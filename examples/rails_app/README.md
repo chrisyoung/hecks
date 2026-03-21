@@ -18,11 +18,11 @@ Then:
 ```bash
 cd examples/rails_app
 bundle install
-rails generate hecks:init
+rails generate active_hecks:init
 rails server
 ```
 
-## What `hecks:init` Creates
+## What `active_hecks:init` Creates
 
 - `config/initializers/hecks.rb` — configures the domain gem and adapter
 - `app/models/HECKS_README.md` — explains why there are no model files
@@ -77,7 +77,7 @@ link_to @pizza.name, pizza_path(@pizza)
 
 ## Testing
 
-`hecks:init` automatically adds the test helper to your spec helper:
+`active_hecks:init` automatically adds the test helper to your spec helper:
 
 ```ruby
 require "hecks/test_helper"
@@ -92,7 +92,12 @@ so every spec starts with a clean slate.
 2. `hecks console` to edit interactively
 3. `hecks build` to generate a new version
 4. Copy the updated gem into this app
-5. Restart the Rails server
+5. Generate and run migrations for any schema changes:
+   ```bash
+   rails generate active_hecks:migration    # produces db/hecks_migrate/*.sql
+   rake hecks:db:migrate             # applies pending migrations
+   ```
+6. Restart the Rails server
 
 ## Pages
 

@@ -16,6 +16,8 @@ module Hecks
   autoload :Versioner,          "hecks/versioner"
   autoload :DomainDiff,         "hecks/domain_diff"
   autoload :MigrationStrategy,  "hecks/migration_strategy"
+  autoload :DomainSnapshot,     "hecks/domain_snapshot"
+  autoload :MigrationRunner,    "hecks/migration_runner"
 
   module MigrationStrategies
     autoload :SqlStrategy, "hecks/migration_strategies/sql_strategy"
@@ -186,5 +188,5 @@ module Hecks
     Generators::AggregateGenerator.new(agg, domain_module: mod, context_module: ctx_mod).generate
   end
 
-  require "hecks/railtie" if defined?(::Rails::Railtie)
+  require "active_hecks/railtie" if defined?(::Rails::Railtie)
 end

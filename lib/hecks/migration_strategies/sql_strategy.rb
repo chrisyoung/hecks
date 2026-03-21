@@ -2,9 +2,10 @@
 #
 # Generates SQL migration files from domain changes. Produces ALTER TABLE
 # statements for attribute changes and CREATE TABLE for new aggregates.
+# Output goes to db/hecks_migrate/ to avoid conflicts with ActiveRecord.
 #
-# Registered as :sql — activated when a SQL adapter is detected
-# (db/schema.sql exists or *_sql_repository.rb files are present).
+# Registered as :sql — used by `hecks generate:migrations` and the
+# Rails generator `rails generate active_hecks:migration`.
 #
 #   strategy = SqlStrategy.new(output_dir: ".")
 #   strategy.generate(changes)
@@ -41,7 +42,7 @@ module Hecks
 
       def file_path
         timestamp = Time.now.strftime("%Y%m%d%H%M%S")
-        "db/migrate/#{timestamp}_hecks_migration.sql"
+        "db/hecks_migrate/#{timestamp}_hecks_migration.sql"
       end
 
       private

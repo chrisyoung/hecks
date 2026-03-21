@@ -456,6 +456,33 @@ end
 
 Tests always run against memory — fast, isolated, no database. Production uses SQL. The API (`Pizza.create`, `Pizza.find`, etc.) is the same either way.
 
+### Migrations
+
+When using the SQL adapter, Hecks generates migration files to create and update your database schema. Migrations go to `db/hecks_migrate/` — separate from ActiveRecord's `db/migrate/` since these are raw SQL, not AR migrations.
+
+```bash
+# First time — generates full CREATE TABLE schema
+hecks generate:migrations --domain pizzas_domain
+
+# After updating the domain gem — generates incremental ALTER TABLE
+bundle update pizzas_domain
+hecks generate:migrations
+
+# Apply to database
+hecks db:migrate --database db/app.sqlite3
+```
+
+Hecks tracks what domain version your migrations were last generated from by saving a `.hecks_domain_snapshot.rb` file. On each run it diffs the current domain against the snapshot to produce only the changes. First run (no snapshot) generates the full schema.
+
+In Rails, you can also use generators and rake tasks:
+
+```bash
+rails generate active_hecks:migration
+rake hecks:db:migrate
+```
+
+Applied migrations are tracked in a `hecks_schema_migrations` table so they won't run twice.
+
 ### Command Bus Middleware
 
 Register middleware that wraps every command dispatch:
@@ -488,7 +515,7 @@ APP.on("PlacedOrder") { |e| puts "Kitchen notified!" }
 ### Rails Integration
 
 ```bash
-rails generate hecks:init
+rails generate active_hecks:init
 ```
 
 This creates:
@@ -496,7 +523,14 @@ This creates:
 - `app/models/HECKS_README.md` — explains the empty models folder
 - Adds `require "hecks/test_helper"` to your spec_helper
 
-That's it. Domain objects work with all Rails helpers — `form_with`, `link_to`, `render`, error display. Tests reset automatically between examples.
+For SQL persistence, generate and run migrations:
+
+```bash
+rails generate active_hecks:migration    # generates db/hecks_migrate/*.sql
+rake hecks:db:migrate             # applies pending migrations
+```
+
+Domain objects work with all Rails helpers — `form_with`, `link_to`, `render`, error display. Tests reset automatically between examples.
 
 ## Examples
 
@@ -523,7 +557,7 @@ A real Rails 7 app using a Hecks domain gem. Includes controllers, views, routes
 ```bash
 cd examples/rails_app
 bundle install
-rails generate hecks:init
+rails generate active_hecks:init
 rails server
 ```
 
@@ -668,8 +702,8 @@ When leaving the REPL, Hecks shows pending actions:
 
 ```
 Next steps:
-  Run migration: db/migrate/20260320143201_hecks_migration.sql
-  $ rails db:migrate
+  Run migration: db/hecks_migrate/20260320143201_hecks_migration.sql
+  $ hecks db:migrate    (or: rake hecks:db:migrate)
   Restart your Rails server to pick up model changes
 ```
 
@@ -687,6 +721,8 @@ You have unsaved changes. Run session.apply! to update model files.
 | `hecks build` | Generate the domain gem (CalVer auto-stamped, e.g. `2026.03.20.1`) |
 | `hecks validate` | Validate the domain definition |
 | `hecks generate:sql` | Generate SQL schema and adapters |
+| `hecks generate:migrations` | Generate incremental SQL migrations from domain changes |
+| `hecks db:migrate` | Run pending Hecks SQL migrations |
 | `hecks version` | Show current domain version |
 | `hecks console` | Start interactive REPL (auto-detects Rails) |
 | `hecks console NAME` | Start REPL with a new named session |
@@ -722,7 +758,7 @@ Hecks has three layers:
 
 **3. Hecks Services** — The application runtime. Wires domains to adapters, dispatches commands, publishes events, executes policies. Maps commands to short aggregate class methods. Provides collection proxies for list attributes. Defaults to memory adapters. Optionally generates SQL adapters for persistence.
 
-**4. DomainDiff + MigrationStrategy** — Compares domain snapshots to detect structural changes (add/remove aggregates, attributes, value objects). Feeds changes to registered migration strategies that generate backend-specific migration files.
+**4. DomainDiff + MigrationStrategy** — Compares domain snapshots to detect structural changes (add/remove aggregates, attributes, value objects). Feeds changes to registered migration strategies that generate backend-specific migration files to `db/hecks_migrate/`.
 
 ```
  domain.rb          hecks build         pizzas_domain gem
@@ -738,8 +774,12 @@ Hecks has three layers:
                                         Adapters
                                     (memory, SQL, custom)
 
- session.apply!  ─────> DomainDiff ─────> MigrationStrategy
-                         (changes)         (SQL, custom backends)
+ hecks generate:migrations ──> DomainDiff ──> MigrationStrategy
+   (snapshot vs current)        (changes)      (SQL files to db/hecks_migrate/)
+       |
+       v
+ hecks db:migrate ──> MigrationRunner
+   (applies pending .sql files, tracks in hecks_schema_migrations table)
 ```
 
 ### Design Principles
@@ -774,11 +814,12 @@ hecks/
       versioner.rb                    # CalVer management (YYYY.MM.DD.N)
       utils.rb                        # shared utilities
       domain_diff.rb                  # compares domain snapshots
+      domain_snapshot.rb              # saves/loads domain DSL for migration diffing
       migration_strategy.rb           # base class for migration generators
+      migration_runner.rb             # executes pending SQL migrations
       dsl_serializer.rb               # domain -> DSL source serializer
       console_runner.rb               # IRB launcher with Rails detection
       active_hecks.rb                  # ActiveModel integration (ActiveHecks)
-      railtie.rb                      # Rails auto-detection
       domain_model/                   # intermediate representation
         domain.rb
         bounded_context.rb
@@ -834,10 +875,14 @@ hecks/
         valid_references.rb
       migration_strategies/           # backend-specific migration generators
         sql_strategy.rb
+      cli/
+        migration_commands.rb         # generate:migrations + db:migrate
+    active_hecks/                     # Rails integration (ActiveHecks)
+      railtie.rb                      # Railtie + rake tasks
   lib/generators/                     # Rails generators
-    hecks/
-      init_generator.rb
-      clean_generator.rb
+    active_hecks/
+      init_generator.rb              # rails generate active_hecks:init
+      migration_generator.rb         # rails generate active_hecks:migration
   examples/
     pizzas/                           # basic domain example
     rails_app/                        # Rails integration example

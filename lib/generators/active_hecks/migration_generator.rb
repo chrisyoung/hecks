@@ -1,0 +1,44 @@
+# rails generate active_hecks:migration
+#
+# Generates SQL migration files from domain changes. Compares the current
+# domain gem against the saved snapshot and produces incremental SQL.
+#
+# Output goes to db/hecks_migrate/ to avoid conflicts with ActiveRecord.
+#
+require "rails/generators"
+
+module ActiveHecks
+  class MigrationGenerator < ::Rails::Generators::Base
+    desc "Generate Hecks SQL migrations from domain changes"
+
+    def generate_migration
+      config = ::Hecks.configuration
+      unless config&.domain_obj
+        say "Hecks is not configured. Add Hecks.configure in an initializer.", :red
+        return
+      end
+
+      domain = config.domain_obj
+      snapshot_path = ::Rails.root.join(Hecks::DomainSnapshot::DEFAULT_PATH).to_s
+      old_domain = Hecks::DomainSnapshot.load(path: snapshot_path)
+
+      changes = Hecks::DomainDiff.call(old_domain, domain)
+
+      if changes.empty?
+        say "Domain is up to date — no migrations needed.", :green
+        return
+      end
+
+      unless Hecks::MigrationStrategy.for(:sql)
+        Hecks::MigrationStrategy.register(:sql, Hecks::MigrationStrategies::SqlStrategy)
+      end
+
+      files = Hecks::MigrationStrategy.run_all(changes, output_dir: ::Rails.root.to_s)
+
+      files.each { |f| say "Generated #{f}", :green }
+
+      Hecks::DomainSnapshot.save(domain, path: snapshot_path)
+      say "Saved domain snapshot to #{snapshot_path}", :green
+    end
+  end
+end
