@@ -32,7 +32,7 @@ What it demonstrates:
 
 ### repl_session.rb — Interactive Domain Building
 
-Builds the domain incrementally using the REPL session API, demonstrates `session.apply!` and CalVer versioning, then switches to play mode to execute commands.
+Builds the domain incrementally using the REPL session API, demonstrates CalVer versioning, then switches to play mode to execute commands.
 
 ```
 ruby -Ilib examples/pizzas/repl_session.rb
@@ -45,7 +45,8 @@ What it demonstrates:
 - `pizza.describe` and `session.describe` to review
 - `session.validate` to check DDD rules
 - `pizza.preview` to see generated code
-- `session.apply!` to write model files with migration diffs
+- `session.save` to write domain.rb
+- `session.build` to generate the domain gem
 - `session.play!` to switch to play mode
 - `session.execute("CreatePizza", ...)` to fire commands and see events
 - `session.to_dsl` to export back to DSL source

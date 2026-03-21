@@ -17,6 +17,8 @@
 #   end
 #   session.validate    # => true
 #   session.preview     # prints generated Ruby code
+#   session.save        # write domain.rb
+#   session.build       # generate domain gem
 #   session.play!       # switch to play mode
 #   session.execute("CreatePizza", name: "Margherita")
 #

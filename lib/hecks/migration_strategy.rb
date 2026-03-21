@@ -16,7 +16,7 @@
 #     end
 #   end
 #
-# Register strategies so apply! picks them up:
+# Register strategies so MigrationStrategy.run_all picks them up:
 #
 #   Hecks::MigrationStrategy.register(:redis, RedisMigrationStrategy)
 #

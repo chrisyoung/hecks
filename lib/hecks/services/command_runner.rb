@@ -1,5 +1,8 @@
 # Hecks::Services::CommandRunner
 #
+# LEGACY — replaced by CommandBus, which adds middleware support.
+# Kept for backward compatibility. New code should use CommandBus instead.
+#
 # Dispatches commands through the domain. Resolves command and event classes,
 # creates events from commands, and publishes them on the event bus.
 # Context-aware: navigates through context modules for multi-context domains.

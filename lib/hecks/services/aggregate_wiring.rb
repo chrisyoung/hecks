@@ -1,5 +1,9 @@
+# Hecks::Services::AggregateWiring
+#
 # Wires aggregate classes with repository-backed class/instance methods,
-# reference resolution, collection proxies, and command methods.
+# reference resolution, collection proxies, scopes, and command methods.
+# Routes commands through the CommandBus (with middleware support) and
+# enforces port-based access restrictions when a port is specified.
 module Hecks
   module Services
     class AggregateWiring
