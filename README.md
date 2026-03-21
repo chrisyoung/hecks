@@ -384,36 +384,41 @@ The application services layer. Wires your domain to adapters, dispatches comman
 ### Application Container
 
 ```ruby
-require "pizzas_domain"
+# Plain Ruby — boot manually
 require "hecks"
+require "pizzas_domain"
 
+domain = eval(File.read("pizzas_domain/domain.rb"))
 app = Hecks::Services::Application.new(domain)
+
+# Rails — use the config block
+Hecks.configure do
+  domain "pizzas_domain"
+  adapter :memory         # default
+end
 ```
 
-Every aggregate gets a memory repository by default. Commands become short methods on the aggregate class, and repository methods are available directly:
+Every aggregate gets a memory repository by default. Commands become short methods on the aggregate class:
 
 ```ruby
-# Commands are mapped to short aggregate class methods
 Pizza.create(name: "Margherita", description: "Classic")
-# => dispatches CreatePizza command, fires CreatedPizza event, saves to repo, returns pizza
-
-Order.place(pizza_id: "abc-123", quantity: 2)
-# => dispatches PlaceOrder, fires PlacedOrder, triggers policies, saves, returns order
-
-Pizza.add_topping(pizza_id: "abc-123", topping: "Pepperoni")
-# => dispatches AddTopping, fires AddedTopping, saves, returns pizza
-
-# Repository methods on the aggregate class
 Pizza.find(id)
 Pizza.all
+Pizza.first
+Pizza.last
 Pizza.count
+Pizza.where(name: "Margherita")
 Pizza.delete(id)
 
-# Subscribe to events
-app.on("CreatedPizza") { |event| puts "Made a #{event.name}!" }
+pizza.update(name: "Margherita Deluxe")
+pizza.destroy
+pizza.save
 
-# View event log
-app.events
+pizza.toppings.create(name: "Mozzarella", amount: 2)
+pizza.toppings.first.delete
+
+order = Order.place(pizza_id: pizza.id, quantity: 3)
+order.pizza  # => resolves the reference
 ```
 
 ### Collection Proxies
@@ -427,200 +432,71 @@ pizza.toppings.create(name: "Mozzarella", amount: 2)
 pizza.toppings.create(name: "Basil", amount: 1)
 pizza.toppings.count   # => 2
 pizza.toppings.each { |t| puts "#{t.name} x#{t.amount}" }
-pizza.toppings.delete(topping)
+pizza.toppings.first.delete
 pizza.toppings.clear
 ```
 
-Collection proxies rebuild the aggregate with the modified collection and save it back to the repository automatically.
+### Adapters
+
+Memory is the default. Switch to SQL with the config block:
+
+```ruby
+# Rails
+Hecks.configure do
+  domain "pizzas_domain"
+  adapter :sql unless Rails.env.test?
+end
+
+# Plain Ruby — manual wiring
+app = Hecks::Services::Application.new(domain) do
+  adapter "Pizza", PizzasDomain::Adapters::PizzaSqlRepository.new(db)
+  adapter "Order", PizzasDomain::Adapters::OrderSqlRepository.new(db)
+end
+```
+
+Tests always run against memory — fast, isolated, no database. Production uses SQL. The API (`Pizza.create`, `Pizza.find`, etc.) is the same either way.
+
+### Command Bus Middleware
+
+Register middleware that wraps every command dispatch:
+
+```ruby
+APP.use :logging do |command, next_handler|
+  Rails.logger.info "Command: #{command.class.name}"
+  result = next_handler.call
+  Rails.logger.info "Event: #{result.class.name}"
+  result
+end
+
+APP.use :transaction do |command, next_handler|
+  ActiveRecord::Base.transaction { next_handler.call }
+end
+```
+
+Middleware chains like Rack — first registered wraps outermost. If any middleware raises, the command is rejected.
 
 ### Multiple Contexts
 
 ```ruby
-app = Hecks::Services::Application.new(domain)
-
-# Context modules hoisted to top level
 Ordering::Order.place(pizza_id: "abc", quantity: 3)
 Kitchen::Recipe.create(name: "Margherita", prep_time: 15)
 
-# Repository access via context
-app["Ordering"]["Order"].all
-app["Kitchen"]["Recipe"].find(id)
-
 # Cross-context events work via shared event bus
-app.on("PlacedOrder") { |e| puts "Kitchen notified!" }
+APP.on("PlacedOrder") { |e| puts "Kitchen notified!" }
 ```
-
-### Swapping Adapters
-
-Override the default memory adapter for any aggregate:
-
-```ruby
-# Single context
-app = Hecks::Services::Application.new(domain) do
-  adapter "Pizza", PizzasDomain::Adapters::PizzaSqlRepository.new(db)
-end
-
-# Multiple contexts
-app = Hecks::Services::Application.new(domain) do
-  adapter "Ordering", "Order", sql_order_repo
-  adapter "Kitchen", "Recipe", sql_recipe_repo
-end
-```
-
-The rest keep using memory. Swap one at a time as you're ready.
-
-### SQL Adapter Generation
-
-Generate SQL schema and adapter classes from your domain:
-
-```
-hecks generate:sql
-```
-
-This produces:
-
-**db/schema.sql** — CREATE TABLE statements for every aggregate, with join tables for list value objects:
-
-```sql
-CREATE TABLE pizzas (
-  id VARCHAR(36) PRIMARY KEY,
-  name VARCHAR(255),
-  description VARCHAR(255),
-  price REAL
-);
-
-CREATE TABLE pizzas_toppings (
-  id VARCHAR(36) PRIMARY KEY,
-  pizza_id VARCHAR(36) NOT NULL REFERENCES pizzas(id),
-  name VARCHAR(255),
-  amount INTEGER
-);
-```
-
-**SQL adapter per aggregate** with `find`, `save`, `delete`, `all`, and `count`. Value objects in list attributes are automatically persisted to and loaded from their join tables.
 
 ### Rails Integration
 
-Hecks auto-detects Rails projects. `hecks console` adapts its behavior automatically — no separate Rails commands needed.
-
-#### Setup
-
-```ruby
-# Gemfile
-gem "hecks"
-gem "pizzas_domain", path: "./pizzas_domain"
-
-# config/initializers/hecks.rb
-require "hecks/rails"
-Hecks::Rails.activate(PizzasDomain)
-
-DOMAIN = eval(File.read(Rails.root.join("domain.rb")))
-APP = Hecks::Services::Application.new(DOMAIN)
-```
-
-#### Rails Generators
-
 ```bash
-# Copy domain classes into app/models/ and create initializer
 rails generate hecks:init
-
-# Reset model files back to pure domain versions
-rails generate hecks:clean
 ```
 
-#### session.apply!
+This creates:
+- `config/initializers/hecks.rb` — the config block
+- `app/models/HECKS_README.md` — explains the empty models folder
+- Adds `require "hecks/test_helper"` to your spec_helper
 
-From the console or scripts, `session.apply!` writes domain objects to `app/models/` with a marker comment. Custom methods you add below the marker survive re-applies:
-
-```ruby
-session = Hecks.session("Pizzas")
-pizza = session.aggregate("Pizza")
-pizza.add_attribute :name, String
-pizza.add_command("CreatePizza") { attribute :name, String }
-
-session.apply!
-#   updated app/models/pizza.rb
-#   Applied 1 model files
-```
-
-The generated model file includes a marker:
-
-```ruby
-# Generated by Hecks from pizzas_domain
-# Local modifications are OK — add custom methods below the marker.
-# Run `rails generate hecks:clean` to reset to the pure domain version.
-#
-# ... generated code ...
-
-# --- Custom methods below this line ---
-
-# Your custom methods here are preserved on re-apply
-```
-
-#### Migration Strategy System
-
-When you call `session.apply!`, Hecks diffs the old domain (from `domain.rb`) against the new domain and runs registered migration strategies. The built-in `SqlStrategy` generates `ALTER TABLE` / `CREATE TABLE` statements:
-
-```ruby
-# Register the SQL strategy (or custom strategies for any backend)
-Hecks::MigrationStrategy.register(:sql, Hecks::MigrationStrategies::SqlStrategy)
-
-session.apply!
-#   updated app/models/pizza.rb
-#   migration db/migrate/20260320143201_hecks_migration.sql
-#
-# Next steps:
-#   Run migration: db/migrate/20260320143201_hecks_migration.sql
-#   $ rails db:migrate
-#   Restart your Rails server to pick up model changes
-```
-
-Custom strategies can be registered for any backend:
-
-```ruby
-class RedisMigrationStrategy < Hecks::MigrationStrategy
-  def generate(changes)
-    # return migration content or nil
-  end
-
-  def file_path
-    "db/redis/#{Time.now.strftime('%Y%m%d%H%M%S')}_migration.rb"
-  end
-end
-
-Hecks::MigrationStrategy.register(:redis, RedisMigrationStrategy)
-```
-
-#### Controllers
-
-```ruby
-class PizzasController < ApplicationController
-  def index
-    @pizzas = Pizza.all
-  end
-
-  def create
-    @pizza = Pizza.create(
-      name: params[:pizza][:name],
-      description: params[:pizza][:description]
-    )
-    redirect_to pizza_path(@pizza)
-  end
-end
-```
-
-#### Views
-
-```erb
-<%# Views — form_with, link_to, render all work %>
-<%= form_with(model: @pizza) do |f| %>
-  <%= f.text_field :name %>
-  <%= f.submit %>
-<% end %>
-
-<%= link_to @pizza.name, pizza_path(@pizza) %>
-<%= render @pizzas %>
-```
+That's it. Domain objects work with all Rails helpers — `form_with`, `link_to`, `render`, error display. Tests reset automatically between examples.
 
 ## Interactive Console
 
