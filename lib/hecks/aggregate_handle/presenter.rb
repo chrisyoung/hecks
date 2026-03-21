@@ -1,0 +1,89 @@
+# Hecks::AggregateHandle::Presenter
+#
+# Presentation methods for AggregateHandle: describe (detailed summary),
+# inspect (one-line), and the type_label helper for formatting types.
+#
+module Hecks
+  class AggregateHandle
+    module Presenter
+      def describe
+        agg = @builder.build
+        lines = []
+        lines << @name
+        lines << ""
+
+        unless agg.attributes.empty?
+          lines << "  Attributes:"
+          agg.attributes.each do |attr|
+            lines << "    #{attr.name}: #{Hecks::Utils.type_label(attr)}"
+          end
+        end
+
+        unless agg.value_objects.empty?
+          lines << "  Value Objects:"
+          agg.value_objects.each do |vo|
+            attrs = vo.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
+            lines << "    #{vo.name} (#{attrs})"
+            vo.invariants.each do |inv|
+              lines << "      invariant: #{inv.message}"
+            end
+          end
+        end
+
+        unless agg.commands.empty?
+          lines << "  Commands:"
+          agg.commands.each_with_index do |cmd, i|
+            event = agg.events[i]
+            attrs = cmd.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
+            lines << "    #{cmd.name} (#{attrs}) -> #{event&.name}"
+          end
+        end
+
+        unless agg.validations.empty?
+          lines << "  Validations:"
+          agg.validations.each do |v|
+            lines << "    #{v.field}: #{v.rules.keys.join(', ')}"
+          end
+        end
+
+        unless agg.invariants.empty?
+          lines << "  Invariants:"
+          agg.invariants.each do |inv|
+            lines << "    #{inv.message}"
+          end
+        end
+
+        unless agg.policies.empty?
+          lines << "  Policies:"
+          agg.policies.each do |pol|
+            lines << "    #{pol.name} (on #{pol.event_name} -> #{pol.trigger_command})"
+          end
+        end
+
+        puts lines.join("\n")
+        nil
+      end
+
+      def inspect
+        "#<#{@name} (#{attributes.size} attributes, #{commands.size} commands)>"
+      end
+
+      private
+
+      def type_label(type)
+        case type
+        when Hash
+          if type[:list]
+            "list_of(#{type[:list]})"
+          elsif type[:reference]
+            "reference_to(#{type[:reference]})"
+          else
+            type.to_s
+          end
+        else
+          type.to_s
+        end
+      end
+    end
+  end
+end

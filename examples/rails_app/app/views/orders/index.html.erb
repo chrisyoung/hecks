@@ -1,0 +1,12 @@
+<h1>Orders</h1>
+
+<% if @orders.empty? %>
+  <p>No orders yet. <%= link_to "Browse pizzas", pizzas_path %> and place one!</p>
+<% end %>
+
+<% @orders.each do |order| %>
+  <div class="card">
+    <p><strong>Pizza:</strong> <%= order.pizza_id %></p>
+    <p><strong>Quantity:</strong> <%= order.quantity %></p>
+  </div>
+<% end %>

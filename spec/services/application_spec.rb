@@ -1,0 +1,144 @@
+require "spec_helper"
+require "tmpdir"
+
+RSpec.describe Hecks::Services::Application do
+  let(:domain) do
+    Hecks.domain "Pizzas" do
+      aggregate "Pizza" do
+        attribute :name, String
+
+        validation :name, presence: true
+
+        command "CreatePizza" do
+          attribute :name, String
+        end
+      end
+
+      aggregate "Order" do
+        attribute :pizza_id, reference_to("Pizza")
+        attribute :quantity, Integer
+
+        command "PlaceOrder" do
+          attribute :pizza_id, reference_to("Pizza")
+          attribute :quantity, Integer
+        end
+
+        policy "NotifyKitchen" do
+          on "PlacedOrder"
+          trigger "NotifyChef"
+        end
+      end
+    end
+  end
+
+  before do
+    # Generate and load the domain gem so classes are available
+    tmpdir = Dir.mktmpdir("hecks_services_test")
+    gen = Hecks::Generators::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
+    gem_path = gen.generate
+    lib_path = File.join(gem_path, "lib")
+    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+    entry = File.join(lib_path, "pizzas_domain.rb")
+    load entry
+    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+  end
+
+  describe "default configuration" do
+    subject(:app) { described_class.new(domain) }
+
+    it "creates memory repositories for each aggregate" do
+      expect(app["Pizza"]).to be_a(PizzasDomain::Adapters::PizzaMemoryRepository)
+      expect(app["Order"]).to be_a(PizzasDomain::Adapters::OrderMemoryRepository)
+    end
+
+    it "runs commands and publishes events" do
+      event = app.run("CreatePizza", name: "Margherita")
+      expect(event.name).to eq("Margherita")
+      expect(app.events.size).to eq(1)
+    end
+
+    it "allows subscribing to events" do
+      received = nil
+      app.on("CreatedPizza") { |e| received = e }
+      app.run("CreatePizza", name: "Pepperoni")
+      expect(received.name).to eq("Pepperoni")
+    end
+  end
+
+  describe "custom adapter" do
+    it "uses the provided adapter class" do
+      custom_repo = Class.new do
+        include PizzasDomain::Ports::PizzaRepository
+        def find(id) = "custom_find"
+        def save(pizza) = "custom_save"
+        def delete(id) = "custom_delete"
+      end
+
+      app = described_class.new(domain) do
+        adapter "Pizza", custom_repo.new
+      end
+
+      expect(app["Pizza"].find("x")).to eq("custom_find")
+    end
+  end
+
+  describe "aggregate command methods" do
+    let!(:app) { described_class.new(domain) }
+
+    it "defines class methods on aggregates for each command" do
+      expect(PizzasDomain::Pizza).to respond_to(:create)
+    end
+
+    it "dispatches through the command bus and returns the aggregate" do
+      pizza = PizzasDomain::Pizza.create(name: "Margherita")
+      expect(pizza).to be_a(PizzasDomain::Pizza)
+      expect(pizza.name).to eq("Margherita")
+    end
+
+    it "saves the aggregate to the repository" do
+      pizza = PizzasDomain::Pizza.create(name: "Pepperoni")
+      found = app["Pizza"].find(pizza.id)
+      expect(found).not_to be_nil
+      expect(found.name).to eq("Pepperoni")
+    end
+
+    it "fires events" do
+      received = nil
+      app.on("CreatedPizza") { |e| received = e }
+      PizzasDomain::Pizza.create(name: "Hawaiian")
+      expect(received.name).to eq("Hawaiian")
+    end
+
+    it "works for other aggregates" do
+      order = PizzasDomain::Order.place(pizza_id: "abc-123", quantity: 3)
+      expect(order).to be_a(PizzasDomain::Order)
+      expect(order.pizza_id).to eq("abc-123")
+      expect(order.quantity).to eq(3)
+    end
+  end
+
+  describe "constant hoisting" do
+    let!(:app) { described_class.new(domain) }
+
+    it "hoists aggregates to top level" do
+      expect(::Pizza).to eq(PizzasDomain::Pizza)
+    end
+
+    it "makes value objects accessible through top-level aggregate" do
+      expect(::Pizza::Topping).to eq(PizzasDomain::Pizza::Topping) if defined?(PizzasDomain::Pizza::Topping)
+    end
+
+    it "allows calling commands on the top-level constant" do
+      pizza = ::Pizza.create(name: "TopLevel")
+      expect(pizza.name).to eq("TopLevel")
+    end
+  end
+
+  describe "#inspect" do
+    it "shows a readable summary" do
+      app = described_class.new(domain)
+      expect(app.inspect).to include("Pizzas")
+      expect(app.inspect).to include("2 repositories")
+    end
+  end
+end
