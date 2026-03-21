@@ -3,11 +3,12 @@
 module Hecks
   module Services
     class AggregateWiring
-      def initialize(domain, repositories, command_runner, mod)
+      def initialize(domain, repositories, command_runner, mod, port_name: nil)
         @domain = domain
         @repositories = repositories
         @command_runner = command_runner
         @mod = mod
+        @port_name = port_name
       end
 
       def wire!
@@ -19,26 +20,25 @@ module Hecks
       end
 
       private
-
       def wire_aggregate(ctx, agg)
         agg_class = resolve_aggregate_class(ctx, agg)
         runner = @command_runner
         repo_key = ctx.default? ? agg.name : "#{ctx.name}/#{agg.name}"
         repo = @repositories[repo_key]
-        agg_attr_defaults = build_defaults(agg)
-
+        defaults = build_defaults(agg)
         wire_collection_proxies(agg, agg_class, repo)
-        wire_repository_class_methods(agg, agg_class, repo, agg_attr_defaults)
+        wire_repository_class_methods(agg, agg_class, repo, defaults)
         wire_query_methods(agg_class)
         wire_instance_methods(agg_class, repo)
         wire_references(agg, agg_class)
-        wire_commands(agg, agg_class, runner, repo, agg_attr_defaults)
+        wire_commands(agg, agg_class, runner, repo, defaults)
+        wire_scopes(agg, agg_class)
+        PortEnforcer.new(port_name: @port_name).enforce!(agg, agg_class)
       end
 
       def build_defaults(agg)
         agg.attributes.each_with_object({}) { |attr, h| h[attr.name] = attr.list? ? [] : nil }
       end
-
       def wire_collection_proxies(agg, agg_class, repo)
         agg.attributes.select(&:list?).each do |list_attr|
           vo = agg.value_objects.find { |v| v.name == list_attr.type.to_s }
@@ -54,7 +54,6 @@ module Hecks
           end
         end
       end
-
       def wire_repository_class_methods(agg, agg_class, repo, defaults)
         agg_class.define_singleton_method(:find) { |id| repo.find(id) }
         agg_class.define_singleton_method(:all) { repo.all }
@@ -75,7 +74,6 @@ module Hecks
           end
         end
       end
-
       def wire_query_methods(agg_class)
         agg_class.define_singleton_method(:where) do |**conditions|
           all.select do |obj|
@@ -85,7 +83,6 @@ module Hecks
         agg_class.define_singleton_method(:first) { all.first }
         agg_class.define_singleton_method(:last) { all.last }
       end
-
       def wire_instance_methods(agg_class, repo)
         agg_class.define_method(:save) { repo.save(self); self }
         agg_class.define_method(:destroy) { repo.delete(id); self }
@@ -101,7 +98,6 @@ module Hecks
           updated
         end
       end
-
       def wire_references(agg, agg_class)
         agg.attributes.select(&:reference?).each do |ref_attr|
           method_name_for_ref = ref_attr.name.to_s.sub(/_id$/, "").to_sym
@@ -114,7 +110,6 @@ module Hecks
           end
         end
       end
-
       def wire_commands(agg, agg_class, runner, repo, defaults)
         agg_snake = Hecks::Utils.underscore(agg.name)
         agg.commands.each do |cmd|
@@ -129,9 +124,13 @@ module Hecks
           end
         end
       end
-
       def wire_create_command(agg_class, method_name, cmd, runner, repo, defaults)
+        cmd_handler = cmd.handler
         agg_class.define_singleton_method(method_name) do |**attrs|
+          if cmd_handler
+            require "ostruct"
+            cmd_handler.call(OpenStruct.new(**attrs))
+          end
           runner.run(cmd.name, **attrs)
           now = Time.now
           constructor_attrs = { created_at: now, updated_at: now }
@@ -141,13 +140,16 @@ module Hecks
           aggregate
         end
       end
-
       def wire_update_command(agg_class, method_name, cmd, runner, repo, defaults)
+        cmd_handler = cmd.handler
         agg_class.define_singleton_method(method_name) do |**attrs|
+          if cmd_handler
+            require "ostruct"
+            cmd_handler.call(OpenStruct.new(**attrs))
+          end
           runner.run(cmd.name, **attrs)
           id_key = attrs.keys.find { |k| k.to_s.end_with?("_id") }
           existing = id_key ? repo.find(attrs[id_key]) : nil
-
           if existing
             now = Time.now
             constructor_attrs = {
@@ -176,7 +178,20 @@ module Hecks
           aggregate
         end
       end
-
+      def wire_scopes(agg, agg_class)
+        agg.scopes.each do |scope|
+          if scope.callable?
+            agg_class.define_singleton_method(scope.name) do |*args|
+              conditions = scope.conditions.call(*args)
+              where(**conditions)
+            end
+          else
+            agg_class.define_singleton_method(scope.name) do
+              where(**scope.conditions)
+            end
+          end
+        end
+      end
       def resolve_aggregate_class(ctx, agg)
         ctx.default? ? @mod.const_get(agg.name) : @mod.const_get(ctx.module_name).const_get(agg.name)
       end

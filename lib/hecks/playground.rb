@@ -30,6 +30,12 @@ module Hecks
 
     # Execute a command by name, returns the event
     def execute(command_name, **attrs)
+      domain_cmd = resolve_domain_command(command_name)
+      if domain_cmd&.handler
+        require "ostruct"
+        domain_cmd.handler.call(OpenStruct.new(**attrs))
+      end
+
       cmd_class = resolve_command(command_name)
       command = cmd_class.new(**attrs)
 
@@ -158,6 +164,17 @@ module Hecks
       else
         mod.const_get(ctx.module_name).const_get(agg.name)
       end
+    end
+
+    def resolve_domain_command(command_name)
+      @domain.contexts.each do |ctx|
+        ctx.aggregates.each do |agg|
+          agg.commands.each do |cmd|
+            return cmd if cmd.name == command_name.to_s
+          end
+        end
+      end
+      nil
     end
 
     def available_commands

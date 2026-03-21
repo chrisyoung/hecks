@@ -27,8 +27,9 @@ module Hecks
     class Application
       attr_reader :domain, :event_bus
 
-      def initialize(domain, &config)
+      def initialize(domain, port: nil, &config)
         @domain = domain
+        @port_name = port
         @mod_name = domain.module_name + "Domain"
         @mod = Object.const_get(@mod_name)
         @event_bus = EventBus.new
@@ -40,7 +41,7 @@ module Hecks
         setup_repositories
         setup_command_runner
         setup_policies
-        AggregateWiring.new(@domain, @repositories, @command_runner, @mod).wire!
+        AggregateWiring.new(@domain, @repositories, @command_runner, @mod, port_name: @port_name).wire!
         hoist_constants
       end
 

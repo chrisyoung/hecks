@@ -13,11 +13,12 @@
 module Hecks
   module DomainModel
     class Command
-      attr_reader :name, :attributes
+      attr_reader :name, :attributes, :handler
 
-      def initialize(name:, attributes: [])
+      def initialize(name:, attributes: [], handler: nil)
         @name = name
         @attributes = attributes
+        @handler = handler
       end
 
       def inferred_event_name

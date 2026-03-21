@@ -18,7 +18,7 @@ module Hecks
     class AggregateBuilder
       include AttributeCollector
 
-      attr_reader :attributes, :commands, :value_objects, :policies, :validations, :invariants
+      attr_reader :attributes, :commands, :value_objects, :policies, :validations, :invariants, :scopes, :ports
 
       def initialize(name)
         @name = name
@@ -28,6 +28,8 @@ module Hecks
         @policies = []
         @validations = []
         @invariants = []
+        @scopes = []
+        @ports = {}
       end
 
       def value_object(name, &block)
@@ -56,6 +58,17 @@ module Hecks
         @invariants << DomainModel::Invariant.new(message: message, block: block)
       end
 
+      def scope(name, conditions_or_lambda = nil, &block)
+        conditions = block || conditions_or_lambda
+        @scopes << DomainModel::Scope.new(name: name, conditions: conditions)
+      end
+
+      def port(name, &block)
+        port_builder = PortBuilder.new(name)
+        port_builder.instance_eval(&block) if block
+        @ports[name] = port_builder.build
+      end
+
       def build
         events = infer_events
 
@@ -67,7 +80,9 @@ module Hecks
           events: events,
           policies: @policies,
           validations: @validations,
-          invariants: @invariants
+          invariants: @invariants,
+          scopes: @scopes,
+          ports: @ports
         )
       end
 

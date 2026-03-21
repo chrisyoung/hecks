@@ -47,6 +47,9 @@ module Hecks
         aggregate.validations.each do |v|
           builder.validation(v.field, v.rules)
         end
+        aggregate.scopes.each do |s|
+          builder.scope(s.name, s.conditions)
+        end
         aggregate.policies.each do |pol|
           builder.policy(pol.name) do
             on pol.event_name
