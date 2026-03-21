@@ -5,6 +5,7 @@ pkg/
 tmp/
 .hecks_version
 examples/pizzas/pizzas_domain/
+examples/pizzas/event_storm_domain.rb
 examples/rails_app/pizzas_domain/
 examples/rails_app/db/*.sqlite3
 examples/rails_app/db/*.sqlite3-*

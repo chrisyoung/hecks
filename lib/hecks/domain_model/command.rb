@@ -1,11 +1,12 @@
 # Hecks::DomainModel::Command
 #
 # Intermediate representation of a domain command -- an intent to change state.
-# Each command carries attributes and can infer a corresponding event name
-# by converting the verb to past tense (CreatePizza -> CreatedPizza).
+# Each command carries attributes, optional read models, external systems,
+# and actors. Can infer a corresponding event name by converting the verb
+# to past tense (CreatePizza -> CreatedPizza).
 #
-# Part of the DomainModel IR layer. Built by CommandBuilder, consumed by
-# CommandGenerator and the event inference logic in AggregateBuilder.
+# Part of the DomainModel IR layer. Built by CommandBuilder or EventStorm
+# parser, consumed by CommandGenerator and event inference in AggregateBuilder.
 #
 #   cmd = Command.new(name: "CreatePizza", attributes: [Attribute.new(name: :name, type: String)])
 #   cmd.inferred_event_name  # => "CreatedPizza"
@@ -13,12 +14,15 @@
 module Hecks
   module DomainModel
     class Command
-      attr_reader :name, :attributes, :handler
+      attr_reader :name, :attributes, :handler, :read_models, :external_systems, :actors
 
-      def initialize(name:, attributes: [], handler: nil)
+      def initialize(name:, attributes: [], handler: nil, read_models: [], external_systems: [], actors: [])
         @name = name
         @attributes = attributes
         @handler = handler
+        @read_models = read_models
+        @external_systems = external_systems
+        @actors = actors
       end
 
       def inferred_event_name
