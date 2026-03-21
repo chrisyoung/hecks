@@ -5,12 +5,14 @@
 # save it back to the repo.
 #
 # Behaves like an Array for reading (each, map, size, etc.) but adds
-# persistence-aware mutations.
+# persistence-aware mutations. Items are wrapped in CollectionItem so
+# they support .delete directly.
 #
 #   pizza = Pizza.create(name: "Margherita")
 #   pizza.toppings.create(name: "Mozzarella", amount: 2)
 #   pizza.toppings.create(name: "Basil", amount: 1)
-#   pizza.toppings.count   # => 2
+#   pizza.toppings.count          # => 2
+#   pizza.toppings.first.delete   # removes and persists
 #   pizza.toppings.each { |t| puts t.name }
 #
 module Hecks

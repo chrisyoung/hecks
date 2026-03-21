@@ -4,8 +4,8 @@
 # describing what was added, removed, or modified. Adapter-agnostic —
 # the changes are structural, not tied to any persistence format.
 #
-# Used by Session#apply! to detect what changed and feed changes to
-# registered MigrationStrategies.
+# Used by MigrationStrategies to detect what changed and generate
+# appropriate migration files.
 #
 #   old_domain = Hecks.domain("Pizzas") { ... }
 #   new_domain = Hecks.domain("Pizzas") { ... }

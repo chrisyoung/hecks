@@ -7,10 +7,9 @@
 # Part of the outer shell of the Hecks architecture -- orchestrates the
 # DSL, Validator, Versioner, and Generators to drive the full workflow.
 #
-#   $ hecks new PizzaShop
-#   $ cd pizza_shop
+#   $ hecks init
 #   $ hecks validate
-#   $ hecks build --bump minor
+#   $ hecks build
 #   $ hecks console
 #   $ hecks generate:sql
 #

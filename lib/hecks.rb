@@ -9,6 +9,7 @@
 #
 # Usage:
 #
+#   # Define a domain
 #   domain = Hecks.domain "Pizzas" do
 #     aggregate "Pizza" do
 #       attribute :name, String
@@ -20,6 +21,18 @@
 #
 #   valid, errors = Hecks.validate(domain)
 #   Hecks.build(domain, version: "1.0.0")
+#
+#   # Boot in Rails (config/initializers/hecks.rb)
+#   Hecks.configure do
+#     domain "pizzas_domain"
+#     adapter :sql
+#   end
+#
+#   # Command bus with middleware
+#   APP.use :logging do |cmd, next_handler|
+#     puts cmd.class.name
+#     next_handler.call
+#   end
 #
 module Hecks
   class PortAccessDenied < StandardError; end

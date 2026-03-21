@@ -24,23 +24,24 @@ rails server
 
 ## What `hecks:init` Creates
 
-- `config/initializers/hecks.rb` — loads the domain gem, boots the Application container, activates ActiveModel
+- `config/initializers/hecks.rb` — configures the domain gem and adapter
 - `app/models/HECKS_README.md` — explains why there are no model files
+- Adds `require "hecks/test_helper"` to your spec/test helper for automatic cleanup between tests
 
 ## How It Works
 
-The initializer does three things:
+The initializer uses `Hecks.configure`:
 
 ```ruby
-# 1. Load the domain definition from the gem
-DOMAIN = eval(File.read(gem_path + "/domain.rb"))
-
-# 2. Boot the Application container (wires commands, repos, events)
-APP = Hecks::Services::Application.new(DOMAIN)
-
-# 3. Activate ActiveModel for form helpers
-Hecks::Rails.activate(PizzasDomain)
+Hecks.configure do
+  domain "pizzas_domain"
+  adapter :memory    # or :sql for ActiveRecord-backed persistence
+end
 ```
+
+The Railtie boots the Application container after initializers load. This wires
+commands, repositories, events, and hoists aggregate constants. Domain objects
+come from the gem only — there are no model files in `app/models/`.
 
 After that, domain objects just work:
 
@@ -49,14 +50,41 @@ After that, domain objects just work:
 Pizza.create(name: "Margherita", description: "Classic")
 Pizza.find(id)
 Pizza.all
+Pizza.where(name: "Margherita")
+Pizza.first
+Pizza.last
 Pizza.delete(id)
-Order.place(pizza_id: id, quantity: 3)
+
+pizza.update(name: "New Name")
+pizza.save
+pizza.destroy
+
 pizza.toppings.create(name: "Mozzarella", amount: 2)
+pizza.toppings.first.delete
+
+Order.place(pizza_id: id, quantity: 3)
+
+# Command bus middleware
+APP.use :logging do |cmd, next_handler|
+  Rails.logger.info("Command: #{cmd.class.name}")
+  next_handler.call
+end
 
 # Views
 form_with(model: @pizza) { |f| f.text_field :name }
 link_to @pizza.name, pizza_path(@pizza)
 ```
+
+## Testing
+
+`hecks:init` automatically adds the test helper to your spec helper:
+
+```ruby
+require "hecks/test_helper"
+```
+
+This resets all memory adapter stores and event history between each test,
+so every spec starts with a clean slate.
 
 ## Updating the Domain
 

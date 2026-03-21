@@ -498,6 +498,37 @@ This creates:
 
 That's it. Domain objects work with all Rails helpers — `form_with`, `link_to`, `render`, error display. Tests reset automatically between examples.
 
+## Examples
+
+The `examples/` directory contains runnable demos:
+
+### examples/pizzas/
+
+A standalone Hecks domain with three scripts:
+
+- **`app.rb`** — Full workflow: build gem, boot Application, `Pizza.create`, `pizza.toppings.create`, events, queries
+- **`repl_session.rb`** — Interactive domain building with the Session API, then play mode
+- **`sql_app.rb`** — SQL adapter generation with a live SQLite demo
+
+```bash
+ruby -Ilib examples/pizzas/app.rb
+ruby -Ilib examples/pizzas/repl_session.rb
+ruby -Ilib examples/pizzas/sql_app.rb
+```
+
+### examples/rails_app/
+
+A real Rails 7 app using a Hecks domain gem. Includes controllers, views, routes, the `Hecks.configure` initializer, and the SQL adapter wired for dev/production with memory for tests.
+
+```bash
+cd examples/rails_app
+bundle install
+rails generate hecks:init
+rails server
+```
+
+See `examples/rails_app/README.md` for the full walkthrough.
+
 ## Interactive Console
 
 Hecks includes a REPL for building and exploring domains interactively.
