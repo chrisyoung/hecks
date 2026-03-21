@@ -7,6 +7,8 @@
 module Hecks
   module Services
     class AggregateWiring
+      include CommandWiring
+
       def initialize(domain, repositories, command_bus, mod, port_name: nil)
         @domain = domain
         @repositories = repositories
@@ -126,60 +128,6 @@ module Hecks
           else
             wire_update_command(agg_class, method_name, cmd, bus, repo, defaults)
           end
-        end
-      end
-      def wire_create_command(agg_class, method_name, cmd, bus, repo, defaults)
-        cmd_handler = cmd.handler
-        agg_class.define_singleton_method(method_name) do |**attrs|
-          if cmd_handler
-            require "ostruct"
-            cmd_handler.call(OpenStruct.new(**attrs))
-          end
-          bus.dispatch(cmd.name, **attrs)
-          now = Time.now
-          constructor_attrs = { created_at: now, updated_at: now }
-          defaults.each { |param, default_val| constructor_attrs[param] = attrs.key?(param) ? attrs[param] : default_val }
-          aggregate = new(**constructor_attrs)
-          repo.save(aggregate)
-          aggregate
-        end
-      end
-      def wire_update_command(agg_class, method_name, cmd, bus, repo, defaults)
-        cmd_handler = cmd.handler
-        agg_class.define_singleton_method(method_name) do |**attrs|
-          if cmd_handler
-            require "ostruct"
-            cmd_handler.call(OpenStruct.new(**attrs))
-          end
-          bus.dispatch(cmd.name, **attrs)
-          id_key = attrs.keys.find { |k| k.to_s.end_with?("_id") }
-          existing = id_key ? repo.find(attrs[id_key]) : nil
-          if existing
-            now = Time.now
-            constructor_attrs = {
-              id: existing.id,
-              created_at: (existing.created_at if existing.respond_to?(:created_at)),
-              updated_at: now
-            }
-            defaults.each do |param, default_val|
-              if attrs.key?(param)
-                constructor_attrs[param] = attrs[param]
-              elsif existing.respond_to?(param)
-                constructor_attrs[param] = existing.send(param)
-              else
-                constructor_attrs[param] = default_val
-              end
-            end
-            aggregate = new(**constructor_attrs)
-          else
-            now = Time.now
-            constructor_attrs = { created_at: now, updated_at: now }
-            defaults.each { |param, default_val| constructor_attrs[param] = attrs.key?(param) ? attrs[param] : default_val }
-            aggregate = new(**constructor_attrs)
-          end
-
-          repo.save(aggregate)
-          aggregate
         end
       end
       def wire_scopes(agg, agg_class)

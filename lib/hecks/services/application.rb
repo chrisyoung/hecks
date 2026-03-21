@@ -107,18 +107,6 @@ module Hecks
 
       private
 
-      # Proxy for context-qualified repository access: app["Ordering"]["Order"]
-      class ContextProxy
-        def initialize(context, repositories)
-          @context = context
-          @repositories = repositories
-        end
-
-        def [](aggregate_name)
-          @repositories["#{@context.name}/#{aggregate_name}"]
-        end
-      end
-
       def setup_repositories
         @domain.contexts.each do |ctx|
           ctx.aggregates.each do |agg|

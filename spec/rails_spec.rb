@@ -1,8 +1,8 @@
 require "spec_helper"
-require "hecks/rails"
+require "active_hecks"
 require "tmpdir"
 
-RSpec.describe Hecks::Rails do
+RSpec.describe ActiveHecks do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
@@ -52,7 +52,7 @@ RSpec.describe Hecks::Rails do
     load entry
     Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
 
-    Hecks::Rails.activate(PizzasDomain)
+    ActiveHecks.activate(PizzasDomain)
   end
 
   after(:all) do
