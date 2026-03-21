@@ -101,8 +101,8 @@ module Hecks
     end
 
     def activate_rails
-      require "hecks/rails"
-      Hecks::Rails.activate(@domain_module)
+      require "active_hecks"
+      ActiveHecks.activate(@domain_module)
     end
   end
 end

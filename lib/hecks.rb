@@ -1,15 +1,9 @@
 # Hecks
 #
-# Top-level entry point and autoload registry for the Hecks domain modeling framework.
-# Provides convenience methods for defining domains, validating them, and generating
-# domain gem artifacts.
+# Top-level entry point and autoload registry for the Hecks domain modeling
+# framework. Loads all subsystems (DomainModel, DSL, Generators, Services)
+# on demand via autoload.
 #
-# Hecks sits at the root of the architecture: it loads all subsystems (DomainModel,
-# DSL, Generators, Services) on demand via autoload.
-#
-# Usage:
-#
-#   # Define a domain
 #   domain = Hecks.domain "Pizzas" do
 #     aggregate "Pizza" do
 #       attribute :name, String
@@ -19,20 +13,7 @@
 #     end
 #   end
 #
-#   valid, errors = Hecks.validate(domain)
 #   Hecks.build(domain, version: "1.0.0")
-#
-#   # Boot in Rails (config/initializers/hecks.rb)
-#   Hecks.configure do
-#     domain "pizzas_domain"
-#     adapter :sql
-#   end
-#
-#   # Command bus with middleware
-#   APP.use :logging do |cmd, next_handler|
-#     puts cmd.class.name
-#     next_handler.call
-#   end
 #
 module Hecks
   class PortAccessDenied < StandardError; end
@@ -124,6 +105,8 @@ module Hecks
     autoload :CommandRunner,     "hecks/services/command_runner"
     autoload :EventBus,          "hecks/services/event_bus"
     autoload :CollectionProxy,   "hecks/services/collection_proxy"
+    autoload :ContextProxy,      "hecks/services/context_proxy"
+    autoload :CommandWiring,     "hecks/services/command_wiring"
     autoload :PortEnforcer,      "hecks/services/port_enforcer"
   end
 

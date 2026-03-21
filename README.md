@@ -777,7 +777,7 @@ hecks/
       migration_strategy.rb           # base class for migration generators
       dsl_serializer.rb               # domain -> DSL source serializer
       console_runner.rb               # IRB launcher with Rails detection
-      rails.rb                        # ActiveModel integration
+      active_hecks.rb                  # ActiveModel integration (ActiveHecks)
       railtie.rb                      # Rails auto-detection
       domain_model/                   # intermediate representation
         domain.rb
