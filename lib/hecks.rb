@@ -1,19 +1,5 @@
-# Hecks
-#
-# Top-level entry point and autoload registry for the Hecks domain modeling
-# framework. Loads all subsystems (DomainModel, DSL, Generators, Services)
-# on demand via autoload.
-#
-#   domain = Hecks.domain "Pizzas" do
-#     aggregate "Pizza" do
-#       attribute :name, String
-#       command "CreatePizza" do
-#         attribute :name, String
-#       end
-#     end
-#   end
-#
-#   Hecks.build(domain, version: "1.0.0")
+# Hecks — Top-level entry point and autoload registry for the Hecks domain
+# modeling framework. Hecks.domain, Hecks.build, Hecks.from_event_storm.
 #
 module Hecks
   class PortAccessDenied < StandardError; end
@@ -66,6 +52,9 @@ module Hecks
     autoload :Invariant,       "hecks/domain_model/invariant"
     autoload :Scope,           "hecks/domain_model/scope"
     autoload :PortDefinition,  "hecks/domain_model/port_definition"
+    autoload :ReadModel,       "hecks/domain_model/read_model"
+    autoload :ExternalSystem,  "hecks/domain_model/external_system"
+    autoload :Actor,           "hecks/domain_model/actor"
   end
 
   module DSL
@@ -96,6 +85,14 @@ module Hecks
     autoload :SqlAdapterGenerator,     "hecks/generators/sql_adapter_generator"
     autoload :SqlBuilder,              "hecks/generators/sql_builder"
     autoload :SqlMigrationGenerator,   "hecks/generators/sql_migration_generator"
+  end
+
+  module EventStorm
+    autoload :Parser,        "hecks/event_storm/parser"
+    autoload :YamlParser,    "hecks/event_storm/yaml_parser"
+    autoload :DomainBuilder, "hecks/event_storm/domain_builder"
+    autoload :DslGenerator,  "hecks/event_storm/dsl_generator"
+    autoload :Result,        "hecks/event_storm/result"
   end
 
   module Services
@@ -160,25 +157,33 @@ module Hecks
     generator.generate
   end
 
+  # Parse an event storm document (ASCII or YAML) and produce a domain + DSL
+  def self.from_event_storm(source, name: nil)
+    content = File.exist?(source.to_s) ? File.read(source) : source
+    yaml = source.to_s.match?(/\.ya?ml$/i) || content.match?(/\A\s*(?:domain|contexts|aggregates)\s*:/)
+    result = (yaml ? EventStorm::YamlParser : EventStorm::Parser).new(content).parse
+    domain_name = name || result.domain_name
+    EventStorm::Result.new(
+      domain: EventStorm::DomainBuilder.new(result, name: domain_name).build,
+      dsl: EventStorm::DslGenerator.new(result, name: domain_name).generate,
+      warnings: result.warnings
+    )
+  end
+
   # Preview generated code for an aggregate
   def self.preview(domain, aggregate_name)
     mod = domain.module_name + "Domain"
-
-    # Find the aggregate and its context
     ctx_mod = nil
     agg = nil
     domain.contexts.each do |ctx|
       found = ctx.aggregates.find { |a| a.name == aggregate_name }
-      if found
-        agg = found
-        ctx_mod = ctx.default? ? nil : ctx.module_name
-        break
-      end
+      next unless found
+      agg = found
+      ctx_mod = ctx.default? ? nil : ctx.module_name
+      break
     end
     raise "Unknown aggregate: #{aggregate_name}" unless agg
-
-    generator = Generators::AggregateGenerator.new(agg, domain_module: mod, context_module: ctx_mod)
-    generator.generate
+    Generators::AggregateGenerator.new(agg, domain_module: mod, context_module: ctx_mod).generate
   end
 
   require "hecks/railtie" if defined?(::Rails::Railtie)

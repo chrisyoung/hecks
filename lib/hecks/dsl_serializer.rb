@@ -59,6 +59,15 @@ module Hecks
           cmd.attributes.each do |attr|
             lines << "      attribute :#{attr.name}, #{dsl_type(attr)}"
           end
+          cmd.read_models.each do |rm|
+            lines << "      read_model \"#{rm.name}\""
+          end
+          cmd.external_systems.each do |ext|
+            lines << "      external \"#{ext.name}\""
+          end
+          cmd.actors.each do |act|
+            lines << "      actor \"#{act.name}\""
+          end
           lines << "    end"
         end
 
