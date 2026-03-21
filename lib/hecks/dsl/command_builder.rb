@@ -22,10 +22,15 @@ module Hecks
       def initialize(name)
         @name = name
         @attributes = []
+        @handler = nil
+      end
+
+      def handler(&block)
+        @handler = block
       end
 
       def build
-        DomainModel::Command.new(name: @name, attributes: @attributes)
+        DomainModel::Command.new(name: @name, attributes: @attributes, handler: @handler)
       end
     end
   end

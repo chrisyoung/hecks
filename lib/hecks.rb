@@ -22,6 +22,8 @@
 #   Hecks.build(domain, version: "1.0.0")
 #
 module Hecks
+  class PortAccessDenied < StandardError; end
+
   autoload :Utils,              "hecks/utils"
   autoload :VERSION,            "hecks/version"
   autoload :Configuration,      "hecks/configuration"
@@ -67,7 +69,9 @@ module Hecks
     autoload :DomainEvent,  "hecks/domain_model/domain_event"
     autoload :Policy,       "hecks/domain_model/policy"
     autoload :Validation,   "hecks/domain_model/validation"
-    autoload :Invariant,    "hecks/domain_model/invariant"
+    autoload :Invariant,       "hecks/domain_model/invariant"
+    autoload :Scope,           "hecks/domain_model/scope"
+    autoload :PortDefinition,  "hecks/domain_model/port_definition"
   end
 
   module DSL
@@ -79,6 +83,7 @@ module Hecks
     autoload :CommandBuilder,     "hecks/dsl/command_builder"
     autoload :PolicyBuilder,      "hecks/dsl/policy_builder"
     autoload :AggregateRebuilder, "hecks/dsl/aggregate_rebuilder"
+    autoload :PortBuilder,        "hecks/dsl/port_builder"
   end
 
   module Generators
@@ -105,6 +110,7 @@ module Hecks
     autoload :CommandRunner,     "hecks/services/command_runner"
     autoload :EventBus,          "hecks/services/event_bus"
     autoload :CollectionProxy,   "hecks/services/collection_proxy"
+    autoload :PortEnforcer,      "hecks/services/port_enforcer"
   end
 
   # Configure Hecks for an application (typically from an initializer)

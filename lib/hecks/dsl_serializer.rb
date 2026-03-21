@@ -46,6 +46,13 @@ module Hecks
           lines << "    validation :#{v.field}, #{v.rules.inspect}"
         end
 
+        agg.scopes.each do |s|
+          next if s.callable?
+          lines << ""
+          formatted = s.conditions.map { |k, v| "#{k}: #{v.inspect}" }.join(", ")
+          lines << "    scope :#{s.name}, #{formatted}"
+        end
+
         agg.commands.each do |cmd|
           lines << ""
           lines << "    command \"#{cmd.name}\" do"
