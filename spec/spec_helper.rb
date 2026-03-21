@@ -1,5 +1,28 @@
 require "hecks"
 
+# Track constants hoisted to Object by Hecks::Services::Application
+# so we can clean them up between specs.
+HECKS_HOISTED = []
+
+module Hecks
+  module Services
+    class Application
+      private
+
+      alias_method :_original_hoist_constants, :hoist_constants
+
+      def hoist_constants
+        _original_hoist_constants
+        if @domain.single_context?
+          @domain.aggregates.each { |a| HECKS_HOISTED << a.name.to_sym }
+        else
+          @domain.contexts.reject(&:default?).each { |c| HECKS_HOISTED << c.module_name.to_sym }
+        end
+      end
+    end
+  end
+end
+
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
@@ -11,4 +34,12 @@ RSpec.configure do |config|
 
   config.filter_run_when_matching :focus
   config.order = :random
+
+  config.after(:each) do
+    HECKS_HOISTED.each do |name|
+      Object.send(:remove_const, name) if Object.const_defined?(name)
+    end
+    HECKS_HOISTED.clear
+    Object.send(:remove_const, :APP) if Object.const_defined?(:APP)
+  end
 end

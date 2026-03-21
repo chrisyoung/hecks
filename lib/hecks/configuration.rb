@@ -94,8 +94,10 @@ module Hecks
         end
       end
 
-      # Make APP available globally
-      Object.const_set(:APP, @app) unless Object.const_defined?(:APP)
+      # Make APP available globally (silently replace if already defined)
+      old = $VERBOSE; $VERBOSE = nil
+      Object.const_set(:APP, @app)
+      $VERBOSE = old
     end
 
     def activate_rails
