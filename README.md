@@ -4,6 +4,55 @@ A Hexagonal / Domain-Driven Design framework for Ruby. Define domains with a Rub
 
 Hecks separates domain modeling from application concerns. You define your domain once, and Hecks generates a standalone Ruby gem with zero dependencies — just pure domain objects. Changes to the domain require a rebuild, producing a new versioned artifact that applications consume.
 
+## Hecks LOVES Rails
+
+Drop a Hecks domain gem into any Rails app and it just works. No ActiveRecord needed.
+
+```ruby
+# Gemfile
+gem "hecks"
+gem "pizzas_domain", path: "./pizzas_domain"
+
+# config/initializers/hecks.rb
+Hecks.configure do
+  domain "pizzas_domain"
+  adapter :sql unless Rails.env.test?
+end
+```
+
+Then write controllers like you always have:
+
+```ruby
+class PizzasController < ApplicationController
+  def index
+    @pizzas = Pizza.all
+  end
+
+  def create
+    @pizza = Pizza.create(name: params[:pizza][:name])
+    redirect_to pizza_path(@pizza)
+  end
+
+  def show
+    @pizza = Pizza.find(params[:id])
+  end
+
+  def destroy
+    Pizza.find(params[:id]).destroy
+    redirect_to pizzas_path
+  end
+end
+```
+
+```erb
+<%= form_with(model: @pizza) do |f| %>
+  <%= f.text_field :name %>
+  <%= f.submit %>
+<% end %>
+```
+
+`Pizza.create`, `Pizza.find`, `Pizza.all`, `pizza.update`, `pizza.destroy`, `pizza.toppings.create` — it feels like ActiveRecord, but it's your pure domain. Tests run against memory adapters automatically. No database setup needed.
+
 ## Install
 
 ```
