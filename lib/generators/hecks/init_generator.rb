@@ -79,6 +79,22 @@ module Hecks
       MD
     end
 
+    def setup_test_helper
+      helper_path = ::Rails.root.join("spec/rails_helper.rb")
+      helper_path = ::Rails.root.join("spec/spec_helper.rb") unless File.exist?(helper_path)
+      helper_path = ::Rails.root.join("test/test_helper.rb") unless File.exist?(helper_path)
+
+      if File.exist?(helper_path)
+        content = File.read(helper_path)
+        unless content.include?("hecks/test_helper")
+          inject_into_file helper_path, after: /require.*rails.*helper.*\n|require.*spec.*helper.*\n|require.*test.*helper.*\n/i do
+            "require \"hecks/test_helper\"\n"
+          end
+          say "Added hecks/test_helper to #{helper_path.relative_path_from(::Rails.root)}", :green
+        end
+      end
+    end
+
     def print_summary
       say ""
       say "Hecks initialized!", :green
@@ -86,6 +102,7 @@ module Hecks
       say "  app/models/HECKS_README.md     — explains the setup"
       say ""
       say "Domain objects are ready: Pizza.create, Pizza.find, etc."
+      say "Tests reset automatically between examples — no setup needed."
     end
   end
 end

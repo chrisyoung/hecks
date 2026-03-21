@@ -3,10 +3,10 @@
 module Hecks
   module Services
     class AggregateWiring
-      def initialize(domain, repositories, command_runner, mod, port_name: nil)
+      def initialize(domain, repositories, command_bus, mod, port_name: nil)
         @domain = domain
         @repositories = repositories
-        @command_runner = command_runner
+        @command_bus = command_bus
         @mod = mod
         @port_name = port_name
       end
@@ -22,7 +22,7 @@ module Hecks
       private
       def wire_aggregate(ctx, agg)
         agg_class = resolve_aggregate_class(ctx, agg)
-        runner = @command_runner
+        bus = @command_bus
         repo_key = ctx.default? ? agg.name : "#{ctx.name}/#{agg.name}"
         repo = @repositories[repo_key]
         defaults = build_defaults(agg)
@@ -31,7 +31,7 @@ module Hecks
         wire_query_methods(agg_class)
         wire_instance_methods(agg_class, repo)
         wire_references(agg, agg_class)
-        wire_commands(agg, agg_class, runner, repo, defaults)
+        wire_commands(agg, agg_class, bus, repo, defaults)
         wire_scopes(agg, agg_class)
         PortEnforcer.new(port_name: @port_name).enforce!(agg, agg_class)
       end
@@ -110,7 +110,7 @@ module Hecks
           end
         end
       end
-      def wire_commands(agg, agg_class, runner, repo, defaults)
+      def wire_commands(agg, agg_class, bus, repo, defaults)
         agg_snake = Hecks::Utils.underscore(agg.name)
         agg.commands.each do |cmd|
           full_name = Hecks::Utils.underscore(cmd.name)
@@ -118,20 +118,20 @@ module Hecks
           is_create = cmd.name.start_with?("Create")
 
           if is_create
-            wire_create_command(agg_class, method_name, cmd, runner, repo, defaults)
+            wire_create_command(agg_class, method_name, cmd, bus, repo, defaults)
           else
-            wire_update_command(agg_class, method_name, cmd, runner, repo, defaults)
+            wire_update_command(agg_class, method_name, cmd, bus, repo, defaults)
           end
         end
       end
-      def wire_create_command(agg_class, method_name, cmd, runner, repo, defaults)
+      def wire_create_command(agg_class, method_name, cmd, bus, repo, defaults)
         cmd_handler = cmd.handler
         agg_class.define_singleton_method(method_name) do |**attrs|
           if cmd_handler
             require "ostruct"
             cmd_handler.call(OpenStruct.new(**attrs))
           end
-          runner.run(cmd.name, **attrs)
+          bus.dispatch(cmd.name, **attrs)
           now = Time.now
           constructor_attrs = { created_at: now, updated_at: now }
           defaults.each { |param, default_val| constructor_attrs[param] = attrs.key?(param) ? attrs[param] : default_val }
@@ -140,14 +140,14 @@ module Hecks
           aggregate
         end
       end
-      def wire_update_command(agg_class, method_name, cmd, runner, repo, defaults)
+      def wire_update_command(agg_class, method_name, cmd, bus, repo, defaults)
         cmd_handler = cmd.handler
         agg_class.define_singleton_method(method_name) do |**attrs|
           if cmd_handler
             require "ostruct"
             cmd_handler.call(OpenStruct.new(**attrs))
           end
-          runner.run(cmd.name, **attrs)
+          bus.dispatch(cmd.name, **attrs)
           id_key = attrs.keys.find { |k| k.to_s.end_with?("_id") }
           existing = id_key ? repo.find(attrs[id_key]) : nil
           if existing

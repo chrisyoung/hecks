@@ -107,6 +107,7 @@ module Hecks
   module Services
     autoload :Application,       "hecks/services/application"
     autoload :AggregateWiring,   "hecks/services/aggregate_wiring"
+    autoload :CommandBus,        "hecks/services/command_bus"
     autoload :CommandRunner,     "hecks/services/command_runner"
     autoload :EventBus,          "hecks/services/event_bus"
     autoload :CollectionProxy,   "hecks/services/collection_proxy"

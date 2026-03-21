@@ -25,7 +25,7 @@ require_relative "aggregate_wiring"
 module Hecks
   module Services
     class Application
-      attr_reader :domain, :event_bus
+      attr_reader :domain, :event_bus, :command_bus
 
       def initialize(domain, port: nil, &config)
         @domain = domain
@@ -39,10 +39,21 @@ module Hecks
         instance_eval(&config) if config
 
         setup_repositories
-        setup_command_runner
+        setup_command_bus
         setup_policies
-        AggregateWiring.new(@domain, @repositories, @command_runner, @mod, port_name: @port_name).wire!
+        AggregateWiring.new(@domain, @repositories, @command_bus, @mod, port_name: @port_name).wire!
         hoist_constants
+      end
+
+      # Register command bus middleware
+      #
+      #   app.use :logging do |command, next_handler|
+      #     puts command.class.name
+      #     next_handler.call
+      #   end
+      #
+      def use(name = nil, &block)
+        @command_bus.use(name, &block)
       end
 
       # Configuration DSL: override adapter for an aggregate
@@ -75,9 +86,9 @@ module Hecks
         end
       end
 
-      # Execute a command
+      # Execute a command through the command bus (with middleware)
       def run(command_name, **attrs)
-        @command_runner.run(command_name, **attrs)
+        @command_bus.dispatch(command_name, **attrs)
       end
 
       # Subscribe to an event
@@ -143,7 +154,7 @@ module Hecks
                 next unless name
                 event_attrs[name] = event.send(name) if event.respond_to?(name)
               end
-              @command_runner.run(policy.trigger_command, **event_attrs)
+              @command_bus.dispatch(policy.trigger_command, **event_attrs)
             rescue StandardError => e
               warn "[Hecks] Policy #{policy.name} failed: #{e.message}"
             end
@@ -151,10 +162,9 @@ module Hecks
         end
       end
 
-      def setup_command_runner
-        @command_runner = CommandRunner.new(
+      def setup_command_bus
+        @command_bus = CommandBus.new(
           domain: @domain,
-          repositories: @repositories,
           event_bus: @event_bus
         )
       end
@@ -163,15 +173,23 @@ module Hecks
         if @domain.single_context?
           @domain.aggregates.each do |agg|
             klass = resolve_aggregate_class(@domain.contexts.first, agg)
-            Object.const_set(agg.name, klass) unless Object.const_defined?(agg.name)
+            silence_warnings { Object.const_set(agg.name, klass) }
           end
         else
           @domain.contexts.each do |ctx|
             next if ctx.default?
             ctx_mod = @mod.const_get(ctx.module_name)
-            Object.const_set(ctx.module_name, ctx_mod) unless Object.const_defined?(ctx.module_name)
+            silence_warnings { Object.const_set(ctx.module_name, ctx_mod) }
           end
         end
+      end
+
+      def silence_warnings
+        old = $VERBOSE
+        $VERBOSE = nil
+        yield
+      ensure
+        $VERBOSE = old
       end
 
       def resolve_aggregate_class(ctx, agg)
