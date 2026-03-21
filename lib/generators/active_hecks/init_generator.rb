@@ -1,4 +1,4 @@
-# rails generate hecks:init
+# rails generate active_hecks:init
 #
 # Sets up a Hecks domain gem in a Rails app:
 #   1. Creates config/initializers/hecks.rb
@@ -8,7 +8,7 @@
 #
 require "rails/generators"
 
-module Hecks
+module ActiveHecks
   class InitGenerator < ::Rails::Generators::Base
     desc "Set up a Hecks domain gem in your Rails app"
 
@@ -70,6 +70,11 @@ module Hecks
         3. Run `hecks build` to generate a new version of the gem
         4. Update the gem version in this app's Gemfile
         5. `bundle update #{@gem_name}`
+        6. Generate and run migrations:
+           ```
+           rails generate active_hecks:migration
+           rake hecks:db:migrate
+           ```
 
         ## Where's the Code?
 

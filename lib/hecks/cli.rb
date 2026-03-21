@@ -12,6 +12,8 @@
 #   $ hecks build
 #   $ hecks console
 #   $ hecks generate:sql
+#   $ hecks generate:migrations
+#   $ hecks db:migrate
 #
 require "thor"
 require "fileutils"
@@ -161,6 +163,9 @@ module Hecks
     def load_domain(file)
       eval(File.read(file), binding, file)
     end
+
+    # Migration commands are in a separate file to keep this under 200 lines
+    require_relative "cli/migration_commands"
 
     def domain_template(name)
       <<~RUBY

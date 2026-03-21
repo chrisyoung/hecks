@@ -16,6 +16,6 @@ ruby -Ilib examples/pizzas/sql_app.rb
 
 ## rails_app/
 
-Shows how to use a Hecks domain gem inside Rails. Uses `Hecks.configure` for setup, `rails generate hecks:init` to scaffold the initializer, and `require "hecks/test_helper"` for automatic test cleanup. Domain objects come from the gem only -- no model files in the Rails app.
+Shows how to use a Hecks domain gem inside Rails. Uses `Hecks.configure` for setup, `rails generate active_hecks:init` to scaffold the initializer, and `require "hecks/test_helper"` for automatic test cleanup. Domain objects come from the gem only -- no model files in the Rails app.
 
 See `rails_app/README.md` for setup instructions.

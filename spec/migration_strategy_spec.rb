@@ -122,7 +122,7 @@ RSpec.describe Hecks::MigrationStrategies::SqlStrategy do
     it "writes the migration file" do
       path = strategy.write("ALTER TABLE pizzas ADD COLUMN size VARCHAR(255);")
       expect(File.exist?(path)).to be true
-      expect(path).to include("db/migrate/")
+      expect(path).to include("db/hecks_migrate/")
       expect(path).to end_with("_hecks_migration.sql")
     end
   end
