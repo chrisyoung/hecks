@@ -4,7 +4,7 @@ Describe your business in Ruby. Hecks generates the code.
 
 Write a short DSL that says what your things are, what you can do with them, and how to look them up. Hecks generates a complete Ruby gem — classes, tests, and all the plumbing. No ActiveRecord. No database setup. Just your business logic.
 
-*Know DDD? See [how Hecks maps to DDD patterns](docs/ddd.md). Love hexagonal architecture? See [how Hecks implements ports and adapters](docs/hexagonal.md).*
+*Know DDD? See [how Hecks maps to DDD patterns](docs/ddd.md). Love hexagonal architecture? See [how Hecks implements ports and adapters](docs/hexagonal.md). Using Rails? See [how ActiveHecks bridges domain objects and Rails](docs/active_hecks.md).*
 
 ## Hecks LOVES Rails
 
@@ -59,7 +59,7 @@ end
 
 ## [Why Hecks instead of ActiveRecord?](docs/why_hecks.md)
 
-Hecks was born out of frustration with ActiveRecord. Describing your business shouldn't be harder than `rails generate model` — so we made it just as easy. Pure objects, named lookups, any database, no lock-in. [Read more](docs/why_hecks.md). Coming from ActiveRecord? See [the migration guide](docs/active_record.md).
+Hecks was born out of frustration with ActiveRecord. Describing your business shouldn't be harder than `rails generate model` — so we made it just as easy. Pure objects, named lookups, any database, no lock-in. [Read more](docs/why_hecks.md). Coming from ActiveRecord? See [the migration guide](docs/active_record.md). For details on the Rails integration layer, see [ActiveHecks](docs/active_hecks.md).
 
 ## Install
 
