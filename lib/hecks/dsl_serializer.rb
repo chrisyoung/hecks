@@ -46,11 +46,25 @@ module Hecks
           lines << "    validation :#{v.field}, #{v.rules.inspect}"
         end
 
+        agg.invariants.each do |inv|
+          lines << ""
+          lines << "    invariant \"#{inv.message}\" do"
+          lines << "      #{Hecks::Utils.block_source(inv.block)}"
+          lines << "    end"
+        end
+
         agg.scopes.each do |s|
           next if s.callable?
           lines << ""
           formatted = s.conditions.map { |k, v| "#{k}: #{v.inspect}" }.join(", ")
           lines << "    scope :#{s.name}, #{formatted}"
+        end
+
+        agg.queries.each do |q|
+          lines << ""
+          lines << "    query \"#{q.name}\" do"
+          lines << "      #{Hecks::Utils.block_source(q.block)}"
+          lines << "    end"
         end
 
         agg.commands.each do |cmd|

@@ -71,7 +71,8 @@ module Hecks
       app = Services::Application.new(domain_obj, event_bus: @shared_event_bus) do
         if adapter_type == :sql
           domain_obj.aggregates.each do |agg|
-            adapter_class = domain_module::Adapters.const_get("#{agg.name}SqlRepository")
+            safe_name = Hecks::Utils.sanitize_constant(agg.name)
+            adapter_class = domain_module::Adapters.const_get("#{safe_name}SqlRepository")
             adapter agg.name, adapter_class.new(db)
           end
         end
@@ -82,14 +83,14 @@ module Hecks
       if @adapter_options[:event_sourced] && @db
         recorder = Services::Persistence::EventRecorder.new(@db)
         domain_obj.aggregates.each do |agg|
-          agg_class = domain_module.const_get(agg.name)
+          agg_class = domain_module.const_get(Hecks::Utils.sanitize_constant(agg.name))
           Services::Persistence.bind_event_recorder(agg_class, recorder)
         end
       end
 
       if @ad_hoc_queries
         domain_obj.aggregates.each do |agg|
-          agg_class = domain_module.const_get(agg.name)
+          agg_class = domain_module.const_get(Hecks::Utils.sanitize_constant(agg.name))
           Services::Querying::AdHocQueries.bind(agg_class, app[agg.name])
         end
       end

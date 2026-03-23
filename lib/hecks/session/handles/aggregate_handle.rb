@@ -121,16 +121,14 @@ module Hecks
       return unless @session
 
       domain = @session.to_domain
-      domain.contexts.each do |ctx|
-        target_agg = ctx.aggregates.find { |a| a.name == target_name.to_s }
-        next unless target_agg
+      target_agg = domain.aggregates.find { |a| a.name == target_name.to_s }
+      return unless target_agg
 
-        back_refs = target_agg.attributes.select(&:reference?).map { |a| a.type.to_s }
-        if back_refs.include?(@name)
-          puts "  !! WARNING: Bidirectional reference detected between #{@name} and #{target_name}."
-          puts "     #{target_name} already references #{@name}. Aggregates should not reference"
-          puts "     each other — one side should use events/policies instead."
-        end
+      back_refs = target_agg.attributes.select(&:reference?).map { |a| a.type.to_s }
+      if back_refs.include?(@name)
+        puts "  !! WARNING: Bidirectional reference detected between #{@name} and #{target_name}."
+        puts "     #{target_name} already references #{@name}. Aggregates should not reference"
+        puts "     each other — one side should use events/policies instead."
       end
     end
   end

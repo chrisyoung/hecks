@@ -26,7 +26,6 @@ require "fileutils"
 require_relative "session/play_mode"
 require_relative "session/presenter"
 require_relative "session/handles/aggregate_handle"
-require_relative "session/handles/context_handle"
 require_relative "session/console_runner"
 require_relative "session/playground"
 
@@ -41,8 +40,6 @@ module Hecks
       @name = name
       @aggregate_builders = {}
       @handles = {}
-      @context_builders = {}
-      @context_handles = {}
       @mode = :build
       @playground = nil
     end
@@ -76,32 +73,10 @@ module Hecks
       handle
     end
 
-    # Get or create a bounded context, returns a ContextHandle
-    def context(name, &block)
-      builder = @context_builders[name] ||= DSL::ContextBuilder.new(name)
-      builder.instance_eval(&block) if block
-
-      handle = @context_handles[name] ||= ContextHandle.new(
-        name, builder, domain_module: @name.gsub(/\s+/, "") + "Domain"
-      )
-
-      handle
-    end
-
     # Build the domain model from current state
     def to_domain
-      if @context_builders.any?
-        contexts = @context_builders.values.map(&:build)
-        if @aggregate_builders.any?
-          default_aggs = @aggregate_builders.values.map(&:build)
-          default_ctx = DomainModel::Structure::BoundedContext.new(name: "Default", aggregates: default_aggs)
-          contexts = [default_ctx] + contexts
-        end
-        DomainModel::Structure::Domain.new(name: @name, contexts: contexts)
-      else
-        aggregates = @aggregate_builders.values.map(&:build)
-        DomainModel::Structure::Domain.new(name: @name, aggregates: aggregates)
-      end
+      aggregates = @aggregate_builders.values.map(&:build)
+      DomainModel::Structure::Domain.new(name: @name, aggregates: aggregates)
     end
 
     # Validate current domain state

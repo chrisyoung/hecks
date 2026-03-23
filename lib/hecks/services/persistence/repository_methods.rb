@@ -75,17 +75,24 @@ module Hecks
       end
 
       module InstanceMethods
+        def destroyed?
+          !!@__destroyed__
+        end
+
         def save
+          return self if destroyed?
           self.class.instance_variable_get(:@__hecks_repo__).save(self)
           self
         end
 
         def destroy
           self.class.instance_variable_get(:@__hecks_repo__).delete(id)
+          @__destroyed__ = true
           self
         end
 
         def update(**new_attrs)
+          return self if destroyed?
           repo = self.class.instance_variable_get(:@__hecks_repo__)
           constructor_attrs = {
             id: id,

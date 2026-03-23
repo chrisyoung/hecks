@@ -28,38 +28,34 @@ module Hecks
 
     def changes
       result = []
+      old_aggs_by_name = (@old&.aggregates || []).each_with_object({}) { |a, h| h[a.name] = a }
 
-      @new.contexts.each do |new_ctx|
-        old_ctx = @old&.find_context(new_ctx.name)
+      @new.aggregates.each do |new_agg|
+        old_agg = old_aggs_by_name[new_agg.name]
 
-        new_ctx.aggregates.each do |new_agg|
-          old_agg = old_ctx&.aggregates&.find { |a| a.name == new_agg.name }
-
-          if old_agg.nil?
-            result << Change.new(
-              kind: :add_aggregate,
-              context: new_ctx.default? ? nil : new_ctx.name,
-              aggregate: new_agg.name,
-              details: { attributes: new_agg.attributes, value_objects: new_agg.value_objects }
-            )
-          else
-            result.concat(diff_attributes(new_ctx, old_agg, new_agg))
-            result.concat(diff_value_objects(new_ctx, old_agg, new_agg))
-          end
+        if old_agg.nil?
+          result << Change.new(
+            kind: :add_aggregate,
+            context: nil,
+            aggregate: new_agg.name,
+            details: { attributes: new_agg.attributes, value_objects: new_agg.value_objects }
+          )
+        else
+          result.concat(diff_attributes(old_agg, new_agg))
+          result.concat(diff_value_objects(old_agg, new_agg))
         end
+      end
 
-        # Removed aggregates
-        if old_ctx
-          old_ctx.aggregates.each do |old_agg|
-            unless new_ctx.aggregates.any? { |a| a.name == old_agg.name }
-              result << Change.new(
-                kind: :remove_aggregate,
-                context: new_ctx.default? ? nil : new_ctx.name,
-                aggregate: old_agg.name,
-                details: {}
-              )
-            end
-          end
+      # Removed aggregates
+      new_agg_names = @new.aggregates.map(&:name)
+      (@old&.aggregates || []).each do |old_agg|
+        unless new_agg_names.include?(old_agg.name)
+          result << Change.new(
+            kind: :remove_aggregate,
+            context: nil,
+            aggregate: old_agg.name,
+            details: {}
+          )
         end
       end
 
@@ -68,7 +64,7 @@ module Hecks
 
     private
 
-    def diff_attributes(ctx, old_agg, new_agg)
+    def diff_attributes(old_agg, new_agg)
       changes = []
       old_names = old_agg.attributes.map(&:name)
       new_names = new_agg.attributes.map(&:name)
@@ -78,7 +74,7 @@ module Hecks
         attr = new_agg.attributes.find { |a| a.name == name }
         changes << Change.new(
           kind: :add_attribute,
-          context: ctx.default? ? nil : ctx.name,
+          context: nil,
           aggregate: new_agg.name,
           details: { name: attr.name, type: attr.type, list: attr.list?, reference: attr.reference? }
         )
@@ -88,7 +84,7 @@ module Hecks
       (old_names - new_names).each do |name|
         changes << Change.new(
           kind: :remove_attribute,
-          context: ctx.default? ? nil : ctx.name,
+          context: nil,
           aggregate: new_agg.name,
           details: { name: name }
         )
@@ -97,7 +93,7 @@ module Hecks
       changes
     end
 
-    def diff_value_objects(ctx, old_agg, new_agg)
+    def diff_value_objects(old_agg, new_agg)
       changes = []
       old_vo_names = old_agg.value_objects.map(&:name)
       new_vo_names = new_agg.value_objects.map(&:name)
@@ -106,7 +102,7 @@ module Hecks
         vo = new_agg.value_objects.find { |v| v.name == name }
         changes << Change.new(
           kind: :add_value_object,
-          context: ctx.default? ? nil : ctx.name,
+          context: nil,
           aggregate: new_agg.name,
           details: { name: vo.name, attributes: vo.attributes }
         )
@@ -115,7 +111,7 @@ module Hecks
       (old_vo_names - new_vo_names).each do |name|
         changes << Change.new(
           kind: :remove_value_object,
-          context: ctx.default? ? nil : ctx.name,
+          context: nil,
           aggregate: new_agg.name,
           details: { name: name }
         )

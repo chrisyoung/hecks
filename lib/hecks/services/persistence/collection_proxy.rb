@@ -38,7 +38,8 @@ module Hecks
 
       def delete(item)
         raw = item.is_a?(CollectionItem) ? item.__raw__ : item
-        new_items = @items.reject { |i| i == raw }
+        found = false
+        new_items = @items.reject { |i| !found && i == raw && (found = true) }
         rebuild_owner(new_items)
         item
       end

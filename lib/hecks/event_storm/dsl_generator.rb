@@ -23,65 +23,50 @@ module Hecks
         lines = ["# Auto-generated from event storm"]
         lines << "Hecks.domain \"#{@name}\" do"
 
-        @parse_result.contexts.each_with_index do |ctx, i|
-          lines << "" if i > 0
-          generate_context(ctx, lines)
-        end
+        # Flatten all context elements into one set of aggregates
+        all_elements = @parse_result.contexts.flat_map(&:elements)
+        hotspots = all_elements.select { |e| e.type == :hotspot }
+        aggregates = group_by_aggregate(all_elements)
 
-        lines << "end"
-        lines.join("\n") + "\n"
-      end
-
-      private
-
-      def generate_context(ctx, lines)
-        aggregates = group_by_aggregate(ctx.elements)
-        hotspots = ctx.elements.select { |e| e.type == :hotspot }
-        use_context = ctx.name != "Default"
-
-        indent = use_context ? "    " : "  "
-        agg_indent = use_context ? "  " : ""
-
-        if use_context
-          lines << "  context \"#{ctx.name}\" do"
-          hotspots.each { |h| lines << "    # HOTSPOT: #{h.name}" }
-        else
-          hotspots.each { |h| lines << "  # HOTSPOT: #{h.name}" }
-        end
+        hotspots.each { |h| lines << "  # HOTSPOT: #{h.name}" }
 
         aggregates.each_with_index do |(agg_name, data), i|
           lines << "" if i > 0
-          lines << "#{agg_indent}  aggregate \"#{agg_name}\" do"
-          lines << "#{indent}# TODO: add attributes"
+          lines << "  aggregate \"#{agg_name}\" do"
+          lines << "    # TODO: add attributes"
 
           data[:commands].each do |cmd|
             lines << ""
-            lines << "#{indent}command \"#{cmd.name}\" do"
-            lines << "#{indent}  # TODO: add attributes"
+            lines << "    command \"#{cmd.name}\" do"
+            lines << "      # TODO: add attributes"
             (cmd.meta[:read_models] || []).each do |rm|
-              lines << "#{indent}  read_model \"#{rm}\""
+              lines << "      read_model \"#{rm}\""
             end
             (cmd.meta[:external_systems] || []).each do |ext|
-              lines << "#{indent}  external \"#{ext}\""
+              lines << "      external \"#{ext}\""
             end
-            lines << "#{indent}end"
+            lines << "    end"
           end
 
           data[:policies].each do |pol|
             lines << ""
-            lines << "#{indent}policy \"#{pol.name}\" do"
-            lines << "#{indent}  on \"#{pol.meta[:event_name]}\""
-            lines << "#{indent}  trigger \"#{pol.meta[:trigger]}\""
-            lines << "#{indent}end"
+            lines << "    policy \"#{pol.name}\" do"
+            lines << "      on \"#{pol.meta[:event_name]}\""
+            lines << "      trigger \"#{pol.meta[:trigger]}\""
+            lines << "    end"
           end
 
-          lines << "#{agg_indent}  end"
+          lines << "  end"
         end
 
-        lines << "  end" if use_context
+        lines << "end"
 
         append_warnings(lines)
+
+        lines.join("\n") + "\n"
       end
+
+      private
 
       def group_by_aggregate(elements)
         aggregates = {}

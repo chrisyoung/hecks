@@ -15,19 +15,16 @@ module Hecks
       end
 
       def wire!
-        @domain.contexts.each do |ctx|
-          ctx.aggregates.each do |agg|
-            wire_aggregate(ctx, agg)
-          end
+        @domain.aggregates.each do |agg|
+          wire_aggregate(agg)
         end
       end
 
       private
 
-      def wire_aggregate(ctx, agg)
-        agg_class = resolve_aggregate_class(ctx, agg)
-        repo_key = ctx.default? ? agg.name : "#{ctx.name}/#{agg.name}"
-        repo = @repositories[repo_key]
+      def wire_aggregate(agg)
+        agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+        repo = @repositories[agg.name]
         defaults = build_defaults(agg)
 
         Persistence.bind(agg_class, agg, repo)
@@ -51,10 +48,6 @@ module Hecks
             builder.instance_exec(*args, &query_block)
           end
         end
-      end
-
-      def resolve_aggregate_class(ctx, agg)
-        ctx.default? ? @mod.const_get(agg.name) : @mod.const_get(ctx.module_name).const_get(agg.name)
       end
     end
   end

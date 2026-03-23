@@ -26,10 +26,6 @@ RSpec.describe Hecks::EventStorm::DslGenerator do
     expect(dsl).to include('Hecks.domain "PizzaOrdering" do')
   end
 
-  it "generates bounded context blocks" do
-    expect(dsl).to include('context "Ordering" do')
-  end
-
   it "generates aggregate blocks" do
     expect(dsl).to include('aggregate "Order" do')
     expect(dsl).to include('aggregate "Payment" do')

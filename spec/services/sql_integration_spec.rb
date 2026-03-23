@@ -70,13 +70,8 @@ RSpec.describe "SQL adapter integration" do
       String :updated_at
     end
 
-    # Generate and load domain gem
-    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
-    gem_path = gen.generate
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    load File.join(lib_path, "pizzas_domain.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    # Load domain module
+    Hecks.load_domain(domain)
 
     # Generate SQL adapters in memory
     domain.aggregates.each do |agg|
@@ -91,6 +86,8 @@ RSpec.describe "SQL adapter integration" do
       adapter "Pizza", pizza_repo
       adapter "Order", order_repo
     end
+
+    Hecks::Services::Querying::AdHocQueries.bind(PizzasDomain::Pizza, pizza_repo)
   end
 
   after { FileUtils.rm_rf(tmpdir) }

@@ -57,7 +57,7 @@ Current module groups:
 - `DomainModel::Behavior` — Command, DomainEvent, Policy, Query
 - `DomainModel::Structure` — Domain, Aggregate, ValueObject, Attribute, etc.
 - `ValidationRules::Naming` / `References` / `Structure`
-- `Session` — AggregateHandle, ContextHandle, Playground, ConsoleRunner
+- `Session` — AggregateHandle, Playground, ConsoleRunner
 - `Migrations` — DomainDiff, DomainSnapshot, MigrationStrategy, MigrationRunner
 - `HTTP` — DomainServer (REST+SSE), RpcServer (JSON-RPC), RouteBuilder
 - `MCP` — DomainServer, SessionTools, AggregateTools, InspectTools, BuildTools, PlayTools

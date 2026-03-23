@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe "Port Authorization" do
   let(:domain) do
@@ -24,14 +23,7 @@ RSpec.describe "Port Authorization" do
   end
 
   before do
-    tmpdir = Dir.mktmpdir("hecks_port_test")
-    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
-    gem_path = gen.generate
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    entry = File.join(lib_path, "port_test_domain.rb")
-    load entry
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
   end
 
   describe "DSL" do

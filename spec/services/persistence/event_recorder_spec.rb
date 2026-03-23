@@ -47,13 +47,7 @@ RSpec.describe Hecks::Services::Persistence::EventRecorder do
       String :updated_at
     end
 
-    tmpdir = Dir.mktmpdir("hecks_event_recorder_test")
-    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
-    gem_path = gen.generate
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    load File.join(lib_path, "pizzas_domain.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
 
     domain.aggregates.each do |agg|
       gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "PizzasDomain")

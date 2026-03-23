@@ -2,12 +2,8 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Hecks::Configuration do
-  def build_and_load(domain, tmpdir)
-    gem_path = Hecks.build(domain, output_dir: tmpdir)
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    require domain.gem_name
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+  def build_and_load(domain, _tmpdir = nil)
+    Hecks.load_domain(domain)
   end
 
   describe "multi-domain with shared event bus" do

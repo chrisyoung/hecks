@@ -62,7 +62,7 @@ module Hecks
         lines = []
         lines << "CREATE TABLE #{vo_table} ("
         lines << "  id VARCHAR(36) PRIMARY KEY,"
-        lines << "  #{Hecks::Utils.underscore(parent_agg.name)}_id VARCHAR(36) NOT NULL REFERENCES #{parent_table}(id),"
+        lines << "  #{Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(parent_agg.name))}_id VARCHAR(36) NOT NULL REFERENCES #{parent_table}(id),"
 
         vo.attributes.each_with_index do |attr, i|
           comma = i < vo.attributes.size - 1 ? "," : ""
@@ -88,7 +88,7 @@ module Hecks
       end
 
       def table_name(name)
-        Hecks::Utils.underscore(name) + "s"
+        Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(name)) + "s"
       end
     end
     end

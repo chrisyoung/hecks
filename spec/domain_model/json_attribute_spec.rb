@@ -20,13 +20,7 @@ RSpec.describe "JSON attribute type" do
   end
 
   before do
-    tmpdir = Dir.mktmpdir("hecks_json_attr_test")
-    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
-    gem_path = gen.generate
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    load File.join(lib_path, "geo_domain.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
   end
 
   describe "memory adapter" do

@@ -4,13 +4,7 @@ require "sequel"
 
 RSpec.describe "Exploratory: trying to break Hecks" do
   def boot(domain)
-    tmpdir = Dir.mktmpdir("hecks_break_test")
-    gem_path = Hecks.build(domain, output_dir: tmpdir)
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    mod_name = domain.module_name + "Domain"
-    load File.join(lib_path, "#{domain.gem_name}.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
     Hecks::Services::Application.new(domain)
   end
 
@@ -131,12 +125,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
     end
 
     before do
-      tmpdir = Dir.mktmpdir("hecks_sql_edge")
-      gem_path = Hecks.build(domain, output_dir: tmpdir)
-      lib_path = File.join(gem_path, "lib")
-      $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-      load File.join(lib_path, "sql_edge_domain.rb")
-      Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+      Hecks.load_domain(domain)
 
       domain.aggregates.each do |agg|
         gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "SqlEdgeDomain")
@@ -222,12 +211,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
         end
       end
 
-      tmpdir = Dir.mktmpdir("hecks_evt_edge")
-      gem_path = Hecks.build(domain, output_dir: tmpdir)
-      lib_path = File.join(gem_path, "lib")
-      $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-      load File.join(lib_path, "evt_src_domain.rb")
-      Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+      Hecks.load_domain(domain)
 
       domain.aggregates.each do |agg|
         gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "EvtSrcDomain")

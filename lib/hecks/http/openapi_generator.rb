@@ -24,7 +24,7 @@ module Hecks
       def build_paths
         paths = {}
         @domain.aggregates.each do |agg|
-          slug = Hecks::Utils.underscore(agg.name) + "s"
+          slug = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name)) + "s"
           paths.merge!(crud_paths(agg, slug))
           paths.merge!(query_paths(agg, slug))
         end

@@ -37,14 +37,7 @@ RSpec.describe "Command Handlers" do
   end
 
   let!(:app) do
-    tmpdir = Dir.mktmpdir("hecks_handler_test")
-    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
-    gem_path = gen.generate
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    entry = File.join(lib_path, "pizzas_domain.rb")
-    load entry
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
     Hecks::Services::Application.new(domain)
   end
 
@@ -102,12 +95,7 @@ RSpec.describe "Command Handlers" do
     end
 
     it "works normally without a handler" do
-      tmpdir = Dir.mktmpdir("hecks_no_handler_test")
-      gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(plain_domain, version: "0.0.0", output_dir: tmpdir)
-      gem_path = gen.generate
-      lib_path = File.join(gem_path, "lib")
-      $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-      Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+      Hecks.load_domain(plain_domain)
 
       plain_app = Hecks::Services::Application.new(plain_domain)
       PizzasDomain::Pizza.create(name: "Cheese")

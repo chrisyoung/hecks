@@ -4,22 +4,16 @@
 # commands, publishes events, and executes policies. Defaults to memory
 # adapters for all aggregates.
 #
-# Single context:
 #   app = Application.new(domain)
 #   app["Pizza"].all
 #   Pizza.create_pizza(name: "Margherita")
 #
-# Multiple contexts:
-#   app = Application.new(domain)
-#   app["Ordering"]["Order"].all
-#   Ordering::Order.place_order(quantity: 3)
-#
 # Custom adapters:
 #   app = Application.new(domain) do
-#     adapter "Pizza", my_sql_repo  # single context
-#     adapter "Ordering", "Order", my_sql_repo  # multi context
+#     adapter "Pizza", my_sql_repo
 #   end
 #
+require "set"
 require_relative "aggregate_wiring"
 
 module Hecks
@@ -57,33 +51,15 @@ module Hecks
       end
 
       # Configuration DSL: override adapter for an aggregate
-      # Single context:  adapter "Pizza", repo_instance
-      # Multi context:   adapter "Ordering", "Order", repo_instance
-      def adapter(*args)
-        case args.size
-        when 2
-          aggregate_name, adapter_obj = args
-          @adapter_overrides[aggregate_name.to_s] = adapter_obj
-        when 3
-          context_name, aggregate_name, adapter_obj = args
-          @adapter_overrides["#{context_name}/#{aggregate_name}"] = adapter_obj
-        end
+      #   adapter "Pizza", repo_instance
+      def adapter(aggregate_name, adapter_obj)
+        @adapter_overrides[aggregate_name.to_s] = adapter_obj
       end
 
       # Get the repository for an aggregate
-      # Single context: app["Pizza"]
-      # Multi context:  app["Ordering"] returns a ContextProxy, then app["Ordering"]["Order"]
+      #   app["Pizza"]
       def [](name)
-        if @domain.single_context?
-          @repositories[name.to_s]
-        else
-          ctx = @domain.find_context(name.to_s)
-          if ctx
-            ContextProxy.new(ctx, @repositories)
-          else
-            @repositories[name.to_s]
-          end
-        end
+        @repositories[name.to_s]
       end
 
       # Execute a command through the command bus (with middleware)
@@ -108,43 +84,42 @@ module Hecks
       private
 
       def setup_repositories
-        @domain.contexts.each do |ctx|
-          ctx.aggregates.each do |agg|
-            key = ctx.default? ? agg.name : "#{ctx.name}/#{agg.name}"
-            override_key = ctx.default? ? agg.name : "#{ctx.name}/#{agg.name}"
-
-            if @adapter_overrides.key?(override_key)
-              @repositories[key] = @adapter_overrides[override_key]
-            elsif @adapter_overrides.key?(agg.name) && ctx.default?
-              @repositories[key] = @adapter_overrides[agg.name]
-            else
-              adapter_class = resolve_memory_adapter(ctx, agg)
-              @repositories[key] = adapter_class.new
-            end
+        @domain.aggregates.each do |agg|
+          if @adapter_overrides.key?(agg.name)
+            @repositories[agg.name] = @adapter_overrides[agg.name]
+          else
+            adapter_class = @mod::Adapters.const_get("#{agg.name}MemoryRepository")
+            @repositories[agg.name] = adapter_class.new
           end
         end
       end
 
-      def resolve_memory_adapter(ctx, agg)
-        if ctx.default?
-          @mod::Adapters.const_get("#{agg.name}MemoryRepository")
-        else
-          @mod::Adapters.const_get(ctx.module_name).const_get("#{agg.name}MemoryRepository")
-        end
-      end
-
       def setup_policies
+        @policies_in_flight = Set.new
+
         @domain.aggregates.each do |agg|
           agg.policies.each do |policy|
             @event_bus.subscribe(policy.event_name) do |event|
-              event_attrs = {}
-              event.class.instance_method(:initialize).parameters.each do |_, name|
-                next unless name
-                event_attrs[name] = event.send(name) if event.respond_to?(name)
+              policy_key = "#{agg.name}.#{policy.name}"
+
+              if @policies_in_flight.include?(policy_key)
+                warn "[Hecks] Skipping re-entrant policy #{policy.name} (already in-flight)"
+                next
               end
-              @command_bus.dispatch(policy.trigger_command, **event_attrs)
-            rescue StandardError => e
-              warn "[Hecks] Policy #{policy.name} failed: #{e.message}"
+
+              begin
+                @policies_in_flight.add(policy_key)
+                event_attrs = {}
+                event.class.instance_method(:initialize).parameters.each do |_, name|
+                  next unless name
+                  event_attrs[name] = event.send(name) if event.respond_to?(name)
+                end
+                @command_bus.dispatch(policy.trigger_command, **event_attrs)
+              rescue StandardError => e
+                warn "[Hecks] Policy #{policy.name} failed: #{e.message}"
+              ensure
+                @policies_in_flight.delete(policy_key)
+              end
             end
           end
         end
@@ -158,17 +133,9 @@ module Hecks
       end
 
       def hoist_constants
-        if @domain.single_context?
-          @domain.aggregates.each do |agg|
-            klass = resolve_aggregate_class(@domain.contexts.first, agg)
-            silence_warnings { Object.const_set(agg.name, klass) }
-          end
-        else
-          @domain.contexts.each do |ctx|
-            next if ctx.default?
-            ctx_mod = @mod.const_get(ctx.module_name)
-            silence_warnings { Object.const_set(ctx.module_name, ctx_mod) }
-          end
+        @domain.aggregates.each do |agg|
+          klass = @mod.const_get(agg.name)
+          silence_warnings { Object.const_set(agg.name, klass) }
         end
       end
 
@@ -178,14 +145,6 @@ module Hecks
         yield
       ensure
         $VERBOSE = old
-      end
-
-      def resolve_aggregate_class(ctx, agg)
-        if ctx.default?
-          @mod.const_get(agg.name)
-        else
-          @mod.const_get(ctx.module_name).const_get(agg.name)
-        end
       end
 
     end

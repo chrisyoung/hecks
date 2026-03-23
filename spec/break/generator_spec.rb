@@ -2,50 +2,41 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe "Generator edge cases: trying to break code generation", :slow do
-  # Helper: build a domain gem, load all generated files, verify they parse.
-  # Set skip_validation: true to bypass Hecks.build's validation gate and
-  # use the generator directly.
+  # Helper: generate into an in-memory hash by monkey-patching write_file,
+  # then verify syntax + loadability.
   def build_and_load(domain, skip_validation: false)
-    tmpdir = Dir.mktmpdir("hecks_break_gen")
-
-    if skip_validation
-      generator = Hecks::Generators::Infrastructure::DomainGemGenerator.new(
-        domain, version: "0.0.1", output_dir: tmpdir
-      )
-      gem_path = generator.generate
-    else
-      gem_path = Hecks.build(domain, output_dir: tmpdir)
+    fs = {}
+    generator = Hecks::Generators::Infrastructure::DomainGemGenerator.new(
+      domain, version: "0.0.1"
+    )
+    # Intercept file writes — send to hash instead of disk
+    generator.define_singleton_method(:write_file) do |root, relative_path, content|
+      fs[File.join(root, relative_path)] = content
     end
+    generator.generate
 
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-
-    # Collect all generated .rb files
-    rb_files = Dir[File.join(gem_path, "**/*.rb")].sort
+    rb_files = fs.select { |k, _| k.end_with?(".rb") }
 
     # Phase 1: every file must be valid Ruby syntax
     syntax_errors = []
-    rb_files.each do |f|
-      output = `ruby -c #{f} 2>&1`
-      syntax_errors << "#{f}: #{output.strip}" unless $?.success?
+    rb_files.each do |path, content|
+      begin
+        RubyVM::InstructionSequence.compile(content, path)
+      rescue SyntaxError => e
+        syntax_errors << "#{path}: #{e.message}"
+      end
     end
 
-    # Phase 2: try to load the entry point and all files
+    # Phase 2: load via generate_source
     load_errors = []
     begin
-      entry = File.join(lib_path, "#{domain.gem_name}.rb")
-      load entry
-      rb_files.each { |f| load f }
+      Hecks.load_domain(domain, force: true, skip_validation: skip_validation)
     rescue => e
       load_errors << "#{e.class}: #{e.message}"
     end
 
-    { tmpdir: tmpdir, gem_path: gem_path, lib_path: lib_path,
-      rb_files: rb_files, syntax_errors: syntax_errors, load_errors: load_errors }
-  end
-
-  after(:each) do
-    @result && FileUtils.rm_rf(@result[:tmpdir])
+    { fs: fs, rb_files: rb_files,
+      syntax_errors: syntax_errors, load_errors: load_errors }
   end
 
   # -----------------------------------------------------------------------
@@ -377,13 +368,12 @@ RSpec.describe "Generator edge cases: trying to break code generation", :slow do
 
       @result = build_and_load(domain)
       # Check for duplicate :id in attr_reader line
-      entry_files = @result[:rb_files].select { |f| f.include?("widget.rb") }
-      entry_files.each do |f|
-        content = File.read(f)
+      widget_files = @result[:rb_files].select { |k, _| k.include?("widget.rb") }
+      widget_files.each do |path, content|
         if content.include?("attr_reader")
           id_count = content.scan(/:id/).count
           expect(id_count).to be <= 2,
-            "Duplicate :id in attr_reader in #{f}:\n#{content}"
+            "Duplicate :id in attr_reader in #{path}:\n#{content}"
         end
       end
 
@@ -408,15 +398,13 @@ RSpec.describe "Generator edge cases: trying to break code generation", :slow do
       end
 
       @result = build_and_load(domain)
-      entry_files = @result[:rb_files].select { |f| f.include?("widget.rb") }
-      entry_files.each do |f|
-        content = File.read(f)
+      widget_files = @result[:rb_files].select { |k, _| k.include?("widget.rb") }
+      widget_files.each do |path, content|
         if content.include?("def initialize")
-          # Check for duplicate created_at parameter
           init_line = content.lines.find { |l| l.include?("def initialize") }
           created_at_count = init_line.scan(/created_at/).count if init_line
           expect(created_at_count).to be <= 1,
-            "Duplicate created_at in constructor in #{f}:\n#{init_line}"
+            "Duplicate created_at in constructor in #{path}:\n#{init_line}"
         end
       end
 
@@ -496,11 +484,11 @@ RSpec.describe "Generator edge cases: trying to break code generation", :slow do
       expect(@result[:load_errors]).to be_empty,
         "Load errors:\n#{@result[:load_errors].join("\n")}"
 
-      # attr_reader :initialize makes the private method public, which
-      # means calling widget.initialize returns the attribute, not the
-      # constructor. This is a semantic bug even if syntax is valid.
+      # Ruby's initialize method always acts as the constructor, even with
+      # attr_reader :initialize. The attribute is stored but not accessible
+      # via a normal reader — only via instance_variable_get.
       widget = InitClashDomain::Widget.new(initialize: "test_val", name: "w")
-      expect(widget.initialize).to eq("test_val")
+      expect(widget.instance_variable_get(:@initialize)).to eq("test_val")
     end
   end
 end

@@ -11,25 +11,17 @@ module Hecks
   module Generators
     module Domain
     class QueryObjectGenerator
-      include ContextAware
 
-      def initialize(aggregate, domain_module:, context_module: nil)
+      def initialize(aggregate, domain_module:)
         @aggregate = aggregate
         @domain_module = domain_module
-        @context_module = context_module
       end
 
       def generate
         lines = []
         lines << "module #{@domain_module}"
         lines << "  module Queries"
-        if @context_module
-          lines << "    module #{@context_module}"
-          lines.concat(query_module_lines(6))
-          lines << "    end"
-        else
-          lines.concat(query_module_lines(4))
-        end
+        lines.concat(query_module_lines(4))
         lines << "  end"
         lines << "end"
         lines.join("\n") + "\n"
@@ -40,7 +32,7 @@ module Hecks
       def query_module_lines(indent)
         pad = " " * indent
         lines = []
-        lines << "#{pad}module #{@aggregate.name}Queries"
+        lines << "#{pad}module #{Hecks::Utils.sanitize_constant(@aggregate.name)}Queries"
         queryable_attributes.each do |attr|
           name = attr.name
           lines << "#{pad}  def by_#{name}(value)"

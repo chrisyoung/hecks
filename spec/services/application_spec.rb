@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe Hecks::Services::Application do
   let(:domain) do
@@ -23,6 +22,10 @@ RSpec.describe Hecks::Services::Application do
           attribute :quantity, Integer
         end
 
+        command "NotifyChef" do
+          attribute :pizza_id, reference_to("Pizza")
+        end
+
         policy "NotifyKitchen" do
           on "PlacedOrder"
           trigger "NotifyChef"
@@ -33,14 +36,7 @@ RSpec.describe Hecks::Services::Application do
 
   before do
     # Generate and load the domain gem so classes are available
-    tmpdir = Dir.mktmpdir("hecks_services_test")
-    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
-    gem_path = gen.generate
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    entry = File.join(lib_path, "pizzas_domain.rb")
-    load entry
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
   end
 
   describe "default configuration" do

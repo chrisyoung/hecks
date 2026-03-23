@@ -26,12 +26,36 @@ module Hecks
         @actors = actors
       end
 
+      IRREGULAR_VERBS = {
+        "Send" => "Sent", "Build" => "Built", "Buy" => "Bought",
+        "Run" => "Ran", "Set" => "Set", "Put" => "Put",
+        "Cut" => "Cut", "Hold" => "Held", "Keep" => "Kept",
+        "Leave" => "Left", "Make" => "Made", "Pay" => "Paid",
+        "Sell" => "Sold", "Tell" => "Told", "Think" => "Thought",
+        "Find" => "Found", "Give" => "Gave", "Get" => "Got",
+        "Spend" => "Spent", "Lend" => "Lent", "Lose" => "Lost",
+        "Win" => "Won", "Write" => "Wrote", "Read" => "Read",
+        "Shut" => "Shut", "Hit" => "Hit", "Split" => "Split",
+        "Bind" => "Bound", "Bring" => "Brought", "Catch" => "Caught",
+        "Choose" => "Chose", "Drive" => "Drove", "Feed" => "Fed",
+        "Hear" => "Heard", "Lead" => "Led", "Meet" => "Met",
+        "Ride" => "Rode", "Ring" => "Rang", "Rise" => "Rose",
+        "Seek" => "Sought", "Shake" => "Shook", "Show" => "Showed",
+        "Speak" => "Spoke", "Steal" => "Stole", "Take" => "Took",
+        "Teach" => "Taught", "Throw" => "Threw", "Understand" => "Understood",
+        "Wake" => "Woke", "Wear" => "Wore", "Withdraw" => "Withdrew",
+      }.freeze
+
       def inferred_event_name
         verb, *rest = name.split(/(?=[A-Z])/)
-        past_tense = case verb
-                     when /e$/  then "#{verb}d"
-                     when /[^aeiou]$/  then "#{verb}ed"
-                     else "#{verb}ed"
+        past_tense = if IRREGULAR_VERBS.key?(verb)
+                       IRREGULAR_VERBS[verb]
+                     elsif verb =~ /[^aeiou]y$/i
+                       verb.sub(/y$/i, "ied")
+                     elsif verb =~ /e$/
+                       "#{verb}d"
+                     else
+                       "#{verb}ed"
                      end
         rest.unshift(past_tense).join
       end

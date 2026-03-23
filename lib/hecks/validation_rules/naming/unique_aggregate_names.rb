@@ -1,24 +1,19 @@
 # Hecks::ValidationRules::Naming::UniqueAggregateNames
 #
-# Rejects duplicate aggregate names within a context.
+# Rejects duplicate aggregate names within a domain.
 #
 module Hecks
   module ValidationRules
     module Naming
-    # Aggregates must be unique within each context
+    # Aggregates must have unique names
     class UniqueAggregateNames < BaseRule
       def errors
-        result = []
-        @domain.contexts.each do |ctx|
-          names = ctx.aggregates.map(&:name)
-          duplicates = names.select { |n| names.count(n) > 1 }.uniq
+        names = @domain.aggregates.map(&:name)
+        duplicates = names.select { |n| names.count(n) > 1 }.uniq
 
-          duplicates.each do |name|
-            prefix = ctx.default? ? "" : "#{ctx.name}: "
-            result << "#{prefix}Duplicate aggregate name: #{name}"
-          end
+        duplicates.map do |name|
+          "Duplicate aggregate name: #{name}"
         end
-        result
       end
     end
     end

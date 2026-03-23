@@ -10,33 +10,39 @@ module Hecks
   module Generators
     module Domain
     class CommandGenerator
-      include ContextAware
 
-      def initialize(command, domain_module:, aggregate_name:, context_module: nil)
+      def initialize(command, domain_module:, aggregate_name:)
         @command = command
         @domain_module = domain_module
         @aggregate_name = aggregate_name
-        @context_module = context_module
+        @has_keyword_attrs = @command.attributes.any? { |a| Hecks::Utils.ruby_keyword?(a.name) }
       end
 
       def generate
         lines = []
-        lines.concat(module_open_lines)
-        lines << "#{indent}class #{@aggregate_name}"
-        lines << "#{indent}  module Commands"
-        lines << "#{indent}    class #{@command.name}"
-        lines << "#{indent}      attr_reader #{@command.attributes.map { |a| ":#{a.name}" }.join(", ")}"
+        lines << "module #{@domain_module}"
+        lines << "  class #{@aggregate_name}"
+        lines << "    module Commands"
+        lines << "      class #{@command.name}"
+        lines << "        attr_reader #{@command.attributes.map { |a| ":#{a.name}" }.join(", ")}"
         lines << ""
-        lines << "#{indent}      def initialize(#{constructor_params})"
-        @command.attributes.each do |attr|
-          lines << "#{indent}        @#{attr.name} = #{attr.name}"
+        if @has_keyword_attrs
+          lines << "        def initialize(**kwargs)"
+          @command.attributes.each do |attr|
+            lines << "          @#{attr.name} = kwargs[:#{attr.name}]"
+          end
+        else
+          lines << "        def initialize(#{constructor_params})"
+          @command.attributes.each do |attr|
+            lines << "          @#{attr.name} = #{attr.name}"
+          end
         end
-        lines << "#{indent}        freeze"
-        lines << "#{indent}      end"
-        lines << "#{indent}    end"
-        lines << "#{indent}  end"
-        lines << "#{indent}end"
-        lines.concat(module_close_lines)
+        lines << "          freeze"
+        lines << "        end"
+        lines << "      end"
+        lines << "    end"
+        lines << "  end"
+        lines << "end"
         lines.join("\n") + "\n"
       end
 

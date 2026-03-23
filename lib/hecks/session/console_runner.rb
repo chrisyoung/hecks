@@ -37,21 +37,9 @@ module Hecks
       if File.exist?("hecks_domain.rb")
         domain = eval(File.read("hecks_domain.rb"), binding, "hecks_domain.rb")
         session = Session.new(domain.name)
-        domain.contexts.each do |ctx|
-          if ctx.default?
-            ctx.aggregates.each do |agg|
-              session.aggregate_builders[agg.name] =
-                DSL::AggregateRebuilder.from_aggregate(agg)
-            end
-          else
-            ctx_builders = session.instance_variable_get(:@context_builders)
-            ctx_builder = DSL::ContextBuilder.new(ctx.name)
-            ctx.aggregates.each do |agg|
-              agg_builder = DSL::AggregateRebuilder.from_aggregate(agg)
-              ctx_builder.aggregates << agg_builder.build
-            end
-            ctx_builders[ctx.name] = ctx_builder
-          end
+        domain.aggregates.each do |agg|
+          session.aggregate_builders[agg.name] =
+            DSL::AggregateRebuilder.from_aggregate(agg)
         end
 
         puts "Loaded domain from domain.rb: #{domain.name}"

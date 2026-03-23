@@ -34,7 +34,6 @@ module Hecks
   module DSL
     autoload :AttributeCollector, "hecks/dsl/attribute_collector"
     autoload :DomainBuilder,      "hecks/dsl/domain_builder"
-    autoload :ContextBuilder,     "hecks/dsl/context_builder"
     autoload :AggregateBuilder,   "hecks/dsl/aggregate_builder"
     autoload :ValueObjectBuilder, "hecks/dsl/value_object_builder"
     autoload :CommandBuilder,     "hecks/dsl/command_builder"
@@ -44,7 +43,6 @@ module Hecks
   end
 
   module Generators
-    autoload :ContextAware,   "hecks/generators/context_aware"
     autoload :Domain,         "hecks/generators/domain"
     autoload :SQL,            "hecks/generators/sql"
     autoload :Infrastructure, "hecks/generators/infrastructure"
@@ -62,7 +60,6 @@ module Hecks
     autoload :Application,      "hecks/services/application"
     autoload :AggregateWiring,  "hecks/services/aggregate_wiring"
     autoload :EventBus,         "hecks/services/event_bus"
-    autoload :ContextProxy,     "hecks/services/context_proxy"
     autoload :PortEnforcer,     "hecks/services/port_enforcer"
     autoload :Persistence,      "hecks/services/persistence"
     autoload :Querying,         "hecks/services/querying"
@@ -117,18 +114,6 @@ module Hecks
     [validator.valid?, validator.errors]
   end
 
-  # Load a domain into memory without file I/O. Evals generated code directly.
-  # Use for tests and REPL — no gem produced, just classes loaded.
-  def self.load_domain(domain)
-    mod = domain.module_name + "Domain"
-    return Object.const_get(mod) if Object.const_defined?(mod)
-
-    gen = Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0")
-    source = gen.generate_source
-    eval(source, TOPLEVEL_BINDING, "(hecks:load:#{domain.name})")
-    Object.const_get(mod)
-  end
-
   # Generate a domain gem, returns the output path
   def self.build(domain, version: "0.1.0", output_dir: ".")
     valid, errors = validate(domain)
@@ -152,6 +137,29 @@ module Hecks
     gem_path
   end
 
+  # Load a domain into memory without file I/O.
+  # Uses generate_source for a single eval-ready string.
+  @loaded_domains = {}
+  def self.load_domain(domain, force: false, skip_validation: false)
+    mod = domain.module_name + "Domain"
+    key = domain.object_id
+    return Object.const_get(mod) if !force && @loaded_domains[mod] == key && Object.const_defined?(mod)
+
+    unless skip_validation
+      validator = Validator.new(domain)
+      unless validator.valid?
+        raise "Domain validation failed:\n#{validator.errors.map { |e| "  - #{e}" }.join("\n")}"
+      end
+    end
+
+    Object.send(:remove_const, mod) if Object.const_defined?(mod)
+    gen = Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0")
+    source = gen.generate_source
+    eval(source, TOPLEVEL_BINDING, "(hecks:load:#{domain.name})")
+    @loaded_domains[mod] = key
+    Object.const_get(mod)
+  end
+
   # Parse an event storm document (ASCII or YAML) and produce a domain + DSL
   def self.from_event_storm(source, name: nil)
     content = File.exist?(source.to_s) ? File.read(source) : source
@@ -168,17 +176,9 @@ module Hecks
   # Preview generated code for an aggregate
   def self.preview(domain, aggregate_name)
     mod = domain.module_name + "Domain"
-    ctx_mod = nil
-    agg = nil
-    domain.contexts.each do |ctx|
-      found = ctx.aggregates.find { |a| a.name == aggregate_name }
-      next unless found
-      agg = found
-      ctx_mod = ctx.default? ? nil : ctx.module_name
-      break
-    end
+    agg = domain.aggregates.find { |a| a.name == aggregate_name }
     raise "Unknown aggregate: #{aggregate_name}" unless agg
-    Generators::Domain::AggregateGenerator.new(agg, domain_module: mod, context_module: ctx_mod).generate
+    Generators::Domain::AggregateGenerator.new(agg, domain_module: mod).generate
   end
 
   require "active_hecks/railtie" if defined?(::Rails::Railtie)

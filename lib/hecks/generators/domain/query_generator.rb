@@ -10,28 +10,26 @@ module Hecks
   module Generators
     module Domain
     class QueryGenerator
-      include ContextAware
 
-      def initialize(query, domain_module:, aggregate_name:, context_module: nil)
+      def initialize(query, domain_module:, aggregate_name:)
         @query = query
         @domain_module = domain_module
         @aggregate_name = aggregate_name
-        @context_module = context_module
       end
 
       def generate
         lines = []
-        lines.concat(module_open_lines)
-        lines << "#{indent}class #{@aggregate_name}"
-        lines << "#{indent}  module Queries"
-        lines << "#{indent}    class #{@query.name}"
-        lines << "#{indent}      def call#{call_params}"
-        lines << "#{indent}        #{call_body}"
-        lines << "#{indent}      end"
-        lines << "#{indent}    end"
-        lines << "#{indent}  end"
-        lines << "#{indent}end"
-        lines.concat(module_close_lines)
+        lines << "module #{@domain_module}"
+        lines << "  class #{@aggregate_name}"
+        lines << "    module Queries"
+        lines << "      class #{@query.name}"
+        lines << "        def call#{call_params}"
+        lines << "          #{call_body}"
+        lines << "        end"
+        lines << "      end"
+        lines << "    end"
+        lines << "  end"
+        lines << "end"
         lines.join("\n") + "\n"
       end
 

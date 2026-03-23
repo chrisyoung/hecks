@@ -37,14 +37,7 @@ RSpec.describe "Scopes" do
 
   describe "application wiring" do
     before do
-      tmpdir = Dir.mktmpdir("hecks_scopes_test")
-      gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
-      gem_path = gen.generate
-      lib_path = File.join(gem_path, "lib")
-      $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-      entry = File.join(lib_path, "pizzas_domain.rb")
-      load entry
-      Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+      Hecks.load_domain(domain)
       @app = Hecks::Services::Application.new(domain)
     end
 

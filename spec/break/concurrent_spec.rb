@@ -4,50 +4,30 @@ require "tmpdir"
 
 RSpec.describe "Destructive testing: concurrency, ordering, and state corruption" do
   def boot_domain(domain)
-    tmpdir = Dir.mktmpdir("hecks_break_test")
-    gem_path = Hecks.build(domain, output_dir: tmpdir)
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    load File.join(lib_path, "#{domain.gem_name}.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
     Hecks::Services::Application.new(domain)
   end
 
   # --- Test 1: Two aggregates with the same name in the same domain ---
   describe "duplicate aggregate names in one domain" do
-    it "second aggregate definition overwrites the first silently" do
-      # Defining two aggregates named "Widget" in the same domain.
-      # This should either raise an error or cleanly merge -- not corrupt state.
-      domain = Hecks.domain("DupAgg") do
-        aggregate "Widget" do
-          attribute :name, String
-          command "CreateWidget" do
+    it "raises an error when two aggregates share the same name" do
+      expect {
+        Hecks.domain("DupAgg") do
+          aggregate "Widget" do
             attribute :name, String
+            command "CreateWidget" do
+              attribute :name, String
+            end
           end
-        end
 
-        aggregate "Widget" do
-          attribute :label, String
-          command "CreateWidget" do
+          aggregate "Widget" do
             attribute :label, String
+            command "CreateWidget" do
+              attribute :label, String
+            end
           end
         end
-      end
-
-      # If we get here, the domain accepted duplicates. Check which one "won".
-      widget_aggs = domain.aggregates.select { |a| a.name == "Widget" }
-
-      # BUG if both exist -- duplicate aggregates in the same context
-      if widget_aggs.size > 1
-        # Document the bug: domain has two aggregates with the same name.
-        # This will cause ambiguous wiring and the second will shadow the first.
-        fail "BUG: Domain accepted two aggregates named 'Widget' without error. " \
-             "Count: #{widget_aggs.size}. This causes ambiguous wiring."
-      else
-        # Only one survived -- check which attributes it has
-        attrs = widget_aggs.first.attributes.map(&:name)
-        expect(attrs).to include(:label).or include(:name)
-      end
+      }.to raise_error(ArgumentError, /Duplicate aggregate name: Widget/)
     end
   end
 
