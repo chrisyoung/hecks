@@ -110,7 +110,7 @@ module Hecks
                File.expand_path(d[:path])
              end
 
-      domain_file = File.join(base, "domain.rb")
+      domain_file = File.join(base, "hecks_domain.rb")
       domain_obj = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
       domain_obj.source_path = domain_file
 
@@ -135,7 +135,7 @@ module Hecks
                    File.join(Dir.pwd, d[:gem_name])
                  end
 
-      domain_file = File.join(gem_path, "domain.rb")
+      domain_file = File.join(gem_path, "hecks_domain.rb")
       domain_obj = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
       domain_obj.source_path = domain_file
       domain_module = Object.const_get(domain_obj.module_name + "Domain")

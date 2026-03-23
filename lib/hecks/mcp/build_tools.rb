@@ -31,8 +31,8 @@ module Hecks
           input_schema: { type: "object", properties: { path: { type: "string" } } }
         ) do |args|
           ctx.ensure_session!
-          ctx.session.save(args["path"] || "domain.rb")
-          "Saved to #{args["path"] || "domain.rb"}"
+          ctx.session.save(args["path"] || "hecks_domain.rb")
+          "Saved to #{args["path"] || "hecks_domain.rb"}"
         end
 
         server.define_tool(
