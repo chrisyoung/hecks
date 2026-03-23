@@ -113,7 +113,17 @@ module Hecks
     end
 
     generator = Generators::Infrastructure::DomainGemGenerator.new(domain, version: version, output_dir: output_dir)
-    generator.generate
+    gem_path = generator.generate
+
+    # Generate docs alongside the gem
+    require_relative "hecks/http/openapi_generator"
+    require_relative "hecks/http/rpc_discovery"
+    docs_dir = File.join(gem_path, "docs")
+    FileUtils.mkdir_p(docs_dir)
+    File.write(File.join(docs_dir, "openapi.json"), JSON.pretty_generate(HTTP::OpenapiGenerator.new(domain).generate))
+    File.write(File.join(docs_dir, "rpc_methods.json"), JSON.pretty_generate(HTTP::RpcDiscovery.new(domain).generate))
+
+    gem_path
   end
 
   # Parse an event storm document (ASCII or YAML) and produce a domain + DSL
