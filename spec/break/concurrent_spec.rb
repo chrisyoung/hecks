@@ -3,7 +3,7 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe "Destructive testing: concurrency, ordering, and state corruption" do
-  def boot(domain)
+  def boot_domain(domain)
     tmpdir = Dir.mktmpdir("hecks_break_test")
     gem_path = Hecks.build(domain, output_dir: tmpdir)
     lib_path = File.join(gem_path, "lib")
@@ -62,7 +62,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       mod = Object.const_get("IterMutDomain")
       klass = mod::Item
@@ -97,7 +97,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = DelUpDomain::Thing
       thing = klass.create(title: "Original")
@@ -135,7 +135,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = SaveDeadDomain::Record
       record = klass.create(data: "alive")
@@ -168,7 +168,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = BadQDomain::Widget
       Hecks::Services::Querying::AdHocQueries.bind(klass, app["Widget"])
@@ -193,7 +193,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = BadOrderDomain::Widget
       Hecks::Services::Querying::AdHocQueries.bind(klass, app["Widget"])
@@ -224,7 +224,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = DeepChainDomain::Product
       Hecks::Services::Querying::AdHocQueries.bind(klass, app["Product"])
@@ -267,7 +267,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = AccumWhereDomain::Item
       Hecks::Services::Querying::AdHocQueries.bind(klass, app["Item"])
@@ -294,7 +294,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = ThreadSafeDomain::Counter
 
@@ -327,7 +327,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = DelIterDomain::Entry
       5.times { |i| klass.create(label: "entry_#{i}") }
@@ -355,7 +355,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = DoubleDelDomain::Item
       item = klass.create(name: "ephemeral")
@@ -377,7 +377,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = UnknownAttrDomain::Widget
 
@@ -399,7 +399,7 @@ RSpec.describe "Destructive testing: concurrency, ordering, and state corruption
           end
         end
       end
-      app = boot(domain)
+      app = BreakTestDomains.boot(domain)
 
       klass = LifecycleDomain::Counter
       counter = klass.create(value: 0)

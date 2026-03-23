@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe "Generator edge cases: trying to break code generation" do
+RSpec.describe "Generator edge cases: trying to break code generation", :slow do
   # Helper: build a domain gem, load all generated files, verify they parse.
   # Set skip_validation: true to bypass Hecks.build's validation gate and
   # use the generator directly.
