@@ -1,15 +1,7 @@
 # Hecks::CLI
 #
-# Thor-based command-line interface for creating, validating, and building
-# Hecks domain projects. This is the user-facing entry point invoked by
-# the `hecks` executable.
+# Command-line interface — init, validate, build, console, mcp, serve:mcp.
 #
-# Part of the outer shell of the Hecks architecture -- orchestrates the
-# DSL, Validator, Versioner, and Generators to drive the full workflow.
-#
-#   $ hecks init
-#   $ hecks validate
-#   $ hecks build
 #   $ hecks console
 #   $ hecks generate:sql
 #   $ hecks generate:migrations
@@ -45,7 +37,6 @@ module Hecks
     desc "build", "Generate the domain gem from domain.rb"
     def build
       domain_file = find_domain_file
-
       unless domain_file
         say "No domain.rb found in current directory", :red
         return
@@ -105,10 +96,23 @@ module Hecks
       Session::ConsoleRunner.new(name: name).run
     end
 
-    desc "mcp", "Start the MCP server for AI agents"
+    desc "mcp", "Start the MCP server for AI agents to build domains"
     def mcp
       require_relative "mcp_server"
       McpServer.new.run
+    end
+
+    desc "serve:mcp", "Serve the domain as MCP tools for AI agents"
+    map "serve:mcp" => :serve_mcp
+    def serve_mcp
+      domain_file = find_domain_file
+      unless domain_file
+        say "No domain.rb found in current directory", :red
+        return
+      end
+      domain = load_domain(domain_file)
+      require_relative "mcp/domain_server"
+      MCP::DomainServer.new(domain).run
     end
 
     desc "generate:sql", "Generate SQL migration and adapter from domain.rb"
