@@ -13,12 +13,18 @@
 #     adapter "Pizza", my_sql_repo
 #   end
 #
-require "set"
 require_relative "aggregate_wiring"
+require_relative "application/repository_setup"
+require_relative "application/policy_setup"
+require_relative "application/constant_hoisting"
 
 module Hecks
   module Services
     class Application
+      include RepositorySetup
+      include PolicySetup
+      include ConstantHoisting
+
       attr_reader :domain, :event_bus, :command_bus
 
       def initialize(domain, port: nil, event_bus: nil, &config)
@@ -94,74 +100,12 @@ module Hecks
 
       private
 
-      def setup_repositories
-        @domain.aggregates.each do |agg|
-          if @adapter_overrides.key?(agg.name)
-            @repositories[agg.name] = @adapter_overrides[agg.name]
-          else
-            adapter_class = @mod::Adapters.const_get("#{agg.name}MemoryRepository")
-            @repositories[agg.name] = adapter_class.new
-          end
-        end
-      end
-
-      def setup_policies
-        @policies_in_flight = Set.new
-
-        @domain.aggregates.each do |agg|
-          agg.policies.each do |policy|
-            @event_bus.subscribe(policy.event_name) do |event|
-              policy_key = "#{agg.name}.#{policy.name}"
-
-              if @policies_in_flight.include?(policy_key)
-                warn "[Hecks] Skipping re-entrant policy #{policy.name} (already in-flight)"
-                next
-              end
-
-              begin
-                @policies_in_flight.add(policy_key)
-                event_attrs = {}
-                event.class.instance_method(:initialize).parameters.each do |_, name|
-                  next unless name
-                  event_attrs[name] = event.send(name) if event.respond_to?(name)
-                end
-                if policy.async && @async_handler
-                  @async_handler.call(policy.trigger_command, event_attrs)
-                else
-                  @command_bus.dispatch(policy.trigger_command, **event_attrs)
-                end
-              rescue StandardError => e
-                warn "[Hecks] Policy #{policy.name} failed: #{e.message}"
-              ensure
-                @policies_in_flight.delete(policy_key)
-              end
-            end
-          end
-        end
-      end
-
       def setup_command_bus
         @command_bus = Commands::CommandBus.new(
           domain: @domain,
           event_bus: @event_bus
         )
       end
-
-      def hoist_constants
-        @domain.aggregates.each do |agg|
-          klass = @mod.const_get(agg.name)
-          silence_warnings { Object.const_set(agg.name, klass) }
-        end
-      end
-
-      def silence_warnings
-        old = $VERBOSE
-        $VERBOSE = nil
-        yield
-      ensure
-        $VERBOSE = old
-      end
-
     end
   end
 end
