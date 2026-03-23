@@ -10,9 +10,15 @@ module Hecks
           say "Domain not found: #{domain_path}", :red
           return
         end
-        dir = File.directory?(domain_path) ? domain_path : File.dirname(domain_path)
-        versioner = Versioner.new(dir)
-        say "#{domain.name}: #{versioner.current || "not built yet"}"
+        # Check gem version first, then local .hecks_version
+        spec = Gem.loaded_specs[domain.gem_name] rescue nil
+        if spec
+          say "#{domain.name}: #{spec.version}"
+        else
+          dir = File.directory?(domain_path) ? domain_path : File.dirname(domain_path)
+          versioner = Versioner.new(dir)
+          say "#{domain.name}: #{versioner.current || "not built yet"}"
+        end
       else
         say "hecks #{Hecks::VERSION}"
       end
