@@ -14,12 +14,14 @@ require_relative "hecks/domain_inspector"
 require_relative "hecks/domain_builder_methods"
 require_relative "hecks/domain_compiler"
 require_relative "hecks/event_storm_importer"
+require_relative "hecks/domain_visualizer_methods"
 
 module Hecks
   extend DomainInspector
   extend DomainBuilderMethods
   extend DomainCompiler
   extend EventStormImporter
+  extend DomainVisualizerMethods
 
   @configuration = nil
   @loaded_domains = {}

@@ -24,7 +24,7 @@ module Hecks
 
       def self.bind_event_recorder(klass, recorder)
         agg_type = klass.name.split("::").last
-        klass.instance_variable_set(:@__hecks_event_recorder__, recorder)
+        klass.define_singleton_method(:__hecks_event_recorder__) { recorder }
         klass.define_singleton_method(:history) do |id|
           recorder.history(agg_type, id)
         end

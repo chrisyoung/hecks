@@ -40,11 +40,11 @@ module Hecks
       end
 
       def wire_query_objects(agg, agg_class)
+        repo = @repositories[agg.name]
         agg.queries.each do |query|
           method_name = Hecks::Utils.underscore(query.name).to_sym
           query_block = query.block
           agg_class.define_singleton_method(method_name) do |*args|
-            repo = instance_variable_get(:@__hecks_repo__)
             builder = Querying::QueryBuilder.new(repo)
             builder.instance_exec(*args, &query_block)
           end

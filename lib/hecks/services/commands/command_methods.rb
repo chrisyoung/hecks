@@ -39,7 +39,7 @@ module Hecks
           defaults.each { |param, default_val| constructor_attrs[param] = attrs.key?(param) ? attrs[param] : default_val }
           aggregate = new(**constructor_attrs)
           repo.save(aggregate)
-          recorder = instance_variable_get(:@__hecks_event_recorder__)
+          recorder = respond_to?(:__hecks_event_recorder__) ? __hecks_event_recorder__ : nil
           recorder.record(agg_type, aggregate.id, event) if recorder
           aggregate
         end
@@ -80,7 +80,7 @@ module Hecks
             aggregate = new(**constructor_attrs)
           end
           repo.save(aggregate)
-          recorder = instance_variable_get(:@__hecks_event_recorder__)
+          recorder = respond_to?(:__hecks_event_recorder__) ? __hecks_event_recorder__ : nil
           recorder.record(agg_type, aggregate.id, event) if recorder
           aggregate
         end

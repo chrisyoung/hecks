@@ -48,6 +48,14 @@ module Hecks
       def glossary
         Hecks::DomainGlossary.new(self).print
       end
+
+      def to_mermaid
+        Hecks::DomainVisualizer.new(self).generate
+      end
+
+      def visualize
+        Hecks::DomainVisualizer.new(self).print
+      end
     end
     end
   end

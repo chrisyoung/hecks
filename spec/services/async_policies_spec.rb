@@ -74,7 +74,7 @@ RSpec.describe "Async policies" do
 
     app.run("CreateTask", title: "Test")
     event_names = app.events.map { |e| e.class.name.split("::").last }
-    expect(event_names).to include("LogedTask")
+    expect(event_names).to include("LoggedTask")
   end
 
   it "is available in the DSL" do
