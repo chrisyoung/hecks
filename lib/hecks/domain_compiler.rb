@@ -13,6 +13,10 @@ module Hecks
         raise "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
       end
 
+      ValidationRules::Naming::ReservedNames.reserved_attr_warnings(domain).each do |w|
+        warn "[Hecks] Warning: #{w}"
+      end
+
       generator = Generators::Infrastructure::DomainGemGenerator.new(domain, version: version, output_dir: output_dir)
       gem_path = generator.generate
 

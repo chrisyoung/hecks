@@ -54,6 +54,8 @@ module Hecks
                        verb.sub(/y$/i, "ied")
                      elsif verb =~ /e$/
                        "#{verb}d"
+                     elsif verb =~ /\A[A-Z][^aeiou]*[aeiou][^aeiouwxy]\z/
+                       "#{verb}#{verb[-1]}ed"
                      else
                        "#{verb}ed"
                      end

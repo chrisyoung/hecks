@@ -927,26 +927,15 @@ Hecks has three layers:
 
 **4. DomainDiff + MigrationStrategy** — Compares domain snapshots to detect structural changes (add/remove aggregates, attributes, value objects). Feeds changes to registered migration strategies that generate backend-specific migration files to `db/hecks_migrate/`.
 
-```
- domain.rb          hecks build         pizzas_domain gem
- (DSL definition) ──────────────────> (pure Ruby, CalVer)
-                                              |
-                                              v
-                                    Hecks::Services::Application
-                                    (command dispatch, event bus,
-                                     adapter wiring, policies,
-                                     collection proxies)
-                                              |
-                                              v
-                                        Adapters
-                                    (memory, SQL, custom)
+```mermaid
+flowchart TB
+    DSL["domain.rb<br/>(DSL definition)"] -->|hecks build| Gem["pizzas_domain gem<br/>(pure Ruby, CalVer)"]
+    Gem --> App["Hecks::Services::Application<br/>(command dispatch, event bus,<br/>adapter wiring, policies,<br/>collection proxies)"]
+    App --> Adapters["Adapters<br/>(memory, SQL, custom)"]
 
- hecks generate:migrations ──> DomainDiff ──> MigrationStrategy
-   (snapshot vs current)        (changes)      (SQL files to db/hecks_migrate/)
-       |
-       v
- hecks db:migrate ──> MigrationRunner
-   (applies pending .sql files, tracks in hecks_schema_migrations table)
+    GenMig["hecks generate:migrations<br/>(snapshot vs current)"] --> Diff["DomainDiff<br/>(changes)"]
+    Diff --> Strategy["MigrationStrategy<br/>(SQL files to db/hecks_migrate/)"]
+    DbMig["hecks db:migrate"] --> Runner["MigrationRunner<br/>(applies pending .sql files,<br/>tracks in hecks_schema_migrations)"]
 ```
 
 ### Design Principles

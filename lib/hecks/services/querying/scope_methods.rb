@@ -12,14 +12,15 @@ module Hecks
       module ScopeMethods
         def self.bind(klass, aggregate)
           aggregate.scopes.each do |scope|
+            repo = klass.instance_variable_get(:@__hecks_repo__)
             if scope.callable?
               klass.define_singleton_method(scope.name) do |*args|
                 conditions = scope.conditions.call(*args)
-                Querying::QueryBuilder.new(instance_variable_get(:@__hecks_repo__)).where(**conditions)
+                Querying::QueryBuilder.new(repo).where(**conditions)
               end
             else
               klass.define_singleton_method(scope.name) do
-                Querying::QueryBuilder.new(instance_variable_get(:@__hecks_repo__)).where(**scope.conditions)
+                Querying::QueryBuilder.new(repo).where(**scope.conditions)
               end
             end
           end

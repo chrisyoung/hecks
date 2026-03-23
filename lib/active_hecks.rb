@@ -1,9 +1,8 @@
 # ActiveHecks
 #
-# Adds ActiveModel compatibility to generated domain objects so they work
-# seamlessly with Rails form helpers, URL helpers, error display, and
-# serialization. Extends aggregates with identity-based persistence semantics
-# and value objects with no-identity semantics.
+# Adds full ActiveModel compatibility to generated domain objects so they
+# work seamlessly with Rails. Includes validations, JSON serialization,
+# lifecycle callbacks, form helpers, URL helpers, and error display.
 #
 # This is an optional integration layer -- only needed when using Hecks
 # domain gems inside a Rails application.
@@ -11,43 +10,58 @@
 #   require "active_hecks"
 #   ActiveHecks.activate(PizzasDomain)
 #
-#   # Now works in Rails views:
-#   form_with(model: pizza) { |f| f.text_field :name }
+#   pizza = Pizza.new(name: "")
+#   pizza.valid?          # => false
+#   pizza.errors[:name]   # => ["can't be blank"]
+#   pizza.as_json         # => {"id" => "...", "name" => "", ...}
+#
+#   Pizza.before_save { puts "saving!" }
+#
+# Mixins:
+#   DomainModelCompat   — naming, conversion, JSON serialization (all objects)
+#   AggregateCompat     — identity, validations, lifecycle callbacks
+#   ValueObjectCompat   — no-identity, immutable semantics
+#   ValidationWiring    — converts DSL rules to ActiveModel validates calls
+#   PersistenceWrapper  — wraps save/destroy with validation + callbacks
 #
 require "active_model"
+require_relative "active_hecks/domain_model_compat"
+require_relative "active_hecks/aggregate_compat"
+require_relative "active_hecks/value_object_compat"
+require_relative "active_hecks/validation_wiring"
+require_relative "active_hecks/persistence_wrapper"
 
 module ActiveHecks
   # Activate ActiveModel compatibility on all aggregates and value objects
   # in a generated domain module.
-  #
-  #   ActiveHecks.activate(PizzasDomain)
-  #
-  # After activation, domain objects work with Rails form helpers,
-  # URL helpers, error display, and serialization.
-  def self.activate(domain_module)
+  def self.activate(domain_module, domain: nil)
+    @domain = domain
+
     domain_module.constants.each do |const_name|
       const = domain_module.const_get(const_name)
 
-      if const.is_a?(Class)
-        # Direct aggregate (single context)
+      if const.is_a?(Class) && !(const < Exception)
         extend_aggregate(const)
         extend_nested_value_objects(const)
       elsif const.is_a?(Module) && !%i[Ports Adapters].include?(const_name)
-        # Context module — recurse into it
         const.constants.each do |agg_name|
           agg_class = const.const_get(agg_name)
-          next unless agg_class.is_a?(Class)
+          next unless agg_class.is_a?(Class) && !(agg_class < Exception)
           extend_aggregate(agg_class)
           extend_nested_value_objects(agg_class)
         end
       end
     end
+  ensure
+    @domain = nil
   end
 
   def self.extend_nested_value_objects(klass)
-    klass.constants.each do |nested_name|
+    # Use constants(false) to only get constants defined directly on the class,
+    # not those inherited from included modules (like ActiveModel validators).
+    klass.constants(false).each do |nested_name|
       nested = klass.const_get(nested_name)
-      next unless nested.is_a?(Class)
+      next unless nested.is_a?(Class) && !(nested < Exception)
       extend_value_object(nested)
     end
   end
@@ -55,7 +69,9 @@ module ActiveHecks
   def self.extend_aggregate(klass)
     klass.include(DomainModelCompat)
     klass.include(AggregateCompat)
+    ValidationWiring.bind(klass, domain: @domain)
     override_model_name(klass)
+    PersistenceWrapper.bind(klass)
   end
 
   def self.extend_value_object(klass)
@@ -69,85 +85,6 @@ module ActiveHecks
     short_name = klass.name.split("::").last
     klass.define_singleton_method(:model_name) do
       @_model_name ||= ActiveModel::Name.new(self, nil, short_name)
-    end
-  end
-
-  # Shared compatibility for all domain objects
-  module DomainModelCompat
-    def self.included(base)
-      base.extend(ActiveModel::Naming) unless base.respond_to?(:model_name)
-      base.include(ActiveModel::Conversion)
-    end
-
-    def to_model
-      self
-    end
-
-    def errors
-      @_errors ||= ActiveModel::Errors.new(self)
-    end
-
-    def attributes
-      hash = {}
-      self.class.instance_method(:initialize).parameters.each do |_, name|
-        next unless name
-        hash[name.to_s] = send(name) if respond_to?(name)
-      end
-      hash
-    end
-
-    def serializable_hash(options = nil)
-      attributes
-    end
-
-    def read_attribute_for_serialization(attr)
-      send(attr)
-    end
-  end
-
-  # Aggregate-specific (has identity)
-  module AggregateCompat
-    def to_param
-      id
-    end
-
-    def to_key
-      persisted? ? [id] : nil
-    end
-
-    def persisted?
-      !id.nil?
-    end
-
-    def new_record?
-      !persisted?
-    end
-
-    def destroyed?
-      false
-    end
-  end
-
-  # Value object-specific (no identity)
-  module ValueObjectCompat
-    def to_param
-      nil
-    end
-
-    def to_key
-      nil
-    end
-
-    def persisted?
-      false
-    end
-
-    def new_record?
-      true
-    end
-
-    def destroyed?
-      false
     end
   end
 end

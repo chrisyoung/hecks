@@ -80,6 +80,11 @@ RSpec.describe "Multi-domain with shared event bus" do
 
     billing_events = @billing_app.events.map { |e| e.class.name.split("::").last }
     expect(billing_events).to include("CreatedInvoice")
+
+    # Policy-triggered aggregate should also be persisted
+    invoices = BillingDomain::Invoice.all
+    expect(invoices.size).to eq(1)
+    expect(invoices.first.quantity).to eq(3)
   end
 
   it "domains are isolated — can't access each other's aggregates" do

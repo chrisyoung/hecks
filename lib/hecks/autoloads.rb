@@ -9,7 +9,8 @@ module Hecks
   autoload :Validator,      "hecks/validator"
   autoload :Versioner,      "hecks/versioner"
   autoload :Migrations,     "hecks/migrations"
-  autoload :DomainGlossary, "hecks/domain_glossary"
+  autoload :DomainGlossary,  "hecks/domain_glossary"
+  autoload :DomainVisualizer, "hecks/domain_visualizer"
   autoload :DslSerializer,      "hecks/dsl_serializer"
   autoload :ConsoleRunner,      "hecks/console_runner"
 

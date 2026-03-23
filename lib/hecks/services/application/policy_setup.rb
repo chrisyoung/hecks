@@ -16,6 +16,23 @@ module Hecks
       module PolicySetup
         private
 
+        def dispatch_policy_command(command_name, event_attrs)
+          target_agg = @domain.aggregates.find do |a|
+            a.commands.any? { |c| c.name == command_name.to_s }
+          end
+          return @command_bus.dispatch(command_name, **event_attrs) unless target_agg
+
+          agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(target_agg.name))
+          agg_snake = Hecks::Utils.underscore(target_agg.name)
+          method_name = Hecks::Utils.underscore(command_name).sub(/_#{agg_snake}$/, "").to_sym
+
+          if agg_class.respond_to?(method_name)
+            agg_class.send(method_name, **event_attrs)
+          else
+            @command_bus.dispatch(command_name, **event_attrs)
+          end
+        end
+
         def setup_policies
           @policies_in_flight = Set.new
 
@@ -39,7 +56,7 @@ module Hecks
                   if policy.async && @async_handler
                     @async_handler.call(policy.trigger_command, event_attrs)
                   else
-                    @command_bus.dispatch(policy.trigger_command, **event_attrs)
+                    dispatch_policy_command(policy.trigger_command, event_attrs)
                   end
                 rescue StandardError => e
                   warn "[Hecks] Policy #{policy.name} failed: #{e.message}"

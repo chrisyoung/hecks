@@ -24,6 +24,7 @@ module Hecks
       ValidationRules::Naming::UniqueAggregateNames,
       ValidationRules::Naming::NameCollisions,
       ValidationRules::Naming::CommandNaming,
+      ValidationRules::Naming::ReservedNames,
       ValidationRules::References::ValidReferences,
       ValidationRules::References::NoBidirectionalReferences,
       ValidationRules::References::NoSelfReferences,

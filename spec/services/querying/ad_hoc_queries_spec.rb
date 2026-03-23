@@ -28,8 +28,8 @@ RSpec.describe Hecks::Services::Querying::AdHocQueries do
   end
 
   describe ".bind" do
-    it "extends the class with query methods" do
-      expect(PizzasDomain::Pizza.singleton_class.ancestors).to include(described_class)
+    it "adds query methods to the class" do
+      expect(PizzasDomain::Pizza).to respond_to(:where, :find_by, :order, :limit, :offset)
     end
   end
 

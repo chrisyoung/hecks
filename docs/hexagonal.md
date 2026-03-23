@@ -4,40 +4,27 @@ You know the ports and adapters diagram. Here's how Hecks implements it.
 
 ## The Layers
 
-```
-                    ┌─────────────────────────────┐
-                    │       Domain (generated gem) │
-                    │                              │
-                    │  Aggregates  Value Objects   │
-                    │  Commands    Events          │
-                    │  Queries     Policies        │
-                    │  Validations Invariants      │
-                    │                              │
-                    │  Zero dependencies.          │
-                    │  No persistence. No framework.│
-                    └──────────────┬───────────────┘
-                                   │
-                    ┌──────────────┴───────────────┐
-                    │    Application (Hecks Services)│
-                    │                              │
-                    │  AggregateWiring orchestrates:│
-                    │    Persistence.bind(...)      │
-                    │    Commands.bind(...)         │
-                    │    Querying.bind(...)         │
-                    │                              │
-                    │  Injects behavior at boot.   │
-                    │  Domain never knows.         │
-                    └──────────────┬───────────────┘
-                                   │
-                    ┌──────────────┴───────────────┐
-                    │    Infrastructure (adapters)  │
-                    │                              │
-                    │  Memory adapters (default)   │
-                    │  SQL adapters (Sequel)       │
-                    │  Your custom adapters        │
-                    │                              │
-                    │  Swappable. Testable.        │
-                    └─────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Domain["Domain (generated gem)"]
+        direction TB
+        D1["Aggregates · Value Objects · Commands · Events<br/>Queries · Policies · Validations · Invariants"]
+        D2["Zero dependencies. No persistence. No framework."]
+    end
+
+    subgraph Application["Application (Hecks Services)"]
+        direction TB
+        A1["AggregateWiring orchestrates:<br/>Persistence.bind · Commands.bind · Querying.bind"]
+        A2["Injects behavior at boot. Domain never knows."]
+    end
+
+    subgraph Infrastructure["Infrastructure (adapters)"]
+        direction TB
+        I1["Memory adapters (default) · SQL adapters (Sequel) · Your custom adapters"]
+        I2["Swappable. Testable."]
+    end
+
+    Domain --> Application --> Infrastructure
 ```
 
 ## Ports
