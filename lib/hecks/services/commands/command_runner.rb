@@ -1,4 +1,4 @@
-# Hecks::Services::CommandRunner
+# Hecks::Services::Commands::CommandRunner
 #
 # LEGACY — replaced by CommandBus, which adds middleware support.
 # Kept for backward compatibility. New code should use CommandBus instead.
@@ -13,7 +13,8 @@
 #
 module Hecks
   module Services
-    class CommandRunner
+    module Commands
+      class CommandRunner
       def initialize(domain:, repositories:, event_bus:)
         @domain = domain
         @repositories = repositories
@@ -78,6 +79,7 @@ module Hecks
           attrs[param] = command.send(param) if command.respond_to?(param)
         end
         attrs
+      end
       end
     end
   end

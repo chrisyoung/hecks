@@ -16,6 +16,13 @@ The `examples/rails_app/` has Rails-generated files that should NOT be committed
 - `db/schema.rb`, `db/seeds.rb`, `log/`, `tmp/`, `storage/`
 - Only commit: `app/`, `config/`, `db/migrate/`, `Gemfile`, `Rakefile`, `config.ru`, `README.md`
 
+## Issue tracking
+
+- Always use Linear for tracking work — create issues before starting, update status as you go
+- Use the Linear MCP tools (list_issues, save_issue, etc.) to manage issues
+- Tag issues with appropriate labels (e.g. "Repository")
+- Mark issues Done when the work is committed and pushed
+
 ## Project conventions
 
 - Every lib file has a doc comment header: class name, one-line purpose, architecture context, usage example

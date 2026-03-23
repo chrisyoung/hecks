@@ -151,7 +151,7 @@ module Hecks
       end
 
       def setup_command_bus
-        @command_bus = CommandBus.new(
+        @command_bus = Commands::CommandBus.new(
           domain: @domain,
           event_bus: @event_bus
         )

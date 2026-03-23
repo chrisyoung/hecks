@@ -1,5 +1,4 @@
-# Hecks — Top-level entry point and autoload registry for the Hecks domain
-# modeling framework. Hecks.domain, Hecks.build, Hecks.from_event_storm.
+# Hecks — Top-level entry point and autoload registry for the Hecks framework.
 #
 module Hecks
   class PortAccessDenied < StandardError; end
@@ -101,18 +100,14 @@ module Hecks
   end
 
   module Services
-    autoload :Application,       "hecks/services/application"
-    autoload :AggregateWiring,   "hecks/services/aggregate_wiring"
-    autoload :CommandBus,        "hecks/services/command_bus"
-    autoload :CommandRunner,     "hecks/services/command_runner"
-    autoload :EventBus,          "hecks/services/event_bus"
-    autoload :CollectionProxy,   "hecks/services/collection_proxy"
-    autoload :ContextProxy,      "hecks/services/context_proxy"
-    autoload :CommandWiring,     "hecks/services/command_wiring"
-    autoload :PortEnforcer,      "hecks/services/port_enforcer"
-    autoload :QueryBuilder,      "hecks/services/query_builder"
-    autoload :AdHocQueries,      "hecks/services/ad_hoc_queries"
-    autoload :RepositoryMethods, "hecks/services/repository_methods"
+    autoload :Application,      "hecks/services/application"
+    autoload :AggregateWiring,  "hecks/services/aggregate_wiring"
+    autoload :EventBus,         "hecks/services/event_bus"
+    autoload :ContextProxy,     "hecks/services/context_proxy"
+    autoload :PortEnforcer,     "hecks/services/port_enforcer"
+    autoload :Persistence,      "hecks/services/persistence"
+    autoload :Querying,         "hecks/services/querying"
+    autoload :Commands,         "hecks/services/commands"
   end
 
   # Configure Hecks for an application (typically from an initializer)

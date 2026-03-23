@@ -1,4 +1,4 @@
-# Hecks::Services::QueryBuilder
+# Hecks::Services::Querying::QueryBuilder
 #
 # Chainable query interface for aggregate repositories. Collects query
 # parameters and delegates execution to the adapter's query method.
@@ -11,7 +11,8 @@
 #
 module Hecks
   module Services
-    class QueryBuilder
+    module Querying
+      class QueryBuilder
       include Enumerable
 
       def initialize(repo)
@@ -134,6 +135,7 @@ module Hecks
       def apply_limit(results)
         return results unless @limit_value
         results.take(@limit_value)
+      end
       end
     end
   end

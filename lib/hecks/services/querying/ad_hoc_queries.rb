@@ -1,33 +1,29 @@
-# Hecks::Services::AdHocQueries
+# Hecks::Services::Querying::AdHocQueries
 #
 # Opt-in mixin that provides ActiveRecord-style query methods (where,
-# find_by, first, last) on aggregate classes. Enable in your project:
+# find_by, first, last) on aggregate classes. Enable via include_ad_hoc_queries
+# in Hecks.configure, or bind directly:
 #
-#   # Plain Ruby:
-#   app = Hecks::Services::Application.new(domain)
-#   Hecks::Services::AdHocQueries.bind(PizzasDomain::Pizza, app["Pizza"])
+#   Hecks::Services::Querying::AdHocQueries.bind(Pizza, repo)
 #
-#   # Rails initializer:
-#   Hecks::Services::AdHocQueries.bind(Pizza, pizza_repo)
-#
-#   # Then use:
 #   Pizza.where(style: "Classic").order(:name).limit(5)
 #   Pizza.find_by(name: "Margherita")
 #
 module Hecks
   module Services
-    module AdHocQueries
+    module Querying
+      module AdHocQueries
       def self.bind(klass, repo)
         klass.instance_variable_set(:@__hecks_repo__, repo)
         klass.extend(self)
       end
 
       def where(**conditions)
-        QueryBuilder.new(@__hecks_repo__).where(**conditions)
+        Querying::QueryBuilder.new(@__hecks_repo__).where(**conditions)
       end
 
       def find_by(**conditions)
-        QueryBuilder.new(@__hecks_repo__).find_by(**conditions)
+        Querying::QueryBuilder.new(@__hecks_repo__).find_by(**conditions)
       end
 
       def first
@@ -36,6 +32,7 @@ module Hecks
 
       def last
         all.last
+      end
       end
     end
   end
