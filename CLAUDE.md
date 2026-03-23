@@ -3,7 +3,7 @@
 ## Before every commit
 
 1. **Update docs** — sync all file doc headers and READMEs with current features
-2. **Run specs** — `bundle exec rspec --order defined` (420+ specs, all must pass)
+2. **Run specs** — `bundle exec rspec --order defined` (430+ specs, all must pass)
 3. **Check file sizes** — no file over 200 lines (`find lib -name "*.rb" -exec wc -l {} + | sort -rn | head -5`)
 4. **Smoke test** — `ruby -Ilib examples/pizzas/app.rb`
 5. **Stage specifically** — don't `git add -A`, stage specific files to avoid Rails boilerplate leaking in
@@ -58,3 +58,10 @@ Current module groups:
 - `ValidationRules::Naming` / `References` / `Structure`
 - `Session` — AggregateHandle, ContextHandle, Playground, ConsoleRunner
 - `Migrations` — DomainDiff, DomainSnapshot, MigrationStrategy, MigrationRunner
+- `HTTP` — DomainServer (REST+SSE), RpcServer (JSON-RPC), RouteBuilder
+- `MCP` — DomainServer, SessionTools, AggregateTools, InspectTools, BuildTools, PlayTools
+
+## CLI structure
+
+Each CLI command is its own file under `lib/hecks/cli/commands/`. The CLI shell
+(`cli.rb`) has shared helpers only. Add new commands by creating a new file.
