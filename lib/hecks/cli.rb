@@ -32,18 +32,30 @@ module Hecks
           load_domain(local)
         else
           # Check installed gems
-          resolve_domain_from_gem(path_or_name)
+          resolve_domain_from_gem(path_or_name, version: options[:version])
         end
       end
     end
 
-    def resolve_domain_from_gem(gem_name)
+    def resolve_domain_from_gem(gem_name, version: nil)
+      specs = Gem::Specification.select { |s| s.name == gem_name && File.exist?(File.join(s.full_gem_path, "hecks_domain.rb")) }
+      return nil if specs.empty?
+
+      spec = if version
+        specs.find { |s| s.version.to_s == version } || (say("Version #{version} not found", :red); return nil)
+      elsif specs.size > 1
+        specs.sort_by(&:version).reverse!
+        say "Multiple versions of #{gem_name} installed:", :yellow
+        specs.each_with_index { |s, i| say "  #{i + 1}. v#{s.version}" }
+        choice = ask("Which version? [1-#{specs.size}]:")
+        specs[choice.to_i - 1] || specs.first
+      else
+        specs.first
+      end
+
+      gem gem_name, "= #{spec.version}"
       require gem_name
-      spec = Gem.loaded_specs[gem_name]
-      return nil unless spec
-      domain_file = File.join(spec.full_gem_path, "hecks_domain.rb")
-      return nil unless File.exist?(domain_file)
-      load_domain(domain_file)
+      load_domain(File.join(spec.full_gem_path, "hecks_domain.rb"))
     rescue LoadError
       nil
     end

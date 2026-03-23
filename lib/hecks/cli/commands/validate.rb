@@ -4,6 +4,7 @@ module Hecks
   class CLI < Thor
     desc "validate", "Validate the domain definition"
     option :domain, type: :string, desc: "Domain gem name or path"
+    option :version, type: :string, desc: "Domain version"
     def validate
       domain = resolve_domain_option
       return unless domain

@@ -4,6 +4,7 @@ module Hecks
   class CLI < Thor
     desc "docs", "Serve API documentation (Swagger UI)"
     option :domain, type: :string, desc: "Domain gem name or path"
+    option :version, type: :string, desc: "Domain version"
     option :port, type: :numeric, default: 9393, desc: "Port"
     def docs
       domain = resolve_domain_option

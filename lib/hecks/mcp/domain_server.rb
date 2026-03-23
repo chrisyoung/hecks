@@ -42,7 +42,7 @@ module Hecks
         lib_path = File.join(gem_path, "lib")
         $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
         require @domain.gem_name
-        Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+        Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| require f }
         @mod = Object.const_get(@domain.module_name + "Domain")
       end
 
