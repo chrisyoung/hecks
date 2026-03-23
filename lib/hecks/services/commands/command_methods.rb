@@ -19,12 +19,20 @@ module Hecks
           cmd_class = mod.const_get(cmd.name) rescue nil
           next unless cmd_class
 
+          # Auto-include mixin if not already included
+          cmd_class.include(Hecks::Command) unless cmd_class < Hecks::Command
+
           # Wire the command to its repository, event bus, handler, and middleware
-          cmd_class.repository = repo if cmd_class.respond_to?(:repository=)
+          cmd_class.repository = repo
           event_bus = bus.respond_to?(:event_bus) ? bus.event_bus : bus
-          cmd_class.event_bus = event_bus if cmd_class.respond_to?(:event_bus=)
-          cmd_class.handler = cmd.handler if cmd_class.respond_to?(:handler=)
-          cmd_class.command_bus = bus if cmd_class.respond_to?(:command_bus=)
+          cmd_class.event_bus = event_bus
+          cmd_class.handler = cmd.handler
+          cmd_class.command_bus = bus
+
+          # Set event name from domain IR (convention: CreatePizza -> CreatedPizza)
+          event_idx = aggregate.commands.index { |c| c.name == cmd.name }
+          event_def = aggregate.events[event_idx] if event_idx
+          cmd_class.emits(event_def.name) if event_def && !cmd_class.event_name
 
           # Create shortcut on aggregate: Pizza.create -> CreatePizza.call
           full_name = Hecks::Utils.underscore(cmd.name)

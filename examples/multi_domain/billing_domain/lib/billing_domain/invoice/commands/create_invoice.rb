@@ -1,10 +1,7 @@
-require 'hecks/command'
-
 module BillingDomain
   class Invoice
     module Commands
       class CreateInvoice
-        include Hecks::Command
         emits "CreatedInvoice"
 
         attr_reader :pizza_id, :quantity

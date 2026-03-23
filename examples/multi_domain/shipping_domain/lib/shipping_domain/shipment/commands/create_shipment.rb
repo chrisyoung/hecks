@@ -1,10 +1,7 @@
-require 'hecks/command'
-
 module ShippingDomain
   class Shipment
     module Commands
       class CreateShipment
-        include Hecks::Command
         emits "CreatedShipment"
 
         attr_reader :pizza_id, :quantity

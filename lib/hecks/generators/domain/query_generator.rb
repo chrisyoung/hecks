@@ -19,14 +19,10 @@ module Hecks
 
       def generate
         lines = []
-        lines << "require 'hecks/query'"
-        lines << ""
         lines << "module #{@domain_module}"
         lines << "  class #{@aggregate_name}"
         lines << "    module Queries"
         lines << "      class #{@query.name}"
-        lines << "        include Hecks::Query"
-        lines << ""
         lines << "        def call#{call_params}"
         lines << "          #{call_body}"
         lines << "        end"

@@ -23,9 +23,11 @@ module Hecks
 
           @domain.aggregates.each do |agg|
             agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
-            if agg_class.const_defined?(:Commands) &&
-               agg_class::Commands.const_defined?(command_name)
+            next unless agg_class.const_defined?(:Commands)
+            begin
               return agg_class::Commands.const_get(command_name)
+            rescue NameError, LoadError
+              next
             end
           end
 

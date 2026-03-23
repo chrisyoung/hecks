@@ -1,10 +1,7 @@
-require 'hecks/command'
-
 module ShippingDomain
   class Shipment
     module Commands
       class ShipShipment
-        include Hecks::Command
         emits "ShippedShipment"
 
         attr_reader :shipment_id
