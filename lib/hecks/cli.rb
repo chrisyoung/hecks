@@ -30,10 +30,12 @@ module Hecks
       name ||= File.basename(Dir.pwd).split(/[_\-\s]/).map(&:capitalize).join
 
       File.write("domain.rb", domain_template(name))
+      File.write("verbs.txt", "# Add custom action verbs here (one per line)\n# WordNet handles most English verbs automatically\n")
       File.write(".hecks_version", "")
 
       say "Initialized Hecks domain: #{name}", :green
       say "  domain.rb   — define your domain here"
+      say "  verbs.txt   — add custom action verbs (optional)"
       say ""
       say "Next steps:"
       say "  hecks console   # edit interactively"
@@ -161,7 +163,9 @@ module Hecks
     end
 
     def load_domain(file)
-      eval(File.read(file), binding, file)
+      domain = eval(File.read(file), binding, file)
+      domain.source_path = file
+      domain
     end
 
     # Migration commands are in a separate file to keep this under 200 lines

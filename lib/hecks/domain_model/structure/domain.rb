@@ -23,11 +23,11 @@ module Hecks
   module DomainModel
     module Structure
     class Domain
-      attr_reader :name, :contexts, :verbs
+      attr_reader :name, :contexts
+      attr_accessor :source_path
 
-      def initialize(name:, aggregates: [], contexts: [], verbs: [])
+      def initialize(name:, aggregates: [], contexts: [])
         @name = name
-        @verbs = verbs
         if contexts.any?
           @contexts = contexts
         else
