@@ -4,7 +4,7 @@
 # the generated DSL string, and any warnings produced during parsing.
 #
 #   result = Hecks.from_event_storm("storm.md")
-#   result.domain    # => DomainModel::Domain
+#   result.domain    # => DomainModel::Structure::Domain
 #   result.dsl       # => "Hecks.domain \"Ordering\" do ..."
 #   result.warnings  # => ["Event 'Order Placed' doesn't match ..."]
 #

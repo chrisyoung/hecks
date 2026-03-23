@@ -63,7 +63,7 @@ RSpec.describe Hecks::Session do
       end
 
       domain = session.to_domain
-      expect(domain).to be_a(Hecks::DomainModel::Domain)
+      expect(domain).to be_a(Hecks::DomainModel::Structure::Domain)
       expect(domain.name).to eq("Pizzas")
     end
   end

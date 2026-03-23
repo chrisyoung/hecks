@@ -25,7 +25,7 @@ RSpec.describe "Port Authorization" do
 
   before do
     tmpdir = Dir.mktmpdir("hecks_port_test")
-    gen = Hecks::Generators::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
+    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
     gem_path = gen.generate
     lib_path = File.join(gem_path, "lib")
     $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
@@ -44,7 +44,7 @@ RSpec.describe "Port Authorization" do
     it "stores allowed methods on each port" do
       agg = domain.aggregates.first
       guest = agg.ports[:guest]
-      expect(guest).to be_a(Hecks::DomainModel::PortDefinition)
+      expect(guest).to be_a(Hecks::DomainModel::Structure::PortDefinition)
       expect(guest.allowed_methods).to include(:find, :all, :where)
       expect(guest.allowed_methods).not_to include(:create, :destroy)
     end
@@ -142,13 +142,13 @@ RSpec.describe "Port Authorization" do
 
   describe "PortDefinition#allows?" do
     it "returns true for allowed methods" do
-      port = Hecks::DomainModel::PortDefinition.new(name: :test, allowed_methods: [:find, :all])
+      port = Hecks::DomainModel::Structure::PortDefinition.new(name: :test, allowed_methods: [:find, :all])
       expect(port.allows?(:find)).to be true
       expect(port.allows?("all")).to be true
     end
 
     it "returns false for disallowed methods" do
-      port = Hecks::DomainModel::PortDefinition.new(name: :test, allowed_methods: [:find])
+      port = Hecks::DomainModel::Structure::PortDefinition.new(name: :test, allowed_methods: [:find])
       expect(port.allows?(:create)).to be false
     end
   end

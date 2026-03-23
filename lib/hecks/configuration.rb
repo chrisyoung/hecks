@@ -67,7 +67,7 @@ module Hecks
 
     def generate_adapters
       @domain_obj.aggregates.each do |agg|
-        gen = Generators::SqlAdapterGenerator.new(agg, domain_module: @domain_obj.module_name + "Domain")
+        gen = Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: @domain_obj.module_name + "Domain")
         eval(gen.generate, TOPLEVEL_BINDING, "(hecks:sql:#{agg.name})")
       end
     end

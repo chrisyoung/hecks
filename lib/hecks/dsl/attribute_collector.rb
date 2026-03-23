@@ -6,7 +6,7 @@ module Hecks
         ref = type.is_a?(Hash) && type[:reference]
         actual_type = type.is_a?(Hash) ? type.values.first : type
 
-        @attributes << DomainModel::Attribute.new(
+        @attributes << DomainModel::Structure::Attribute.new(
           name: name,
           type: actual_type,
           list: !!list,

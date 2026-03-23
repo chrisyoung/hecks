@@ -222,7 +222,7 @@ RSpec.describe Hecks::EventStorm::YamlParser do
 
     it "auto-detects YAML format from file extension" do
       result = Hecks.from_event_storm("examples/pizzas/event_storm.yml")
-      expect(result.domain).to be_a(Hecks::DomainModel::Domain)
+      expect(result.domain).to be_a(Hecks::DomainModel::Structure::Domain)
       expect(result.domain.contexts.map(&:name)).to include("Ordering", "Fulfillment")
     end
   end

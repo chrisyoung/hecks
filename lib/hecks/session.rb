@@ -90,13 +90,13 @@ module Hecks
         contexts = @context_builders.values.map(&:build)
         if @aggregate_builders.any?
           default_aggs = @aggregate_builders.values.map(&:build)
-          default_ctx = DomainModel::BoundedContext.new(name: "Default", aggregates: default_aggs)
+          default_ctx = DomainModel::Structure::BoundedContext.new(name: "Default", aggregates: default_aggs)
           contexts = [default_ctx] + contexts
         end
-        DomainModel::Domain.new(name: @name, contexts: contexts)
+        DomainModel::Structure::Domain.new(name: @name, contexts: contexts)
       else
         aggregates = @aggregate_builders.values.map(&:build)
-        DomainModel::Domain.new(name: @name, aggregates: aggregates)
+        DomainModel::Structure::Domain.new(name: @name, aggregates: aggregates)
       end
     end
 

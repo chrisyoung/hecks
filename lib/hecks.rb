@@ -23,40 +23,17 @@ module Hecks
   end
 
   module ValidationRules
-    autoload :BaseRule,                  "hecks/validation_rules/base_rule"
-    autoload :UniqueContextNames,        "hecks/validation_rules/unique_context_names"
-    autoload :UniqueAggregateNames,      "hecks/validation_rules/unique_aggregate_names"
-    autoload :NameCollisions,            "hecks/validation_rules/name_collisions"
-    autoload :ValidReferences,           "hecks/validation_rules/valid_references"
-    autoload :NoBidirectionalReferences, "hecks/validation_rules/no_bidirectional_references"
-    autoload :NoSelfReferences,          "hecks/validation_rules/no_self_references"
-    autoload :NoValueObjectReferences,   "hecks/validation_rules/no_value_object_references"
-    autoload :AggregatesHaveCommands,    "hecks/validation_rules/aggregates_have_commands"
-    autoload :CommandNaming,             "hecks/validation_rules/command_naming"
-    autoload :CommandsHaveAttributes,    "hecks/validation_rules/commands_have_attributes"
-    autoload :ValidPolicyEvents,         "hecks/validation_rules/valid_policy_events"
-    autoload :ValidPolicyTriggers,       "hecks/validation_rules/valid_policy_triggers"
+    autoload :BaseRule,    "hecks/validation_rules/base_rule"
+    autoload :Naming,      "hecks/validation_rules/naming"
+    autoload :References,  "hecks/validation_rules/references"
+    autoload :Structure,   "hecks/validation_rules/structure"
   end
   autoload :DslSerializer,      "hecks/dsl_serializer"
   autoload :ConsoleRunner,      "hecks/console_runner"
 
   module DomainModel
-    autoload :Domain,          "hecks/domain_model/domain"
-    autoload :BoundedContext,  "hecks/domain_model/bounded_context"
-    autoload :Aggregate,       "hecks/domain_model/aggregate"
-    autoload :ValueObject,  "hecks/domain_model/value_object"
-    autoload :Attribute,    "hecks/domain_model/attribute"
-    autoload :Command,      "hecks/domain_model/command"
-    autoload :DomainEvent,  "hecks/domain_model/domain_event"
-    autoload :Policy,       "hecks/domain_model/policy"
-    autoload :Validation,   "hecks/domain_model/validation"
-    autoload :Invariant,       "hecks/domain_model/invariant"
-    autoload :Scope,           "hecks/domain_model/scope"
-    autoload :Query,           "hecks/domain_model/query"
-    autoload :PortDefinition,  "hecks/domain_model/port_definition"
-    autoload :ReadModel,       "hecks/domain_model/read_model"
-    autoload :ExternalSystem,  "hecks/domain_model/external_system"
-    autoload :Actor,           "hecks/domain_model/actor"
+    autoload :Behavior,  "hecks/domain_model/behavior"
+    autoload :Structure, "hecks/domain_model/structure"
   end
 
   module DSL
@@ -72,23 +49,10 @@ module Hecks
   end
 
   module Generators
-    autoload :ContextAware,          "hecks/generators/context_aware"
-    autoload :DomainGemGenerator,    "hecks/generators/domain_gem_generator"
-    autoload :AggregateGenerator,   "hecks/generators/aggregate_generator"
-    autoload :ValueObjectGenerator, "hecks/generators/value_object_generator"
-    autoload :CommandGenerator,     "hecks/generators/command_generator"
-    autoload :EventGenerator,       "hecks/generators/event_generator"
-    autoload :PolicyGenerator,      "hecks/generators/policy_generator"
-    autoload :PortGenerator,        "hecks/generators/port_generator"
-    autoload :SpecGenerator,          "hecks/generators/spec_generator"
-    autoload :SpecHelpers,            "hecks/generators/spec_helpers"
-    autoload :AutoloadGenerator,      "hecks/generators/autoload_generator"
-    autoload :MemoryAdapterGenerator,  "hecks/generators/memory_adapter_generator"
-    autoload :SqlAdapterGenerator,     "hecks/generators/sql_adapter_generator"
-    autoload :SqlBuilder,              "hecks/generators/sql_builder"
-    autoload :SqlMigrationGenerator,   "hecks/generators/sql_migration_generator"
-    autoload :QueryObjectGenerator,    "hecks/generators/query_object_generator"
-    autoload :QueryGenerator,          "hecks/generators/query_generator"
+    autoload :ContextAware,   "hecks/generators/context_aware"
+    autoload :Domain,         "hecks/generators/domain"
+    autoload :SQL,            "hecks/generators/sql"
+    autoload :Infrastructure, "hecks/generators/infrastructure"
   end
 
   module EventStorm
@@ -156,7 +120,7 @@ module Hecks
       raise "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
     end
 
-    generator = Generators::DomainGemGenerator.new(domain, version: version, output_dir: output_dir)
+    generator = Generators::Infrastructure::DomainGemGenerator.new(domain, version: version, output_dir: output_dir)
     generator.generate
   end
 
@@ -186,7 +150,7 @@ module Hecks
       break
     end
     raise "Unknown aggregate: #{aggregate_name}" unless agg
-    Generators::AggregateGenerator.new(agg, domain_module: mod, context_module: ctx_mod).generate
+    Generators::Domain::AggregateGenerator.new(agg, domain_module: mod, context_module: ctx_mod).generate
   end
 
   require "active_hecks/railtie" if defined?(::Rails::Railtie)

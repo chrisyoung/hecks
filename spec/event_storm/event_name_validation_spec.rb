@@ -54,7 +54,7 @@ RSpec.describe "Event name validation" do
 
     it "returns both domain and DSL" do
       result = Hecks.from_event_storm(source, name: "Pizzas")
-      expect(result.domain).to be_a(Hecks::DomainModel::Domain)
+      expect(result.domain).to be_a(Hecks::DomainModel::Structure::Domain)
       expect(result.dsl).to include('Hecks.domain "Pizzas"')
       expect(result.domain.aggregates.map(&:name)).to include("Pizza")
     end

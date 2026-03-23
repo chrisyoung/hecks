@@ -20,7 +20,7 @@ module Hecks
       end
 
       def build
-        DomainModel::PortDefinition.new(name: @name, allowed_methods: @allowed)
+        DomainModel::Structure::PortDefinition.new(name: @name, allowed_methods: @allowed)
       end
     end
   end

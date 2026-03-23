@@ -112,7 +112,7 @@ module Hecks
 
     def compile!
       @tmpdir = Dir.mktmpdir("hecks_playground")
-      generator = Generators::DomainGemGenerator.new(@domain, version: "0.0.0", output_dir: @tmpdir)
+      generator = Generators::Infrastructure::DomainGemGenerator.new(@domain, version: "0.0.0", output_dir: @tmpdir)
       gem_path = generator.generate
 
       lib_path = File.join(gem_path, "lib")

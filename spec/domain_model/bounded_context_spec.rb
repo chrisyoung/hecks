@@ -1,8 +1,8 @@
 require "spec_helper"
 
-RSpec.describe Hecks::DomainModel::BoundedContext do
+RSpec.describe Hecks::DomainModel::Structure::BoundedContext do
   let(:aggregate) do
-    Hecks::DomainModel::Aggregate.new(name: "Order", attributes: [])
+    Hecks::DomainModel::Structure::Aggregate.new(name: "Order", attributes: [])
   end
 
   subject(:context) do

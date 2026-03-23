@@ -61,7 +61,7 @@ module Hecks
       versioner = Versioner.new(".")
       version = versioner.next
 
-      generator = Generators::DomainGemGenerator.new(domain, version: version)
+      generator = Generators::Infrastructure::DomainGemGenerator.new(domain, version: version)
       output = generator.generate
 
       say "Built #{domain.gem_name} v#{version}", :green
@@ -125,7 +125,7 @@ module Hecks
       end
 
       # Generate migration
-      migration_gen = Generators::SqlMigrationGenerator.new(domain)
+      migration_gen = Generators::SQL::SqlMigrationGenerator.new(domain)
       migration = migration_gen.generate
 
       FileUtils.mkdir_p("db")
@@ -136,7 +136,7 @@ module Hecks
       gem_dir = gem_name
       if Dir.exist?(gem_dir)
         domain.aggregates.each do |agg|
-          adapter_gen = Generators::SqlAdapterGenerator.new(agg, domain_module: mod)
+          adapter_gen = Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: mod)
           path = File.join(gem_dir, "lib/#{gem_name}/adapters/#{Hecks::Utils.underscore(agg.name)}_sql_repository.rb")
           FileUtils.mkdir_p(File.dirname(path))
           File.write(path, adapter_gen.generate)

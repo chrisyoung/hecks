@@ -2,7 +2,7 @@
 #
 # DSL builder for aggregate definitions. Collects attributes, value objects,
 # commands, policies, validations, and invariants, then builds a
-# DomainModel::Aggregate. Automatically infers domain events from commands.
+# DomainModel::Structure::Aggregate. Automatically infers domain events from commands.
 #
 # The workhorse of the DSL layer -- used inside domain, context, and session
 # blocks to define aggregate roots.
@@ -52,20 +52,20 @@ module Hecks
       end
 
       def validation(field, rules)
-        @validations << DomainModel::Validation.new(field: field, rules: rules)
+        @validations << DomainModel::Structure::Validation.new(field: field, rules: rules)
       end
 
       def invariant(message, &block)
-        @invariants << DomainModel::Invariant.new(message: message, block: block)
+        @invariants << DomainModel::Structure::Invariant.new(message: message, block: block)
       end
 
       def scope(name, conditions_or_lambda = nil, &block)
         conditions = block || conditions_or_lambda
-        @scopes << DomainModel::Scope.new(name: name, conditions: conditions)
+        @scopes << DomainModel::Structure::Scope.new(name: name, conditions: conditions)
       end
 
       def query(name, &block)
-        @queries << DomainModel::Query.new(name: name, block: block)
+        @queries << DomainModel::Behavior::Query.new(name: name, block: block)
       end
 
       def port(name, &block)
@@ -77,7 +77,7 @@ module Hecks
       def build
         events = infer_events
 
-        DomainModel::Aggregate.new(
+        DomainModel::Structure::Aggregate.new(
           name: @name,
           attributes: @attributes,
           value_objects: @value_objects,
@@ -96,7 +96,7 @@ module Hecks
 
       def infer_events
         @commands.map do |command|
-          DomainModel::DomainEvent.new(
+          DomainModel::Behavior::DomainEvent.new(
             name: command.inferred_event_name,
             attributes: command.attributes
           )

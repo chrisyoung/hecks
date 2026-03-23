@@ -34,7 +34,7 @@ RSpec.describe Hecks::Services::Application do
   before do
     # Generate and load the domain gem so classes are available
     tmpdir = Dir.mktmpdir("hecks_services_test")
-    gen = Hecks::Generators::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
+    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
     gem_path = gen.generate
     lib_path = File.join(gem_path, "lib")
     $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)

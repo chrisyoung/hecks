@@ -1,12 +1,12 @@
 require "spec_helper"
 
-RSpec.describe Hecks::DomainModel::Domain do
+RSpec.describe Hecks::DomainModel::Structure::Domain do
   subject(:domain) do
     described_class.new(name: "Pizzas", aggregates: [aggregate])
   end
 
   let(:aggregate) do
-    Hecks::DomainModel::Aggregate.new(name: "Pizza", attributes: [])
+    Hecks::DomainModel::Structure::Aggregate.new(name: "Pizza", attributes: [])
   end
 
   describe "#module_name" do
