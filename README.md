@@ -813,19 +813,56 @@ Or if you have unsaved changes:
 You have unsaved changes. Run session.apply! to update model files.
 ```
 
+## Serve Your Domain
+
+One command to serve any domain as an API:
+
+```bash
+hecks serve pizzas_domain              # REST API + SSE on port 9292
+hecks serve pizzas_domain --rpc        # JSON-RPC
+hecks serve pizzas_domain --mcp        # MCP for AI agents
+hecks serve pizzas_domain --port 3001  # custom port
+```
+
+REST endpoints are generated from your DSL:
+
+```
+GET    /pizzas              → all pizzas
+GET    /pizzas/:id          → find by ID
+POST   /pizzas              → create (JSON body)
+PATCH  /pizzas/:id          → update
+DELETE /pizzas/:id          → delete
+GET    /pizzas/classics     → named lookup
+GET    /events              → SSE event stream
+```
+
+No code, no controllers, no routes file. The DSL is the API.
+
+## AI Tooling
+
+```bash
+hecks mcp                     # MCP server for building domains
+hecks serve domain --mcp      # MCP server for using domains
+```
+
+An AI agent can build a domain through MCP tools (`create_session`, `add_aggregate`, `validate`, `serve_domain`), or use an existing domain's commands and queries as tools.
+
 ## CLI Reference
 
 | Command | Description |
 |---|---|
-| `hecks new NAME` | Create a new domain project |
-| `hecks build` | Generate the domain gem (CalVer auto-stamped, e.g. `2026.03.20.1`) |
+| `hecks init [NAME]` | Create a new domain project |
+| `hecks build` | Generate the domain gem (CalVer auto-stamped) |
 | `hecks validate` | Validate the domain definition |
+| `hecks serve DOMAIN` | Serve domain as REST API + SSE |
+| `hecks serve DOMAIN --rpc` | Serve as JSON-RPC |
+| `hecks serve DOMAIN --mcp` | Serve as MCP tools for AI |
+| `hecks mcp` | MCP server for building domains |
+| `hecks console` | Start interactive REPL |
 | `hecks generate:sql` | Generate SQL schema and adapters |
-| `hecks generate:migrations` | Generate incremental SQL migrations from domain changes |
-| `hecks db:migrate` | Run pending Hecks SQL migrations |
+| `hecks generate:migrations` | Generate incremental SQL migrations |
+| `hecks db:migrate` | Run pending SQL migrations |
 | `hecks version` | Show current domain version |
-| `hecks console` | Start interactive REPL (auto-detects Rails) |
-| `hecks console NAME` | Start REPL with a new named session |
 
 ## Simple API
 

@@ -27,3 +27,14 @@ Three separate domains (pizzas, billing, shipping) sharing one event bus. When a
 ```bash
 ruby -Ilib examples/multi_domain/app.rb
 ```
+
+## Serving any domain
+
+From any directory with a `domain.rb`:
+
+```bash
+hecks serve                    # REST API + SSE on port 9292
+hecks serve --rpc              # JSON-RPC
+hecks serve --mcp              # MCP for AI agents
+hecks serve examples/pizzas    # serve from a path
+```
