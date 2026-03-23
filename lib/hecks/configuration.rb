@@ -6,9 +6,16 @@
 #   adapter :sql, database: :mysql, host: "localhost", name: "pizzas"
 #
 require "fileutils"
+require_relative "configuration/database_connection"
+require_relative "configuration/domain_loader"
+require_relative "configuration/sql_setup"
 
 module Hecks
   class Configuration
+    include DatabaseConnection
+    include DomainLoader
+    include SqlSetup
+
     attr_reader :apps
 
     def initialize
@@ -60,6 +67,7 @@ module Hecks
     def app
       @apps.values.first
     end
+
     private
 
     def boot_domain(d)
@@ -98,95 +106,6 @@ module Hecks
           Services::Querying::AdHocQueries.bind(agg_class, app[agg.name])
         end
       end
-    end
-
-    def load_domain(d)
-      if d[:path]
-        load_from_path(d)
-      else
-        load_from_gem(d)
-      end
-    end
-
-    def load_from_path(d)
-      base = if defined?(::Rails)
-               ::Rails.root.join(d[:path]).to_s
-             else
-               File.expand_path(d[:path])
-             end
-
-      domain_file = File.join(base, "hecks_domain.rb")
-      domain_obj = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
-      domain_obj.source_path = domain_file
-
-      gem_path = Hecks.build(domain_obj, output_dir: base)
-      lib_path = File.join(gem_path, "lib")
-      $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-      require d[:gem_name]
-      Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
-      domain_module = Object.const_get(domain_obj.module_name + "Domain")
-      [domain_obj, domain_module]
-    end
-
-    def load_from_gem(d)
-      gem d[:gem_name], d[:version] if d[:version]
-      require d[:gem_name]
-
-      gem_path = if Gem.loaded_specs[d[:gem_name]]
-                   Gem.loaded_specs[d[:gem_name]].full_gem_path
-                 elsif defined?(::Rails)
-                   ::Rails.root.join(d[:gem_name]).to_s
-                 else
-                   File.join(Dir.pwd, d[:gem_name])
-                 end
-
-      domain_file = File.join(gem_path, "hecks_domain.rb")
-      domain_obj = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
-      domain_obj.source_path = domain_file
-      domain_module = Object.const_get(domain_obj.module_name + "Domain")
-      [domain_obj, domain_module]
-    end
-
-    def generate_adapters(domain_obj)
-      domain_obj.aggregates.each do |agg|
-        gen = Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: domain_obj.module_name + "Domain")
-        eval(gen.generate, TOPLEVEL_BINDING, "(hecks:sql:#{agg.name})")
-      end
-    end
-
-    def connect_database
-      require "sequel"
-
-      if @adapter_options[:url]
-        Sequel.connect(@adapter_options[:url])
-      elsif @adapter_options[:database]
-        connect_by_type(@adapter_options)
-      elsif defined?(::Rails)
-        connect_from_rails
-      else
-        Sequel.sqlite
-      end
-    end
-
-    def connect_by_type(opts)
-      case opts[:database]
-      when :mysql
-        Sequel.connect(adapter: :mysql2, host: opts[:host] || "localhost",
-          user: opts[:user] || "root", password: opts[:password], database: opts[:name])
-      when :postgres
-        Sequel.connect(adapter: :postgres, host: opts[:host] || "localhost",
-          user: opts[:user], password: opts[:password], database: opts[:name])
-      when :sqlite
-        Sequel.sqlite(opts[:name])
-      else
-        raise "Unknown database type: #{opts[:database]}. Use :sqlite, :mysql, or :postgres."
-      end
-    end
-
-    def connect_from_rails
-      db_config = ActiveRecord::Base.connection_db_config
-      url = db_config.try(:url) || db_config.configuration_hash[:url]
-      url ? Sequel.connect(url) : Sequel.sqlite
     end
 
     def activate_rails

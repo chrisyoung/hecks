@@ -12,7 +12,7 @@ module Hecks
       autoload :RepositoryMethods, "hecks/services/persistence/repository_methods"
       autoload :CollectionMethods, "hecks/services/persistence/collection_methods"
       autoload :CollectionProxy,   "hecks/services/persistence/collection_proxy"
-      autoload :CollectionItem,    "hecks/services/persistence/collection_proxy"
+      autoload :CollectionItem,    "hecks/services/persistence/collection_item"
       autoload :ReferenceMethods,  "hecks/services/persistence/reference_methods"
       autoload :EventRecorder,    "hecks/services/persistence/event_recorder"
 
