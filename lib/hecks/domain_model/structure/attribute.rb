@@ -8,14 +8,8 @@
 # and every generator.
 #
 #   attr = Attribute.new(name: :name, type: String)
-#   attr.ruby_type     # => "String"
-#
-#   list_attr = Attribute.new(name: :toppings, type: "Topping", list: true)
-#   list_attr.list?    # => true
-#   list_attr.ruby_type  # => "Array"
-#
-#   ref_attr = Attribute.new(name: :order_id, type: "Order", reference: true)
-#   ref_attr.reference?  # => true
+#   json_attr = Attribute.new(name: :points, type: JSON)
+#   json_attr.json?  # => true
 #
 module Hecks
   module DomainModel
@@ -39,11 +33,17 @@ module Hecks
         @reference
       end
 
+      def json?
+        type == JSON
+      end
+
       def ruby_type
         if reference?
           "String"
         elsif list?
           "Array"
+        elsif json?
+          "JSON"
         else
           type.to_s
         end

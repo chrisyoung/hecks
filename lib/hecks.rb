@@ -1,5 +1,7 @@
 # Hecks — Top-level entry point and autoload registry for the Hecks framework.
 #
+require "json"
+
 module Hecks
   class PortAccessDenied < StandardError; end
 
