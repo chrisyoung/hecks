@@ -42,8 +42,8 @@ module ShippingDomain
           results = results.sort_by { |obj| val = obj.respond_to?(order_key) ? obj.send(order_key) : nil; val.nil? ? "" : val }
           results = results.reverse if order_direction == :desc
         end
-        results = results.drop(offset) if offset
-        results = results.take(limit) if limit
+        results = results.drop([offset, 0].max) if offset
+        results = results.take([limit, 0].max) if limit
         results
       end
 

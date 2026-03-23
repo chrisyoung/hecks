@@ -8,7 +8,7 @@ module ShippingDomain
 
     module Events
       autoload :CreatedShipment, "shipping_domain/shipment/events/created_shipment"
-      autoload :ShipedShipment, "shipping_domain/shipment/events/shiped_shipment"
+      autoload :ShippedShipment, "shipping_domain/shipment/events/shipped_shipment"
     end
 
     module Policies

@@ -33,7 +33,13 @@ module Hecks
               opts = { domain_module: mod }
               parts << source_for(Domain::AggregateGenerator, agg, **opts)
               AGGREGATE_GENERATORS.each do |method, gen|
-                agg.send(method).each { |obj| parts << source_for(gen, obj, aggregate_name: safe_name, **opts) }
+                if method == :commands
+                  agg.commands.each_with_index do |cmd, i|
+                    parts << source_for(gen, cmd, aggregate_name: safe_name, aggregate: agg, event: agg.events[i], **opts)
+                  end
+                else
+                  agg.send(method).each { |obj| parts << source_for(gen, obj, aggregate_name: safe_name, **opts) }
+                end
               end
               parts << source_for(Infrastructure::PortGenerator, agg, **opts)
               parts << source_for(Infrastructure::MemoryAdapterGenerator, agg, **opts)

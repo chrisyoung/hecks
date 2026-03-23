@@ -4,6 +4,10 @@ Hecks.domain "Billing" do
     attribute :quantity, Integer
     attribute :status, String
 
+    query "Pending" do
+      true
+    end
+
     command "CreateInvoice" do
       attribute :pizza_id, String
       attribute :quantity, Integer

@@ -73,7 +73,7 @@
         }
       }
     },
-    "ShipedShipment": {
+    "ShippedShipment": {
       "type": "object",
       "properties": {
         "occurred_at": {

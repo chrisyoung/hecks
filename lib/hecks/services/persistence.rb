@@ -28,6 +28,16 @@ module Hecks
         klass.define_singleton_method(:history) do |id|
           recorder.history(agg_type, id)
         end
+
+        # Wire recorder into command classes
+        cmd_mod = klass.const_get(:Commands) rescue nil
+        return unless cmd_mod
+        cmd_mod.constants.each do |name|
+          cmd_class = cmd_mod.const_get(name)
+          next unless cmd_class.respond_to?(:event_recorder=)
+          cmd_class.event_recorder = recorder
+          cmd_class.aggregate_type = agg_type
+        end
       end
     end
   end
