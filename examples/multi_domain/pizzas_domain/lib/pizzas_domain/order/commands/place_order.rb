@@ -1,10 +1,7 @@
-require 'hecks/command'
-
 module PizzasDomain
   class Order
     module Commands
       class PlaceOrder
-        include Hecks::Command
         emits "PlacedOrder"
 
         attr_reader :pizza_id, :quantity

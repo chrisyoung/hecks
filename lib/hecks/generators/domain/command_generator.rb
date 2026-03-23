@@ -25,13 +25,10 @@ module Hecks
 
       def generate
         lines = []
-        lines << "require 'hecks/command'"
-        lines << ""
         lines << "module #{@domain_module}"
         lines << "  class #{@aggregate_name}"
         lines << "    module Commands"
         lines << "      class #{@command.name}"
-        lines << "        include Hecks::Command"
         lines << "        emits \"#{@event.name}\"" if @event
         lines << ""
         lines << "        attr_reader #{@command.attributes.map { |a| ":#{a.name}" }.join(", ")}"

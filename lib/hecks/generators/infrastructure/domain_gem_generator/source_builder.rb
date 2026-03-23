@@ -35,7 +35,13 @@ module Hecks
               AGGREGATE_GENERATORS.each do |method, gen|
                 if method == :commands
                   agg.commands.each_with_index do |cmd, i|
-                    parts << source_for(gen, cmd, aggregate_name: safe_name, aggregate: agg, event: agg.events[i], **opts)
+                    src = source_for(gen, cmd, aggregate_name: safe_name, aggregate: agg, event: agg.events[i], **opts)
+                    parts << inject_mixin(src, cmd.name, "Hecks::Command")
+                  end
+                elsif method == :queries
+                  agg.send(method).each do |obj|
+                    src = source_for(gen, obj, aggregate_name: safe_name, **opts)
+                    parts << inject_mixin(src, obj.name, "Hecks::Query")
                   end
                 else
                   agg.send(method).each { |obj| parts << source_for(gen, obj, aggregate_name: safe_name, **opts) }
@@ -48,6 +54,12 @@ module Hecks
           end
 
           def source_for(klass, obj, **opts) = klass.new(obj, **opts).generate
+
+          # For eval-based loading, inject include line since const_missing
+          # (which auto-includes for file-based gems) doesn't fire.
+          def inject_mixin(source, class_name, mixin)
+            source.sub("class #{class_name}\n", "class #{class_name}\n        include #{mixin}\n")
+          end
         end
       end
     end

@@ -1,10 +1,7 @@
-require 'hecks/command'
-
 module PizzasDomain
   class Pizza
     module Commands
       class CreatePizza
-        include Hecks::Command
         emits "CreatedPizza"
 
         attr_reader :name, :style, :price

@@ -30,7 +30,12 @@ module Hecks
           entry = File.join(lib_path, "#{@domain.gem_name}.rb")
           load entry
 
-          Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+          # Load non-command/query files eagerly. Commands and queries are
+          # loaded lazily via const_missing which auto-includes their mixins.
+          Dir[File.join(lib_path, "**/*.rb")].sort.each do |f|
+            next if f.include?("/commands/") || f.include?("/queries/")
+            load f
+          end
         end
       end
     end

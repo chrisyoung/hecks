@@ -83,20 +83,38 @@ module Hecks
 
     def check_invariants!; end
 
-    # Auto-discovery: creates a submodule that autoloads constants by convention.
+    MIXINS = {
+      Commands: -> { Hecks::Command },
+      Queries:  -> { Hecks::Query },
+    }.freeze
+
+    # Auto-discovery: creates a submodule that autoloads constants by convention
+    # and auto-includes the appropriate mixin (Hecks::Command, Hecks::Query).
     def self.create_submodule(base, type)
       return if base.const_defined?(type, false)
 
       mod = Module.new
       type_dir = Hecks::Utils.underscore(type.to_s)
+      mixin_proc = MIXINS[type]
 
       mod.define_singleton_method(:const_missing) do |name|
         parts = base.name.split("::")
         gem_name = Hecks::Utils.underscore(parts.first)
         agg_name = Hecks::Utils.underscore(parts.last)
         file_name = Hecks::Utils.underscore(name.to_s)
-        require "#{gem_name}/#{agg_name}/#{type_dir}/#{file_name}"
-        const_get(name)
+
+        if mixin_proc
+          # Pre-create class with mixin so DSL methods (emits, where, etc.)
+          # are available when the file is loaded and reopens the class.
+          klass = Class.new
+          const_set(name, klass)
+          klass.include(mixin_proc.call)
+          require "#{gem_name}/#{agg_name}/#{type_dir}/#{file_name}"
+          klass
+        else
+          require "#{gem_name}/#{agg_name}/#{type_dir}/#{file_name}"
+          const_get(name)
+        end
       end
 
       base.const_set(type, mod)
