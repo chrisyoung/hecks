@@ -3,13 +3,10 @@
 module Hecks
   class CLI < Thor
     desc "validate", "Validate the domain definition"
+    option :domain, type: :string, desc: "Domain gem name or path"
     def validate
-      domain_file = find_domain_file
-      unless domain_file
-        say "No domain.rb found in current directory", :red
-        return
-      end
-      domain = load_domain(domain_file)
+      domain = resolve_domain_option
+      return unless domain
       validator = Validator.new(domain)
       if validator.valid?
         say "Domain is valid", :green

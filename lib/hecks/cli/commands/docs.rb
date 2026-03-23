@@ -2,14 +2,12 @@
 #
 module Hecks
   class CLI < Thor
-    desc "docs [DOMAIN]", "Serve API documentation (Swagger UI)"
+    desc "docs", "Serve API documentation (Swagger UI)"
+    option :domain, type: :string, desc: "Domain gem name or path"
     option :port, type: :numeric, default: 9393, desc: "Port"
-    def docs(domain_path = nil)
-      domain = resolve_domain(domain_path)
-      unless domain
-        say "No domain found", :red
-        return
-      end
+    def docs
+      domain = resolve_domain_option
+      return unless domain
 
       require_relative "../../http/openapi_generator"
       require_relative "../../http/rpc_discovery"
