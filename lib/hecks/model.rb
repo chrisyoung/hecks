@@ -21,10 +21,21 @@ require "securerandom"
 module Hecks
   module Model
     def self.included(base)
+      base.attr_reader :id, :created_at, :updated_at
       create_submodule(base, :Commands)
       create_submodule(base, :Events)
       create_submodule(base, :Queries)
       create_submodule(base, :Policies)
+    end
+
+    # Timestamps — set by persistence layer, not by domain logic
+    def stamp_created!
+      @created_at = Time.now
+      @updated_at = @created_at
+    end
+
+    def stamp_updated!
+      @updated_at = Time.now
     end
 
     # Identity

@@ -103,8 +103,6 @@ module Hecks
           cmd_attr = @command.attributes.find { |c| c.name == a.name }
           parts << "#{a.name}: #{a.name}" if cmd_attr
         end
-        parts << "created_at: Time.now"
-        parts << "updated_at: Time.now"
         parts.join(", ")
       end
 
@@ -118,8 +116,6 @@ module Hecks
             parts << "#{a.name}: existing.#{a.name}"
           end
         end
-        parts << "created_at: existing.created_at"
-        parts << "updated_at: Time.now"
         parts.join(", ")
       end
 

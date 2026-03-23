@@ -67,6 +67,11 @@ module Hecks
 
     def save(agg)
       @aggregate = agg
+      if agg.respond_to?(:stamp_created!) && agg.created_at.nil?
+        agg.stamp_created!
+      elsif agg.respond_to?(:stamp_updated!)
+        agg.stamp_updated!
+      end
       repository.save(agg)
       agg
     end

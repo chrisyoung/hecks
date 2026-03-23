@@ -17,9 +17,9 @@ module PizzasDomain
         def call
           existing = repository.find(pizza_id)
           if existing
-            save Order.new(id: existing.id, pizza_id: pizza_id, quantity: quantity, created_at: existing.created_at, updated_at: Time.now)
+            save Order.new(id: existing.id, pizza_id: pizza_id, quantity: quantity)
           else
-            save Order.new(pizza_id: pizza_id, quantity: quantity, created_at: Time.now, updated_at: Time.now)
+            save Order.new(pizza_id: pizza_id, quantity: quantity)
           end
         end
       end

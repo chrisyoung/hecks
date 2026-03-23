@@ -27,6 +27,9 @@ module ActiveHecks
         next unless name
         hash[name.to_s] = send(name) if respond_to?(name)
       end
+      %i[created_at updated_at].each do |ts|
+        hash[ts.to_s] = send(ts) if respond_to?(ts) && !hash.key?(ts.to_s)
+      end
       hash
     end
 

@@ -1,9 +1,7 @@
 # Hecks::Generators::Domain::AggregateGenerator::ConstructorGeneration
 #
 # Mixin that generates initialize method and constructor parameters for aggregates.
-#
-# Handles both keyword-style (when attribute names clash with Ruby keywords)
-# and standard keyword argument constructors.
+# Timestamps (created_at, updated_at) are handled by the persistence layer.
 #
 #   class AggregateGenerator
 #     include ConstructorGeneration
@@ -30,8 +28,6 @@ module Hecks
                   lines << "      @#{attr.name} = kwargs[:#{attr.name}]"
                 end
               end
-              lines << "      @created_at = kwargs[:created_at] || Time.now"
-              lines << "      @updated_at = kwargs[:updated_at] || Time.now"
             else
               lines << "    def initialize(#{constructor_params})"
               lines << "      @id = id || generate_id"
@@ -42,8 +38,6 @@ module Hecks
                   lines << "      @#{attr.name} = #{attr.name}"
                 end
               end
-              lines << "      @created_at = created_at || Time.now"
-              lines << "      @updated_at = updated_at || Time.now"
             end
             lines << "      validate!"
             lines << "      check_invariants!"
@@ -62,8 +56,6 @@ module Hecks
               end
             end
             params << "id: nil"
-            params << "created_at: nil"
-            params << "updated_at: nil"
             params.join(", ")
           end
         end

@@ -66,11 +66,15 @@ module Hecks
       end
 
       def serialize(obj)
-        obj.class.instance_method(:initialize).parameters.each_with_object({}) do |(_, name), h|
+        h = {}
+        obj.class.instance_method(:initialize).parameters.each do |(_, name)|
           next unless name && obj.respond_to?(name)
-          val = obj.send(name)
-          h[name.to_s] = serialize_value(val)
+          h[name.to_s] = serialize_value(obj.send(name))
         end
+        %i[created_at updated_at].each do |ts|
+          h[ts.to_s] = serialize_value(obj.send(ts)) if obj.respond_to?(ts) && !h.key?(ts.to_s)
+        end
+        h
       end
 
       def serialize_value(val)

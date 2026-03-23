@@ -38,14 +38,14 @@ module Hecks
         klass.define_singleton_method(:last) { all.last }
 
         klass.define_singleton_method(:create) do |**attrs|
-          now = Time.now
-          constructor_attrs = { created_at: now, updated_at: now }
+          constructor_attrs = {}
           instance_method(:initialize).parameters
             .select { |type, _| type == :key || type == :keyreq }
             .map { |_, name| name }
-            .reject { |n| [:id, :created_at, :updated_at].include?(n) }
+            .reject { |n| [:id].include?(n) }
             .each { |param| constructor_attrs[param] = attrs.key?(param) ? attrs[param] : nil }
           aggregate = new(**constructor_attrs)
+          aggregate.stamp_created! if aggregate.respond_to?(:stamp_created!)
           repo.save(aggregate)
           aggregate
         end
@@ -68,19 +68,17 @@ module Hecks
 
         klass.define_method(:update) do |**new_attrs|
           return self if destroyed?
-          constructor_attrs = {
-            id: id,
-            created_at: (created_at if respond_to?(:created_at)),
-            updated_at: Time.now
-          }
+          constructor_attrs = { id: id }
           self.class.instance_method(:initialize).parameters.each do |_, param_name|
             next unless param_name
-            next if [:id, :created_at, :updated_at].include?(param_name)
+            next if [:id].include?(param_name)
             if respond_to?(param_name)
               constructor_attrs[param_name] = new_attrs.key?(param_name) ? new_attrs[param_name] : send(param_name)
             end
           end
           updated = self.class.new(**constructor_attrs)
+          updated.instance_variable_set(:@created_at, created_at) if respond_to?(:created_at)
+          updated.stamp_updated! if updated.respond_to?(:stamp_updated!)
           repo.save(updated)
           updated
         end
