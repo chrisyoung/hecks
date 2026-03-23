@@ -67,13 +67,16 @@ module Hecks
       end
 
       def boot_domain
-        tmpdir = Dir.mktmpdir("hecks_rpc")
-        gem_path = Hecks.build(@domain, output_dir: tmpdir)
-        lib_path = File.join(gem_path, "lib")
-        $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-        require @domain.gem_name
-        Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| require f }
-        @mod = Object.const_get(@domain.module_name + "Domain")
+        mod_name = @domain.module_name + "Domain"
+        unless Object.const_defined?(mod_name)
+          tmpdir = Dir.mktmpdir("hecks_rpc")
+          gem_path = Hecks.build(@domain, output_dir: tmpdir)
+          lib_path = File.join(gem_path, "lib")
+          $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+          require @domain.gem_name
+          Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| require f }
+        end
+        @mod = Object.const_get(mod_name)
         @app = Services::Application.new(@domain)
       end
 

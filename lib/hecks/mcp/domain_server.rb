@@ -37,13 +37,18 @@ module Hecks
       end
 
       def build_and_load
-        @tmpdir = Dir.mktmpdir("hecks_mcp_domain")
-        gem_path = Hecks.build(@domain, output_dir: @tmpdir)
-        lib_path = File.join(gem_path, "lib")
-        $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-        require @domain.gem_name
-        Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| require f }
-        @mod = Object.const_get(@domain.module_name + "Domain")
+        mod_name = @domain.module_name + "Domain"
+        if Object.const_defined?(mod_name)
+          @mod = Object.const_get(mod_name)
+        else
+          @tmpdir = Dir.mktmpdir("hecks_mcp_domain")
+          gem_path = Hecks.build(@domain, output_dir: @tmpdir)
+          lib_path = File.join(gem_path, "lib")
+          $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+          require @domain.gem_name
+          Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| require f }
+          @mod = Object.const_get(mod_name)
+        end
       end
 
       def boot_application
