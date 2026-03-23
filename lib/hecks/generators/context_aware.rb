@@ -1,4 +1,4 @@
-# Hecks::Generators::ContextAware
+# Hecks::Generators::Infrastructure::ContextAware
 #
 # Mixin for generators that need to handle optional bounded context nesting.
 # Provides helpers for module wrapping, file path prefixes, and indentation

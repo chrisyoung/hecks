@@ -8,12 +8,12 @@ RSpec.describe "Validator DDD rules" do
 
   describe "aggregate must have at least one command" do
     it "rejects aggregates with no commands" do
-      domain = Hecks::DomainModel::Domain.new(
+      domain = Hecks::DomainModel::Structure::Domain.new(
         name: "Bad",
         aggregates: [
-          Hecks::DomainModel::Aggregate.new(
+          Hecks::DomainModel::Structure::Aggregate.new(
             name: "Widget",
-            attributes: [Hecks::DomainModel::Attribute.new(name: :name, type: String)]
+            attributes: [Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)]
           )
         ]
       )
@@ -48,19 +48,19 @@ RSpec.describe "Validator DDD rules" do
 
   describe "command names should be verb phrases" do
     it "warns when command name doesn't start with a verb" do
-      domain = Hecks::DomainModel::Domain.new(
+      domain = Hecks::DomainModel::Structure::Domain.new(
         name: "Bad",
         aggregates: [
-          Hecks::DomainModel::Aggregate.new(
+          Hecks::DomainModel::Structure::Aggregate.new(
             name: "Pizza",
-            attributes: [Hecks::DomainModel::Attribute.new(name: :name, type: String)],
+            attributes: [Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)],
             commands: [
-              Hecks::DomainModel::Command.new(
+              Hecks::DomainModel::Behavior::Command.new(
                 name: "PizzaOrder",
-                attributes: [Hecks::DomainModel::Attribute.new(name: :name, type: String)]
+                attributes: [Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)]
               )
             ],
-            events: [Hecks::DomainModel::DomainEvent.new(name: "PizzaOrdered", attributes: [])]
+            events: [Hecks::DomainModel::Behavior::DomainEvent.new(name: "PizzaOrdered", attributes: [])]
           )
         ]
       )
@@ -148,22 +148,22 @@ RSpec.describe "Validator DDD rules" do
 
   describe "aggregate and value object name collision" do
     it "rejects when a value object has the same name as its aggregate" do
-      domain = Hecks::DomainModel::Domain.new(
+      domain = Hecks::DomainModel::Structure::Domain.new(
         name: "Bad",
         aggregates: [
-          Hecks::DomainModel::Aggregate.new(
+          Hecks::DomainModel::Structure::Aggregate.new(
             name: "Pizza",
-            attributes: [Hecks::DomainModel::Attribute.new(name: :name, type: String)],
+            attributes: [Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)],
             value_objects: [
-              Hecks::DomainModel::ValueObject.new(name: "Pizza", attributes: [])
+              Hecks::DomainModel::Structure::ValueObject.new(name: "Pizza", attributes: [])
             ],
             commands: [
-              Hecks::DomainModel::Command.new(
+              Hecks::DomainModel::Behavior::Command.new(
                 name: "CreatePizza",
-                attributes: [Hecks::DomainModel::Attribute.new(name: :name, type: String)]
+                attributes: [Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)]
               )
             ],
-            events: [Hecks::DomainModel::DomainEvent.new(name: "CreatedPizza", attributes: [])]
+            events: [Hecks::DomainModel::Behavior::DomainEvent.new(name: "CreatedPizza", attributes: [])]
           )
         ]
       )

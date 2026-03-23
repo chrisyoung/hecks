@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Generators::SqlMigrationGenerator do
+RSpec.describe Hecks::Generators::SQL::SqlMigrationGenerator do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do

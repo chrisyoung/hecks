@@ -40,7 +40,7 @@ module Hecks
       end
 
       def build
-        DomainModel::BoundedContext.new(name: @name, aggregates: @aggregates)
+        DomainModel::Structure::BoundedContext.new(name: @name, aggregates: @aggregates)
       end
     end
   end

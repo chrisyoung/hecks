@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::DomainModel::Command do
+RSpec.describe Hecks::DomainModel::Behavior::Command do
   subject(:command) do
     described_class.new(name: "CreatePizza", attributes: [])
   end

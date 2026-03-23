@@ -54,13 +54,13 @@ module Hecks
         if @contexts.any?
           # If there are also bare aggregates, wrap them in a Default context
           if @aggregates.any?
-            default_ctx = DomainModel::BoundedContext.new(name: "Default", aggregates: @aggregates)
-            DomainModel::Domain.new(name: @name, contexts: [default_ctx] + @contexts)
+            default_ctx = DomainModel::Structure::BoundedContext.new(name: "Default", aggregates: @aggregates)
+            DomainModel::Structure::Domain.new(name: @name, contexts: [default_ctx] + @contexts)
           else
-            DomainModel::Domain.new(name: @name, contexts: @contexts)
+            DomainModel::Structure::Domain.new(name: @name, contexts: @contexts)
           end
         else
-          DomainModel::Domain.new(name: @name, aggregates: @aggregates)
+          DomainModel::Structure::Domain.new(name: @name, aggregates: @aggregates)
         end
       end
     end

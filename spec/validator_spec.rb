@@ -22,11 +22,11 @@ RSpec.describe Hecks::Validator do
 
   describe "duplicate aggregate names" do
     let(:domain) do
-      Hecks::DomainModel::Domain.new(
+      Hecks::DomainModel::Structure::Domain.new(
         name: "Bad",
         aggregates: [
-          Hecks::DomainModel::Aggregate.new(name: "Pizza"),
-          Hecks::DomainModel::Aggregate.new(name: "Pizza")
+          Hecks::DomainModel::Structure::Aggregate.new(name: "Pizza"),
+          Hecks::DomainModel::Structure::Aggregate.new(name: "Pizza")
         ]
       )
     end

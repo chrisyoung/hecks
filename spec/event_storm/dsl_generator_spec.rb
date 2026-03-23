@@ -56,7 +56,7 @@ RSpec.describe Hecks::EventStorm::DslGenerator do
 
   it "generates parseable Ruby DSL" do
     domain = eval(dsl)
-    expect(domain).to be_a(Hecks::DomainModel::Domain)
+    expect(domain).to be_a(Hecks::DomainModel::Structure::Domain)
     expect(domain.name).to eq("PizzaOrdering")
   end
 end

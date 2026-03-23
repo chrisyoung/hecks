@@ -93,14 +93,14 @@ module Hecks
     end
 
     def value_objects
-      @builder.value_objects.map { |vo| vo.is_a?(DomainModel::ValueObject) ? vo.name : vo.build.name }
+      @builder.value_objects.map { |vo| vo.is_a?(DomainModel::Structure::ValueObject) ? vo.name : vo.build.name }
     end
 
     # Show the generated code for this aggregate
     def preview
       agg = @builder.build
       domain_module = @domain_module || "Domain"
-      gen = Generators::AggregateGenerator.new(agg, domain_module: domain_module)
+      gen = Generators::Domain::AggregateGenerator.new(agg, domain_module: domain_module)
       puts gen.generate
       nil
     end

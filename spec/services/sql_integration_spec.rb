@@ -80,7 +80,7 @@ RSpec.describe "SQL adapter integration" do
     SQL
 
     # Generate and load domain gem
-    gen = Hecks::Generators::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
+    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
     gem_path = gen.generate
     lib_path = File.join(gem_path, "lib")
     $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
@@ -89,7 +89,7 @@ RSpec.describe "SQL adapter integration" do
 
     # Generate SQL adapters in memory
     domain.aggregates.each do |agg|
-      gen = Hecks::Generators::SqlAdapterGenerator.new(agg, domain_module: "PizzasDomain")
+      gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "PizzasDomain")
       eval(gen.generate, TOPLEVEL_BINDING)
     end
 

@@ -1,26 +1,26 @@
 require "spec_helper"
 
-RSpec.describe Hecks::DomainModel::Aggregate do
+RSpec.describe Hecks::DomainModel::Structure::Aggregate do
   subject(:aggregate) do
     described_class.new(
       name: "Pizza",
       attributes: [name_attr],
       value_objects: [topping],
       commands: [create_command],
-      validations: [Hecks::DomainModel::Validation.new(field: :name, rules: { presence: true })]
+      validations: [Hecks::DomainModel::Structure::Validation.new(field: :name, rules: { presence: true })]
     )
   end
 
   let(:name_attr) do
-    Hecks::DomainModel::Attribute.new(name: :name, type: String)
+    Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)
   end
 
   let(:topping) do
-    Hecks::DomainModel::ValueObject.new(name: "Topping", attributes: [])
+    Hecks::DomainModel::Structure::ValueObject.new(name: "Topping", attributes: [])
   end
 
   let(:create_command) do
-    Hecks::DomainModel::Command.new(name: "CreatePizza", attributes: [name_attr])
+    Hecks::DomainModel::Behavior::Command.new(name: "CreatePizza", attributes: [name_attr])
   end
 
   describe "#value_objects" do

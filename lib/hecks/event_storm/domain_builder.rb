@@ -1,6 +1,6 @@
 # Hecks::EventStorm::DomainBuilder
 #
-# Builds a DomainModel::Domain from a Parser::ParseResult. Groups commands
+# Builds a DomainModel::Structure::Domain from a Parser::ParseResult. Groups commands
 # under their aggregates, wires policies, attaches read models and external
 # systems, and validates that event names match command inferences.
 #
@@ -21,14 +21,14 @@ module Hecks
 
       def build
         contexts = @parse_result.contexts.map { |ctx| build_context(ctx) }
-        DomainModel::Domain.new(name: @name, contexts: contexts)
+        DomainModel::Structure::Domain.new(name: @name, contexts: contexts)
       end
 
       private
 
       def build_context(parsed_context)
         aggregates = group_by_aggregate(parsed_context.elements)
-        DomainModel::BoundedContext.new(
+        DomainModel::Structure::BoundedContext.new(
           name: parsed_context.name,
           aggregates: aggregates
         )
@@ -69,7 +69,7 @@ module Hecks
           commands += unassigned_commands if agg_name == all_agg_names.first && !unassigned_commands.empty?
           policies = aggregate_policies.fetch(agg_name, [])
 
-          DomainModel::Aggregate.new(
+          DomainModel::Structure::Aggregate.new(
             name: agg_name,
             commands: commands,
             events: infer_events(commands),
@@ -80,13 +80,13 @@ module Hecks
 
       def build_command(element)
         read_models = (element.meta[:read_models] || []).map do |name|
-          DomainModel::ReadModel.new(name: name)
+          DomainModel::Structure::ReadModel.new(name: name)
         end
         externals = (element.meta[:external_systems] || []).map do |name|
-          DomainModel::ExternalSystem.new(name: name)
+          DomainModel::Structure::ExternalSystem.new(name: name)
         end
 
-        DomainModel::Command.new(
+        DomainModel::Behavior::Command.new(
           name: element.name,
           read_models: read_models,
           external_systems: externals
@@ -94,7 +94,7 @@ module Hecks
       end
 
       def build_policy(element)
-        DomainModel::Policy.new(
+        DomainModel::Behavior::Policy.new(
           name: element.name,
           event_name: element.meta[:event_name],
           trigger_command: element.meta[:trigger]
@@ -111,7 +111,7 @@ module Hecks
 
       def infer_events(commands)
         commands.map do |cmd|
-          DomainModel::DomainEvent.new(
+          DomainModel::Behavior::DomainEvent.new(
             name: cmd.inferred_event_name,
             attributes: cmd.attributes
           )
@@ -124,7 +124,7 @@ module Hecks
 
         inferred = {}
         commands.each do |cmd|
-          dummy = DomainModel::Command.new(name: cmd.name)
+          dummy = DomainModel::Behavior::Command.new(name: cmd.name)
           inferred[dummy.inferred_event_name] = cmd.name
         end
 

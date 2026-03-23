@@ -22,18 +22,18 @@
 module Hecks
   class Validator
     RULES = [
-      ValidationRules::UniqueContextNames,
-      ValidationRules::UniqueAggregateNames,
-      ValidationRules::NameCollisions,
-      ValidationRules::ValidReferences,
-      ValidationRules::NoBidirectionalReferences,
-      ValidationRules::NoSelfReferences,
-      ValidationRules::NoValueObjectReferences,
-      ValidationRules::AggregatesHaveCommands,
-      ValidationRules::CommandNaming,
-      ValidationRules::CommandsHaveAttributes,
-      ValidationRules::ValidPolicyEvents,
-      ValidationRules::ValidPolicyTriggers,
+      ValidationRules::Naming::UniqueContextNames,
+      ValidationRules::Naming::UniqueAggregateNames,
+      ValidationRules::Naming::NameCollisions,
+      ValidationRules::Naming::CommandNaming,
+      ValidationRules::References::ValidReferences,
+      ValidationRules::References::NoBidirectionalReferences,
+      ValidationRules::References::NoSelfReferences,
+      ValidationRules::References::NoValueObjectReferences,
+      ValidationRules::Structure::AggregatesHaveCommands,
+      ValidationRules::Structure::CommandsHaveAttributes,
+      ValidationRules::Structure::ValidPolicyEvents,
+      ValidationRules::Structure::ValidPolicyTriggers,
     ].freeze
 
     attr_reader :errors

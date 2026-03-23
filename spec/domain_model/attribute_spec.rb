@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::DomainModel::Attribute do
+RSpec.describe Hecks::DomainModel::Structure::Attribute do
   describe "a simple attribute" do
     subject(:attr) { described_class.new(name: :name, type: String) }
 

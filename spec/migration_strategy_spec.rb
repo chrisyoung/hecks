@@ -86,7 +86,7 @@ RSpec.describe Hecks::MigrationStrategies::SqlStrategy do
     end
 
     it "generates CREATE TABLE for new aggregates" do
-      attr = Hecks::DomainModel::Attribute.new(name: :name, type: String)
+      attr = Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)
       changes = [
         Hecks::DomainDiff::Change.new(
           kind: :add_aggregate,

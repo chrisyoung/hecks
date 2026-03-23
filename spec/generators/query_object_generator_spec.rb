@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Generators::QueryObjectGenerator do
+RSpec.describe Hecks::Generators::Domain::QueryObjectGenerator do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do

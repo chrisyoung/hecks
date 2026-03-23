@@ -1,7 +1,7 @@
 # Hecks::DSL::ValueObjectBuilder
 #
 # DSL builder for value object definitions. Collects attributes and invariants,
-# then builds a DomainModel::ValueObject. Used inside aggregate blocks.
+# then builds a DomainModel::Structure::ValueObject. Used inside aggregate blocks.
 #
 # Part of the DSL layer, nested under AggregateBuilder. The resulting value
 # object is embedded within its parent aggregate.
@@ -24,11 +24,11 @@ module Hecks
       end
 
       def invariant(message, &block)
-        @invariants << DomainModel::Invariant.new(message: message, block: block)
+        @invariants << DomainModel::Structure::Invariant.new(message: message, block: block)
       end
 
       def build
-        DomainModel::ValueObject.new(
+        DomainModel::Structure::ValueObject.new(
           name: @name,
           attributes: @attributes,
           invariants: @invariants

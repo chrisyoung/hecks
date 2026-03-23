@@ -31,7 +31,7 @@ module Hecks
       def build
         raise "Policy '#{@name}': missing 'on' (event name)" unless @event_name
         raise "Policy '#{@name}': missing 'trigger' (command name)" unless @trigger_command
-        DomainModel::Policy.new(
+        DomainModel::Behavior::Policy.new(
           name: @name,
           event_name: @event_name,
           trigger_command: @trigger_command

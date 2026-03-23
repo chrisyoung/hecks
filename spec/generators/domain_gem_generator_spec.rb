@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::Generators::DomainGemGenerator do
+RSpec.describe Hecks::Generators::Infrastructure::DomainGemGenerator do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
