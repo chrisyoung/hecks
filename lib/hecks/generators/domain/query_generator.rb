@@ -1,10 +1,10 @@
 # Hecks::Generators::Domain::QueryGenerator
 #
-# Generates query classes with a call method. Queries are defined in the
-# DSL and auto-wired as class methods on aggregates.
+# Generates query classes with Hecks::Query mixin. The call method
+# contains the query logic using where/order/limit DSL.
 #
 #   gen = QueryGenerator.new(query, domain_module: "PizzasDomain", aggregate_name: "Pizza")
-#   gen.generate  # => "module PizzasDomain\n  class Pizza\n    module Queries\n  ..."
+#   gen.generate
 #
 module Hecks
   module Generators
@@ -19,10 +19,14 @@ module Hecks
 
       def generate
         lines = []
+        lines << "require 'hecks/query'"
+        lines << ""
         lines << "module #{@domain_module}"
         lines << "  class #{@aggregate_name}"
         lines << "    module Queries"
         lines << "      class #{@query.name}"
+        lines << "        include Hecks::Query"
+        lines << ""
         lines << "        def call#{call_params}"
         lines << "          #{call_body}"
         lines << "        end"

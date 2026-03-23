@@ -41,12 +41,28 @@ module Hecks
 
       def wire_query_objects(agg, agg_class)
         repo = @repositories[agg.name]
+        queries_mod = agg_class.const_get(:Queries) rescue nil
+
         agg.queries.each do |query|
           method_name = Hecks::Utils.underscore(query.name).to_sym
-          query_block = query.block
-          agg_class.define_singleton_method(method_name) do |*args|
-            builder = Querying::QueryBuilder.new(repo)
-            builder.instance_exec(*args, &query_block)
+          query_class = begin
+            queries_mod&.const_defined?(query.name, false) && queries_mod.const_get(query.name)
+          rescue StandardError
+            nil
+          end
+
+          if query_class&.respond_to?(:repository=)
+            query_class.repository = repo
+            agg_class.define_singleton_method(method_name) do |*args|
+              query_class.call(*args)
+            end
+          else
+            # Fallback for queries without Hecks::Query mixin
+            query_block = query.block
+            agg_class.define_singleton_method(method_name) do |*args|
+              builder = Querying::QueryBuilder.new(repo)
+              builder.instance_exec(*args, &query_block)
+            end
           end
         end
       end
