@@ -7,6 +7,7 @@
 #   hecks serve:mcp
 #
 require "mcp"
+require "tmpdir"
 
 module Hecks
   module MCP
