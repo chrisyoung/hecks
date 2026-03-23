@@ -7,6 +7,8 @@
 #   Hecks::Services::Querying::AdHocQueries.bind(Pizza, repo)
 #
 #   Pizza.where(style: "Classic").order(:name).limit(5)
+#   Pizza.order(:name).limit(5)
+#   Pizza.limit(10).offset(20)
 #   Pizza.find_by(name: "Margherita")
 #
 module Hecks
@@ -24,6 +26,18 @@ module Hecks
 
       def find_by(**conditions)
         Querying::QueryBuilder.new(@__hecks_repo__).find_by(**conditions)
+      end
+
+      def order(key_or_hash)
+        Querying::QueryBuilder.new(@__hecks_repo__).order(key_or_hash)
+      end
+
+      def limit(n)
+        Querying::QueryBuilder.new(@__hecks_repo__).limit(n)
+      end
+
+      def offset(n)
+        Querying::QueryBuilder.new(@__hecks_repo__).offset(n)
       end
 
       def first
