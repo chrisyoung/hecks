@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::Services::CommandBus do
+RSpec.describe Hecks::Services::Commands::CommandBus do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do

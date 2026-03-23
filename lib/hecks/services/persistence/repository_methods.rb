@@ -1,4 +1,4 @@
-# Hecks::Services::RepositoryMethods
+# Hecks::Services::Persistence::RepositoryMethods
 #
 # Opt-in mixin that provides persistence methods on aggregate classes.
 # Adds ActiveRecord-style class and instance methods for CRUD and queries.
@@ -20,7 +20,8 @@
 #
 module Hecks
   module Services
-    module RepositoryMethods
+    module Persistence
+      module RepositoryMethods
       def self.bind(klass, repo)
         klass.instance_variable_set(:@__hecks_repo__, repo)
         klass.extend(ClassMethods)
@@ -102,6 +103,7 @@ module Hecks
           repo.save(updated)
           updated
         end
+      end
       end
     end
   end

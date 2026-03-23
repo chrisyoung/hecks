@@ -1,4 +1,4 @@
-# Hecks::Services::CollectionProxy
+# Hecks::Services::Persistence::CollectionProxy
 #
 # Wraps a list attribute on an aggregate, providing create/delete/count
 # methods that rebuild the aggregate with the modified collection and
@@ -17,7 +17,8 @@
 #
 module Hecks
   module Services
-    class CollectionProxy
+    module Persistence
+      class CollectionProxy
       include Enumerable
 
       def initialize(items:, owner:, attr_name:, value_object_class:, repo:)
@@ -123,14 +124,10 @@ module Hecks
       end
     end
 
-    # Wraps a value object from a collection, delegating all methods to the
-    # underlying object but adding delete/destroy that remove it from the
-    # parent collection.
-    #
-    #   pizza.toppings.first.delete   # removes from pizza and persists
-    #   pizza.toppings.first.name     # delegates to the Topping
-    #
-    class CollectionItem
+      # Wraps a value object from a collection, delegating all methods to the
+      # underlying object but adding delete/destroy that remove it from the
+      # parent collection.
+      class CollectionItem
       def initialize(raw, collection)
         @raw = raw
         @collection = collection
@@ -185,6 +182,7 @@ module Hecks
         else
           super
         end
+      end
       end
     end
   end

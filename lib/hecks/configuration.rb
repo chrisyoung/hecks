@@ -110,7 +110,7 @@ module Hecks
     def bind_ad_hoc_queries
       @domain_obj.aggregates.each do |agg|
         agg_class = @domain_module.const_get(agg.name)
-        Services::AdHocQueries.bind(agg_class, @app[agg.name])
+        Services::Querying::AdHocQueries.bind(agg_class, @app[agg.name])
       end
     end
 

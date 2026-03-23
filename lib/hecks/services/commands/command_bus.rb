@@ -1,4 +1,4 @@
-# Hecks::Services::CommandBus
+# Hecks::Services::Commands::CommandBus
 #
 # Dispatches commands through a middleware pipeline. Each middleware
 # wraps the next, like Rack middleware for commands.
@@ -16,7 +16,8 @@
 #
 module Hecks
   module Services
-    class CommandBus
+    module Commands
+      class CommandBus
       attr_reader :middleware
 
       def initialize(domain:, event_bus:)
@@ -110,6 +111,7 @@ module Hecks
           attrs[param] = command.send(param) if command.respond_to?(param)
         end
         attrs
+      end
       end
     end
   end

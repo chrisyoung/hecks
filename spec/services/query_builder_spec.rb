@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::Services::QueryBuilder do
+RSpec.describe Hecks::Services::Querying::QueryBuilder do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
@@ -75,7 +75,7 @@ RSpec.describe Hecks::Services::QueryBuilder do
   context "with ad-hoc queries enabled" do
     before do
       repo = @app["Pizza"]
-      Hecks::Services::AdHocQueries.bind(PizzasDomain::Pizza, repo)
+      Hecks::Services::Querying::AdHocQueries.bind(PizzasDomain::Pizza, repo)
     end
 
     describe ".where" do

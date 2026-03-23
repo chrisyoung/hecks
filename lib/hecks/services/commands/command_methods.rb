@@ -1,18 +1,33 @@
-# Hecks::Services::CommandWiring
+# Hecks::Services::Commands::CommandMethods
 #
-# Wires command methods (create and update) onto aggregate classes. Extracted
-# from AggregateWiring to keep file sizes manageable. Commands dispatch through
+# Binds command methods onto aggregate classes. Commands dispatch through
 # the CommandBus and persist aggregates via the repository.
 #
-#   Pizza.create(name: "Margherita")    # from CreatePizza command
-#   Order.place(pizza_id: id, quantity: 3)  # from PlaceOrder command
+#   Commands.bind(PizzaClass, pizza_aggregate, bus, repo, defaults)
+#   Pizza.create(name: "Margherita")
+#   Order.place(pizza_id: id, quantity: 3)
 #
 module Hecks
   module Services
-    module CommandWiring
-      def wire_create_command(agg_class, method_name, cmd, bus, repo, defaults)
+    module Commands
+      module CommandMethods
+      def self.bind(klass, aggregate, bus, repo, defaults)
+        agg_snake = Hecks::Utils.underscore(aggregate.name)
+        aggregate.commands.each do |cmd|
+          full_name = Hecks::Utils.underscore(cmd.name)
+          method_name = full_name.sub(/_#{agg_snake}$/, "").to_sym
+
+          if cmd.name.start_with?("Create")
+            bind_create(klass, method_name, cmd, bus, repo, defaults)
+          else
+            bind_update(klass, method_name, cmd, bus, repo, defaults)
+          end
+        end
+      end
+
+      def self.bind_create(klass, method_name, cmd, bus, repo, defaults)
         cmd_handler = cmd.handler
-        agg_class.define_singleton_method(method_name) do |**attrs|
+        klass.define_singleton_method(method_name) do |**attrs|
           if cmd_handler
             require "ostruct"
             cmd_handler.call(OpenStruct.new(**attrs))
@@ -27,9 +42,9 @@ module Hecks
         end
       end
 
-      def wire_update_command(agg_class, method_name, cmd, bus, repo, defaults)
+      def self.bind_update(klass, method_name, cmd, bus, repo, defaults)
         cmd_handler = cmd.handler
-        agg_class.define_singleton_method(method_name) do |**attrs|
+        klass.define_singleton_method(method_name) do |**attrs|
           if cmd_handler
             require "ostruct"
             cmd_handler.call(OpenStruct.new(**attrs))
@@ -60,10 +75,10 @@ module Hecks
             defaults.each { |param, default_val| constructor_attrs[param] = attrs.key?(param) ? attrs[param] : default_val }
             aggregate = new(**constructor_attrs)
           end
-
           repo.save(aggregate)
           aggregate
         end
+      end
       end
     end
   end
