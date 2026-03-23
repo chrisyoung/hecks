@@ -1,8 +1,10 @@
 # Hecks
 
-A Hexagonal / Domain-Driven Design framework for Ruby. Define domains with a Ruby DSL, generate pure versioned domain gems.
+Describe your business in Ruby. Hecks generates the code.
 
-Hecks separates domain modeling from application concerns. You define your domain once, and Hecks generates a standalone Ruby gem with zero dependencies — just pure domain objects. Changes to the domain require a rebuild, producing a new versioned artifact that applications consume.
+Write a short DSL that says what your things are, what you can do with them, and how to look them up. Hecks generates a complete Ruby gem — classes, tests, and all the plumbing. No ActiveRecord. No database setup. Just your business logic.
+
+*Know DDD? See [how Hecks maps to DDD patterns](docs/ddd.md). Love hexagonal architecture? See [how Hecks implements ports and adapters](docs/hexagonal.md).*
 
 ## Hecks LOVES Rails
 
@@ -57,7 +59,7 @@ end
 
 ## [Why Hecks instead of ActiveRecord?](docs/why_hecks.md)
 
-Hecks was born out of frustration with ActiveRecord. DDD and hexagonal architecture shouldn't be harder than `rails generate model` — so we made it just as easy. Pure domain objects, named queries, any database, no lock-in. [Read more](docs/why_hecks.md).
+Hecks was born out of frustration with ActiveRecord. Describing your business shouldn't be harder than `rails generate model` — so we made it just as easy. Pure objects, named lookups, any database, no lock-in. [Read more](docs/why_hecks.md). Coming from ActiveRecord? See [the migration guide](docs/active_record.md).
 
 ## Install
 
@@ -97,11 +99,11 @@ hecks build
 
 This generates `pizzas_domain/` — a complete Ruby gem you can publish or add to any application's `Gemfile`. Each build auto-stamps a CalVer version like `2026.03.20.1`.
 
-## The Domain DSL
+## The DSL
 
-### Aggregates
+### Describing Your Things
 
-Aggregates are the top-level boundaries. Each aggregate becomes a class in the generated gem with identity-based equality and an auto-generated UUID. All constructor arguments default to nil (or `[]` for lists), like ActiveRecord — validations enforce required-ness, not the constructor.
+Each thing in your business gets an `aggregate` block. It becomes a Ruby class with a unique ID and the attributes you define.
 
 ```ruby
 Hecks.domain "Pizzas" do
@@ -114,9 +116,9 @@ Hecks.domain "Pizzas" do
 end
 ```
 
-### Value Objects
+### Embedded Details
 
-Immutable objects defined within an aggregate. They use value-based equality and are frozen on creation.
+Some things contain smaller pieces that don't have their own identity — a Topping on a Pizza, an Address on an Order. These are `value_object` blocks, and they're frozen once created.
 
 ```ruby
 aggregate "Pizza" do
@@ -133,9 +135,9 @@ aggregate "Pizza" do
 end
 ```
 
-### Commands
+### Actions
 
-Commands describe intent. Each command automatically infers a corresponding domain event (`CreatePizza` -> `CreatedPizza`, `AddTopping` -> `AddedTopping`). Commands are mapped to short method names on aggregate classes by stripping the aggregate name:
+Actions describe what you can do. Each action automatically creates a corresponding event (`CreatePizza` fires `CreatedPizza`). They become short method names on your classes:
 
 - `CreatePizza` -> `Pizza.create(name:, description:)`
 - `PlaceOrder` -> `Order.place(pizza_id:, quantity:)`
@@ -155,9 +157,9 @@ aggregate "Pizza" do
 end
 ```
 
-### Queries
+### Lookups
 
-Named queries defined in the DSL become class methods on the aggregate. They use the query DSL internally (`where`, `order`, `limit`, comparison operators) but expose a clean domain API.
+Named lookups become class methods. Use `where`, `order`, `limit`, and comparison operators inside them.
 
 ```ruby
 aggregate "Pizza" do
@@ -180,14 +182,14 @@ end
 ```
 
 ```ruby
-Pizza.classics                    # named queries, always available
+Pizza.classics                    # named lookups, always available
 Pizza.by_style("Tropical")
 Pizza.expensive
 ```
 
-### Validations & Invariants
+### Rules & Requirements
 
-Validations run on aggregate construction. Invariants enforce business rules on value objects and aggregates.
+Requirements are checked when objects are created. Rules enforce business logic.
 
 ```ruby
 aggregate "Pizza" do
@@ -203,9 +205,9 @@ aggregate "Pizza" do
 end
 ```
 
-### Policies
+### Reactions
 
-Reactive rules that bind events to commands. When an event fires, the policy declares what command should be triggered. Policies are the approved mechanism for cross-context communication.
+When something happens, do something else. A `policy` listens for an event and triggers another action.
 
 ```ruby
 aggregate "Order" do
@@ -224,9 +226,9 @@ aggregate "Order" do
 end
 ```
 
-### Cross-Aggregate References
+### References
 
-References between aggregates must be by ID only. This is enforced at build time.
+Things can reference other things by ID. Hecks enforces this at build time — no circular references, no reaching into other things' internals.
 
 ```ruby
 aggregate "Order" do
@@ -234,9 +236,9 @@ aggregate "Order" do
 end
 ```
 
-### Bounded Contexts
+### Modules
 
-Group related aggregates into bounded contexts. Contexts enforce separation — aggregates in different contexts cannot reference each other directly, only through events and policies.
+Group related things into modules. Things in different modules can't reference each other directly — they communicate through events and reactions.
 
 ```ruby
 Hecks.domain "Pizzas" do
@@ -280,26 +282,26 @@ Hecks.domain "Pizzas" do
 end
 ```
 
-Domains without `context` blocks work exactly as before — aggregates go into an implicit default context.
+Domains without `context` blocks work exactly as before — everything goes into one module.
 
-## DDD Validation Rules
+## Build-Time Checks
 
-Hecks enforces DDD best practices at validation time (`hecks validate`, `session.validate`, `session.play!`, `session.build`):
+Hecks catches mistakes when you build, not at runtime:
 
 | Rule | What it catches |
 |---|---|
-| **Aggregates must have commands** | A data bag with no behavior |
-| **Command names must be verbs** | `PizzaData` instead of `CreatePizza` |
-| **Commands must have attributes** | Empty commands with no payload |
-| **No self-references** | An aggregate referencing itself by ID |
-| **No bidirectional references** | Pizza -> Order and Order -> Pizza |
-| **No cross-context references** | Direct `reference_to` across context boundaries |
-| **References must target aggregate roots** | Referencing a value object instead of an aggregate |
-| **Value objects must not hold references** | Identity references in a value-only object |
-| **No aggregate/value object name collisions** | A value object named the same as its aggregate |
-| **Policy events must exist** | Policy listening for an event that no command produces |
-| **Policy triggers must exist** | Policy triggering a command that doesn't exist |
-| **No duplicate names** | Duplicate aggregate or context names |
+| **Things need actions** | A thing with no behavior defined |
+| **Action names must be verbs** | `PizzaData` instead of `CreatePizza` |
+| **Actions need attributes** | Empty actions with no payload |
+| **No self-references** | A thing referencing itself |
+| **No circular references** | Pizza -> Order and Order -> Pizza |
+| **No cross-module references** | Direct references across module boundaries |
+| **References must target things** | Referencing an embedded detail instead of a thing |
+| **Embedded details can't hold references** | References in a detail object |
+| **No name collisions** | A detail named the same as its parent |
+| **Reaction events must exist** | Reacting to an event that no action produces |
+| **Reaction triggers must exist** | Triggering an action that doesn't exist |
+| **No duplicate names** | Duplicate names in the same scope |
 
 In the REPL, bidirectional references are warned about immediately when you add the offending attribute. All other rules are checked at transition points (validate, play, build, save).
 
