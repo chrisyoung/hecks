@@ -1,31 +1,7 @@
-# Hecks::CLI docs commands
+# Hecks::CLI docs command — serve Swagger UI
 #
 module Hecks
   class CLI < Thor
-    desc "generate:docs", "Generate OpenAPI and RPC discovery docs"
-    map "generate:docs" => :generate_docs
-    def generate_docs
-      domain_file = find_domain_file
-      unless domain_file
-        say "No domain.rb found in current directory", :red
-        return
-      end
-      domain = load_domain(domain_file)
-
-      require_relative "../../http/openapi_generator"
-      require_relative "../../http/rpc_discovery"
-
-      FileUtils.mkdir_p("docs")
-
-      openapi = HTTP::OpenapiGenerator.new(domain).generate
-      File.write("docs/openapi.json", JSON.pretty_generate(openapi))
-      say "Generated docs/openapi.json", :green
-
-      rpc = HTTP::RpcDiscovery.new(domain).generate
-      File.write("docs/rpc_methods.json", JSON.pretty_generate(rpc))
-      say "Generated docs/rpc_methods.json", :green
-    end
-
     desc "docs [DOMAIN]", "Serve API documentation (Swagger UI)"
     option :port, type: :numeric, default: 9393, desc: "Port"
     def docs(domain_path = nil)

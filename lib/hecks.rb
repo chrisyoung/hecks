@@ -120,14 +120,10 @@ module Hecks
     require_relative "hecks/http/rpc_discovery"
     require_relative "hecks/http/json_schema_generator"
     docs_dir = File.join(gem_path, "docs")
-    schemas_dir = File.join(gem_path, "schemas")
     FileUtils.mkdir_p(docs_dir)
-    FileUtils.mkdir_p(schemas_dir)
     File.write(File.join(docs_dir, "openapi.json"), JSON.pretty_generate(HTTP::OpenapiGenerator.new(domain).generate))
     File.write(File.join(docs_dir, "rpc_methods.json"), JSON.pretty_generate(HTTP::RpcDiscovery.new(domain).generate))
-    HTTP::JsonSchemaGenerator.new(domain).generate.each do |name, schema|
-      File.write(File.join(schemas_dir, "#{Utils.underscore(name)}.json"), JSON.pretty_generate(schema))
-    end
+    File.write(File.join(docs_dir, "schema.json"), JSON.pretty_generate(HTTP::JsonSchemaGenerator.new(domain).generate))
 
     gem_path
   end
