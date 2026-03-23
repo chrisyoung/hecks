@@ -1,6 +1,8 @@
 # Hecks::Generators::Domain::AggregateGenerator
 #
-# Generates the aggregate root class with identity, validation, and invariants.
+# Generates the aggregate root class. Includes Hecks::Model for identity,
+# auto-discovery, and validation stubs. Only generates constructor,
+# custom validations, and invariants.
 #
 #   gen = AggregateGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."
@@ -28,30 +30,23 @@ module Hecks
 
       def generate
         lines = []
+        lines << "require 'hecks/model'"
+        lines << ""
         lines << "module #{@domain_module}"
         lines << "  class #{@safe_name}"
+        lines << "    include Hecks::Model"
+        lines << ""
         lines << "    attr_reader :id#{attr_readers}, :created_at, :updated_at"
         lines << ""
         lines.concat(constructor_lines)
-        lines << ""
-        lines << "    def ==(other)"
-        lines << "      other.is_a?(self.class) && id == other.id"
-        lines << "    end"
-        lines << "    alias eql? =="
-        lines << ""
-        lines << "    def hash"
-        lines << "      [self.class, id].hash"
-        lines << "    end"
-        lines << ""
-        lines << "    private"
-        lines << ""
-        lines << "    def generate_id"
-        lines << "      SecureRandom.uuid"
-        lines << "    end"
-        lines << ""
-        lines.concat(validation_lines)
-        lines << ""
-        lines.concat(invariant_lines)
+        unless @aggregate.validations.empty? && @aggregate.invariants.empty?
+          lines << ""
+          lines << "    private"
+          lines << ""
+          lines.concat(validation_lines) unless @aggregate.validations.empty?
+          lines << "" unless @aggregate.validations.empty? || @aggregate.invariants.empty?
+          lines.concat(invariant_lines) unless @aggregate.invariants.empty?
+        end
         lines << "  end"
         lines << "end"
         lines.join("\n") + "\n"
