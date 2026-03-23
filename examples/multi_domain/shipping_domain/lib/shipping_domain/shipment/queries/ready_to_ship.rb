@@ -7,7 +7,7 @@ module ShippingDomain
         include Hecks::Query
 
         def call
-          true
+          where(status: "pending")
         end
       end
     end

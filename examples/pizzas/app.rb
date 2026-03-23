@@ -8,7 +8,8 @@
 require "hecks"
 
 # 1. Load the domain definition
-domain = eval(File.read(File.join(__dir__, "hecks_domain.rb")))
+domain_file = File.join(__dir__, "hecks_domain.rb")
+domain = eval(File.read(domain_file), nil, domain_file, 1)
 
 # 2. Validate it
 valid, errors = Hecks.validate(domain)

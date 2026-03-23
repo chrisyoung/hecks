@@ -7,7 +7,7 @@ module BillingDomain
         include Hecks::Query
 
         def call
-          true
+          where(status: "pending")
         end
       end
     end

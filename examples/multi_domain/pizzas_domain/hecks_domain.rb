@@ -5,7 +5,7 @@ Hecks.domain "Pizzas" do
     attribute :price, Float
 
     query "Classics" do
-      true
+      where(style: "Classic")
     end
 
     command "CreatePizza" do

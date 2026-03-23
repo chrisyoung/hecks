@@ -7,7 +7,7 @@ module PizzasDomain
         include Hecks::Query
 
         def call
-          true
+          where(style: "Classic")
         end
       end
     end

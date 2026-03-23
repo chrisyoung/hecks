@@ -40,7 +40,8 @@ RSpec.describe "Validation Rules" do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, "verbs.txt"), "Yeet\n")
         File.write(File.join(dir, "hecks_domain.rb"), 'Hecks.domain("T") { aggregate("A") { attribute :n, String; command("YeetThing") { attribute :n, String } } }')
-        domain = eval(File.read(File.join(dir, "hecks_domain.rb")))
+        domain_file = File.join(dir, "hecks_domain.rb")
+        domain = eval(File.read(domain_file), nil, domain_file, 1)
         domain.source_path = File.join(dir, "hecks_domain.rb")
         valid, _ = validate(domain)
         expect(valid).to be true
