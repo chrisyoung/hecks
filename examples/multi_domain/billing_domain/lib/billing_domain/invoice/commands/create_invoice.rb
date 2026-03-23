@@ -15,7 +15,7 @@ module BillingDomain
         end
 
         def call
-          save Invoice.new(pizza_id: pizza_id, quantity: quantity)
+          Invoice.new(pizza_id: pizza_id, quantity: quantity)
         end
       end
     end

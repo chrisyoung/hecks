@@ -16,9 +16,9 @@ module ShippingDomain
         def call
           existing = repository.find(shipment_id)
           if existing
-            save Shipment.new(id: existing.id, pizza_id: existing.pizza_id, quantity: existing.quantity, status: existing.status)
+            Shipment.new(id: existing.id, pizza_id: existing.pizza_id, quantity: existing.quantity, status: existing.status)
           else
-            save Shipment.new()
+            Shipment.new()
           end
         end
       end
