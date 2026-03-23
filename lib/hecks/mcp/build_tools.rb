@@ -1,6 +1,6 @@
 # Hecks::MCP::BuildTools
 #
-# MCP tools for validating, building, and saving domains.
+# MCP tools for validating, building, saving, and serving domains.
 #
 module Hecks
   module MCP
@@ -33,6 +33,19 @@ module Hecks
           ctx.ensure_session!
           ctx.session.save(args["path"] || "domain.rb")
           "Saved to #{args["path"] || "domain.rb"}"
+        end
+
+        server.define_tool(
+          name: "serve_domain",
+          description: "Serve the domain as HTTP REST API with SSE events",
+          input_schema: { type: "object", properties: { port: { type: "integer", description: "Port (default 9292)" } } }
+        ) do |args|
+          ctx.ensure_session!
+          domain = ctx.session.send(:to_domain)
+          require_relative "../http/domain_server"
+          port = args["port"] || 9292
+          Thread.new { Hecks::HTTP::DomainServer.new(domain, port: port).run }
+          "Serving domain on http://localhost:#{port}"
         end
       end
     end
