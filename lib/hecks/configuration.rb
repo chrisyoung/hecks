@@ -1,17 +1,19 @@
 # Hecks::Configuration
 #
-# Simple config block for wiring Hecks into an application. Handles
-# loading the domain gem, choosing adapters, and booting the Application.
+# Config block for wiring Hecks into an application. Handles loading the
+# domain gem, choosing adapters, database connection, and booting.
 #
 #   Hecks.configure do
 #     domain "pizzas_domain"
-#     adapter :sql
-#     include_ad_hoc_queries  # opt-in: where, find_by, order, limit
+#     adapter :sql, database: :mysql, host: "localhost",
+#       user: "root", password: "secret", name: "pizzas"
+#     include_ad_hoc_queries
 #   end
 #
-# Adapter options:
-#   :memory  — default, in-memory hash storage
-#   :sql     — generates SQL adapter classes from the domain, uses ActiveRecord connection
+# Database options:
+#   database: :sqlite (default), :mysql, :postgres
+#   url: "mysql2://user:pass@host/db" (alternative to individual options)
+#   host:, user:, password:, name: (individual connection params)
 #
 require "fileutils"
 
@@ -22,6 +24,7 @@ module Hecks
     def initialize
       @gem_name = nil
       @adapter_type = :memory
+      @adapter_options = {}
       @domain_obj = nil
       @app = nil
       @ad_hoc_queries = false
@@ -31,8 +34,9 @@ module Hecks
       @gem_name = gem_name
     end
 
-    def adapter(type)
+    def adapter(type, **options)
       @adapter_type = type
+      @adapter_options = options
     end
 
     def include_ad_hoc_queries
@@ -76,24 +80,10 @@ module Hecks
       adapter_type = @adapter_type
       domain_module = @domain_module
       domain_obj = @domain_obj
+      db = connect_database if adapter_type == :sql
 
       @app = Services::Application.new(@domain_obj) do
         if adapter_type == :sql
-          db = Object.new
-          db.define_singleton_method(:execute) do |sql, binds = []|
-            conn = ActiveRecord::Base.connection
-            if binds.empty?
-              conn.exec_query(sql).to_a
-            else
-              # Sanitize binds into the SQL (ActiveRecord handles escaping)
-              sanitized = sql.dup
-              binds.each do |val|
-                sanitized.sub!("?", conn.quote(val))
-              end
-              conn.exec_query(sanitized).to_a
-            end
-          end
-
           domain_obj.aggregates.each do |agg|
             adapter_class = domain_module::Adapters.const_get("#{agg.name}SqlRepository")
             adapter agg.name, adapter_class.new(db)
@@ -101,10 +91,54 @@ module Hecks
         end
       end
 
-      # Make APP available globally (silently replace if already defined)
       old = $VERBOSE; $VERBOSE = nil
       Object.const_set(:APP, @app)
       $VERBOSE = old
+    end
+
+    def connect_database
+      require "sequel"
+
+      if @adapter_options[:url]
+        Sequel.connect(@adapter_options[:url])
+      elsif @adapter_options[:database]
+        connect_by_type(@adapter_options)
+      elsif defined?(::Rails)
+        connect_from_rails
+      else
+        Sequel.sqlite
+      end
+    end
+
+    def connect_by_type(opts)
+      case opts[:database]
+      when :mysql
+        Sequel.connect(
+          adapter: :mysql2,
+          host: opts[:host] || "localhost",
+          user: opts[:user] || "root",
+          password: opts[:password],
+          database: opts[:name]
+        )
+      when :postgres
+        Sequel.connect(
+          adapter: :postgres,
+          host: opts[:host] || "localhost",
+          user: opts[:user],
+          password: opts[:password],
+          database: opts[:name]
+        )
+      when :sqlite
+        Sequel.sqlite(opts[:name])
+      else
+        raise "Unknown database type: #{opts[:database]}. Use :sqlite, :mysql, or :postgres."
+      end
+    end
+
+    def connect_from_rails
+      db_config = ActiveRecord::Base.connection_db_config
+      url = db_config.try(:url) || db_config.configuration_hash[:url]
+      url ? Sequel.connect(url) : Sequel.sqlite
     end
 
     def bind_ad_hoc_queries

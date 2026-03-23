@@ -1,6 +1,6 @@
 require "spec_helper"
 require "tmpdir"
-require "sqlite3"
+require "sequel"
 
 RSpec.describe "SQL adapter integration" do
   let(:domain) do
@@ -43,41 +43,32 @@ RSpec.describe "SQL adapter integration" do
   end
 
   let(:tmpdir) { Dir.mktmpdir }
-  let(:db) { SQLite3::Database.new(":memory:") }
+  let(:db) { Sequel.sqlite }
 
   before do
-    db.results_as_hash = true
+    db.create_table(:pizzas) do
+      String :id, primary_key: true, size: 36
+      String :name
+      String :description
+      String :created_at
+      String :updated_at
+    end
 
-    # Create tables
-    db.execute <<~SQL
-      CREATE TABLE pizzas (
-        id VARCHAR(36) PRIMARY KEY,
-        name VARCHAR(255),
-        description VARCHAR(255),
-        created_at TEXT,
-        updated_at TEXT
-      )
-    SQL
+    db.create_table(:pizzas_toppings) do
+      String :id, primary_key: true, size: 36
+      String :pizza_id, null: false
+      String :name
+      Integer :amount
+    end
 
-    db.execute <<~SQL
-      CREATE TABLE pizzas_toppings (
-        id VARCHAR(36) PRIMARY KEY,
-        pizza_id VARCHAR(36) NOT NULL REFERENCES pizzas(id),
-        name VARCHAR(255),
-        amount INTEGER
-      )
-    SQL
-
-    db.execute <<~SQL
-      CREATE TABLE orders (
-        id VARCHAR(36) PRIMARY KEY,
-        pizza_id VARCHAR(36),
-        quantity INTEGER,
-        status VARCHAR(255),
-        created_at TEXT,
-        updated_at TEXT
-      )
-    SQL
+    db.create_table(:orders) do
+      String :id, primary_key: true, size: 36
+      String :pizza_id
+      Integer :quantity
+      String :status
+      String :created_at
+      String :updated_at
+    end
 
     # Generate and load domain gem
     gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
@@ -93,7 +84,7 @@ RSpec.describe "SQL adapter integration" do
       eval(gen.generate, TOPLEVEL_BINDING)
     end
 
-    # Boot application with SQL adapters
+    # Boot application with SQL adapters (pass Sequel DB)
     pizza_repo = PizzasDomain::Adapters::PizzaSqlRepository.new(db)
     order_repo = PizzasDomain::Adapters::OrderSqlRepository.new(db)
     @app = Hecks::Services::Application.new(domain) do
@@ -110,8 +101,8 @@ RSpec.describe "SQL adapter integration" do
       expect(pizza.name).to eq("Margherita")
       expect(pizza.id).not_to be_nil
 
-      row = db.execute("SELECT * FROM pizzas WHERE id = ?", [pizza.id]).first
-      expect(row["name"]).to eq("Margherita")
+      row = db[:pizzas].where(id: pizza.id).first
+      expect(row[:name]).to eq("Margherita")
     end
 
     it "sets timestamps" do
@@ -225,7 +216,7 @@ RSpec.describe "SQL adapter integration" do
       pizza = PizzasDomain::Pizza.create(name: "Margherita", description: "Classic")
       pizza.toppings.create(name: "Cheese", amount: 2)
       pizza.destroy
-      toppings = db.execute("SELECT COUNT(*) as c FROM pizzas_toppings").first["c"]
+      toppings = db[:pizzas_toppings].count
       expect(toppings).to eq(0)
     end
   end
