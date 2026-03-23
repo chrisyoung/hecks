@@ -5,7 +5,7 @@ Hecks.domain "Billing" do
     attribute :status, String
 
     query "Pending" do
-      true
+      where(status: "pending")
     end
 
     command "CreateInvoice" do

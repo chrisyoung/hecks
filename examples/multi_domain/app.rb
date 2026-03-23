@@ -13,7 +13,8 @@ require "hecks"
 
 # 1. Load each domain
 domains = %w[pizzas billing shipping].map do |name|
-  eval(File.read(File.join(__dir__, "#{name}_domain.rb")))
+  path = File.join(__dir__, "#{name}_domain.rb")
+  eval(File.read(path), nil, path, 1)
 end
 
 # 2. Validate all domains

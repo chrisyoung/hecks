@@ -5,7 +5,7 @@ Hecks.domain "Shipping" do
     attribute :status, String
 
     query "ReadyToShip" do
-      true
+      where(status: "pending")
     end
 
     command "CreateShipment" do
