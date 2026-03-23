@@ -31,6 +31,7 @@ The `examples/rails_app/` has Rails-generated files that should NOT be committed
 - CalVer versioning (YYYY.MM.DD.N) — no manual bumping
 - `Hecks.configure` for Rails, `Application.new` for plain Ruby
 - Aggregates are pure domain objects — no persistence logic mixed in
+- Examples should use Hecks APIs (`Hecks.build`, `Hecks.configure`, `hecks serve`) — don't call generators or create tables manually
 
 ## Module grouping pattern
 
