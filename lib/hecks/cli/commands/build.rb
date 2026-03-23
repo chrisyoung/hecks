@@ -22,6 +22,14 @@ module Hecks
       output = generator.generate
       say "Built #{domain.gem_name} v#{version}", :green
       say "  Output: #{output}/"
+
+      # Generate docs alongside the gem
+      require_relative "../../http/openapi_generator"
+      require_relative "../../http/rpc_discovery"
+      FileUtils.mkdir_p("docs")
+      File.write("docs/openapi.json", JSON.pretty_generate(HTTP::OpenapiGenerator.new(domain).generate))
+      File.write("docs/rpc_methods.json", JSON.pretty_generate(HTTP::RpcDiscovery.new(domain).generate))
+      say "  Docs: docs/openapi.json, docs/rpc_methods.json"
     end
   end
 end
