@@ -8,6 +8,7 @@ require "rack"
 require "json"
 require "tmpdir"
 require_relative "route_builder"
+require_relative "openapi_generator"
 
 module Hecks
   module HTTP
@@ -23,6 +24,7 @@ module Hecks
         puts "Hecks serving #{@domain.name} on http://localhost:#{@port}"
         puts ""
         @routes.each { |r| puts "  #{r[:method].ljust(6)} #{r[:path]}" }
+        puts "  GET    /openapi.json"
         puts "  GET    /events (SSE)"
         puts ""
         Rack::Handler::WEBrick.run(method(:call), Port: @port,
@@ -32,6 +34,7 @@ module Hecks
       def call(env)
         req = Rack::Request.new(env)
         return cors_preflight if req.request_method == "OPTIONS"
+        return json(200, @openapi) if req.path == "/openapi.json"
         return sse_stream if req.path == "/events"
         route = @routes.find { |r| r[:method] == req.request_method && match?(r[:path], req.path) }
         return json(404, error: "Not found") unless route
@@ -52,6 +55,7 @@ module Hecks
         @mod = Object.const_get(@domain.module_name + "Domain")
         @app = Services::Application.new(@domain)
         @routes = RouteBuilder.new(@domain, @mod).build
+        @openapi = OpenapiGenerator.new(@domain).generate
         @domain.aggregates.flat_map { |a| a.events.map(&:name) }.uniq.each do |evt|
           @app.event_bus.subscribe(evt) { |e| broadcast(e) }
         end
