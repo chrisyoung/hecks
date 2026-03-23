@@ -6,9 +6,10 @@ ActiveHecks bridges generated Hecks domain objects and Rails. It adds ActiveMode
 
 ```mermaid
 flowchart LR
-    subgraph Domain["Domain Gem (pure Ruby)"]
-        Pizza["Pizza\n(attributes, initialize)"]
+    subgraph Domain["Domain Gem"]
+        Pizza["Pizza\n(Hecks::Model)"]
         Topping["Pizza::Topping\n(value object)"]
+        Cmd["CreatePizza\n(Hecks::Command)"]
     end
 
     subgraph ActiveHecks["ActiveHecks.activate"]
@@ -101,7 +102,7 @@ Shared by all domain objects. Adds:
 - `ActiveModel::Naming` — `Pizza.model_name` works
 - `ActiveModel::Conversion` — `to_model`, `to_partial_path`
 - `ActiveModel::Serializers::JSON` — `as_json`, `to_json`
-- `attributes` — introspects constructor params
+- `attributes` — uses `hecks_attributes` metadata from `Hecks::Model`, plus `id`, `created_at`, `updated_at`
 
 ### AggregateCompat
 
@@ -128,7 +129,7 @@ validation :name, presence: true
 Pizza.validates :name, presence: true
 ```
 
-Also disables the generated `validate!` (which raises in the constructor), so you can build invalid objects and check `valid?` / `errors` the Rails way.
+Also disables the domain-level `validate!` so you can build invalid objects and check `valid?` / `errors` the Rails way.
 
 ### PersistenceWrapper
 
@@ -162,6 +163,27 @@ class PizzasController < ApplicationController
 end
 ```
 
+## What a Domain Object Looks Like
+
+With `Hecks::Model`, domain objects are minimal. ActiveHecks layers Rails compatibility on top:
+
+```ruby
+# Generated domain gem — pure Ruby, no Rails
+class Pizza
+  include Hecks::Model
+
+  attribute :name
+  attribute :description
+  attribute :toppings, default: [], freeze: true
+end
+
+# After ActiveHecks.activate — gains Rails powers:
+pizza = Pizza.new(name: "")
+pizza.valid?          # => false
+pizza.errors[:name]   # => ["can't be blank"]
+pizza.as_json         # => {"id" => "...", "name" => "", ...}
+```
+
 ## Railtie
 
 The Railtie handles two things automatically:
@@ -173,12 +195,14 @@ The Railtie handles two things automatically:
 
 ## What Stays Out of the Domain
 
-ActiveHecks is intentionally separate from the domain gem. The generated gem stays pure Ruby with zero dependencies. ActiveHecks adds Rails compatibility from the outside — the domain never knows.
+ActiveHecks is intentionally separate from the domain gem. The generated gem uses `Hecks::Model` and `Hecks::Command` — pure Ruby with minimal framework dependency. ActiveHecks adds Rails compatibility from the outside — the domain never knows.
 
 | Concern | Domain Gem | ActiveHecks |
 |---|---|---|
-| Attributes & types | Yes | — |
-| Business invariants | Yes | — |
+| Attributes (via DSL) | `Hecks::Model` | — |
+| Business invariants | `validate!` / `check_invariants!` | — |
+| Commands | `Hecks::Command` (by convention) | — |
+| Queries | `Hecks::Query` (by convention) | — |
 | ActiveModel naming | — | DomainModelCompat |
 | JSON serialization | — | DomainModelCompat |
 | Validations (`valid?`) | — | AggregateCompat + ValidationWiring |
