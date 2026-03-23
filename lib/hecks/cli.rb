@@ -48,6 +48,32 @@ module Hecks
       nil
     end
 
+    def resolve_domain_option
+      if options[:domain]
+        resolve_domain(options[:domain])
+      else
+        file = find_domain_file
+        if file
+          load_domain(file)
+        else
+          domains = find_installed_domains
+          if domains.empty?
+            say "No domain.rb found and no --domain specified.", :red
+          else
+            say "No domain.rb found. Use --domain to specify one:", :red
+            domains.each { |name, ver| say "  --domain #{name} (v#{ver})", :yellow }
+          end
+          nil
+        end
+      end
+    end
+
+    def find_installed_domains
+      Gem::Specification.select do |spec|
+        File.exist?(File.join(spec.full_gem_path, "domain.rb"))
+      end.map { |spec| [spec.name, spec.version] }
+    end
+
     def load_domain(file)
       domain = eval(File.read(file), binding, file)
       domain.source_path = file
