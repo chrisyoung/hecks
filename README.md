@@ -137,7 +137,7 @@ end
 
 ### Actions
 
-Actions describe what you can do. Each action automatically creates a corresponding event (`CreatePizza` fires `CreatedPizza`). They become short method names on your classes:
+Actions describe what you can do. Each one becomes a short class method:
 
 - `CreatePizza` -> `Pizza.create(name:, description:)`
 - `PlaceOrder` -> `Order.place(pizza_id:, quantity:)`
@@ -156,6 +156,23 @@ aggregate "Pizza" do
   end
 end
 ```
+
+When you call `Pizza.create(name: "Margherita")`, here's what happens:
+
+```mermaid
+flowchart LR
+    Call["Pizza.create(name:)"] --> Bus["CommandBus\ndispatches CreatePizza"]
+    Bus --> MW["Middleware\n(optional)"]
+    MW --> Event["CreatedPizza\nevent published"]
+    Event --> Save["Aggregate saved\nto repository"]
+    Event --> Policies["Policies triggered\n(if any listen)"]
+```
+
+1. The command attributes are validated and a `CreatePizza` command object is built
+2. The `CommandBus` dispatches it through any registered middleware
+3. A `CreatedPizza` event is created and published on the `EventBus`
+4. The aggregate is constructed and saved to the repository
+5. Any policies listening for `CreatedPizza` fire their trigger commands
 
 ### Lookups
 
