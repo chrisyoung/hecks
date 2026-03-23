@@ -9,7 +9,7 @@ require "hecks"
 require "sequel"
 
 # 1. Load and build the domain
-domain = eval(File.read(File.join(__dir__, "domain.rb")))
+domain = eval(File.read(File.join(__dir__, "hecks_domain.rb")))
 output = Hecks.build(domain, version: "2026.03.23.1", output_dir: __dir__)
 
 $LOAD_PATH.unshift(File.join(output, "lib"))

@@ -34,8 +34,8 @@ module Hecks
         return session
       end
 
-      if File.exist?("domain.rb")
-        domain = eval(File.read("domain.rb"), binding, "domain.rb")
+      if File.exist?("hecks_domain.rb")
+        domain = eval(File.read("hecks_domain.rb"), binding, "hecks_domain.rb")
         session = Session.new(domain.name)
         domain.contexts.each do |ctx|
           if ctx.default?

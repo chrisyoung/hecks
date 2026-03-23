@@ -146,7 +146,7 @@ module Hecks
     end
 
     # Save the domain definition to domain.rb
-    def save(path = "domain.rb")
+    def save(path = "hecks_domain.rb")
       File.write(path, to_dsl)
       puts "Saved to #{path}"
       path

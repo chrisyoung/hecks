@@ -10,7 +10,7 @@ module Hecks
     private
 
     def find_domain_file
-      path = File.join(Dir.pwd, "domain.rb")
+      path = File.join(Dir.pwd, "hecks_domain.rb")
       File.exist?(path) ? path : nil
     end
 
@@ -20,14 +20,14 @@ module Hecks
         return nil unless file
         load_domain(file)
       elsif File.directory?(path_or_name)
-        file = File.join(path_or_name, "domain.rb")
+        file = File.join(path_or_name, "hecks_domain.rb")
         return nil unless File.exist?(file)
         load_domain(file)
       elsif File.exist?(path_or_name)
         load_domain(path_or_name)
       else
         # Check local subdirectory
-        local = File.join(Dir.pwd, path_or_name, "domain.rb")
+        local = File.join(Dir.pwd, path_or_name, "hecks_domain.rb")
         if File.exist?(local)
           load_domain(local)
         else
@@ -41,7 +41,7 @@ module Hecks
       require gem_name
       spec = Gem.loaded_specs[gem_name]
       return nil unless spec
-      domain_file = File.join(spec.full_gem_path, "domain.rb")
+      domain_file = File.join(spec.full_gem_path, "hecks_domain.rb")
       return nil unless File.exist?(domain_file)
       load_domain(domain_file)
     rescue LoadError
@@ -70,7 +70,7 @@ module Hecks
 
     def find_installed_domains
       Gem::Specification.select do |spec|
-        File.exist?(File.join(spec.full_gem_path, "domain.rb"))
+        File.exist?(File.join(spec.full_gem_path, "hecks_domain.rb"))
       end.map { |spec| [spec.name, spec.version] }
     end
 

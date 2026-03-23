@@ -128,7 +128,7 @@ module Hecks
         require "#{domain.gem_name}"
 
         # Load the domain
-        domain_file = File.join(Gem.loaded_specs["#{domain.gem_name}"]&.full_gem_path || "../#{domain.gem_name}", "domain.rb")
+        domain_file = File.join(Gem.loaded_specs["#{domain.gem_name}"]&.full_gem_path || "../#{domain.gem_name}", "hecks_domain.rb")
         DOMAIN = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
 
         # Boot with memory adapters (swap to SQL for production)
