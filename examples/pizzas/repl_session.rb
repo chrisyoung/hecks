@@ -38,6 +38,11 @@ order.add_command "PlaceOrder" do
   attribute :quantity, Integer
 end
 
+order.add_command "ReserveStock" do
+  attribute :pizza_id, reference_to("Pizza")
+  attribute :quantity, Integer
+end
+
 order.add_policy "ReserveIngredients" do
   on "PlacedOrder"
   trigger "ReserveStock"
