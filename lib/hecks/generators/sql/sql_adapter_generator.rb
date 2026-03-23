@@ -1,14 +1,11 @@
 # Hecks::Generators::SQL::SqlAdapterGenerator
 #
-# Generates SQL-backed repository implementations with find, save, delete,
-# all, and query operations. Handles join tables for list-type value objects.
-# The query method uses Sequel's dataset builder for SQL construction.
-#
-# Part of the Generators layer. Invoked by the CLI's `generate:sql` command
-# to produce SQL adapter classes alongside the schema migration.
+# Generates SQL-backed repository implementations using Sequel datasets.
+# Supports any database Sequel connects to (SQLite, MySQL, Postgres).
+# Handles join tables for list-type value objects.
 #
 #   gen = SqlAdapterGenerator.new(agg, domain_module: "PizzasDomain")
-#   gen.generate  # => "module PizzasDomain\n  module Adapters\n    class PizzaSqlRepository\n  ..."
+#   gen.generate  # => "module PizzasDomain\n  module Adapters\n  ..."
 #
 require_relative "sql_builder"
 require "sequel"
@@ -33,14 +30,12 @@ module Hecks
         lines << "    class #{@aggregate.name}SqlRepository"
         lines << "      include Ports::#{@aggregate.name}Repository"
         lines << ""
-        lines << "      def initialize(connection)"
-        lines << "        @connection = connection"
+        lines << "      def initialize(db)"
+        lines << "        @db = db"
         lines << "      end"
         lines << ""
         lines << "      def find(id)"
-        lines << "        row = @connection.execute("
-        lines << "          \"SELECT * FROM #{table_name} WHERE id = ?\", [id]"
-        lines << "        ).first"
+        lines << "        row = @db[:#{table_name}].where(id: id).first"
         lines << "        return nil unless row"
         lines << "        build(row)"
         lines << "      end"
@@ -56,23 +51,19 @@ module Hecks
         lines << ""
         lines << "      def delete(id)"
         lines.concat(delete_vo_lines)
-        lines << "        @connection.execute("
-        lines << "          \"DELETE FROM #{table_name} WHERE id = ?\", [id]"
-        lines << "        )"
+        lines << "        @db[:#{table_name}].where(id: id).delete"
         lines << "      end"
         lines << ""
         lines << "      def all"
-        lines << "        rows = @connection.execute(\"SELECT * FROM #{table_name}\")"
-        lines << "        rows.map { |row| build(row) }"
+        lines << "        @db[:#{table_name}].all.map { |row| build(row) }"
         lines << "      end"
         lines << ""
         lines << "      def count"
-        lines << "        row = @connection.execute(\"SELECT COUNT(*) FROM #{table_name}\").first"
-        lines << "        row.is_a?(Hash) ? row.values.first : row[0]"
+        lines << "        @db[:#{table_name}].count"
         lines << "      end"
         lines << ""
         lines << "      def query(conditions: {}, order_key: nil, order_direction: :asc, limit: nil, offset: nil)"
-        lines << "        ds = Sequel.sqlite[:#{table_name}]"
+        lines << "        ds = @db[:#{table_name}]"
         lines << "        unless conditions.empty?"
         lines << "          conditions.each do |k, v|"
         lines << "            ds = v.respond_to?(:sequel_expr) ? ds.where(v.sequel_expr(k)) : ds.where(k => v)"
@@ -81,8 +72,7 @@ module Hecks
         lines << "        ds = ds.order(order_direction == :desc ? Sequel.desc(order_key) : order_key) if order_key"
         lines << "        ds = ds.limit(limit) if limit"
         lines << "        ds = ds.offset(offset) if offset"
-        lines << "        rows = @connection.execute(ds.sql)"
-        lines << "        rows.map { |row| build(row) }"
+        lines << "        ds.all.map { |row| build(row) }"
         lines << "      end"
         lines << ""
         lines << "      private"

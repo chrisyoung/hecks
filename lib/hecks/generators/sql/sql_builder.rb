@@ -1,8 +1,8 @@
 # Hecks::Generators::SQL::SqlBuilder
 #
-# SQL generation helpers for SqlAdapterGenerator. Builds the INSERT,
-# UPDATE, SELECT (build), and DELETE statement fragments including
-# join-table handling for list-type value objects.
+# Sequel-based generation helpers for SqlAdapterGenerator. Builds insert,
+# update, build, and delete method bodies using Sequel dataset operations.
+# Handles join tables for list-type value objects.
 #
 module Hecks
   module Generators
@@ -11,24 +11,14 @@ module Hecks
       private
 
       def insert_lines
-        cols = ["id"] + scalar_attributes.map { |a| a.name.to_s } + ["created_at", "updated_at"]
-        placeholders = cols.map { "?" }.join(", ")
-        values = cols.map do |c|
-          if %w[created_at updated_at].include?(c)
-            "#{snake_name}.#{c}&.iso8601"
-          elsif c == "id"
-            "#{snake_name}.id"
-          else
-            "#{snake_name}.#{c}"
-          end
-        end.join(", ")
+        col_hash = scalar_attributes.map { |a| "#{a.name}: #{snake_name}.#{a.name}" }
+        col_hash << "id: #{snake_name}.id"
+        col_hash << "created_at: #{snake_name}.created_at&.iso8601"
+        col_hash << "updated_at: #{snake_name}.updated_at&.iso8601"
 
         lines = []
         lines << "      def insert(#{snake_name})"
-        lines << "        @connection.execute("
-        lines << "          \"INSERT INTO #{table_name} (#{cols.join(', ')}) VALUES (#{placeholders})\","
-        lines << "          [#{values}]"
-        lines << "        )"
+        lines << "        @db[:#{table_name}].insert(#{col_hash.join(', ')})"
         list_value_objects.each do |vo|
           lines.concat(insert_vo_lines(vo))
         end
@@ -37,22 +27,18 @@ module Hecks
       end
 
       def update_lines
-        all_sets = scalar_attributes.map { |a| "#{a.name} = ?" } + ["created_at = ?", "updated_at = ?"]
-        sets = all_sets.join(", ")
-        all_values = scalar_attributes.map { |a| "#{snake_name}.#{a.name}" } + ["#{snake_name}.created_at&.iso8601", "#{snake_name}.updated_at&.iso8601"]
-        values = all_values.join(", ")
+        col_hash = scalar_attributes.map { |a| "#{a.name}: #{snake_name}.#{a.name}" }
+        col_hash << "created_at: #{snake_name}.created_at&.iso8601"
+        col_hash << "updated_at: #{snake_name}.updated_at&.iso8601"
 
         lines = []
         lines << "      def update(#{snake_name})"
         if scalar_attributes.any?
-          lines << "        @connection.execute("
-          lines << "          \"UPDATE #{table_name} SET #{sets} WHERE id = ?\","
-          lines << "          [#{values}, #{snake_name}.id]"
-          lines << "        )"
+          lines << "        @db[:#{table_name}].where(id: #{snake_name}.id).update(#{col_hash.join(', ')})"
         end
         list_value_objects.each do |vo|
           vo_table = "#{table_name}_#{Hecks::Utils.underscore(vo.name)}s"
-          lines << "        @connection.execute(\"DELETE FROM #{vo_table} WHERE #{snake_name}_id = ?\", [#{snake_name}.id])"
+          lines << "        @db[:#{vo_table}].where(#{snake_name}_id: #{snake_name}.id).delete"
           lines.concat(insert_vo_lines(vo))
         end
         lines << "      end"
@@ -61,7 +47,7 @@ module Hecks
 
       def build_lines
         attr_assigns = scalar_attributes.map do |a|
-          "          #{a.name}: row[\"#{a.name}\"]"
+          "          #{a.name}: row[:#{a.name}]"
         end
 
         lines = []
@@ -69,20 +55,19 @@ module Hecks
 
         list_value_objects.each do |vo|
           vo_table = "#{table_name}_#{Hecks::Utils.underscore(vo.name)}s"
-          lines << "        #{Hecks::Utils.underscore(vo.name)}_rows = @connection.execute("
-          lines << "          \"SELECT * FROM #{vo_table} WHERE #{snake_name}_id = ?\", [row[\"id\"]]"
-          lines << "        )"
-          vo_attrs = vo.attributes.map { |a| "#{a.name}: r[\"#{a.name}\"]" }.join(", ")
-          lines << "        #{Hecks::Utils.underscore(vo.name)}s = #{Hecks::Utils.underscore(vo.name)}_rows.map { |r| #{@aggregate.name}::#{vo.name}.new(#{vo_attrs}) }"
+          vo_snake = Hecks::Utils.underscore(vo.name)
+          lines << "        #{vo_snake}_rows = @db[:#{vo_table}].where(#{snake_name}_id: row[:id]).all"
+          vo_attrs = vo.attributes.map { |a| "#{a.name}: r[:#{a.name}]" }.join(", ")
+          lines << "        #{vo_snake}s = #{vo_snake}_rows.map { |r| #{@aggregate.name}::#{vo.name}.new(#{vo_attrs}) }"
         end
 
-        all_assigns = ["          id: row[\"id\"]"] + attr_assigns
+        all_assigns = ["          id: row[:id]"] + attr_assigns
         list_value_objects.each do |vo|
           attr_name = @aggregate.attributes.find { |a| a.list? && a.type.to_s == vo.name }&.name
           all_assigns << "          #{attr_name}: #{Hecks::Utils.underscore(vo.name)}s" if attr_name
         end
-        all_assigns << "          created_at: row[\"created_at\"] ? Time.parse(row[\"created_at\"].to_s) : nil"
-        all_assigns << "          updated_at: row[\"updated_at\"] ? Time.parse(row[\"updated_at\"].to_s) : nil"
+        all_assigns << "          created_at: row[:created_at] ? Time.parse(row[:created_at].to_s) : nil"
+        all_assigns << "          updated_at: row[:updated_at] ? Time.parse(row[:updated_at].to_s) : nil"
 
         lines << "        require \"time\""
         lines << "        #{@aggregate.name}.new("
@@ -97,16 +82,11 @@ module Hecks
         attr_name = @aggregate.attributes.find { |a| a.list? && a.type.to_s == vo.name }&.name
         return [] unless attr_name
 
-        vo_cols = ["id", "#{snake_name}_id"] + vo.attributes.map { |a| a.name.to_s }
-        vo_placeholders = vo_cols.map { "?" }.join(", ")
-        vo_values = vo.attributes.map { |a| "vo.#{a.name}" }.join(", ")
+        vo_cols = vo.attributes.map { |a| "#{a.name}: vo.#{a.name}" }
 
         lines = []
         lines << "        #{snake_name}.#{attr_name}.each do |vo|"
-        lines << "          @connection.execute("
-        lines << "            \"INSERT INTO #{vo_table} (#{vo_cols.join(', ')}) VALUES (#{vo_placeholders})\","
-        lines << "            [SecureRandom.uuid, #{snake_name}.id, #{vo_values}]"
-        lines << "          )"
+        lines << "          @db[:#{vo_table}].insert(id: SecureRandom.uuid, #{snake_name}_id: #{snake_name}.id, #{vo_cols.join(', ')})"
         lines << "        end"
         lines
       end
@@ -115,7 +95,7 @@ module Hecks
         lines = []
         list_value_objects.each do |vo|
           vo_table = "#{table_name}_#{Hecks::Utils.underscore(vo.name)}s"
-          lines << "        @connection.execute(\"DELETE FROM #{vo_table} WHERE #{snake_name}_id = ?\", [id])"
+          lines << "        @db[:#{vo_table}].where(#{snake_name}_id: id).delete"
         end
         lines
       end
