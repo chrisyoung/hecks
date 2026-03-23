@@ -23,7 +23,7 @@ module Hecks
           private
 
           def module_shell(mod)
-            "require 'securerandom'\nmodule #{mod}\n  class ValidationError < StandardError; end\n  class InvariantError < StandardError; end\nend"
+            "require 'securerandom'\nrequire 'hecks/model'\nrequire 'hecks/command'\nmodule #{mod}\n  class ValidationError < StandardError; end\n  class InvariantError < StandardError; end\nend"
           end
 
           def aggregate_sources(mod)

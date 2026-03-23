@@ -5,6 +5,7 @@ module ShippingDomain
     module Commands
       class ShipShipment
         include Hecks::Command
+        emits "ShippedShipment"
 
         attr_reader :shipment_id
 
@@ -13,16 +14,12 @@ module ShippingDomain
         end
 
         def call
-          run_handler
           existing = repository.find(shipment_id)
           if existing
             save Shipment.new(id: existing.id, pizza_id: existing.pizza_id, quantity: existing.quantity, status: existing.status, created_at: existing.created_at, updated_at: Time.now)
           else
             save Shipment.new(created_at: Time.now, updated_at: Time.now)
           end
-          emit Events::ShippedShipment.new(shipment_id: shipment_id)
-          record_event(aggregate.id, event)
-          self
         end
       end
     end

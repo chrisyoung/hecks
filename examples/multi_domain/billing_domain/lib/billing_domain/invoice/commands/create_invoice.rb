@@ -5,6 +5,7 @@ module BillingDomain
     module Commands
       class CreateInvoice
         include Hecks::Command
+        emits "CreatedInvoice"
 
         attr_reader :pizza_id, :quantity
 
@@ -14,11 +15,7 @@ module BillingDomain
         end
 
         def call
-          run_handler
           save Invoice.new(pizza_id: pizza_id, quantity: quantity, created_at: Time.now, updated_at: Time.now)
-          emit Events::CreatedInvoice.new(pizza_id: pizza_id, quantity: quantity)
-          record_event(aggregate.id, event)
-          self
         end
       end
     end
