@@ -56,4 +56,35 @@ RSpec.describe Hecks::Services::Querying::AdHocQueries do
       expect(PizzasDomain::Pizza.find_by(name: "Nonexistent")).to be_nil
     end
   end
+
+  describe ".order" do
+    it "sorts directly on the class" do
+      results = PizzasDomain::Pizza.order(:name)
+      expect(results.map(&:name)).to eq(["Margherita", "Pepperoni"])
+    end
+
+    it "sorts descending" do
+      results = PizzasDomain::Pizza.order(name: :desc)
+      expect(results.map(&:name)).to eq(["Pepperoni", "Margherita"])
+    end
+
+    it "chains with limit" do
+      results = PizzasDomain::Pizza.order(:name).limit(1)
+      expect(results.map(&:name)).to eq(["Margherita"])
+    end
+  end
+
+  describe ".limit" do
+    it "limits directly on the class" do
+      results = PizzasDomain::Pizza.limit(1)
+      expect(results.to_a.size).to eq(1)
+    end
+  end
+
+  describe ".offset" do
+    it "offsets directly on the class" do
+      results = PizzasDomain::Pizza.order(:name).offset(1)
+      expect(results.map(&:name)).to eq(["Pepperoni"])
+    end
+  end
 end
