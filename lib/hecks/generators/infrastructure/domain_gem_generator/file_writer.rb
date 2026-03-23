@@ -1,7 +1,12 @@
 # Hecks::Generators::Infrastructure::DomainGemGenerator::FileWriter
 #
-# Writes generated files to disk — aggregates, value objects, commands,
-# events, policies, queries, ports, adapters, gemspec, and entry point.
+# Mixin that writes generated domain files to disk — aggregates, value objects,
+# commands, events, policies, queries, ports, adapters, gemspec, entry point,
+# and hecks_domain.rb (serialized DSL). Part of DomainGemGenerator, consumed
+# by DomainGemGenerator#generate.
+#
+#   # Mixed into DomainGemGenerator:
+#   generate_aggregates(root, gem_name, mod)
 #
 module Hecks
   module Generators
@@ -59,6 +64,11 @@ module Hecks
               agg.policies.each do |pol|
                 pol_gen = Domain::PolicyGenerator.new(pol, domain_module: mod, aggregate_name: safe_name)
                 write_file(root, "#{base}/policies/#{Hecks::Utils.underscore(pol.name)}.rb", pol_gen.generate)
+              end
+
+              # Create conventional folders even when empty
+              %w[commands events policies queries].each do |dir|
+                FileUtils.mkdir_p(File.join(root, base, dir))
               end
             end
           end

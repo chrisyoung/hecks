@@ -1,7 +1,13 @@
 # Hecks::Generators::Infrastructure::DomainGemGenerator::SourceBuilder
 #
-# Generates all domain Ruby source as one eval-ready string (no file I/O).
-# Used by Hecks.load_domain for fast in-memory domain loading.
+# Mixin that generates all domain Ruby source as one eval-ready string (no
+# file I/O). Produces aggregates, value objects, commands, events, policies,
+# ports, and adapters. Injects Hecks::Command and Hecks::Query includes for
+# eval-based loading since const_missing auto-include does not fire. Part of
+# DomainGemGenerator, consumed by Hecks.load_domain.
+#
+#   gen = DomainGemGenerator.new(domain)
+#   gen.generate_source  # => "require 'securerandom'\n..."
 #
 module Hecks
   module Generators

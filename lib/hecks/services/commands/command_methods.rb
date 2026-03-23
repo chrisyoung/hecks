@@ -27,6 +27,7 @@ module Hecks
           event_bus = bus.respond_to?(:event_bus) ? bus.event_bus : bus
           cmd_class.event_bus = event_bus
           cmd_class.handler = cmd.handler
+          cmd_class.guarded_by = cmd.guard_name
           cmd_class.command_bus = bus
 
           # Set event name from domain IR (convention: CreatePizza -> CreatedPizza)

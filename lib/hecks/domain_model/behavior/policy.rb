@@ -21,13 +21,22 @@ module Hecks
   module DomainModel
     module Behavior
     class Policy
-      attr_reader :name, :event_name, :trigger_command, :async
+      attr_reader :name, :event_name, :trigger_command, :async, :block
 
-      def initialize(name:, event_name:, trigger_command:, async: false)
+      def initialize(name:, event_name: nil, trigger_command: nil, async: false, block: nil)
         @name = name
         @event_name = event_name
         @trigger_command = trigger_command
         @async = async
+        @block = block
+      end
+
+      def guard?
+        block != nil
+      end
+
+      def reactive?
+        event_name != nil
       end
     end
     end

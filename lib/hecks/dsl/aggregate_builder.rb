@@ -1,8 +1,9 @@
 # Hecks::DSL::AggregateBuilder
 #
 # DSL builder for aggregate definitions. Collects attributes, value objects,
-# commands, policies, validations, and invariants, then builds a
-# DomainModel::Structure::Aggregate. Automatically infers domain events from commands.
+# commands, policies, validations, invariants, scopes, ports, and queries,
+# then builds a DomainModel::Structure::Aggregate. Automatically infers
+# domain events from commands.
 #
 # The workhorse of the DSL layer -- used inside domain, context, and session
 # blocks to define aggregate roots.
@@ -10,7 +11,8 @@
 #   builder = AggregateBuilder.new("Pizza")
 #   builder.attribute :name, String
 #   builder.command("CreatePizza") { attribute :name, String }
-#   builder.validation :name, presence: true
+#   builder.scope :large, size: "L"
+#   builder.port(:guest) { allow :find, :all }
 #   agg = builder.build  # => #<Aggregate name="Pizza" ...>
 #
 module Hecks
@@ -46,10 +48,17 @@ module Hecks
       end
 
       def policy(name, &block)
-        builder = PolicyBuilder.new(name)
-        builder.instance_eval(&block) if block
-        @policies << builder.build
+        if block && block.arity > 0
+          # Guard policy: block takes a command argument
+          @policies << DomainModel::Behavior::Policy.new(name: name, block: block)
+        else
+          # Reactive policy: block configures on/trigger/async
+          builder = PolicyBuilder.new(name)
+          builder.instance_eval(&block) if block
+          @policies << builder.build
+        end
       end
+
 
       def validation(field, rules)
         @validations << DomainModel::Structure::Validation.new(field: field, rules: rules)
