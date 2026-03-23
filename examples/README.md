@@ -28,6 +28,14 @@ Three separate domains (pizzas, billing, shipping) sharing one event bus. When a
 ruby -Ilib examples/multi_domain/app.rb
 ```
 
+## sinatra_app/
+
+Generated from the pizzas domain with `hecks generate:sinatra`. An editable Sinatra app with routes wired to the domain — add auth, middleware, custom endpoints on top.
+
+```bash
+cd examples/sinatra_app && bundle install && ruby app.rb
+```
+
 ## Serving any domain
 
 From any directory with a `domain.rb`:
