@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+trap 'echo "\nAborted."; exit 1' INT
 
 echo "=== Updating doc headers ==="
 claude -p "Update the doc headers in all lib/**/*.rb files to match current features. Don't change code, just the comment block at the top of each file." --allowedTools Read,Edit,Glob,Grep --verbose
