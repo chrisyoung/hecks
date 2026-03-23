@@ -24,6 +24,7 @@ module Hecks
       def generate
         lines = []
         lines << "require \"time\""
+        lines << "require \"json\"" if has_json_attributes?
         lines << ""
         lines << "module #{@domain_module}"
         lines << "  module Adapters"
@@ -100,6 +101,10 @@ module Hecks
 
       def scalar_attributes
         @aggregate.attributes.reject(&:list?)
+      end
+
+      def has_json_attributes?
+        @aggregate.attributes.any?(&:json?)
       end
 
       def list_value_objects

@@ -11,7 +11,7 @@ module Hecks
       private
 
       def insert_lines
-        col_hash = scalar_attributes.map { |a| "#{a.name}: #{snake_name}.#{a.name}" }
+        col_hash = scalar_attributes.map { |a| a.json? ? "#{a.name}: JSON.generate(#{snake_name}.#{a.name} || nil)" : "#{a.name}: #{snake_name}.#{a.name}" }
         col_hash << "id: #{snake_name}.id"
         col_hash << "created_at: #{snake_name}.created_at&.iso8601"
         col_hash << "updated_at: #{snake_name}.updated_at&.iso8601"
@@ -27,7 +27,7 @@ module Hecks
       end
 
       def update_lines
-        col_hash = scalar_attributes.map { |a| "#{a.name}: #{snake_name}.#{a.name}" }
+        col_hash = scalar_attributes.map { |a| a.json? ? "#{a.name}: JSON.generate(#{snake_name}.#{a.name} || nil)" : "#{a.name}: #{snake_name}.#{a.name}" }
         col_hash << "created_at: #{snake_name}.created_at&.iso8601"
         col_hash << "updated_at: #{snake_name}.updated_at&.iso8601"
 
@@ -47,7 +47,11 @@ module Hecks
 
       def build_lines
         attr_assigns = scalar_attributes.map do |a|
-          "          #{a.name}: row[:#{a.name}]"
+          if a.json?
+            "          #{a.name}: (row[:#{a.name}] ? JSON.parse(row[:#{a.name}]) : nil)"
+          else
+            "          #{a.name}: row[:#{a.name}]"
+          end
         end
 
         lines = []
