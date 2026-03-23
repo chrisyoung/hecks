@@ -16,16 +16,18 @@ gem "pizzas_domain", path: "./pizzas_domain"
 # config/initializers/hecks.rb
 Hecks.configure do
   domain "pizzas_domain"
-  adapter :sql unless Rails.env.test?
+  adapter :sql, database: :mysql,
+    host: "localhost", user: "root", password: "secret", name: "pizzas"
+  include_ad_hoc_queries
 end
 ```
 
-Then write controllers like you always have:
+Then write controllers using query objects and familiar methods:
 
 ```ruby
 class PizzasController < ApplicationController
   def index
-    @pizzas = Pizza.all
+    @pizzas = params[:style] ? Pizza.by_style(params[:style]) : Pizza.all
   end
 
   def create
@@ -53,45 +55,9 @@ end
 
 `Pizza.create`, `Pizza.find`, `Pizza.all`, `pizza.update`, `pizza.destroy`, `pizza.toppings.create` — it feels like ActiveRecord, but it's your pure domain. Tests run against memory adapters automatically. No database setup needed.
 
-## Why Hecks instead of ActiveRecord?
+## [Why Hecks instead of ActiveRecord?](docs/why_hecks.md)
 
-Hecks was born out of frustration with ActiveRecord. Your model layer shouldn't be a tangle of persistence logic, callbacks, and query scopes — with business rules buried somewhere in the middle. ActiveRecord makes the database the center of your architecture. Hecks makes your domain the center. DDD and hexagonal architecture shouldn't be harder than `rails generate model` — so we made it just as easy.
-
-**Model real-world relationships, not database tables.** ActiveRecord starts with the database and works backward — your models are table wrappers. Hecks starts with how your business actually works. A Pizza has Toppings. An Order references a Pizza. You describe that in Ruby, and the database plumbing gets handled for you.
-
-**Your domain is a gem, not a directory.** Hecks generates a standalone Ruby gem with zero dependencies. Your domain is a versioned artifact — you can share it across multiple apps, test it in isolation, and reason about it without a database running.
-
-**No persistence in your objects.** A Hecks aggregate is just a Ruby class with attributes, validations, and invariants. No `belongs_to`, no `has_many`, no callbacks, no `before_save`. You don't need plumbing that's just for databases mixed into your business logic.
-
-**Tests don't need a database.** Your domain runs against memory adapters by default — no migrations, no fixtures, no database process. Production uses SQL. The domain code is identical either way.
-
-**Queries are domain concepts.** Instead of scattering `where` clauses across controllers and services, you define named queries in the DSL:
-
-```ruby
-aggregate "Order" do
-  query "Pending" do
-    where(status: "pending")
-  end
-
-  query "ForPizza" do |pizza_id|
-    where(pizza_id: pizza_id)
-  end
-end
-```
-
-`Order.pending` and `Order.for_pizza(id)` are part of your domain language, not ad-hoc SQL. ActiveRecord-style queries (`where`, `order`, `limit`) are available as an opt-in for when you need them:
-
-```ruby
-# config/initializers/hecks.rb
-Hecks.configure do
-  domain "pizzas_domain"
-  include_ad_hoc_queries  # enables Pizza.where(...).order(...).limit(...)
-end
-```
-
-**Commands make intent explicit.** Instead of `pizza.update(status: "cancelled")`, you define `CancelOrder` — a named command that fires a `CancelledOrder` event. Every state change has a name, a payload, and a paper trail.
-
-Even simple CRUD apps have a domain. Hecks just makes you model it first and pick a database later — instead of the other way around.
+Hecks was born out of frustration with ActiveRecord. DDD and hexagonal architecture shouldn't be harder than `rails generate model` — so we made it just as easy. Pure domain objects, named queries, any database, no lock-in. [Read more](docs/why_hecks.md).
 
 ## Install
 
@@ -187,6 +153,36 @@ aggregate "Pizza" do
     attribute :topping, String
   end
 end
+```
+
+### Queries
+
+Named queries defined in the DSL become class methods on the aggregate. They use the query DSL internally (`where`, `order`, `limit`, comparison operators) but expose a clean domain API.
+
+```ruby
+aggregate "Pizza" do
+  attribute :name, String
+  attribute :style, String
+  attribute :price, Float
+
+  query "Classics" do
+    where(style: "Classic").order(:name)
+  end
+
+  query "ByStyle" do |style|
+    where(style: style)
+  end
+
+  query "Expensive" do
+    where(price: gt(15.0))
+  end
+end
+```
+
+```ruby
+Pizza.classics                    # named queries, always available
+Pizza.by_style("Tropical")
+Pizza.expensive
 ```
 
 ### Validations & Invariants
@@ -419,7 +415,11 @@ repo.delete(pizza.id)
 
 ## Hecks Services
 
-The application services layer. Wires your domain to adapters, dispatches commands, publishes events, and executes policies. Commands are automatically mapped to short method names on aggregate roots.
+The application services layer, organized into three concerns:
+
+- **Persistence** — `RepositoryMethods`, `CollectionMethods`, `ReferenceMethods` (find, save, create, etc.)
+- **Commands** — `CommandBus`, `CommandMethods` (dispatch, event firing)
+- **Querying** — `QueryBuilder`, `AdHocQueries`, `ScopeMethods`, `Operators` (where, order, limit, gt, lt)
 
 ### Application Container
 
@@ -434,25 +434,62 @@ app = Hecks::Services::Application.new(domain)
 # Rails — use the config block
 Hecks.configure do
   domain "pizzas_domain"
-  adapter :memory         # default
+  adapter :sql, database: :mysql,
+    host: "localhost", user: "root", password: "secret", name: "pizzas"
+  include_ad_hoc_queries  # opt-in: where, order, limit, find_by
 end
 ```
 
-Every aggregate gets a memory repository by default. Commands become short methods on the aggregate class:
+### Query Objects (always available)
+
+Define named queries in the DSL — they become class methods on the aggregate:
 
 ```ruby
-Pizza.create(name: "Margherita", description: "Classic")
-Pizza.find(id)
-Pizza.all
+aggregate "Pizza" do
+  query "Classics" do
+    where(style: "Classic").order(:name)
+  end
+
+  query "ByStyle" do |style|
+    where(style: style)
+  end
+end
+```
+
+```ruby
+Pizza.classics                    # => [Margherita, Pepperoni]
+Pizza.by_style("Tropical")       # => [Hawaiian]
+```
+
+### Ad-Hoc Queries (opt-in)
+
+Enable `include_ad_hoc_queries` for the full ActiveRecord-style API:
+
+```ruby
+Pizza.where(style: "Classic")
+Pizza.where(price: gt(10)).order(:name)
+Pizza.order(:name).limit(5)
+Pizza.order(name: :desc).offset(10)
+Pizza.find_by(name: "Margherita")
+Pizza.limit(10)
 Pizza.first
 Pizza.last
+```
+
+### Persistence Methods
+
+Always available via `RepositoryMethods`:
+
+```ruby
+Pizza.find(id)
+Pizza.create(name: "Margherita", description: "Classic")
+Pizza.all
 Pizza.count
-Pizza.where(name: "Margherita")
 Pizza.delete(id)
 
+pizza.save
 pizza.update(name: "Margherita Deluxe")
 pizza.destroy
-pizza.save
 
 pizza.toppings.create(name: "Mozzarella", amount: 2)
 pizza.toppings.first.delete
@@ -478,23 +515,39 @@ pizza.toppings.clear
 
 ### Adapters
 
-Memory is the default. Switch to SQL with the config block:
+Memory is the default. Switch to SQL with the config block. Hecks uses Sequel under the hood — supports SQLite, MySQL, and Postgres:
 
 ```ruby
-# Rails
+# Rails — MySQL
 Hecks.configure do
   domain "pizzas_domain"
-  adapter :sql unless Rails.env.test?
+  adapter :sql, database: :mysql,
+    host: "localhost", user: "root", password: "secret", name: "pizzas"
+  include_ad_hoc_queries
 end
 
-# Plain Ruby — manual wiring
+# Postgres via URL
+Hecks.configure do
+  domain "pizzas_domain"
+  adapter :sql, url: "postgres://user:pass@host/pizzas"
+end
+
+# SQLite (default when no db config)
+Hecks.configure do
+  domain "pizzas_domain"
+  adapter :sql
+end
+
+# Plain Ruby — manual wiring with Sequel
+require "sequel"
+db = Sequel.sqlite("pizzas.db")
 app = Hecks::Services::Application.new(domain) do
   adapter "Pizza", PizzasDomain::Adapters::PizzaSqlRepository.new(db)
   adapter "Order", PizzasDomain::Adapters::OrderSqlRepository.new(db)
 end
 ```
 
-Tests always run against memory — fast, isolated, no database. Production uses SQL. The API (`Pizza.create`, `Pizza.find`, etc.) is the same either way.
+Tests always run against memory — fast, isolated, no database. Production uses SQL. The domain code is identical either way.
 
 ### Migrations
 
@@ -824,110 +877,48 @@ Hecks has three layers:
 
 ### Design Principles
 
-- **Domain purity** — Generated gems have zero runtime dependencies. No framework coupling.
-- **Feels like Ruby** — `Pizza.create(name: "Margherita")`, `pizza.toppings.create(...)`, `Pizza.find(id)`. ActiveRecord-style API, DDD structure.
-- **Batteries included** — Memory adapters work out of the box. SQL is one command away.
+- **Pure domain objects** — Aggregates have no persistence logic. No callbacks, no `belongs_to`.
+- **Queries are domain concepts** — Named queries in the DSL, ad-hoc queries opt-in.
+- **Any database** — SQLite, MySQL, Postgres via Sequel. One config line to switch.
+- **Feels like Ruby** — `Pizza.create(...)`, `Pizza.classics`, `pizza.toppings.create(...)`.
+- **Modular services** — Persistence, Querying, Commands are separate mixins.
+- **Batteries included** — Memory adapters by default. SQL is one config line away.
 - **DDD rules enforced** — 12 validation rules catch modeling mistakes at build time.
-- **CalVer versioning** — Every build auto-stamps `YYYY.MM.DD.N`. No manual bumping. The version tells you when the domain was defined.
-- **Bounded contexts** — Group aggregates into contexts. Cross-context communication via events only.
-- **Aggregate boundaries** — Cross-aggregate references are by ID only, enforced at build time.
-- **Immutability** — Value objects are frozen. Commands and events are frozen.
-- **Identity equality** — Aggregates compare by ID. Value objects compare by attributes.
-- **Versioned artifacts** — Every build produces a new CalVer version. Your domain is a dependency, not a directory.
-- **No hand-editing** — Edit the DSL, rebuild. The generated code is the build output, not the source.
-- **Swap when ready** — Start with memory, generate SQL when you need it, bring your own adapter whenever.
-- **Optional constructor args** — Aggregate constructors default all attributes to nil. Validations enforce required-ness, not the constructor.
+- **CalVer versioning** — Every build auto-stamps `YYYY.MM.DD.N`.
+- **Immutability** — Value objects, commands, and events are frozen.
+- **Swap when ready** — Start with memory, switch to SQL, bring your own adapter.
 
 ## Project Structure
 
 ```
 hecks/
-  lib/
-    hecks.rb                          # entry point + top-level API
-    hecks/
-      cli.rb                          # Thor CLI
-      session.rb                      # interactive REPL session
-      aggregate_handle.rb             # per-aggregate mutation API
-      context_handle.rb               # per-context REPL handle
-      playground.rb                   # play mode runtime
-      validator.rb                    # DDD validation rules
-      versioner.rb                    # CalVer management (YYYY.MM.DD.N)
-      utils.rb                        # shared utilities
-      domain_diff.rb                  # compares domain snapshots
-      domain_snapshot.rb              # saves/loads domain DSL for migration diffing
-      migration_strategy.rb           # base class for migration generators
-      migration_runner.rb             # executes pending SQL migrations
-      dsl_serializer.rb               # domain -> DSL source serializer
-      console_runner.rb               # IRB launcher with Rails detection
-      active_hecks.rb                  # ActiveModel integration (ActiveHecks)
-      domain_model/                   # intermediate representation
-        domain.rb
-        bounded_context.rb
-        aggregate.rb
-        value_object.rb
-        attribute.rb
-        command.rb
-        domain_event.rb
-        policy.rb
-        validation.rb
-        invariant.rb
-      dsl/                            # DSL builders
-        domain_builder.rb
-        context_builder.rb
-        aggregate_builder.rb
-        value_object_builder.rb
-        command_builder.rb
-        policy_builder.rb
-        attribute_collector.rb
-        aggregate_rebuilder.rb
-      generators/                     # code generators
-        context_aware.rb
-        domain_gem_generator.rb
-        aggregate_generator.rb
-        value_object_generator.rb
-        command_generator.rb
-        event_generator.rb
-        policy_generator.rb
-        port_generator.rb
-        memory_adapter_generator.rb
-        sql_adapter_generator.rb
-        sql_migration_generator.rb
-        autoload_generator.rb
-        spec_generator.rb
-      services/                       # application runtime
-        application.rb
-        command_runner.rb
-        event_bus.rb
-        collection_proxy.rb
-      validation_rules/               # individual DDD rule objects
-        base_rule.rb
-        aggregates_have_commands.rb
-        command_naming.rb
-        commands_have_attributes.rb
-        name_collisions.rb
-        no_bidirectional_references.rb
-        no_self_references.rb
-        no_value_object_references.rb
-        unique_aggregate_names.rb
-        unique_context_names.rb
-        valid_policy_events.rb
-        valid_policy_triggers.rb
-        valid_references.rb
-      migration_strategies/           # backend-specific migration generators
-        sql_strategy.rb
-      cli/
-        migration_commands.rb         # generate:migrations + db:migrate
-    active_hecks/                     # Rails integration (ActiveHecks)
-      railtie.rb                      # Railtie + rake tasks
-  lib/generators/                     # Rails generators
-    active_hecks/
-      init_generator.rb              # rails generate active_hecks:init
-      migration_generator.rb         # rails generate active_hecks:migration
+  lib/hecks/
+    domain_model/
+      behavior/                       # Command, DomainEvent, Policy, Query
+      structure/                      # Domain, Aggregate, ValueObject, Attribute, ...
+    dsl/                              # DSL builders
+    generators/
+      context_aware.rb                # shared mixin
+      domain/                         # Aggregate, VO, Command, Event, Policy, Query
+      sql/                            # SqlAdapter, SqlBuilder, SqlMigration
+      infrastructure/                 # Port, MemoryAdapter, Autoload, Spec, DomainGem
+    services/
+      persistence/                    # RepositoryMethods, CollectionProxy, References
+      querying/                       # QueryBuilder, AdHocQueries, Scopes, Operators
+      commands/                       # CommandBus, CommandMethods, CommandRunner
+      aggregate_wiring.rb             # orchestrates mixin binding
+      application.rb                  # boot container
+    validation_rules/
+      naming/                         # CommandNaming, NameCollisions, Uniqueness
+      references/                     # ValidRefs, NoBidirectional, NoSelf, NoVO
+      structure/                      # AggregatesHaveCommands, Policies
+    migration_strategies/
+  active_hecks/                       # Rails integration
+  docs/
+    why_hecks.md
   examples/
-    pizzas/                           # basic domain example
+    pizzas/                           # standalone domain example
     rails_app/                        # Rails integration example
-  spec/
-    ...
 ```
 
 ## License

@@ -6,8 +6,8 @@ A complete Hecks domain with Pizza and Order aggregates, value objects, commands
 
 `domain.rb` defines two aggregates:
 
-- **Pizza** — name, description, toppings (list of Topping value objects), with a presence validation on name. Commands: `CreatePizza`, `AddTopping`.
-- **Order** — references Pizza by ID, has quantity and status. Commands: `PlaceOrder`, `CancelOrder`, `ReserveStock`. Policy: `ReserveIngredients` fires when an order is placed.
+- **Pizza** — name, description, toppings (list of Topping value objects), with a presence validation on name. Commands: `CreatePizza`, `AddTopping`. Query: `ByDescription`.
+- **Order** — references Pizza by ID, has quantity and status. Commands: `PlaceOrder`, `CancelOrder`, `ReserveStock`. Query: `Pending`. Policy: `ReserveIngredients` fires when an order is placed.
 
 ## Running the Examples
 
@@ -26,7 +26,8 @@ What it demonstrates:
 - `Hecks::Services::Application.new(domain)` to wire everything up
 - `Pizza.create(name: ...)` to dispatch commands via short method names
 - `pizza.toppings.create(name: "Mozzarella", amount: 2)` collection proxies
-- `Pizza.find(id)` / `Pizza.all` / `Pizza.count` / `Pizza.delete(id)` repository methods
+- `Pizza.find(id)` / `Pizza.all` / `Pizza.count` repository methods
+- `Pizza.by_description("Classic")` DSL query objects
 - `app.on("CreatedPizza") { ... }` to subscribe to events
 - Value object creation and freezing
 
@@ -63,8 +64,9 @@ Requires `gem install sqlite3` for the live demo. Without SQLite installed, it s
 
 What it demonstrates:
 - `SqlMigrationGenerator` producing CREATE TABLE statements with join tables for value objects
-- `SqlAdapterGenerator` producing repository classes with find/save/delete/all/count
+- `SqlAdapterGenerator` producing Sequel-based repository classes
 - Value object hydration from join tables (Pizza with Toppings round-trips through SQL)
+- Sequel handles SQLite, MySQL, and Postgres — same generated code works everywhere
 - Adapter swapping: `Application.new(domain) { adapter "Pizza", sql_repo }`
 - Short API: `Pizza.create(...)`, `Pizza.find(id)`, `Pizza.all`
 
