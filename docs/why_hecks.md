@@ -1,26 +1,26 @@
 # Why Hecks instead of ActiveRecord?
 
-Hecks was born out of frustration with ActiveRecord. Your model layer shouldn't be a tangle of persistence logic, callbacks, and query scopes — with business rules buried somewhere in the middle. ActiveRecord makes the database the center of your architecture. Hecks makes your domain the center. DDD and hexagonal architecture shouldn't be harder than `rails generate model` — so we made it just as easy.
+Hecks was born out of frustration with ActiveRecord. Your model layer shouldn't be a tangle of persistence logic, callbacks, and query scopes — with business rules buried somewhere in the middle. ActiveRecord makes the database the center of your app. Hecks makes your business logic the center. Describing your business shouldn't be harder than `rails generate model` — so we made it just as easy.
 
 ## Model real-world relationships, not database tables
 
 ActiveRecord starts with the database and works backward — your models are table wrappers. Hecks starts with how your business actually works. A Pizza has Toppings. An Order references a Pizza. You describe that in Ruby, and the database plumbing gets handled for you.
 
-## Your domain is a gem, not a directory
+## Your business logic is a gem, not a directory
 
 Hecks generates a standalone Ruby gem with zero dependencies. Your domain is a versioned artifact — you can share it across multiple apps, test it in isolation, and reason about it without a database running.
 
 ## No persistence in your objects
 
-A Hecks aggregate is just a Ruby class with attributes, validations, and invariants. No `belongs_to`, no `has_many`, no callbacks, no `before_save`. You don't need plumbing that's just for databases mixed into your business logic.
+A Hecks class is just Ruby — attributes, requirements, and rules. No `belongs_to`, no `has_many`, no callbacks, no `before_save`. You don't need database plumbing mixed into your business logic.
 
 ## Tests don't need a database
 
-Your domain runs against memory adapters by default — no migrations, no fixtures, no database process. Production uses SQL. The domain code is identical either way.
+Your code runs against memory by default — no migrations, no fixtures, no database process. Production uses SQL. The code is identical either way.
 
-## Queries are domain concepts
+## Lookups are part of your business
 
-Instead of scattering `where` clauses across controllers and services, you define named queries in the DSL:
+Instead of scattering `where` clauses across controllers and services, you define named lookups in the DSL:
 
 ```ruby
 aggregate "Order" do
