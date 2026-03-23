@@ -2,6 +2,9 @@
 #
 require "json"
 
+# Suppress json-schema MultiJSON deprecation from mcp gem
+JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
+
 module Hecks
   class PortAccessDenied < StandardError; end
 
@@ -64,6 +67,15 @@ module Hecks
     autoload :Persistence,      "hecks/services/persistence"
     autoload :Querying,         "hecks/services/querying"
     autoload :Commands,         "hecks/services/commands"
+  end
+
+  module HTTP
+    autoload :DomainServer,       "hecks/http/domain_server"
+    autoload :RpcServer,          "hecks/http/rpc_server"
+    autoload :RouteBuilder,       "hecks/http/route_builder"
+    autoload :OpenapiGenerator,   "hecks/http/openapi_generator"
+    autoload :RpcDiscovery,       "hecks/http/rpc_discovery"
+    autoload :JsonSchemaGenerator, "hecks/http/json_schema_generator"
   end
 
   # Configure Hecks for an application (typically from an initializer)
