@@ -1,19 +1,10 @@
 # Hecks::Configuration
 #
-# Config block for wiring Hecks into an application. Handles loading the
-# domain gem, choosing adapters, database connection, and booting.
+# Wires Hecks into an application. Load from a gem or a local folder.
 #
-#   Hecks.configure do
-#     domain "pizzas_domain", version: "2026.03.22.1"
-#     adapter :sql, database: :mysql, host: "localhost",
-#       user: "root", password: "secret", name: "pizzas"
-#     include_ad_hoc_queries
-#   end
-#
-# Database options:
-#   database: :sqlite (default), :mysql, :postgres
-#   url: "mysql2://user:pass@host/db" (alternative to individual options)
-#   host:, user:, password:, name: (individual connection params)
+#   domain "pizzas_domain", version: "2026.03.22.1"  # from gem
+#   domain "pizzas_domain", path: "domain/"           # local, builds on boot
+#   adapter :sql, database: :mysql, host: "localhost", name: "pizzas"
 #
 require "fileutils"
 
@@ -30,9 +21,10 @@ module Hecks
       @ad_hoc_queries = false
     end
 
-    def domain(gem_name, version: nil)
+    def domain(gem_name, version: nil, path: nil)
       @gem_name = gem_name
       @gem_version = version
+      @domain_path = path
     end
 
     def adapter(type, **options)
@@ -56,6 +48,33 @@ module Hecks
     private
 
     def load_domain
+      if @domain_path
+        load_from_path
+      else
+        load_from_gem
+      end
+    end
+
+    def load_from_path
+      base = if defined?(::Rails)
+               ::Rails.root.join(@domain_path).to_s
+             else
+               File.expand_path(@domain_path)
+             end
+
+      domain_file = File.join(base, "domain.rb")
+      @domain_obj = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
+
+      # Build the gem into the same directory
+      gem_path = Hecks.build(@domain_obj, output_dir: base)
+      lib_path = File.join(gem_path, "lib")
+      $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+      require @gem_name
+      Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+      @domain_module = Object.const_get(@domain_obj.module_name + "Domain")
+    end
+
+    def load_from_gem
       gem @gem_name, @gem_version if @gem_version
       require @gem_name
 
