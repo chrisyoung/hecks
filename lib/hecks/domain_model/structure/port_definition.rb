@@ -1,4 +1,4 @@
-# Hecks::DomainModel::PortDefinition
+# Hecks::DomainModel::Structure::PortDefinition
 #
 # Represents a named port that defines which methods are accessible
 # through a particular access level (e.g., :guest, :admin).

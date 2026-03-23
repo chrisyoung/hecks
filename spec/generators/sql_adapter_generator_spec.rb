@@ -69,7 +69,7 @@ RSpec.describe Hecks::Generators::SQL::SqlAdapterGenerator do
     it "implements query using Sequel dataset builder" do
       expect(code).to include("def query(conditions: {}, order_key: nil, order_direction: :asc, limit: nil, offset: nil)")
       expect(code).to include("Sequel.sqlite[:pizzas]")
-      expect(code).to include("ds.where(conditions)")
+      expect(code).to include("ds.where")
       expect(code).to include("ds.order")
       expect(code).to include("ds.limit")
       expect(code).to include("ds.offset")

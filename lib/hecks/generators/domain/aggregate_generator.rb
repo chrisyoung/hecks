@@ -1,4 +1,4 @@
-# Hecks::Generators::AggregateGenerator
+# Hecks::Generators::Domain::AggregateGenerator
 #
 # Generates the aggregate root class with identity, validation, and invariants.
 # Supports optional context module nesting for bounded contexts.

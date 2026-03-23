@@ -1,4 +1,4 @@
-# Hecks::DomainModel::Actor
+# Hecks::DomainModel::Structure::Actor
 #
 # Represents a user role or persona that issues commands. Captured during
 # Event Storming as small yellow stickies -- the people or systems that

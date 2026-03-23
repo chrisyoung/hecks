@@ -1,4 +1,4 @@
-# Hecks::Generators::AutoloadGenerator
+# Hecks::Generators::Infrastructure::AutoloadGenerator
 #
 # Generates the entry point file with autoload declarations for the domain gem.
 # Handles both single-context (flat) and multi-context (nested) layouts.

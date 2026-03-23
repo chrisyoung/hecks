@@ -1,4 +1,4 @@
-# Hecks::Generators::QueryGenerator
+# Hecks::Generators::Domain::QueryGenerator
 #
 # Generates query classes with a call method. Queries are defined in the
 # DSL and auto-wired as class methods on aggregates.

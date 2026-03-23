@@ -1,4 +1,4 @@
-# Hecks::DomainModel::Attribute
+# Hecks::DomainModel::Structure::Attribute
 #
 # Represents a typed attribute on an aggregate, value object, command, or event.
 # Supports scalar types (String, Integer), list types, and cross-aggregate

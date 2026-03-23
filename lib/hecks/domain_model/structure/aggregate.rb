@@ -1,4 +1,4 @@
-# Hecks::DomainModel::Aggregate
+# Hecks::DomainModel::Structure::Aggregate
 #
 # Intermediate representation of a DDD aggregate -- the core building block
 # of a Hecks domain. Groups a root entity with its value objects, commands,

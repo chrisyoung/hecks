@@ -1,4 +1,4 @@
-# Hecks::DomainModel::DomainEvent
+# Hecks::DomainModel::Behavior::DomainEvent
 #
 # Intermediate representation of a domain event -- a record that something
 # happened. Events are automatically inferred from commands by the

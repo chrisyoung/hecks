@@ -1,4 +1,4 @@
-# Hecks::DomainModel::ReadModel
+# Hecks::DomainModel::Structure::ReadModel
 #
 # Represents a read model (data view) needed by a command to make decisions.
 # Captured during Event Storming as green stickies -- the information a user

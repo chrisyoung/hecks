@@ -1,4 +1,4 @@
-# Hecks::Generators::SqlBuilder
+# Hecks::Generators::SQL::SqlBuilder
 #
 # SQL generation helpers for SqlAdapterGenerator. Builds the INSERT,
 # UPDATE, SELECT (build), and DELETE statement fragments including

@@ -1,4 +1,4 @@
-# Hecks::DomainModel::Scope
+# Hecks::DomainModel::Structure::Scope
 #
 # Value object representing a named query scope declared on an aggregate.
 # A scope has a name and conditions -- either a plain Hash for simple

@@ -1,4 +1,4 @@
-# Hecks::Generators::SqlMigrationGenerator
+# Hecks::Generators::SQL::SqlMigrationGenerator
 #
 # Generates CREATE TABLE SQL statements from a domain model. Produces one
 # table per aggregate plus join tables for list-type value objects.

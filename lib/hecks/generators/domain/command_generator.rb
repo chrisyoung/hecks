@@ -1,4 +1,4 @@
-# Hecks::Generators::CommandGenerator
+# Hecks::Generators::Domain::CommandGenerator
 #
 # Generates frozen command data objects. Commands describe intent and are
 # dispatched through the command bus.
