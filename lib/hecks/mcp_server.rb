@@ -28,7 +28,7 @@ module Hecks
     end
 
     def run
-      transport = ::MCP::Transport::Stdio.new(@server)
+      transport = ::MCP::Transport.new(@server)
       transport.open
     end
 
