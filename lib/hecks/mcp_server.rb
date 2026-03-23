@@ -28,8 +28,8 @@ module Hecks
     end
 
     def run
-      transport = ::MCP::Transport.new(@server)
-      transport.open
+      require "mcp/server/transports/stdio_transport"
+      ::MCP::Server::Transports::StdioTransport.new(@server).open
     end
 
     def ensure_session!
