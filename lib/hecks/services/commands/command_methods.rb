@@ -27,29 +27,33 @@ module Hecks
 
       def self.bind_create(klass, method_name, cmd, bus, repo, defaults)
         cmd_handler = cmd.handler
+        agg_type = klass.name.split("::").last
         klass.define_singleton_method(method_name) do |**attrs|
           if cmd_handler
             require "ostruct"
             cmd_handler.call(OpenStruct.new(**attrs))
           end
-          bus.dispatch(cmd.name, **attrs)
+          event = bus.dispatch(cmd.name, **attrs)
           now = Time.now
           constructor_attrs = { created_at: now, updated_at: now }
           defaults.each { |param, default_val| constructor_attrs[param] = attrs.key?(param) ? attrs[param] : default_val }
           aggregate = new(**constructor_attrs)
           repo.save(aggregate)
+          recorder = instance_variable_get(:@__hecks_event_recorder__)
+          recorder.record(agg_type, aggregate.id, event) if recorder
           aggregate
         end
       end
 
       def self.bind_update(klass, method_name, cmd, bus, repo, defaults)
         cmd_handler = cmd.handler
+        agg_type = klass.name.split("::").last
         klass.define_singleton_method(method_name) do |**attrs|
           if cmd_handler
             require "ostruct"
             cmd_handler.call(OpenStruct.new(**attrs))
           end
-          bus.dispatch(cmd.name, **attrs)
+          event = bus.dispatch(cmd.name, **attrs)
           id_key = attrs.keys.find { |k| k.to_s.end_with?("_id") }
           existing = id_key ? repo.find(attrs[id_key]) : nil
           if existing
@@ -76,6 +80,8 @@ module Hecks
             aggregate = new(**constructor_attrs)
           end
           repo.save(aggregate)
+          recorder = instance_variable_get(:@__hecks_event_recorder__)
+          recorder.record(agg_type, aggregate.id, event) if recorder
           aggregate
         end
       end
