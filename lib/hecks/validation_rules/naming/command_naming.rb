@@ -14,6 +14,7 @@ module Hecks
         Activate Deactivate Enable Disable Archive Restore
         Prepare Process Schedule Notify Verify Confirm Check
         Import Export Generate Build Release Deploy Promote
+        Ship Deliver Fulfill Pay Charge Refund Bill Mark
       ].freeze
 
       def errors

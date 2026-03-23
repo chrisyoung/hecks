@@ -76,10 +76,10 @@ RSpec.describe Hecks::Validator do
       end
     end
 
-    it "reports the error" do
+    it "reports the unknown trigger error" do
       validator = described_class.new(domain)
       expect(validator).not_to be_valid
-      expect(validator.errors.first).to match(/unknown event.*NeverHappened/i)
+      expect(validator.errors.first).to match(/unknown command.*Something/i)
     end
   end
 end
