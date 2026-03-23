@@ -10,34 +10,40 @@ module Hecks
   module Generators
     module Domain
     class EventGenerator
-      include ContextAware
 
-      def initialize(event, domain_module:, aggregate_name:, context_module: nil)
+      def initialize(event, domain_module:, aggregate_name:)
         @event = event
         @domain_module = domain_module
         @aggregate_name = aggregate_name
-        @context_module = context_module
+        @has_keyword_attrs = @event.attributes.any? { |a| Hecks::Utils.ruby_keyword?(a.name) }
       end
 
       def generate
         lines = []
-        lines.concat(module_open_lines)
-        lines << "#{indent}class #{@aggregate_name}"
-        lines << "#{indent}  module Events"
-        lines << "#{indent}    class #{@event.name}"
-        lines << "#{indent}      attr_reader #{@event.attributes.map { |a| ":#{a.name}" }.join(", ")}, :occurred_at"
+        lines << "module #{@domain_module}"
+        lines << "  class #{@aggregate_name}"
+        lines << "    module Events"
+        lines << "      class #{@event.name}"
+        lines << "        attr_reader #{@event.attributes.map { |a| ":#{a.name}" }.join(", ")}, :occurred_at"
         lines << ""
-        lines << "#{indent}      def initialize(#{constructor_params})"
-        @event.attributes.each do |attr|
-          lines << "#{indent}        @#{attr.name} = #{attr.name}"
+        if @has_keyword_attrs
+          lines << "        def initialize(**kwargs)"
+          @event.attributes.each do |attr|
+            lines << "          @#{attr.name} = kwargs[:#{attr.name}]"
+          end
+        else
+          lines << "        def initialize(#{constructor_params})"
+          @event.attributes.each do |attr|
+            lines << "          @#{attr.name} = #{attr.name}"
+          end
         end
-        lines << "#{indent}        @occurred_at = Time.now"
-        lines << "#{indent}        freeze"
-        lines << "#{indent}      end"
-        lines << "#{indent}    end"
-        lines << "#{indent}  end"
-        lines << "#{indent}end"
-        lines.concat(module_close_lines)
+        lines << "          @occurred_at = Time.now"
+        lines << "          freeze"
+        lines << "        end"
+        lines << "      end"
+        lines << "    end"
+        lines << "  end"
+        lines << "end"
         lines.join("\n") + "\n"
       end
 

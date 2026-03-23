@@ -22,27 +22,24 @@ result = Hecks.from_event_storm(storm_path, name: "PizzaOrdering")
 puts "=== Domain: #{result.domain.name} ==="
 puts
 
-result.domain.contexts.each do |ctx|
-  puts "Bounded Context: #{ctx.name}"
-  ctx.aggregates.each do |agg|
-    next if agg.commands.empty? && agg.policies.empty?
-    puts "  Aggregate: #{agg.name}"
+result.domain.aggregates.each do |agg|
+  next if agg.commands.empty? && agg.policies.empty?
+  puts "Aggregate: #{agg.name}"
 
-    agg.commands.each do |cmd|
-      extras = []
-      extras << "reads: #{cmd.read_models.map(&:name).join(', ')}" unless cmd.read_models.empty?
-      extras << "calls: #{cmd.external_systems.map(&:name).join(', ')}" unless cmd.external_systems.empty?
-      suffix = extras.empty? ? "" : " (#{extras.join('; ')})"
-      puts "    Command: #{cmd.name}#{suffix}"
-    end
+  agg.commands.each do |cmd|
+    extras = []
+    extras << "reads: #{cmd.read_models.map(&:name).join(', ')}" unless cmd.read_models.empty?
+    extras << "calls: #{cmd.external_systems.map(&:name).join(', ')}" unless cmd.external_systems.empty?
+    suffix = extras.empty? ? "" : " (#{extras.join('; ')})"
+    puts "  Command: #{cmd.name}#{suffix}"
+  end
 
-    agg.events.each do |evt|
-      puts "    Event:   #{evt.name}"
-    end
+  agg.events.each do |evt|
+    puts "  Event:   #{evt.name}"
+  end
 
-    agg.policies.each do |pol|
-      puts "    Policy:  #{pol.name} — on #{pol.event_name} -> #{pol.trigger_command}"
-    end
+  agg.policies.each do |pol|
+    puts "  Policy:  #{pol.name} — on #{pol.event_name} -> #{pol.trigger_command}"
   end
   puts
 end
@@ -65,5 +62,5 @@ puts result.dsl
 domain = eval(result.dsl)
 puts "=== Round-trip check ==="
 puts "Parsed domain: #{domain.name}"
-puts "Contexts: #{domain.contexts.map(&:name).join(', ')}"
+puts "Aggregates: #{domain.aggregates.map(&:name).join(', ')}"
 puts "Aggregates: #{domain.aggregates.map(&:name).join(', ')}"

@@ -41,13 +41,4 @@ RSpec.describe Hecks::Generators::Domain::QueryObjectGenerator do
     end
   end
 
-  context "with bounded context" do
-    subject(:generator) { described_class.new(aggregate, domain_module: "PizzasDomain", context_module: "Kitchen") }
-
-    it "nests under the context module" do
-      code = generator.generate
-      expect(code).to include("module Kitchen")
-      expect(code).to include("module PizzaQueries")
-    end
-  end
 end

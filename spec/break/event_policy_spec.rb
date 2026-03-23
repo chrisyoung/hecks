@@ -4,12 +4,7 @@ require "timeout"
 
 RSpec.describe "Event bus and policy edge cases (destructive)" do
   def BreakTestDomains.boot(domain)
-    tmpdir = Dir.mktmpdir("hecks_break_test")
-    gem_path = Hecks.build(domain, output_dir: tmpdir)
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    load File.join(lib_path, "#{domain.gem_name}.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
     Hecks::Services::Application.new(domain)
   end
 

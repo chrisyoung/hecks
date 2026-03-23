@@ -1,12 +1,10 @@
 # Hecks::Generators::Infrastructure::SpecGenerator
 #
 # Generates RSpec test scaffolds for domain objects. Creates specs for
-# aggregates, value objects, commands, and events. Supports context-qualified
-# class names for multi-context domains.
+# aggregates, value objects, commands, and events.
 #
 #   gen = SpecGenerator.new(domain)
-#   gen.generate_aggregate_spec(agg)                          # PizzasDomain::Pizza
-#   gen.generate_aggregate_spec(agg, context_module: "Ordering")  # PizzasDomain::Ordering::Order
+#   gen.generate_aggregate_spec(agg)  # PizzasDomain::Pizza
 #
 require_relative "spec_helpers"
 
@@ -41,20 +39,22 @@ module Hecks
         RUBY
       end
 
-      def generate_aggregate_spec(aggregate, context_module: nil)
-        fqn = full_class_name(aggregate.name, context_module)
+      def generate_aggregate_spec(aggregate)
+        safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
+        fqn = full_class_name(safe_name)
+        snake = Hecks::Utils.underscore(safe_name)
 
         <<~RUBY
           require "spec_helper"
 
           RSpec.describe #{fqn} do
-            subject(:#{Hecks::Utils.underscore(aggregate.name)}) do
+            subject(:#{snake}) do
               described_class.new(#{example_args(aggregate)})
             end
 
             describe "#initialize" do
-              it "creates a #{aggregate.name} with an id" do
-                expect(#{Hecks::Utils.underscore(aggregate.name)}.id).not_to be_nil
+              it "creates a #{safe_name} with an id" do
+                expect(#{snake}.id).not_to be_nil
               end
 
           #{attribute_specs(aggregate)}
@@ -66,8 +66,9 @@ module Hecks
         RUBY
       end
 
-      def generate_value_object_spec(value_object, aggregate, context_module: nil)
-        fqn = full_class_name("#{aggregate.name}::#{value_object.name}", context_module)
+      def generate_value_object_spec(value_object, aggregate)
+        safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
+        fqn = full_class_name("#{safe_agg}::#{value_object.name}")
 
         <<~RUBY
           require "spec_helper"
@@ -95,8 +96,9 @@ module Hecks
         RUBY
       end
 
-      def generate_command_spec(command, aggregate, context_module: nil)
-        fqn = full_class_name("#{aggregate.name}::Commands::#{command.name}", context_module)
+      def generate_command_spec(command, aggregate)
+        safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
+        fqn = full_class_name("#{safe_agg}::Commands::#{command.name}")
 
         <<~RUBY
           require "spec_helper"
@@ -117,8 +119,9 @@ module Hecks
         RUBY
       end
 
-      def generate_event_spec(event, aggregate, context_module: nil)
-        fqn = full_class_name("#{aggregate.name}::Events::#{event.name}", context_module)
+      def generate_event_spec(event, aggregate)
+        safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
+        fqn = full_class_name("#{safe_agg}::Events::#{event.name}")
 
         <<~RUBY
           require "spec_helper"

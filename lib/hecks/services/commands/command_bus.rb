@@ -47,15 +47,15 @@ module Hecks
       # Dispatch a command by name through the middleware stack.
       # Returns the event.
       def dispatch(command_name, **attrs)
-        ctx, agg_def, cmd_def, event_def = resolve(command_name)
+        agg_def, cmd_def, event_def = resolve(command_name)
 
-        cmd_class = resolve_command_class(ctx, agg_def.name, command_name)
+        cmd_class = resolve_command_class(agg_def.name, command_name)
         command = cmd_class.new(**attrs)
 
         # Build the innermost handler — creates and publishes the event
         event_bus = @event_bus
         inner = -> {
-          event_class = resolve_event_class(ctx, agg_def.name, event_def.name)
+          event_class = resolve_event_class(agg_def.name, event_def.name)
           event_attrs = extract_event_attrs(command, event_class)
           event = event_class.new(**event_attrs)
           event_bus.publish(event)
@@ -78,11 +78,9 @@ module Hecks
       private
 
       def resolve(command_name)
-        @domain.contexts.each do |ctx|
-          ctx.aggregates.each do |agg|
-            agg.commands.each_with_index do |cmd, i|
-              return [ctx, agg, cmd, agg.events[i]] if cmd.name == command_name.to_s
-            end
+        @domain.aggregates.each do |agg|
+          agg.commands.each_with_index do |cmd, i|
+            return [agg, cmd, agg.events[i]] if cmd.name == command_name.to_s
           end
         end
 
@@ -90,18 +88,14 @@ module Hecks
         raise "Unknown command: #{command_name}. Available: #{available.join(', ')}"
       end
 
-      def resolve_command_class(ctx, agg_name, command_name)
-        agg_mod = resolve_aggregate_module(ctx, agg_name)
+      def resolve_command_class(agg_name, command_name)
+        agg_mod = @mod.const_get(agg_name)
         agg_mod::Commands.const_get(command_name)
       end
 
-      def resolve_event_class(ctx, agg_name, event_name)
-        agg_mod = resolve_aggregate_module(ctx, agg_name)
+      def resolve_event_class(agg_name, event_name)
+        agg_mod = @mod.const_get(agg_name)
         agg_mod::Events.const_get(event_name)
-      end
-
-      def resolve_aggregate_module(ctx, agg_name)
-        ctx.default? ? @mod.const_get(agg_name) : @mod.const_get(ctx.module_name).const_get(agg_name)
       end
 
       def extract_event_attrs(command, event_class)

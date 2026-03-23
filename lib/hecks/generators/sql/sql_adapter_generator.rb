@@ -28,8 +28,9 @@ module Hecks
         lines << ""
         lines << "module #{@domain_module}"
         lines << "  module Adapters"
-        lines << "    class #{@aggregate.name}SqlRepository"
-        lines << "      include Ports::#{@aggregate.name}Repository"
+        safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
+        lines << "    class #{safe_name}SqlRepository"
+        lines << "      include Ports::#{safe_name}Repository"
         lines << ""
         lines << "      def initialize(db)"
         lines << "        @db = db"
@@ -92,11 +93,11 @@ module Hecks
       private
 
       def table_name
-        Hecks::Utils.underscore(@aggregate.name) + "s"
+        Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(@aggregate.name)) + "s"
       end
 
       def snake_name
-        Hecks::Utils.underscore(@aggregate.name)
+        Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(@aggregate.name))
       end
 
       def scalar_attributes

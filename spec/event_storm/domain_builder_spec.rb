@@ -36,47 +36,40 @@ RSpec.describe Hecks::EventStorm::DomainBuilder do
     expect(domain.name).to eq("PizzaOrdering")
   end
 
-  it "creates bounded contexts" do
-    expect(domain.contexts.size).to eq(2)
-    expect(domain.contexts.map(&:name)).to eq(["Ordering", "Fulfillment"])
+  it "creates aggregates from all contexts" do
+    expect(domain.aggregates.map(&:name)).to include("Order", "Inventory", "KitchenTicket")
   end
 
-  describe "Ordering context" do
-    let(:ordering) { domain.contexts.first }
-
-    it "creates aggregates from command associations" do
-      expect(ordering.aggregates.map(&:name)).to include("Order", "Inventory")
-    end
-
+  describe "Order aggregate" do
     it "assigns commands to their aggregates" do
-      order_agg = ordering.aggregates.find { |a| a.name == "Order" }
+      order_agg = domain.aggregates.find { |a| a.name == "Order" }
       expect(order_agg.commands.map(&:name)).to include("PlaceOrder")
     end
 
     it "infers events from commands" do
-      order_agg = ordering.aggregates.find { |a| a.name == "Order" }
+      order_agg = domain.aggregates.find { |a| a.name == "Order" }
       expect(order_agg.events.map(&:name)).to include("PlacedOrder")
     end
 
-    it "attaches policies to the aggregate owning the trigger" do
-      inventory_agg = ordering.aggregates.find { |a| a.name == "Inventory" }
-      expect(inventory_agg.policies.size).to eq(1)
-      expect(inventory_agg.policies.first.event_name).to eq("OrderPlaced")
-      expect(inventory_agg.policies.first.trigger_command).to eq("ReserveStock")
-    end
-
     it "attaches read models to commands" do
-      order_agg = ordering.aggregates.find { |a| a.name == "Order" }
+      order_agg = domain.aggregates.find { |a| a.name == "Order" }
       cmd = order_agg.commands.find { |c| c.name == "PlaceOrder" }
       expect(cmd.read_models.map(&:name)).to include("Menu & Availability")
     end
   end
 
-  describe "Fulfillment context" do
-    let(:fulfillment) { domain.contexts.last }
+  describe "Inventory aggregate" do
+    it "attaches policies to the aggregate owning the trigger" do
+      inventory_agg = domain.aggregates.find { |a| a.name == "Inventory" }
+      expect(inventory_agg.policies.size).to eq(1)
+      expect(inventory_agg.policies.first.event_name).to eq("OrderPlaced")
+      expect(inventory_agg.policies.first.trigger_command).to eq("ReserveStock")
+    end
+  end
 
+  describe "KitchenTicket aggregate" do
     it "attaches external systems to commands" do
-      kt = fulfillment.aggregates.find { |a| a.name == "KitchenTicket" }
+      kt = domain.aggregates.find { |a| a.name == "KitchenTicket" }
       cmd = kt.commands.find { |c| c.name == "StartPreparation" }
       expect(cmd.external_systems.map(&:name)).to include("SMS Gateway")
     end

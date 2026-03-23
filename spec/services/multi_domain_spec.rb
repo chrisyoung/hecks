@@ -44,24 +44,12 @@ RSpec.describe "Multi-domain with shared event bus" do
   end
 
   before do
-    @tmpdir = Dir.mktmpdir("hecks_multi_domain_test")
-
-    [pizzas_domain, billing_domain].each do |domain|
-      gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: @tmpdir)
-      gem_path = gen.generate
-      lib_path = File.join(gem_path, "lib")
-      $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-      entry = File.join(lib_path, "#{domain.gem_name}.rb")
-      load entry
-      Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
-    end
+    [pizzas_domain, billing_domain].each { |d| Hecks.load_domain(d) }
 
     shared_bus = Hecks::Services::EventBus.new
     @pizzas_app = Hecks::Services::Application.new(pizzas_domain, event_bus: shared_bus)
     @billing_app = Hecks::Services::Application.new(billing_domain, event_bus: shared_bus)
   end
-
-  after { FileUtils.rm_rf(@tmpdir) }
 
   it "each domain has its own aggregates" do
     pizza = PizzasDomain::Pizza.create(name: "Margherita")

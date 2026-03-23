@@ -55,14 +55,14 @@ module Hecks
         @app = Services::Application.new(@domain)
         # Bind repository methods so find/all/count work
         @domain.aggregates.each do |agg|
-          agg_class = @mod.const_get(agg.name)
+          agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
           Services::Persistence::RepositoryMethods.bind(agg_class, @app[agg.name])
         end
       end
 
       def register_command_tools
         @domain.aggregates.each do |agg|
-          agg_class = @mod.const_get(agg.name)
+          agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
           agg.commands.each do |cmd|
             register_command(agg, agg_class, cmd)
           end
@@ -90,7 +90,7 @@ module Hecks
 
       def register_query_tools
         @domain.aggregates.each do |agg|
-          agg_class = @mod.const_get(agg.name)
+          agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
           agg.queries.each do |query|
             register_query(agg, agg_class, query)
           end
@@ -127,7 +127,7 @@ module Hecks
 
       def register_repository_tools
         @domain.aggregates.each do |agg|
-          agg_class = @mod.const_get(agg.name)
+          agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
           name = agg.name
           klass = agg_class
 

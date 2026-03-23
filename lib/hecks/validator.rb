@@ -1,16 +1,15 @@
 # Hecks::Validator
 #
 # Validates a domain model for DDD consistency. Enforces aggregate boundaries,
-# reference rules, command/event structure, policy wiring, naming conventions,
-# and bounded context separation.
+# reference rules, command/event structure, policy wiring, and naming conventions.
 #
 #   validator = Validator.new(domain)
 #   validator.valid?   # => true/false
 #   validator.errors   # => ["Order references unknown aggregate: Widget"]
 #
 # Rules enforced:
-#   - No duplicate context or aggregate names
-#   - References must target aggregate roots within the same context
+#   - No duplicate aggregate names
+#   - References must target aggregate roots
 #   - No bidirectional references between aggregates
 #   - No self-references on aggregates
 #   - Value objects must not contain references
@@ -22,7 +21,6 @@
 module Hecks
   class Validator
     RULES = [
-      ValidationRules::Naming::UniqueContextNames,
       ValidationRules::Naming::UniqueAggregateNames,
       ValidationRules::Naming::NameCollisions,
       ValidationRules::Naming::CommandNaming,

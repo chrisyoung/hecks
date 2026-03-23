@@ -128,13 +128,11 @@ module Hecks
     def resolve_command(command_name)
       mod = Object.const_get(@mod_name)
 
-      @domain.contexts.each do |ctx|
-        ctx.aggregates.each do |agg|
-          agg_class = resolve_agg_class(mod, ctx, agg)
-          if agg_class.const_defined?(:Commands) &&
-             agg_class::Commands.const_defined?(command_name)
-            return agg_class::Commands.const_get(command_name)
-          end
+      @domain.aggregates.each do |agg|
+        agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+        if agg_class.const_defined?(:Commands) &&
+           agg_class::Commands.const_defined?(command_name)
+          return agg_class::Commands.const_get(command_name)
         end
       end
 
@@ -144,14 +142,12 @@ module Hecks
     def resolve_event_for(command_name)
       mod = Object.const_get(@mod_name)
 
-      @domain.contexts.each do |ctx|
-        ctx.aggregates.each do |agg|
-          agg.commands.each_with_index do |cmd, i|
-            if cmd.name == command_name.to_s
-              event = agg.events[i]
-              agg_class = resolve_agg_class(mod, ctx, agg)
-              return agg_class::Events.const_get(event.name)
-            end
+      @domain.aggregates.each do |agg|
+        agg.commands.each_with_index do |cmd, i|
+          if cmd.name == command_name.to_s
+            event = agg.events[i]
+            agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+            return agg_class::Events.const_get(event.name)
           end
         end
       end
@@ -159,20 +155,10 @@ module Hecks
       raise "No event mapped for command: #{command_name}"
     end
 
-    def resolve_agg_class(mod, ctx, agg)
-      if ctx.default?
-        mod.const_get(agg.name)
-      else
-        mod.const_get(ctx.module_name).const_get(agg.name)
-      end
-    end
-
     def resolve_domain_command(command_name)
-      @domain.contexts.each do |ctx|
-        ctx.aggregates.each do |agg|
-          agg.commands.each do |cmd|
-            return cmd if cmd.name == command_name.to_s
-          end
+      @domain.aggregates.each do |agg|
+        agg.commands.each do |cmd|
+          return cmd if cmd.name == command_name.to_s
         end
       end
       nil

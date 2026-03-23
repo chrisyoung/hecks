@@ -27,12 +27,7 @@ RSpec.describe "SQL safety: injection and escaping attacks" do
   end
 
   before do
-    tmpdir = Dir.mktmpdir("hecks_sql_safety")
-    gem_path = Hecks.build(domain, output_dir: tmpdir)
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    load File.join(lib_path, "sql_safe_domain.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
 
     domain.aggregates.each do |agg|
       gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "SqlSafeDomain")

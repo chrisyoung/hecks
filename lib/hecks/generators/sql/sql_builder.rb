@@ -62,7 +62,7 @@ module Hecks
           vo_snake = Hecks::Utils.underscore(vo.name)
           lines << "        #{vo_snake}_rows = @db[:#{vo_table}].where(#{snake_name}_id: row[:id]).all"
           vo_attrs = vo.attributes.map { |a| "#{a.name}: r[:#{a.name}]" }.join(", ")
-          lines << "        #{vo_snake}s = #{vo_snake}_rows.map { |r| #{@aggregate.name}::#{vo.name}.new(#{vo_attrs}) }"
+          lines << "        #{vo_snake}s = #{vo_snake}_rows.map { |r| #{Hecks::Utils.sanitize_constant(@aggregate.name)}::#{vo.name}.new(#{vo_attrs}) }"
         end
 
         all_assigns = ["          id: row[:id]"] + attr_assigns
@@ -74,7 +74,7 @@ module Hecks
         all_assigns << "          updated_at: row[:updated_at] ? Time.parse(row[:updated_at].to_s) : nil"
 
         lines << "        require \"time\""
-        lines << "        #{@aggregate.name}.new("
+        lines << "        #{Hecks::Utils.sanitize_constant(@aggregate.name)}.new("
         lines << all_assigns.join(",\n")
         lines << "        )"
         lines << "      end"

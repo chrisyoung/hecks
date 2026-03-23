@@ -18,13 +18,7 @@ require "timeout"
 RSpec.describe "BREAK: Multi-domain conflicts" do
   # Helper: build a domain gem, load it, return the Application
   def boot(domain, event_bus: nil)
-    tmpdir = Dir.mktmpdir("hecks_break_multi")
-    @tmpdirs << tmpdir
-    gem_path = Hecks.build(domain, output_dir: tmpdir)
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    load File.join(lib_path, "#{domain.gem_name}.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
     Hecks::Services::Application.new(domain, event_bus: event_bus)
   end
 
@@ -449,16 +443,11 @@ RSpec.describe "BREAK: Multi-domain conflicts" do
       _hr_app = boot(matching_hr, event_bus: shared_bus)
       _payroll_app = boot(matching_payroll, event_bus: shared_bus)
 
-      # CreatedWorker -> policy -> CreateWorker -> CreatedWorker -> ...
-      # The policy handler rescues StandardError, but SystemStackError is NOT
-      # a StandardError — it's a subclass of Exception. So the recursion
-      # crashes the entire call stack.
-      #
-      # BUG: No recursion guard on policies. If a policy triggers a command
-      # that produces the same event the policy listens for, it blows up.
+      # Previously this would cause infinite recursion (SystemStackError),
+      # but the re-entrancy guard now prevents the policy from re-triggering.
       expect {
         MatchHrDomain::Worker.create(name: "Bob")
-      }.to raise_error(SystemStackError)
+      }.not_to raise_error
     end
   end
 

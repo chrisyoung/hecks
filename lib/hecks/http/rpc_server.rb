@@ -82,7 +82,7 @@ module Hecks
 
       def register_methods
         @domain.aggregates.each do |agg|
-          klass = @mod.const_get(agg.name)
+          klass = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
           register_commands(agg, klass)
           register_queries(agg, klass)
           register_crud(agg, klass)

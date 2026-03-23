@@ -20,19 +20,13 @@ module Hecks
       end
 
       def build
-        contexts = @parse_result.contexts.map { |ctx| build_context(ctx) }
-        DomainModel::Structure::Domain.new(name: @name, contexts: contexts)
+        # Flatten all context elements into a single aggregate list
+        all_elements = @parse_result.contexts.flat_map(&:elements)
+        aggregates = group_by_aggregate(all_elements)
+        DomainModel::Structure::Domain.new(name: @name, aggregates: aggregates)
       end
 
       private
-
-      def build_context(parsed_context)
-        aggregates = group_by_aggregate(parsed_context.elements)
-        DomainModel::Structure::BoundedContext.new(
-          name: parsed_context.name,
-          aggregates: aggregates
-        )
-      end
 
       def group_by_aggregate(elements)
         aggregate_commands = {}

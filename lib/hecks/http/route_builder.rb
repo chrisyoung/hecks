@@ -13,8 +13,8 @@ module Hecks
       def build
         routes = []
         @domain.aggregates.each do |agg|
-          klass = @mod.const_get(agg.name)
-          slug = Hecks::Utils.underscore(agg.name) + "s"
+          klass = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+          slug = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name)) + "s"
           routes.concat(query_routes(agg, klass, slug))
           routes.concat(crud_routes(agg, klass, slug))
         end

@@ -14,18 +14,9 @@ RSpec.describe Hecks::Services::Commands::CommandBus do
     end
   end
 
-  let(:tmpdir) { Dir.mktmpdir }
-
   before do
-    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: tmpdir)
-    gem_path = gen.generate
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    load File.join(lib_path, "pizzas_domain.rb")
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
+    Hecks.load_domain(domain)
   end
-
-  after { FileUtils.rm_rf(tmpdir) }
 
   let(:event_bus) { Hecks::Services::EventBus.new }
   subject(:bus) { described_class.new(domain: domain, event_bus: event_bus) }

@@ -10,13 +10,9 @@ module Hecks
     module SpecHelpers
       private
 
-      def full_class_name(class_path, context_module)
+      def full_class_name(class_path)
         mod = @domain.module_name + "Domain"
-        if context_module
-          "#{mod}::#{context_module}::#{class_path}"
-        else
-          "#{mod}::#{class_path}"
-        end
+        "#{mod}::#{class_path}"
       end
 
       def example_args(thing)
@@ -39,8 +35,10 @@ module Hecks
       end
 
       def attribute_specs(aggregate)
+        safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
+        snake = Hecks::Utils.underscore(safe_name)
         aggregate.attributes.map do |attr|
-          "    it \"has #{attr.name}\" do\n      expect(#{Hecks::Utils.underscore(aggregate.name)}.#{attr.name}).not_to be_nil\n    end"
+          "    it \"has #{attr.name}\" do\n      expect(#{snake}.#{attr.name}).not_to be_nil\n    end"
         end.join("\n\n")
       end
 

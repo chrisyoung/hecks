@@ -391,43 +391,6 @@ RSpec.describe "Schema Generator Edge Cases" do
   end
 
   # ===========================================================================
-  # 8. OpenAPI with bounded contexts -- does it flatten correctly?
-  # ===========================================================================
-  describe "OpenAPI with bounded contexts" do
-    let(:domain) do
-      Hecks.domain "ECommerce" do
-        context "Catalog" do
-          aggregate "Product" do
-            attribute :name, String
-            command "CreateProduct" do
-              attribute :name, String
-            end
-          end
-        end
-        context "Ordering" do
-          aggregate "Cart" do
-            attribute :total, Float
-            command "CreateCart" do
-              attribute :total, Float
-            end
-          end
-        end
-      end
-    end
-    let(:spec) { Hecks::HTTP::OpenapiGenerator.new(domain).generate }
-
-    it "generates paths for aggregates from all contexts" do
-      expect(spec[:paths]).to have_key("/products")
-      expect(spec[:paths]).to have_key("/carts")
-    end
-
-    it "generates schemas for aggregates from all contexts" do
-      expect(spec[:components][:schemas]).to have_key("Product")
-      expect(spec[:components][:schemas]).to have_key("Cart")
-    end
-  end
-
-  # ===========================================================================
   # 9. Aggregate with list_of but no matching value_object -- dangling $ref?
   # ===========================================================================
   describe "JSON Schema with dangling list_of reference" do

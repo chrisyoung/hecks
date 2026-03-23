@@ -1,23 +1,11 @@
 # Hecks::Generators::Infrastructure::AutoloadGenerator
 #
 # Generates the entry point file with autoload declarations for the domain gem.
-# Handles both single-context (flat) and multi-context (nested) layouts.
 #
-# Single context output:
 #   module PizzasDomain
 #     autoload :Pizza, "pizzas_domain/pizza/pizza"
 #     module Ports ...
 #     module Adapters ...
-#   end
-#
-# Multi-context output:
-#   module PizzasDomain
-#     module Ordering
-#       autoload :Order, "pizzas_domain/ordering/order/order"
-#     end
-#     module Ports
-#       module Ordering ...
-#     end
 #   end
 #
 module Hecks
@@ -40,60 +28,27 @@ module Hecks
         lines << "  class InvariantError < StandardError; end"
         lines << ""
 
-        @domain.contexts.each do |ctx|
-          if ctx.default?
-            ctx.aggregates.each do |agg|
-              snake = Hecks::Utils.underscore(agg.name)
-              lines << "  autoload :#{agg.name}, \"#{gem_name}/#{snake}/#{snake}\""
-            end
-          else
-            ctx_snake = Hecks::Utils.underscore(ctx.module_name)
-            lines << "  module #{ctx.module_name}"
-            ctx.aggregates.each do |agg|
-              snake = Hecks::Utils.underscore(agg.name)
-              lines << "    autoload :#{agg.name}, \"#{gem_name}/#{ctx_snake}/#{snake}/#{snake}\""
-            end
-            lines << "  end"
-          end
+        @domain.aggregates.each do |agg|
+          safe_name = Hecks::Utils.sanitize_constant(agg.name)
+          snake = Hecks::Utils.underscore(safe_name)
+          lines << "  autoload :#{safe_name}, \"#{gem_name}/#{snake}/#{snake}\""
         end
 
         lines << ""
         lines << "  module Ports"
-        @domain.contexts.each do |ctx|
-          if ctx.default?
-            ctx.aggregates.each do |agg|
-              snake = Hecks::Utils.underscore(agg.name)
-              lines << "    autoload :#{agg.name}Repository, \"#{gem_name}/ports/#{snake}_repository\""
-            end
-          else
-            ctx_snake = Hecks::Utils.underscore(ctx.module_name)
-            lines << "    module #{ctx.module_name}"
-            ctx.aggregates.each do |agg|
-              snake = Hecks::Utils.underscore(agg.name)
-              lines << "      autoload :#{agg.name}Repository, \"#{gem_name}/ports/#{ctx_snake}/#{snake}_repository\""
-            end
-            lines << "    end"
-          end
+        @domain.aggregates.each do |agg|
+          safe_name = Hecks::Utils.sanitize_constant(agg.name)
+          snake = Hecks::Utils.underscore(safe_name)
+          lines << "    autoload :#{safe_name}Repository, \"#{gem_name}/ports/#{snake}_repository\""
         end
         lines << "  end"
 
         lines << ""
         lines << "  module Adapters"
-        @domain.contexts.each do |ctx|
-          if ctx.default?
-            ctx.aggregates.each do |agg|
-              snake = Hecks::Utils.underscore(agg.name)
-              lines << "    autoload :#{agg.name}MemoryRepository, \"#{gem_name}/adapters/#{snake}_memory_repository\""
-            end
-          else
-            ctx_snake = Hecks::Utils.underscore(ctx.module_name)
-            lines << "    module #{ctx.module_name}"
-            ctx.aggregates.each do |agg|
-              snake = Hecks::Utils.underscore(agg.name)
-              lines << "      autoload :#{agg.name}MemoryRepository, \"#{gem_name}/adapters/#{ctx_snake}/#{snake}_memory_repository\""
-            end
-            lines << "    end"
-          end
+        @domain.aggregates.each do |agg|
+          safe_name = Hecks::Utils.sanitize_constant(agg.name)
+          snake = Hecks::Utils.underscore(safe_name)
+          lines << "    autoload :#{safe_name}MemoryRepository, \"#{gem_name}/adapters/#{snake}_memory_repository\""
         end
         lines << "  end"
 
@@ -101,13 +56,11 @@ module Hecks
         lines.join("\n") + "\n"
       end
 
-      def generate_aggregate_autoloads(aggregate, gem_name, domain_module, context: nil)
-        ctx_prefix = (context && !context.default?) ? "#{Hecks::Utils.underscore(context.module_name)}/" : ""
-        snake = Hecks::Utils.underscore(aggregate.name)
-        base = "#{gem_name}/#{ctx_prefix}#{snake}"
-
-        # Indent is deeper when inside a context module
-        base_indent = (context && !context.default?) ? "      " : "    "
+      def generate_aggregate_autoloads(aggregate, gem_name, domain_module)
+        safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
+        snake = Hecks::Utils.underscore(safe_name)
+        base = "#{gem_name}/#{snake}"
+        base_indent = "    "
 
         lines = []
 

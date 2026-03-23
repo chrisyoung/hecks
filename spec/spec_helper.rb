@@ -14,11 +14,7 @@ module Hecks
 
       def hoist_constants
         _original_hoist_constants
-        if @domain.single_context?
-          @domain.aggregates.each { |a| HECKS_HOISTED << a.name.to_sym }
-        else
-          @domain.contexts.reject(&:default?).each { |c| HECKS_HOISTED << c.module_name.to_sym }
-        end
+        @domain.aggregates.each { |a| HECKS_HOISTED << a.name.to_sym }
       end
     end
   end

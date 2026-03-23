@@ -20,12 +20,9 @@ module Hecks
       return unless defined?(APP) && APP.is_a?(Hecks::Services::Application)
 
       # Clear all memory adapter stores
-      APP.domain.contexts.each do |ctx|
-        ctx.aggregates.each do |agg|
-          key = ctx.default? ? agg.name : "#{ctx.name}/#{agg.name}"
-          repo = APP[key] || (ctx.default? ? APP[agg.name] : nil)
-          repo.clear if repo&.respond_to?(:clear)
-        end
+      APP.domain.aggregates.each do |agg|
+        repo = APP[agg.name]
+        repo.clear if repo&.respond_to?(:clear)
       end
 
       # Clear event history

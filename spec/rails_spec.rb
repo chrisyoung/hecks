@@ -24,8 +24,6 @@ RSpec.describe ActiveHecks do
   end
 
   before(:all) do
-    # Generate and load the domain once for all specs
-    @tmpdir = Dir.mktmpdir("hecks_rails_test")
     domain = Hecks.domain "Pizzas" do
       aggregate "Pizza" do
         attribute :name, String
@@ -44,19 +42,8 @@ RSpec.describe ActiveHecks do
       end
     end
 
-    gen = Hecks::Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0", output_dir: @tmpdir)
-    gem_path = gen.generate
-    lib_path = File.join(gem_path, "lib")
-    $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-    entry = File.join(lib_path, "pizzas_domain.rb")
-    load entry
-    Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
-
+    Hecks.load_domain(domain)
     ActiveHecks.activate(PizzasDomain)
-  end
-
-  after(:all) do
-    FileUtils.rm_rf(@tmpdir) if @tmpdir
   end
 
   describe ".activate" do

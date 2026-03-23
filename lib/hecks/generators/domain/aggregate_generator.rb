@@ -1,79 +1,93 @@
 # Hecks::Generators::Domain::AggregateGenerator
 #
 # Generates the aggregate root class with identity, validation, and invariants.
-# Supports optional context module nesting for bounded contexts.
 #
 #   gen = AggregateGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."
-#
-#   gen = AggregateGenerator.new(agg, domain_module: "PizzasDomain", context_module: "Ordering")
-#   gen.generate  # => "module PizzasDomain\n  module Ordering\n    class Order\n  ..."
 #
 module Hecks
   module Generators
     module Domain
     class AggregateGenerator
-      include ContextAware
 
-      def initialize(aggregate, domain_module:, context_module: nil)
+      def initialize(aggregate, domain_module:)
         @aggregate = aggregate
         @domain_module = domain_module
-        @context_module = context_module
+        @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
+        # Filter out attributes that clash with auto-generated fields
+        @user_attrs = @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
+        @has_keyword_attrs = @user_attrs.any? { |a| Hecks::Utils.ruby_keyword?(a.name) }
       end
 
       def generate
         lines = []
-        lines.concat(module_open_lines)
-        lines << "#{indent}class #{@aggregate.name}"
-        lines << "#{indent}  attr_reader :id#{attr_readers}, :created_at, :updated_at"
+        lines << "module #{@domain_module}"
+        lines << "  class #{@safe_name}"
+        lines << "    attr_reader :id#{attr_readers}, :created_at, :updated_at"
         lines << ""
-        lines << "#{indent}  def initialize(#{constructor_params})"
-        lines << "#{indent}    @id = id || generate_id"
-        @aggregate.attributes.each do |attr|
-          if attr.list?
-            lines << "#{indent}    @#{attr.name} = #{attr.name}.freeze"
-          else
-            lines << "#{indent}    @#{attr.name} = #{attr.name}"
+        if @has_keyword_attrs
+          lines << "    def initialize(**kwargs)"
+          lines << "      @id = kwargs[:id] || generate_id"
+          @user_attrs.each do |attr|
+            if attr.list?
+              lines << "      @#{attr.name} = (kwargs[:#{attr.name}] || []).freeze"
+            elsif attr.default
+              lines << "      @#{attr.name} = kwargs.fetch(:#{attr.name}, #{attr.default.inspect})"
+            else
+              lines << "      @#{attr.name} = kwargs[:#{attr.name}]"
+            end
           end
+          lines << "      @created_at = kwargs[:created_at] || Time.now"
+          lines << "      @updated_at = kwargs[:updated_at] || Time.now"
+        else
+          lines << "    def initialize(#{constructor_params})"
+          lines << "      @id = id || generate_id"
+          @user_attrs.each do |attr|
+            if attr.list?
+              lines << "      @#{attr.name} = #{attr.name}.freeze"
+            else
+              lines << "      @#{attr.name} = #{attr.name}"
+            end
+          end
+          lines << "      @created_at = created_at || Time.now"
+          lines << "      @updated_at = updated_at || Time.now"
         end
-        lines << "#{indent}    @created_at = created_at || Time.now"
-        lines << "#{indent}    @updated_at = updated_at || Time.now"
-        lines << "#{indent}    validate!"
-        lines << "#{indent}    check_invariants!"
-        lines << "#{indent}  end"
+        lines << "      validate!"
+        lines << "      check_invariants!"
+        lines << "    end"
         lines << ""
-        lines << "#{indent}  def ==(other)"
-        lines << "#{indent}    other.is_a?(self.class) && id == other.id"
-        lines << "#{indent}  end"
-        lines << "#{indent}  alias eql? =="
+        lines << "    def ==(other)"
+        lines << "      other.is_a?(self.class) && id == other.id"
+        lines << "    end"
+        lines << "    alias eql? =="
         lines << ""
-        lines << "#{indent}  def hash"
-        lines << "#{indent}    [self.class, id].hash"
-        lines << "#{indent}  end"
+        lines << "    def hash"
+        lines << "      [self.class, id].hash"
+        lines << "    end"
         lines << ""
-        lines << "#{indent}  private"
+        lines << "    private"
         lines << ""
-        lines << "#{indent}  def generate_id"
-        lines << "#{indent}    SecureRandom.uuid"
-        lines << "#{indent}  end"
+        lines << "    def generate_id"
+        lines << "      SecureRandom.uuid"
+        lines << "    end"
         lines << ""
         lines.concat(validation_lines)
         lines << ""
         lines.concat(invariant_lines)
-        lines << "#{indent}end"
-        lines.concat(module_close_lines)
+        lines << "  end"
+        lines << "end"
         lines.join("\n") + "\n"
       end
 
       private
 
       def attr_readers
-        return "" if @aggregate.attributes.empty?
-        ", " + @aggregate.attributes.map { |a| ":#{a.name}" }.join(", ")
+        return "" if @user_attrs.empty?
+        ", " + @user_attrs.map { |a| ":#{a.name}" }.join(", ")
       end
 
       def constructor_params
-        params = @aggregate.attributes.map do |attr|
+        params = @user_attrs.map do |attr|
           if attr.list?
             "#{attr.name}: []"
           elsif attr.default
@@ -90,43 +104,43 @@ module Hecks
 
       def validation_lines
         if @aggregate.validations.empty?
-          return ["#{indent}  def validate!; end"]
+          return ["    def validate!; end"]
         end
 
-        lines = ["#{indent}  def validate!"]
+        lines = ["    def validate!"]
         @aggregate.validations.each do |v|
           field = v.field
           rules = v.rules
 
           if rules[:presence]
-            lines << "#{indent}    raise ValidationError, \"#{field} can't be blank\" if #{field}.nil? || (#{field}.respond_to?(:empty?) && #{field}.empty?)"
+            lines << "      raise ValidationError, \"#{field} can't be blank\" if #{field}.nil? || (#{field}.respond_to?(:empty?) && #{field}.empty?)"
           end
 
           if rules[:type]
-            lines << "#{indent}    raise ValidationError, \"#{field} must be a #{rules[:type]}\" unless #{field}.is_a?(#{rules[:type]})"
+            lines << "      raise ValidationError, \"#{field} must be a #{rules[:type]}\" unless #{field}.is_a?(#{rules[:type]})"
           end
         end
-        lines << "#{indent}  end"
+        lines << "    end"
         lines
       end
 
       def invariant_lines
         if @aggregate.invariants.empty?
-          return ["#{indent}  def check_invariants!; end"]
+          return ["    def check_invariants!; end"]
         end
 
         lines = []
-        lines << "#{indent}  INVARIANTS = {"
+        lines << "    INVARIANTS = {"
         @aggregate.invariants.each do |inv|
-          lines << "#{indent}    #{inv.message.inspect} => #{source_from_block(inv.block)},"
+          lines << "      #{inv.message.inspect} => #{source_from_block(inv.block)},"
         end
-        lines << "#{indent}  }.freeze"
+        lines << "    }.freeze"
         lines << ""
-        lines << "#{indent}  def check_invariants!"
+        lines << "    def check_invariants!"
         @aggregate.invariants.each do |inv|
-          lines << "#{indent}    raise InvariantError, #{inv.message.inspect} unless instance_eval(&INVARIANTS[#{inv.message.inspect}])"
+          lines << "      raise InvariantError, #{inv.message.inspect} unless instance_eval(&INVARIANTS[#{inv.message.inspect}])"
         end
-        lines << "#{indent}  end"
+        lines << "    end"
         lines
       end
 
