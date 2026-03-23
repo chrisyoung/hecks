@@ -4,14 +4,11 @@ module Hecks
   class CLI < Thor
     desc "generate:sinatra", "Scaffold a Sinatra app from a domain"
     map "generate:sinatra" => :generate_sinatra
-    option :domain, type: :string, required: true, desc: "Domain gem name or path"
+    option :domain, type: :string, desc: "Domain gem name or path"
     option :dir, type: :string, desc: "Output directory (default: {domain}_app)"
     def generate_sinatra
-      domain = resolve_domain(options[:domain])
-      unless domain
-        say "Domain not found: #{options[:domain]}", :red
-        return
-      end
+      domain = resolve_domain_option
+      return unless domain
 
       app_name = options[:dir] || "#{Hecks::Utils.underscore(domain.module_name)}_app"
       generate_sinatra_app(domain, app_name)

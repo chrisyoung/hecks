@@ -2,9 +2,8 @@
 #
 module Hecks
   class CLI < Thor
-    desc "serve DOMAIN", "Serve a domain (HTTP default, --mcp, --rpc)"
+    desc "serve DOMAIN", "Serve a domain as HTTP (default) or JSON-RPC (--rpc)"
     option :port, type: :numeric, default: 9292, desc: "HTTP port"
-    option :mcp, type: :boolean, default: false, desc: "MCP for AI agents"
     option :rpc, type: :boolean, default: false, desc: "JSON-RPC"
     def serve(domain_path = nil)
       domain = resolve_domain(domain_path)
@@ -12,10 +11,7 @@ module Hecks
         say "No domain found. Pass a path or run from a directory with domain.rb", :red
         return
       end
-      if options[:mcp]
-        require_relative "../../mcp/domain_server"
-        MCP::DomainServer.new(domain).run
-      elsif options[:rpc]
+      if options[:rpc]
         require_relative "../../http/rpc_server"
         HTTP::RpcServer.new(domain, port: options[:port]).run
       else
