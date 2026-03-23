@@ -97,20 +97,24 @@ module Hecks
         end
 
         def rebuild_owner(new_items)
-          constructor_params = @owner.class.instance_method(:initialize).parameters
-          attrs = {}
-          constructor_params.each do |_, name|
-            next unless name
-            if name == @attr_name
-              attrs[name] = new_items
-            elsif name == :id
-              attrs[:id] = @owner.id
-            elsif @owner.respond_to?(name)
-              attrs[name] = @owner.send(name)
+          attrs = { id: @owner.id }
+          if @owner.class.respond_to?(:hecks_attributes)
+            @owner.class.hecks_attributes.each do |a|
+              attrs[a[:name]] = a[:name] == @attr_name ? new_items : @owner.send(a[:name])
+            end
+          else
+            @owner.class.instance_method(:initialize).parameters.each do |_, name|
+              next unless name
+              if name == @attr_name
+                attrs[name] = new_items
+              elsif name != :id && @owner.respond_to?(name)
+                attrs[name] = @owner.send(name)
+              end
             end
           end
 
           new_owner = @owner.class.new(**attrs)
+          new_owner.instance_variable_set(:@created_at, @owner.created_at) if @owner.respond_to?(:created_at)
           @repo.save(new_owner)
 
           @items = new_items.freeze

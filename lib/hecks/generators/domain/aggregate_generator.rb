@@ -1,13 +1,12 @@
 # Hecks::Generators::Domain::AggregateGenerator
 #
-# Generates the aggregate root class. Includes Hecks::Model for identity,
-# auto-discovery, and validation stubs. Only generates constructor,
-# custom validations, and invariants.
+# Generates the aggregate root class using Hecks::Model attribute DSL.
+# Only generates custom validations and invariants — everything else
+# comes from the mixin.
 #
 #   gen = AggregateGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."
 #
-require_relative "aggregate_generator/constructor_generation"
 require_relative "aggregate_generator/validation_generation"
 require_relative "aggregate_generator/invariant_generation"
 
@@ -15,7 +14,6 @@ module Hecks
   module Generators
     module Domain
     class AggregateGenerator
-      include ConstructorGeneration
       include ValidationGeneration
       include InvariantGeneration
 
@@ -23,9 +21,7 @@ module Hecks
         @aggregate = aggregate
         @domain_module = domain_module
         @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
-        # Filter out attributes that clash with auto-generated fields
         @user_attrs = @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
-        @has_keyword_attrs = @user_attrs.any? { |a| Hecks::Utils.ruby_keyword?(a.name) }
       end
 
       def generate
@@ -36,11 +32,9 @@ module Hecks
         lines << "  class #{@safe_name}"
         lines << "    include Hecks::Model"
         lines << ""
-        unless @user_attrs.empty?
-          lines << "    attr_reader " + @user_attrs.map { |a| ":#{a.name}" }.join(", ")
+        @user_attrs.each do |attr|
+          lines << "    attribute #{attribute_declaration(attr)}"
         end
-        lines << ""
-        lines.concat(constructor_lines)
         unless @aggregate.validations.empty? && @aggregate.invariants.empty?
           lines << ""
           lines << "    private"
@@ -56,9 +50,15 @@ module Hecks
 
       private
 
-      def attr_readers
-        return "" if @user_attrs.empty?
-        ", " + @user_attrs.map { |a| ":#{a.name}" }.join(", ")
+      def attribute_declaration(attr)
+        parts = [":#{attr.name}"]
+        if attr.list?
+          parts << "default: []"
+          parts << "freeze: true"
+        elsif attr.default
+          parts << "default: #{attr.default.inspect}"
+        end
+        parts.join(", ")
       end
     end
     end

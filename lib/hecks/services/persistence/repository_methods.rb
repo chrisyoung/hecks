@@ -1,22 +1,11 @@
 # Hecks::Services::Persistence::RepositoryMethods
 #
 # Opt-in mixin that provides persistence methods on aggregate classes.
-# Adds ActiveRecord-style class and instance methods for CRUD and queries.
-# All repo references are closure-captured so multiple Applications
-# booting the same domain get isolated bindings.
+# Uses hecks_attributes metadata for introspection instead of parsing
+# constructor parameters.
 #
-#   # Plain Ruby:
-#   app = Hecks::Services::Application.new(domain)
-#   Hecks::Services::RepositoryMethods.bind(PizzasDomain::Pizza, app["Pizza"])
-#
-#   # Rails initializer:
-#   Hecks::Services::RepositoryMethods.bind(Pizza, pizza_repo)
-#
-#   # Then use:
-#   Pizza.find(id)
+#   Pizza.find(id) / Pizza.all / Pizza.count
 #   Pizza.create(name: "Margherita")
-#   Pizza.all / Pizza.count / Pizza.first / Pizza.last
-#   Pizza.where(style: "Classic").order(:name).limit(5)
 #   pizza.save / pizza.update(name: "New") / pizza.destroy
 #
 module Hecks
@@ -39,11 +28,7 @@ module Hecks
 
         klass.define_singleton_method(:create) do |**attrs|
           constructor_attrs = {}
-          instance_method(:initialize).parameters
-            .select { |type, _| type == :key || type == :keyreq }
-            .map { |_, name| name }
-            .reject { |n| [:id].include?(n) }
-            .each { |param| constructor_attrs[param] = attrs.key?(param) ? attrs[param] : nil }
+          RepositoryMethods.attr_names(self).each { |n| constructor_attrs[n] = attrs.key?(n) ? attrs[n] : nil }
           aggregate = new(**constructor_attrs)
           aggregate.stamp_created! if aggregate.respond_to?(:stamp_created!)
           repo.save(aggregate)
@@ -69,12 +54,8 @@ module Hecks
         klass.define_method(:update) do |**new_attrs|
           return self if destroyed?
           constructor_attrs = { id: id }
-          self.class.instance_method(:initialize).parameters.each do |_, param_name|
-            next unless param_name
-            next if [:id].include?(param_name)
-            if respond_to?(param_name)
-              constructor_attrs[param_name] = new_attrs.key?(param_name) ? new_attrs[param_name] : send(param_name)
-            end
+          RepositoryMethods.attr_names(self.class).each do |name|
+            constructor_attrs[name] = new_attrs.key?(name) ? new_attrs[name] : send(name)
           end
           updated = self.class.new(**constructor_attrs)
           updated.instance_variable_set(:@created_at, created_at) if respond_to?(:created_at)
@@ -85,6 +66,17 @@ module Hecks
       end
 
       private_class_method :bind_class_methods, :bind_instance_methods
+
+      def self.attr_names(klass)
+        if klass.respond_to?(:hecks_attributes)
+          klass.hecks_attributes.map { |a| a[:name] }
+        else
+          klass.instance_method(:initialize).parameters
+            .select { |type, _| type == :key || type == :keyreq }
+            .map { |_, name| name }
+            .reject { |n| n == :id }
+        end
+      end
       end
     end
   end

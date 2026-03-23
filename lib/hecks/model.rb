@@ -1,28 +1,59 @@
 # Hecks::Model
 #
-# Mixin for generated aggregate classes. Provides identity, id generation,
-# validation hooks, auto-discovery of Commands/Events/Queries/Policies,
-# and timestamp support for the persistence layer.
+# Mixin for generated aggregate classes. Declares attributes via a DSL,
+# generates the constructor automatically, and provides identity,
+# validation hooks, auto-discovery, and timestamp support.
 #
 #   class Pizza
 #     include Hecks::Model
-#     attr_reader :name, :toppings
-#     def initialize(name: nil, toppings: [])
-#       @name = name
-#       @toppings = toppings.freeze
-#     end
+#     attribute :name
+#     attribute :description
+#     attribute :toppings, default: []
 #   end
+#
+#   Pizza.hecks_attributes  # => [{name: :name, default: nil}, ...]
+#   Pizza.new(name: "Margherita").name  # => "Margherita"
 #
 require "securerandom"
 
 module Hecks
   module Model
     def self.included(base)
+      base.extend(ClassMethods)
       base.attr_reader :id, :created_at, :updated_at
       create_submodule(base, :Commands)
       create_submodule(base, :Events)
       create_submodule(base, :Queries)
       create_submodule(base, :Policies)
+    end
+
+    module ClassMethods
+      def attribute(name, default: nil, freeze: false)
+        @hecks_attributes ||= []
+        @hecks_attributes << { name: name.to_sym, default: default, freeze: freeze }
+        attr_reader name
+        rebuild_initializer
+      end
+
+      def hecks_attributes
+        @hecks_attributes || []
+      end
+
+      private
+
+      def rebuild_initializer
+        attrs = @hecks_attributes.dup
+        define_method(:initialize) do |id: nil, **kwargs|
+          @id = id || SecureRandom.uuid
+          attrs.each do |attr|
+            val = kwargs.fetch(attr[:name], attr[:default])
+            val = val.freeze if attr[:freeze]
+            instance_variable_set(:"@#{attr[:name]}", val)
+          end
+          validate!
+          check_invariants!
+        end
+      end
     end
 
     # Timestamps — set by persistence layer, not by domain logic
@@ -48,17 +79,11 @@ module Hecks
 
     private
 
-    def generate_id
-      SecureRandom.uuid
-    end
-
     def validate!; end
 
     def check_invariants!; end
 
     # Auto-discovery: creates a submodule that autoloads constants by convention.
-    # PizzasDomain::Pizza::Commands::CreatePizza
-    #   → requires "pizzas_domain/pizza/commands/create_pizza"
     def self.create_submodule(base, type)
       return if base.const_defined?(type, false)
 

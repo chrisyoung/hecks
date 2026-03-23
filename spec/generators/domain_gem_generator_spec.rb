@@ -76,7 +76,9 @@ RSpec.describe Hecks::Generators::Infrastructure::DomainGemGenerator do
     content = File.read(path)
     expect(content).to include("class Pizza")
     expect(content).to include("include Hecks::Model")
-    expect(content).to include("attr_reader :name, :description, :toppings")
+    expect(content).to include("attribute :name")
+    expect(content).to include("attribute :description")
+    expect(content).to include("attribute :toppings")
   end
 
   it "creates value objects" do

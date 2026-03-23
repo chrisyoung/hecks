@@ -85,9 +85,8 @@ module Hecks
       end
 
       def serialize_aggregate(obj)
-        params = obj.class.instance_method(:initialize).parameters
-        attrs = params.map do |_, name|
-          next unless name && obj.respond_to?(name)
+        attrs = Hecks::Utils.object_attr_names(obj).map do |name|
+          next unless obj.respond_to?(name)
           "#{name}: #{obj.send(name).inspect}"
         end.compact
         "#{obj.class.name.split('::').last}(#{attrs.join(', ')})"
