@@ -1,3 +1,4 @@
+require_relative "shared_domains"
 require "spec_helper"
 require "tmpdir"
 
