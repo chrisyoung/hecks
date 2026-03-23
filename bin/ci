@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -e
+
+echo "=== Regenerating examples ==="
+ruby -Ilib examples/pizzas/app.rb
+ruby -Ilib examples/multi_domain/app.rb
+
+echo ""
+echo "=== Running specs ==="
+bundle exec rspec --order defined
+
+echo ""
+echo "=== Checking file sizes ==="
+oversized=$(find lib -name "*.rb" -exec wc -l {} + | sort -rn | awk '$1 > 200 && !/total/ { print }')
+if [ -n "$oversized" ]; then
+  echo "ERROR: Files over 200 lines:"
+  echo "$oversized"
+  exit 1
+else
+  echo "All files under 200 lines"
+fi
+
+echo ""
+echo "=== CI passed ==="

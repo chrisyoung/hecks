@@ -46,8 +46,8 @@ module Hecks
                 write_file(root, "#{base}/#{Hecks::Utils.underscore(vo.name)}.rb", vo_gen.generate)
               end
 
-              agg.commands.each do |cmd|
-                cmd_gen = Domain::CommandGenerator.new(cmd, domain_module: mod, aggregate_name: safe_name)
+              agg.commands.each_with_index do |cmd, i|
+                cmd_gen = Domain::CommandGenerator.new(cmd, domain_module: mod, aggregate_name: safe_name, aggregate: agg, event: agg.events[i])
                 write_file(root, "#{base}/commands/#{Hecks::Utils.underscore(cmd.name)}.rb", cmd_gen.generate)
               end
 

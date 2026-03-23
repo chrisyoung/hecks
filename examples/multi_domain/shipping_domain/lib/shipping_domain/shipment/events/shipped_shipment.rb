@@ -1,7 +1,7 @@
 module ShippingDomain
   class Shipment
     module Events
-      class ShipedShipment
+      class ShippedShipment
         attr_reader :shipment_id, :occurred_at
 
         def initialize(shipment_id: nil)

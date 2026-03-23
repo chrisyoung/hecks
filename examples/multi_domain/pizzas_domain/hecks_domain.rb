@@ -4,6 +4,10 @@ Hecks.domain "Pizzas" do
     attribute :style, String
     attribute :price, Float
 
+    query "Classics" do
+      true
+    end
+
     command "CreatePizza" do
       attribute :name, String
       attribute :style, String

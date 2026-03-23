@@ -4,6 +4,10 @@ Hecks.domain "Shipping" do
     attribute :quantity, Integer
     attribute :status, String
 
+    query "ReadyToShip" do
+      true
+    end
+
     command "CreateShipment" do
       attribute :pizza_id, String
       attribute :quantity, Integer

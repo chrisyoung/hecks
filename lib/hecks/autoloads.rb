@@ -1,6 +1,7 @@
 # Hecks autoload registry — maps module names to source files.
 #
 module Hecks
+  autoload :Command,        "hecks/command"
   autoload :Utils,          "hecks/utils"
   autoload :VERSION,        "hecks/version"
   autoload :Configuration,  "hecks/configuration"

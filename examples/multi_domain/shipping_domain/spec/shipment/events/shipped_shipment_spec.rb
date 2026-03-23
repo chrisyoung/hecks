@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe ShippingDomain::Shipment::Events::ShipedShipment do
+RSpec.describe ShippingDomain::Shipment::Events::ShippedShipment do
   subject(:event) do
     described_class.new(shipment_id: "example")
   end

@@ -18,7 +18,7 @@ module Hecks
   module Services
     module Commands
       class CommandBus
-      attr_reader :middleware
+      attr_reader :middleware, :event_bus
 
       def initialize(domain:, event_bus:)
         @domain = domain
@@ -42,6 +42,16 @@ module Hecks
         else
           @middleware << { name: name_or_middleware.class.name, handler: name_or_middleware }
         end
+      end
+
+      # Run middleware around a pre-built command, delegating to a block
+      # for the core logic instead of creating events internally.
+      def dispatch_with_command(command, &core)
+        chain = @middleware.reverse.reduce(core) do |next_handler, mw|
+          handler = mw[:handler]
+          -> { handler.call(command, next_handler) }
+        end
+        chain.call
       end
 
       # Dispatch a command by name through the middleware stack.

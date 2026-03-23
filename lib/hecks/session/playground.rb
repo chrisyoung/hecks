@@ -51,7 +51,7 @@ module Hecks
       event_class = resolve_event_for(command_name)
       event_attrs = {}
       command.class.instance_methods(false)
-            .reject { |m| m == :freeze }
+            .reject { |m| %i[freeze call].include?(m) }
             .select { |m| command.class.method_defined?(m) }
             .each do |m|
         next if m.to_s.end_with?("=")
