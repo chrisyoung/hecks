@@ -58,10 +58,12 @@ module Hecks
         else
           domains = find_installed_domains
           if domains.empty?
-            say "No domain.rb found and no --domain specified.", :red
+            say "No hecks_domain.rb found and no --domain specified.", :red
           else
-            say "No domain.rb found. Use --domain to specify one:", :red
-            domains.each { |name, ver| say "  --domain #{name} (v#{ver})", :yellow }
+            say "No hecks_domain.rb found. Use --domain to specify one:", :red
+            domains.each do |name, versions|
+              say "  --domain #{name} (#{versions.map { |v| "v#{v}" }.join(", ")})", :yellow
+            end
           end
           nil
         end
@@ -71,7 +73,10 @@ module Hecks
     def find_installed_domains
       Gem::Specification.select do |spec|
         File.exist?(File.join(spec.full_gem_path, "hecks_domain.rb"))
-      end.map { |spec| [spec.name, spec.version] }
+      end.group_by(&:name).map do |name, specs|
+        versions = specs.map(&:version).sort.reverse
+        [name, versions]
+      end
     end
 
     def load_domain(file)

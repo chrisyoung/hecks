@@ -9,7 +9,13 @@ module Hecks
         say "No Hecks domains installed.", :yellow
       else
         say "Installed Hecks domains:", :green
-        domains.each { |name, ver| say "  #{name} (v#{ver})" }
+        domains.each do |name, versions|
+          if versions.size == 1
+            say "  #{name} (v#{versions.first})"
+          else
+            say "  #{name} (#{versions.map { |v| "v#{v}" }.join(", ")})"
+          end
+        end
       end
     end
   end
