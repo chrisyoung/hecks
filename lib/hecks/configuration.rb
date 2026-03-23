@@ -4,7 +4,7 @@
 # domain gem, choosing adapters, database connection, and booting.
 #
 #   Hecks.configure do
-#     domain "pizzas_domain"
+#     domain "pizzas_domain", version: "2026.03.22.1"
 #     adapter :sql, database: :mysql, host: "localhost",
 #       user: "root", password: "secret", name: "pizzas"
 #     include_ad_hoc_queries
@@ -30,8 +30,9 @@ module Hecks
       @ad_hoc_queries = false
     end
 
-    def domain(gem_name)
+    def domain(gem_name, version: nil)
       @gem_name = gem_name
+      @gem_version = version
     end
 
     def adapter(type, **options)
@@ -55,6 +56,7 @@ module Hecks
     private
 
     def load_domain
+      gem @gem_name, @gem_version if @gem_version
       require @gem_name
 
       gem_path = if Gem.loaded_specs[@gem_name]
