@@ -1,4 +1,8 @@
-# Hecks autoload registry — maps module names to source files.
+# Hecks Autoloads
+#
+# Central autoload registry mapping every Hecks module to its source file.
+# Infrastructure layer — required by lib/hecks.rb to enable lazy loading
+# of all framework components (CLI, DSL, Generators, Services, HTTP, MCP, etc.).
 #
 module Hecks
   autoload :Command,        "hecks/command"

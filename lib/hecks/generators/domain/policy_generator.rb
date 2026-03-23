@@ -1,10 +1,10 @@
 # Hecks::Generators::Domain::PolicyGenerator
 #
-# Generates policy classes that declare reactive rules binding events to
-# commands. Policies enable cross-gem communication via the event bus.
+# Generates policy classes. Guard policies have a call(command) method.
+# Reactive policies declare EVENT, TRIGGER, and ASYNC constants.
 #
 #   gen = PolicyGenerator.new(policy, domain_module: "PizzasDomain", aggregate_name: "Order")
-#   gen.generate  # => "module PizzasDomain\n  class Order\n    module Policies\n  ..."
+#   gen.generate
 #
 module Hecks
   module Generators
@@ -18,6 +18,28 @@ module Hecks
       end
 
       def generate
+        @policy.guard? ? generate_guard : generate_reactive
+      end
+
+      private
+
+      def generate_guard
+        lines = []
+        lines << "module #{@domain_module}"
+        lines << "  class #{@aggregate_name}"
+        lines << "    module Policies"
+        lines << "      class #{@policy.name}"
+        lines << "        def call#{call_params}"
+        lines << "          #{call_body}"
+        lines << "        end"
+        lines << "      end"
+        lines << "    end"
+        lines << "  end"
+        lines << "end"
+        lines.join("\n") + "\n"
+      end
+
+      def generate_reactive
         lines = []
         lines << "module #{@domain_module}"
         lines << "  class #{@aggregate_name}"
@@ -38,6 +60,16 @@ module Hecks
         lines << "  end"
         lines << "end"
         lines.join("\n") + "\n"
+      end
+
+      def call_params
+        params = @policy.block&.parameters&.map { |_, name| name.to_s } || []
+        return "" if params.empty?
+        "(#{params.join(", ")})"
+      end
+
+      def call_body
+        Hecks::Utils.block_source(@policy.block)
       end
     end
     end

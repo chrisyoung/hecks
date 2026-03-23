@@ -23,6 +23,7 @@ module Hecks
         @name = name
         @attributes = []
         @handler = nil
+        @guard_name = nil
         @read_models = []
         @external_systems = []
         @actors = []
@@ -30,6 +31,10 @@ module Hecks
 
       def handler(&block)
         @handler = block
+      end
+
+      def guarded_by(name)
+        @guard_name = name
       end
 
       def read_model(name)
@@ -46,7 +51,7 @@ module Hecks
 
       def build
         DomainModel::Behavior::Command.new(
-          name: @name, attributes: @attributes, handler: @handler,
+          name: @name, attributes: @attributes, handler: @handler, guard_name: @guard_name,
           read_models: @read_models, external_systems: @external_systems, actors: @actors
         )
       end

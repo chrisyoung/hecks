@@ -1,12 +1,11 @@
 # Hecks::Command
 #
 # Mixin for generated command classes. Orchestrates the full command lifecycle:
-# run handler, execute call, persist, emit event, record event.
+# run guard, execute call, persist, emit event, record event.
 # The generated call method is pure domain logic — just build and return
 # the aggregate.
 #
 #   class CreatePizza
-#     include Hecks::Command
 #     emits "CreatedPizza"
 #
 #     def call
@@ -26,8 +25,8 @@ module Hecks
     end
 
     module ClassMethods
-      attr_accessor :repository, :event_bus, :handler, :event_recorder,
-                    :aggregate_type, :command_bus
+      attr_accessor :repository, :event_bus, :handler, :guarded_by,
+                    :event_recorder, :aggregate_type, :command_bus
 
       def emits(event_name)
         @event_name = event_name
@@ -44,6 +43,7 @@ module Hecks
 
       def call(**attrs)
         cmd = new(**attrs)
+        cmd.send(:run_guard)
         cmd.send(:run_handler)
         result = if command_bus && !command_bus.middleware.empty?
           command_bus.dispatch_with_command(cmd) { cmd.call }
@@ -62,6 +62,15 @@ module Hecks
 
     def repository
       self.class.repository
+    end
+
+    def run_guard
+      policy_name = self.class.guarded_by
+      return unless policy_name
+
+      agg_module = self.class.name.split("::")[0..-3].join("::")
+      policy_class = Object.const_get("#{agg_module}::Policies::#{policy_name}")
+      policy_class.new.call(self)
     end
 
     def run_handler

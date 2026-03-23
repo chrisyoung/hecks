@@ -37,7 +37,7 @@ module Hecks
           @policies_in_flight = Set.new
 
           @domain.aggregates.each do |agg|
-            agg.policies.each do |policy|
+            agg.policies.select(&:reactive?).each do |policy|
               @event_bus.subscribe(policy.event_name) do |event|
                 policy_key = "#{agg.name}.#{policy.name}"
 

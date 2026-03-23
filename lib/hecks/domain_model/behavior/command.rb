@@ -15,12 +15,13 @@ module Hecks
   module DomainModel
     module Behavior
     class Command
-      attr_reader :name, :attributes, :handler, :read_models, :external_systems, :actors
+      attr_reader :name, :attributes, :handler, :guard_name, :read_models, :external_systems, :actors
 
-      def initialize(name:, attributes: [], handler: nil, read_models: [], external_systems: [], actors: [])
+      def initialize(name:, attributes: [], handler: nil, guard_name: nil, read_models: [], external_systems: [], actors: [])
         @name = name
         @attributes = attributes
         @handler = handler
+        @guard_name = guard_name
         @read_models = read_models
         @external_systems = external_systems
         @actors = actors
