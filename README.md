@@ -236,53 +236,35 @@ aggregate "Order" do
 end
 ```
 
-### Modules
+### Multiple Domains
 
-Group related things into modules. Things in different modules can't reference each other directly — they communicate through events and reactions.
+Each domain is its own gem — a natural boundary. Multiple domains share one event bus, so reactions work across boundaries:
 
 ```ruby
-Hecks.domain "Pizzas" do
-  context "Ordering" do
-    aggregate "Order" do
-      attribute :pizza_id, reference_to("Pizza")
-      attribute :quantity, Integer
+# config/initializers/hecks.rb
+Hecks.configure do
+  domain "pizzas_domain"
+  domain "billing_domain"
+  adapter :sql, database: :postgres
+end
+```
 
-      command "PlaceOrder" do
-        attribute :pizza_id, reference_to("Pizza")
-        attribute :quantity, Integer
-      end
-    end
-
-    aggregate "Pizza" do
-      attribute :name, String
-
-      command "CreatePizza" do
-        attribute :name, String
-      end
-    end
+```ruby
+# billing_domain/domain.rb — reacts to events from pizzas_domain
+aggregate "Invoice" do
+  command "CreateInvoice" do
+    attribute :pizza_id, String
+    attribute :quantity, Integer
   end
 
-  context "Kitchen" do
-    aggregate "Recipe" do
-      attribute :name, String
-      attribute :prep_time, Integer
-
-      command "CreateRecipe" do
-        attribute :name, String
-        attribute :prep_time, Integer
-      end
-
-      # Cross-context communication via events
-      policy "StartPrep" do
-        on "PlacedOrder"
-        trigger "CreateRecipe"
-      end
-    end
+  policy "BillOnOrder" do
+    on "PlacedOrder"          # from pizzas_domain
+    trigger "CreateInvoice"
   end
 end
 ```
 
-Domains without `context` blocks work exactly as before — everything goes into one module.
+Domains can't access each other's classes. They communicate through events only.
 
 ## Build-Time Checks
 

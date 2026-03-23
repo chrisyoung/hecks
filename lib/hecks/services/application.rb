@@ -27,12 +27,12 @@ module Hecks
     class Application
       attr_reader :domain, :event_bus, :command_bus
 
-      def initialize(domain, port: nil, &config)
+      def initialize(domain, port: nil, event_bus: nil, &config)
         @domain = domain
         @port_name = port
         @mod_name = domain.module_name + "Domain"
         @mod = Object.const_get(@mod_name)
-        @event_bus = EventBus.new
+        @event_bus = event_bus || EventBus.new
         @repositories = {}
         @adapter_overrides = {}
 
