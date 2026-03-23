@@ -1,29 +1,55 @@
 require "spec_helper"
 
 RSpec.describe "Validation Rules" do
+  def validate(domain)
+    v = Hecks::Validator.new(domain)
+    [v.valid?, v.errors]
+  end
+
   describe "Naming::CommandNaming" do
-    it "accepts WordNet-known verbs" do
-      domain = Hecks.domain("T") { aggregate("A") { attribute :n, String; command("ReconcileThing") { attribute :n, String } } }
-      expect(Hecks::Validator.new(domain).valid?).to be true
+    it "accepts common verbs without custom config" do
+      %w[Create Update Delete Remove Place Cancel Submit Approve].each do |verb|
+        domain = Hecks.domain("T") { aggregate("A") { attribute :n, String; command("#{verb}Thing") { attribute :n, String } } }
+        valid, errors = validate(domain)
+        expect(valid).to be(true), "Expected '#{verb}Thing' to be valid but got: #{errors}"
+      end
     end
 
-    it "rejects non-verbs" do
+    it "accepts WordNet-known verbs like Reconcile, Dispatch, Authorize" do
+      %w[Reconcile Dispatch Authorize Synchronize Provision].each do |verb|
+        domain = Hecks.domain("T") { aggregate("A") { attribute :n, String; command("#{verb}Thing") { attribute :n, String } } }
+        valid, _ = validate(domain)
+        expect(valid).to be(true), "Expected '#{verb}Thing' to be valid"
+      end
+    end
+
+    it "rejects nouns as command prefixes" do
       domain = Hecks.domain("T") { aggregate("A") { attribute :n, String; command("PizzaData") { attribute :n, String } } }
-      validator = Hecks::Validator.new(domain)
-      expect(validator.valid?).to be false
-      expect(validator.errors.first).to match(/doesn't start with a verb/)
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors.first).to include("doesn't start with a verb")
     end
 
-    it "suggests adding custom verbs in error message" do
+    it "error message tells user to add to verbs.txt" do
       domain = Hecks.domain("T") { aggregate("A") { attribute :n, String; command("YeetThing") { attribute :n, String } } }
-      validator = Hecks::Validator.new(domain)
-      validator.valid?
-      expect(validator.errors.first).to include("verbs.txt")
+      _, errors = validate(domain)
+      expect(errors.first).to include("verbs.txt")
+    end
+
+    it "reads custom verbs from verbs.txt when source_path is set" do
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "verbs.txt"), "Yeet\n")
+        File.write(File.join(dir, "hecks_domain.rb"), 'Hecks.domain("T") { aggregate("A") { attribute :n, String; command("YeetThing") { attribute :n, String } } }')
+        domain = eval(File.read(File.join(dir, "hecks_domain.rb")))
+        domain.source_path = File.join(dir, "hecks_domain.rb")
+        valid, _ = validate(domain)
+        expect(valid).to be true
+      end
     end
   end
 
   describe "Naming::NameCollisions" do
-    it "rejects aggregate and value object with same name" do
+    it "rejects value object with same name as aggregate" do
       domain = Hecks.domain("T") do
         aggregate("Pizza") do
           attribute :name, String
@@ -31,93 +57,99 @@ RSpec.describe "Validation Rules" do
           command("CreatePizza") { attribute :name, String }
         end
       end
-      validator = Hecks::Validator.new(domain)
-      expect(validator.valid?).to be false
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors.any? { |e| e.include?("collision") || e.include?("same name") }).to be true
     end
   end
 
   describe "References::NoSelfReferences" do
-    it "rejects self-referencing aggregates" do
+    it "rejects aggregate referencing itself" do
       domain = Hecks.domain("T") do
-        aggregate("Thing") do
-          attribute :thing_id, reference_to("Thing")
-          command("CreateThing") { attribute :name, String }
-        end
+        aggregate("Thing") { attribute :thing_id, reference_to("Thing"); command("CreateThing") { attribute :name, String } }
       end
-      validator = Hecks::Validator.new(domain)
-      expect(validator.valid?).to be false
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors.any? { |e| e.downcase.include?("self") }).to be true
     end
   end
 
   describe "References::NoBidirectionalReferences" do
-    it "rejects bidirectional references" do
+    it "rejects A->B and B->A references" do
       domain = Hecks.domain("T") do
-        aggregate("Pizza") do
-          attribute :order_id, reference_to("Order")
-          command("CreatePizza") { attribute :name, String }
-        end
-        aggregate("Order") do
-          attribute :pizza_id, reference_to("Pizza")
-          command("PlaceOrder") { attribute :pizza_id, reference_to("Pizza") }
-        end
+        aggregate("Pizza") { attribute :order_id, reference_to("Order"); command("CreatePizza") { attribute :name, String } }
+        aggregate("Order") { attribute :pizza_id, reference_to("Pizza"); command("PlaceOrder") { attribute :pizza_id, reference_to("Pizza") } }
       end
-      validator = Hecks::Validator.new(domain)
-      expect(validator.valid?).to be false
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors.any? { |e| e.downcase.include?("bidirectional") }).to be true
+    end
+
+    it "allows one-directional references" do
+      domain = Hecks.domain("T") do
+        aggregate("Pizza") { attribute :name, String; command("CreatePizza") { attribute :name, String } }
+        aggregate("Order") { attribute :pizza_id, reference_to("Pizza"); command("PlaceOrder") { attribute :pizza_id, reference_to("Pizza") } }
+      end
+      valid, _ = validate(domain)
+      expect(valid).to be true
     end
   end
 
   describe "References::NoValueObjectReferences" do
-    it "rejects references in value objects" do
+    it "rejects reference attributes in value objects" do
       domain = Hecks.domain("T") do
         aggregate("Pizza") do
           attribute :name, String
           value_object("Topping") { attribute :order_id, reference_to("Order") }
           command("CreatePizza") { attribute :name, String }
         end
-        aggregate("Order") do
-          attribute :qty, Integer
-          command("PlaceOrder") { attribute :qty, Integer }
-        end
+        aggregate("Order") { attribute :qty, Integer; command("PlaceOrder") { attribute :qty, Integer } }
       end
-      validator = Hecks::Validator.new(domain)
-      expect(validator.valid?).to be false
+      valid, _ = validate(domain)
+      expect(valid).to be false
     end
   end
 
   describe "Structure::AggregatesHaveCommands" do
-    it "warns when aggregate has no commands" do
+    it "rejects aggregate without commands" do
       domain = Hecks.domain("T") { aggregate("Thing") { attribute :name, String } }
-      validator = Hecks::Validator.new(domain)
-      expect(validator.valid?).to be false
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors.any? { |e| e.downcase.include?("command") }).to be true
     end
   end
 
   describe "Structure::ValidPolicyTriggers" do
-    it "rejects policies triggering nonexistent commands" do
+    it "rejects policy triggering nonexistent command" do
+      domain = Hecks.domain("T") do
+        aggregate("A") { attribute :n, String; command("CreateA") { attribute :n, String }; policy("React") { on "CreatedA"; trigger "Nonexistent" } }
+      end
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors.first).to include("unknown command")
+    end
+
+    it "accepts policy triggering valid command" do
       domain = Hecks.domain("T") do
         aggregate("A") do
           attribute :n, String
           command("CreateA") { attribute :n, String }
-          policy("React") { on "CreatedA"; trigger "Nonexistent" }
+          command("ProcessA") { attribute :n, String }
+          policy("React") { on "CreatedA"; trigger "ProcessA" }
         end
       end
-      validator = Hecks::Validator.new(domain)
-      expect(validator.valid?).to be false
-      expect(validator.errors.first).to match(/unknown command/i)
+      valid, _ = validate(domain)
+      expect(valid).to be true
     end
   end
 
   describe "Structure::ValidPolicyEvents" do
-    it "allows cross-domain events (warning, not error)" do
+    it "allows cross-domain events (not an error)" do
       domain = Hecks.domain("T") do
-        aggregate("A") do
-          attribute :n, String
-          command("CreateA") { attribute :n, String }
-          policy("React") { on "ExternalEvent"; trigger "CreateA" }
-        end
+        aggregate("A") { attribute :n, String; command("CreateA") { attribute :n, String }; policy("React") { on "ExternalEvent"; trigger "CreateA" } }
       end
-      validator = Hecks::Validator.new(domain)
-      expect(validator.valid?).to be true
+      valid, _ = validate(domain)
+      expect(valid).to be true
     end
   end
 end
