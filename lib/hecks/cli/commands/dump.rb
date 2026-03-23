@@ -4,6 +4,7 @@ module Hecks
   class CLI < Thor
     desc "dump [TYPE]", "Extract docs from a domain (schema, swagger, rpc, domain)"
     option :domain, type: :string, desc: "Domain gem name or path"
+    option :version, type: :string, desc: "Domain version"
     def dump(type = nil)
       domain = resolve_domain_option
       return unless domain

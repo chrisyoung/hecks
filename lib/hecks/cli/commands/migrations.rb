@@ -4,6 +4,7 @@ module Hecks
   class CLI < Thor
     desc "generate:migrations", "Generate SQL migrations from domain changes"
     option :domain, type: :string, desc: "Domain gem name or path"
+    option :version, type: :string, desc: "Domain version"
     map "generate:migrations" => :generate_migrations
     def generate_migrations
       domain = resolve_domain_option
@@ -37,6 +38,7 @@ module Hecks
 
     desc "generate:sql", "Generate SQL schema and adapters"
     option :domain, type: :string, desc: "Domain gem name or path"
+    option :version, type: :string, desc: "Domain version"
     map "generate:sql" => :generate_sql
     def generate_sql
       domain = resolve_domain_option

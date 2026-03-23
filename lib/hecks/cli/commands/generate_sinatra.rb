@@ -5,6 +5,7 @@ module Hecks
     desc "generate:sinatra", "Scaffold a Sinatra app from a domain"
     map "generate:sinatra" => :generate_sinatra
     option :domain, type: :string, desc: "Domain gem name or path"
+    option :version, type: :string, desc: "Domain version"
     option :dir, type: :string, desc: "Output directory (default: {domain}_app)"
     def generate_sinatra
       domain = resolve_domain_option

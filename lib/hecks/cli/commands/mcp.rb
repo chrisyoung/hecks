@@ -4,6 +4,7 @@ module Hecks
   class CLI < Thor
     desc "mcp", "Start MCP server — build domains (default) or serve one (--domain)"
     option :domain, type: :string, desc: "Domain gem name or path (serves it as MCP tools)"
+    option :version, type: :string, desc: "Domain version"
     def mcp
       if options[:domain]
         domain = resolve_domain(options[:domain])
