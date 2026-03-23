@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::Naming::CommandNaming
+#
+# Rejects command names that do not start with a verb.
+#
 module Hecks
   module ValidationRules
     module Naming

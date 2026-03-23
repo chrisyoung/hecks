@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::Naming::UniqueContextNames
+#
+# Rejects duplicate bounded context names.
+#
 module Hecks
   module ValidationRules
     module Naming

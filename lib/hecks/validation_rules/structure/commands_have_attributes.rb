@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::Structure::CommandsHaveAttributes
+#
+# Warns when commands have no attributes.
+#
 module Hecks
   module ValidationRules
     module Structure

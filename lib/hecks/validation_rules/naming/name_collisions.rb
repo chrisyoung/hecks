@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::Naming::NameCollisions
+#
+# Rejects aggregate and value object name collisions.
+#
 module Hecks
   module ValidationRules
     module Naming

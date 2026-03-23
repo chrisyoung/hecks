@@ -1,3 +1,7 @@
+# Hecks::DomainModel::Structure::Validation
+#
+# A validation rule for an aggregate attribute (presence, type).
+#
 module Hecks
   module DomainModel
     module Structure

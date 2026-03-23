@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::Structure::ValidPolicyTriggers
+#
+# Rejects policies that trigger non-existent commands.
+#
 module Hecks
   module ValidationRules
     module Structure

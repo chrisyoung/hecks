@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::References::ValidReferences
+#
+# Rejects references to non-existent aggregates.
+#
 module Hecks
   module ValidationRules
     module References
