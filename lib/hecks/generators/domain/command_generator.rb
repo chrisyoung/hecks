@@ -78,7 +78,7 @@ module Hecks
       end
 
       def create_body
-        ["          save #{@aggregate_name}.new(#{create_constructor_args})"]
+        ["          #{@aggregate_name}.new(#{create_constructor_args})"]
       end
 
       def update_body
@@ -87,12 +87,12 @@ module Hecks
         if id_attr
           lines << "          existing = repository.find(#{id_attr.name})"
           lines << "          if existing"
-          lines << "            save #{@aggregate_name}.new(#{update_constructor_args})"
+          lines << "            #{@aggregate_name}.new(#{update_constructor_args})"
           lines << "          else"
-          lines << "            save #{@aggregate_name}.new(#{create_constructor_args})"
+          lines << "            #{@aggregate_name}.new(#{create_constructor_args})"
           lines << "          end"
         else
-          lines << "          save #{@aggregate_name}.new(#{create_constructor_args})"
+          lines << "          #{@aggregate_name}.new(#{create_constructor_args})"
         end
         lines
       end

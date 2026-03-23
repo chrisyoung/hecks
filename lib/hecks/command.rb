@@ -1,15 +1,16 @@
 # Hecks::Command
 #
 # Mixin for generated command classes. Orchestrates the full command lifecycle:
-# run handler, execute call, emit event, record event. The generated call
-# method only contains domain logic (build and save the aggregate).
+# run handler, execute call, persist, emit event, record event.
+# The generated call method is pure domain logic — just build and return
+# the aggregate.
 #
 #   class CreatePizza
 #     include Hecks::Command
 #     emits "CreatedPizza"
 #
 #     def call
-#       save Pizza.new(name: name, created_at: Time.now, updated_at: Time.now)
+#       Pizza.new(name: name)
 #     end
 #   end
 #
@@ -44,11 +45,13 @@ module Hecks
       def call(**attrs)
         cmd = new(**attrs)
         cmd.send(:run_handler)
-        if command_bus && !command_bus.middleware.empty?
+        result = if command_bus && !command_bus.middleware.empty?
           command_bus.dispatch_with_command(cmd) { cmd.call }
         else
           cmd.call
         end
+        cmd.instance_variable_set(:@aggregate, result)
+        cmd.send(:persist_aggregate)
         cmd.send(:emit_event)
         cmd.send(:record_event_for_aggregate)
         cmd
@@ -65,15 +68,14 @@ module Hecks
       self.class.handler&.call(self)
     end
 
-    def save(agg)
-      @aggregate = agg
-      if agg.respond_to?(:stamp_created!) && agg.created_at.nil?
-        agg.stamp_created!
-      elsif agg.respond_to?(:stamp_updated!)
-        agg.stamp_updated!
+    def persist_aggregate
+      return unless aggregate
+      if aggregate.respond_to?(:stamp_created!) && aggregate.created_at.nil?
+        aggregate.stamp_created!
+      elsif aggregate.respond_to?(:stamp_updated!)
+        aggregate.stamp_updated!
       end
-      repository.save(agg)
-      agg
+      repository.save(aggregate)
     end
 
     def emit_event
