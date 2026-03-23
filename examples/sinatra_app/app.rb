@@ -64,8 +64,8 @@ class App < Sinatra::Base
   private
 
   def serialize(obj)
-    obj.class.instance_method(:initialize).parameters.each_with_object({}) do |(_, name), h|
-      next unless name && obj.respond_to?(name)
+    Hecks::Utils.object_attr_names(obj).each_with_object({}) do |name, h|
+      next unless obj.respond_to?(name)
       val = obj.send(name)
       h[name] = val.is_a?(Time) ? val.iso8601 : val
     end

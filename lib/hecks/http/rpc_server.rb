@@ -123,9 +123,7 @@ module Hecks
       end
 
       def serialize(obj)
-        obj.class.instance_method(:initialize).parameters.each_with_object({}) do |(_, n), h|
-          h[n.to_s] = obj.send(n) if n && obj.respond_to?(n)
-        end
+        Hecks::Utils.serialize_object(obj)
       end
     end
   end

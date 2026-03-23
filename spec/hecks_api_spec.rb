@@ -72,7 +72,7 @@ RSpec.describe "Hecks top-level API" do
     it "returns generated code for an aggregate" do
       code = Hecks.preview(domain, "Pizza")
       expect(code).to include("class Pizza")
-      expect(code).to include("attr_reader")
+      expect(code).to include("attribute :name")
     end
 
     it "raises for unknown aggregate" do

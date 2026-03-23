@@ -100,5 +100,28 @@ module Hecks
     rescue StandardError
       "true"
     end
+
+    # Returns attribute names for an object, using hecks_attributes metadata
+    # if available, otherwise falling back to initialize parameter introspection.
+    def object_attr_names(obj)
+      klass = obj.is_a?(Class) ? obj : obj.class
+      names = [:id]
+      if klass.respond_to?(:hecks_attributes)
+        names += klass.hecks_attributes.map { |a| a[:name] }
+      else
+        klass.instance_method(:initialize).parameters.each do |_, name|
+          names << name if name && name != :id
+        end
+      end
+      names += [:created_at, :updated_at] if obj.respond_to?(:created_at)
+      names
+    end
+
+    # Serializes an object to a hash using attribute metadata.
+    def serialize_object(obj)
+      object_attr_names(obj).each_with_object({}) do |name, h|
+        h[name.to_s] = obj.send(name) if obj.respond_to?(name)
+      end
+    end
   end
 end
