@@ -1,107 +1,76 @@
 require "spec_helper"
 
 RSpec.describe Hecks::DSL::DomainBuilder do
-  describe "building a domain" do
-    subject(:domain) do
-      Hecks.domain "Pizzas" do
-        aggregate "Pizza" do
-          attribute :name, String
-          attribute :description, String
-          attribute :toppings, list_of("Topping")
+  it "builds a domain with aggregates" do
+    domain = Hecks.domain("Test") { aggregate("Pizza") { attribute :name, String; command("CreatePizza") { attribute :name, String } } }
+    expect(domain.name).to eq("Test")
+    expect(domain.aggregates.first.name).to eq("Pizza")
+  end
 
-          value_object "Topping" do
-            attribute :name, String
-            attribute :amount, Integer
-          end
+  it "builds queries" do
+    domain = Hecks.domain("T") { aggregate("P") { attribute :s, String; command("CreateP") { attribute :s, String }; query("Q") { where(s: "x") } } }
+    expect(domain.aggregates.first.queries.first.name).to eq("Q")
+  end
 
-          validation :name, presence: true
-
-          command "CreatePizza" do
-            attribute :name, String
-            attribute :description, String
-          end
-
-          command "AddTopping" do
-            attribute :pizza_id, reference_to("Pizza")
-            attribute :topping, String
-          end
-        end
-
-        aggregate "Order" do
-          attribute :pizza_id, reference_to("Pizza")
-          attribute :quantity, Integer
-
-          command "PlaceOrder" do
-            attribute :pizza_id, reference_to("Pizza")
-            attribute :quantity, Integer
-          end
-
-          policy "ReserveIngredients" do
-            on "PlacedOrder"
-            trigger "ReserveStock"
-          end
-        end
+  it "builds value objects with invariants" do
+    domain = Hecks.domain("T") do
+      aggregate("P") do
+        attribute :toppings, list_of("T")
+        value_object("T") { attribute :n, String; invariant("x") { true } }
+        command("CreateP") { attribute :n, String }
       end
     end
+    expect(domain.aggregates.first.value_objects.first.invariants.size).to eq(1)
+  end
 
-    it "builds a domain with the correct name" do
-      expect(domain.name).to eq("Pizzas")
-    end
-
-    it "has two aggregates" do
-      expect(domain.aggregates.size).to eq(2)
-    end
-
-    describe "Pizza aggregate" do
-      let(:pizza) { domain.aggregates.first }
-
-      it "has the correct name" do
-        expect(pizza.name).to eq("Pizza")
-      end
-
-      it "has three attributes" do
-        expect(pizza.attributes.size).to eq(3)
-      end
-
-      it "has a list attribute for toppings" do
-        toppings_attr = pizza.attributes.find { |a| a.name == :toppings }
-        expect(toppings_attr).to be_list
-      end
-
-      it "has one value object" do
-        expect(pizza.value_objects.size).to eq(1)
-        expect(pizza.value_objects.first.name).to eq("Topping")
-      end
-
-      it "has two commands" do
-        expect(pizza.commands.size).to eq(2)
-      end
-
-      it "infers events from commands" do
-        expect(pizza.events.size).to eq(2)
-        expect(pizza.events.map(&:name)).to include("CreatedPizza", "AddedTopping")
-      end
-
-      it "has validations" do
-        expect(pizza.validations.size).to eq(1)
+  it "builds policies" do
+    domain = Hecks.domain("T") do
+      aggregate("A") do
+        attribute :n, String
+        command("CreateA") { attribute :n, String }
+        command("DoB") { attribute :n, String }
+        policy("React") { on "CreatedA"; trigger "DoB" }
       end
     end
+    expect(domain.aggregates.first.policies.first.trigger_command).to eq("DoB")
+  end
 
-    describe "Order aggregate" do
-      let(:order) { domain.aggregates.last }
+  it "infers events from commands" do
+    domain = Hecks.domain("T") { aggregate("P") { attribute :n, String; command("CreateP") { attribute :n, String }; command("DeleteP") { attribute :id, String } } }
+    expect(domain.aggregates.first.events.map(&:name)).to eq(["CreatedP", "DeletedP"])
+  end
 
-      it "has a reference attribute" do
-        pizza_ref = order.attributes.find { |a| a.name == :pizza_id }
-        expect(pizza_ref).to be_reference
-      end
+  it "supports JSON attributes" do
+    domain = Hecks.domain("T") { aggregate("R") { attribute :pts, JSON; command("CreateR") { attribute :pts, JSON } } }
+    expect(domain.aggregates.first.attributes.first.json?).to be true
+  end
 
-      it "has a policy" do
-        expect(order.policies.size).to eq(1)
-        policy = order.policies.first
-        expect(policy.name).to eq("ReserveIngredients")
-        expect(policy.event_name).to eq("PlacedOrder")
-        expect(policy.trigger_command).to eq("ReserveStock")
-      end
+  it "generates gem_name" do
+    domain = Hecks.domain("Pizza Shop") { aggregate("P") { attribute :n, String; command("CreateP") { attribute :n, String } } }
+    expect(domain.gem_name).to eq("pizza_shop_domain")
+  end
+
+  it "supports scopes" do
+    domain = Hecks.domain("T") { aggregate("P") { attribute :s, String; command("CreateP") { attribute :s, String }; scope(:active, s: "on") } }
+    expect(domain.aggregates.first.scopes.first.name).to eq(:active)
+  end
+
+  it "supports validations" do
+    domain = Hecks.domain("T") { aggregate("P") { attribute :n, String; validation(:n, presence: true); command("CreateP") { attribute :n, String } } }
+    expect(domain.aggregates.first.validations.first.presence?).to be true
+  end
+
+  it "supports references" do
+    domain = Hecks.domain("T") do
+      aggregate("P") { attribute :n, String; command("CreateP") { attribute :n, String } }
+      aggregate("O") { attribute :p_id, reference_to("P"); command("CreateO") { attribute :p_id, reference_to("P") } }
     end
+    expect(domain.aggregates.last.attributes.first.reference?).to be true
+  end
+
+  it "source_path is settable" do
+    domain = Hecks.domain("T") { aggregate("P") { attribute :n, String; command("CreateP") { attribute :n, String } } }
+    domain.source_path = "/tmp/test.rb"
+    expect(domain.source_path).to eq("/tmp/test.rb")
   end
 end
