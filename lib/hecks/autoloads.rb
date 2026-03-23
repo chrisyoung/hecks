@@ -3,6 +3,7 @@
 module Hecks
   autoload :Command,        "hecks/command"
   autoload :Model,           "hecks/model"
+  autoload :Query,           "hecks/query"
   autoload :Utils,          "hecks/utils"
   autoload :VERSION,        "hecks/version"
   autoload :Configuration,  "hecks/configuration"
