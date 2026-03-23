@@ -20,6 +20,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "thor", "~> 1.0"
   spec.add_dependency "sequel", ">= 5.0"
   spec.add_dependency "rwordnet"
+  spec.add_dependency "mcp"
 
   spec.add_development_dependency "rspec", "~> 3.0"
   spec.add_development_dependency "activemodel", ">= 6.0"

@@ -105,6 +105,12 @@ module Hecks
       Session::ConsoleRunner.new(name: name).run
     end
 
+    desc "mcp", "Start the MCP server for AI agents"
+    def mcp
+      require_relative "mcp_server"
+      McpServer.new.run
+    end
+
     desc "generate:sql", "Generate SQL migration and adapter from domain.rb"
     map "generate:sql" => :generate_sql
     def generate_sql
