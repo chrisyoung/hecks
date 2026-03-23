@@ -6,7 +6,8 @@
 # Falls back to in-memory filtering for adapters without query support.
 #
 #   Pizza.where(style: "Classic").order(:name).limit(5)
-#   Pizza.where(status: "active").count
+#   Pizza.where(price: gt(10)).count
+#   Pizza.where(status: not_eq("cancelled"))
 #   Pizza.find_by(name: "Margherita")
 #
 module Hecks
@@ -83,6 +84,13 @@ module Hecks
       end
       alias length size
 
+      def gt(value)  = Operators::Gt.new(value)
+      def gte(value) = Operators::Gte.new(value)
+      def lt(value)  = Operators::Lt.new(value)
+      def lte(value) = Operators::Lte.new(value)
+      def not_eq(value) = Operators::NotEq.new(value)
+      def one_of(values) = Operators::In.new(values)
+
       def inspect
         "#<Hecks::QueryBuilder conditions=#{@conditions} order=#{@order_key} limit=#{@limit_value}>"
       end
@@ -112,7 +120,11 @@ module Hecks
         return results if @conditions.empty?
 
         results.select do |obj|
-          @conditions.all? { |k, v| obj.respond_to?(k) && obj.send(k) == v }
+          @conditions.all? do |k, v|
+            next false unless obj.respond_to?(k)
+            actual = obj.send(k)
+            v.respond_to?(:match?) ? v.match?(actual) : actual == v
+          end
         end
       end
 

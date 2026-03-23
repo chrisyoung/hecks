@@ -1,4 +1,4 @@
-# Hecks::Generators::EventGenerator
+# Hecks::Generators::Domain::EventGenerator
 #
 # Generates frozen domain event classes with occurred_at timestamps.
 # Events are inferred from commands (CreatePizza -> CreatedPizza).

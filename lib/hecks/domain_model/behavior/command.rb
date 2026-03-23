@@ -1,4 +1,4 @@
-# Hecks::DomainModel::Command
+# Hecks::DomainModel::Behavior::Command
 #
 # Intermediate representation of a domain command -- an intent to change state.
 # Each command carries attributes, optional read models, external systems,

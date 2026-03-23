@@ -11,6 +11,7 @@ module Hecks
       autoload :QueryBuilder,  "hecks/services/querying/query_builder"
       autoload :AdHocQueries,  "hecks/services/querying/ad_hoc_queries"
       autoload :ScopeMethods,  "hecks/services/querying/scope_methods"
+      autoload :Operators,     "hecks/services/querying/operators"
 
       def self.bind(klass, aggregate)
         ScopeMethods.bind(klass, aggregate)

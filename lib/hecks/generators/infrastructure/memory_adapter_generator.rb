@@ -1,4 +1,4 @@
-# Hecks::Generators::MemoryAdapterGenerator
+# Hecks::Generators::Infrastructure::MemoryAdapterGenerator
 #
 # Generates in-memory repository implementations that store aggregates in a
 # hash. Every aggregate gets one by default — zero setup needed. Includes a
@@ -116,7 +116,15 @@ module Hecks
         [
           "#{pad}def query(conditions: {}, order_key: nil, order_direction: :asc, limit: nil, offset: nil)",
           "#{pad}  results = @store.values",
-          "#{pad}  results = results.select { |obj| conditions.all? { |k, v| obj.respond_to?(k) && obj.send(k) == v } } unless conditions.empty?",
+          "#{pad}  unless conditions.empty?",
+          "#{pad}    results = results.select do |obj|",
+          "#{pad}      conditions.all? do |k, v|",
+          "#{pad}        next false unless obj.respond_to?(k)",
+          "#{pad}        actual = obj.send(k)",
+          "#{pad}        v.respond_to?(:match?) ? v.match?(actual) : actual == v",
+          "#{pad}      end",
+          "#{pad}    end",
+          "#{pad}  end",
           "#{pad}  if order_key",
           "#{pad}    results = results.sort_by { |obj| val = obj.respond_to?(order_key) ? obj.send(order_key) : nil; val.nil? ? \"\" : val }",
           "#{pad}    results = results.reverse if order_direction == :desc",

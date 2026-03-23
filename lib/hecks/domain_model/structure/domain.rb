@@ -1,4 +1,4 @@
-# Hecks::DomainModel::Domain
+# Hecks::DomainModel::Structure::Domain
 #
 # The root of the domain model intermediate representation. A domain contains
 # one or more bounded contexts, each holding aggregates. For backward

@@ -1,4 +1,4 @@
-# Hecks::DomainModel::ExternalSystem
+# Hecks::DomainModel::Structure::ExternalSystem
 #
 # Represents an external system that a command interacts with. Captured
 # during Event Storming as pink stickies -- third-party services, APIs,

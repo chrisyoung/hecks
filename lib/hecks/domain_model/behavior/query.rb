@@ -1,4 +1,4 @@
-# Hecks::DomainModel::Query
+# Hecks::DomainModel::Behavior::Query
 #
 # Intermediate representation of a domain query — a named, reusable query
 # defined in the DSL. Each query has a name and a block that uses the

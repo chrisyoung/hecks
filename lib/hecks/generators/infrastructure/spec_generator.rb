@@ -1,4 +1,4 @@
-# Hecks::Generators::SpecGenerator
+# Hecks::Generators::Infrastructure::SpecGenerator
 #
 # Generates RSpec test scaffolds for domain objects. Creates specs for
 # aggregates, value objects, commands, and events. Supports context-qualified

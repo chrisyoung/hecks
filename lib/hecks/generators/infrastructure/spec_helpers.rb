@@ -1,4 +1,4 @@
-# Hecks::Generators::SpecHelpers
+# Hecks::Generators::Infrastructure::SpecHelpers
 #
 # Private helper methods for SpecGenerator: example argument generation,
 # example values by type, and spec snippet builders for attributes,

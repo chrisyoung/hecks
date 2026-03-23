@@ -1,4 +1,4 @@
-# Hecks::DomainModel::ValueObject
+# Hecks::DomainModel::Structure::ValueObject
 #
 # Intermediate representation of a DDD value object -- an immutable object
 # defined entirely by its attributes, with no identity. Value objects can

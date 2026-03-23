@@ -1,4 +1,4 @@
-# Hecks::Generators::PolicyGenerator
+# Hecks::Generators::Domain::PolicyGenerator
 #
 # Generates policy classes that declare reactive rules binding events to
 # commands. Policies enable cross-context communication via the event bus.

@@ -1,4 +1,4 @@
-# Hecks::Generators::ValueObjectGenerator
+# Hecks::Generators::Domain::ValueObjectGenerator
 #
 # Generates immutable value object classes with value-based equality.
 # Supports optional context module nesting.

@@ -1,4 +1,4 @@
-# Hecks::DomainModel::Policy
+# Hecks::DomainModel::Behavior::Policy
 #
 # Intermediate representation of a reactive policy -- a rule that triggers
 # a command in response to a domain event. Policies are the approved

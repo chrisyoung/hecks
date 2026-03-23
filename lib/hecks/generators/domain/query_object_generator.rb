@@ -1,4 +1,4 @@
-# Hecks::Generators::QueryObjectGenerator
+# Hecks::Generators::Domain::QueryObjectGenerator
 #
 # Generates query modules for aggregates based on DSL attributes. Each
 # scalar attribute gets a by_<attribute> class method. These are always

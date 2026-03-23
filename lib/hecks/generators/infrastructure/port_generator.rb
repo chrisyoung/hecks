@@ -1,4 +1,4 @@
-# Hecks::Generators::PortGenerator
+# Hecks::Generators::Infrastructure::PortGenerator
 #
 # Generates repository port interfaces (modules with NotImplementedError stubs).
 # Consuming apps include the port and implement the methods.

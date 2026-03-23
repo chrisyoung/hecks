@@ -1,4 +1,4 @@
-# Hecks::Generators::SqlAdapterGenerator
+# Hecks::Generators::SQL::SqlAdapterGenerator
 #
 # Generates SQL-backed repository implementations with find, save, delete,
 # all, and query operations. Handles join tables for list-type value objects.
@@ -73,7 +73,11 @@ module Hecks
         lines << ""
         lines << "      def query(conditions: {}, order_key: nil, order_direction: :asc, limit: nil, offset: nil)"
         lines << "        ds = Sequel.sqlite[:#{table_name}]"
-        lines << "        ds = ds.where(conditions) unless conditions.empty?"
+        lines << "        unless conditions.empty?"
+        lines << "          conditions.each do |k, v|"
+        lines << "            ds = v.respond_to?(:sequel_expr) ? ds.where(v.sequel_expr(k)) : ds.where(k => v)"
+        lines << "          end"
+        lines << "        end"
         lines << "        ds = ds.order(order_direction == :desc ? Sequel.desc(order_key) : order_key) if order_key"
         lines << "        ds = ds.limit(limit) if limit"
         lines << "        ds = ds.offset(offset) if offset"

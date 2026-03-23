@@ -1,4 +1,4 @@
-# Hecks::DomainModel::BoundedContext
+# Hecks::DomainModel::Structure::BoundedContext
 #
 # Represents a bounded context within a domain — a grouping of related
 # aggregates that share a common language and boundary. Contexts enforce
