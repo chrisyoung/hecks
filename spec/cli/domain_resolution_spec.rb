@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe "CLI domain resolution" do
   describe "find_installed_domains" do
     it "finds gems with hecks_domain.rb" do
-      cli = Hecks::CLI.new
+      cli = Hecks::CLI::Domain.new
       domains = cli.send(:find_installed_domains)
       # pizzas_domain should be installed from our test setup
       names = domains.map(&:first)
@@ -12,7 +12,7 @@ RSpec.describe "CLI domain resolution" do
   end
 
   describe "resolve_domain" do
-    let(:cli) { Hecks::CLI.new }
+    let(:cli) { Hecks::CLI::Domain.new }
 
     it "resolves from a directory with hecks_domain.rb" do
       Dir.mktmpdir do |dir|
