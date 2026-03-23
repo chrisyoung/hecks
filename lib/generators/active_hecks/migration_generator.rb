@@ -19,25 +19,25 @@ module ActiveHecks
       end
 
       domain = config.domain_obj
-      snapshot_path = ::Rails.root.join(Hecks::DomainSnapshot::DEFAULT_PATH).to_s
-      old_domain = Hecks::DomainSnapshot.load(path: snapshot_path)
+      snapshot_path = ::Rails.root.join(Hecks::Migrations::DomainSnapshot::DEFAULT_PATH).to_s
+      old_domain = Hecks::Migrations::DomainSnapshot.load(path: snapshot_path)
 
-      changes = Hecks::DomainDiff.call(old_domain, domain)
+      changes = Hecks::Migrations::DomainDiff.call(old_domain, domain)
 
       if changes.empty?
         say "Domain is up to date — no migrations needed.", :green
         return
       end
 
-      unless Hecks::MigrationStrategy.for(:sql)
-        Hecks::MigrationStrategy.register(:sql, Hecks::MigrationStrategies::SqlStrategy)
+      unless Hecks::Migrations::MigrationStrategy.for(:sql)
+        Hecks::Migrations::MigrationStrategy.register(:sql, Hecks::Migrations::Strategies::SqlStrategy)
       end
 
-      files = Hecks::MigrationStrategy.run_all(changes, output_dir: ::Rails.root.to_s)
+      files = Hecks::Migrations::MigrationStrategy.run_all(changes, output_dir: ::Rails.root.to_s)
 
       files.each { |f| say "Generated #{f}", :green }
 
-      Hecks::DomainSnapshot.save(domain, path: snapshot_path)
+      Hecks::Migrations::DomainSnapshot.save(domain, path: snapshot_path)
       say "Saved domain snapshot to #{snapshot_path}", :green
     end
   end

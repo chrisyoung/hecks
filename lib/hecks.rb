@@ -3,24 +3,14 @@
 module Hecks
   class PortAccessDenied < StandardError; end
 
-  autoload :Utils,              "hecks/utils"
-  autoload :VERSION,            "hecks/version"
-  autoload :Configuration,      "hecks/configuration"
-  autoload :CLI,                "hecks/cli"
-  autoload :Session,            "hecks/session"
-  autoload :AggregateHandle,    "hecks/aggregate_handle"
-  autoload :ContextHandle,      "hecks/context_handle"
-  autoload :Playground,          "hecks/playground"
-  autoload :Validator,          "hecks/validator"
-  autoload :Versioner,          "hecks/versioner"
-  autoload :DomainDiff,         "hecks/domain_diff"
-  autoload :MigrationStrategy,  "hecks/migration_strategy"
-  autoload :DomainSnapshot,     "hecks/domain_snapshot"
-  autoload :MigrationRunner,    "hecks/migration_runner"
-
-  module MigrationStrategies
-    autoload :SqlStrategy, "hecks/migration_strategies/sql_strategy"
-  end
+  autoload :Utils,          "hecks/utils"
+  autoload :VERSION,        "hecks/version"
+  autoload :Configuration,  "hecks/configuration"
+  autoload :CLI,            "hecks/cli"
+  autoload :Session,        "hecks/session"
+  autoload :Validator,      "hecks/validator"
+  autoload :Versioner,      "hecks/versioner"
+  autoload :Migrations,     "hecks/migrations"
 
   module ValidationRules
     autoload :BaseRule,    "hecks/validation_rules/base_rule"

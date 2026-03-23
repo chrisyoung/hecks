@@ -1,4 +1,4 @@
-# Hecks::MigrationStrategies::SqlStrategy
+# Hecks::Migrations::Strategies::SqlStrategy
 #
 # Generates SQL migration files from domain changes. Produces ALTER TABLE
 # statements for attribute changes and CREATE TABLE for new aggregates.
@@ -14,8 +14,9 @@
 require "fileutils"
 
 module Hecks
-  module MigrationStrategies
-    class SqlStrategy < MigrationStrategy
+  module Migrations
+    module Strategies
+      class SqlStrategy < MigrationStrategy
       def generate(changes)
         lines = []
 
@@ -136,6 +137,7 @@ module Hecks
         when "Boolean", "TrueClass", "FalseClass" then "BOOLEAN"
         else "TEXT"
         end
+      end
       end
     end
   end

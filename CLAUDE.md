@@ -30,4 +30,31 @@ The `examples/rails_app/` has Rails-generated files that should NOT be committed
 - Tests run against memory adapters — fast and isolated
 - CalVer versioning (YYYY.MM.DD.N) — no manual bumping
 - `Hecks.configure` for Rails, `Application.new` for plain Ruby
-- Domain objects feel like Ruby — `Pizza.create`, `Pizza.find`, `pizza.toppings.create`
+- Aggregates are pure domain objects — no persistence logic mixed in
+
+## Module grouping pattern
+
+Group related files under a parent module with a `.bind` class method. The parent module file documents what's inside and delegates binding. Each child is a separate file with its own doc header.
+
+```
+services/
+  persistence.rb          # parent: autoloads + Persistence.bind(klass, agg, repo)
+  persistence/
+    repository_methods.rb # RepositoryMethods.bind(klass, repo)
+    collection_methods.rb
+    collection_proxy.rb
+    reference_methods.rb
+```
+
+Current module groups:
+- `Services::Persistence` — RepositoryMethods, CollectionProxy, References
+- `Services::Querying` — QueryBuilder, AdHocQueries, Scopes, Operators
+- `Services::Commands` — CommandBus, CommandMethods, CommandRunner
+- `Generators::Domain` — Aggregate, VO, Command, Event, Policy, Query
+- `Generators::SQL` — SqlAdapter, SqlBuilder, SqlMigration
+- `Generators::Infrastructure` — Port, MemoryAdapter, Autoload, Spec, DomainGem
+- `DomainModel::Behavior` — Command, DomainEvent, Policy, Query
+- `DomainModel::Structure` — Domain, Aggregate, ValueObject, Attribute, etc.
+- `ValidationRules::Naming` / `References` / `Structure`
+- `Session` — AggregateHandle, ContextHandle, Playground, ConsoleRunner
+- `Migrations` — DomainDiff, DomainSnapshot, MigrationStrategy, MigrationRunner

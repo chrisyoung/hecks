@@ -1,4 +1,4 @@
-# Hecks::DomainSnapshot
+# Hecks::Migrations::DomainSnapshot
 #
 # Saves and loads domain DSL snapshots for migration diffing. When
 # migrations are generated, the current domain is serialized to a
@@ -9,7 +9,8 @@
 #   old_domain = DomainSnapshot.load(path: ".hecks_domain_snapshot.rb")
 #
 module Hecks
-  class DomainSnapshot
+  module Migrations
+    class DomainSnapshot
     DEFAULT_PATH = ".hecks_domain_snapshot.rb"
 
     def self.save(domain, path: DEFAULT_PATH)
@@ -26,6 +27,7 @@ module Hecks
 
     def self.exists?(path: DEFAULT_PATH)
       File.exist?(path)
+    end
     end
   end
 end

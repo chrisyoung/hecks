@@ -1,4 +1,4 @@
-# Hecks::ContextHandle
+# Hecks::Session::ContextHandle
 #
 # Interactive handle for building a bounded context in the REPL. Returns
 # AggregateHandles for each aggregate within the context.
@@ -12,7 +12,8 @@
 #   ordering.aggregates  # => ["Order"]
 #
 module Hecks
-  class ContextHandle
+  class Session
+    class ContextHandle
     attr_reader :name
 
     def initialize(name, context_builder, domain_module:)
@@ -101,5 +102,6 @@ module Hecks
       parts.empty? ? "empty" : parts.join(", ")
     end
 
+  end
   end
 end

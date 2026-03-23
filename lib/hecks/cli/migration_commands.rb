@@ -15,10 +15,10 @@ module Hecks
       domain = load_migration_domain
       return unless domain
 
-      snapshot_path = DomainSnapshot::DEFAULT_PATH
-      old_domain = DomainSnapshot.load(path: snapshot_path)
+      snapshot_path = Migrations::DomainSnapshot::DEFAULT_PATH
+      old_domain = Migrations::DomainSnapshot.load(path: snapshot_path)
 
-      changes = DomainDiff.call(old_domain, domain)
+      changes = Migrations::DomainDiff.call(old_domain, domain)
 
       if changes.empty?
         say "Domain is up to date — no migrations needed.", :green
@@ -28,7 +28,7 @@ module Hecks
       # Ensure SqlStrategy is registered
       register_sql_strategy
 
-      files = MigrationStrategy.run_all(changes, output_dir: ".")
+      files = Migrations::MigrationStrategy.run_all(changes, output_dir: ".")
 
       if files.empty?
         say "No migration files generated.", :yellow
@@ -41,7 +41,7 @@ module Hecks
         content.each_line { |line| say "  #{line.rstrip}", :cyan }
       end
 
-      DomainSnapshot.save(domain, path: snapshot_path)
+      Migrations::DomainSnapshot.save(domain, path: snapshot_path)
       say "Saved domain snapshot to #{snapshot_path}", :green
     end
 
@@ -52,7 +52,7 @@ module Hecks
       connection = build_connection
       return unless connection
 
-      runner = MigrationRunner.new(connection: connection)
+      runner = Migrations::MigrationRunner.new(connection: connection)
       applied = runner.run_all
 
       if applied.empty?
@@ -116,8 +116,8 @@ module Hecks
     end
 
     def register_sql_strategy
-      unless MigrationStrategy.for(:sql)
-        MigrationStrategy.register(:sql, MigrationStrategies::SqlStrategy)
+      unless Migrations::MigrationStrategy.for(:sql)
+        Migrations::MigrationStrategy.register(:sql, Migrations::Strategies::SqlStrategy)
       end
     end
   end

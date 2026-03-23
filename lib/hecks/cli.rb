@@ -100,7 +100,7 @@ module Hecks
 
     desc "console [NAME]", "Start an interactive session"
     def console(name = nil)
-      ConsoleRunner.new(name: name).run
+      Session::ConsoleRunner.new(name: name).run
     end
 
     desc "generate:sql", "Generate SQL migration and adapter from domain.rb"

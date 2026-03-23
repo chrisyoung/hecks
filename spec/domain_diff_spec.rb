@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::DomainDiff do
+RSpec.describe Hecks::Migrations::DomainDiff do
   let(:old_domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do

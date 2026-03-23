@@ -1,4 +1,4 @@
-# Hecks::ConsoleRunner
+# Hecks::Session::ConsoleRunner
 #
 # Launches an interactive IRB session pre-configured with a Hecks Session.
 # Loads domain.rb if it exists, otherwise starts a new session.
@@ -6,7 +6,8 @@
 #   ConsoleRunner.new(name: "Pizzas").run
 #
 module Hecks
-  class ConsoleRunner
+  class Session
+    class ConsoleRunner
     def initialize(name: nil)
       @name = name
     end
@@ -75,5 +76,6 @@ module Hecks
       puts "  session.build     # generate domain gem"
       puts ""
     end
+  end
   end
 end
