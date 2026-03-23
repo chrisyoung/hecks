@@ -31,7 +31,7 @@ module Hecks
           method_name = full_name.sub(/_#{agg_snake}$/, "").to_sym
 
           klass.define_singleton_method(method_name) do |**attrs|
-            cmd_class.call(**attrs)
+            cmd_class.call(**attrs).aggregate
           end
         end
       end

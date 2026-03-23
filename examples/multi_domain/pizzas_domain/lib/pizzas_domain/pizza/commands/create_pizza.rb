@@ -12,16 +12,14 @@ module PizzasDomain
           @name = name
           @style = style
           @price = price
-          freeze
         end
 
         def call
           run_handler
-          aggregate = Pizza.new(name: name, style: style, price: price, created_at: Time.now, updated_at: Time.now)
-          repository.save(aggregate)
-          event = emit Events::CreatedPizza.new(name: name, style: style, price: price)
+          save Pizza.new(name: name, style: style, price: price, created_at: Time.now, updated_at: Time.now)
+          emit Events::CreatedPizza.new(name: name, style: style, price: price)
           record_event(aggregate.id, event)
-          aggregate
+          self
         end
       end
     end

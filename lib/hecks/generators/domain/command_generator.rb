@@ -1,8 +1,8 @@
 # Hecks::Generators::Domain::CommandGenerator
 #
-# Generates command classes with a call method that builds the aggregate,
-# saves it, and emits the corresponding event. Commands are self-contained —
-# open the file and you see exactly what happens.
+# Generates command classes with emits declaration and a call method
+# containing only domain logic. The Hecks::Command mixin handles
+# handler, event emission, and recording.
 #
 #   gen = CommandGenerator.new(cmd, domain_module: "PizzasDomain",
 #     aggregate_name: "Pizza", aggregate: agg, event: evt)
@@ -32,6 +32,7 @@ module Hecks
         lines << "    module Commands"
         lines << "      class #{@command.name}"
         lines << "        include Hecks::Command"
+        lines << "        emits \"#{@event.name}\"" if @event
         lines << ""
         lines << "        attr_reader #{@command.attributes.map { |a| ":#{a.name}" }.join(", ")}"
         lines << ""
@@ -60,7 +61,6 @@ module Hecks
             lines << "          @#{attr.name} = #{attr.name}"
           end
         end
-        lines << "          freeze"
         lines << "        end"
         lines
       end
@@ -78,34 +78,22 @@ module Hecks
       end
 
       def create_body
-        lines = []
-        lines << "          run_handler"
-        lines << "          aggregate = #{@aggregate_name}.new(#{create_constructor_args})"
-        lines << "          repository.save(aggregate)"
-        lines << "          event = emit Events::#{@event.name}.new(#{event_args})"
-        lines << "          record_event(aggregate.id, event)"
-        lines << "          aggregate"
-        lines
+        ["          save #{@aggregate_name}.new(#{create_constructor_args})"]
       end
 
       def update_body
         lines = []
-        lines << "          run_handler"
         id_attr = @command.attributes.find { |a| a.name.to_s.end_with?("_id") }
         if id_attr
           lines << "          existing = repository.find(#{id_attr.name})"
           lines << "          if existing"
-          lines << "            aggregate = #{@aggregate_name}.new(#{update_constructor_args})"
+          lines << "            save #{@aggregate_name}.new(#{update_constructor_args})"
           lines << "          else"
-          lines << "            aggregate = #{@aggregate_name}.new(#{create_constructor_args})"
+          lines << "            save #{@aggregate_name}.new(#{create_constructor_args})"
           lines << "          end"
         else
-          lines << "          aggregate = #{@aggregate_name}.new(#{create_constructor_args})"
+          lines << "          save #{@aggregate_name}.new(#{create_constructor_args})"
         end
-        lines << "          repository.save(aggregate)"
-        lines << "          event = emit Events::#{@event.name}.new(#{event_args})"
-        lines << "          record_event(aggregate.id, event)"
-        lines << "          aggregate"
         lines
       end
 
@@ -113,9 +101,7 @@ module Hecks
         parts = []
         agg_attrs.each do |a|
           cmd_attr = @command.attributes.find { |c| c.name == a.name }
-          if cmd_attr
-            parts << "#{a.name}: #{a.name}"
-          end
+          parts << "#{a.name}: #{a.name}" if cmd_attr
         end
         parts << "created_at: Time.now"
         parts << "updated_at: Time.now"
@@ -135,10 +121,6 @@ module Hecks
         parts << "created_at: existing.created_at"
         parts << "updated_at: Time.now"
         parts.join(", ")
-      end
-
-      def event_args
-        @command.attributes.map { |a| "#{a.name}: #{a.name}" }.join(", ")
       end
 
       def agg_attrs
