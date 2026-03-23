@@ -34,6 +34,33 @@ module Hecks
         root
       end
 
+      # Generate all Ruby source as one string (no file I/O)
+      def generate_source
+        mod = @domain.module_name + "Domain"
+        parts = []
+
+        # Module shell with error classes (no autoloads — everything is eval'd)
+        parts << "require 'securerandom'\nmodule #{mod}\n  class ValidationError < StandardError; end\n  class InvariantError < StandardError; end\nend"
+
+        @domain.contexts.each do |ctx|
+          ctx_mod = ctx.default? ? nil : ctx.module_name
+          ctx.aggregates.each do |agg|
+            parts << Domain::AggregateGenerator.new(agg, domain_module: mod, context_module: ctx_mod).generate
+            agg.value_objects.each { |vo| parts << Domain::ValueObjectGenerator.new(vo, domain_module: mod, aggregate_name: agg.name, context_module: ctx_mod).generate }
+            agg.commands.each { |cmd| parts << Domain::CommandGenerator.new(cmd, domain_module: mod, aggregate_name: agg.name, context_module: ctx_mod).generate }
+            agg.events.each { |evt| parts << Domain::EventGenerator.new(evt, domain_module: mod, aggregate_name: agg.name, context_module: ctx_mod).generate }
+            agg.policies.each { |pol| parts << Domain::PolicyGenerator.new(pol, domain_module: mod, aggregate_name: agg.name, context_module: ctx_mod).generate }
+          end
+        end
+
+        each_aggregate_with_context do |agg, ctx_mod, _|
+          parts << Infrastructure::PortGenerator.new(agg, domain_module: mod, context_module: ctx_mod).generate
+          parts << Infrastructure::MemoryAdapterGenerator.new(agg, domain_module: mod, context_module: ctx_mod).generate
+        end
+
+        parts.join("\n")
+      end
+
       private
 
       def generate_gemspec(root, gem_name, mod)
