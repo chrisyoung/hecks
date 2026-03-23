@@ -1,6 +1,8 @@
 # Hecks::MCP::AggregateTools
 #
-# MCP tools for adding things, actions, details, validations, and reactions.
+# MCP tools for building domain structure: add/remove aggregates, commands,
+# value objects, validations, and policies. Each tool delegates to the
+# Session's AggregateHandle API.
 #
 module Hecks
   module MCP

@@ -1,8 +1,9 @@
 # Hecks::Generators::Infrastructure::MemoryAdapterGenerator
 #
 # Generates in-memory repository implementations that store aggregates in a
-# hash. Every aggregate gets one by default — zero setup needed. Includes a
-# query method for adapter-driven filtering, sorting, and pagination.
+# hash. Every aggregate gets one by default -- zero setup needed. Includes a
+# query method for adapter-driven filtering, sorting, and pagination. Part of
+# Generators::Infrastructure, consumed by DomainGemGenerator and SourceBuilder.
 #
 #   gen = MemoryAdapterGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  module Adapters\n    class PizzaMemoryRepository\n  ..."

@@ -1,3 +1,13 @@
+# Hecks::Utils
+#
+# Shared utility functions used across the framework. Provides constant
+# sanitization, underscore conversion, type labeling, keyword detection,
+# block source extraction, and object serialization.
+# Infrastructure layer — consumed by generators, DSL, services, and CLI.
+#
+#   Hecks::Utils.sanitize_constant("My Pizza")  # => "MyPizza"
+#   Hecks::Utils.underscore("PizzaDomain")       # => "pizza_domain"
+#
 module Hecks
   module Utils
     # Ruby reserved keywords that cannot be used as bare keyword parameters

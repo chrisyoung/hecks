@@ -1,7 +1,12 @@
 # Hecks::Migrations
 #
 # Schema migration infrastructure: diff detection, snapshot tracking,
-# strategy dispatch, and migration execution.
+# strategy dispatch, and migration execution. Parent module that
+# autoloads DomainDiff, DomainSnapshot, MigrationStrategy, and
+# MigrationRunner plus the Strategies namespace.
+#
+#   changes = Migrations::DomainDiff.call(old_domain, new_domain)
+#   Migrations::MigrationStrategy.run_all(changes)
 #
 module Hecks
   module Migrations

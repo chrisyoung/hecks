@@ -1,7 +1,8 @@
 # Hecks::Generators::SQL
 #
-# SQL-specific generators: adapter classes, builder helpers, and
-# migration scripts for database persistence.
+# Parent module for SQL-specific generators: adapter classes, builder helpers,
+# and migration scripts for database persistence. Part of the Generators layer,
+# consumed by DomainGemGenerator and the CLI `hecks domain build` command.
 #
 module Hecks
   module Generators

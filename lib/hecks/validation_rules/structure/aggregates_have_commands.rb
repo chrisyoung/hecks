@@ -1,6 +1,8 @@
 # Hecks::ValidationRules::Structure::AggregatesHaveCommands
 #
-# Warns when aggregates have no commands.
+# Rejects aggregates that have no commands -- an aggregate without
+# commands is a data bag, not a behavior boundary. Part of the
+# ValidationRules::Structure group -- run by Hecks.validate.
 #
 module Hecks
   module ValidationRules

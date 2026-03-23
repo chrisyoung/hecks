@@ -1,8 +1,12 @@
 # Hecks::Services::AggregateWiring
 #
-# Orchestrates binding of mixins onto aggregate classes. Each concern
-# is a separate module with a .bind class method. AggregateWiring
-# just resolves the class and delegates to each mixin.
+# Orchestrates binding of all service mixins onto aggregate classes.
+# Wires Persistence, Commands, Querying (scopes), Introspection,
+# query objects, and PortEnforcer for each aggregate in the domain.
+# Each concern is a separate module with a .bind class method.
+#
+#   AggregateWiring.new(domain, repositories, command_bus, mod).wire!
+#
 module Hecks
   module Services
     class AggregateWiring

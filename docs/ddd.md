@@ -19,7 +19,7 @@ end
 
 ## Value Objects
 
-`value_object` in the DSL. Generated as frozen, immutable objects with equality by attributes (not identity). Support invariants for business rules.
+`value_object` in the DSL, nested inside an aggregate. Generated as frozen, immutable objects with equality by attributes (not identity). Support invariants for business rules.
 
 ```ruby
 value_object "Topping" do     # Chapter 5: Value Objects
@@ -35,9 +35,16 @@ end
 
 `command` in the DSL. Represents intent — a request to change state. Each command automatically infers a corresponding domain event (`CreatePizza` -> `CreatedPizza`). Commands are dispatched through a CommandBus with middleware support (Chapter 10: Supple Design).
 
+Commands support event-storming annotations: `read_model` names a read model dependency, `external` names an external system, and `actor` names who triggers the command. These appear in documentation and MCP introspection but don't affect runtime behavior.
+
 ```ruby
 command "CreatePizza" do      # Application Service pattern
   attribute :name, String
+  attribute :description, String
+  guarded_by "MustBeAdmin"    # optional: references a guard policy
+  read_model "Menu"           # optional: event storm annotation
+  external "Stripe"           # optional: external system dependency
+  actor "Customer"            # optional: who triggers this command
 end
 ```
 
@@ -48,12 +55,13 @@ Auto-generated from commands. Frozen, immutable facts with `occurred_at` timesta
 ```ruby
 # CreatedPizza event auto-generated from CreatePizza command
 app.on("CreatedPizza") { |event| puts event.name }
-Pizza.history(id)  # => full event stream (when event sourcing enabled)
 ```
 
 ## Policies
 
-`policy` in the DSL. Reactive rules that subscribe to domain events and trigger commands — Evans' "domain event subscribers" pattern. Policies are the approved mechanism for cross-aggregate and cross-context communication.
+`policy` in the DSL. Hecks supports two kinds of policies:
+
+**Reactive policies** subscribe to domain events and trigger commands — Evans' "domain event subscribers" pattern. Policies are the mechanism for cross-aggregate communication.
 
 ```ruby
 policy "ReserveIngredients" do   # Chapter 14: Model Integrity
@@ -62,22 +70,79 @@ policy "ReserveIngredients" do   # Chapter 14: Model Integrity
 end
 ```
 
-## Bounded Contexts
-
-`context` in the DSL. Each context generates a separate module namespace. Cross-context references are forbidden (validated at build time) — contexts communicate through events and policies only.
+**Guard policies** validate commands before execution. The command references a guard policy by name with `guarded_by`. The guard block receives the command and must return truthy to allow it.
 
 ```ruby
-Hecks.domain "Pizzas" do
-  context "Ordering" do       # Chapter 14: Bounded Contexts
-    aggregate "Order" do ... end
+policy "MustBeAdmin" do |command|   # Authorization guard
+  command.role == "admin"
+end
+
+command "DeletePizza" do
+  attribute :pizza_id, reference_to("Pizza")
+  guarded_by "MustBeAdmin"
+end
+```
+
+## Validations
+
+`validation` in the DSL. Declarative attribute constraints checked at construction time. Currently supports `:presence` (non-nil/non-empty) and `:type` checks. Raises `ValidationError` on failure.
+
+```ruby
+aggregate "Order" do
+  attribute :quantity, Integer
+  validation :quantity, presence: true
+end
+```
+
+## Invariants
+
+`invariant` in the DSL. Business rule constraints checked at construction time on both aggregates and value objects. The block is evaluated in the object's context. Raises `InvariantError` on failure.
+
+```ruby
+invariant "amount must be positive" do
+  amount > 0
+end
+```
+
+## Scopes
+
+`scope` in the DSL. Named, reusable query filters bound as class methods on aggregates at boot time. Support both hash-based (static) and parameterized (lambda) forms. Returns a chainable `QueryBuilder`.
+
+```ruby
+aggregate "Order" do
+  scope :pending, status: "pending"       # hash-based
+
+  scope :by_size do |size|                # parameterized
+    { size: size }
   end
-  context "Kitchen" do
-    aggregate "Recipe" do
-      policy "StartPrep" do
-        on "PlacedOrder"      # cross-context via events
-        trigger "CreateRecipe"
-      end
-    end
+end
+
+# Usage:
+Order.pending.count
+Order.by_size("L").to_a
+```
+
+## Query Objects
+
+`query` in the DSL. Named, reusable queries defined as domain concepts. Internally use a `QueryBuilder` that delegates to the adapter — memory adapters filter in Ruby, SQL adapters build Sequel datasets.
+
+```ruby
+query "ByDescription" do |desc|    # Repository pattern: named queries
+  where(description: desc)
+end
+
+# Usage:
+Pizza.by_description("Classic").to_a
+```
+
+## Ports
+
+`port` in the DSL. Access control boundaries that restrict which repository methods are available through a named port. Raises `PortAccessDenied` when a disallowed method is called.
+
+```ruby
+aggregate "Pizza" do
+  port :guest do
+    allow :find, :all, :where
   end
 end
 ```
@@ -91,17 +156,7 @@ The `.bind` pattern implements the Ports and Adapters (Hexagonal) architecture:
 ```ruby
 # Domain layer: pure aggregate class (no persistence knowledge)
 # Infrastructure layer: RepositoryMethods.bind(Pizza, repo) at boot
-# Application layer: Hecks::Services::Application orchestrates wiring
-```
-
-## Query Objects
-
-`query` in the DSL. Named, reusable queries defined as domain concepts. Internally use a `QueryBuilder` that delegates to the adapter — memory adapters filter in Ruby, SQL adapters build Sequel datasets.
-
-```ruby
-query "Classics" do           # Repository pattern: named queries
-  where(style: "Classic").order(:name)
-end
+# Application layer: AggregateWiring orchestrates binding
 ```
 
 ## Ports and Adapters
@@ -116,7 +171,7 @@ Each group has a `.bind` method that injects behavior into aggregate classes at 
 
 ## Event Sourcing
 
-Opt-in via `event_sourced: true`. Every command records its event to a `domain_events` table alongside the regular SQL state. Provides `Pizza.history(id)` for full event streams. Regular SQL tables serve as the read model — queries stay fast.
+Opt-in via `adapter :sql, event_sourced: true` in `Hecks.configure`. Every command records its event to a `domain_events` table (stream ID, event type, JSON data, version) alongside the regular SQL state. The `EventRecorder` provides `history(aggregate_type, id)` for full event streams. Regular SQL tables serve as the read model — queries stay fast.
 
 ## What Hecks Validates (DDD Rules)
 
@@ -129,10 +184,10 @@ Opt-in via `event_sourced: true`. Every command records its event to a `domain_e
 | Commands must have attributes | Intent requires data |
 | No self-references | Aggregate boundary |
 | No bidirectional references | Aggregate boundary |
-| No cross-context references | Bounded Context integrity |
-| References by ID only | Aggregate Root references |
+| References must target existing aggregates | Aggregate Root references |
 | Value objects can't hold references | Value Object purity |
 | No name collisions | Ubiquitous Language clarity |
+| Unique aggregate names | Ubiquitous Language |
+| Reserved names rejected | Ruby keyword safety |
 | Policy events must exist | Model integrity |
 | Policy triggers must exist | Model integrity |
-| Unique names | Ubiquitous Language |

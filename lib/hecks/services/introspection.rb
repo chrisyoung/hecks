@@ -3,13 +3,14 @@
 # Mixin that gives generated aggregate classes runtime introspection.
 # Bound by AggregateWiring, backed by the domain IR.
 #
-#   Pizza.describe       # formatted summary
-#   Pizza.commands       # => ["CreatePizza(name: String) -> CreatedPizza"]
-#   Pizza.attributes     # => [:name, :style, :toppings]
-#   Pizza.value_objects  # => ["Topping (name: String, amount: Integer)"]
-#   Pizza.policies       # => ["ReserveIngredients (PlacedOrder -> ReserveStock)"]
-#   Pizza.queries        # => ["Classics", "ByStyle"]
-#   Pizza.domain_def     # => raw Aggregate IR object
+#   Pizza.describe              # formatted summary
+#   Pizza.domain_commands       # => ["CreatePizza(name: String) -> CreatedPizza"]
+#   Pizza.domain_attributes     # => [:name, :style, :toppings]
+#   Pizza.domain_value_objects  # => ["Topping (name: String, amount: Integer)"]
+#   Pizza.domain_policies       # => ["ReserveIngredients (PlacedOrder -> ReserveStock)"]
+#   Pizza.domain_queries        # => ["Classics", "ByStyle"]
+#   Pizza.domain_def            # => raw Aggregate IR object
+#   Pizza.glossary              # prints domain glossary for this aggregate
 #
 module Hecks
   module Services

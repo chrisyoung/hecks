@@ -1,7 +1,8 @@
 # Hecks::ValidationRules::Structure::ValidPolicyEvents
 #
-# Warns when policies listen for events not defined in this domain.
-# Cross-domain events are valid — they arrive via the shared event bus.
+# Produces warnings (not errors) when policies listen for events not defined
+# in this domain. Cross-domain events are valid -- they arrive via the shared
+# event bus -- so this is informational only.
 #
 module Hecks
   module ValidationRules

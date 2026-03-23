@@ -1,8 +1,10 @@
 # Hecks::HTTP::RpcServer
 #
-# JSON-RPC server generated from a domain. One endpoint, method dispatch.
+# WEBrick-based JSON-RPC 2.0 server for a domain. Single POST endpoint that
+# dispatches to commands, queries, and CRUD methods per aggregate. Boots the
+# domain gem from a temp directory, same as DomainServer.
 #
-#   hecks serve pizzas_domain --rpc
+#   hecks domain serve pizzas_domain --rpc
 #
 require "webrick"
 require "json"

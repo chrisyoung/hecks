@@ -1,7 +1,13 @@
 # Hecks::Session::BuildActions
 #
 # Session methods for validating, previewing, building, and saving
-# the domain being constructed.
+# the domain being constructed. Part of the Session layer -- mixed
+# into Session to keep build-phase logic separate from play-mode.
+#
+#   session.validate
+#   session.preview("Pizza")
+#   session.build(version: "1.0.0")
+#   session.save("hecks_domain.rb")
 #
 module Hecks
   class Session

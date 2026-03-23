@@ -1,6 +1,7 @@
 # Hecks::MCP::BuildTools
 #
-# MCP tools for validating, building, saving, and serving domains.
+# MCP tools for domain lifecycle: validate the domain, generate the gem,
+# save DSL to a file, and serve the domain as an HTTP REST API.
 #
 module Hecks
   module MCP

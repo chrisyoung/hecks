@@ -1,8 +1,8 @@
 # Hecks::Generators::Domain::AggregateGenerator::InvariantGeneration
 #
 # Mixin that generates the check_invariants! method and INVARIANTS constant.
-#
-# Converts DSL invariant blocks into runtime proc-based checks.
+# Converts DSL invariant blocks into runtime proc-based checks. Part of
+# Generators::Domain, mixed into AggregateGenerator.
 #
 #   class AggregateGenerator
 #     include InvariantGeneration

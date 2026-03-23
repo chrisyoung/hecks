@@ -2,7 +2,8 @@
 #
 # Generates SQL-backed repository implementations using Sequel datasets.
 # Supports any database Sequel connects to (SQLite, MySQL, Postgres).
-# Handles join tables for list-type value objects.
+# Handles join tables for list-type value objects. Part of Generators::SQL,
+# consumed by DomainGemGenerator for SQL persistence.
 #
 #   gen = SqlAdapterGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  module Adapters\n  ..."

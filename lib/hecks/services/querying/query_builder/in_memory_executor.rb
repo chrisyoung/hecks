@@ -1,7 +1,11 @@
 # Hecks::Services::Querying::QueryBuilder::InMemoryExecutor
 #
 # Fallback query engine for adapters without native query support.
-# Filters, sorts, offsets, and limits results in Ruby.
+# Filters, sorts, offsets, and limits results in Ruby. Included
+# into QueryBuilder and invoked when the repo lacks a #query method.
+#
+#   # Used internally by QueryBuilder#execute:
+#   #   in_memory_execute  # => filtered, sorted, paginated Array
 #
 module Hecks
   module Services

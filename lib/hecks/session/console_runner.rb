@@ -1,7 +1,7 @@
 # Hecks::Session::ConsoleRunner
 #
 # Launches an interactive IRB session pre-configured with a Hecks Session.
-# Loads domain.rb if it exists, otherwise starts a new session.
+# Loads hecks_domain.rb if present, otherwise starts a new empty session.
 #
 #   ConsoleRunner.new(name: "Pizzas").run
 #

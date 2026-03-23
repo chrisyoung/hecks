@@ -1,8 +1,12 @@
 # Hecks::Generators::SQL::SqlBuilder
 #
-# Sequel-based generation helpers for SqlAdapterGenerator. Builds insert,
-# update, build, and delete method bodies using Sequel dataset operations.
-# Handles join tables for list-type value objects.
+# Mixin with Sequel-based generation helpers for SqlAdapterGenerator. Builds
+# insert, update, build, and delete method bodies using Sequel dataset
+# operations. Handles join tables for list-type value objects. Part of
+# Generators::SQL, mixed into SqlAdapterGenerator.
+#
+#   # Mixed into SqlAdapterGenerator:
+#   insert_lines  # => ["      def insert(pizza)", ...]
 #
 module Hecks
   module Generators

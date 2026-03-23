@@ -1,12 +1,13 @@
 # Hecks::DSL::AggregateRebuilder
 #
 # Reconstructs an AggregateBuilder from a built Aggregate model object.
-# This is used when loading an existing domain.rb and needing to work
-# with builder objects (e.g., in the interactive console session).
+# Used when loading an existing domain.rb and needing to work with builder
+# objects (e.g., in the interactive console session or DslSerializer round-trips).
+# Restores attributes, value objects, commands, validations, scopes, and
+# reactive policies. Does not restore ports, queries, or guard policies.
 #
 #   builder = DSL::AggregateRebuilder.from_aggregate(aggregate)
-#   # => an AggregateBuilder populated with the aggregate's attributes,
-#   #    value objects, commands, validations, and policies
+#   builder.build  # => a new Aggregate equivalent to the original
 #
 module Hecks
   module DSL

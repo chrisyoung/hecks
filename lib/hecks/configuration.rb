@@ -1,9 +1,13 @@
 # Hecks::Configuration
 #
-# Wires Hecks into an application. Supports single or multiple domains.
+# Wires Hecks into an application. Supports single or multiple domains with
+# pluggable adapters (memory or SQL). Includes DatabaseConnection, DomainLoader,
+# and SqlSetup modules for database connectivity, gem loading, and adapter generation.
 #
-#   domain "pizzas_domain"
-#   adapter :sql, database: :mysql, host: "localhost", name: "pizzas"
+#   Hecks.configure do
+#     domain "pizzas_domain"
+#     adapter :sql, database: :mysql, host: "localhost", name: "pizzas"
+#   end
 #
 require "fileutils"
 require_relative "configuration/database_connection"

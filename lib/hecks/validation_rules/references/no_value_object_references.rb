@@ -1,6 +1,8 @@
 # Hecks::ValidationRules::References::NoValueObjectReferences
 #
-# Rejects reference attributes on value objects.
+# Rejects reference attributes on value objects. Value objects are about
+# values, not identity. Part of the ValidationRules::References group --
+# run by Hecks.validate.
 #
 module Hecks
   module ValidationRules

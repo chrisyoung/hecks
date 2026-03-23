@@ -1,7 +1,16 @@
 # Hecks::DomainModel::Behavior
 #
-# Domain behavior representations: commands (intent), events (facts),
-# policies (reactive rules), and queries (named lookups).
+# Namespace for domain behavior representations: commands (intent to change
+# state), events (records of what happened), policies (reactive rules and
+# guards), and queries (named lookups).
+#
+# Part of the DomainModel IR layer. Each child class is an intermediate
+# representation built by the DSL and consumed by generators.
+#
+#   Behavior::Command      # intent to change state
+#   Behavior::DomainEvent  # record that something happened
+#   Behavior::Policy       # reactive rule or guard block
+#   Behavior::Query        # named, reusable lookup
 #
 module Hecks
   module DomainModel

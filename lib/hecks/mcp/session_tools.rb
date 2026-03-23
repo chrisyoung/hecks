@@ -1,6 +1,7 @@
 # Hecks::MCP::SessionTools
 #
-# MCP tools for creating and loading domain sessions.
+# MCP tools for session management: create a new domain modeling session
+# or load an existing domain.rb file into a session.
 #
 module Hecks
   module MCP

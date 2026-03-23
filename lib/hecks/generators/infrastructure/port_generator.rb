@@ -1,7 +1,8 @@
 # Hecks::Generators::Infrastructure::PortGenerator
 #
 # Generates repository port interfaces (modules with NotImplementedError stubs).
-# Consuming apps include the port and implement the methods.
+# Consuming apps include the port and implement the methods. Part of
+# Generators::Infrastructure, consumed by DomainGemGenerator and SourceBuilder.
 #
 #   gen = PortGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  module Ports\n    module PizzaRepository\n  ..."

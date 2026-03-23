@@ -10,7 +10,7 @@
 #   old_domain = Hecks.domain("Pizzas") { ... }
 #   new_domain = Hecks.domain("Pizzas") { ... }
 #   changes = DomainDiff.call(old_domain, new_domain)
-#   # => [AddAttribute.new(aggregate: "Pizza", name: :size, type: String), ...]
+#   # => [Change.new(kind: :add_attribute, aggregate: "Pizza", details: {...}), ...]
 #
 module Hecks
   module Migrations

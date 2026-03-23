@@ -1,7 +1,7 @@
 # Hecks::DSL::DomainBuilder
 #
-# Top-level DSL builder for domain definitions. Aggregates are added directly
-# to the domain:
+# Top-level DSL builder for domain definitions. Collects aggregate definitions
+# and builds a DomainModel::Structure::Domain. Enforces unique aggregate names.
 #
 #   Hecks.domain "Pizzas" do
 #     aggregate "Pizza" do

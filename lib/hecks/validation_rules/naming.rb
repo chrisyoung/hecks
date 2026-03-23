@@ -1,7 +1,8 @@
 # Hecks::ValidationRules::Naming
 #
-# Rules that enforce naming conventions: command verb prefixes,
-# no duplicate names, unique aggregate names.
+# Naming convention rules: command verb prefixes, no duplicate names,
+# unique aggregate names, and reserved name detection. Part of the
+# ValidationRules layer -- autoloads individual rule classes.
 #
 module Hecks
   module ValidationRules

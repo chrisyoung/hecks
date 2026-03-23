@@ -1,8 +1,12 @@
 # Hecks::DslSerializer
 #
-# Serializes a built Domain back into DSL source code. Extracted from
-# Session#to_dsl so the serialization logic can be reused independently
-# of any interactive session state.
+# Serializes a built Domain back into DSL source code. Handles all DSL
+# constructs: attributes, value objects, validations, invariants, scopes,
+# queries, commands (with guarded_by, read models, external systems, actors),
+# and reactive policies. Extracted from Session#to_dsl for standalone reuse.
+#
+# Part of the DSL layer. Used by the console session to dump editable domain
+# definitions and by round-trip tooling that loads then re-saves domains.
 #
 #   domain = Hecks.domain("Pizzas") { ... }
 #   DslSerializer.new(domain).serialize
