@@ -29,6 +29,7 @@ module Hecks
         @event_bus = event_bus || EventBus.new
         @repositories = {}
         @adapter_overrides = {}
+        @async_handler = nil
 
         instance_eval(&config) if config
 
@@ -65,6 +66,16 @@ module Hecks
       # Execute a command through the command bus (with middleware)
       def run(command_name, **attrs)
         @command_bus.dispatch(command_name, **attrs)
+      end
+
+      # Register an async handler for policies marked async: true
+      #
+      #   app.async do |command_name, attrs|
+      #     MyWorker.perform_async(command_name, attrs)
+      #   end
+      #
+      def async(&handler)
+        @async_handler = handler
       end
 
       # Subscribe to an event
@@ -114,7 +125,11 @@ module Hecks
                   next unless name
                   event_attrs[name] = event.send(name) if event.respond_to?(name)
                 end
-                @command_bus.dispatch(policy.trigger_command, **event_attrs)
+                if policy.async && @async_handler
+                  @async_handler.call(policy.trigger_command, event_attrs)
+                else
+                  @command_bus.dispatch(policy.trigger_command, **event_attrs)
+                end
               rescue StandardError => e
                 warn "[Hecks] Policy #{policy.name} failed: #{e.message}"
               ensure

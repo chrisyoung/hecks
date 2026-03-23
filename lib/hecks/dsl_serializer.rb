@@ -90,6 +90,7 @@ module Hecks
           lines << "    policy \"#{pol.name}\" do"
           lines << "      on \"#{pol.event_name}\""
           lines << "      trigger \"#{pol.trigger_command}\""
+          lines << "      async true" if pol.async
           lines << "    end"
         end
 

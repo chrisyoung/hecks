@@ -30,6 +30,7 @@ module Hecks
         Persistence.bind(agg_class, agg, repo)
         Commands.bind(agg_class, agg, @command_bus, repo, defaults)
         Querying.bind(agg_class, agg)
+        Introspection.bind(agg_class, agg)
         wire_query_objects(agg, agg_class)
         PortEnforcer.new(port_name: @port_name).enforce!(agg, agg_class)
       end

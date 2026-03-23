@@ -13,11 +13,12 @@ module Hecks
       return unless type
 
       case type
-      when "schema"  then dump_file(domain, "schema")
-      when "swagger" then dump_file(domain, "swagger")
-      when "rpc"     then dump_file(domain, "rpc")
-      when "domain"  then dump_domain(domain)
-      else say "Unknown type: #{type}. Use: schema, swagger, rpc, domain", :red
+      when "schema"   then dump_file(domain, "schema")
+      when "swagger"  then dump_file(domain, "swagger")
+      when "rpc"      then dump_file(domain, "rpc")
+      when "domain"   then dump_domain(domain)
+      when "glossary" then dump_glossary(domain)
+      else say "Unknown type: #{type}. Use: schema, swagger, rpc, domain, glossary", :red
       end
     end
 
@@ -29,7 +30,8 @@ module Hecks
       say "  2. swagger   — OpenAPI 3.0 spec"
       say "  3. rpc       — JSON-RPC discovery"
       say "  4. domain    — domain gem to domain/ folder"
-      { "1" => "schema", "2" => "swagger", "3" => "rpc", "4" => "domain" }[ask("Choice [1-4]:")]
+      say "  5. glossary  — plain-English domain glossary"
+      { "1" => "schema", "2" => "swagger", "3" => "rpc", "4" => "domain", "5" => "glossary" }[ask("Choice [1-5]:")]
     end
 
     def dump_file(domain, type)
@@ -53,6 +55,12 @@ module Hecks
       FileUtils.mkdir_p("domain")
       gem_path = Hecks.build(domain, output_dir: "domain")
       say "Dumped domain gem to domain/#{File.basename(gem_path)}/", :green
+    end
+
+    def dump_glossary(domain)
+      glossary = DomainGlossary.new(domain)
+      File.write("glossary.md", glossary.generate.join("\n") + "\n")
+      say "Dumped glossary.md", :green
     end
   end
 end

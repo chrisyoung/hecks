@@ -226,6 +226,36 @@ aggregate "Order" do
 end
 ```
 
+Mark a policy `async true` to dispatch it through a background job queue instead of inline:
+
+```ruby
+  policy "SendConfirmation" do
+    on "PlacedOrder"
+    trigger "SendEmail"
+    async true
+  end
+```
+
+Then register your queue adapter:
+
+```ruby
+# Plain Ruby
+app = Hecks::Services::Application.new(domain)
+app.async do |command_name, attrs|
+  MyWorker.perform_async(command_name, attrs)
+end
+
+# Rails
+Hecks.configure do
+  domain "pizzas_domain"
+  async do |command_name, attrs|
+    PolicyWorker.perform_async(command_name, attrs)
+  end
+end
+```
+
+Hecks serializes the event and hands it off. Your worker calls `app.run(command_name, **attrs)` to complete the dispatch. No async handler configured? Async policies fall back to inline dispatch.
+
 ### References
 
 Things can reference other things by ID. Hecks enforces this at build time — no circular references, no reaching into other things' internals.

@@ -2,10 +2,7 @@
 #
 # Wires Hecks into an application. Supports single or multiple domains.
 #
-#   domain "pizzas_domain", version: "2026.03.22.1"  # from gem
-#   domain "pizzas_domain", path: "domain/"           # local, builds on boot
-#   domain "pizzas_domain"                             # multiple domains share event bus
-#   domain "billing_domain"
+#   domain "pizzas_domain"
 #   adapter :sql, database: :mysql, host: "localhost", name: "pizzas"
 #
 require "fileutils"
@@ -35,6 +32,11 @@ module Hecks
       @ad_hoc_queries = true
     end
 
+    # Register an async handler for policies marked async: true
+    def async(&block)
+      @async_handler = block
+    end
+
     def boot!
       @shared_event_bus = Services::EventBus.new
       @db = connect_database if @adapter_type == :sql
@@ -58,11 +60,12 @@ module Hecks
     def app
       @apps.values.first
     end
-
     private
 
     def boot_domain(d)
       domain_obj, domain_module = load_domain(d)
+      mod = domain_obj.module_name + "Domain"
+      Hecks.instance_variable_get(:@domain_objects)[mod] = domain_obj
       generate_adapters(domain_obj) if @adapter_type == :sql
 
       adapter_type = @adapter_type
@@ -78,6 +81,7 @@ module Hecks
         end
       end
 
+      app.async(&@async_handler) if @async_handler
       @apps[d[:gem_name]] = app
 
       if @adapter_options[:event_sourced] && @db
