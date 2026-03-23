@@ -15,8 +15,8 @@ module Hecks
         @domain.aggregates.each do |agg|
           klass = @mod.const_get(agg.name)
           slug = Hecks::Utils.underscore(agg.name) + "s"
-          routes.concat(crud_routes(agg, klass, slug))
           routes.concat(query_routes(agg, klass, slug))
+          routes.concat(crud_routes(agg, klass, slug))
         end
         routes
       end
@@ -67,7 +67,19 @@ module Hecks
 
       def serialize(obj)
         obj.class.instance_method(:initialize).parameters.each_with_object({}) do |(_, name), h|
-          h[name.to_s] = obj.send(name) if name && obj.respond_to?(name)
+          next unless name && obj.respond_to?(name)
+          val = obj.send(name)
+          h[name.to_s] = serialize_value(val)
+        end
+      end
+
+      def serialize_value(val)
+        if val.respond_to?(:to_a) && val.respond_to?(:each) && !val.is_a?(Array) && !val.is_a?(Hash) && !val.is_a?(String)
+          val.to_a.map { |item| item.respond_to?(:id) ? serialize(item) : serialize_value(item) }
+        elsif val.is_a?(Time)
+          val.iso8601
+        else
+          val
         end
       end
 
