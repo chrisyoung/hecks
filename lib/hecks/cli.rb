@@ -26,10 +26,26 @@ module Hecks
       elsif File.exist?(path_or_name)
         load_domain(path_or_name)
       else
-        file = File.join(Dir.pwd, path_or_name, "domain.rb")
-        return nil unless File.exist?(file)
-        load_domain(file)
+        # Check local subdirectory
+        local = File.join(Dir.pwd, path_or_name, "domain.rb")
+        if File.exist?(local)
+          load_domain(local)
+        else
+          # Check installed gems
+          resolve_domain_from_gem(path_or_name)
+        end
       end
+    end
+
+    def resolve_domain_from_gem(gem_name)
+      require gem_name
+      spec = Gem.loaded_specs[gem_name]
+      return nil unless spec
+      domain_file = File.join(spec.full_gem_path, "domain.rb")
+      return nil unless File.exist?(domain_file)
+      load_domain(domain_file)
+    rescue LoadError
+      nil
     end
 
     def load_domain(file)
