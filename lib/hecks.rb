@@ -16,6 +16,8 @@ module Hecks
   autoload :Validator,      "hecks/validator"
   autoload :Versioner,      "hecks/versioner"
   autoload :Migrations,     "hecks/migrations"
+  autoload :DomainGlossary, "hecks/domain_glossary"
+  require_relative "hecks/domain_inspector"
 
   module ValidationRules
     autoload :BaseRule,    "hecks/validation_rules/base_rule"
@@ -64,6 +66,7 @@ module Hecks
     autoload :Persistence,      "hecks/services/persistence"
     autoload :Querying,         "hecks/services/querying"
     autoload :Commands,         "hecks/services/commands"
+    autoload :Introspection,    "hecks/services/introspection"
   end
 
   module HTTP
@@ -133,6 +136,7 @@ module Hecks
     File.write(File.join(docs_dir, "openapi.json"), JSON.pretty_generate(HTTP::OpenapiGenerator.new(domain).generate))
     File.write(File.join(docs_dir, "rpc_methods.json"), JSON.pretty_generate(HTTP::RpcDiscovery.new(domain).generate))
     File.write(File.join(docs_dir, "schema.json"), JSON.pretty_generate(HTTP::JsonSchemaGenerator.new(domain).generate))
+    File.write(File.join(docs_dir, "glossary.md"), DomainGlossary.new(domain).generate.join("\n") + "\n")
 
     gem_path
   end
@@ -140,6 +144,7 @@ module Hecks
   # Load a domain into memory without file I/O.
   # Uses generate_source for a single eval-ready string.
   @loaded_domains = {}
+  @domain_objects = {}
   def self.load_domain(domain, force: false, skip_validation: false)
     mod = domain.module_name + "Domain"
     key = domain.object_id
@@ -157,8 +162,11 @@ module Hecks
     source = gen.generate_source
     eval(source, TOPLEVEL_BINDING, "(hecks:load:#{domain.name})")
     @loaded_domains[mod] = key
+    @domain_objects[mod] = domain
     Object.const_get(mod)
   end
+
+  extend DomainInspector
 
   # Parse an event storm document (ASCII or YAML) and produce a domain + DSL
   def self.from_event_storm(source, name: nil)

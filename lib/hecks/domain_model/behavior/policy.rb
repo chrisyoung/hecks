@@ -10,21 +10,24 @@
 #   policy = Policy.new(
 #     name: "NotifyKitchen",
 #     event_name: "OrderPlaced",
-#     trigger_command: "PrepareOrder"
+#     trigger_command: "PrepareOrder",
+#     async: true
 #   )
 #   policy.event_name       # => "OrderPlaced"
 #   policy.trigger_command  # => "PrepareOrder"
+#   policy.async            # => true
 #
 module Hecks
   module DomainModel
     module Behavior
     class Policy
-      attr_reader :name, :event_name, :trigger_command
+      attr_reader :name, :event_name, :trigger_command, :async
 
-      def initialize(name:, event_name:, trigger_command:)
+      def initialize(name:, event_name:, trigger_command:, async: false)
         @name = name
         @event_name = event_name
         @trigger_command = trigger_command
+        @async = async
       end
     end
     end

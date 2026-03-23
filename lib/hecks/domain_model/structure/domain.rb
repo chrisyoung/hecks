@@ -25,6 +25,29 @@ module Hecks
       def gem_name
         Hecks::Utils.underscore(module_name) + "_domain"
       end
+
+      def describe
+        lines = [name, ""]
+        aggregates.each do |agg|
+          attrs = agg.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
+          lines << "  #{agg.name} (#{attrs})"
+          agg.commands.each_with_index do |cmd, i|
+            event = agg.events[i]
+            cmd_attrs = cmd.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
+            lines << "    #{cmd.name}(#{cmd_attrs}) -> #{event&.name}"
+          end
+          agg.queries.each { |q| lines << "    query: #{q.name}" }
+          agg.policies.each do |pol|
+            async_label = pol.async ? " [async]" : ""
+            lines << "    policy: #{pol.name} (#{pol.event_name} -> #{pol.trigger_command})#{async_label}"
+          end
+        end
+        puts lines.join("\n")
+        nil
+      end
+      def glossary
+        Hecks::DomainGlossary.new(self).print
+      end
     end
     end
   end
