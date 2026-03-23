@@ -1,18 +1,15 @@
 # Hecks::Model
 #
-# Mixin for generated aggregate classes. Provides identity, auto-discovery
-# of Commands/Events/Queries/Policies by convention, and validation stubs.
+# Mixin for generated aggregate classes. Provides identity, id generation,
+# validation hooks, auto-discovery of Commands/Events/Queries/Policies,
+# and timestamp support for the persistence layer.
 #
 #   class Pizza
 #     include Hecks::Model
-#     attr_reader :id, :name, :created_at, :updated_at
-#     def initialize(name: nil, id: nil, created_at: nil, updated_at: nil)
-#       @id = id || generate_id
+#     attr_reader :name, :toppings
+#     def initialize(name: nil, toppings: [])
 #       @name = name
-#       @created_at = created_at || Time.now
-#       @updated_at = updated_at || Time.now
-#       validate!
-#       check_invariants!
+#       @toppings = toppings.freeze
 #     end
 #   end
 #

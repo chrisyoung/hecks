@@ -2,6 +2,8 @@
 #
 # Generates REST routes from a domain's aggregates, commands, and queries.
 #
+require "time"
+
 module Hecks
   module HTTP
     class RouteBuilder

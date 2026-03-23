@@ -1,7 +1,8 @@
 # Hecks::Generators::Domain::AggregateGenerator::ConstructorGeneration
 #
-# Mixin that generates initialize method and constructor parameters for aggregates.
-# Timestamps (created_at, updated_at) are handled by the persistence layer.
+# Mixin that generates initialize method for aggregates.
+# Identity (generate_id), validation stubs, and invariant stubs
+# are provided by Hecks::Model. Timestamps are handled by persistence.
 #
 #   class AggregateGenerator
 #     include ConstructorGeneration
