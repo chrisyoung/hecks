@@ -47,6 +47,7 @@ module Hecks
       load_domain
       generate_adapters if @adapter_type == :sql
       create_application
+      bind_event_recorder if @adapter_options[:event_sourced]
       bind_ad_hoc_queries if @ad_hoc_queries
       activate_rails if defined?(::Rails)
     end
@@ -80,7 +81,8 @@ module Hecks
       adapter_type = @adapter_type
       domain_module = @domain_module
       domain_obj = @domain_obj
-      db = connect_database if adapter_type == :sql
+      @db = connect_database if adapter_type == :sql
+      db = @db
 
       @app = Services::Application.new(@domain_obj) do
         if adapter_type == :sql
@@ -139,6 +141,14 @@ module Hecks
       db_config = ActiveRecord::Base.connection_db_config
       url = db_config.try(:url) || db_config.configuration_hash[:url]
       url ? Sequel.connect(url) : Sequel.sqlite
+    end
+
+    def bind_event_recorder
+      recorder = Services::Persistence::EventRecorder.new(@db)
+      @domain_obj.aggregates.each do |agg|
+        agg_class = @domain_module.const_get(agg.name)
+        Services::Persistence.bind_event_recorder(agg_class, recorder)
+      end
     end
 
     def bind_ad_hoc_queries

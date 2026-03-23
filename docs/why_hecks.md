@@ -77,6 +77,21 @@ pizza.destroy
 
 No excuses.
 
+## Event sourcing built in
+
+Add `event_sourced: true` and every command records its event. Full audit trail, no extra code:
+
+```ruby
+adapter :sql, database: :postgres, event_sourced: true
+```
+
+```ruby
+Pizza.create(name: "Margherita")
+Pizza.history(pizza.id)  # => full event stream
+```
+
+Try that with ActiveRecord.
+
 ---
 
 Even simple CRUD apps have a domain. Hecks just makes you model it first and pick a database later — instead of the other way around.

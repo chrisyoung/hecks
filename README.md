@@ -549,6 +549,29 @@ end
 
 Tests always run against memory — fast, isolated, no database. Production uses SQL. The domain code is identical either way.
 
+### Event Sourcing
+
+Enable `event_sourced: true` to persist every domain event alongside your SQL state. Full audit history with zero changes to domain code:
+
+```ruby
+Hecks.configure do
+  domain "pizzas_domain"
+  adapter :sql, database: :postgres, event_sourced: true
+end
+```
+
+Every command automatically records its event to a `domain_events` table:
+
+```ruby
+Pizza.create(name: "Margherita", style: "Classic")
+# => records CreatedPizza event
+
+Pizza.history(pizza.id)
+# => [{event_type: "CreatedPizza", data: {"name" => "Margherita"}, version: 1, ...}]
+```
+
+Regular SQL tables handle reads (queries stay fast). The events table provides full history for auditing, debugging, and future replay capabilities.
+
 ### Migrations
 
 When using the SQL adapter, Hecks generates migration files to create and update your database schema. Migrations go to `db/hecks_migrate/` — separate from ActiveRecord's `db/migrate/` since these are raw SQL, not AR migrations.
