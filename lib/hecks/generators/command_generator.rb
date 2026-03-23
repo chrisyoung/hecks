@@ -42,7 +42,7 @@ module Hecks
       private
 
       def constructor_params
-        @command.attributes.map { |attr| "#{attr.name}:" }.join(", ")
+        @command.attributes.map { |attr| "#{attr.name}: nil" }.join(", ")
       end
     end
   end
