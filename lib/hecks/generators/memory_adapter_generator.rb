@@ -1,7 +1,8 @@
 # Hecks::Generators::MemoryAdapterGenerator
 #
 # Generates in-memory repository implementations that store aggregates in a
-# hash. Every aggregate gets one by default — zero setup needed.
+# hash. Every aggregate gets one by default — zero setup needed. Includes a
+# query method for adapter-driven filtering, sorting, and pagination.
 #
 #   gen = MemoryAdapterGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  module Adapters\n    class PizzaMemoryRepository\n  ..."
@@ -60,6 +61,8 @@ module Hecks
           lines << "          @store.size"
           lines << "        end"
           lines << ""
+          lines.concat(query_lines(8))
+          lines << ""
           lines << "        def clear"
           lines << "          @store.clear"
           lines << "        end"
@@ -93,6 +96,8 @@ module Hecks
           lines << "        @store.size"
           lines << "      end"
           lines << ""
+          lines.concat(query_lines(6))
+          lines << ""
           lines << "      def clear"
           lines << "        @store.clear"
           lines << "      end"
@@ -103,6 +108,24 @@ module Hecks
         lines.join("\n") + "\n"
       end
 
+      private
+
+      def query_lines(indent)
+        pad = " " * indent
+        [
+          "#{pad}def query(conditions: {}, order_key: nil, order_direction: :asc, limit: nil, offset: nil)",
+          "#{pad}  results = @store.values",
+          "#{pad}  results = results.select { |obj| conditions.all? { |k, v| obj.respond_to?(k) && obj.send(k) == v } } unless conditions.empty?",
+          "#{pad}  if order_key",
+          "#{pad}    results = results.sort_by { |obj| val = obj.respond_to?(order_key) ? obj.send(order_key) : nil; val.nil? ? \"\" : val }",
+          "#{pad}    results = results.reverse if order_direction == :desc",
+          "#{pad}  end",
+          "#{pad}  results = results.drop(offset) if offset",
+          "#{pad}  results = results.take(limit) if limit",
+          "#{pad}  results",
+          "#{pad}end"
+        ]
+      end
     end
   end
 end

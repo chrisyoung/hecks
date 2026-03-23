@@ -1,6 +1,10 @@
 class PizzasController < ApplicationController
   def index
-    @pizzas = Pizza.all
+    if params[:description].present?
+      @pizzas = Pizza.by_description(params[:description])
+    else
+      @pizzas = Pizza.all
+    end
   end
 
   def show

@@ -53,6 +53,7 @@ module Hecks
     autoload :Validation,   "hecks/domain_model/validation"
     autoload :Invariant,       "hecks/domain_model/invariant"
     autoload :Scope,           "hecks/domain_model/scope"
+    autoload :Query,           "hecks/domain_model/query"
     autoload :PortDefinition,  "hecks/domain_model/port_definition"
     autoload :ReadModel,       "hecks/domain_model/read_model"
     autoload :ExternalSystem,  "hecks/domain_model/external_system"
@@ -87,6 +88,8 @@ module Hecks
     autoload :SqlAdapterGenerator,     "hecks/generators/sql_adapter_generator"
     autoload :SqlBuilder,              "hecks/generators/sql_builder"
     autoload :SqlMigrationGenerator,   "hecks/generators/sql_migration_generator"
+    autoload :QueryObjectGenerator,    "hecks/generators/query_object_generator"
+    autoload :QueryGenerator,          "hecks/generators/query_generator"
   end
 
   module EventStorm
@@ -107,6 +110,9 @@ module Hecks
     autoload :ContextProxy,      "hecks/services/context_proxy"
     autoload :CommandWiring,     "hecks/services/command_wiring"
     autoload :PortEnforcer,      "hecks/services/port_enforcer"
+    autoload :QueryBuilder,      "hecks/services/query_builder"
+    autoload :AdHocQueries,      "hecks/services/ad_hoc_queries"
+    autoload :RepositoryMethods, "hecks/services/repository_methods"
   end
 
   # Configure Hecks for an application (typically from an initializer)

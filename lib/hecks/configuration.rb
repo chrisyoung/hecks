@@ -6,6 +6,7 @@
 #   Hecks.configure do
 #     domain "pizzas_domain"
 #     adapter :sql
+#     include_ad_hoc_queries  # opt-in: where, find_by, order, limit
 #   end
 #
 # Adapter options:
@@ -23,6 +24,7 @@ module Hecks
       @adapter_type = :memory
       @domain_obj = nil
       @app = nil
+      @ad_hoc_queries = false
     end
 
     def domain(gem_name)
@@ -33,10 +35,15 @@ module Hecks
       @adapter_type = type
     end
 
+    def include_ad_hoc_queries
+      @ad_hoc_queries = true
+    end
+
     def boot!
       load_domain
       generate_adapters if @adapter_type == :sql
       create_application
+      bind_ad_hoc_queries if @ad_hoc_queries
       activate_rails if defined?(::Rails)
     end
 
@@ -98,6 +105,13 @@ module Hecks
       old = $VERBOSE; $VERBOSE = nil
       Object.const_set(:APP, @app)
       $VERBOSE = old
+    end
+
+    def bind_ad_hoc_queries
+      @domain_obj.aggregates.each do |agg|
+        agg_class = @domain_module.const_get(agg.name)
+        Services::AdHocQueries.bind(agg_class, @app[agg.name])
+      end
     end
 
     def activate_rails

@@ -20,6 +20,10 @@ Hecks.domain "Pizzas" do
       attribute :description, String
     end
 
+    query "ByDescription" do |desc|
+      where(description: desc)
+    end
+
     command "AddTopping" do
       attribute :pizza_id, reference_to("Pizza")
       attribute :topping, String
@@ -45,6 +49,10 @@ Hecks.domain "Pizzas" do
     command "ReserveStock" do
       attribute :pizza_id, reference_to("Pizza")
       attribute :quantity, Integer
+    end
+
+    query "Pending" do
+      where(status: "pending")
     end
 
     policy "ReserveIngredients" do
