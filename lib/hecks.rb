@@ -117,6 +117,18 @@ module Hecks
     [validator.valid?, validator.errors]
   end
 
+  # Load a domain into memory without file I/O. Evals generated code directly.
+  # Use for tests and REPL — no gem produced, just classes loaded.
+  def self.load_domain(domain)
+    mod = domain.module_name + "Domain"
+    return Object.const_get(mod) if Object.const_defined?(mod)
+
+    gen = Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0")
+    source = gen.generate_source
+    eval(source, TOPLEVEL_BINDING, "(hecks:load:#{domain.name})")
+    Object.const_get(mod)
+  end
+
   # Generate a domain gem, returns the output path
   def self.build(domain, version: "0.1.0", output_dir: ".")
     valid, errors = validate(domain)

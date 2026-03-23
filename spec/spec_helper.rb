@@ -1,4 +1,5 @@
 require "hecks"
+require_relative "support/shared_boot"
 
 # Track constants hoisted to Object by Hecks::Services::Application
 # so we can clean them up between specs.
