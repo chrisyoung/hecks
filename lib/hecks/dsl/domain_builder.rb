@@ -36,12 +36,17 @@ module Hecks
         @aggregates = []
         @contexts = []
         @attributes = []
+        @verbs = []
       end
 
       def aggregate(name, &block)
         builder = AggregateBuilder.new(name)
         builder.instance_eval(&block) if block
         @aggregates << builder.build
+      end
+
+      def verbs(*words)
+        @verbs.concat(words.map(&:to_s))
       end
 
       def context(name, &block)
@@ -55,12 +60,12 @@ module Hecks
           # If there are also bare aggregates, wrap them in a Default context
           if @aggregates.any?
             default_ctx = DomainModel::Structure::BoundedContext.new(name: "Default", aggregates: @aggregates)
-            DomainModel::Structure::Domain.new(name: @name, contexts: [default_ctx] + @contexts)
+            DomainModel::Structure::Domain.new(name: @name, contexts: [default_ctx] + @contexts, verbs: @verbs)
           else
-            DomainModel::Structure::Domain.new(name: @name, contexts: @contexts)
+            DomainModel::Structure::Domain.new(name: @name, contexts: @contexts, verbs: @verbs)
           end
         else
-          DomainModel::Structure::Domain.new(name: @name, aggregates: @aggregates)
+          DomainModel::Structure::Domain.new(name: @name, aggregates: @aggregates, verbs: @verbs)
         end
       end
     end
