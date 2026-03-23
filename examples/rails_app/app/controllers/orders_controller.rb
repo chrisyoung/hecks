@@ -1,6 +1,10 @@
 class OrdersController < ApplicationController
   def index
-    @orders = Order.all
+    if params[:status] == "pending"
+      @orders = Order.pending
+    else
+      @orders = Order.all
+    end
   end
 
   def new

@@ -157,6 +157,29 @@ RSpec.describe "SQL adapter integration" do
       expect(results.size).to eq(1)
       expect(results.first.name).to eq("Pepperoni")
     end
+
+    it "chains where with order" do
+      PizzasDomain::Pizza.create(name: "Pepperoni", description: "Classic")
+      PizzasDomain::Pizza.create(name: "Margherita", description: "Classic")
+      PizzasDomain::Pizza.create(name: "Hawaiian", description: "Tropical")
+      results = PizzasDomain::Pizza.where(description: "Classic").order(:name)
+      expect(results.map(&:name)).to eq(["Margherita", "Pepperoni"])
+    end
+
+    it "chains where with order desc" do
+      PizzasDomain::Pizza.create(name: "Pepperoni", description: "Classic")
+      PizzasDomain::Pizza.create(name: "Margherita", description: "Classic")
+      results = PizzasDomain::Pizza.where(description: "Classic").order(name: :desc)
+      expect(results.map(&:name)).to eq(["Pepperoni", "Margherita"])
+    end
+
+    it "chains where with limit and offset" do
+      PizzasDomain::Pizza.create(name: "A", description: "Classic")
+      PizzasDomain::Pizza.create(name: "B", description: "Classic")
+      PizzasDomain::Pizza.create(name: "C", description: "Classic")
+      results = PizzasDomain::Pizza.where(description: "Classic").order(:name).offset(1).limit(1)
+      expect(results.map(&:name)).to eq(["B"])
+    end
   end
 
   describe "Pizza.first / Pizza.last" do

@@ -1,7 +1,8 @@
 # Hecks::Generators::SqlAdapterGenerator
 #
 # Generates SQL-backed repository implementations with find, save, delete,
-# and all operations. Handles join tables for list-type value objects.
+# all, and query operations. Handles join tables for list-type value objects.
+# The query method uses Sequel's dataset builder for SQL construction.
 #
 # Part of the Generators layer. Invoked by the CLI's `generate:sql` command
 # to produce SQL adapter classes alongside the schema migration.
@@ -10,6 +11,7 @@
 #   gen.generate  # => "module PizzasDomain\n  module Adapters\n    class PizzaSqlRepository\n  ..."
 #
 require_relative "sql_builder"
+require "sequel"
 
 module Hecks
   module Generators
@@ -66,6 +68,16 @@ module Hecks
         lines << "      def count"
         lines << "        row = @connection.execute(\"SELECT COUNT(*) FROM #{table_name}\").first"
         lines << "        row.is_a?(Hash) ? row.values.first : row[0]"
+        lines << "      end"
+        lines << ""
+        lines << "      def query(conditions: {}, order_key: nil, order_direction: :asc, limit: nil, offset: nil)"
+        lines << "        ds = Sequel.sqlite[:#{table_name}]"
+        lines << "        ds = ds.where(conditions) unless conditions.empty?"
+        lines << "        ds = ds.order(order_direction == :desc ? Sequel.desc(order_key) : order_key) if order_key"
+        lines << "        ds = ds.limit(limit) if limit"
+        lines << "        ds = ds.offset(offset) if offset"
+        lines << "        rows = @connection.execute(ds.sql)"
+        lines << "        rows.map { |row| build(row) }"
         lines << "      end"
         lines << ""
         lines << "      private"

@@ -18,11 +18,11 @@ module Hecks
   module DomainModel
     class Aggregate
       attr_reader :name, :attributes, :value_objects, :commands,
-                  :events, :policies, :validations, :invariants, :scopes, :ports
+                  :events, :policies, :validations, :invariants, :scopes, :ports, :queries
 
       def initialize(name:, attributes: [], value_objects: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
-                     scopes: [], ports: {})
+                     scopes: [], ports: {}, queries: [])
         @name = name
         @attributes = attributes
         @value_objects = value_objects
@@ -33,6 +33,7 @@ module Hecks
         @invariants = invariants
         @scopes = scopes
         @ports = ports
+        @queries = queries
       end
 
     end

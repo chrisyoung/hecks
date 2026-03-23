@@ -145,6 +145,16 @@ module Hecks
           lines << "#{base_indent}end"
         end
 
+        unless aggregate.queries.empty?
+          lines << ""
+          lines << "#{base_indent}module Queries"
+          aggregate.queries.each do |query|
+            query_snake = Hecks::Utils.underscore(query.name)
+            lines << "#{base_indent}  autoload :#{query.name}, \"#{base}/queries/#{query_snake}\""
+          end
+          lines << "#{base_indent}end"
+        end
+
         lines.join("\n")
       end
 

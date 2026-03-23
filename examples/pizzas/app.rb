@@ -64,11 +64,19 @@ Pizza.all.each do |p|
   puts "  #{p.name}: #{p.description}"
 end
 
-# 10. Value objects
+# 10. DSL query objects
+puts "\n--- Query objects ---"
+classics = Pizza.by_description("Classic")
+puts "Classic pizzas: #{classics.map(&:name).join(", ")}"
+
+spicy = Pizza.by_description("Spicy")
+puts "Spicy pizzas: #{spicy.map(&:name).join(", ")}"
+
+# 12. Value objects
 topping = PizzasDomain::Pizza::Topping.new(name: "Pineapple", amount: 3)
 puts "\nTopping: #{topping.name} x#{topping.amount} (frozen: #{topping.frozen?})"
 
-# 11. Show event history
+# 13. Show event history
 puts "\n--- Event history ---"
 app.events.each_with_index do |event, i|
   name = event.class.name.split("::").last

@@ -20,10 +20,26 @@ module Hecks
 
     def block_source(block)
       return "true" unless block
-      file, line = block.source_location
+      file, start_line = block.source_location
       lines = File.readlines(file)
-      source_line = lines[line - 1].strip
-      source_line.sub(/^invariant.*do\s*/, "").sub(/\s*end\s*$/, "")
+
+      # Single-line block: `query "Foo" do where(x: 1) end`
+      first = lines[start_line - 1].strip
+      if first.match?(/\bdo\b.*\bend\s*$/)
+        return first.sub(/^.*?\bdo\s*(\|[^|]*\|\s*)?/, "").sub(/\s*end\s*$/, "").strip
+      end
+
+      # Multi-line block: collect body lines between do and end
+      body_lines = []
+      depth = 0
+      lines[start_line..-1].each do |l|
+        stripped = l.strip
+        break if depth == 0 && stripped == "end"
+        body_lines << stripped
+        depth += 1 if stripped.match?(/\b(do|def|class|module|if|unless|case|begin)\b/)
+        depth -= 1 if stripped == "end"
+      end
+      body_lines.reject(&:empty?).join("\n")
     rescue StandardError
       "true"
     end

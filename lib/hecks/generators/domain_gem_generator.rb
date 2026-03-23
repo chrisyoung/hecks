@@ -1,15 +1,7 @@
 # Hecks::Generators::DomainGemGenerator
 #
-# Master orchestrator that generates a complete domain gem from a domain model.
-# Iterates through bounded contexts and their aggregates, delegating to
-# specialized generators for each artifact type.
-#
-# Single context (default):
-#   pizzas_domain/lib/pizzas_domain/pizza/pizza.rb
-#
-# Multiple contexts:
-#   pizzas_domain/lib/pizzas_domain/ordering/order/order.rb
-#   pizzas_domain/lib/pizzas_domain/kitchen/recipe/recipe.rb
+# Generates a complete domain gem from a domain model — aggregates, queries,
+# ports, adapters, and specs. Delegates to specialized generators per artifact.
 #
 #   gen = DomainGemGenerator.new(domain, version: "1.0.0")
 #   gen.generate  # => "./pizzas_domain"
@@ -36,6 +28,7 @@ module Hecks
         generate_gemspec(root, gem_name, mod)
         generate_entry_point(root, gem_name, mod)
         generate_aggregates(root, gem_name, mod)
+        generate_queries(root, gem_name, mod)
         generate_ports(root, gem_name, mod)
         generate_adapters(root, gem_name, mod)
         generate_specs(root, gem_name, mod)
@@ -117,27 +110,35 @@ module Hecks
         end
       end
 
-      def generate_ports(root, gem_name, mod)
-        @domain.contexts.each do |ctx|
-          ctx_mod = ctx.default? ? nil : ctx.module_name
-          ctx_prefix = ctx.default? ? "" : "#{Hecks::Utils.underscore(ctx.module_name)}/"
-
-          ctx.aggregates.each do |agg|
-            port_gen = PortGenerator.new(agg, domain_module: mod, context_module: ctx_mod)
-            write_file(root, "lib/#{gem_name}/ports/#{ctx_prefix}#{Hecks::Utils.underscore(agg.name)}_repository.rb", port_gen.generate)
+      def generate_queries(root, gem_name, mod)
+        each_aggregate_with_context do |agg, ctx_mod, ctx_prefix|
+          snake = Hecks::Utils.underscore(agg.name)
+          agg.queries.each do |query|
+            query_gen = QueryGenerator.new(query, domain_module: mod, aggregate_name: agg.name, context_module: ctx_mod)
+            write_file(root, "lib/#{gem_name}/#{ctx_prefix}#{snake}/queries/#{Hecks::Utils.underscore(query.name)}.rb", query_gen.generate)
           end
         end
       end
 
+      def generate_ports(root, gem_name, mod)
+        each_aggregate_with_context do |agg, ctx_mod, ctx_prefix|
+          port_gen = PortGenerator.new(agg, domain_module: mod, context_module: ctx_mod)
+          write_file(root, "lib/#{gem_name}/ports/#{ctx_prefix}#{Hecks::Utils.underscore(agg.name)}_repository.rb", port_gen.generate)
+        end
+      end
+
       def generate_adapters(root, gem_name, mod)
+        each_aggregate_with_context do |agg, ctx_mod, ctx_prefix|
+          adapter_gen = MemoryAdapterGenerator.new(agg, domain_module: mod, context_module: ctx_mod)
+          write_file(root, "lib/#{gem_name}/adapters/#{ctx_prefix}#{Hecks::Utils.underscore(agg.name)}_memory_repository.rb", adapter_gen.generate)
+        end
+      end
+
+      def each_aggregate_with_context
         @domain.contexts.each do |ctx|
           ctx_mod = ctx.default? ? nil : ctx.module_name
           ctx_prefix = ctx.default? ? "" : "#{Hecks::Utils.underscore(ctx.module_name)}/"
-
-          ctx.aggregates.each do |agg|
-            adapter_gen = MemoryAdapterGenerator.new(agg, domain_module: mod, context_module: ctx_mod)
-            write_file(root, "lib/#{gem_name}/adapters/#{ctx_prefix}#{Hecks::Utils.underscore(agg.name)}_memory_repository.rb", adapter_gen.generate)
-          end
+          ctx.aggregates.each { |agg| yield agg, ctx_mod, ctx_prefix }
         end
       end
 

@@ -70,7 +70,7 @@ RSpec.describe "Port Authorization" do
       expect { PortTestDomain::Pizza.count }.not_to raise_error
       expect { PortTestDomain::Pizza.first }.not_to raise_error
       expect { PortTestDomain::Pizza.last }.not_to raise_error
-      expect { PortTestDomain::Pizza.where(name: "x") }.not_to raise_error
+      # where is opt-in via AdHocQueries.bind
     end
 
     it "allows write methods" do
@@ -102,7 +102,7 @@ RSpec.describe "Port Authorization" do
       expect { PortTestDomain::Pizza.count }.not_to raise_error
       expect { PortTestDomain::Pizza.first }.not_to raise_error
       expect { PortTestDomain::Pizza.last }.not_to raise_error
-      expect { PortTestDomain::Pizza.where(name: "x") }.not_to raise_error
+      # where is opt-in via AdHocQueries.bind
     end
 
     it "raises PortAccessDenied for create" do

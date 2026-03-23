@@ -1,9 +1,8 @@
 # Hecks::Services::AggregateWiring
 #
-# Wires aggregate classes with repository-backed class/instance methods,
-# reference resolution, collection proxies, scopes, and command methods.
-# Routes commands through the CommandBus (with middleware support) and
-# enforces port-based access restrictions when a port is specified.
+# Wires aggregate classes with domain behavior: DSL query objects, commands,
+# collection proxies, reference resolution, and scopes. Persistence methods
+# (find, save, where, etc.) are opt-in via RepositoryMethods.bind.
 module Hecks
   module Services
     class AggregateWiring
@@ -32,10 +31,9 @@ module Hecks
         repo_key = ctx.default? ? agg.name : "#{ctx.name}/#{agg.name}"
         repo = @repositories[repo_key]
         defaults = build_defaults(agg)
+        RepositoryMethods.bind(agg_class, repo)
         wire_collection_proxies(agg, agg_class, repo)
-        wire_repository_class_methods(agg, agg_class, repo, defaults)
-        wire_query_methods(agg_class)
-        wire_instance_methods(agg_class, repo)
+        wire_query_objects(agg, agg_class)
         wire_references(agg, agg_class)
         wire_commands(agg, agg_class, bus, repo, defaults)
         wire_scopes(agg, agg_class)
@@ -60,48 +58,15 @@ module Hecks
           end
         end
       end
-      def wire_repository_class_methods(agg, agg_class, repo, defaults)
-        agg_class.define_singleton_method(:find) { |id| repo.find(id) }
-        agg_class.define_singleton_method(:all) { repo.all }
-        agg_class.define_singleton_method(:count) { repo.count }
-        agg_class.define_singleton_method(:delete) { |id| repo.delete(id) }
-
-        unless agg.commands.any? { |c| c.name.start_with?("Create") }
-          defaults_for_create = defaults
-          agg_class.define_singleton_method(:create) do |**attrs|
-            now = Time.now
-            constructor_attrs = { created_at: now, updated_at: now }
-            defaults_for_create.each do |param, default_val|
-              constructor_attrs[param] = attrs.key?(param) ? attrs[param] : default_val
-            end
-            aggregate = new(**constructor_attrs)
-            repo.save(aggregate)
-            aggregate
+      def wire_query_objects(agg, agg_class)
+        agg.queries.each do |query|
+          method_name = Hecks::Utils.underscore(query.name).to_sym
+          query_block = query.block
+          agg_class.define_singleton_method(method_name) do |*args|
+            repo = instance_variable_get(:@__hecks_repo__)
+            builder = QueryBuilder.new(repo)
+            builder.instance_exec(*args, &query_block)
           end
-        end
-      end
-      def wire_query_methods(agg_class)
-        agg_class.define_singleton_method(:where) do |**conditions|
-          all.select do |obj|
-            conditions.all? { |k, v| obj.respond_to?(k) && obj.send(k) == v }
-          end
-        end
-        agg_class.define_singleton_method(:first) { all.first }
-        agg_class.define_singleton_method(:last) { all.last }
-      end
-      def wire_instance_methods(agg_class, repo)
-        agg_class.define_method(:save) { repo.save(self); self }
-        agg_class.define_method(:destroy) { repo.delete(id); self }
-        agg_class.define_method(:update) do |**new_attrs|
-          constructor_attrs = { id: id, created_at: (created_at if respond_to?(:created_at)), updated_at: Time.now }
-          self.class.instance_method(:initialize).parameters.each do |_, param_name|
-            next unless param_name
-            next if param_name == :id || param_name == :created_at || param_name == :updated_at
-            constructor_attrs[param_name] = new_attrs.key?(param_name) ? new_attrs[param_name] : send(param_name) if respond_to?(param_name)
-          end
-          updated = self.class.new(**constructor_attrs)
-          repo.save(updated)
-          updated
         end
       end
       def wire_references(agg, agg_class)
@@ -135,11 +100,11 @@ module Hecks
           if scope.callable?
             agg_class.define_singleton_method(scope.name) do |*args|
               conditions = scope.conditions.call(*args)
-              where(**conditions)
+              QueryBuilder.new(instance_variable_get(:@__hecks_repo__)).where(**conditions)
             end
           else
             agg_class.define_singleton_method(scope.name) do
-              where(**scope.conditions)
+              QueryBuilder.new(instance_variable_get(:@__hecks_repo__)).where(**scope.conditions)
             end
           end
         end
