@@ -2,35 +2,21 @@
 #
 module Hecks
   class CLI < Thor
-    desc "dump DOMAIN [TYPE]", "Extract docs from a built domain gem"
-    long_desc <<~DESC
-      Extract generated docs from a domain gem to the working directory.
-
-      Types: schema, swagger, rpc, domain
-
-      If no type given, prompts for selection.
-    DESC
-    def dump(domain_path, type = nil)
-      domain = resolve_domain(domain_path)
-      unless domain
-        say "Domain not found: #{domain_path}", :red
-        return
-      end
+    desc "dump [TYPE]", "Extract docs from a domain (schema, swagger, rpc, domain)"
+    option :domain, type: :string, desc: "Domain gem name or path"
+    def dump(type = nil)
+      domain = resolve_domain_option
+      return unless domain
 
       type ||= ask_dump_type
       return unless type
 
       case type
-      when "schema"
-        dump_file(domain, "schema")
-      when "swagger"
-        dump_file(domain, "swagger")
-      when "rpc"
-        dump_file(domain, "rpc")
-      when "domain"
-        dump_domain(domain, domain_path)
-      else
-        say "Unknown type: #{type}. Use: schema, swagger, rpc, domain", :red
+      when "schema"  then dump_file(domain, "schema")
+      when "swagger" then dump_file(domain, "swagger")
+      when "rpc"     then dump_file(domain, "rpc")
+      when "domain"  then dump_domain(domain)
+      else say "Unknown type: #{type}. Use: schema, swagger, rpc, domain", :red
       end
     end
 
@@ -42,32 +28,27 @@ module Hecks
       say "  2. swagger   — OpenAPI 3.0 spec"
       say "  3. rpc       — JSON-RPC discovery"
       say "  4. domain    — domain gem to domain/ folder"
-      choice = ask("Choice [1-4]:")
-      { "1" => "schema", "2" => "swagger", "3" => "rpc", "4" => "domain" }[choice]
+      { "1" => "schema", "2" => "swagger", "3" => "rpc", "4" => "domain" }[ask("Choice [1-4]:")]
     end
 
     def dump_file(domain, type)
       require_relative "../../http/json_schema_generator"
       require_relative "../../http/openapi_generator"
       require_relative "../../http/rpc_discovery"
-
       case type
       when "schema"
-        data = HTTP::JsonSchemaGenerator.new(domain).generate
-        File.write("schema.json", JSON.pretty_generate(data))
+        File.write("schema.json", JSON.pretty_generate(HTTP::JsonSchemaGenerator.new(domain).generate))
         say "Dumped schema.json", :green
       when "swagger"
-        data = HTTP::OpenapiGenerator.new(domain).generate
-        File.write("openapi.json", JSON.pretty_generate(data))
+        File.write("openapi.json", JSON.pretty_generate(HTTP::OpenapiGenerator.new(domain).generate))
         say "Dumped openapi.json", :green
       when "rpc"
-        data = HTTP::RpcDiscovery.new(domain).generate
-        File.write("rpc_methods.json", JSON.pretty_generate(data))
+        File.write("rpc_methods.json", JSON.pretty_generate(HTTP::RpcDiscovery.new(domain).generate))
         say "Dumped rpc_methods.json", :green
       end
     end
 
-    def dump_domain(domain, domain_path)
+    def dump_domain(domain)
       FileUtils.mkdir_p("domain")
       gem_path = Hecks.build(domain, output_dir: "domain")
       say "Dumped domain gem to domain/#{File.basename(gem_path)}/", :green

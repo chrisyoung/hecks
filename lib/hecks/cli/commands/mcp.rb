@@ -2,12 +2,13 @@
 #
 module Hecks
   class CLI < Thor
-    desc "mcp [DOMAIN]", "Start MCP server — build domains (no args) or serve one"
-    def mcp(domain_path = nil)
-      if domain_path
-        domain = resolve_domain(domain_path)
+    desc "mcp", "Start MCP server — build domains (default) or serve one (--domain)"
+    option :domain, type: :string, desc: "Domain gem name or path (serves it as MCP tools)"
+    def mcp
+      if options[:domain]
+        domain = resolve_domain(options[:domain])
         unless domain
-          say "Domain not found: #{domain_path}", :red
+          say "Domain not found: #{options[:domain]}", :red
           return
         end
         require_relative "../../mcp/domain_server"

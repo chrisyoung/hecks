@@ -2,14 +2,11 @@
 #
 module Hecks
   class CLI < Thor
-    desc "build", "Generate the domain gem from domain.rb"
+    desc "build", "Generate the domain gem"
+    option :domain, type: :string, desc: "Domain gem name or path"
     def build
-      domain_file = find_domain_file
-      unless domain_file
-        say "No domain.rb found in current directory", :red
-        return
-      end
-      domain = load_domain(domain_file)
+      domain = resolve_domain_option
+      return unless domain
       validator = Validator.new(domain)
       unless validator.valid?
         say "Domain validation failed:", :red
@@ -21,7 +18,7 @@ module Hecks
       output = Hecks.build(domain, version: version)
       say "Built #{domain.gem_name} v#{version}", :green
       say "  Output: #{output}/"
-      say "  Docs: #{output}/docs/openapi.json"
+      say "  Docs: #{output}/docs/"
     end
   end
 end

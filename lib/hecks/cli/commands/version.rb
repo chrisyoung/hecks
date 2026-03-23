@@ -2,20 +2,20 @@
 #
 module Hecks
   class CLI < Thor
-    desc "version [DOMAIN]", "Show Hecks version, or domain version if given"
-    def version(domain_path = nil)
-      if domain_path
-        domain = resolve_domain(domain_path)
+    desc "version", "Show Hecks version, or domain version (--domain)"
+    option :domain, type: :string, desc: "Domain gem name or path"
+    def version
+      if options[:domain]
+        domain = resolve_domain(options[:domain])
         unless domain
-          say "Domain not found: #{domain_path}", :red
+          say "Domain not found: #{options[:domain]}", :red
           return
         end
-        # Check gem version first, then local .hecks_version
         spec = Gem.loaded_specs[domain.gem_name] rescue nil
         if spec
           say "#{domain.name}: #{spec.version}"
         else
-          dir = File.directory?(domain_path) ? domain_path : File.dirname(domain_path)
+          dir = File.directory?(options[:domain]) ? options[:domain] : "."
           versioner = Versioner.new(dir)
           say "#{domain.name}: #{versioner.current || "not built yet"}"
         end
