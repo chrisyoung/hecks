@@ -43,7 +43,7 @@ module Hecks
       private
 
       def constructor_params
-        @event.attributes.map { |attr| "#{attr.name}:" }.join(", ")
+        @event.attributes.map { |attr| "#{attr.name}: nil" }.join(", ")
       end
     end
   end

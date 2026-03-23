@@ -48,13 +48,41 @@ module Hecks
       private
 
       def generate_create_table(change)
+        tables = []
+
         cols = ["  id VARCHAR(36) PRIMARY KEY"]
         change.details[:attributes].each do |attr|
           next if attr.list?
           cols << "  #{attr.name} #{sql_type(attr)}"
         end
+        cols << "  created_at DATETIME"
+        cols << "  updated_at DATETIME"
+        tables << "CREATE TABLE #{table_name(change.aggregate)} (\n#{cols.join(",\n")}\n);"
 
-        "CREATE TABLE #{table_name(change.aggregate)} (\n#{cols.join(",\n")}\n);"
+        # Generate join tables for list value objects
+        (change.details[:value_objects] || []).each do |vo|
+          list_attr = change.details[:attributes].find { |a| a.list? && a.type.to_s == vo.name }
+          next unless list_attr
+          tables << generate_create_join_table_from_vo(change.aggregate, vo)
+        end
+
+        tables.join("\n\n")
+      end
+
+      def generate_create_join_table_from_vo(aggregate_name, vo)
+        parent_table = table_name(aggregate_name)
+        jt = join_table_name(aggregate_name, vo.name)
+        parent_fk = "#{Hecks::Utils.underscore(aggregate_name)}_id"
+
+        cols = [
+          "  id VARCHAR(36) PRIMARY KEY",
+          "  #{parent_fk} VARCHAR(36) NOT NULL REFERENCES #{parent_table}(id)"
+        ]
+        vo.attributes.each do |attr|
+          cols << "  #{attr.name} #{sql_type(attr)}"
+        end
+
+        "CREATE TABLE #{jt} (\n#{cols.join(",\n")}\n);"
       end
 
       def generate_add_column(change)
