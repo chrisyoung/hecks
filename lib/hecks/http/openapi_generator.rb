@@ -3,9 +3,21 @@
 # Generates an OpenAPI 3.0 spec from a domain. Every aggregate gets
 # CRUD paths, every query gets a GET path. Types derived from DSL.
 #
+# Path building  -> OpenapiGenerator::PathBuilder
+# Schema building -> OpenapiGenerator::SchemaBuilder
+# Response helpers -> OpenapiGenerator::ResponseHelpers
+#
+require_relative "openapi_generator/response_helpers"
+require_relative "openapi_generator/schema_builder"
+require_relative "openapi_generator/path_builder"
+
 module Hecks
   module HTTP
     class OpenapiGenerator
+      include ResponseHelpers
+      include SchemaBuilder
+      include PathBuilder
+
       def initialize(domain)
         @domain = domain
       end
@@ -17,127 +29,6 @@ module Hecks
           paths: build_paths,
           components: { schemas: build_schemas }
         }
-      end
-
-      private
-
-      def build_paths
-        paths = {}
-        @domain.aggregates.each do |agg|
-          slug = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name)) + "s"
-          paths.merge!(crud_paths(agg, slug))
-          paths.merge!(query_paths(agg, slug))
-        end
-        paths["/events"] = events_path
-        paths
-      end
-
-      def crud_paths(agg, slug)
-        name = agg.name
-        paths = {}
-
-        paths["/#{slug}"] = {
-          get: { summary: "List all #{name}s", responses: ok_array(name) },
-          post: post_path(agg, slug)
-        }.compact
-
-        paths["/#{slug}/{id}"] = {
-          get: { summary: "Find #{name} by ID", parameters: [id_param], responses: ok_object(name) },
-          patch: patch_path(agg),
-          delete: { summary: "Delete #{name}", parameters: [id_param], responses: ok_message }
-        }.compact
-
-        paths
-      end
-
-      def post_path(agg, slug)
-        cmd = agg.commands.find { |c| c.name.start_with?("Create") }
-        return nil unless cmd
-        {
-          summary: cmd.name,
-          requestBody: request_body(cmd),
-          responses: ok_object(agg.name)
-        }
-      end
-
-      def patch_path(agg)
-        cmd = agg.commands.find { |c| c.name.start_with?("Update") }
-        return nil unless cmd
-        {
-          summary: cmd.name,
-          parameters: [id_param],
-          requestBody: request_body(cmd),
-          responses: ok_object(agg.name)
-        }
-      end
-
-      def query_paths(agg, slug)
-        paths = {}
-        agg.queries.each do |query|
-          qn = Hecks::Utils.underscore(query.name)
-          params = query.block.parameters.map do |_, name|
-            { name: name.to_s, in: "query", schema: { type: "string" }, required: true }
-          end
-          paths["/#{slug}/#{qn}"] = {
-            get: {
-              summary: "#{agg.name}.#{qn}",
-              parameters: params.empty? ? nil : params,
-              responses: ok_array(agg.name)
-            }.compact
-          }
-        end
-        paths
-      end
-
-      def events_path
-        { get: { summary: "SSE event stream", responses: { "200" => { description: "Server-Sent Events stream" } } } }
-      end
-
-      def build_schemas
-        schemas = {}
-        @domain.aggregates.each do |agg|
-          props = { id: { type: "string" } }
-          agg.attributes.reject(&:list?).each do |attr|
-            props[attr.name] = { type: openapi_type(attr) }
-          end
-          props[:created_at] = { type: "string", format: "date-time" }
-          props[:updated_at] = { type: "string", format: "date-time" }
-          schemas[agg.name] = { type: "object", properties: props }
-        end
-        schemas
-      end
-
-      def openapi_type(attr)
-        case attr.ruby_type
-        when "Integer" then "integer"
-        when "Float" then "number"
-        when "JSON" then "object"
-        else "string"
-        end
-      end
-
-      def request_body(cmd)
-        props = {}
-        cmd.attributes.each do |attr|
-          props[attr.name] = { type: openapi_type(attr) }
-        end
-        { content: { "application/json" => { schema: { type: "object", properties: props } } } }
-      end
-
-      def id_param
-        { name: "id", in: "path", required: true, schema: { type: "string" } }
-      end
-
-      def ok_array(name)
-        { "200" => { description: "Array of #{name}s", content: { "application/json" => { schema: { type: "array", items: { "$ref" => "#/components/schemas/#{name}" } } } } } }
-      end
-
-      def ok_object(name)
-        { "200" => { description: name, content: { "application/json" => { schema: { "$ref" => "#/components/schemas/#{name}" } } } } }
-      end
-
-      def ok_message
-        { "200" => { description: "Success" } }
       end
     end
   end

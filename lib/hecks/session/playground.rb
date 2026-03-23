@@ -7,6 +7,10 @@
 # Sits between the Generators (which produce source code) and the runtime --
 # it generates a temp gem, loads it, and provides a command/event interface.
 #
+# Mixins:
+#   GemBootstrap    — temp gem compilation and loading (compile!)
+#   RuntimeResolver — command/event class resolution and policy checking
+#
 #   playground = Hecks::Session::Playground.new(domain)
 #   playground.execute("CreatePizza", name: "Margherita")
 #   playground.events      # => [#<CreatedPizza ...>]
@@ -14,11 +18,15 @@
 #   playground.history     # prints numbered event timeline
 #   playground.reset!      # clears all events
 #
-require "tmpdir"
+require_relative "playground/gem_bootstrap"
+require_relative "playground/runtime_resolver"
 
 module Hecks
   class Session
     class Playground
+    include GemBootstrap
+    include RuntimeResolver
+
     attr_reader :events
 
     def initialize(domain)
@@ -107,74 +115,6 @@ module Hecks
 
     def inspect
       "#<Hecks::Session::Playground \"#{@domain.name}\" (#{@events.size} events)>"
-    end
-
-    private
-
-    def compile!
-      @tmpdir = Dir.mktmpdir("hecks_playground")
-      generator = Generators::Infrastructure::DomainGemGenerator.new(@domain, version: "0.0.0", output_dir: @tmpdir)
-      gem_path = generator.generate
-
-      lib_path = File.join(gem_path, "lib")
-      $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-
-      entry = File.join(lib_path, "#{@domain.gem_name}.rb")
-      load entry
-
-      Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
-    end
-
-    def resolve_command(command_name)
-      mod = Object.const_get(@mod_name)
-
-      @domain.aggregates.each do |agg|
-        agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
-        if agg_class.const_defined?(:Commands) &&
-           agg_class::Commands.const_defined?(command_name)
-          return agg_class::Commands.const_get(command_name)
-        end
-      end
-
-      raise "Unknown command: #{command_name}. Available: #{available_commands.join(', ')}"
-    end
-
-    def resolve_event_for(command_name)
-      mod = Object.const_get(@mod_name)
-
-      @domain.aggregates.each do |agg|
-        agg.commands.each_with_index do |cmd, i|
-          if cmd.name == command_name.to_s
-            event = agg.events[i]
-            agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
-            return agg_class::Events.const_get(event.name)
-          end
-        end
-      end
-
-      raise "No event mapped for command: #{command_name}"
-    end
-
-    def resolve_domain_command(command_name)
-      @domain.aggregates.each do |agg|
-        agg.commands.each do |cmd|
-          return cmd if cmd.name == command_name.to_s
-        end
-      end
-      nil
-    end
-
-    def available_commands
-      @domain.aggregates.flat_map { |a| a.commands.map(&:name) }
-    end
-
-    def collect_policies
-      @domain.aggregates.flat_map(&:policies)
-    end
-
-    def check_policies(event)
-      event_name = event.class.name.split("::").last
-      @policies.select { |p| p.event_name == event_name }
     end
   end
   end
