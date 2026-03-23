@@ -1,7 +1,11 @@
 # Hecks::Generators::Infrastructure::DomainGemGenerator::SpecWriter
 #
-# Generates RSpec specs for all aggregates, value objects, commands,
-# and events in the domain gem.
+# Mixin that writes RSpec specs for all aggregates, value objects, commands,
+# and events in the domain gem. Delegates to SpecGenerator for spec content.
+# Part of DomainGemGenerator, invoked during DomainGemGenerator#generate.
+#
+#   # Mixed into DomainGemGenerator:
+#   generate_specs(root, gem_name, mod)
 #
 module Hecks
   module Generators

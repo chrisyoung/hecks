@@ -1,4 +1,21 @@
-# Hecks — Top-level entry point for the Hecks framework.
+# Hecks
+#
+# Top-level entry point for the Hecks domain modeling framework.
+# Extends itself with DomainInspector, DomainBuilderMethods, DomainCompiler,
+# EventStormImporter, and DomainVisualizerMethods. Manages global configuration
+# via Hecks.configure and auto-loads the ActiveHecks Railtie when Rails
+# is present.
+#
+# Plain Ruby:
+#
+#   app = Hecks::Services::Application.new(domain)
+#
+# Rails (via initializer):
+#
+#   Hecks.configure do
+#     domain "pizzas_domain"
+#     adapter :sql
+#   end
 #
 require "json"
 

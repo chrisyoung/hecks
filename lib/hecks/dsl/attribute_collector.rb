@@ -1,3 +1,13 @@
+# Hecks::DSL::AttributeCollector
+#
+# Shared mixin for DSL builders that collect attributes. Provides the
+# `attribute`, `list_of`, and `reference_to` DSL methods. Included by
+# AggregateBuilder, CommandBuilder, ValueObjectBuilder, and DomainBuilder.
+#
+#   attribute :name, String
+#   attribute :toppings, list_of("Topping")
+#   attribute :order, reference_to("Order")
+#
 module Hecks
   module DSL
     module AttributeCollector

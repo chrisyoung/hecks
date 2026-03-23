@@ -1,6 +1,10 @@
 # Hecks::Generators::Domain::ValueObjectGenerator
 #
-# Generates immutable value object classes with value-based equality.
+# Generates frozen, immutable value object classes with value-based
+# equality (==, eql?, hash). Supports invariant checks, list attributes
+# that freeze on creation, and Ruby keyword-safe attribute names via
+# **kwargs. Part of Generators::Domain, consumed by DomainGemGenerator
+# and SourceBuilder.
 #
 #   gen = ValueObjectGenerator.new(vo, domain_module: "PizzasDomain", aggregate_name: "Pizza")
 #   gen.generate  # => "module PizzasDomain\n  class Pizza\n    class Topping\n  ..."

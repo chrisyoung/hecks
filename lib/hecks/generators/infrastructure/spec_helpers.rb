@@ -2,7 +2,11 @@
 #
 # Private helper methods for SpecGenerator: example argument generation,
 # example values by type, and spec snippet builders for attributes,
-# validations, invariants, and equality.
+# validations, invariants, and equality. Part of Generators::Infrastructure,
+# mixed into SpecGenerator.
+#
+#   # Mixed into SpecGenerator:
+#   example_args(aggregate)  # => "name: \"example\", size: \"example\""
 #
 module Hecks
   module Generators

@@ -1,8 +1,8 @@
 # Hecks::Generators::Domain::AggregateGenerator::ValidationGeneration
 #
 # Mixin that generates the validate! method for aggregate classes.
-#
 # Produces presence and type checks based on the aggregate's validation rules.
+# Part of Generators::Domain, mixed into AggregateGenerator.
 #
 #   class AggregateGenerator
 #     include ValidationGeneration

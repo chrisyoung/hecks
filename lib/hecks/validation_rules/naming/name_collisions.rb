@@ -1,6 +1,7 @@
 # Hecks::ValidationRules::Naming::NameCollisions
 #
-# Rejects aggregate and value object name collisions.
+# Rejects aggregate root names that collide with their own value object
+# names. Part of the ValidationRules::Naming group -- run by Hecks.validate.
 #
 module Hecks
   module ValidationRules

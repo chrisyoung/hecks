@@ -1,21 +1,23 @@
 # Hecks::DomainModel::Behavior::Policy
 #
-# Intermediate representation of a reactive policy -- a rule that triggers
-# a command in response to a domain event. Policies are the approved
-# mechanism for cross-context communication in Hecks.
+# Intermediate representation of a domain policy. Policies come in two forms:
+# reactive policies that trigger a command in response to an event (cross-context
+# communication), and guard policies that carry a block to validate commands.
 #
-# Part of the DomainModel IR layer. Built by PolicyBuilder and consumed by
-# PolicyGenerator and the Playground/Application for wiring event reactions.
+# Part of the DomainModel IR layer. Built by PolicyBuilder (reactive) or
+# AggregateBuilder (guard), consumed by generators and the Application layer.
+# Use `reactive?` and `guard?` to distinguish the two forms.
 #
-#   policy = Policy.new(
-#     name: "NotifyKitchen",
-#     event_name: "OrderPlaced",
-#     trigger_command: "PrepareOrder",
-#     async: true
-#   )
-#   policy.event_name       # => "OrderPlaced"
-#   policy.trigger_command  # => "PrepareOrder"
-#   policy.async            # => true
+#   # Reactive policy: event -> command
+#   policy = Policy.new(name: "NotifyKitchen", event_name: "OrderPlaced",
+#                       trigger_command: "PrepareOrder", async: true)
+#   policy.reactive?  # => true
+#   policy.guard?     # => false
+#
+#   # Guard policy: block validates a command
+#   guard = Policy.new(name: "MustBeAdmin", block: ->(cmd) { cmd.role == "admin" })
+#   guard.guard?      # => true
+#   guard.reactive?   # => false
 #
 module Hecks
   module DomainModel

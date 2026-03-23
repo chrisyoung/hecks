@@ -1,6 +1,8 @@
 # Hecks::MCP::PlayTools
 #
-# MCP tools for play mode — execute actions, see events, view history.
+# MCP tools for play mode: enter/exit play mode, execute commands against
+# an in-memory playground, list available commands, view event history,
+# and reset the playground state.
 #
 module Hecks
   module MCP

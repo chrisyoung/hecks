@@ -1,6 +1,7 @@
 # Hecks::MCP::InspectTools
 #
-# MCP tools for inspecting the domain — describe, list, preview, show DSL.
+# MCP tools for reading domain state: describe the full domain, list
+# aggregates, preview generated Ruby code, and show raw DSL source.
 #
 module Hecks
   module MCP

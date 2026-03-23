@@ -1,14 +1,17 @@
 # Hecks::DSL::CommandBuilder
 #
 # DSL builder for command definitions. Collects attributes, read models,
-# external systems, and actors, then builds a DomainModel::Behavior::Command.
+# external systems, actors, an optional handler block, and an optional
+# guard policy reference, then builds a DomainModel::Behavior::Command.
 #
 # Part of the DSL layer, nested under AggregateBuilder. Each command
 # automatically gets a corresponding domain event inferred by name.
 #
 #   builder = CommandBuilder.new("CreatePizza")
 #   builder.attribute :name, String
-#   builder.attribute :size, String
+#   builder.guarded_by "MustBeAdmin"
+#   builder.read_model "Menu & Availability"
+#   builder.actor "Customer"
 #   cmd = builder.build  # => #<Command name="CreatePizza" ...>
 #   cmd.inferred_event_name  # => "CreatedPizza"
 #

@@ -1,6 +1,7 @@
 # Hecks::ValidationRules::References::NoBidirectionalReferences
 #
-# Rejects bidirectional references between aggregates.
+# Rejects bidirectional references between aggregates (A->B and B->A).
+# Part of the ValidationRules::References group -- run by Hecks.validate.
 #
 module Hecks
   module ValidationRules

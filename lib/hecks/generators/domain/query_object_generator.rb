@@ -1,8 +1,10 @@
 # Hecks::Generators::Domain::QueryObjectGenerator
 #
-# Generates query modules for aggregates based on DSL attributes. Each
-# scalar attribute gets a by_<attribute> class method. These are always
-# included — they are domain queries, not ad-hoc.
+# Generates query modules (e.g. PizzaQueries) under Domain::Queries.
+# Each scalar, non-reference attribute gets a by_<attribute> method that
+# delegates to where(). These modules are mixed into repositories to
+# provide typed finder methods. Part of Generators::Domain, consumed by
+# DomainGemGenerator.
 #
 #   gen = QueryObjectGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  module Queries\n    module PizzaQueries\n  ..."

@@ -1,8 +1,8 @@
 # Hecks::Services::Persistence::RepositoryMethods
 #
-# Opt-in mixin that provides persistence methods on aggregate classes.
-# Uses hecks_attributes metadata for introspection instead of parsing
-# constructor parameters.
+# Adds CRUD persistence methods to aggregate classes. Bound automatically
+# by Persistence.bind during application setup. Uses hecks_attributes
+# metadata for introspection, falling back to constructor parameters.
 #
 #   Pizza.find(id) / Pizza.all / Pizza.count
 #   Pizza.create(name: "Margherita")

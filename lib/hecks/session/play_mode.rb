@@ -1,8 +1,14 @@
 # Hecks::Session::PlayMode
 #
-# Module providing play-mode functionality for Session. Handles switching
-# between build and play modes, executing commands against a live compiled
-# domain, and inspecting events and history.
+# Session mixin for play-mode: executing commands against a live compiled
+# domain and inspecting events. Part of the Session layer -- delegates to
+# Playground for actual execution.
+#
+#   session.play!
+#   session.execute("CreatePizza", name: "Margherita")
+#   session.events
+#   session.history
+#   session.build!   # back to build mode
 #
 module Hecks
   class Session

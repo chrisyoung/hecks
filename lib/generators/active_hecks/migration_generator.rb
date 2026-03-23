@@ -1,9 +1,10 @@
-# rails generate active_hecks:migration
+# ActiveHecks::MigrationGenerator
 #
-# Generates SQL migration files from domain changes. Compares the current
-# domain gem against the saved snapshot and produces incremental SQL.
+# Rails generator that produces SQL migration files from domain changes.
+# Compares the current domain against the saved snapshot using DomainDiff
+# and writes incremental SQL to db/hecks_migrate/ (separate from ActiveRecord).
 #
-# Output goes to db/hecks_migrate/ to avoid conflicts with ActiveRecord.
+#   rails generate active_hecks:migration
 #
 require "rails/generators"
 

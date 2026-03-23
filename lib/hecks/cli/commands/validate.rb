@@ -1,29 +1,37 @@
-# Hecks::CLI validate command
+# Hecks::CLI::Domain#validate
+#
+# Validates the domain definition and prints a summary of all aggregates,
+# including their attributes, value objects, commands, events, and policies.
+# Reports validation errors if the domain is invalid.
+#
+#   hecks domain validate [--domain NAME]
 #
 module Hecks
   class CLI < Thor
-    desc "validate", "Validate the domain definition"
-    option :domain, type: :string, desc: "Domain gem name or path"
-    option :version, type: :string, desc: "Domain version"
-    def validate
-      domain = resolve_domain_option
-      return unless domain
-      validator = Validator.new(domain)
-      if validator.valid?
-        say "Domain is valid", :green
-        say ""
-        say "Aggregates:"
-        domain.aggregates.each do |agg|
-          say "  #{agg.name}"
-          say "    Attributes:     #{agg.attributes.map(&:name).join(', ')}"
-          say "    Value Objects:  #{agg.value_objects.map(&:name).join(', ')}" unless agg.value_objects.empty?
-          say "    Commands:       #{agg.commands.map(&:name).join(', ')}" unless agg.commands.empty?
-          say "    Events:         #{agg.events.map(&:name).join(', ')}" unless agg.events.empty?
-          say "    Policies:       #{agg.policies.map(&:name).join(', ')}" unless agg.policies.empty?
+    class Domain < Thor
+      desc "validate", "Validate the domain definition"
+      option :domain, type: :string, desc: "Domain gem name or path"
+      option :version, type: :string, desc: "Domain version"
+      def validate
+        domain = resolve_domain_option
+        return unless domain
+        validator = Validator.new(domain)
+        if validator.valid?
+          say "Domain is valid", :green
+          say ""
+          say "Aggregates:"
+          domain.aggregates.each do |agg|
+            say "  #{agg.name}"
+            say "    Attributes:     #{agg.attributes.map(&:name).join(', ')}"
+            say "    Value Objects:  #{agg.value_objects.map(&:name).join(', ')}" unless agg.value_objects.empty?
+            say "    Commands:       #{agg.commands.map(&:name).join(', ')}" unless agg.commands.empty?
+            say "    Events:         #{agg.events.map(&:name).join(', ')}" unless agg.events.empty?
+            say "    Policies:       #{agg.policies.map(&:name).join(', ')}" unless agg.policies.empty?
+          end
+        else
+          say "Domain validation failed:", :red
+          validator.errors.each { |e| say "  - #{e}", :red }
         end
-      else
-        say "Domain validation failed:", :red
-        validator.errors.each { |e| say "  - #{e}", :red }
       end
     end
   end

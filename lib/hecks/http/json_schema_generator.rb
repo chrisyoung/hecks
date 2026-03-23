@@ -1,7 +1,11 @@
 # Hecks::HTTP::JsonSchemaGenerator
 #
-# Generates a single JSON Schema document from a domain with all
-# aggregates, value objects, commands, and queries as definitions.
+# Generates a JSON Schema (2020-12) document from a domain definition.
+# HTTP layer — used alongside OpenapiGenerator to describe domain types.
+# Includes definitions for aggregates, value objects, commands, events,
+# and queries. Handles references, lists, and JSON attributes.
+#
+#   Hecks::HTTP::JsonSchemaGenerator.new(domain).generate
 #
 module Hecks
   module HTTP

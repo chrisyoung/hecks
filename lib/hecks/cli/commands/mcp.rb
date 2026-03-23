@@ -1,22 +1,30 @@
-# Hecks::CLI mcp command
+# Hecks::CLI::Domain#mcp
+#
+# Starts an MCP (Model Context Protocol) server. Without --domain, launches the
+# build-oriented McpServer. With --domain, launches MCP::DomainServer exposing
+# the domain's aggregates, commands, and queries as MCP tools.
+#
+#   hecks domain mcp [--domain NAME]
 #
 module Hecks
   class CLI < Thor
-    desc "mcp", "Start MCP server — build domains (default) or serve one (--domain)"
-    option :domain, type: :string, desc: "Domain gem name or path (serves it as MCP tools)"
-    option :version, type: :string, desc: "Domain version"
-    def mcp
-      if options[:domain]
-        domain = resolve_domain(options[:domain])
-        unless domain
-          say "Domain not found: #{options[:domain]}", :red
-          return
+    class Domain < Thor
+      desc "mcp", "Start MCP server — build domains (default) or serve one (--domain)"
+      option :domain, type: :string, desc: "Domain gem name or path (serves it as MCP tools)"
+      option :version, type: :string, desc: "Domain version"
+      def mcp
+        if options[:domain]
+          domain = resolve_domain(options[:domain])
+          unless domain
+            say "Domain not found: #{options[:domain]}", :red
+            return
+          end
+          require_relative "../../mcp/domain_server"
+          MCP::DomainServer.new(domain).run
+        else
+          require_relative "../../mcp_server"
+          McpServer.new.run
         end
-        require_relative "../../mcp/domain_server"
-        MCP::DomainServer.new(domain).run
-      else
-        require_relative "../../mcp_server"
-        McpServer.new.run
       end
     end
   end

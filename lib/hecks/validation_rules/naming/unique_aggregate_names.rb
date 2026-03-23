@@ -1,6 +1,7 @@
 # Hecks::ValidationRules::Naming::UniqueAggregateNames
 #
-# Rejects duplicate aggregate names within a domain.
+# Rejects duplicate aggregate names within a domain. Part of the
+# ValidationRules::Naming group -- run by Hecks.validate.
 #
 module Hecks
   module ValidationRules

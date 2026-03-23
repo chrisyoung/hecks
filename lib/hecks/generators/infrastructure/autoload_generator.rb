@@ -1,12 +1,13 @@
 # Hecks::Generators::Infrastructure::AutoloadGenerator
 #
-# Generates the entry point file with autoload declarations for the domain gem.
+# Generates autoload entry point and per-aggregate autoload declarations for
+# domain gems. The entry point declares autoloads for aggregates, ports, and
+# adapters. Per-aggregate autoloads cover value objects only (commands, events,
+# queries, and policies are auto-discovered via const_missing at runtime).
+# Part of the Generators::Infrastructure layer, consumed by DomainGemGenerator.
 #
-#   module PizzasDomain
-#     autoload :Pizza, "pizzas_domain/pizza/pizza"
-#     module Ports ...
-#     module Adapters ...
-#   end
+#   gen = AutoloadGenerator.new(domain)
+#   gen.generate_entry_point  # => "module PizzasDomain\n  autoload :Pizza, ..."
 #
 module Hecks
   module Generators

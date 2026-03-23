@@ -1,7 +1,11 @@
 # Hecks::Session::Presenter
 #
-# Module providing presentation methods for Session: describe, status,
-# and inspect. Formats domain state for human-readable output.
+# Session mixin for human-readable output: describe, status, and inspect.
+# Part of the Session layer -- formats aggregate, command, and policy
+# summaries for REPL display.
+#
+#   session.describe   # prints full domain summary
+#   session.status     # alias for describe
 #
 module Hecks
   class Session

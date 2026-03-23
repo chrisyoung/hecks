@@ -1,6 +1,8 @@
 # Hecks::ValidationRules::References::ValidReferences
 #
-# Rejects references to non-existent aggregates.
+# Rejects references to non-existent aggregates and references that
+# target value objects instead of aggregate roots. Part of the
+# ValidationRules::References group -- run by Hecks.validate.
 #
 module Hecks
   module ValidationRules

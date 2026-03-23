@@ -1,7 +1,10 @@
 # Hecks::Services::Querying
 #
 # Groups all query-related services: the chainable QueryBuilder,
-# ad-hoc query methods (opt-in), and named scopes.
+# AdHocQueries, ScopeMethods, and comparison Operators.
+# Querying.bind wires named scopes onto aggregate classes.
+# AdHocQueries (where, find_by, order, limit) is bound separately
+# by Application during repository setup.
 #
 #   Querying.bind(agg_class, aggregate)
 #

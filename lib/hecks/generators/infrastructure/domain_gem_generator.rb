@@ -1,7 +1,13 @@
 # Hecks::Generators::Infrastructure::DomainGemGenerator
 #
-# Generates a complete domain gem — aggregates, queries, ports, adapters, specs.
-# File writing, source building, and spec generation are in separate mixins.
+# Generates a complete domain gem on disk — aggregates, value objects, commands,
+# events, policies, queries, ports, adapters, specs, and a gemspec. Delegates
+# to FileWriter (disk I/O), SourceBuilder (eval-ready string), and SpecWriter
+# (RSpec scaffolds). Part of the Generators::Infrastructure layer, invoked by
+# the CLI `hecks domain build` command and `Hecks.build`.
+#
+#   gen = DomainGemGenerator.new(domain, output_dir: "./generated")
+#   gen.generate  # => path to generated gem root
 #
 require "fileutils"
 require_relative "domain_gem_generator/file_writer"

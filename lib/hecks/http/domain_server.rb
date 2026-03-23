@@ -1,8 +1,10 @@
 # Hecks::HTTP::DomainServer
 #
-# WEBrick server that serves a domain as REST + SSE. Generated from the DSL.
+# WEBrick-based REST server that serves a domain over HTTP with CORS support.
+# Builds the domain gem into a temp directory, boots it, then delegates route
+# generation to RouteBuilder. Also exposes a /events endpoint for event history.
 #
-#   hecks serve pizzas_domain
+#   hecks domain serve pizzas_domain
 #
 require "webrick"
 require "json"

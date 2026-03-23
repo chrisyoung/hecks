@@ -1,7 +1,8 @@
 # Hecks::Generators::Infrastructure::SpecGenerator
 #
 # Generates RSpec test scaffolds for domain objects. Creates specs for
-# aggregates, value objects, commands, and events.
+# aggregates, value objects, commands, and events. Part of
+# Generators::Infrastructure, consumed by DomainGemGenerator::SpecWriter.
 #
 #   gen = SpecGenerator.new(domain)
 #   gen.generate_aggregate_spec(agg)  # PizzasDomain::Pizza

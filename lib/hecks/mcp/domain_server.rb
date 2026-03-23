@@ -7,7 +7,7 @@
 # Tool registration is split into three mixins:
 #   CommandTools, QueryTools, RepositoryTools
 #
-#   hecks serve:mcp
+#   hecks domain mcp --domain NAME
 #
 require "mcp"
 require "tmpdir"

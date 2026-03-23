@@ -2,7 +2,8 @@
 #
 # Rejects command names that do not start with a verb. Uses WordNet
 # for detection. Custom verbs can be added in a verbs.txt file at
-# the root of the domain folder (one word per line).
+# the root of the domain folder (one word per line). Part of the
+# ValidationRules::Naming group -- run by Hecks.validate.
 #
 require "rwordnet"
 

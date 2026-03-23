@@ -1,10 +1,12 @@
 # Hecks::McpServer
 #
-# MCP server that exposes the Hecks Session API as tools for AI agents.
-# Like `hecks console` but for AI — agents build and play with domains
-# through tool calls instead of a REPL.
+# MCP (Model Context Protocol) server that exposes the Hecks Session API
+# as tools for AI agents. Registers five tool groups (SessionTools,
+# AggregateTools, InspectTools, BuildTools, PlayTools) and runs over
+# stdio transport. Provides shared helpers for type resolution and
+# output capture used by all tool modules.
 #
-#   hecks mcp    # starts the server on stdio
+#   hecks domain mcp    # starts the server on stdio
 #
 require "mcp"
 require_relative "mcp/session_tools"

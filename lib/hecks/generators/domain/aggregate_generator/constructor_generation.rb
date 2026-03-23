@@ -1,8 +1,8 @@
 # Hecks::Generators::Domain::AggregateGenerator::ConstructorGeneration
 #
-# Mixin that generates initialize method for aggregates.
-# Identity (generate_id), validation stubs, and invariant stubs
-# are provided by Hecks::Model. Timestamps are handled by persistence.
+# Mixin that generates an initialize method for aggregates with keyword
+# arguments, identity assignment, and default handling. Currently unused —
+# Hecks::Model provides identity, timestamps, and equality at runtime.
 #
 #   class AggregateGenerator
 #     include ConstructorGeneration

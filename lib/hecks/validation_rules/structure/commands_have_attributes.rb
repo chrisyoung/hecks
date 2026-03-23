@@ -1,6 +1,7 @@
 # Hecks::ValidationRules::Structure::CommandsHaveAttributes
 #
-# Warns when commands have no attributes.
+# Rejects commands that have no attributes. Part of the
+# ValidationRules::Structure group -- run by Hecks.validate.
 #
 module Hecks
   module ValidationRules

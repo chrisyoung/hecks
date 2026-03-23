@@ -1,7 +1,16 @@
 # Hecks::DomainModel::Structure
 #
-# Structural building blocks: domains, aggregates, value objects,
-# attributes, validations, invariants, scopes, ports, read models, and actors.
+# Namespace for the structural building blocks of a domain model: domains,
+# aggregates, value objects, attributes, validations, invariants, scopes,
+# ports, read models, external systems, and actors.
+#
+# Part of the DomainModel IR layer. Each child class is an intermediate
+# representation built by the DSL and consumed by generators.
+#
+#   Structure::Domain         # root container holding aggregates
+#   Structure::Aggregate      # DDD aggregate with commands, events, etc.
+#   Structure::ValueObject    # immutable object defined by its attributes
+#   Structure::Attribute      # typed field on any structure
 #
 module Hecks
   module DomainModel

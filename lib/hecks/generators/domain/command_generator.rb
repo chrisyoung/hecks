@@ -1,8 +1,11 @@
 # Hecks::Generators::Domain::CommandGenerator
 #
-# Generates command classes with emits declaration and a call method
-# containing only domain logic. The Hecks::Command mixin handles
-# handler, event emission, and recording.
+# Generates command classes with an emits declaration and a call method.
+# Create commands build a new aggregate; update commands look up an
+# existing one by ID and merge changed attributes. Handles Ruby keyword-
+# safe attribute names via **kwargs. The Hecks::Command mixin (included
+# at load time) provides event emission and handler wiring. Part of
+# Generators::Domain, consumed by DomainGemGenerator and SourceBuilder.
 #
 #   gen = CommandGenerator.new(cmd, domain_module: "PizzasDomain",
 #     aggregate_name: "Pizza", aggregate: agg, event: evt)

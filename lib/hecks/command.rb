@@ -1,7 +1,8 @@
 # Hecks::Command
 #
 # Mixin for generated command classes. Orchestrates the full command lifecycle:
-# run guard, execute call, persist, emit event, record event.
+# run guard policy, run handler, execute call (with optional middleware),
+# persist aggregate, emit event, and record event.
 # The generated call method is pure domain logic — just build and return
 # the aggregate.
 #

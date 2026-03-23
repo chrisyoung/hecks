@@ -1,6 +1,8 @@
 # Hecks::HTTP::RouteBuilder
 #
-# Generates REST routes from a domain's aggregates, commands, and queries.
+# Generates REST route definitions from a domain's aggregates. Produces CRUD
+# routes (GET index, GET show, POST create, PATCH update, DELETE) and query
+# routes for each aggregate. Used by DomainServer to handle HTTP requests.
 #
 require "time"
 

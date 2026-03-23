@@ -7,32 +7,22 @@ claude -p "Update the doc headers in all lib/**/*.rb files to match current feat
 
 echo ""
 echo "=== Updating docs/active_hecks.md ==="
-cat docs/active_hecks.md
-echo "---"
 claude -p "Update docs/active_hecks.md to match the current codebase. Read the relevant source files and make sure the doc accurately reflects how things work now." --allowedTools Read,Edit,Glob,Grep --verbose
 
 echo ""
 echo "=== Updating docs/active_record.md ==="
-cat docs/active_record.md
-echo "---"
 claude -p "Update docs/active_record.md to match the current codebase. Read the relevant source files and make sure the doc accurately reflects how things work now." --allowedTools Read,Edit,Glob,Grep --verbose
 
 echo ""
 echo "=== Updating docs/ddd.md ==="
-cat docs/ddd.md
-echo "---"
 claude -p "Update docs/ddd.md to match the current codebase. Read the relevant source files and make sure the doc accurately reflects how things work now." --allowedTools Read,Edit,Glob,Grep --verbose
 
 echo ""
 echo "=== Updating docs/hexagonal.md ==="
-cat docs/hexagonal.md
-echo "---"
 claude -p "Update docs/hexagonal.md to match the current codebase. Read the relevant source files and make sure the doc accurately reflects how things work now." --allowedTools Read,Edit,Glob,Grep --verbose
 
 echo ""
 echo "=== Updating docs/why_hecks.md ==="
-cat docs/why_hecks.md
-echo "---"
 claude -p "Update docs/why_hecks.md to match the current codebase. Read the relevant source files and make sure the doc accurately reflects how things work now." --allowedTools Read,Edit,Glob,Grep --verbose
 
 echo ""

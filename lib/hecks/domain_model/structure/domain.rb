@@ -1,10 +1,18 @@
 # Hecks::DomainModel::Structure::Domain
 #
-# The root of the domain model intermediate representation. A domain contains
-# aggregates directly.
+# The root of the domain model intermediate representation. A domain holds
+# aggregates and provides helpers for naming (module_name, gem_name),
+# introspection (describe), glossary output (glossary), and Mermaid
+# visualization (to_mermaid, visualize).
+#
+# Part of the DomainModel IR layer. Built by DomainBuilder, consumed by every
+# generator and by the Application/Session at runtime.
 #
 #   domain = Domain.new(name: "Pizzas", aggregates: [pizza_agg, order_agg])
-#   domain.aggregates  # => [pizza_agg, order_agg]
+#   domain.gem_name    # => "pizzas_domain"
+#   domain.describe    # prints aggregate tree with commands, queries, policies
+#   domain.glossary    # prints domain term glossary
+#   domain.visualize   # prints Mermaid diagrams (structure + behavior)
 #
 module Hecks
   module DomainModel
