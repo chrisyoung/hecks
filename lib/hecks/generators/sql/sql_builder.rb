@@ -70,13 +70,13 @@ module Hecks
           attr_name = @aggregate.attributes.find { |a| a.list? && a.type.to_s == vo.name }&.name
           all_assigns << "          #{attr_name}: #{Hecks::Utils.underscore(vo.name)}s" if attr_name
         end
-        all_assigns << "          created_at: row[:created_at] ? Time.parse(row[:created_at].to_s) : nil"
-        all_assigns << "          updated_at: row[:updated_at] ? Time.parse(row[:updated_at].to_s) : nil"
-
         lines << "        require \"time\""
-        lines << "        #{Hecks::Utils.sanitize_constant(@aggregate.name)}.new("
+        lines << "        agg = #{Hecks::Utils.sanitize_constant(@aggregate.name)}.new("
         lines << all_assigns.join(",\n")
         lines << "        )"
+        lines << "        agg.instance_variable_set(:@created_at, row[:created_at] ? Time.parse(row[:created_at].to_s) : nil)"
+        lines << "        agg.instance_variable_set(:@updated_at, row[:updated_at] ? Time.parse(row[:updated_at].to_s) : nil)"
+        lines << "        agg"
         lines << "      end"
         lines
       end

@@ -16,7 +16,7 @@ module PizzasDomain
         end
 
         def call
-          save Pizza.new(name: name, style: style, price: price, created_at: Time.now, updated_at: Time.now)
+          save Pizza.new(name: name, style: style, price: price)
         end
       end
     end

@@ -105,21 +105,21 @@ RSpec.describe "Port Authorization" do
 
     it "raises PortAccessDenied for instance save" do
       # Build an instance manually (without going through create)
-      instance = PortTestDomain::Pizza.new(name: "Sneaky", created_at: Time.now, updated_at: Time.now)
+      instance = PortTestDomain::Pizza.new(name: "Sneaky")
       expect { instance.save }.to raise_error(
         Hecks::PortAccessDenied, /Pizza#save.*:guest/
       )
     end
 
     it "raises PortAccessDenied for instance destroy" do
-      instance = PortTestDomain::Pizza.new(name: "Sneaky", created_at: Time.now, updated_at: Time.now)
+      instance = PortTestDomain::Pizza.new(name: "Sneaky")
       expect { instance.destroy }.to raise_error(
         Hecks::PortAccessDenied, /Pizza#destroy.*:guest/
       )
     end
 
     it "raises PortAccessDenied for instance update" do
-      instance = PortTestDomain::Pizza.new(name: "Sneaky", created_at: Time.now, updated_at: Time.now)
+      instance = PortTestDomain::Pizza.new(name: "Sneaky")
       expect { instance.update(name: "Nope") }.to raise_error(
         Hecks::PortAccessDenied, /Pizza#update.*:guest/
       )

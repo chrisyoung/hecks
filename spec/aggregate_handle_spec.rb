@@ -144,7 +144,7 @@ RSpec.describe Hecks::Session::AggregateHandle do
       pizza = session.aggregate("Pizza")
       pizza.add_attribute :name, String
 
-      expect { pizza.preview }.to output(/module PizzasDomain.*class Pizza.*attr_reader :id, :name/m).to_stdout
+      expect { pizza.preview }.to output(/module PizzasDomain.*class Pizza.*include Hecks::Model.*attr_reader :name/m).to_stdout
     end
   end
 

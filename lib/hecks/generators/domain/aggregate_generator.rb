@@ -36,7 +36,9 @@ module Hecks
         lines << "  class #{@safe_name}"
         lines << "    include Hecks::Model"
         lines << ""
-        lines << "    attr_reader :id#{attr_readers}, :created_at, :updated_at"
+        unless @user_attrs.empty?
+          lines << "    attr_reader " + @user_attrs.map { |a| ":#{a.name}" }.join(", ")
+        end
         lines << ""
         lines.concat(constructor_lines)
         unless @aggregate.validations.empty? && @aggregate.invariants.empty?
