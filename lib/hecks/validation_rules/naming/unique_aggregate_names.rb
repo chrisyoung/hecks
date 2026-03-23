@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::Naming::UniqueAggregateNames
+#
+# Rejects duplicate aggregate names within a context.
+#
 module Hecks
   module ValidationRules
     module Naming

@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::Structure::ValidPolicyEvents
+#
+# Rejects policies that listen for non-existent events.
+#
 module Hecks
   module ValidationRules
     module Structure

@@ -1,3 +1,7 @@
+# Hecks::DomainModel::Structure::Invariant
+#
+# A business rule that must always hold true for an aggregate or value object.
+#
 module Hecks
   module DomainModel
     module Structure

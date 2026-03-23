@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::Structure::AggregatesHaveCommands
+#
+# Warns when aggregates have no commands.
+#
 module Hecks
   module ValidationRules
     module Structure

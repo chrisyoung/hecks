@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::References::NoSelfReferences
+#
+# Rejects aggregates that reference themselves.
+#
 module Hecks
   module ValidationRules
     module References

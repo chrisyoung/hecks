@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::References::NoValueObjectReferences
+#
+# Rejects reference attributes on value objects.
+#
 module Hecks
   module ValidationRules
     module References

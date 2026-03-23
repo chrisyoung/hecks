@@ -1,3 +1,7 @@
+# Hecks::ValidationRules::References::NoBidirectionalReferences
+#
+# Rejects bidirectional references between aggregates.
+#
 module Hecks
   module ValidationRules
     module References
