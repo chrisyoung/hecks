@@ -76,6 +76,20 @@ module Hecks
           register_queries(agg, klass)
           register_crud(agg, klass)
         end
+        register_discovery
+      end
+
+      def register_discovery
+        methods_list = @methods.keys.sort
+        @methods["system.listMethods"] = ->(_) { methods_list }
+        @methods["system.describe"] = ->(_) {
+          @domain.aggregates.map do |agg|
+            { name: agg.name,
+              commands: agg.commands.map(&:name),
+              queries: agg.queries.map { |q| Hecks::Utils.underscore(q.name) },
+              attributes: agg.attributes.map { |a| { name: a.name, type: a.ruby_type } } }
+          end
+        }
       end
 
       def register_commands(agg, klass)
