@@ -3,7 +3,7 @@ require "tmpdir"
 require "timeout"
 
 RSpec.describe "Event bus and policy edge cases (destructive)" do
-  def boot_domain(domain)
+  def BreakTestDomains.boot(domain)
     tmpdir = Dir.mktmpdir("hecks_break_test")
     gem_path = Hecks.build(domain, output_dir: tmpdir)
     lib_path = File.join(gem_path, "lib")
@@ -43,7 +43,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "does not hang or blow the stack on a self-triggering policy" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
 
       result = Timeout.timeout(3) do
         begin
@@ -92,7 +92,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "inflects 'Notify' as 'Notified', not 'Notifyed'" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
       app.run("NotifyAlert", message: "test")
 
       event_name = app.events.first.class.name.split("::").last
@@ -103,7 +103,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "inflects 'Send' as 'Sent', not 'Sended'" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
       app.run("SendAlert", message: "test")
 
       event_name = app.events.last.class.name.split("::").last
@@ -153,7 +153,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "fires both policies when a single event is published" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
       app.run("CreateInvoice", amount: 100)
 
       event_names = app.events.map { |e| e.class.name.split("::").last }
@@ -192,7 +192,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
       end
 
       expect {
-        boot_domain(domain)
+        BreakTestDomains.boot(domain)
       }.to raise_error(RuntimeError, /GhostCommand/)
     end
   end
@@ -214,7 +214,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "delivers all 100 events to subscribers without dropping any" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
 
       received = []
       app.on("CreatedItem") { |event| received << event }
@@ -248,7 +248,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "empties the event log after clear" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
 
       5.times { |i| app.run("CreateThing", label: "thing_#{i}") }
       expect(app.events.size).to eq(5)
@@ -259,7 +259,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "continues recording events after clear" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
 
       3.times { |i| app.run("CreateThing", label: "before_#{i}") }
       app.event_bus.clear
@@ -270,7 +270,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "does not affect subscribers after clear" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
       received = []
       app.on("CreatedThing") { |e| received << e }
 
@@ -300,7 +300,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "records events in the order commands were dispatched" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
 
       positions = (1..20).to_a
       positions.each { |p| app.run("CreateStep", position: p) }
@@ -311,7 +311,7 @@ RSpec.describe "Event bus and policy edge cases (destructive)" do
     end
 
     it "subscriber receives events in dispatch order" do
-      app = boot_domain(domain)
+      app = BreakTestDomains.boot(domain)
       received_positions = []
       app.on("CreatedStep") { |e| received_positions << e.position }
 

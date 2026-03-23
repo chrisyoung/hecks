@@ -32,7 +32,7 @@ RSpec.describe "CollectionProxy destructive tests" do
     end
   end
 
-  before { @app = boot_domain(domain) }
+  before { @app = BreakTestDomains.boot(domain) }
 
   describe "bulk operations - 100 value objects" do
     it "creates 100 toppings on one aggregate" do
