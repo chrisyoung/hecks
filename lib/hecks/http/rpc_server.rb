@@ -4,11 +4,7 @@
 #
 #   hecks serve pizzas_domain --rpc
 #
-#   {"method": "CreatePizza", "params": {"name": "Margherita"}, "id": 1}
-#   {"method": "Pizza.find", "params": {"id": "abc-123"}, "id": 2}
-#   {"method": "Pizza.classics", "params": {}, "id": 3}
-#
-require "rack"
+require "webrick"
 require "json"
 require "tmpdir"
 
@@ -29,16 +25,27 @@ module Hecks
         puts "Methods:"
         @methods.each_key { |m| puts "  #{m}" }
         puts ""
-        Rack::Handler::WEBrick.run(method(:call), Port: @port,
-          Logger: WEBrick::Log.new("/dev/null"), AccessLog: [])
+
+        server = WEBrick::HTTPServer.new(Port: @port, Logger: WEBrick::Log.new("/dev/null"), AccessLog: [])
+        server.mount_proc("/") { |req, res| handle(req, res) }
+        trap("INT") { server.shutdown }
+        server.start
       end
 
-      def call(env)
-        req = Rack::Request.new(env)
-        return cors_preflight if req.request_method == "OPTIONS"
+      private
 
-        body = req.body.read
-        return error_response(nil, -32700, "Parse error") if body.empty?
+      def handle(req, res)
+        res["Access-Control-Allow-Origin"] = "*"
+        res["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        res["Access-Control-Allow-Headers"] = "Content-Type"
+        res["Content-Type"] = "application/json"
+        return if req.request_method == "OPTIONS"
+
+        body = req.body || ""
+        if body.empty?
+          res.body = JSON.generate(jsonrpc: "2.0", error: { code: -32700, message: "Parse error" }, id: nil)
+          return
+        end
 
         request = JSON.parse(body)
         method_name = request["method"]
@@ -46,17 +53,18 @@ module Hecks
         id = request["id"]
 
         handler = @methods[method_name]
-        return error_response(id, -32601, "Method not found: #{method_name}") unless handler
+        unless handler
+          res.body = JSON.generate(jsonrpc: "2.0", error: { code: -32601, message: "Method not found: #{method_name}" }, id: id)
+          return
+        end
 
         result = handler.call(params)
-        success_response(id, result)
+        res.body = JSON.generate(jsonrpc: "2.0", result: result, id: id)
       rescue JSON::ParserError
-        error_response(nil, -32700, "Parse error")
+        res.body = JSON.generate(jsonrpc: "2.0", error: { code: -32700, message: "Parse error" }, id: nil)
       rescue => e
-        error_response(request&.dig("id"), -32000, e.message)
+        res.body = JSON.generate(jsonrpc: "2.0", error: { code: -32000, message: e.message }, id: request&.dig("id"))
       end
-
-      private
 
       def boot_domain
         tmpdir = Dir.mktmpdir("hecks_rpc")
@@ -115,28 +123,6 @@ module Hecks
         obj.class.instance_method(:initialize).parameters.each_with_object({}) do |(_, n), h|
           h[n.to_s] = obj.send(n) if n && obj.respond_to?(n)
         end
-      end
-
-      def success_response(id, result)
-        json(200, jsonrpc: "2.0", result: result, id: id)
-      end
-
-      def error_response(id, code, message)
-        json(200, jsonrpc: "2.0", error: { code: code, message: message }, id: id)
-      end
-
-      def json(status, data)
-        [status, cors_headers.merge("Content-Type" => "application/json"), [JSON.generate(data)]]
-      end
-
-      def cors_preflight
-        [204, cors_headers, []]
-      end
-
-      def cors_headers
-        { "Access-Control-Allow-Origin" => "*",
-          "Access-Control-Allow-Methods" => "POST, OPTIONS",
-          "Access-Control-Allow-Headers" => "Content-Type" }
       end
     end
   end

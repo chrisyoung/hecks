@@ -37,34 +37,24 @@ module Hecks
 
       require_relative "../../http/openapi_generator"
       require_relative "../../http/rpc_discovery"
-      require "rack"
+      require "webrick"
       require "json"
 
       openapi = HTTP::OpenapiGenerator.new(domain).generate
       rpc = HTTP::RpcDiscovery.new(domain).generate
       port = options[:port]
 
-      app = proc do |env|
-        req = Rack::Request.new(env)
-        cors = { "Access-Control-Allow-Origin" => "*", "Content-Type" => "application/json" }
-        case req.path
-        when "/openapi.json"
-          [200, cors, [JSON.generate(openapi)]]
-        when "/rpc_methods.json"
-          [200, cors, [JSON.generate(rpc)]]
-        when "/"
-          [200, { "Content-Type" => "text/html" }, [swagger_html(port)]]
-        else
-          [404, cors, [JSON.generate(error: "Not found")]]
-        end
-      end
-
       say "Hecks docs for #{domain.name} on http://localhost:#{port}", :green
       say "  GET /              Swagger UI"
       say "  GET /openapi.json  OpenAPI 3.0 spec"
       say "  GET /rpc_methods.json  JSON-RPC discovery"
-      Rack::Handler::WEBrick.run(app, Port: port,
-        Logger: WEBrick::Log.new("/dev/null"), AccessLog: [])
+
+      server = WEBrick::HTTPServer.new(Port: port, Logger: WEBrick::Log.new("/dev/null"), AccessLog: [])
+      server.mount_proc("/openapi.json") { |_, res| res["Content-Type"] = "application/json"; res["Access-Control-Allow-Origin"] = "*"; res.body = JSON.generate(openapi) }
+      server.mount_proc("/rpc_methods.json") { |_, res| res["Content-Type"] = "application/json"; res["Access-Control-Allow-Origin"] = "*"; res.body = JSON.generate(rpc) }
+      server.mount_proc("/") { |_, res| res["Content-Type"] = "text/html"; res.body = swagger_html(port) }
+      trap("INT") { server.shutdown }
+      server.start
     end
 
     private

@@ -1,11 +1,12 @@
 # Hecks::HTTP::DomainServer
 #
-# Rack app that serves a domain as REST + SSE. Generated from the DSL.
+# WEBrick server that serves a domain as REST + SSE. Generated from the DSL.
 #
 #   hecks serve pizzas_domain
 #
-require "rack"
+require "webrick"
 require "json"
+require "stringio"
 require "tmpdir"
 require_relative "route_builder"
 
@@ -25,22 +26,43 @@ module Hecks
         @routes.each { |r| puts "  #{r[:method].ljust(6)} #{r[:path]}" }
         puts "  GET    /events (SSE)"
         puts ""
-        Rack::Handler::WEBrick.run(method(:call), Port: @port,
-          Logger: WEBrick::Log.new("/dev/null"), AccessLog: [])
-      end
 
-      def call(env)
-        req = Rack::Request.new(env)
-        return cors_preflight if req.request_method == "OPTIONS"
-        return sse_stream if req.path == "/events"
-        route = @routes.find { |r| r[:method] == req.request_method && match?(r[:path], req.path) }
-        return json(404, error: "Not found") unless route
-        json(200, route[:handler].call(req))
-      rescue => e
-        json(422, error: e.message)
+        server = WEBrick::HTTPServer.new(Port: @port, Logger: WEBrick::Log.new("/dev/null"), AccessLog: [])
+        server.mount_proc("/") { |req, res| handle(req, res) }
+        trap("INT") { server.shutdown }
+        server.start
       end
 
       private
+
+      def handle(req, res)
+        set_cors(res)
+        return if req.request_method == "OPTIONS"
+
+        if req.path == "/events"
+          # SSE not supported in basic WEBrick — return event list instead
+          res["Content-Type"] = "application/json"
+          res.body = JSON.generate(@app.events.map { |e| { type: e.class.name.split("::").last, occurred_at: e.occurred_at.iso8601 } })
+          return
+        end
+
+        route = @routes.find { |r| r[:method] == req.request_method && match?(r[:path], req.path) }
+        unless route
+          res.status = 404
+          res["Content-Type"] = "application/json"
+          res.body = JSON.generate(error: "Not found")
+          return
+        end
+
+        wrapper = RequestWrapper.new(req)
+        result = route[:handler].call(wrapper)
+        res["Content-Type"] = "application/json"
+        res.body = JSON.generate(result)
+      rescue => e
+        res.status = 422
+        res["Content-Type"] = "application/json"
+        res.body = JSON.generate(error: e.message)
+      end
 
       def boot_domain
         tmpdir = Dir.mktmpdir("hecks_serve")
@@ -52,9 +74,6 @@ module Hecks
         @mod = Object.const_get(@domain.module_name + "Domain")
         @app = Services::Application.new(@domain)
         @routes = RouteBuilder.new(@domain, @mod).build
-        @domain.aggregates.flat_map { |a| a.events.map(&:name) }.uniq.each do |evt|
-          @app.event_bus.subscribe(evt) { |e| broadcast(e) }
-        end
       end
 
       def match?(pattern, path)
@@ -62,33 +81,29 @@ module Hecks
         pp.size == ap.size && pp.zip(ap).all? { |p, a| p.start_with?(":") || p == a }
       end
 
-      def sse_stream
-        q = Queue.new
-        @sse_clients << q
-        body = proc do |out|
-          out.call("data: {\"connected\":true}\n\n")
-          loop { out.call("data: #{q.pop}\n\n") }
-        rescue IOError
-          @sse_clients.delete(q)
+      def set_cors(res)
+        res["Access-Control-Allow-Origin"] = "*"
+        res["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS"
+        res["Access-Control-Allow-Headers"] = "Content-Type"
+      end
+
+      # Wraps WEBrick::HTTPRequest to look like Rack::Request for RouteBuilder
+      class RequestWrapper
+        attr_reader :path, :params
+
+        def initialize(req)
+          @req = req
+          @path = req.path
+          @params = req.query
         end
-        [200, { "Content-Type" => "text/event-stream", "Cache-Control" => "no-cache", "Access-Control-Allow-Origin" => "*" }, body]
-      end
 
-      def broadcast(event)
-        data = JSON.generate(type: event.class.name.split("::").last, occurred_at: event.occurred_at.iso8601)
-        @sse_clients.each { |q| q << data rescue nil }
-      end
+        def body
+          ::StringIO.new(@req.body || "")
+        end
 
-      def json(status, data)
-        [status, cors_headers.merge("Content-Type" => "application/json"), [JSON.generate(data)]]
-      end
-
-      def cors_preflight
-        [204, cors_headers, []]
-      end
-
-      def cors_headers
-        { "Access-Control-Allow-Origin" => "*", "Access-Control-Allow-Methods" => "GET, POST, PATCH, DELETE, OPTIONS", "Access-Control-Allow-Headers" => "Content-Type" }
+        def request_method
+          @req.request_method
+        end
       end
     end
   end
