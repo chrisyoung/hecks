@@ -1,10 +1,11 @@
-# Hecks::AggregateHandle::Presenter
+# Hecks::Session::AggregateHandle::Presenter
 #
 # Presentation methods for AggregateHandle: describe (detailed summary),
 # inspect (one-line), and the type_label helper for formatting types.
 #
 module Hecks
-  class AggregateHandle
+  class Session
+    class AggregateHandle
     module Presenter
       def describe
         agg = @builder.build
@@ -84,6 +85,7 @@ module Hecks
           type.to_s
         end
       end
+    end
     end
   end
 end

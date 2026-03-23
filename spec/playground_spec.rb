@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Playground do
+RSpec.describe Hecks::Session::Playground do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do

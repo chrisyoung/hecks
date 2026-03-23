@@ -32,28 +32,28 @@ module ActiveHecks
           end
 
           domain = config.domain_obj
-          snapshot_path = ::Rails.root.join(Hecks::DomainSnapshot::DEFAULT_PATH).to_s
-          old_domain = Hecks::DomainSnapshot.load(path: snapshot_path)
-          changes = Hecks::DomainDiff.call(old_domain, domain)
+          snapshot_path = ::Rails.root.join(Hecks::Migrations::DomainSnapshot::DEFAULT_PATH).to_s
+          old_domain = Hecks::Migrations::DomainSnapshot.load(path: snapshot_path)
+          changes = Hecks::Migrations::DomainDiff.call(old_domain, domain)
 
           if changes.empty?
             puts "Domain is up to date — no migrations needed."
             next
           end
 
-          unless Hecks::MigrationStrategy.for(:sql)
-            Hecks::MigrationStrategy.register(:sql, Hecks::MigrationStrategies::SqlStrategy)
+          unless Hecks::Migrations::MigrationStrategy.for(:sql)
+            Hecks::Migrations::MigrationStrategy.register(:sql, Hecks::Migrations::Strategies::SqlStrategy)
           end
-          files = Hecks::MigrationStrategy.run_all(changes, output_dir: ::Rails.root.to_s)
+          files = Hecks::Migrations::MigrationStrategy.run_all(changes, output_dir: ::Rails.root.to_s)
           files.each { |f| puts "Generated #{f}" }
 
-          Hecks::DomainSnapshot.save(domain, path: snapshot_path)
+          Hecks::Migrations::DomainSnapshot.save(domain, path: snapshot_path)
           puts "Saved domain snapshot to #{snapshot_path}"
         end
 
         desc "Run pending Hecks SQL migrations"
         task "db:migrate" => :environment do
-          runner = Hecks::MigrationRunner.new(
+          runner = Hecks::Migrations::MigrationRunner.new(
             connection: ActiveRecord::Base.connection,
             migration_dir: ::Rails.root.join("db/hecks_migrate").to_s
           )

@@ -1,4 +1,4 @@
-# Hecks::AggregateHandle
+# Hecks::Session::AggregateHandle
 #
 # Interactive handle for incrementally building a single aggregate in the
 # REPL. Wraps an AggregateBuilder and provides add/remove methods that
@@ -18,7 +18,8 @@
 require_relative "aggregate_handle/presenter"
 
 module Hecks
-  class AggregateHandle
+  class Session
+    class AggregateHandle
     include Presenter
 
     attr_reader :name
@@ -132,5 +133,6 @@ module Hecks
         end
       end
     end
+  end
   end
 end

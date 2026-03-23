@@ -1,4 +1,4 @@
-# Hecks::MigrationRunner
+# Hecks::Migrations::MigrationRunner
 #
 # Executes pending SQL migration files from db/hecks_migrate/ against a
 # database connection. Tracks applied migrations in a hecks_schema_migrations
@@ -12,7 +12,8 @@
 #   runner.run_all   # applies pending migrations
 #
 module Hecks
-  class MigrationRunner
+  module Migrations
+    class MigrationRunner
     TRACKING_TABLE = "hecks_schema_migrations"
 
     def initialize(connection:, migration_dir: "db/hecks_migrate")
@@ -65,6 +66,7 @@ module Hecks
       return [] unless Dir.exist?(@migration_dir)
 
       Dir.glob(File.join(@migration_dir, "*.sql")).sort
+    end
     end
   end
 end

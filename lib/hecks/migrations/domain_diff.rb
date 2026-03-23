@@ -1,4 +1,4 @@
-# Hecks::DomainDiff
+# Hecks::Migrations::DomainDiff
 #
 # Compares two domain snapshots and produces a list of Change objects
 # describing what was added, removed, or modified. Adapter-agnostic —
@@ -13,7 +13,8 @@
 #   # => [AddAttribute.new(aggregate: "Pizza", name: :size, type: String), ...]
 #
 module Hecks
-  class DomainDiff
+  module Migrations
+    class DomainDiff
     Change = Struct.new(:kind, :context, :aggregate, :details, keyword_init: true)
 
     def self.call(old_domain, new_domain)
@@ -121,6 +122,7 @@ module Hecks
       end
 
       changes
+    end
     end
   end
 end

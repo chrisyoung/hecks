@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::MigrationStrategy do
+RSpec.describe Hecks::Migrations::MigrationStrategy do
   after { described_class.registry.delete(:test) }
 
   describe ".register" do
@@ -25,7 +25,7 @@ RSpec.describe Hecks::MigrationStrategy do
       end
 
       described_class.register(:test, strategy_class)
-      changes = [Hecks::DomainDiff::Change.new(kind: :add_attribute, aggregate: "Pizza", details: { name: :size })]
+      changes = [Hecks::Migrations::DomainDiff::Change.new(kind: :add_attribute, aggregate: "Pizza", details: { name: :size })]
 
       files = described_class.run_all(changes, output_dir: tmpdir)
       expect(files.size).to eq(1)
@@ -41,7 +41,7 @@ RSpec.describe Hecks::MigrationStrategy do
       end
 
       described_class.register(:test, strategy_class)
-      files = described_class.run_all([Hecks::DomainDiff::Change.new(kind: :add_attribute, aggregate: "X", details: {})])
+      files = described_class.run_all([Hecks::Migrations::DomainDiff::Change.new(kind: :add_attribute, aggregate: "X", details: {})])
       expect(files).to be_empty
     end
 
@@ -52,7 +52,7 @@ RSpec.describe Hecks::MigrationStrategy do
   end
 end
 
-RSpec.describe Hecks::MigrationStrategies::SqlStrategy do
+RSpec.describe Hecks::Migrations::Strategies::SqlStrategy do
   subject(:strategy) { described_class.new(output_dir: tmpdir) }
   let(:tmpdir) { Dir.mktmpdir }
 
@@ -61,7 +61,7 @@ RSpec.describe Hecks::MigrationStrategies::SqlStrategy do
   describe "#generate" do
     it "generates ADD COLUMN for added attributes" do
       changes = [
-        Hecks::DomainDiff::Change.new(
+        Hecks::Migrations::DomainDiff::Change.new(
           kind: :add_attribute,
           aggregate: "Pizza",
           details: { name: :size, type: String, list: false, reference: false }
@@ -74,7 +74,7 @@ RSpec.describe Hecks::MigrationStrategies::SqlStrategy do
 
     it "generates DROP COLUMN for removed attributes" do
       changes = [
-        Hecks::DomainDiff::Change.new(
+        Hecks::Migrations::DomainDiff::Change.new(
           kind: :remove_attribute,
           aggregate: "Pizza",
           details: { name: :temp }
@@ -88,7 +88,7 @@ RSpec.describe Hecks::MigrationStrategies::SqlStrategy do
     it "generates CREATE TABLE for new aggregates" do
       attr = Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)
       changes = [
-        Hecks::DomainDiff::Change.new(
+        Hecks::Migrations::DomainDiff::Change.new(
           kind: :add_aggregate,
           aggregate: "Review",
           details: { attributes: [attr], value_objects: [] }
@@ -102,7 +102,7 @@ RSpec.describe Hecks::MigrationStrategies::SqlStrategy do
 
     it "generates DROP TABLE for removed aggregates" do
       changes = [
-        Hecks::DomainDiff::Change.new(
+        Hecks::Migrations::DomainDiff::Change.new(
           kind: :remove_aggregate,
           aggregate: "Review",
           details: {}

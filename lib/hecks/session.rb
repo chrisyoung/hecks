@@ -25,6 +25,10 @@
 require "fileutils"
 require_relative "session/play_mode"
 require_relative "session/presenter"
+require_relative "session/handles/aggregate_handle"
+require_relative "session/handles/context_handle"
+require_relative "session/console_runner"
+require_relative "session/playground"
 
 module Hecks
   class Session

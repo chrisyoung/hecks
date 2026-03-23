@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::MigrationRunner do
+RSpec.describe Hecks::Migrations::MigrationRunner do
   let(:tmpdir) { Dir.mktmpdir }
   let(:migration_dir) { File.join(tmpdir, "db/hecks_migrate") }
   let(:db) { FakeConnection.new }

@@ -17,7 +17,7 @@ RSpec.describe Hecks::Session do
 
     it "returns an AggregateHandle" do
       handle = session.aggregate("Pizza")
-      expect(handle).to be_a(Hecks::AggregateHandle)
+      expect(handle).to be_a(Hecks::Session::AggregateHandle)
     end
 
     it "returns the same handle each time" do

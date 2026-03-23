@@ -1,4 +1,4 @@
-# Hecks::MigrationStrategy
+# Hecks::Migrations::MigrationStrategy
 #
 # Base class for adapter-specific migration generators. Each strategy
 # knows how to turn domain Change objects into migration files for its
@@ -21,7 +21,8 @@
 #   Hecks::MigrationStrategy.register(:redis, RedisMigrationStrategy)
 #
 module Hecks
-  class MigrationStrategy
+  module Migrations
+    class MigrationStrategy
     @registry = {}
 
     class << self
@@ -76,6 +77,7 @@ module Hecks
       FileUtils.mkdir_p(File.dirname(path))
       File.write(path, content)
       path
+    end
     end
   end
 end

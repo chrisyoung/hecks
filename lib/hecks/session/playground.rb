@@ -1,4 +1,4 @@
-# Hecks::Playground
+# Hecks::Session::Playground
 #
 # Live execution sandbox that compiles a domain model into real Ruby classes,
 # then lets you execute commands and inspect the resulting events. Used by
@@ -7,7 +7,7 @@
 # Sits between the Generators (which produce source code) and the runtime --
 # it generates a temp gem, loads it, and provides a command/event interface.
 #
-#   playground = Hecks::Playground.new(domain)
+#   playground = Hecks::Session::Playground.new(domain)
 #   playground.execute("CreatePizza", name: "Margherita")
 #   playground.events      # => [#<CreatedPizza ...>]
 #   playground.commands    # => ["CreatePizza(name: String) -> CreatedPizza"]
@@ -17,7 +17,8 @@
 require "tmpdir"
 
 module Hecks
-  class Playground
+  class Session
+    class Playground
     attr_reader :events
 
     def initialize(domain)
@@ -105,7 +106,7 @@ module Hecks
     end
 
     def inspect
-      "#<Hecks::Playground \"#{@domain.name}\" (#{@events.size} events)>"
+      "#<Hecks::Session::Playground \"#{@domain.name}\" (#{@events.size} events)>"
     end
 
     private
@@ -189,5 +190,6 @@ module Hecks
       event_name = event.class.name.split("::").last
       @policies.select { |p| p.event_name == event_name }
     end
+  end
   end
 end

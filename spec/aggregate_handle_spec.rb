@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::AggregateHandle do
+RSpec.describe Hecks::Session::AggregateHandle do
   let(:session) { Hecks::Session.new("Pizzas") }
 
   before { allow($stdout).to receive(:puts) }
