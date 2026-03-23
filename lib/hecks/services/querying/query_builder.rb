@@ -141,12 +141,12 @@ module Hecks
 
       def apply_offset(results)
         return results unless @offset_value
-        results.drop(@offset_value)
+        results.drop([@offset_value, 0].max)
       end
 
       def apply_limit(results)
         return results unless @limit_value
-        results.take(@limit_value)
+        results.take([@limit_value, 0].max)
       end
       end
     end

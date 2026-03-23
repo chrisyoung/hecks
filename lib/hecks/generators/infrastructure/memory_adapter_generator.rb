@@ -129,8 +129,8 @@ module Hecks
           "#{pad}    results = results.sort_by { |obj| val = obj.respond_to?(order_key) ? obj.send(order_key) : nil; val.nil? ? \"\" : val }",
           "#{pad}    results = results.reverse if order_direction == :desc",
           "#{pad}  end",
-          "#{pad}  results = results.drop(offset) if offset",
-          "#{pad}  results = results.take(limit) if limit",
+          "#{pad}  results = results.drop([offset, 0].max) if offset",
+          "#{pad}  results = results.take([limit, 0].max) if limit",
           "#{pad}  results",
           "#{pad}end"
         ]
