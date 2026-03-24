@@ -36,7 +36,7 @@ end
 shared_bus = Hecks::Services::EventBus.new
 
 apps = domains.map do |domain|
-  Hecks::Services::Application.new(domain, event_bus: shared_bus)
+  Hecks::Services::Runtime.new(domain, event_bus: shared_bus)
 end
 
 # 5. Subscribe to events across all domains

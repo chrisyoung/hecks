@@ -17,7 +17,7 @@
 module Hecks
   module TestHelper
     def self.reset!
-      return unless defined?(APP) && APP.is_a?(Hecks::Services::Application)
+      return unless defined?(APP) && APP.is_a?(Hecks::Services::Runtime)
 
       # Clear all memory adapter stores
       APP.domain.aggregates.each do |agg|

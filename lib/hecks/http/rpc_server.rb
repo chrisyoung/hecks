@@ -79,7 +79,7 @@ module Hecks
           Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| require f }
         end
         @mod = Object.const_get(mod_name)
-        @app = Services::Application.new(@domain)
+        @app = Services::Runtime.new(@domain)
       end
 
       def register_methods

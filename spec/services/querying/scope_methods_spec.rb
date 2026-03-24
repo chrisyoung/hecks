@@ -22,8 +22,7 @@ RSpec.describe Hecks::Services::Querying::ScopeMethods do
   end
 
   before do
-    Hecks.load_domain(domain)
-    @app = Hecks::Services::Application.new(domain)
+    @app = Hecks.load(domain)
 
     PizzasDomain::Pizza.create(name: "Margherita", style: "Classic", price: 12.0)
     PizzasDomain::Pizza.create(name: "Pepperoni", style: "Spicy", price: 15.0)

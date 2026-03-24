@@ -17,8 +17,7 @@ RSpec.describe Hecks::Services::Querying::AdHocQueries do
   end
 
   before do
-    Hecks.load_domain(domain)
-    @app = Hecks::Services::Application.new(domain)
+    @app = Hecks.load(domain)
 
     repo = @app["Pizza"]
     described_class.bind(PizzasDomain::Pizza, repo)

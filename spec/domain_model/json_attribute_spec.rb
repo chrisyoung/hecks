@@ -19,12 +19,8 @@ RSpec.describe "JSON attribute type" do
     end
   end
 
-  before do
-    Hecks.load_domain(domain)
-  end
-
   describe "memory adapter" do
-    before { @app = Hecks::Services::Application.new(domain) }
+    before { @app = Hecks.load(domain) }
 
     it "stores arrays natively" do
       road = GeoDomain::Road.create(name: "Main", points: [{x: 0, y: 0}, {x: 100, y: 50}], radii: [400])
@@ -35,6 +31,8 @@ RSpec.describe "JSON attribute type" do
 
   describe "SQL adapter" do
     before do
+      Hecks.load(domain)
+
       domain.aggregates.each do |agg|
         gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "GeoDomain")
         eval(gen.generate, TOPLEVEL_BINDING)
@@ -48,7 +46,7 @@ RSpec.describe "JSON attribute type" do
       end
 
       db = @db
-      @app = Hecks::Services::Application.new(domain) do
+      @app = Hecks.load(domain) do
         adapter "Road", GeoDomain::Adapters::RoadSqlRepository.new(db)
       end
     end

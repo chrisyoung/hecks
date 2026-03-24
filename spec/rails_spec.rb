@@ -21,7 +21,7 @@ RSpec.describe ActiveHecks do
       end
     end
 
-    Hecks.load_domain(domain)
+    Hecks.load(domain)
     ActiveHecks.activate(PizzasDomain, domain: domain)
   end
 
@@ -207,8 +207,7 @@ RSpec.describe ActiveHecks do
         end
       end
 
-      Hecks.load_domain(domain)
-      @app = Hecks::Services::Application.new(domain)
+      @app = Hecks.load(domain)
       ActiveHecks.activate(GarageDomain)
     end
 
@@ -232,8 +231,7 @@ RSpec.describe ActiveHecks do
         end
       end
 
-      Hecks.load_domain(domain)
-      @app = Hecks::Services::Application.new(domain)
+      @app = Hecks.load(domain)
       ActiveHecks.activate(BakeryDomain)
     end
 

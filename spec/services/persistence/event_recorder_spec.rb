@@ -47,7 +47,7 @@ RSpec.describe Hecks::Services::Persistence::EventRecorder do
       String :updated_at
     end
 
-    Hecks.load_domain(domain)
+    Hecks.load(domain)
 
     domain.aggregates.each do |agg|
       gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "PizzasDomain")
@@ -56,7 +56,7 @@ RSpec.describe Hecks::Services::Persistence::EventRecorder do
 
     pizza_repo = PizzasDomain::Adapters::PizzaSqlRepository.new(db)
     order_repo = PizzasDomain::Adapters::OrderSqlRepository.new(db)
-    @app = Hecks::Services::Application.new(domain) do
+    @app = Hecks.load(domain) do
       adapter "Pizza", pizza_repo
       adapter "Order", order_repo
     end

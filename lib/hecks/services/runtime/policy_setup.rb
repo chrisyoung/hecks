@@ -1,10 +1,10 @@
-# Hecks::Services::Application::PolicySetup
+# Hecks::Services::Runtime::PolicySetup
 #
 # Mixin that subscribes domain policies to their trigger events on
 # the event bus. Guards against re-entrant policy execution and
 # supports async dispatch via an optional async handler.
 #
-#   class Application
+#   class Runtime
 #     include PolicySetup
 #   end
 #
@@ -12,7 +12,7 @@ require "set"
 
 module Hecks
   module Services
-    class Application
+    class Runtime
       module PolicySetup
         private
 

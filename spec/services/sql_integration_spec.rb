@@ -70,10 +70,9 @@ RSpec.describe "SQL adapter integration" do
       String :updated_at
     end
 
-    # Load domain module
-    Hecks.load_domain(domain)
+    # Load domain module and generate SQL adapters in memory
+    Hecks.load(domain)
 
-    # Generate SQL adapters in memory
     domain.aggregates.each do |agg|
       gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "PizzasDomain")
       eval(gen.generate, TOPLEVEL_BINDING)
@@ -82,7 +81,7 @@ RSpec.describe "SQL adapter integration" do
     # Boot application with SQL adapters (pass Sequel DB)
     pizza_repo = PizzasDomain::Adapters::PizzaSqlRepository.new(db)
     order_repo = PizzasDomain::Adapters::OrderSqlRepository.new(db)
-    @app = Hecks::Services::Application.new(domain) do
+    @app = Hecks.load(domain) do
       adapter "Pizza", pizza_repo
       adapter "Order", order_repo
     end

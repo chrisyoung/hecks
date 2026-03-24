@@ -14,9 +14,7 @@ RSpec.describe Hecks::Services::Commands::CommandBus do
     end
   end
 
-  before do
-    Hecks.load_domain(domain)
-  end
+  before { Hecks.load(domain) }
 
   let(:event_bus) { Hecks::Services::EventBus.new }
   subject(:bus) { described_class.new(domain: domain, event_bus: event_bus) }
@@ -97,7 +95,7 @@ RSpec.describe Hecks::Services::Commands::CommandBus do
   describe "integration with Application" do
     it "middleware registered on the app flows through to commands" do
       log = []
-      app = Hecks::Services::Application.new(domain)
+      app = Hecks.load(domain)
       app.use(:logging) do |command, next_handler|
         log << command.class.name.split("::").last
         next_handler.call

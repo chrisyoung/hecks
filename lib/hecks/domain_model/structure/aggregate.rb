@@ -21,11 +21,11 @@ module Hecks
     module Structure
     class Aggregate
       attr_reader :name, :attributes, :value_objects, :commands,
-                  :events, :policies, :validations, :invariants, :scopes, :ports, :queries
+                  :events, :policies, :validations, :invariants, :scopes, :ports, :queries, :subscribers
 
       def initialize(name:, attributes: [], value_objects: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
-                     scopes: [], ports: {}, queries: [])
+                     scopes: [], ports: {}, queries: [], subscribers: [])
         @name = name
         @attributes = attributes
         @value_objects = value_objects
@@ -37,6 +37,7 @@ module Hecks
         @scopes = scopes
         @ports = ports
         @queries = queries
+        @subscribers = subscribers
       end
 
     end

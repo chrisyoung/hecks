@@ -63,7 +63,7 @@ module Hecks
       end
 
       def boot_application
-        @app = Services::Application.new(@domain)
+        @app = Services::Runtime.new(@domain)
         @domain.aggregates.each do |agg|
           agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
           Services::Persistence::RepositoryMethods.bind(agg_class, @app[agg.name])

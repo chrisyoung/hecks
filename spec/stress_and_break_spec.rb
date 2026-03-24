@@ -4,8 +4,7 @@ require "sequel"
 
 RSpec.describe "Exploratory: trying to break Hecks" do
   def boot(domain)
-    Hecks.load_domain(domain)
-    Hecks::Services::Application.new(domain)
+    Hecks.load(domain)
   end
 
   describe "aggregate with minimal attributes" do
@@ -125,7 +124,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
     end
 
     before do
-      Hecks.load_domain(domain)
+      Hecks.load(domain)
 
       domain.aggregates.each do |agg|
         gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "SqlEdgeDomain")
@@ -144,7 +143,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
       end
 
       db = @db
-      @app = Hecks::Services::Application.new(domain) do
+      @app = Hecks.load(domain) do
         adapter "Item", SqlEdgeDomain::Adapters::ItemSqlRepository.new(db)
       end
     end
@@ -211,7 +210,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
         end
       end
 
-      Hecks.load_domain(domain)
+      Hecks.load(domain)
 
       domain.aggregates.each do |agg|
         gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: "EvtSrcDomain")
@@ -225,7 +224,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
         String :created_at; String :updated_at
       end
 
-      app = Hecks::Services::Application.new(domain) do
+      app = Hecks.load(domain) do
         adapter "Thing", EvtSrcDomain::Adapters::ThingSqlRepository.new(db)
       end
 

@@ -22,10 +22,6 @@ RSpec.describe "Port Authorization" do
     end
   end
 
-  before do
-    Hecks.load_domain(domain)
-  end
-
   describe "DSL" do
     it "defines ports on the aggregate" do
       agg = domain.aggregates.first
@@ -43,7 +39,7 @@ RSpec.describe "Port Authorization" do
   end
 
   describe "Application without port (backward compatible)" do
-    let!(:app) { Hecks::Services::Application.new(domain) }
+    let!(:app) { Hecks.load(domain) }
 
     it "allows all methods" do
       pizza = PortTestDomain::Pizza.create(name: "Margherita")
@@ -55,7 +51,7 @@ RSpec.describe "Port Authorization" do
   end
 
   describe "Application with :admin port" do
-    let!(:app) { Hecks::Services::Application.new(domain, port: :admin) }
+    let!(:app) { Hecks.load(domain, port: :admin) }
 
     it "allows read methods" do
       expect { PortTestDomain::Pizza.all }.not_to raise_error
@@ -87,7 +83,7 @@ RSpec.describe "Port Authorization" do
   end
 
   describe "Application with :guest port" do
-    let!(:app) { Hecks::Services::Application.new(domain, port: :guest) }
+    let!(:app) { Hecks.load(domain, port: :guest) }
 
     it "allows read methods" do
       expect { PortTestDomain::Pizza.all }.not_to raise_error

@@ -49,7 +49,7 @@ end
 pizza_repo = PizzasDomain::Adapters::PizzaSqlRepository.new(db)
 order_repo = PizzasDomain::Adapters::OrderSqlRepository.new(db)
 
-app = Hecks::Services::Application.new(domain) do
+app = Hecks::Services::Runtime.new(domain) do
   adapter "Pizza", pizza_repo
   adapter "Order", order_repo
 end

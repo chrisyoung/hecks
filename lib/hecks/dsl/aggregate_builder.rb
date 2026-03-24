@@ -20,7 +20,7 @@ module Hecks
     class AggregateBuilder
       include AttributeCollector
 
-      attr_reader :attributes, :commands, :value_objects, :policies, :validations, :invariants, :scopes, :ports, :queries
+      attr_reader :attributes, :commands, :value_objects, :policies, :validations, :invariants, :scopes, :ports, :queries, :subscribers
 
       def initialize(name)
         @name = name
@@ -33,6 +33,7 @@ module Hecks
         @scopes = []
         @ports = {}
         @queries = []
+        @subscribers = []
       end
 
       def value_object(name, &block)
@@ -77,6 +78,13 @@ module Hecks
         @queries << DomainModel::Behavior::Query.new(name: name, block: block)
       end
 
+      def on_event(event_name, async: false, &block)
+        name = generate_subscriber_name(event_name.to_s)
+        @subscribers << DomainModel::Behavior::EventSubscriber.new(
+          name: name, event_name: event_name.to_s, block: block, async: async
+        )
+      end
+
       def port(name, &block)
         port_builder = PortBuilder.new(name)
         port_builder.instance_eval(&block) if block
@@ -97,11 +105,18 @@ module Hecks
           invariants: @invariants,
           scopes: @scopes,
           ports: @ports,
-          queries: @queries
+          queries: @queries,
+          subscribers: @subscribers
         )
       end
 
       private
+
+      def generate_subscriber_name(event_name)
+        base = "On#{event_name}"
+        existing = @subscribers.count { |s| s.event_name == event_name }
+        existing.zero? ? base : "#{base}#{existing + 1}"
+      end
 
       def infer_events
         @commands.map do |command|

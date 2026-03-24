@@ -39,8 +39,7 @@ RSpec.describe Hecks::Services::AggregateWiring do
   end
 
   before do
-    Hecks.load_domain(domain)
-    @app = Hecks::Services::Application.new(domain)
+    @app = Hecks.load(domain)
   end
 
   it "binds RepositoryMethods (find, all, count, create)" do

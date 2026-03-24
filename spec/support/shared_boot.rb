@@ -91,9 +91,7 @@ module BootedDomains
     key = domain.object_id
     return @cache[key] if @cache[key]
 
-    Hecks.load_domain(domain)
-
     @cache[key] = true
-    Hecks::Services::Application.new(domain)
+    Hecks.load(domain)
   end
 end

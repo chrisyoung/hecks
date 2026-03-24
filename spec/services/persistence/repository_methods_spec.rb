@@ -17,8 +17,7 @@ RSpec.describe Hecks::Services::Persistence::RepositoryMethods do
   end
 
   before do
-    Hecks.load_domain(domain)
-    @app = Hecks::Services::Application.new(domain)
+    @app = Hecks.load(domain)
   end
 
   describe ".bind" do

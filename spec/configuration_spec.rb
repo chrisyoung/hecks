@@ -3,7 +3,7 @@ require "tmpdir"
 
 RSpec.describe Hecks::Configuration do
   def build_and_load(domain, _tmpdir = nil)
-    Hecks.load_domain(domain)
+    Hecks.load(domain)
   end
 
   describe "multi-domain with shared event bus" do
@@ -16,8 +16,8 @@ RSpec.describe Hecks::Configuration do
       build_and_load(domain_b, tmpdir)
 
       shared_bus = Hecks::Services::EventBus.new
-      app_a = Hecks::Services::Application.new(domain_a, event_bus: shared_bus)
-      app_b = Hecks::Services::Application.new(domain_b, event_bus: shared_bus)
+      app_a = Hecks.load(domain_a, event_bus: shared_bus)
+      app_b = Hecks.load(domain_b, event_bus: shared_bus)
 
       DomainADomain::Thing.create(name: "test")
 
@@ -36,8 +36,8 @@ RSpec.describe Hecks::Configuration do
       build_and_load(domain_b, tmpdir)
 
       shared_bus = Hecks::Services::EventBus.new
-      Hecks::Services::Application.new(domain_a, event_bus: shared_bus)
-      Hecks::Services::Application.new(domain_b, event_bus: shared_bus)
+      Hecks.load(domain_a, event_bus: shared_bus)
+      Hecks.load(domain_b, event_bus: shared_bus)
 
       expect(defined?(IsoADomain::Bar)).to be_nil
       expect(defined?(IsoBDomain::Foo)).to be_nil
@@ -51,7 +51,7 @@ RSpec.describe Hecks::Configuration do
       build_and_load(domain, tmpdir)
 
       custom_bus = Hecks::Services::EventBus.new
-      app = Hecks::Services::Application.new(domain, event_bus: custom_bus)
+      app = Hecks.load(domain, event_bus: custom_bus)
 
       expect(app.event_bus).to equal(custom_bus)
 

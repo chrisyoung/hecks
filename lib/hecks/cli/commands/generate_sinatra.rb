@@ -140,7 +140,7 @@ module Hecks
           DOMAIN = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
 
           # Boot with memory adapters (swap to SQL for production)
-          APP = Hecks::Services::Application.new(DOMAIN)
+          APP = Hecks.load(DOMAIN)
 
           # Uncomment for SQL persistence:
           # Hecks.configure do

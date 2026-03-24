@@ -19,6 +19,7 @@ module Hecks
             commands:      Domain::CommandGenerator,
             events:        Domain::EventGenerator,
             policies:      Domain::PolicyGenerator,
+            subscribers:   Domain::SubscriberGenerator,
           }.freeze
 
           def generate_source

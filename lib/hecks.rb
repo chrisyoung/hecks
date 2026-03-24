@@ -8,7 +8,9 @@
 #
 # Plain Ruby:
 #
-#   app = Hecks::Services::Application.new(domain)
+#   app = Hecks.load(domain)
+#   app["Pizza"].all
+#   Pizza.create(name: "Margherita")
 #
 # Rails (via initializer):
 #
@@ -53,6 +55,17 @@ module Hecks
 
   def self.configuration
     @configuration
+  end
+
+  # Load a domain and wire up the runtime in one step.
+  # Returns a Hecks::Services::Runtime instance.
+  #
+  #   app = Hecks.load(domain)
+  #   Pizza.create(name: "Margherita")
+  #
+  def self.load(domain, force: false, **opts, &config)
+    load_domain(domain, force: force)
+    Services::Runtime.new(domain, **opts, &config)
   end
 
   require "active_hecks/railtie" if defined?(::Rails::Railtie)

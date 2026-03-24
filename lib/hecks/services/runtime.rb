@@ -1,28 +1,30 @@
-# Hecks::Services::Application
+# Hecks::Services::Runtime
 #
-# The application container that wires a domain to adapters, dispatches
+# The runtime container that wires a domain to adapters, dispatches
 # commands, publishes events, and executes policies. Defaults to memory
-# adapters for all aggregates.
+# adapters for all aggregates. Created via Hecks.load(domain).
 #
-#   app = Application.new(domain)
+#   app = Hecks.load(domain)
 #   app["Pizza"].all
-#   Pizza.create_pizza(name: "Margherita")
+#   Pizza.create(name: "Margherita")
 #
 # Custom adapters:
-#   app = Application.new(domain) do
+#   app = Hecks.load(domain) do
 #     adapter "Pizza", my_sql_repo
 #   end
 #
 require_relative "aggregate_wiring"
-require_relative "application/repository_setup"
-require_relative "application/policy_setup"
-require_relative "application/constant_hoisting"
+require_relative "runtime/repository_setup"
+require_relative "runtime/policy_setup"
+require_relative "runtime/subscriber_setup"
+require_relative "runtime/constant_hoisting"
 
 module Hecks
   module Services
-    class Application
+    class Runtime
       include RepositorySetup
       include PolicySetup
+      include SubscriberSetup
       include ConstantHoisting
 
       attr_reader :domain, :event_bus, :command_bus
@@ -42,29 +44,22 @@ module Hecks
         setup_repositories
         setup_command_bus
         setup_policies
+        setup_subscribers
         AggregateWiring.new(@domain, @repositories, @command_bus, @mod, port_name: @port_name).wire!
         hoist_constants
       end
 
       # Register command bus middleware
-      #
-      #   app.use :logging do |command, next_handler|
-      #     puts command.class.name
-      #     next_handler.call
-      #   end
-      #
       def use(name = nil, &block)
         @command_bus.use(name, &block)
       end
 
       # Configuration DSL: override adapter for an aggregate
-      #   adapter "Pizza", repo_instance
       def adapter(aggregate_name, adapter_obj)
         @adapter_overrides[aggregate_name.to_s] = adapter_obj
       end
 
       # Get the repository for an aggregate
-      #   app["Pizza"]
       def [](name)
         @repositories[name.to_s]
       end
@@ -75,11 +70,6 @@ module Hecks
       end
 
       # Register an async handler for policies marked async: true
-      #
-      #   app.async do |command_name, attrs|
-      #     MyWorker.perform_async(command_name, attrs)
-      #   end
-      #
       def async(&handler)
         @async_handler = handler
       end
@@ -95,7 +85,7 @@ module Hecks
       end
 
       def inspect
-        "#<Hecks::Services::Application \"#{@domain.name}\" (#{@repositories.size} repositories)>"
+        "#<Hecks::Services::Runtime \"#{@domain.name}\" (#{@repositories.size} repositories)>"
       end
 
       private
@@ -107,5 +97,8 @@ module Hecks
         )
       end
     end
+
+    # Backward compatibility
+    Application = Runtime
   end
 end
