@@ -33,7 +33,6 @@ module Hecks
         mod = @domain.module_name + "Domain"
         root = File.join(@output_dir, gem_name)
 
-        FileUtils.rm_rf(root)
         FileUtils.mkdir_p(root)
 
         generate_gemspec(root, gem_name, mod)

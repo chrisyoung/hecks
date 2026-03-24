@@ -15,11 +15,13 @@ module Hecks
       class DomainGemGenerator
         module SourceBuilder
           AGGREGATE_GENERATORS = {
-            value_objects: Domain::ValueObjectGenerator,
-            commands:      Domain::CommandGenerator,
-            events:        Domain::EventGenerator,
-            policies:      Domain::PolicyGenerator,
-            subscribers:   Domain::SubscriberGenerator,
+            value_objects:  Domain::ValueObjectGenerator,
+            entities:       Domain::EntityGenerator,
+            commands:       Domain::CommandGenerator,
+            events:         Domain::EventGenerator,
+            policies:       Domain::PolicyGenerator,
+            subscribers:    Domain::SubscriberGenerator,
+            specifications: Domain::SpecificationGenerator,
           }.freeze
 
           def generate_source
@@ -49,6 +51,11 @@ module Hecks
                   agg.send(method).each do |obj|
                     src = source_for(gen, obj, aggregate_name: safe_name, **opts)
                     parts << inject_mixin(src, obj.name, "Hecks::Query")
+                  end
+                elsif method == :specifications
+                  agg.send(method).each do |obj|
+                    src = source_for(gen, obj, aggregate_name: safe_name, **opts)
+                    parts << inject_mixin(src, obj.name, "Hecks::Specification")
                   end
                 else
                   agg.send(method).each { |obj| parts << source_for(gen, obj, aggregate_name: safe_name, **opts) }

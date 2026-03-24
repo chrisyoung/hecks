@@ -47,6 +47,15 @@ module Hecks
             end
           end
 
+          unless agg.entities.empty?
+            lines << "  Entities:"
+            agg.entities.each do |ent|
+              attrs = ent.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
+              lines << "    #{ent.name} (#{attrs})"
+              ent.invariants.each { |inv| lines << "      invariant: #{inv.message}" }
+            end
+          end
+
           unless agg.commands.empty?
             lines << "  Commands:"
             agg.commands.each_with_index do |cmd, i|
@@ -81,6 +90,11 @@ module Hecks
             end
           end
 
+          unless agg.specifications.empty?
+            lines << "  Specifications:"
+            agg.specifications.each { |s| lines << "    #{s.name}" }
+          end
+
           puts lines.join("\n")
           nil
         end
@@ -102,11 +116,22 @@ module Hecks
           domain_def.queries.map(&:name)
         end
 
+        def domain_entities
+          domain_def.entities.map do |ent|
+            attrs = ent.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
+            "#{ent.name} (#{attrs})"
+          end
+        end
+
         def domain_value_objects
           domain_def.value_objects.map do |vo|
             attrs = vo.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
             "#{vo.name} (#{attrs})"
           end
+        end
+
+        def domain_specifications
+          domain_def.specifications.map(&:name)
         end
 
         def domain_policies

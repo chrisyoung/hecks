@@ -6,7 +6,7 @@
 module Hecks
   module ValidationRules
     module Naming
-    # Aggregate root name must not collide with its value object names
+    # Aggregate root name must not collide with its value object or entity names
     class NameCollisions < BaseRule
       def errors
         result = []
@@ -14,6 +14,11 @@ module Hecks
           agg.value_objects.each do |vo|
             if vo.name == agg.name
               result << "#{agg.name} has a value object with the same name as the aggregate root. Rename the value object."
+            end
+          end
+          agg.entities.each do |ent|
+            if ent.name == agg.name
+              result << "#{agg.name} has an entity with the same name as the aggregate root. Rename the entity."
             end
           end
         end

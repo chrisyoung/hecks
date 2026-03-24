@@ -20,15 +20,16 @@ module Hecks
   module DomainModel
     module Structure
     class Aggregate
-      attr_reader :name, :attributes, :value_objects, :commands,
-                  :events, :policies, :validations, :invariants, :scopes, :ports, :queries, :subscribers, :indexes
+      attr_reader :name, :attributes, :value_objects, :entities, :commands,
+                  :events, :policies, :validations, :invariants, :scopes, :ports, :queries, :subscribers, :indexes, :specifications
 
-      def initialize(name:, attributes: [], value_objects: [], commands: [],
+      def initialize(name:, attributes: [], value_objects: [], entities: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
-                     scopes: [], ports: {}, queries: [], subscribers: [], indexes: [])
+                     scopes: [], ports: {}, queries: [], subscribers: [], indexes: [], specifications: [])
         @name = name
         @attributes = attributes
         @value_objects = value_objects
+        @entities = entities
         @commands = commands
         @events = events
         @policies = policies
@@ -39,6 +40,7 @@ module Hecks
         @queries = queries
         @subscribers = subscribers
         @indexes = indexes
+        @specifications = specifications
       end
 
     end

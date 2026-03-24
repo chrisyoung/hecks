@@ -71,6 +71,11 @@ module Hecks
           lines << "#{base_indent}autoload :#{vo.name}, \"#{base}/#{vo_snake}\""
         end
 
+        aggregate.entities.each do |ent|
+          ent_snake = Hecks::Utils.underscore(ent.name)
+          lines << "#{base_indent}autoload :#{ent.name}, \"#{base}/#{ent_snake}\""
+        end
+
         lines.join("\n")
       end
 

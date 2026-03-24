@@ -34,6 +34,13 @@ module Hecks
             end
           end
 
+          unless agg.entities.empty?
+            agg.entities.each do |ent|
+              ent_attrs = ent.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
+              lines << "    Entities: #{ent.name} (#{ent_attrs})"
+            end
+          end
+
           unless agg.commands.empty?
             agg.commands.each_with_index do |cmd, i|
               event = agg.events[i]

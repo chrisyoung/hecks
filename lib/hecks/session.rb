@@ -112,6 +112,7 @@ module Hecks
       parts = []
       parts << "#{agg.attributes.size} attributes" unless agg.attributes.empty?
       parts << "#{agg.value_objects.size} value objects" unless agg.value_objects.empty?
+      parts << "#{agg.entities.size} entities" unless agg.entities.empty?
       parts << "#{agg.commands.size} commands" unless agg.commands.empty?
       parts << "#{agg.policies.size} policies" unless agg.policies.empty?
       parts.empty? ? "empty" : parts.join(", ")

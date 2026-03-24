@@ -24,6 +24,7 @@ module Hecks
             say "  #{agg.name}"
             say "    Attributes:     #{agg.attributes.map(&:name).join(', ')}"
             say "    Value Objects:  #{agg.value_objects.map(&:name).join(', ')}" unless agg.value_objects.empty?
+            say "    Entities:       #{agg.entities.map(&:name).join(', ')}" unless agg.entities.empty?
             say "    Commands:       #{agg.commands.map(&:name).join(', ')}" unless agg.commands.empty?
             say "    Events:         #{agg.events.map(&:name).join(', ')}" unless agg.events.empty?
             say "    Policies:       #{agg.policies.map(&:name).join(', ')}" unless agg.policies.empty?

@@ -25,6 +25,7 @@ module Hecks
       create_submodule(base, :Events)
       create_submodule(base, :Queries)
       create_submodule(base, :Policies)
+      create_submodule(base, :Specifications)
     end
 
     module ClassMethods
@@ -95,8 +96,9 @@ module Hecks
     def check_invariants!; end
 
     MIXINS = {
-      Commands: -> { Hecks::Command },
-      Queries:  -> { Hecks::Query },
+      Commands:       -> { Hecks::Command },
+      Queries:        -> { Hecks::Query },
+      Specifications: -> { Hecks::Specification },
     }.freeze
 
     # Auto-discovery: creates a submodule that autoloads constants by convention

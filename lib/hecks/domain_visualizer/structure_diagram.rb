@@ -29,6 +29,16 @@ module Hecks
             lines << "    }"
             lines << "    #{agg.name} *-- #{vo.name}"
           end
+
+          agg.entities.each do |ent|
+            lines << "    class #{ent.name} {"
+            lines << "        +id : UUID"
+            ent.attributes.each do |attr|
+              lines << "        #{attribute_label(attr)}"
+            end
+            lines << "    }"
+            lines << "    #{agg.name} *-- #{ent.name}"
+          end
         end
 
         references(lines)

@@ -16,6 +16,7 @@ require_relative "spec_generator/aggregate_spec"
 require_relative "spec_generator/value_object_spec"
 require_relative "spec_generator/command_spec"
 require_relative "spec_generator/event_spec"
+require_relative "spec_generator/entity_spec"
 
 module Hecks
   module Generators
@@ -26,6 +27,7 @@ module Hecks
       include ValueObjectSpec
       include CommandSpec
       include EventSpec
+      include EntitySpec
 
       def initialize(domain)
         @domain = domain

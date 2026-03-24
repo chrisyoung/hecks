@@ -109,6 +109,12 @@
         "status": {
           "type": "string"
         },
+        "ledger": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Account::LedgerEntry"
+          }
+        },
         "created_at": {
           "type": "string",
           "format": "date-time"
@@ -116,6 +122,30 @@
         "updated_at": {
           "type": "string",
           "format": "date-time"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "Account::LedgerEntry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string"
+        },
+        "entry_type": {
+          "type": "string"
+        },
+        "posted_at": {
+          "type": "string"
         }
       },
       "required": [

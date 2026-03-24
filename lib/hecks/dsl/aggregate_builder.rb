@@ -20,12 +20,13 @@ module Hecks
     class AggregateBuilder
       include AttributeCollector
 
-      attr_reader :attributes, :commands, :value_objects, :policies, :validations, :invariants, :scopes, :ports, :queries, :subscribers, :indexes
+      attr_reader :attributes, :commands, :value_objects, :entities, :policies, :validations, :invariants, :scopes, :ports, :queries, :subscribers, :indexes, :specifications
 
       def initialize(name)
         @name = name
         @attributes = []
         @value_objects = []
+        @entities = []
         @commands = []
         @policies = []
         @validations = []
@@ -35,12 +36,19 @@ module Hecks
         @queries = []
         @subscribers = []
         @indexes = []
+        @specifications = []
       end
 
       def value_object(name, &block)
         builder = ValueObjectBuilder.new(name)
         builder.instance_eval(&block) if block
         @value_objects << builder.build
+      end
+
+      def entity(name, &block)
+        builder = EntityBuilder.new(name)
+        builder.instance_eval(&block) if block
+        @entities << builder.build
       end
 
       def command(name, &block)
@@ -79,6 +87,10 @@ module Hecks
         @queries << DomainModel::Behavior::Query.new(name: name, block: block)
       end
 
+      def specification(name, &block)
+        @specifications << DomainModel::Behavior::Specification.new(name: name, block: block)
+      end
+
       def index(*fields, unique: false)
         @indexes << { fields: fields.map(&:to_sym), unique: unique }
       end
@@ -103,6 +115,7 @@ module Hecks
           name: @name,
           attributes: @attributes,
           value_objects: @value_objects,
+          entities: @entities,
           commands: @commands,
           events: events,
           policies: @policies,
@@ -112,7 +125,8 @@ module Hecks
           ports: @ports,
           queries: @queries,
           subscribers: @subscribers,
-          indexes: @indexes
+          indexes: @indexes,
+          specifications: @specifications
         )
       end
 

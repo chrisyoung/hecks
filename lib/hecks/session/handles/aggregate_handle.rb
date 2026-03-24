@@ -43,8 +43,6 @@ module Hecks
       self
     end
 
-
-
     def remove(name)
       attrs = @builder.attributes
       removed = attrs.reject! { |a| a.name == name.to_sym }
@@ -60,6 +58,13 @@ module Hecks
       name = normalize_name(name)
       @builder.value_object(name, &block)
       puts "  + value_object #{name}"
+      self
+    end
+
+    def entity(name, &block)
+      name = normalize_name(name)
+      @builder.entity(name, &block)
+      puts "  + entity #{name}"
       self
     end
 
@@ -109,6 +114,13 @@ module Hecks
       self
     end
 
+    def specification(name, &block)
+      name = normalize_name(name)
+      @builder.specification(name, &block)
+      puts "  + specification #{name}"
+      self
+    end
+
     def on_event(event_name, async: false, &block)
       @builder.on_event(event_name, async: async, &block)
       puts "  + subscriber on #{event_name}"
@@ -121,6 +133,7 @@ module Hecks
     alias_method :attr_reader, :attr
     alias_method :remove_attribute, :remove
     alias_method :add_value_object, :value_object
+    alias_method :add_entity, :entity
     alias_method :add_command, :command
     alias_method :add_validation, :validation
     alias_method :add_invariant, :invariant
@@ -128,6 +141,7 @@ module Hecks
     alias_method :add_verb, :verb
     alias_method :add_query, :query
     alias_method :add_scope, :scope
+    alias_method :add_specification, :specification
 
     def attributes
       @builder.attributes.map(&:name)
@@ -139,6 +153,10 @@ module Hecks
 
     def value_objects
       @builder.value_objects.map { |vo| vo.is_a?(DomainModel::Structure::ValueObject) ? vo.name : vo.build.name }
+    end
+
+    def entities
+      @builder.entities.map { |ent| ent.is_a?(DomainModel::Structure::Entity) ? ent.name : ent.build.name }
     end
 
     # DSL helpers for use in blocks

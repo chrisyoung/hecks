@@ -2,8 +2,9 @@
 #
 # Mixin that writes generated domain files to disk — aggregates, value objects,
 # commands, events, policies, queries, ports, adapters, gemspec, entry point,
-# and hecks_domain.rb (serialized DSL). Part of DomainGemGenerator, consumed
-# by DomainGemGenerator#generate.
+# and hecks_domain.rb (serialized DSL). Preserves custom call methods in
+# command files across regeneration cycles. Part of DomainGemGenerator,
+# consumed by DomainGemGenerator#generate.
 #
 #   # Mixed into DomainGemGenerator:
 #   generate_aggregates(root, gem_name, mod)
@@ -51,9 +52,15 @@ module Hecks
                 write_file(root, "#{base}/#{Hecks::Utils.underscore(vo.name)}.rb", vo_gen.generate)
               end
 
+              agg.entities.each do |ent|
+                ent_gen = Domain::EntityGenerator.new(ent, domain_module: mod, aggregate_name: safe_name)
+                write_file(root, "#{base}/#{Hecks::Utils.underscore(ent.name)}.rb", ent_gen.generate)
+              end
+
               agg.commands.each_with_index do |cmd, i|
                 cmd_gen = Domain::CommandGenerator.new(cmd, domain_module: mod, aggregate_name: safe_name, aggregate: agg, event: agg.events[i])
-                write_file(root, "#{base}/commands/#{Hecks::Utils.underscore(cmd.name)}.rb", cmd_gen.generate)
+                cmd_path = "#{base}/commands/#{Hecks::Utils.underscore(cmd.name)}.rb"
+                write_command_file(root, cmd_path, cmd_gen.generate, cmd)
               end
 
               agg.events.each do |evt|
@@ -71,8 +78,13 @@ module Hecks
                 write_file(root, "#{base}/subscribers/#{Hecks::Utils.underscore(sub.name)}.rb", sub_gen.generate)
               end
 
+              agg.specifications.each do |spec|
+                spec_gen = Domain::SpecificationGenerator.new(spec, domain_module: mod, aggregate_name: safe_name)
+                write_file(root, "#{base}/specifications/#{Hecks::Utils.underscore(spec.name)}.rb", spec_gen.generate)
+              end
+
               # Create conventional folders even when empty
-              %w[commands events policies queries subscribers].each do |dir|
+              %w[commands events policies queries subscribers specifications].each do |dir|
                 FileUtils.mkdir_p(File.join(root, base, dir))
               end
             end
@@ -113,6 +125,23 @@ module Hecks
             return code if autoloads.strip.empty?
             marker = "class #{agg_name}\n"
             code.sub(marker, "#{marker}#{autoloads}\n\n")
+          end
+
+          # Write a command file, preserving any custom call method from an
+          # existing file on disk. If the DSL defines a call_body, that always
+          # wins. Otherwise, if the existing file has a call method that differs
+          # from the auto-generated one, splice it into the new content.
+          def write_command_file(root, relative_path, new_content, command)
+            full_path = File.join(root, relative_path)
+            if !command.call_body && File.exist?(full_path)
+              existing_source = File.read(full_path)
+              existing_call = Hecks::Utils.extract_call_method(existing_source)
+              generated_call = Hecks::Utils.extract_call_method(new_content)
+              if existing_call && generated_call && existing_call.strip != generated_call.strip
+                new_content = new_content.sub(generated_call, existing_call)
+              end
+            end
+            write_file(root, relative_path, new_content)
           end
 
           def write_file(root, relative_path, content)
