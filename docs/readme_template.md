@@ -46,9 +46,9 @@ Describe your business in Ruby. Hecks generates the code.
 
 {{cli_commands}}
 
-## Features
+## All Features
 
-{{features}}
+See [FEATURES.md](FEATURES.md) for the complete feature list.
 
 ## Banking Example
 
