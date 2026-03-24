@@ -68,6 +68,16 @@ module Hecks
         end
       end
 
+      agg.entities.each do |ent|
+        lines << "#{an(ent.name)} is an entity within #{an(agg.name, capitalize: false)}, with its own identity."
+        ent.attributes.each do |attr|
+          lines << "  #{an(ent.name)} has #{article(attr.name.to_s)} #{attr.name} (#{attr.type})."
+        end
+        ent.invariants.each do |inv|
+          lines << "  #{inv.message}. (invariant)"
+        end
+      end
+
       agg.commands.each_with_index do |cmd, i|
         lines << command_statement(agg.name, cmd, agg.events[i])
       end

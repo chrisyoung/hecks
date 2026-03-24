@@ -31,6 +31,17 @@ module Hecks
           end
         end
 
+        unless agg.entities.empty?
+          lines << "  Entities:"
+          agg.entities.each do |ent|
+            attrs = ent.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
+            lines << "    #{ent.name} (#{attrs})"
+            ent.invariants.each do |inv|
+              lines << "      invariant: #{inv.message}"
+            end
+          end
+        end
+
         unless agg.commands.empty?
           lines << "  Commands:"
           agg.commands.each_with_index do |cmd, i|
@@ -59,6 +70,11 @@ module Hecks
           agg.policies.each do |pol|
             lines << "    #{pol.name} (on #{pol.event_name} -> #{pol.trigger_command})"
           end
+        end
+
+        unless agg.specifications.empty?
+          lines << "  Specifications:"
+          agg.specifications.each { |s| lines << "    #{s.name}" }
         end
 
         puts lines.join("\n")

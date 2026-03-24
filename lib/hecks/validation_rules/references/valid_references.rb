@@ -13,6 +13,7 @@ module Hecks
         result = []
         all_aggregate_names = @domain.aggregates.map(&:name)
         all_vo_names = @domain.aggregates.flat_map { |a| a.value_objects.map(&:name) }
+        all_entity_names = @domain.aggregates.flat_map { |a| a.entities.map(&:name) }
 
         @domain.aggregates.each do |agg|
           agg.attributes.select(&:reference?).each do |attr|
@@ -21,6 +22,12 @@ module Hecks
             # Check if referencing a value object instead of an aggregate
             if all_vo_names.include?(ref_name) && !all_aggregate_names.include?(ref_name)
               result << "#{agg.name} references #{ref_name} which is a value object, not an aggregate root. References must target aggregate roots."
+              next
+            end
+
+            # Check if referencing an entity instead of an aggregate
+            if all_entity_names.include?(ref_name) && !all_aggregate_names.include?(ref_name)
+              result << "#{agg.name} references #{ref_name} which is an entity, not an aggregate root. References must target aggregate roots."
               next
             end
 

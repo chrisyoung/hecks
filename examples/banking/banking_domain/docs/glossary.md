@@ -17,6 +17,12 @@ An Account has a balance (Float).
 An Account has an account_type (String).
 An Account has a daily_limit (Float).
 An Account has a status (String).
+An Account has many LedgerEntries.
+A LedgerEntry is an entity within an Account, with its own identity.
+  A LedgerEntry has an amount (Float).
+  A LedgerEntry has a description (String).
+  A LedgerEntry has an entry_type (String).
+  A LedgerEntry has a posted_at (String).
 You can open an Account with customer id, account type, and daily limit. When this happens, an Account is opened. (command)
 You can deposit an Account with account id and amount. When this happens, an Account is deposited. (command)
 You can withdraw an Account with account id and amount. When this happens, an Account is withdrew. (command)

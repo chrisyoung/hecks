@@ -31,6 +31,13 @@ module Hecks
             end
           end
         end
+        aggregate.entities.each do |ent|
+          builder.entity(ent.name) do
+            ent.attributes.each do |attr|
+              attribute attr.name, attr.type
+            end
+          end
+        end
         aggregate.commands.each do |cmd|
           builder.command(cmd.name) do
             cmd.attributes.each do |attr|
@@ -56,6 +63,9 @@ module Hecks
             on pol.event_name
             trigger pol.trigger_command
           end
+        end
+        aggregate.specifications.each do |spec|
+          builder.specification(spec.name, &spec.block)
         end
         builder
       end

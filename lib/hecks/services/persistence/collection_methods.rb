@@ -14,6 +14,7 @@ module Hecks
       def self.bind(klass, aggregate, repo)
         aggregate.attributes.select(&:list?).each do |list_attr|
           vo = aggregate.value_objects.find { |v| v.name == list_attr.type.to_s }
+          vo ||= aggregate.entities.find { |e| e.name == list_attr.type.to_s }
           next unless vo
           attr_name = list_attr.name
           vo_class = begin; klass.const_get(vo.name); rescue NameError; nil; end

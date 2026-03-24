@@ -74,6 +74,28 @@ module Hecks
         end
 
         server.define_tool(
+          name: "add_entity",
+          description: "Add a sub-entity with identity (e.g. LedgerEntry on Account)",
+          input_schema: {
+            type: "object",
+            properties: {
+              aggregate: { type: "string" },
+              name: { type: "string" },
+              attributes: { type: "array", items: { type: "object", properties: { name: { type: "string" }, type: { type: "string" } } } }
+            },
+            required: ["aggregate", "name"]
+          }
+        ) do |args|
+          ctx.ensure_session!
+          handle = ctx.session.aggregate(args["aggregate"])
+          resolved = (args["attributes"] || []).map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
+          handle.add_entity(args["name"]) do
+            resolved.each { |name, type| attribute name, type }
+          end
+          "Added entity #{args["name"]} to #{args["aggregate"]}"
+        end
+
+        server.define_tool(
           name: "add_validation",
           description: "Add a requirement (e.g. name must be present)",
           input_schema: {

@@ -45,6 +45,21 @@ module Hecks
           lines << "    end"
         end
 
+        agg.entities.each do |ent|
+          lines << ""
+          lines << "    entity \"#{ent.name}\" do"
+          ent.attributes.each do |attr|
+            lines << "      attribute :#{attr.name}, #{dsl_type(attr)}"
+          end
+          ent.invariants.each do |inv|
+            lines << ""
+            lines << "      invariant \"#{inv.message}\" do"
+            lines << "        #{Hecks::Utils.block_source(inv.block)}"
+            lines << "      end"
+          end
+          lines << "    end"
+        end
+
         agg.validations.each do |v|
           lines << ""
           lines << "    validation :#{v.field}, #{v.rules.inspect}"
@@ -68,6 +83,15 @@ module Hecks
           lines << ""
           lines << "    query \"#{q.name}\" do"
           lines << "      #{Hecks::Utils.block_source(q.block)}"
+          lines << "    end"
+        end
+
+        agg.specifications.each do |spec|
+          lines << ""
+          params = spec.block&.parameters&.map { |_, n| n.to_s } || []
+          param_str = params.empty? ? "|object|" : "|#{params.join(", ")}|"
+          lines << "    specification \"#{spec.name}\" do #{param_str}"
+          lines << "      #{Hecks::Utils.block_source(spec.block)}"
           lines << "    end"
         end
 

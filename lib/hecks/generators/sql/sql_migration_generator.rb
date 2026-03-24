@@ -29,6 +29,14 @@ module Hecks
               tables << generate_value_object_table(vo, agg)
             end
           end
+
+          agg.entities.each do |ent|
+            # Entities with list attributes get their own table (with id column)
+            list_attrs = agg.attributes.select { |a| a.list? && a.type.to_s == ent.name }
+            unless list_attrs.empty?
+              tables << generate_entity_table(ent, agg)
+            end
+          end
         end
 
         tables.join("\n\n")
@@ -65,6 +73,24 @@ module Hecks
 
         vo.attributes.each_with_index do |attr, i|
           comma = i < vo.attributes.size - 1 ? "," : ""
+          lines << "  #{attr.name} #{sql_type(attr)}#{comma}"
+        end
+
+        lines << ");"
+        lines.join("\n")
+      end
+
+      def generate_entity_table(ent, parent_agg)
+        parent_table = table_name(parent_agg.name)
+        ent_table = "#{parent_table}_#{table_name(ent.name)}"
+
+        lines = []
+        lines << "CREATE TABLE #{ent_table} ("
+        lines << "  id VARCHAR(36) PRIMARY KEY,"
+        lines << "  #{Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(parent_agg.name))}_id VARCHAR(36) NOT NULL REFERENCES #{parent_table}(id),"
+
+        ent.attributes.each_with_index do |attr, i|
+          comma = i < ent.attributes.size - 1 ? "," : ""
           lines << "  #{attr.name} #{sql_type(attr)}#{comma}"
         end
 

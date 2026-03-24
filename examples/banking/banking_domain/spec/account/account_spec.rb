@@ -7,7 +7,8 @@ RSpec.describe BankingDomain::Account do
           balance: 1.0,
           account_type: "example",
           daily_limit: 1.0,
-          status: "example"
+          status: "example",
+          ledger: []
         ) }
 
     it "assigns an id" do
@@ -33,6 +34,10 @@ RSpec.describe BankingDomain::Account do
     it "sets status" do
       expect(account.status).to eq("example")
     end
+
+    it "sets ledger" do
+      expect(account.ledger).to eq([])
+    end
   end
 
   describe "account_type validation" do
@@ -43,7 +48,8 @@ RSpec.describe BankingDomain::Account do
           balance: 1.0,
           account_type: nil,
           daily_limit: 1.0,
-          status: "example"
+          status: "example",
+          ledger: []
         )
       }.to raise_error(BankingDomain::ValidationError, /account_type/)
     end
@@ -58,6 +64,7 @@ RSpec.describe BankingDomain::Account do
           account_type: "example",
           daily_limit: 1.0,
           status: "example",
+          ledger: [],
           id: id
         )
       b = described_class.new(
@@ -66,6 +73,7 @@ RSpec.describe BankingDomain::Account do
           account_type: "example",
           daily_limit: 1.0,
           status: "example",
+          ledger: [],
           id: id
         )
       expect(a).to eq(b)
@@ -77,14 +85,16 @@ RSpec.describe BankingDomain::Account do
           balance: 1.0,
           account_type: "example",
           daily_limit: 1.0,
-          status: "example"
+          status: "example",
+          ledger: []
         )
       b = described_class.new(
           customer_id: "ref-id-123",
           balance: 1.0,
           account_type: "example",
           daily_limit: 1.0,
-          status: "example"
+          status: "example",
+          ledger: []
         )
       expect(a).not_to eq(b)
     end

@@ -24,6 +24,9 @@ module Hecks
               agg.value_objects.each do |vo|
                 write_file(root, "spec/#{snake}/#{Hecks::Utils.underscore(vo.name)}_spec.rb", sg.generate_value_object_spec(vo, agg))
               end
+              agg.entities.each do |ent|
+                write_file(root, "spec/#{snake}/#{Hecks::Utils.underscore(ent.name)}_spec.rb", sg.generate_entity_spec(ent, agg))
+              end
               agg.commands.each do |cmd|
                 write_file(root, "spec/#{snake}/commands/#{Hecks::Utils.underscore(cmd.name)}_spec.rb", sg.generate_command_spec(cmd, agg))
               end

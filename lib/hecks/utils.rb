@@ -129,6 +129,39 @@ module Hecks
       names
     end
 
+    # Extract a `def call` method body from Ruby source code.
+    # Returns the full method text (from `def call` to its matching `end`),
+    # or nil if no call method is found.
+    #
+    #   source = "  def call\n    Pizza.new(name: name)\n  end\n"
+    #   extract_call_method(source)  # => "  def call\n    Pizza.new(name: name)\n  end"
+    #
+    def extract_call_method(source)
+      return nil unless source
+      lines = source.lines
+      start_idx = lines.index { |l| l.strip.match?(/\Adef call\b/) }
+      return nil unless start_idx
+
+      # Track nesting: `def call` itself is the first opener
+      depth = 1
+      end_idx = nil
+      lines[(start_idx + 1)..].each_with_index do |line, i|
+        stripped = line.strip
+        # Count block-opening keywords at start of line (not inline modifiers)
+        if stripped.match?(/\A(def|class|module|if|unless|case|begin|while|until|for)\b/)
+          depth += 1
+        end
+        depth += 1 if stripped.match?(/\bdo\s*(\|[^|]*\|)?\s*$/)
+        depth -= 1 if stripped == "end"
+        if depth == 0
+          end_idx = start_idx + 1 + i
+          break
+        end
+      end
+      return nil unless end_idx
+      lines[start_idx..end_idx].join.rstrip
+    end
+
     # Serializes an object to a hash using attribute metadata.
     def serialize_object(obj)
       object_attr_names(obj).each_with_object({}) do |name, h|

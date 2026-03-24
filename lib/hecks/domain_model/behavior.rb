@@ -20,6 +20,7 @@ module Hecks
       autoload :Policy,      "hecks/domain_model/behavior/policy"
       autoload :Query,            "hecks/domain_model/behavior/query"
       autoload :EventSubscriber, "hecks/domain_model/behavior/event_subscriber"
+      autoload :Specification,   "hecks/domain_model/behavior/specification"
     end
   end
 end

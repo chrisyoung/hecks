@@ -10,6 +10,7 @@
 #   Structure::Domain         # root container holding aggregates
 #   Structure::Aggregate      # DDD aggregate with commands, events, etc.
 #   Structure::ValueObject    # immutable object defined by its attributes
+#   Structure::Entity         # mutable sub-entity with identity (UUID)
 #   Structure::Attribute      # typed field on any structure
 #
 module Hecks
@@ -18,6 +19,7 @@ module Hecks
       autoload :Domain,         "hecks/domain_model/structure/domain"
       autoload :Aggregate,      "hecks/domain_model/structure/aggregate"
       autoload :ValueObject,    "hecks/domain_model/structure/value_object"
+      autoload :Entity,         "hecks/domain_model/structure/entity"
       autoload :Attribute,      "hecks/domain_model/structure/attribute"
       autoload :Validation,     "hecks/domain_model/structure/validation"
       autoload :Invariant,      "hecks/domain_model/structure/invariant"

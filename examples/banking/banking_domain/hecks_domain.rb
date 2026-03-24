@@ -24,8 +24,20 @@ Hecks.domain "Banking" do
     attribute :account_type, String
     attribute :daily_limit, Float
     attribute :status, String
+    attribute :ledger, list_of("LedgerEntry")
+
+    entity "LedgerEntry" do
+      attribute :amount, Float
+      attribute :description, String
+      attribute :entry_type, String
+      attribute :posted_at, String
+    end
 
     validation :account_type, {:presence=>true}
+
+    specification "LargeWithdrawal" do |withdrawal|
+      withdrawal.amount > 10_000
+    end
 
     command "OpenAccount" do
       attribute :customer_id, String
@@ -85,6 +97,10 @@ Hecks.domain "Banking" do
     validation :principal, {:presence=>true}
 
     validation :rate, {:presence=>true}
+
+    specification "HighRisk" do |loan|
+      loan.principal > 50_000 && loan.rate > 10
+    end
 
     command "IssueLoan" do
       attribute :customer_id, String

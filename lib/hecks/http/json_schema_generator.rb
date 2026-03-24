@@ -30,6 +30,7 @@ module Hecks
         @domain.aggregates.each do |agg|
           defs[agg.name] = aggregate_def(agg)
           agg.value_objects.each { |vo| defs["#{agg.name}::#{vo.name}"] = value_object_def(vo) }
+          agg.entities.each { |ent| defs["#{agg.name}::#{ent.name}"] = entity_def(ent) }
           agg.commands.each { |cmd| defs[cmd.name] = command_def(cmd) }
           agg.events.each { |evt| defs[evt.name] = event_def(evt) }
           agg.queries.each { |q| defs["#{agg.name}.#{Hecks::Utils.underscore(q.name)}"] = query_def(agg, q) }
@@ -43,7 +44,9 @@ module Hecks
         agg.attributes.each do |attr|
           if attr.list?
             vo = agg.value_objects.find { |v| v.name == attr.type.to_s }
-            props[attr.name] = { type: "array", items: vo ? { "$ref" => "#/definitions/#{agg.name}::#{vo.name}" } : { type: "object" } }
+            ent = agg.entities.find { |e| e.name == attr.type.to_s } unless vo
+            child = vo || ent
+            props[attr.name] = { type: "array", items: child ? { "$ref" => "#/definitions/#{agg.name}::#{child.name}" } : { type: "object" } }
           else
             props[attr.name] = property(attr)
           end
@@ -57,6 +60,12 @@ module Hecks
         props = {}
         vo.attributes.each { |attr| props[attr.name] = property(attr) }
         { type: "object", properties: props }
+      end
+
+      def entity_def(ent)
+        props = { id: { type: "string", format: "uuid" } }
+        ent.attributes.each { |attr| props[attr.name] = property(attr) }
+        { type: "object", properties: props, required: ["id"] }
       end
 
       def command_def(cmd)

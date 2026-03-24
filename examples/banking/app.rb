@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
 #
-# Working banking domain — all logic defined through the Hecks DSL.
+# Working banking domain — structure in DSL, logic in generated files.
 #
 # Run from the hecks project root:
 #   ruby -Ilib examples/banking/app.rb
 #
 require "hecks"
+require "ostruct"
 
 domain = Hecks.domain "Banking" do
   aggregate "Customer" do
@@ -16,17 +17,10 @@ domain = Hecks.domain "Banking" do
     command "RegisterCustomer" do
       attribute :name, String
       attribute :email, String
-      call do
-        Customer.new(name: name, email: email, status: "active")
-      end
     end
 
     command "SuspendCustomer" do
       attribute :customer_id, String
-      call do
-        existing = repository.find(customer_id)
-        Customer.new(id: existing.id, name: existing.name, email: existing.email, status: "suspended")
-      end
     end
 
     validation :name, presence: true
@@ -39,50 +33,40 @@ domain = Hecks.domain "Banking" do
     attribute :account_type, String
     attribute :daily_limit, Float
     attribute :status, String, default: "open"
+    attribute :ledger, list_of("LedgerEntry")
+
+    entity "LedgerEntry" do
+      attribute :amount, Float
+      attribute :description, String
+      attribute :entry_type, String
+      attribute :posted_at, String
+    end
 
     command "OpenAccount" do
       attribute :customer_id, String
       attribute :account_type, String
       attribute :daily_limit, Float
-      call do
-        Account.new(customer_id: customer_id, account_type: account_type, daily_limit: daily_limit, balance: 0.0, status: "open")
-      end
     end
 
     command "Deposit" do
       attribute :account_id, String
       attribute :amount, Float
-      call do
-        existing = repository.find(account_id)
-        raise "Account not found" unless existing
-        Account.new(id: existing.id, customer_id: existing.customer_id, account_type: existing.account_type, daily_limit: existing.daily_limit, balance: existing.balance + amount, status: existing.status)
-      end
     end
 
     command "Withdraw" do
       attribute :account_id, String
       attribute :amount, Float
-      call do
-        existing = repository.find(account_id)
-        raise "Account not found" unless existing
-        new_balance = existing.balance - amount
-        raise "Insufficient funds: balance $#{existing.balance}, withdrawal $#{amount}" if new_balance < 0
-        raise "Exceeds daily limit of $#{existing.daily_limit}" if amount > existing.daily_limit
-        Account.new(id: existing.id, customer_id: existing.customer_id, account_type: existing.account_type, daily_limit: existing.daily_limit, balance: new_balance, status: existing.status)
-      end
     end
 
     command "CloseAccount" do
       attribute :account_id, String
-      call do
-        existing = repository.find(account_id)
-        raise "Account not found" unless existing
-        raise "Cannot close account with balance $#{existing.balance}" if existing.balance > 0
-        Account.new(id: existing.id, customer_id: existing.customer_id, account_type: existing.account_type, daily_limit: existing.daily_limit, balance: 0.0, status: "closed")
-      end
     end
 
     validation :account_type, presence: true
+
+    specification "LargeWithdrawal" do |withdrawal|
+      withdrawal.amount > 10_000
+    end
   end
 
   aggregate "Transfer" do
@@ -97,30 +81,14 @@ domain = Hecks.domain "Banking" do
       attribute :to_account_id, String
       attribute :amount, Float
       attribute :memo, String
-      call do
-        Transfer.new(from_account_id: from_account_id, to_account_id: to_account_id, amount: amount, memo: memo, status: "pending")
-      end
     end
 
     command "CompleteTransfer" do
       attribute :transfer_id, String
-      call do
-        existing = repository.find(transfer_id)
-        raise "Transfer not found" unless existing
-        raise "Transfer already #{existing.status}" unless existing.status == "pending"
-        Account.withdraw(account_id: existing.from_account_id, amount: existing.amount)
-        Account.deposit(account_id: existing.to_account_id, amount: existing.amount)
-        Transfer.new(id: existing.id, from_account_id: existing.from_account_id, to_account_id: existing.to_account_id, amount: existing.amount, memo: existing.memo, status: "completed")
-      end
     end
 
     command "RejectTransfer" do
       attribute :transfer_id, String
-      call do
-        existing = repository.find(transfer_id)
-        raise "Transfer not found" unless existing
-        Transfer.new(id: existing.id, from_account_id: existing.from_account_id, to_account_id: existing.to_account_id, amount: existing.amount, memo: existing.memo, status: "rejected")
-      end
     end
 
     validation :amount, presence: true
@@ -141,45 +109,31 @@ domain = Hecks.domain "Banking" do
       attribute :principal, Float
       attribute :rate, Float
       attribute :term_months, Integer
-      call do
-        Loan.new(customer_id: customer_id, account_id: account_id, principal: principal, rate: rate, term_months: term_months, remaining_balance: principal, status: "active")
-      end
     end
 
     command "MakePayment" do
       attribute :loan_id, String
       attribute :amount, Float
-      call do
-        existing = repository.find(loan_id)
-        raise "Loan not found" unless existing
-        raise "Loan is #{existing.status}" unless existing.status == "active"
-        new_balance = existing.remaining_balance - amount
-        new_status = new_balance <= 0 ? "paid_off" : "active"
-        Loan.new(id: existing.id, customer_id: existing.customer_id, account_id: existing.account_id, principal: existing.principal, rate: existing.rate, term_months: existing.term_months, remaining_balance: [new_balance, 0.0].max, status: new_status)
-      end
     end
 
     command "DefaultLoan" do
       attribute :loan_id, String
       attribute :customer_id, String
-      call do
-        existing = repository.find(loan_id)
-        raise "Loan not found" unless existing
-        Loan.new(id: existing.id, customer_id: existing.customer_id, account_id: existing.account_id, principal: existing.principal, rate: existing.rate, term_months: existing.term_months, remaining_balance: existing.remaining_balance, status: "defaulted")
-      end
     end
 
     validation :principal, presence: true
     validation :rate, presence: true
 
-    # Deposit principal into linked account when loan is issued
+    specification "HighRisk" do |loan|
+      loan.principal > 50_000 && loan.rate > 10
+    end
+
     policy "DisburseFunds" do
       on "IssuedLoan"
       trigger "Deposit"
       map account_id: :account_id, principal: :amount
     end
 
-    # Suspend customer on default
     policy "SuspendOnDefault" do
       on "DefaultedLoan"
       trigger "SuspendCustomer"
@@ -196,6 +150,7 @@ puts "Valid: #{valid}"
 errors.each { |e| puts "  - #{e}" } unless valid
 exit(1) unless valid
 
+# Build regenerates structure but preserves custom call methods
 Hecks.build(domain, version: "1.0.0", output_dir: __dir__)
 $LOAD_PATH.unshift(File.join(__dir__, "banking_domain", "lib"))
 require "banking_domain"
@@ -280,6 +235,36 @@ bad_loan = Loan.default(loan_id: bad_loan.id, customer_id: bob.id)
 puts "Loan status: #{bad_loan.status}"
 bob = Customer.find(bob.id)
 puts "Bob status: #{bob.status}"
+
+puts "\n--- Specifications ---"
+high_risk = Loan::Specifications::HighRisk.new
+puts "Alice's $25k loan high risk? #{high_risk.satisfied_by?(loan)}"
+big_loan = OpenStruct.new(principal: 100_000, rate: 15)
+puts "Hypothetical $100k/15% loan high risk? #{high_risk.satisfied_by?(big_loan)}"
+
+large_wd = Account::Specifications::LargeWithdrawal.new
+small = OpenStruct.new(amount: 500)
+big = OpenStruct.new(amount: 15_000)
+puts "Withdrawal $500 large? #{large_wd.satisfied_by?(small)}"
+puts "Withdrawal $15k large? #{large_wd.satisfied_by?(big)}"
+
+# Compose specifications
+not_high_risk = high_risk.not
+puts "Composed not-high-risk for Alice's loan: #{not_high_risk.satisfied_by?(loan)}"
+
+puts "\n--- Ledger entries (sub-entities with identity) ---"
+entry1 = BankingDomain::Account::LedgerEntry.new(
+  amount: 5000.0, description: "Initial deposit", entry_type: "credit", posted_at: Time.now.to_s
+)
+entry2 = BankingDomain::Account::LedgerEntry.new(
+  amount: 1500.0, description: "ATM withdrawal", entry_type: "debit", posted_at: Time.now.to_s
+)
+puts "Entry 1 id: #{entry1.id[0..7]}... amount: $#{"%.2f" % entry1.amount} (#{entry1.entry_type})"
+puts "Entry 2 id: #{entry2.id[0..7]}... amount: $#{"%.2f" % entry2.amount} (#{entry2.entry_type})"
+puts "Entries equal? #{entry1 == entry2}"
+puts "Entry mutable? #{!entry1.frozen?}"
+entry1.amount = 5500.0
+puts "Entry 1 updated amount: $#{"%.2f" % entry1.amount}"
 
 puts "\n--- Final state ---"
 puts "Customers: #{Customer.count}"

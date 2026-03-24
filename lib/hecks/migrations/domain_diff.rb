@@ -43,6 +43,7 @@ module Hecks
         else
           result.concat(diff_attributes(old_agg, new_agg))
           result.concat(diff_value_objects(old_agg, new_agg))
+          result.concat(diff_entities(old_agg, new_agg))
           result.concat(diff_indexes(old_agg, new_agg))
         end
       end
@@ -114,6 +115,33 @@ module Hecks
       (old_vo_names - new_vo_names).each do |name|
         changes << Change.new(
           kind: :remove_value_object,
+          context: nil,
+          aggregate: new_agg.name,
+          details: { name: name }
+        )
+      end
+
+      changes
+    end
+
+    def diff_entities(old_agg, new_agg)
+      changes = []
+      old_ent_names = (old_agg.entities || []).map(&:name)
+      new_ent_names = (new_agg.entities || []).map(&:name)
+
+      (new_ent_names - old_ent_names).each do |name|
+        ent = new_agg.entities.find { |e| e.name == name }
+        changes << Change.new(
+          kind: :add_entity,
+          context: nil,
+          aggregate: new_agg.name,
+          details: { name: ent.name, attributes: ent.attributes }
+        )
+      end
+
+      (old_ent_names - new_ent_names).each do |name|
+        changes << Change.new(
+          kind: :remove_entity,
           context: nil,
           aggregate: new_agg.name,
           details: { name: name }
