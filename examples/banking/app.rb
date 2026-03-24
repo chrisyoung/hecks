@@ -1,163 +1,18 @@
 #!/usr/bin/env ruby
 #
-# Working banking domain — structure in DSL, logic in generated files.
+# Working banking domain — structure in hecks_domain.rb, logic in generated files.
 #
 # Run from the hecks project root:
 #   ruby -Ilib examples/banking/app.rb
+#   ruby -Ilib examples/banking/app.rb --sqlite
 #
 require "hecks"
 require "ostruct"
 
-domain = Hecks.domain "Banking" do
-  aggregate "Customer" do
-    attribute :name, String
-    attribute :email, String
-    attribute :status, String, default: "active"
+adapter = ARGV.include?("--sqlite") ? :sqlite : :memory
+app = Hecks.boot(__dir__, adapter: adapter)
 
-    command "RegisterCustomer" do
-      attribute :name, String
-      attribute :email, String
-    end
-
-    command "SuspendCustomer" do
-      attribute :customer_id, String
-    end
-
-    validation :name, presence: true
-    validation :email, presence: true
-  end
-
-  aggregate "Account" do
-    attribute :customer_id, reference_to("Customer")
-    attribute :balance, Float
-    attribute :account_type, String
-    attribute :daily_limit, Float
-    attribute :status, String, default: "open"
-    attribute :ledger, list_of("LedgerEntry")
-
-    entity "LedgerEntry" do
-      attribute :amount, Float
-      attribute :description, String
-      attribute :entry_type, String
-      attribute :posted_at, String
-    end
-
-    command "OpenAccount" do
-      attribute :customer_id, String
-      attribute :account_type, String
-      attribute :daily_limit, Float
-    end
-
-    command "Deposit" do
-      attribute :account_id, String
-      attribute :amount, Float
-    end
-
-    command "Withdraw" do
-      attribute :account_id, String
-      attribute :amount, Float
-    end
-
-    command "CloseAccount" do
-      attribute :account_id, String
-    end
-
-    validation :account_type, presence: true
-
-    specification "LargeWithdrawal" do |withdrawal|
-      withdrawal.amount > 10_000
-    end
-  end
-
-  aggregate "Transfer" do
-    attribute :from_account_id, reference_to("Account")
-    attribute :to_account_id, reference_to("Account")
-    attribute :amount, Float
-    attribute :status, String, default: "pending"
-    attribute :memo, String
-
-    command "InitiateTransfer" do
-      attribute :from_account_id, String
-      attribute :to_account_id, String
-      attribute :amount, Float
-      attribute :memo, String
-    end
-
-    command "CompleteTransfer" do
-      attribute :transfer_id, String
-    end
-
-    command "RejectTransfer" do
-      attribute :transfer_id, String
-    end
-
-    validation :amount, presence: true
-  end
-
-  aggregate "Loan" do
-    attribute :customer_id, reference_to("Customer")
-    attribute :account_id, reference_to("Account")
-    attribute :principal, Float
-    attribute :rate, Float
-    attribute :term_months, Integer
-    attribute :remaining_balance, Float
-    attribute :status, String, default: "active"
-
-    command "IssueLoan" do
-      attribute :customer_id, String
-      attribute :account_id, String
-      attribute :principal, Float
-      attribute :rate, Float
-      attribute :term_months, Integer
-    end
-
-    command "MakePayment" do
-      attribute :loan_id, String
-      attribute :amount, Float
-    end
-
-    command "DefaultLoan" do
-      attribute :loan_id, String
-      attribute :customer_id, String
-    end
-
-    validation :principal, presence: true
-    validation :rate, presence: true
-
-    specification "HighRisk" do |loan|
-      loan.principal > 50_000 && loan.rate > 10
-    end
-  end
-
-  # Domain-level policies — cross-aggregate reactive policies
-  policy "DisburseFunds" do
-    on "IssuedLoan"
-    trigger "Deposit"
-    map account_id: :account_id, principal: :amount
-  end
-
-  policy "SuspendOnDefault" do
-    on "DefaultedLoan"
-    trigger "SuspendCustomer"
-    map customer_id: :customer_id
-    condition { |event| event.respond_to?(:customer_id) && event.customer_id }
-  end
-end
-
-# --- Load and wire ---
-
-puts "=== Banking Domain ==="
-valid, errors = Hecks.validate(domain)
-puts "Valid: #{valid}"
-errors.each { |e| puts "  - #{e}" } unless valid
-exit(1) unless valid
-
-# Build regenerates structure but preserves custom call methods
-Hecks.build(domain, version: "1.0.0", output_dir: __dir__)
-$LOAD_PATH.unshift(File.join(__dir__, "banking_domain", "lib"))
-require "banking_domain"
-
-app = Hecks::Services::Runtime.new(domain)
+puts "=== Banking Domain (#{adapter}) ==="
 
 # --- Event subscriptions ---
 
@@ -243,30 +98,6 @@ high_risk = Loan::Specifications::HighRisk.new
 puts "Alice's $25k loan high risk? #{high_risk.satisfied_by?(loan)}"
 big_loan = OpenStruct.new(principal: 100_000, rate: 15)
 puts "Hypothetical $100k/15% loan high risk? #{high_risk.satisfied_by?(big_loan)}"
-
-large_wd = Account::Specifications::LargeWithdrawal.new
-small = OpenStruct.new(amount: 500)
-big = OpenStruct.new(amount: 15_000)
-puts "Withdrawal $500 large? #{large_wd.satisfied_by?(small)}"
-puts "Withdrawal $15k large? #{large_wd.satisfied_by?(big)}"
-
-# Compose specifications
-not_high_risk = high_risk.not
-puts "Composed not-high-risk for Alice's loan: #{not_high_risk.satisfied_by?(loan)}"
-
-puts "\n--- Ledger entries (sub-entities with identity) ---"
-entry1 = BankingDomain::Account::LedgerEntry.new(
-  amount: 5000.0, description: "Initial deposit", entry_type: "credit", posted_at: Time.now.to_s
-)
-entry2 = BankingDomain::Account::LedgerEntry.new(
-  amount: 1500.0, description: "ATM withdrawal", entry_type: "debit", posted_at: Time.now.to_s
-)
-puts "Entry 1 id: #{entry1.id[0..7]}... amount: $#{"%.2f" % entry1.amount} (#{entry1.entry_type})"
-puts "Entry 2 id: #{entry2.id[0..7]}... amount: $#{"%.2f" % entry2.amount} (#{entry2.entry_type})"
-puts "Entries equal? #{entry1 == entry2}"
-puts "Entry mutable? #{!entry1.frozen?}"
-entry1.amount = 5500.0
-puts "Entry 1 updated amount: $#{"%.2f" % entry1.amount}"
 
 puts "\n--- Final state ---"
 puts "Customers: #{Customer.count}"

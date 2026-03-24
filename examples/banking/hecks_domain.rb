@@ -2,19 +2,7 @@ Hecks.domain "Banking" do
   aggregate "Customer" do
     attribute :name, String
     attribute :email, String
-    attribute :status, String
-    attribute :address, list_of("Address")
-
-    value_object "Address" do
-      attribute :street, String
-      attribute :city, String
-      attribute :state, String
-      attribute :zip, String
-    end
-
-    validation :name, {:presence=>true}
-
-    validation :email, {:presence=>true}
+    attribute :status, String, default: "active"
 
     command "RegisterCustomer" do
       attribute :name, String
@@ -25,14 +13,8 @@ Hecks.domain "Banking" do
       attribute :customer_id, String
     end
 
-    command "NotifyCustomer" do
-      attribute :customer_id, String
-      attribute :message, String
-    end
-
-    on_event "RegisteredCustomer" do |event|
-      puts "Welcome email sent to #{event.email}"
-    end
+    validation :name, presence: true
+    validation :email, presence: true
   end
 
   aggregate "Account" do
@@ -40,12 +22,14 @@ Hecks.domain "Banking" do
     attribute :balance, Float
     attribute :account_type, String
     attribute :daily_limit, Float
-    attribute :status, String
+    attribute :status, String, default: "open"
+    attribute :ledger, list_of("LedgerEntry")
 
-    validation :account_type, {:presence=>true}
-
-    query "ByCustomer" do
-      where(customer_id: customer_id)
+    entity "LedgerEntry" do
+      attribute :amount, Float
+      attribute :description, String
+      attribute :entry_type, String
+      attribute :posted_at, String
     end
 
     command "OpenAccount" do
@@ -64,22 +48,14 @@ Hecks.domain "Banking" do
       attribute :amount, Float
     end
 
-    command "FlagSuspiciousActivity" do
-      attribute :account_id, String
-      attribute :reason, String
-    end
-
     command "CloseAccount" do
       attribute :account_id, String
     end
 
-    policy "FraudAlert" do
-      on "Withdrew"
-      trigger "FlagSuspiciousActivity"
-    end
+    validation :account_type, presence: true
 
-    on_event "Deposited" do |event|
-      puts "Deposit receipt for account #{event.account_id}: $#{event.amount}"
+    specification "LargeWithdrawal" do |withdrawal|
+      withdrawal.amount > 10_000
     end
   end
 
@@ -87,14 +63,8 @@ Hecks.domain "Banking" do
     attribute :from_account_id, reference_to("Account")
     attribute :to_account_id, reference_to("Account")
     attribute :amount, Float
-    attribute :status, String
+    attribute :status, String, default: "pending"
     attribute :memo, String
-
-    validation :amount, {:presence=>true}
-
-    query "HighValue" do
-      where(amount: Hecks::Services::Querying::Operators::Gte.new(1000.0))
-    end
 
     command "InitiateTransfer" do
       attribute :from_account_id, String
@@ -111,9 +81,7 @@ Hecks.domain "Banking" do
       attribute :transfer_id, String
     end
 
-    on_event "CompletedTransfer" do |event|
-      puts "Transfer #{event.transfer_id} completed — notify both parties"
-    end
+    validation :amount, presence: true
   end
 
   aggregate "Loan" do
@@ -122,38 +90,8 @@ Hecks.domain "Banking" do
     attribute :principal, Float
     attribute :rate, Float
     attribute :term_months, Integer
-    attribute :status, String
     attribute :remaining_balance, Float
-    attribute :payment_schedule, list_of("PaymentScheduleEntry")
-
-    value_object "PaymentScheduleEntry" do
-      attribute :due_date, String
-      attribute :principal_amount, Float
-      attribute :interest_amount, Float
-      attribute :total_amount, Float
-    end
-
-    value_object "Disbursement" do
-      attribute :amount, Float
-      attribute :disbursed_at, String
-      attribute :method, String
-    end
-
-    validation :principal, {:presence=>true}
-
-    validation :rate, {:presence=>true}
-
-    invariant "rate must be between 0 and 100" do
-      rate.nil? || (rate >= 0 && rate <= 100)
-    end
-
-    query "ByCustomer" do
-      where(customer_id: customer_id)
-    end
-
-    query "Delinquent" do
-      where(status: "defaulted")
-    end
+    attribute :status, String, default: "active"
 
     command "IssueLoan" do
       attribute :customer_id, String
@@ -170,27 +108,27 @@ Hecks.domain "Banking" do
 
     command "DefaultLoan" do
       attribute :loan_id, String
-      attribute :reason, String
+      attribute :customer_id, String
     end
 
-    command "RefinanceLoan" do
-      attribute :loan_id, String
-      attribute :new_rate, Float
-      attribute :new_term_months, Integer
-    end
+    validation :principal, presence: true
+    validation :rate, presence: true
 
-    policy "DisburseFunds" do
-      on "IssuedLoan"
-      trigger "Deposit"
+    specification "HighRisk" do |loan|
+      loan.principal > 50_000 && loan.rate > 10
     end
+  end
 
-    policy "SuspendOnDefault" do
-      on "DefaultedLoan"
-      trigger "SuspendCustomer"
-    end
+  policy "DisburseFunds" do
+    on "IssuedLoan"
+    trigger "Deposit"
+    map account_id: :account_id, principal: :amount
+  end
 
-    on_event "MadePayment" do |event|
-      puts "Payment of $#{event.amount} received for loan #{event.loan_id}"
-    end
+  policy "SuspendOnDefault" do
+    on "DefaultedLoan"
+    trigger "SuspendCustomer"
+    map customer_id: :customer_id
+    condition { |event| event.respond_to?(:customer_id) && event.customer_id }
   end
 end
