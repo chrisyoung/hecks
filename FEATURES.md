@@ -29,6 +29,7 @@
 - Domain version pinning and local path loading in configuration
 
 ## Runtime API
+- `Hecks.boot(__dir__)` — find domain file, validate, build, load, and wire in one call
 - `Hecks.load(domain)` — load domain and wire runtime in one step, returns `Hecks::Services::Runtime`
 - `app["Pizza"]` — access aggregate repository
 - `app.on("EventName") { }` — subscribe to events at runtime
@@ -128,6 +129,7 @@
 - Serve domain tool: start HTTP/MCP server from within the MCP session
 
 ## CLI Commands
+- `hecks new NAME` — scaffold a complete project (domain, app, Gemfile, specs, gitignore)
 - `hecks init [NAME]` — top-level shortcut for `hecks domain init`
 - `hecks domain build` — validate and generate versioned gem
 - `hecks domain serve [--rpc]` — start REST or JSON-RPC server

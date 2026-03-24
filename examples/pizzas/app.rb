@@ -7,27 +7,10 @@
 
 require "hecks"
 
-# 1. Load the domain definition
-domain_file = File.join(__dir__, "hecks_domain.rb")
-domain = eval(File.read(domain_file), nil, domain_file, 1)
+# Boot the domain — loads, validates, builds, and wires everything in one call
+app = Hecks.boot(__dir__)
 
-# 2. Validate it
-valid, errors = Hecks.validate(domain)
-puts "Domain valid: #{valid}"
-errors.each { |e| puts "  - #{e}" } unless valid
-
-# 3. Build the gem (CalVer auto-stamped)
-output = Hecks.build(domain, version: "2026.03.20.1", output_dir: __dir__)
-puts "Built: #{output}"
-
-# 4. Load the generated domain
-$LOAD_PATH.unshift(File.join(output, "lib"))
-require "pizzas_domain"
-
-# 5. Wire up the application with default memory adapters
-app = Hecks::Services::Runtime.new(domain)
-
-# 6. Subscribe to events
+# Subscribe to events
 app.on("CreatedPizza") do |event|
   puts "  [event] CreatedPizza: #{event.name}"
 end

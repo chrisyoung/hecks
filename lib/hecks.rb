@@ -31,6 +31,7 @@ require_relative "hecks/domain_builder_methods"
 require_relative "hecks/domain_compiler"
 require_relative "hecks/event_storm_importer"
 require_relative "hecks/domain_visualizer_methods"
+require_relative "hecks/boot"
 
 module Hecks
   extend DomainInspector
@@ -38,6 +39,7 @@ module Hecks
   extend DomainCompiler
   extend EventStormImporter
   extend DomainVisualizerMethods
+  extend Boot
 
   @configuration = nil
   @loaded_domains = {}
