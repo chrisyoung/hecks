@@ -1,7 +1,10 @@
 # Hecks::Services::Querying::Operators
 #
 # Comparison operator wrappers for the query DSL. Used as values in
-# where conditions to express comparisons beyond equality.
+# where conditions to express comparisons beyond equality. Each operator
+# implements match?(actual) for in-memory filtering. SQL translation is
+# handled by the SQL adapter, not here — keeping the domain layer pure.
+# All operators include the Operator marker module for adapter detection.
 #
 #   where(price: Operators::Gt.new(10))
 #   where(status: Operators::NotEq.new("cancelled"))
@@ -11,46 +14,49 @@ module Hecks
   module Services
     module Querying
       module Operators
+        # Marker module so adapters can detect operator values
+        module Operator; end
+
         class Gt
+          include Operator
           attr_reader :value
           def initialize(value) = @value = value
           def match?(actual) = !actual.nil? && actual > @value
-          def sequel_expr(column) = Sequel.expr(column) > @value
         end
 
         class Gte
+          include Operator
           attr_reader :value
           def initialize(value) = @value = value
           def match?(actual) = !actual.nil? && actual >= @value
-          def sequel_expr(column) = Sequel.expr(column) >= @value
         end
 
         class Lt
+          include Operator
           attr_reader :value
           def initialize(value) = @value = value
           def match?(actual) = !actual.nil? && actual < @value
-          def sequel_expr(column) = Sequel.expr(column) < @value
         end
 
         class Lte
+          include Operator
           attr_reader :value
           def initialize(value) = @value = value
           def match?(actual) = !actual.nil? && actual <= @value
-          def sequel_expr(column) = Sequel.expr(column) <= @value
         end
 
         class NotEq
+          include Operator
           attr_reader :value
           def initialize(value) = @value = value
           def match?(actual) = actual != @value
-          def sequel_expr(column) = Sequel.negate(column => @value)
         end
 
         class In
+          include Operator
           attr_reader :value
           def initialize(value) = @value = value
           def match?(actual) = @value.include?(actual)
-          def sequel_expr(column) = Sequel.expr(column => @value)
         end
       end
     end
