@@ -15,7 +15,7 @@ RSpec.describe Hecks::Configuration do
       build_and_load(domain_a, tmpdir)
       build_and_load(domain_b, tmpdir)
 
-      shared_bus = Hecks::Services::EventBus.new
+      shared_bus = Hecks::EventBus.new
       app_a = Hecks.load(domain_a, event_bus: shared_bus)
       app_b = Hecks.load(domain_b, event_bus: shared_bus)
 
@@ -35,7 +35,7 @@ RSpec.describe Hecks::Configuration do
       build_and_load(domain_a, tmpdir)
       build_and_load(domain_b, tmpdir)
 
-      shared_bus = Hecks::Services::EventBus.new
+      shared_bus = Hecks::EventBus.new
       Hecks.load(domain_a, event_bus: shared_bus)
       Hecks.load(domain_b, event_bus: shared_bus)
 
@@ -50,7 +50,7 @@ RSpec.describe Hecks::Configuration do
       tmpdir = Dir.mktmpdir("hecks_ext_bus_test")
       build_and_load(domain, tmpdir)
 
-      custom_bus = Hecks::Services::EventBus.new
+      custom_bus = Hecks::EventBus.new
       app = Hecks.load(domain, event_bus: custom_bus)
 
       expect(app.event_bus).to equal(custom_bus)

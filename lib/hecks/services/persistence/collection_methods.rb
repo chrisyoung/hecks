@@ -1,4 +1,4 @@
-# Hecks::Services::Persistence::CollectionMethods
+# Hecks::Persistence::CollectionMethods
 #
 # Binds collection proxy accessors onto aggregate classes. For each
 # list attribute with a value object, defines an instance method that
@@ -8,9 +8,8 @@
 #   pizza.toppings.create(name: "Mozzarella", amount: 2)
 #
 module Hecks
-  module Services
-    module Persistence
-      module CollectionMethods
+  module Persistence
+    module CollectionMethods
       def self.bind(klass, aggregate, repo)
         aggregate.attributes.select(&:list?).each do |list_attr|
           vo = aggregate.value_objects.find { |v| v.name == list_attr.type.to_s }
@@ -29,6 +28,5 @@ module Hecks
         end
       end
       end
-    end
   end
 end

@@ -44,7 +44,7 @@ RSpec.describe "Multi-domain with shared event bus" do
   end
 
   before do
-    shared_bus = Hecks::Services::EventBus.new
+    shared_bus = Hecks::EventBus.new
     @pizzas_app = Hecks.load(pizzas_domain, event_bus: shared_bus)
     @billing_app = Hecks.load(billing_domain, event_bus: shared_bus)
   end

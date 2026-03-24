@@ -22,7 +22,7 @@ RSpec.describe "Hecks.boot" do
     RUBY
 
     app = Hecks.boot(tmpdir)
-    expect(app).to be_a(Hecks::Services::Runtime)
+    expect(app).to be_a(Hecks::Runtime)
     expect(app.domain.name).to eq("BootTest")
   end
 

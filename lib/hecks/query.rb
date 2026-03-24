@@ -33,9 +33,9 @@ module Hecks
     private
 
     def with_builder(*args)
-      @builder = Services::Querying::QueryBuilder.new(self.class.repository)
+      @builder = Querying::QueryBuilder.new(self.class.repository)
       result = call(*args)
-      result.is_a?(Services::Querying::QueryBuilder) ? result : @builder
+      result.is_a?(Querying::QueryBuilder) ? result : @builder
     end
 
     def where(**conditions)
@@ -54,11 +54,11 @@ module Hecks
       @builder = @builder.offset(n)
     end
 
-    def gt(value)     = Services::Querying::Operators::Gt.new(value)
-    def gte(value)    = Services::Querying::Operators::Gte.new(value)
-    def lt(value)     = Services::Querying::Operators::Lt.new(value)
-    def lte(value)    = Services::Querying::Operators::Lte.new(value)
-    def not_eq(value) = Services::Querying::Operators::NotEq.new(value)
-    def one_of(values) = Services::Querying::Operators::In.new(values)
+    def gt(value)     = Querying::Operators::Gt.new(value)
+    def gte(value)    = Querying::Operators::Gte.new(value)
+    def lt(value)     = Querying::Operators::Lt.new(value)
+    def lte(value)    = Querying::Operators::Lte.new(value)
+    def not_eq(value) = Querying::Operators::NotEq.new(value)
+    def one_of(values) = Querying::Operators::In.new(values)
   end
 end

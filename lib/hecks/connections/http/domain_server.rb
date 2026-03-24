@@ -77,7 +77,7 @@ module Hecks
           Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| require f }
         end
         @mod = Object.const_get(mod_name)
-        @app = Services::Runtime.new(@domain)
+        @app = Runtime.new(@domain)
         @routes = RouteBuilder.new(@domain, @mod).build
       end
 

@@ -1,4 +1,4 @@
-# Hecks::Services::Persistence::ReferenceMethods
+# Hecks::Persistence::ReferenceMethods
 #
 # Binds reference resolution methods onto aggregate classes. For each
 # reference_to attribute (e.g. pizza_id), defines a method that resolves
@@ -8,9 +8,8 @@
 #   order.pizza  # => resolves Pizza.find(order.pizza_id)
 #
 module Hecks
-  module Services
-    module Persistence
-      module ReferenceMethods
+  module Persistence
+    module ReferenceMethods
       def self.bind(klass, aggregate)
         aggregate.attributes.select(&:reference?).each do |ref_attr|
           method_name = ref_attr.name.to_s.sub(/_id$/, "").to_sym
@@ -24,6 +23,5 @@ module Hecks
         end
       end
       end
-    end
   end
 end

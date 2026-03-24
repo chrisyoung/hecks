@@ -1,4 +1,4 @@
-# Hecks::Services::Runtime
+# Hecks::Runtime
 #
 # The runtime container that wires a domain to adapters, dispatches
 # commands, publishes events, and executes policies. Defaults to memory
@@ -21,8 +21,7 @@ require_relative "runtime/constant_hoisting"
 require_relative "runtime/connection_setup"
 
 module Hecks
-  module Services
-    class Runtime
+  class Runtime
       include RepositorySetup
       include PolicySetup
       include SubscriberSetup
@@ -89,7 +88,7 @@ module Hecks
       end
 
       def inspect
-        "#<Hecks::Services::Runtime \"#{@domain.name}\" (#{@repositories.size} repositories)>"
+        "#<Hecks::Runtime \"#{@domain.name}\" (#{@repositories.size} repositories)>"
       end
 
       private
@@ -102,7 +101,6 @@ module Hecks
       end
     end
 
-    # Backward compatibility
-    Application = Runtime
-  end
+  # Backward compatibility
+  Application = Runtime
 end

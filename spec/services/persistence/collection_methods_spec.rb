@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::Services::Persistence::CollectionMethods do
+RSpec.describe Hecks::Persistence::CollectionMethods do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
@@ -30,7 +30,7 @@ RSpec.describe Hecks::Services::Persistence::CollectionMethods do
   end
 
   it "returns a CollectionProxy" do
-    expect(@pizza.toppings).to be_a(Hecks::Services::Persistence::CollectionProxy)
+    expect(@pizza.toppings).to be_a(Hecks::Persistence::CollectionProxy)
   end
 
   it "starts with empty collection" do

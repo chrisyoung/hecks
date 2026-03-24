@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Services::Runtime do
+RSpec.describe Hecks::Runtime do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do

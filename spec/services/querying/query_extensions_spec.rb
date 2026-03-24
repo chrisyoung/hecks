@@ -20,7 +20,7 @@ RSpec.describe "Query DSL extensions" do
   before do
     @app = Hecks.load(domain, force: true)
     repo = @app["Pizza"]
-    Hecks::Services::Querying::AdHocQueries.bind(QueryExtDomain::Pizza, repo)
+    Hecks::Querying::AdHocQueries.bind(QueryExtDomain::Pizza, repo)
 
     QueryExtDomain::Pizza.create(name: "Margherita", style: "Classic", price: 12)
     QueryExtDomain::Pizza.create(name: "Pepperoni", style: "Spicy", price: 15)

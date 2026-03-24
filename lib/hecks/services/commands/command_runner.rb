@@ -1,4 +1,4 @@
-# Hecks::Services::Commands::CommandRunner
+# Hecks::Commands::CommandRunner
 #
 # LEGACY — replaced by CommandBus, which adds middleware support.
 # Kept for backward compatibility. New code should use CommandBus instead.
@@ -11,9 +11,8 @@
 #   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
 #
 module Hecks
-  module Services
-    module Commands
-      class CommandRunner
+  module Commands
+    class CommandRunner
       def initialize(domain:, repositories:, event_bus:)
         @domain = domain
         @repositories = repositories
@@ -70,6 +69,5 @@ module Hecks
         attrs
       end
       end
-    end
   end
 end

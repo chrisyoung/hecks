@@ -1,4 +1,4 @@
-# Hecks::Services::Runtime::ConstantHoisting
+# Hecks::Runtime::ConstantHoisting
 #
 # Mixin that promotes aggregate classes from the domain module
 # namespace into the top-level Object namespace so they can be
@@ -10,8 +10,7 @@
 #   end
 #
 module Hecks
-  module Services
-    class Runtime
+  class Runtime
       module ConstantHoisting
         private
 
@@ -30,6 +29,5 @@ module Hecks
           $VERBOSE = old
         end
       end
-    end
   end
 end

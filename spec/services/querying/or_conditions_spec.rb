@@ -20,7 +20,7 @@ RSpec.describe "OR conditions" do
   before do
     @app = Hecks.load(domain, force: true)
     repo = @app["Pizza"]
-    Hecks::Services::Querying::AdHocQueries.bind(OrTestDomain::Pizza, repo)
+    Hecks::Querying::AdHocQueries.bind(OrTestDomain::Pizza, repo)
 
     OrTestDomain::Pizza.create(name: "Margherita", style: "Classic", price: 12)
     OrTestDomain::Pizza.create(name: "Pepperoni", style: "Spicy", price: 15)
@@ -49,7 +49,7 @@ RSpec.describe "OR conditions" do
   end
 
   it "works with operators in or branches" do
-    builder = Hecks::Services::Querying::QueryBuilder.new(@app["Pizza"])
+    builder = Hecks::Querying::QueryBuilder.new(@app["Pizza"])
     results = builder.where(price: builder.gt(14)).or(builder.where(style: "Classic"))
     expect(results.map(&:name)).to contain_exactly("Margherita", "Cheese", "Pepperoni")
   end

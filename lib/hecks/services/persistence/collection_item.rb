@@ -1,4 +1,4 @@
-# Hecks::Services::Persistence::CollectionItem
+# Hecks::Persistence::CollectionItem
 #
 # Wraps a value object from a collection, delegating all methods to the
 # underlying object but adding delete/destroy that remove it from the
@@ -8,9 +8,8 @@
 #   pizza.toppings.first.name     # delegates to the value object
 #
 module Hecks
-  module Services
-    module Persistence
-      class CollectionItem
+  module Persistence
+    class CollectionItem
         def initialize(raw, collection)
           @raw = raw
           @collection = collection
@@ -67,6 +66,5 @@ module Hecks
           end
         end
       end
-    end
   end
 end

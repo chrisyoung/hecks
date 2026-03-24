@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Services::Runtime::ConnectionSetup do
+RSpec.describe Hecks::Runtime::ConnectionSetup do
   let(:domain) { BootedDomains.pizzas }
   let(:mod_name) { domain.module_name + "Domain" }
 
@@ -37,7 +37,7 @@ RSpec.describe Hecks::Services::Runtime::ConnectionSetup do
       mod.instance_variable_set(:@connections, nil)
 
       # Create a fake source domain module with an event bus
-      source_bus = Hecks::Services::EventBus.new
+      source_bus = Hecks::EventBus.new
       source_mod = Module.new
       source_mod.extend(Hecks::DomainConnections)
       source_mod.instance_variable_set(:@event_bus, source_bus)

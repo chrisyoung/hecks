@@ -61,17 +61,15 @@ module Hecks
     autoload :Result,        "hecks/event_storm/result"
   end
 
-  module Services
-    autoload :Runtime,           "hecks/services/runtime"
-    autoload :Application,      "hecks/services/runtime"
-    autoload :AggregateWiring,  "hecks/services/aggregate_wiring"
-    autoload :EventBus,         "hecks/services/event_bus"
-    autoload :PortEnforcer,     "hecks/services/port_enforcer"
-    autoload :Persistence,      "hecks/services/persistence"
-    autoload :Querying,         "hecks/services/querying"
-    autoload :Commands,         "hecks/services/commands"
-    autoload :Introspection,    "hecks/services/introspection"
-  end
+  autoload :Runtime,          "hecks/services/runtime"
+  autoload :Application,      "hecks/services/runtime"
+  autoload :AggregateWiring,  "hecks/services/aggregate_wiring"
+  autoload :EventBus,         "hecks/services/event_bus"
+  autoload :PortEnforcer,     "hecks/services/port_enforcer"
+  autoload :Persistence,      "hecks/services/persistence"
+  autoload :Querying,         "hecks/services/querying"
+  autoload :Commands,         "hecks/services/commands"
+  autoload :Introspection,    "hecks/services/introspection"
 
   module HTTP
     autoload :DomainServer,       "hecks/connections/http/domain_server"

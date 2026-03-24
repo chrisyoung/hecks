@@ -1,18 +1,17 @@
-# Hecks::Services::Runtime::ConnectionSetup
+# Hecks::Runtime::ConnectionSetup
 #
 # Mixin that wires domain connections declared via DomainConnections
 # (listens_to and sends_to) onto the event bus at boot time. Also exposes
 # the event bus on the domain module for cross-domain subscriptions.
 #
-# Part of Services::Runtime. Consumed after repositories and policies are set up.
+# Part of Runtime. Consumed after repositories and policies are set up.
 #
 #   class Runtime
 #     include ConnectionSetup
 #   end
 #
 module Hecks
-  module Services
-    class Runtime
+  class Runtime
       module ConnectionSetup
         private
 
@@ -69,6 +68,5 @@ module Hecks
           end
         end
       end
-    end
   end
 end

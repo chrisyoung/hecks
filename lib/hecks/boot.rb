@@ -25,7 +25,7 @@ module Hecks
     # @param dir [String] directory containing hecks_domain.rb
     # @param adapter [Symbol, Hash] :memory (default), :sqlite, or { type: :sqlite, database: "path" }
     # @param block [Proc] optional block evaluated on the domain module for connections
-    # @return [Hecks::Services::Runtime]
+    # @return [Hecks::Runtime]
     def boot(dir, adapter: :memory, &block)
       domain_file = File.join(dir, "hecks_domain.rb")
       unless File.exist?(domain_file)
@@ -69,7 +69,7 @@ module Hecks
       if effective_adapter && sql_adapter_type?(effective_adapter[:type])
         boot_with_sql(domain, effective_adapter)
       else
-        Services::Runtime.new(domain)
+        Runtime.new(domain)
       end
     end
 
@@ -88,7 +88,7 @@ module Hecks
     def boot_with_sql(domain, adapter_config)
       db = SqlBoot.connect(adapter_config)
       adapters = SqlBoot.setup(domain, db)
-      Services::Runtime.new(domain) do
+      Runtime.new(domain) do
         adapters.each { |name, repo| adapter(name, repo) }
       end
     end

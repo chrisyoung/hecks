@@ -1,4 +1,4 @@
-# Hecks::Services::Commands::CommandMethods
+# Hecks::Commands::CommandMethods
 #
 # Wires command classes to repositories and event buses, then creates
 # shortcut methods on aggregate classes that delegate to command.call.
@@ -10,9 +10,8 @@
 #   # creates shortcut methods using a custom executor proc
 #
 module Hecks
-  module Services
-    module Commands
-      module CommandMethods
+  module Commands
+    module CommandMethods
       def self.bind(klass, aggregate, bus, repo, defaults)
         mod = begin; klass.const_get(:Commands); rescue NameError; nil; end
         return unless mod
@@ -84,6 +83,5 @@ module Hecks
         end
       end
       end
-    end
   end
 end

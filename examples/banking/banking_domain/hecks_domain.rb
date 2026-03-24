@@ -119,15 +119,18 @@ Hecks.domain "Banking" do
       attribute :loan_id, String
       attribute :customer_id, String
     end
+  end
 
-    policy "DisburseFunds" do
-      on "IssuedLoan"
-      trigger "Deposit"
-    end
+  policy "DisburseFunds" do
+    on "IssuedLoan"
+    trigger "Deposit"
+    map account_id: :account_id, principal: :amount
+  end
 
-    policy "SuspendOnDefault" do
-      on "DefaultedLoan"
-      trigger "SuspendCustomer"
-    end
+  policy "SuspendOnDefault" do
+    on "DefaultedLoan"
+    trigger "SuspendCustomer"
+    map customer_id: :customer_id
+    condition { |event|  }
   end
 end

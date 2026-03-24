@@ -1,4 +1,4 @@
-# Hecks::Services::Persistence::RepositoryMethods
+# Hecks::Persistence::RepositoryMethods
 #
 # Adds CRUD persistence methods to aggregate classes. Bound automatically
 # by Persistence.bind during application setup. Uses hecks_attributes
@@ -9,9 +9,8 @@
 #   pizza.save / pizza.update(name: "New") / pizza.destroy
 #
 module Hecks
-  module Services
-    module Persistence
-      module RepositoryMethods
+  module Persistence
+    module RepositoryMethods
       def self.bind(klass, repo)
         klass.instance_variable_set(:@__hecks_repo__, repo)
         bind_class_methods(klass, repo)
@@ -78,6 +77,5 @@ module Hecks
         end
       end
       end
-    end
   end
 end

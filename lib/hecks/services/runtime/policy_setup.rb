@@ -1,4 +1,4 @@
-# Hecks::Services::Runtime::PolicySetup
+# Hecks::Runtime::PolicySetup
 #
 # Mixin that subscribes both aggregate-level and domain-level policies
 # to their trigger events on the event bus. Guards against re-entrant
@@ -12,8 +12,7 @@
 require "set"
 
 module Hecks
-  module Services
-    class Runtime
+  class Runtime
       module PolicySetup
         private
 
@@ -96,6 +95,5 @@ module Hecks
           end
         end
       end
-    end
   end
 end

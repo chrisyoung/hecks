@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Services::Querying::QueryBuilder do
+RSpec.describe Hecks::Querying::QueryBuilder do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
@@ -66,7 +66,7 @@ RSpec.describe Hecks::Services::Querying::QueryBuilder do
   context "with ad-hoc queries enabled" do
     before do
       repo = @app["Pizza"]
-      Hecks::Services::Querying::AdHocQueries.bind(PizzasDomain::Pizza, repo)
+      Hecks::Querying::AdHocQueries.bind(PizzasDomain::Pizza, repo)
     end
 
     describe ".where" do

@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::Services::Persistence::RepositoryMethods do
+RSpec.describe Hecks::Persistence::RepositoryMethods do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do

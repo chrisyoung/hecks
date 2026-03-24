@@ -125,7 +125,7 @@ end
 transfer.validation :amount, presence: true
 
 transfer.query "HighValue" do
-  where(amount: Hecks::Services::Querying::Operators::Gte.new(1000.0))
+  where(amount: Hecks::Querying::Operators::Gte.new(1000.0))
 end
 
 transfer.scope :pending, ->(all) { all.select { |t| t.status == "pending" } }
