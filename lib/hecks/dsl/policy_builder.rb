@@ -1,16 +1,17 @@
 # Hecks::DSL::PolicyBuilder
 #
 # DSL builder for reactive policy definitions. Binds an event name to a
-# trigger command, creating the wiring for event-driven workflows.
+# trigger command, creating the wiring for event-driven workflows. Supports
+# an optional `condition` block that gates when the policy fires.
 #
 # Part of the DSL layer, nested under AggregateBuilder. Policies enable
 # cross-context communication by reacting to events from any context.
 #
-#   builder = PolicyBuilder.new("NotifyKitchen")
-#   builder.on "OrderPlaced"
-#   builder.trigger "PrepareOrder"
-#   builder.async true
-#   policy = builder.build  # => #<Policy name="NotifyKitchen" async=true ...>
+#   builder = PolicyBuilder.new("FraudAlert")
+#   builder.on "Withdrew"
+#   builder.trigger "FlagSuspicious"
+#   builder.condition { |event| event.amount > 10_000 }
+#   policy = builder.build  # => #<Policy name="FraudAlert" condition=... ...>
 #
 module Hecks
   module DSL
@@ -21,6 +22,7 @@ module Hecks
         @trigger_command = nil
         @async = false
         @attribute_map = {}
+        @condition = nil
       end
 
       def on(event_name)
@@ -41,6 +43,13 @@ module Hecks
         @attribute_map.merge!(mapping)
       end
 
+      # Conditional firing: policy only triggers when the block returns true.
+      # The block receives the event object.
+      #   condition { |event| event.amount > 10_000 }
+      def condition(&block)
+        @condition = block
+      end
+
       def build
         raise "Policy '#{@name}': missing 'on' (event name)" unless @event_name
         raise "Policy '#{@name}': missing 'trigger' (command name)" unless @trigger_command
@@ -49,7 +58,8 @@ module Hecks
           event_name: @event_name,
           trigger_command: @trigger_command,
           async: @async,
-          attribute_map: @attribute_map
+          attribute_map: @attribute_map,
+          condition: @condition
         )
       end
     end

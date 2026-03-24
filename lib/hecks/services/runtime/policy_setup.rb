@@ -1,8 +1,9 @@
 # Hecks::Services::Runtime::PolicySetup
 #
 # Mixin that subscribes domain policies to their trigger events on
-# the event bus. Guards against re-entrant policy execution and
-# supports async dispatch via an optional async handler.
+# the event bus. Guards against re-entrant policy execution, checks
+# optional condition blocks before firing, and supports async dispatch
+# via an optional async handler.
 #
 #   class Runtime
 #     include PolicySetup
@@ -53,6 +54,12 @@ module Hecks
 
                 begin
                   @policies_in_flight.add(policy_key)
+
+                  # Check condition — skip if the condition block returns false
+                  if policy.condition
+                    next unless policy.condition.call(event)
+                  end
+
                   event_attrs = {}
                   event.class.instance_method(:initialize).parameters.each do |_, name|
                     next unless name
