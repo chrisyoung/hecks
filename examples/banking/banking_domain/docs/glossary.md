@@ -55,6 +55,9 @@ You can make a Loan with loan id and amount. When this happens, a Payment is mad
 You can default a Loan with loan id and customer id. When this happens, a Loan is defaulted. (command)
 A Loan must have a principal. (validation)
 A Loan must have a rate. (validation)
+
+## Domain Policies
+
 When a Loan is issued, the system will deposit . (policy)
 When a Loan is defaulted, the system will suspend Customer. (policy)
 

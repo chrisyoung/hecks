@@ -1,4 +1,4 @@
-# Hecks::Services::Querying::Operators
+# Hecks::Querying::Operators
 #
 # Comparison operator wrappers for the query DSL. Used as values in
 # where conditions to express comparisons beyond equality. Each operator
@@ -11,9 +11,8 @@
 #   where(style: Operators::In.new(["Classic", "Tropical"]))
 #
 module Hecks
-  module Services
-    module Querying
-      module Operators
+  module Querying
+    module Operators
         # Marker module so adapters can detect operator values
         module Operator; end
 
@@ -59,6 +58,5 @@ module Hecks
           def match?(actual) = @value.include?(actual)
         end
       end
-    end
   end
 end

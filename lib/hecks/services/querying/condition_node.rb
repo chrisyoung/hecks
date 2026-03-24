@@ -1,4 +1,4 @@
-# Hecks::Services::Querying::ConditionNode
+# Hecks::Querying::ConditionNode
 #
 # Tree structure for composing AND/OR query conditions. Leaf AND nodes
 # hold a conditions hash; OR nodes combine two child trees. Used by
@@ -11,9 +11,8 @@
 #   combined.match?(pizza)  # => true if either branch matches
 #
 module Hecks
-  module Services
-    module Querying
-      class ConditionNode
+  module Querying
+    class ConditionNode
         attr_reader :type, :children, :conditions
 
         def self.and(conditions = {})
@@ -60,6 +59,5 @@ module Hecks
           end
         end
       end
-    end
   end
 end

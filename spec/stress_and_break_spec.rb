@@ -93,8 +93,8 @@ RSpec.describe "Exploratory: trying to break Hecks" do
     it "gt on empty returns empty" do
       domain = Hecks.domain("EmptyQ") { aggregate("Thing") { attribute :price, Float; command("CreateThing") { attribute :price, Float } } }
       app = boot(domain)
-      Hecks::Services::Querying::AdHocQueries.bind(EmptyQDomain::Thing, app["Thing"])
-      builder = Hecks::Services::Querying::QueryBuilder.new(app["Thing"])
+      Hecks::Querying::AdHocQueries.bind(EmptyQDomain::Thing, app["Thing"])
+      builder = Hecks::Querying::QueryBuilder.new(app["Thing"])
       results = builder.where(price: builder.gt(10.0))
       expect(results.to_a).to be_empty
       expect(results.count).to eq(0)
@@ -190,7 +190,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
 
       repo = @app["Item"]
       results = repo.query(
-        conditions: { price: Hecks::Services::Querying::Operators::Gt.new(10.0) },
+        conditions: { price: Hecks::Querying::Operators::Gt.new(10.0) },
         order_key: :price, order_direction: :asc, limit: nil, offset: nil
       )
       expect(results.map(&:name)).to eq(["Mid", "Expensive"])
@@ -228,8 +228,8 @@ RSpec.describe "Exploratory: trying to break Hecks" do
         adapter "Thing", EvtSrcDomain::Adapters::ThingSqlRepository.new(db)
       end
 
-      recorder = Hecks::Services::Persistence::EventRecorder.new(db)
-      Hecks::Services::Persistence.bind_event_recorder(EvtSrcDomain::Thing, recorder)
+      recorder = Hecks::Persistence::EventRecorder.new(db)
+      Hecks::Persistence.bind_event_recorder(EvtSrcDomain::Thing, recorder)
 
       thing = EvtSrcDomain::Thing.create(name: "Test", data: { key: "value" })
       history = EvtSrcDomain::Thing.history(thing.id)

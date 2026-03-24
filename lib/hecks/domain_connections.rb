@@ -57,7 +57,7 @@ module Hecks
 
     # Expose the event bus set by Runtime for cross-domain subscriptions.
     #
-    # @return [Hecks::Services::EventBus, nil]
+    # @return [Hecks::EventBus, nil]
     def event_bus
       @event_bus
     end

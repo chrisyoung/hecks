@@ -1,4 +1,4 @@
-# Hecks::Services::Commands::CommandBus
+# Hecks::Commands::CommandBus
 #
 # Dispatches commands through a middleware pipeline. Each middleware
 # wraps the next, like Rack middleware for commands.
@@ -15,9 +15,8 @@
 #   bus.dispatch("CreatePizza", name: "Margherita")
 #
 module Hecks
-  module Services
-    module Commands
-      class CommandBus
+  module Commands
+    class CommandBus
       attr_reader :middleware, :event_bus
 
       def initialize(domain:, event_bus:)
@@ -117,6 +116,5 @@ module Hecks
         attrs
       end
       end
-    end
   end
 end

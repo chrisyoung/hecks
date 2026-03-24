@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::Services::Querying::Operators do
+RSpec.describe Hecks::Querying::Operators do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
@@ -22,7 +22,7 @@ RSpec.describe Hecks::Services::Querying::Operators do
     @app = Hecks.load(domain)
 
     repo = @app["Pizza"]
-    Hecks::Services::Querying::AdHocQueries.bind(PizzasDomain::Pizza, repo)
+    Hecks::Querying::AdHocQueries.bind(PizzasDomain::Pizza, repo)
 
     PizzasDomain::Pizza.create(name: "Margherita", style: "Classic", price: 12.0)
     PizzasDomain::Pizza.create(name: "Pepperoni", style: "Spicy", price: 15.0)
@@ -104,19 +104,19 @@ RSpec.describe Hecks::Services::Querying::Operators do
 
   describe "operator combinations" do
     it "combines operator on one field with equality on another (AND)" do
-      builder = Hecks::Services::Querying::QueryBuilder.new(@app["Pizza"])
+      builder = Hecks::Querying::QueryBuilder.new(@app["Pizza"])
       results = builder.where(style: "Classic").where(price: builder.gt(11.0))
       expect(results.map(&:name)).to eq(["Margherita"])
     end
 
     it "combines not_eq with gt" do
-      builder = Hecks::Services::Querying::QueryBuilder.new(@app["Pizza"])
+      builder = Hecks::Querying::QueryBuilder.new(@app["Pizza"])
       results = builder.where(style: builder.not_eq("Classic")).where(price: builder.gt(14.5))
       expect(results.map(&:name)).to eq(["Pepperoni"])
     end
 
     it "combines operator with equality" do
-      builder = Hecks::Services::Querying::QueryBuilder.new(@app["Pizza"])
+      builder = Hecks::Querying::QueryBuilder.new(@app["Pizza"])
       results = builder.where(style: "Classic").where(price: builder.gt(11.0))
       expect(results.map(&:name)).to eq(["Margherita"])
     end

@@ -1,4 +1,4 @@
-# Hecks::Services::AggregateWiring
+# Hecks::AggregateWiring
 #
 # Orchestrates binding of all service mixins onto aggregate classes.
 # Wires Persistence, Commands, Querying (scopes), Introspection,
@@ -8,8 +8,7 @@
 #   AggregateWiring.new(domain, repositories, command_bus, mod).wire!
 #
 module Hecks
-  module Services
-    class AggregateWiring
+  class AggregateWiring
       def initialize(domain, repositories, command_bus, mod, port_name: nil)
         @domain = domain
         @repositories = repositories
@@ -70,6 +69,5 @@ module Hecks
           end
         end
       end
-    end
   end
 end

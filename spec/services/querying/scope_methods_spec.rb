@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::Services::Querying::ScopeMethods do
+RSpec.describe Hecks::Querying::ScopeMethods do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do

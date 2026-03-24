@@ -36,7 +36,7 @@ domain = Hecks.domain "Bench" do
 end
 
 Hecks.load_domain(domain, force: true)
-app = Hecks::Services::Application.new(domain)
+app = Hecks::Application.new(domain)
 
 puts "=== Hecks Performance Benchmarks ==="
 puts
@@ -68,10 +68,10 @@ puts "--- Query Performance (memory adapter) ---"
 puts
 
 # Seed data — enable ad-hoc queries for where/order/limit
-app2 = Hecks::Services::Application.new(domain)
+app2 = Hecks::Application.new(domain)
 domain.aggregates.each do |agg|
   agg_class = BenchDomain.const_get(agg.name)
-  Hecks::Services::Querying::AdHocQueries.bind(agg_class, app2[agg.name])
+  Hecks::Querying::AdHocQueries.bind(agg_class, app2[agg.name])
 end
 styles = %w[Classic Modern Retro Minimal Bold]
 10_000.times do |i|
@@ -122,10 +122,10 @@ puts "--- Scaling: query over growing dataset ---"
 puts
 
 [100, 1_000, 5_000, 10_000].each do |n|
-  app_n = Hecks::Services::Application.new(domain)
+  app_n = Hecks::Application.new(domain)
   domain.aggregates.each do |agg|
     agg_class = BenchDomain.const_get(agg.name)
-    Hecks::Services::Querying::AdHocQueries.bind(agg_class, app_n[agg.name])
+    Hecks::Querying::AdHocQueries.bind(agg_class, app_n[agg.name])
   end
   n.times { |i| BenchDomain::Widget.create(name: "W#{i}", style: styles[i % 5], price: (i % 50) + 1.0) }
 

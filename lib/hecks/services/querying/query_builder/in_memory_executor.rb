@@ -1,4 +1,4 @@
-# Hecks::Services::Querying::QueryBuilder::InMemoryExecutor
+# Hecks::Querying::QueryBuilder::InMemoryExecutor
 #
 # Fallback query engine for adapters without native query support,
 # or when conditions include OR nodes. Filters using the condition
@@ -9,9 +9,8 @@
 #   #   in_memory_execute  # => filtered, sorted, paginated Array
 #
 module Hecks
-  module Services
-    module Querying
-      class QueryBuilder
+  module Querying
+    class QueryBuilder
         module InMemoryExecutor
           private
 
@@ -52,6 +51,5 @@ module Hecks
           end
         end
       end
-    end
   end
 end

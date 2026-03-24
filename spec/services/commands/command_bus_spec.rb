@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Hecks::Services::Commands::CommandBus do
+RSpec.describe Hecks::Commands::CommandBus do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
@@ -16,7 +16,7 @@ RSpec.describe Hecks::Services::Commands::CommandBus do
 
   before { Hecks.load(domain) }
 
-  let(:event_bus) { Hecks::Services::EventBus.new }
+  let(:event_bus) { Hecks::EventBus.new }
   subject(:bus) { described_class.new(domain: domain, event_bus: event_bus) }
 
   describe "#dispatch" do

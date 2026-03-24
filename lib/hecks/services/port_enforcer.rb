@@ -1,4 +1,4 @@
-# Hecks::Services::PortEnforcer
+# Hecks::PortEnforcer
 #
 # Applies port-based access restrictions to an aggregate class.
 # For each method not allowed by the port definition, redefines it
@@ -9,8 +9,7 @@
 # remain accessible (backward compatible).
 #
 module Hecks
-  module Services
-    class PortEnforcer
+  class PortEnforcer
       CLASS_METHODS    = %i[find all count delete where first last create].freeze
       INSTANCE_METHODS = %i[save destroy update].freeze
 
@@ -64,6 +63,5 @@ module Hecks
           Hecks::Utils.underscore(cmd.name).sub(/_#{agg_snake}$/, "").to_sym
         end
       end
-    end
   end
 end

@@ -68,7 +68,7 @@ module Hecks
         lines << "        ds = @db[:#{table_name}]"
         lines << "        unless conditions.empty?"
         lines << "          conditions.each do |k, v|"
-        lines << "            ds = v.is_a?(Hecks::Services::Querying::Operators::Operator) ? ds.where(sequel_op(k, v)) : ds.where(k => v)"
+        lines << "            ds = v.is_a?(Hecks::Querying::Operators::Operator) ? ds.where(sequel_op(k, v)) : ds.where(k => v)"
         lines << "          end"
         lines << "        end"
         lines << "        ds = ds.order(order_direction == :desc ? Sequel.desc(order_key) : order_key) if order_key"

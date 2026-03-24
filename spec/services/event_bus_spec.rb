@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Services::EventBus do
+RSpec.describe Hecks::EventBus do
   subject(:bus) { described_class.new }
 
   let(:event) do

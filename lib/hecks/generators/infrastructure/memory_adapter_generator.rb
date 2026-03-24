@@ -76,7 +76,7 @@ module Hecks
           "#{pad}      conditions.all? do |k, v|",
           "#{pad}        next false unless obj.respond_to?(k)",
           "#{pad}        actual = obj.send(k)",
-          "#{pad}        v.is_a?(Hecks::Services::Querying::Operators::Operator) ? v.match?(actual) : actual == v",
+          "#{pad}        v.is_a?(Hecks::Querying::Operators::Operator) ? v.match?(actual) : actual == v",
           "#{pad}      end",
           "#{pad}    end",
           "#{pad}  end",

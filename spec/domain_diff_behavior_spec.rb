@@ -198,7 +198,7 @@ RSpec.describe "DomainDiff behavioral diffs" do
           command("CreateAccount") { attribute :name, String }
           command("Deposit") { attribute :amount, Float }
           query("ByName") { |n| where(name: n) }
-          query("HighBalance") { where(balance: Hecks::Services::Querying::Operators::Gte.new(10_000)) }
+          query("HighBalance") { where(balance: Hecks::Querying::Operators::Gte.new(10_000)) }
         end
       end
       changes = Hecks::Migrations::DomainDiff.call(base_domain, new_domain)

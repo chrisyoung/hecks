@@ -1,4 +1,4 @@
-# Hecks::Services::Querying::QueryBuilder
+# Hecks::Querying::QueryBuilder
 #
 # Chainable query interface for aggregate repositories. Collects query
 # parameters and delegates execution to the adapter's query method.
@@ -13,9 +13,8 @@ require_relative "condition_node"
 require_relative "query_builder/in_memory_executor"
 
 module Hecks
-  module Services
-    module Querying
-      class QueryBuilder
+  module Querying
+    class QueryBuilder
       include Enumerable
       include InMemoryExecutor
 
@@ -138,6 +137,5 @@ module Hecks
         end
       end
       end
-    end
   end
 end

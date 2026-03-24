@@ -29,7 +29,7 @@ RSpec.describe "Hecks.boot with connections" do
 
     mod = Object.const_get("ConnTestDomain")
     expect(mod.connections[:persist]).to eq({ type: :memory })
-    expect(app).to be_a(Hecks::Services::Runtime)
+    expect(app).to be_a(Hecks::Runtime)
   end
 
   it "supports sends_to in boot block" do
@@ -69,6 +69,6 @@ RSpec.describe "Hecks.boot with connections" do
 
     # adapter: :memory should still produce a working Runtime
     app = Hecks.boot(tmpdir, adapter: :memory)
-    expect(app).to be_a(Hecks::Services::Runtime)
+    expect(app).to be_a(Hecks::Runtime)
   end
 end

@@ -1,4 +1,4 @@
-# Hecks::Services::Querying::ScopeMethods
+# Hecks::Querying::ScopeMethods
 #
 # Binds named scope methods onto aggregate classes. Scopes are defined
 # in the DSL and wrap QueryBuilder.where calls.
@@ -7,9 +7,8 @@
 #   Pizza.classics  # => QueryBuilder result
 #
 module Hecks
-  module Services
-    module Querying
-      module ScopeMethods
+  module Querying
+    module ScopeMethods
         def self.bind(klass, aggregate)
           aggregate.scopes.each do |scope|
             repo = klass.instance_variable_get(:@__hecks_repo__)
@@ -26,6 +25,5 @@ module Hecks
           end
         end
       end
-    end
   end
 end

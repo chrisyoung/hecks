@@ -1,4 +1,4 @@
-# Hecks::Services::EventBus
+# Hecks::EventBus
 #
 # Simple in-process publish/subscribe event bus. Stores all published events
 # and notifies registered listeners by event class name.
@@ -13,8 +13,7 @@
 #   bus.clear   # empties the event log
 #
 module Hecks
-  module Services
-    class EventBus
+  class EventBus
       attr_reader :events
 
       def initialize
@@ -43,6 +42,5 @@ module Hecks
       def clear
         @events.clear
       end
-    end
   end
 end

@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "sequel"
 
-RSpec.describe Hecks::Services::Persistence::EventRecorder do
+RSpec.describe Hecks::Persistence::EventRecorder do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
@@ -62,8 +62,8 @@ RSpec.describe Hecks::Services::Persistence::EventRecorder do
     end
 
     @recorder = described_class.new(db)
-    Hecks::Services::Persistence.bind_event_recorder(PizzasDomain::Pizza, @recorder)
-    Hecks::Services::Persistence.bind_event_recorder(PizzasDomain::Order, @recorder)
+    Hecks::Persistence.bind_event_recorder(PizzasDomain::Pizza, @recorder)
+    Hecks::Persistence.bind_event_recorder(PizzasDomain::Order, @recorder)
   end
 
   describe "#record and #history" do

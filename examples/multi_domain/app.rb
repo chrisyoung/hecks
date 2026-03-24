@@ -33,10 +33,10 @@ domains.each do |domain|
 end
 
 # 4. Boot with shared event bus
-shared_bus = Hecks::Services::EventBus.new
+shared_bus = Hecks::EventBus.new
 
 apps = domains.map do |domain|
-  Hecks::Services::Runtime.new(domain, event_bus: shared_bus)
+  Hecks::Runtime.new(domain, event_bus: shared_bus)
 end
 
 # 5. Subscribe to events across all domains

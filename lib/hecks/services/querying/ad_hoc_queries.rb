@@ -1,10 +1,10 @@
-# Hecks::Services::Querying::AdHocQueries
+# Hecks::Querying::AdHocQueries
 #
 # Opt-in mixin that provides ActiveRecord-style query methods (where,
 # find_by, first, last) on aggregate classes. All repo references are
 # closure-captured for per-application isolation.
 #
-#   Hecks::Services::Querying::AdHocQueries.bind(Pizza, repo)
+#   Hecks::Querying::AdHocQueries.bind(Pizza, repo)
 #
 #   Pizza.where(style: "Classic").order(:name).limit(5)
 #   Pizza.order(:name).limit(5)
@@ -12,9 +12,8 @@
 #   Pizza.find_by(name: "Margherita")
 #
 module Hecks
-  module Services
-    module Querying
-      module AdHocQueries
+  module Querying
+    module AdHocQueries
       def self.bind(klass, repo)
         klass.instance_variable_set(:@__hecks_repo__, repo)
 
@@ -39,6 +38,5 @@ module Hecks
         end
       end
       end
-    end
   end
 end

@@ -1,4 +1,4 @@
-# Hecks::Services::Persistence::CollectionProxy
+# Hecks::Persistence::CollectionProxy
 #
 # Wraps a list attribute on an aggregate, providing create/delete/count
 # methods that rebuild the aggregate with the modified collection and
@@ -16,9 +16,8 @@
 require_relative "collection_item"
 
 module Hecks
-  module Services
-    module Persistence
-      class CollectionProxy
+  module Persistence
+    class CollectionProxy
         include Enumerable
 
         def initialize(items:, owner:, attr_name:, value_object_class:, repo:)
@@ -123,6 +122,5 @@ module Hecks
           new_owner
         end
       end
-    end
   end
 end

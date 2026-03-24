@@ -27,7 +27,7 @@ RSpec.describe "Hecks.boot with SQL adapter" do
     RUBY
 
     app = Hecks.boot(tmpdir, adapter: :sqlite)
-    expect(app).to be_a(Hecks::Services::Runtime)
+    expect(app).to be_a(Hecks::Runtime)
     expect(app.domain.name).to eq("SqlTest")
   end
 

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Services::Introspection do
+RSpec.describe Hecks::Introspection do
   let(:domain) do
     Hecks.domain "Inspect" do
       aggregate "Pizza" do

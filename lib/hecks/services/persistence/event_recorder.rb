@@ -1,4 +1,4 @@
-# Hecks::Services::Persistence::EventRecorder
+# Hecks::Persistence::EventRecorder
 #
 # Records domain events to a SQL events table. Enabled via
 # `adapter :sql, event_sourced: true` in Hecks.configure.
@@ -11,9 +11,8 @@
 require "json"
 
 module Hecks
-  module Services
-    module Persistence
-      class EventRecorder
+  module Persistence
+    class EventRecorder
         def initialize(db)
           @db = db
           ensure_table
@@ -87,6 +86,5 @@ module Hecks
           end
         end
       end
-    end
   end
 end

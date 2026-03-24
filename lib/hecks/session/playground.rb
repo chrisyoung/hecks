@@ -122,7 +122,7 @@ module Hecks
     # Boot a full Runtime with memory adapters, capturing all events
     def boot_runtime!
       playground_events = @events
-      bus = Services::EventBus.new
+      bus = EventBus.new
 
       # Intercept publish to capture every event into playground's list
       original_publish = bus.method(:publish)
@@ -131,7 +131,7 @@ module Hecks
         playground_events << event
       end
 
-      @runtime = Services::Runtime.new(@domain, event_bus: bus)
+      @runtime = Runtime.new(@domain, event_bus: bus)
     end
   end
   end

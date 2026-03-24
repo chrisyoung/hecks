@@ -1,4 +1,4 @@
-# Hecks::Services::Introspection
+# Hecks::Introspection
 #
 # Mixin that gives generated aggregate classes runtime introspection.
 # Bound by AggregateWiring, backed by the domain IR.
@@ -13,8 +13,7 @@
 #   Pizza.glossary              # prints domain glossary for this aggregate
 #
 module Hecks
-  module Services
-    module Introspection
+  module Introspection
       def self.bind(klass, agg)
         klass.instance_variable_set(:@__hecks_agg_def__, agg)
         klass.extend(ClassMethods)
@@ -155,6 +154,5 @@ module Hecks
           Hecks::DomainGlossary.new(nil).print_for(domain_def)
         end
       end
-    end
   end
 end

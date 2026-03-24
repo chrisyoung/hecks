@@ -203,7 +203,7 @@ RSpec.describe "Specifications" do
 
       begin
         require "spec_test_domain"
-        app = Hecks::Services::Runtime.new(domain)
+        app = Hecks::Runtime.new(domain)
 
         widget = Widget.create(weight: 150.0)
         spec_class = SpecTestDomain::Widget::Specifications::Heavy

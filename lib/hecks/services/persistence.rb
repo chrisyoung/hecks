@@ -1,4 +1,4 @@
-# Hecks::Services::Persistence
+# Hecks::Persistence
 #
 # Groups all persistence-related mixins: repository CRUD methods,
 # collection proxies for list attributes, reference resolution,
@@ -7,8 +7,7 @@
 #   Persistence.bind(agg_class, aggregate, repo)
 #
 module Hecks
-  module Services
-    module Persistence
+  module Persistence
       autoload :RepositoryMethods, "hecks/services/persistence/repository_methods"
       autoload :CollectionMethods, "hecks/services/persistence/collection_methods"
       autoload :CollectionProxy,   "hecks/services/persistence/collection_proxy"
@@ -39,6 +38,5 @@ module Hecks
           cmd_class.aggregate_type = agg_type
         end
       end
-    end
   end
 end

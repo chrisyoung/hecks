@@ -49,7 +49,7 @@ module Hecks
     end
 
     def boot!
-      @shared_event_bus = Services::EventBus.new
+      @shared_event_bus = EventBus.new
       @db = connect_database if @adapter_type == :sql
 
       @domains.each { |d| boot_domain(d) }
@@ -83,7 +83,7 @@ module Hecks
       adapter_type = @adapter_type
       db = @db
 
-      app = Services::Runtime.new(domain_obj, event_bus: @shared_event_bus) do
+      app = Runtime.new(domain_obj, event_bus: @shared_event_bus) do
         if adapter_type == :sql
           domain_obj.aggregates.each do |agg|
             safe_name = Hecks::Utils.sanitize_constant(agg.name)
@@ -97,17 +97,17 @@ module Hecks
       @apps[d[:gem_name]] = app
 
       if @adapter_options[:event_sourced] && @db
-        recorder = Services::Persistence::EventRecorder.new(@db)
+        recorder = Persistence::EventRecorder.new(@db)
         domain_obj.aggregates.each do |agg|
           agg_class = domain_module.const_get(Hecks::Utils.sanitize_constant(agg.name))
-          Services::Persistence.bind_event_recorder(agg_class, recorder)
+          Persistence.bind_event_recorder(agg_class, recorder)
         end
       end
 
       if @ad_hoc_queries
         domain_obj.aggregates.each do |agg|
           agg_class = domain_module.const_get(Hecks::Utils.sanitize_constant(agg.name))
-          Services::Querying::AdHocQueries.bind(agg_class, app[agg.name])
+          Querying::AdHocQueries.bind(agg_class, app[agg.name])
         end
       end
     end

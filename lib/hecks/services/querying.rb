@@ -1,4 +1,4 @@
-# Hecks::Services::Querying
+# Hecks::Querying
 #
 # Groups all query-related services: the chainable QueryBuilder,
 # AdHocQueries, ScopeMethods, and comparison Operators.
@@ -9,8 +9,7 @@
 #   Querying.bind(agg_class, aggregate)
 #
 module Hecks
-  module Services
-    module Querying
+  module Querying
       autoload :QueryBuilder,  "hecks/services/querying/query_builder"
       autoload :AdHocQueries,  "hecks/services/querying/ad_hoc_queries"
       autoload :ScopeMethods,  "hecks/services/querying/scope_methods"
@@ -19,6 +18,5 @@ module Hecks
       def self.bind(klass, aggregate)
         ScopeMethods.bind(klass, aggregate)
       end
-    end
   end
 end

@@ -86,7 +86,7 @@ RSpec.describe "SQL adapter integration" do
       adapter "Order", order_repo
     end
 
-    Hecks::Services::Querying::AdHocQueries.bind(PizzasDomain::Pizza, pizza_repo)
+    Hecks::Querying::AdHocQueries.bind(PizzasDomain::Pizza, pizza_repo)
   end
 
   after { FileUtils.rm_rf(tmpdir) }
