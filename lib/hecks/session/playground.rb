@@ -1,11 +1,12 @@
 # Hecks::Session::Playground
 #
 # Live execution sandbox that compiles a domain model into real Ruby classes,
-# then lets you execute commands and inspect the resulting events. Used by
-# Session's "play" mode for rapid prototyping.
+# boots a full Runtime with memory adapters, and lets you execute commands
+# with real persistence. Used by Session's "play" mode for rapid prototyping.
 #
-# Sits between the Generators (which produce source code) and the runtime --
-# it generates a temp gem, loads it, and provides a command/event interface.
+# Generates a temp gem, loads it, then creates a Runtime that wires
+# persistence, commands, queries, and the event bus. Aggregates are
+# persisted in memory — find, all, count, where all work.
 #
 # Mixins:
 #   GemBootstrap    — temp gem compilation and loading (compile!)
@@ -13,10 +14,10 @@
 #
 #   playground = Hecks::Session::Playground.new(domain)
 #   playground.execute("CreatePizza", name: "Margherita")
+#   Pizza.find(id)         # works — persisted in memory
+#   Pizza.all              # works
 #   playground.events      # => [#<CreatedPizza ...>]
-#   playground.commands    # => ["CreatePizza(name: String) -> CreatedPizza"]
-#   playground.history     # prints numbered event timeline
-#   playground.reset!      # clears all events
+#   playground.reset!      # clears events and repositories
 #
 require_relative "playground/gem_bootstrap"
 require_relative "playground/runtime_resolver"
@@ -27,7 +28,7 @@ module Hecks
     include GemBootstrap
     include RuntimeResolver
 
-    attr_reader :events
+    attr_reader :events, :runtime
 
     def initialize(domain)
       @domain = domain
@@ -35,47 +36,41 @@ module Hecks
       @events = []
       @policies = collect_policies
       compile!
-      wire_commands!
+      boot_runtime!
     end
 
-    # Execute a command by name, returns the event
+    # Execute a command by name, returns the aggregate
     def execute(command_name, **attrs)
-      domain_cmd = resolve_domain_command(command_name)
-      if domain_cmd&.handler
-        require "ostruct"
-        domain_cmd.handler.call(OpenStruct.new(**attrs))
+      agg_def = @domain.aggregates.find do |a|
+        a.commands.any? { |c| c.name == command_name.to_s }
+      end
+      unless agg_def
+        available = @domain.aggregates.flat_map { |a| a.commands.map(&:name) }
+        raise "Unknown command: #{command_name}. Available: #{available.join(', ')}"
       end
 
-      cmd_class = resolve_command(command_name)
-      command = cmd_class.new(**attrs)
+      mod = Object.const_get(@mod_name)
+      agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg_def.name))
+      agg_snake = Hecks::Utils.underscore(agg_def.name)
+      method_name = Hecks::Utils.underscore(command_name).sub(/_#{agg_snake}$/, "").to_sym
 
-      event_class = resolve_event_for(command_name)
-      event_attrs = {}
-      command.class.instance_methods(false)
-            .reject { |m| %i[freeze call].include?(m) }
-            .select { |m| command.class.method_defined?(m) }
-            .each do |m|
-        next if m.to_s.end_with?("=")
-        val = command.send(m)
-        if event_class.instance_method(:initialize).parameters.any? { |_, n| n == m }
-          event_attrs[m] = val
+      result = agg_class.send(method_name, **attrs)
+
+      event = @events.last
+      if event
+        event_name = event.class.name.split("::").last
+        puts "Command: #{command_name}"
+        puts "  Event: #{event_name}"
+        attrs.each { |k, v| puts "    #{k}: #{v.inspect}" }
+        puts "    occurred_at: #{event.occurred_at}"
+
+        triggered = check_policies(event)
+        triggered.each do |policy|
+          puts "  Policy: #{policy.name} -> #{policy.trigger_command}"
         end
       end
 
-      event = event_class.new(**event_attrs)
-      @events << event
-
-      puts "Command: #{command_name}"
-      puts "  Event: #{event.class.name.split('::').last}"
-      event_attrs.each { |k, v| puts "    #{k}: #{v.inspect}" }
-      puts "    occurred_at: #{event.occurred_at}"
-
-      triggered = check_policies(event)
-      triggered.each do |policy|
-        puts "  Policy: #{policy.name} -> #{policy.trigger_command}"
-      end
-
-      event
+      result
     end
 
     # List available commands
@@ -94,10 +89,14 @@ module Hecks
       @events.select { |e| e.class.name.split("::").last == type_name }
     end
 
-    # Clear all events
+    # Clear all events and repository data
     def reset!
       @events.clear
-      puts "Cleared all events"
+      @domain.aggregates.each do |agg|
+        repo = @runtime[agg.name]
+        repo.clear if repo.respond_to?(:clear)
+      end
+      puts "Cleared all events and data"
     end
 
     # Show a summary of what's happened
@@ -120,19 +119,19 @@ module Hecks
 
     private
 
-    # Wire shortcut methods onto aggregate classes so instances can call
-    # commands directly: cat.meow delegates to playground.execute("Meow").
-    def wire_commands!
-      mod = Object.const_get(@mod_name)
-      playground = self
+    # Boot a full Runtime with memory adapters, capturing all events
+    def boot_runtime!
+      playground_events = @events
+      bus = Services::EventBus.new
 
-      @domain.aggregates.each do |agg|
-        klass = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
-        Services::Commands::CommandMethods.bind_shortcuts(klass, agg) do |cmd|
-          cmd_name = cmd.name
-          ->(attrs) { playground.execute(cmd_name, **attrs) }
-        end
+      # Intercept publish to capture every event into playground's list
+      original_publish = bus.method(:publish)
+      bus.define_singleton_method(:publish) do |event|
+        original_publish.call(event)
+        playground_events << event
       end
+
+      @runtime = Services::Runtime.new(@domain, event_bus: bus)
     end
   end
   end
