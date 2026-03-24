@@ -23,8 +23,8 @@ module Hecks
 
     def dispatch(tag, arg)
       case tag
-      when "content"          then read_file("docs/content/#{arg}.md")
-      when "usage"            then read_file("docs/usage/#{arg}.md")
+      when "content"          then read_content("docs/content/#{arg}.md")
+      when "usage"            then read_usage("docs/usage/#{arg}.md")
       when "features"         then features
       when "validation_rules" then validation_rules
       when "cli_commands"     then cli_commands
@@ -32,9 +32,23 @@ module Hecks
       end
     end
 
-    def read_file(path)
+    def read_content(path)
       full = File.join(@root, path)
       File.exist?(full) ? File.read(full).strip : "<!-- TODO: create #{path} -->"
+    end
+
+    # Strip title headers and section headers from usage docs since
+    # the template provides its own section structure.
+    def read_usage(path)
+      full = File.join(@root, path)
+      return "<!-- TODO: create #{path} -->" unless File.exist?(full)
+
+      lines = File.readlines(full)
+      # Drop the title (# ...) and any blank lines after it
+      lines.shift while lines.first&.match?(/\A(#[^#]|\s*$)/)
+      # Strip ## sub-headers — template controls structure
+      lines.reject! { |l| l.match?(/\A## /) }
+      lines.join.strip
     end
 
     def features
