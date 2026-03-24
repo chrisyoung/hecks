@@ -38,15 +38,15 @@ module Hecks
       end
 
       def policy_links(lines)
-        @domain.aggregates.each do |agg|
-          agg.policies.each do |pol|
-            evt_agg, evt_id = find_event_node(pol.event_name)
-            cmd_agg, cmd_id = find_command_node(pol.trigger_command)
-            next unless evt_id && cmd_id
+        all_policies = @domain.aggregates.flat_map(&:policies) + @domain.policies
 
-            label = pol.async ? "#{pol.name} [async]" : pol.name
-            lines << "    #{evt_id} -.->|#{label}| #{cmd_id}"
-          end
+        all_policies.each do |pol|
+          evt_agg, evt_id = find_event_node(pol.event_name)
+          cmd_agg, cmd_id = find_command_node(pol.trigger_command)
+          next unless evt_id && cmd_id
+
+          label = pol.async ? "#{pol.name} [async]" : pol.name
+          lines << "    #{evt_id} -.->|#{label}| #{cmd_id}"
         end
       end
 

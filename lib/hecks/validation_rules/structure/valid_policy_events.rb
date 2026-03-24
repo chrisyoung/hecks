@@ -23,6 +23,13 @@ module Hecks
             end
           end
         end
+
+        @domain.policies.each do |policy|
+          unless all_events.include?(policy.event_name)
+            result << "Domain policy #{policy.name} listens for #{policy.event_name} (not in this domain — must come from another domain)"
+          end
+        end
+
         result
       end
     end

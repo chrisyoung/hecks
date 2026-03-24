@@ -1,9 +1,9 @@
 # Hecks::Services::Runtime::PolicySetup
 #
-# Mixin that subscribes domain policies to their trigger events on
-# the event bus. Guards against re-entrant policy execution, checks
-# optional condition blocks before firing, and supports async dispatch
-# via an optional async handler.
+# Mixin that subscribes both aggregate-level and domain-level policies
+# to their trigger events on the event bus. Guards against re-entrant
+# policy execution, checks optional condition blocks before firing,
+# and supports async dispatch via an optional async handler.
 #
 #   class Runtime
 #     include PolicySetup
@@ -42,49 +42,56 @@ module Hecks
         def setup_policies
           @policies_in_flight = Set.new
 
+          # Subscribe aggregate-level policies
           @domain.aggregates.each do |agg|
             agg.policies.select(&:reactive?).each do |policy|
-              @event_bus.subscribe(policy.event_name) do |event|
-                policy_key = "#{agg.name}.#{policy.name}"
+              subscribe_policy(policy, "#{agg.name}.#{policy.name}")
+            end
+          end
 
-                if @policies_in_flight.include?(policy_key)
-                  warn "[Hecks] Skipping re-entrant policy #{policy.name} (already in-flight)"
-                  next
-                end
+          # Subscribe domain-level policies
+          @domain.policies.select(&:reactive?).each do |policy|
+            subscribe_policy(policy, "domain.#{policy.name}")
+          end
+        end
 
-                begin
-                  @policies_in_flight.add(policy_key)
+        def subscribe_policy(policy, policy_key)
+          @event_bus.subscribe(policy.event_name) do |event|
+            if @policies_in_flight.include?(policy_key)
+              warn "[Hecks] Skipping re-entrant policy #{policy.name} (already in-flight)"
+              next
+            end
 
-                  # Check condition — skip if the condition block returns false
-                  if policy.condition
-                    next unless policy.condition.call(event)
-                  end
+            begin
+              @policies_in_flight.add(policy_key)
 
-                  event_attrs = {}
-                  event.class.instance_method(:initialize).parameters.each do |_, name|
-                    next unless name
-                    event_attrs[name] = event.send(name) if event.respond_to?(name)
-                  end
-                  # Apply attribute mapping: rename event keys to command keys
-                  mapped_attrs = if policy.attribute_map.any?
-                    policy.attribute_map.each_with_object({}) do |(from, to), h|
-                      h[to.to_sym] = event_attrs[from.to_sym] if event_attrs.key?(from.to_sym)
-                    end
-                  else
-                    event_attrs
-                  end
-
-                  if policy.async && @async_handler
-                    @async_handler.call(policy.trigger_command, mapped_attrs)
-                  else
-                    dispatch_policy_command(policy.trigger_command, mapped_attrs)
-                  end
-                rescue StandardError => e
-                  warn "[Hecks] Policy #{policy.name} failed: #{e.message}"
-                ensure
-                  @policies_in_flight.delete(policy_key)
-                end
+              if policy.condition
+                next unless policy.condition.call(event)
               end
+
+              event_attrs = {}
+              event.class.instance_method(:initialize).parameters.each do |_, name|
+                next unless name
+                event_attrs[name] = event.send(name) if event.respond_to?(name)
+              end
+
+              mapped_attrs = if policy.attribute_map.any?
+                policy.attribute_map.each_with_object({}) do |(from, to), h|
+                  h[to.to_sym] = event_attrs[from.to_sym] if event_attrs.key?(from.to_sym)
+                end
+              else
+                event_attrs
+              end
+
+              if policy.async && @async_handler
+                @async_handler.call(policy.trigger_command, mapped_attrs)
+              else
+                dispatch_policy_command(policy.trigger_command, mapped_attrs)
+              end
+            rescue StandardError => e
+              warn "[Hecks] Policy #{policy.name} failed: #{e.message}"
+            ensure
+              @policies_in_flight.delete(policy_key)
             end
           end
         end

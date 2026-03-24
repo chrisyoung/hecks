@@ -62,6 +62,14 @@ module Hecks
           lines << ""
         end
 
+        unless domain.policies.empty?
+          lines << "  Domain Policies:"
+          domain.policies.each do |pol|
+            lines << "    #{pol.name} (on #{pol.event_name} -> #{pol.trigger_command})"
+          end
+          lines << ""
+        end
+
         puts lines.join("\n")
         nil
       end

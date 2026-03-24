@@ -1,11 +1,18 @@
 # Hecks::DSL::DomainBuilder
 #
 # Top-level DSL builder for domain definitions. Collects aggregate definitions
-# and builds a DomainModel::Structure::Domain. Enforces unique aggregate names.
+# and domain-level policies, then builds a DomainModel::Structure::Domain.
+# Enforces unique aggregate names. Domain-level policies are cross-aggregate
+# reactive policies defined outside any aggregate block.
 #
-#   Hecks.domain "Pizzas" do
-#     aggregate "Pizza" do
-#       attribute :name, String
+#   Hecks.domain "Banking" do
+#     aggregate "Loan" do ... end
+#     aggregate "Account" do ... end
+#
+#     policy "DisburseFunds" do
+#       on "IssuedLoan"
+#       trigger "Deposit"
+#       map principal: :amount
 #     end
 #   end
 #
@@ -17,6 +24,7 @@ module Hecks
       def initialize(name)
         @name = name
         @aggregates = []
+        @policies = []
         @attributes = []
       end
 
@@ -36,8 +44,16 @@ module Hecks
         @aggregates << builder.build
       end
 
+      def policy(name, &block)
+        builder = PolicyBuilder.new(name)
+        builder.instance_eval(&block) if block
+        @policies << builder.build
+      end
+
       def build
-        DomainModel::Structure::Domain.new(name: @name, aggregates: @aggregates)
+        DomainModel::Structure::Domain.new(
+          name: @name, aggregates: @aggregates, policies: @policies
+        )
       end
     end
   end

@@ -15,6 +15,7 @@
 - Define specifications as reusable composable predicates (`satisfied_by?`, `and`, `or`, `not`)
 - Define guard policies (authorization blocks that gate command execution)
 - Define reactive policies (event-driven: on event → trigger command, with async option)
+- Domain-level policies for cross-aggregate concerns (outside any aggregate block)
 - Policy conditions: `condition { |event| event.amount > 10_000 }` — policy only fires when true
 - Policy attribute mapping: `map principal: :amount` translates event attrs to command attrs
 - Define command `call` blocks in DSL for inline business logic (prototyping and play mode)

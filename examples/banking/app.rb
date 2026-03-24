@@ -127,19 +127,20 @@ domain = Hecks.domain "Banking" do
     specification "HighRisk" do |loan|
       loan.principal > 50_000 && loan.rate > 10
     end
+  end
 
-    policy "DisburseFunds" do
-      on "IssuedLoan"
-      trigger "Deposit"
-      map account_id: :account_id, principal: :amount
-    end
+  # Domain-level policies — cross-aggregate reactive policies
+  policy "DisburseFunds" do
+    on "IssuedLoan"
+    trigger "Deposit"
+    map account_id: :account_id, principal: :amount
+  end
 
-    policy "SuspendOnDefault" do
-      on "DefaultedLoan"
-      trigger "SuspendCustomer"
-      map customer_id: :customer_id
-      condition { |event| event.respond_to?(:customer_id) && event.customer_id }
-    end
+  policy "SuspendOnDefault" do
+    on "DefaultedLoan"
+    trigger "SuspendCustomer"
+    map customer_id: :customer_id
+    condition { |event| event.respond_to?(:customer_id) && event.customer_id }
   end
 end
 
