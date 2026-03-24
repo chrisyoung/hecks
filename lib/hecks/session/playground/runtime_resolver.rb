@@ -21,14 +21,13 @@ module Hecks
         def resolve_command(command_name)
           mod = Object.const_get(@mod_name)
 
+          # Find the aggregate that owns this command via domain IR first,
+          # then load only from that aggregate's Commands module. This avoids
+          # polluting other aggregates' namespaces via const_missing.
           @domain.aggregates.each do |agg|
+            next unless agg.commands.any? { |c| c.name == command_name.to_s }
             agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
-            next unless agg_class.const_defined?(:Commands)
-            begin
-              return agg_class::Commands.const_get(command_name)
-            rescue NameError, LoadError
-              next
-            end
+            return agg_class::Commands.const_get(command_name)
           end
 
           raise "Unknown command: #{command_name}. Available: #{available_commands.join(', ')}"

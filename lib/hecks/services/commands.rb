@@ -15,6 +15,10 @@ module Hecks
       def self.bind(klass, aggregate, bus, repo, defaults)
         CommandMethods.bind(klass, aggregate, bus, repo, defaults)
       end
+
+      def self.bind_shortcuts(klass, aggregate, &block)
+        CommandMethods.bind_shortcuts(klass, aggregate, &block)
+      end
     end
   end
 end

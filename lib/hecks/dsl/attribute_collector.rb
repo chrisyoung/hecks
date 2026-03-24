@@ -11,7 +11,18 @@
 module Hecks
   module DSL
     module AttributeCollector
-      def attribute(name, type, **options)
+      TYPE_MAP = {
+        string: String, str: String,
+        integer: Integer, int: Integer,
+        float: Float,
+        boolean: TrueClass, bool: TrueClass,
+        symbol: Symbol, sym: Symbol,
+        array: Array,
+        hash: Hash,
+      }.freeze
+
+      def attribute(name, type = String, **options)
+        type = resolve_type(type)
         list = type.is_a?(Hash) && type[:list]
         ref = type.is_a?(Hash) && type[:reference]
         actual_type = type.is_a?(Hash) ? type.values.first : type
@@ -31,6 +42,16 @@ module Hecks
 
       def reference_to(type)
         { reference: type }
+      end
+
+      private
+
+      def resolve_type(type)
+        case type
+        when Symbol then TYPE_MAP.fetch(type) { type }
+        when String then TYPE_MAP.fetch(type.downcase.to_sym) { type }
+        else type
+        end
       end
     end
   end

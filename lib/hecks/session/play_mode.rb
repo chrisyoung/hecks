@@ -8,7 +8,7 @@
 #   session.execute("CreatePizza", name: "Margherita")
 #   session.events
 #   session.history
-#   session.build!   # back to build mode
+#   session.define!   # back to define mode
 #
 module Hecks
   class Session
@@ -28,23 +28,22 @@ module Hecks
         @mode = :play
         puts "Entering play mode"
         puts ""
-        puts "  session.commands   # list available commands"
-        puts "  session.execute(\"CreatePizza\", name: \"Pepperoni\")"
-        puts "  session.events     # all events"
-        puts "  session.history    # event timeline"
-        puts "  session.reset!     # clear events"
-        puts "  session.build!     # back to build mode"
+        puts "  commands                                # list available commands"
+        puts "  execute(\"CreatePizza\", name: \"Pepperoni\")"
+        puts "  events / history / reset!"
+        puts "  define!                                 # back to define mode"
         puts ""
         self
       end
 
-      # Switch back to build mode
-      def build!
+      # Switch back to define mode
+      def define!
         @mode = :build
         @playground = nil
-        puts "Back to build mode"
+        puts "Back to define mode"
         self
       end
+      alias_method :build!, :define!
 
       # Play mode: execute a command
       def execute(command_name, **attrs)

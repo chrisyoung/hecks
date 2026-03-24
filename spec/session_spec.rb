@@ -235,6 +235,35 @@ RSpec.describe Hecks::Session do
     end
   end
 
+  describe "#add_verb" do
+    it "adds a custom verb" do
+      session.add_verb("Poop")
+      domain = session.to_domain
+      expect(domain.custom_verbs).to include("Poop")
+    end
+
+    it "does not add duplicates" do
+      session.add_verb("Poop")
+      session.add_verb("Poop")
+      domain = session.to_domain
+      expect(domain.custom_verbs.count("Poop")).to eq(1)
+    end
+  end
+
+  describe "#active_hecks!" do
+    it "enables active_hecks mode" do
+      session.aggregate "Pizza" do
+        attribute :name, String
+        command "CreatePizza" do
+          attribute :name, String
+        end
+      end
+
+      session.active_hecks!
+      expect(session.active_hecks?).to be true
+    end
+  end
+
   describe "play mode" do
     before do
       session.aggregate "Pizza" do

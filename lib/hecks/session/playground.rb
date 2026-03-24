@@ -35,6 +35,7 @@ module Hecks
       @events = []
       @policies = collect_policies
       compile!
+      wire_commands!
     end
 
     # Execute a command by name, returns the event
@@ -115,6 +116,23 @@ module Hecks
 
     def inspect
       "#<Hecks::Session::Playground \"#{@domain.name}\" (#{@events.size} events)>"
+    end
+
+    private
+
+    # Wire shortcut methods onto aggregate classes so instances can call
+    # commands directly: cat.meow delegates to playground.execute("Meow").
+    def wire_commands!
+      mod = Object.const_get(@mod_name)
+      playground = self
+
+      @domain.aggregates.each do |agg|
+        klass = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+        Services::Commands::CommandMethods.bind_shortcuts(klass, agg) do |cmd|
+          cmd_name = cmd.name
+          ->(attrs) { playground.execute(cmd_name, **attrs) }
+        end
+      end
     end
   end
   end

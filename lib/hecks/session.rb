@@ -30,6 +30,8 @@ module Hecks
       @name = name
       @aggregate_builders = {}
       @handles = {}
+      @custom_verbs = []
+      @active_hecks = false
       @mode = :build
       @playground = nil
     end
@@ -48,6 +50,7 @@ module Hecks
 
     # Get or create an aggregate, returns a handle for incremental building
     def aggregate(name, &block)
+      name = normalize_name(name)
       builder = @aggregate_builders[name] ||= DSL::AggregateBuilder.new(name)
       builder.instance_eval(&block) if block
 
@@ -63,7 +66,26 @@ module Hecks
 
     def to_domain
       aggregates = @aggregate_builders.values.map(&:build)
-      DomainModel::Structure::Domain.new(name: @name, aggregates: aggregates)
+      DomainModel::Structure::Domain.new(name: @name, aggregates: aggregates, custom_verbs: @custom_verbs)
+    end
+
+    def active_hecks!
+      @active_hecks = true
+      domain = to_domain
+      mod = Hecks.load_domain(domain, force: true, skip_validation: true)
+      require "active_hecks"
+      ActiveHecks.activate(mod, domain: domain)
+      puts "ActiveHecks loaded for #{domain.module_name}Domain"
+      mod
+    end
+
+    def active_hecks?
+      @active_hecks
+    end
+
+    def add_verb(word)
+      @custom_verbs << word.to_s unless @custom_verbs.include?(word.to_s)
+      self
     end
 
     def aggregates
@@ -81,6 +103,10 @@ module Hecks
     end
 
     private
+
+    def normalize_name(name)
+      Hecks::Utils.sanitize_constant(name)
+    end
 
     def aggregate_summary(agg)
       parts = []

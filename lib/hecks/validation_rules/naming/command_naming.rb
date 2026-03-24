@@ -28,15 +28,19 @@ module Hecks
       private
 
       def verb?(word, custom)
-        return true if custom.include?(word)
+        return true if custom.any? { |v| v.downcase == word.downcase }
         WordNet::Lemma.find_all(word.downcase).any? { |l| l.pos == "v" }
       end
 
       def load_custom_verbs
-        return [] unless @domain.respond_to?(:source_path) && @domain.source_path
-        verbs_file = File.join(File.dirname(@domain.source_path), "verbs.txt")
-        return [] unless File.exist?(verbs_file)
-        File.readlines(verbs_file).map(&:strip).reject(&:empty?)
+        verbs = @domain.respond_to?(:custom_verbs) ? Array(@domain.custom_verbs) : []
+        if @domain.respond_to?(:source_path) && @domain.source_path
+          verbs_file = File.join(File.dirname(@domain.source_path), "verbs.txt")
+          if File.exist?(verbs_file)
+            verbs += File.readlines(verbs_file).map(&:strip).reject(&:empty?)
+          end
+        end
+        verbs
       end
     end
     end

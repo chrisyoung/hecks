@@ -5,6 +5,8 @@
 - Define aggregates with attributes, commands, events, policies, queries, and scopes
 - Define value objects as immutable nested types within aggregates
 - Define typed attributes with String, Integer, Float, Boolean, JSON, etc.
+- Symbol type shorthand: `:string`, `:integer`, `:float`, `:boolean` resolve to Ruby classes
+- Default attribute type is String when omitted
 - Define collection attributes with `list_of("Type")` syntax
 - Define cross-aggregate references with `reference_to("Aggregate")`
 - Define commands with attributes, handlers, guards, read models, actors, and external system docs
@@ -82,6 +84,8 @@
 - Command bus with `app.run("CommandName", attrs)` dispatch
 - Short API: `app["Pizza"].create(name: "M")`
 - Class-level command methods: `Pizza.create(name: "M")`
+- Instance-level command methods: `cat.meow` auto-fills from instance attributes, `cat.meow(name: "Pow")` overrides
+- Mutable setters on aggregates — tweak state interactively, then fire commands that read from `self`
 - Commands return self with `.aggregate` and `.event` accessors
 - `Hecks::Command` mixin orchestrates full lifecycle (guard → handler → call → persist → emit → record)
 - `Hecks::Query` mixin — queries are self-contained like commands
@@ -116,6 +120,7 @@
 - Serve domain tool: start HTTP/MCP server from within the MCP session
 
 ## CLI Commands
+- `hecks init [NAME]` — top-level shortcut for `hecks domain init`
 - `hecks domain build` — validate and generate versioned gem
 - `hecks domain serve [--rpc]` — start REST or JSON-RPC server
 - `hecks domain console [NAME]` — interactive REPL with domain loaded
@@ -126,19 +131,40 @@
 - `hecks domain mcp` — start MCP server
 - `hecks domain generate-sinatra` — scaffold a Sinatra app from domain
 - `hecks domain migrations [status|pending|create]` — schema migration management
-- `hecks domain list` — show installed domain gems with versions
-- `hecks domain dump` — show glossary, visualizer, and DSL output
 - `hecks docs update` — sync all file doc headers and READMEs
-- `hecks gem build` / `hecks gem install` — package and install domain gems
+- `hecks gem build` — build the hecks gem from gemspec
+- `hecks gem install` — build and install the hecks gem locally
 - `hecks version` / `hecks version DOMAIN` — show framework or domain version
 - All commands accept `--domain` flag consistently
+- Thor `exit_on_failure?` properly configured
 
 ## Session & Playground
 - Interactive session for incremental domain building (`Hecks.session`)
 - REPL mode via `ConsoleRunner` with `describe`, `validate`, `build`, `play!`, `dump`, `save`
+- All session methods hoisted to top level in console (no `session.` prefix needed)
+- `_a` shortcut — always points to the last aggregate handle
+- `_d` shortcut — always points to the last built domain object
+- `help` command in console prints available commands
+- Persistent command history across sessions (`~/.hecks_history`)
+- Clean IRB exit handling (catches `:IRB_EXIT`)
+- AggregateHandle short method names: `attr`, `command`, `validation`, `value_object`, `policy`, `invariant`, `verb`, `remove`
+- Duplicate attribute detection — raises on `attr :name` when `:name` already exists
+- `handle.build(**attrs)` — compile domain and return a live domain object instance
+- `handle.build` with `active_hecks!` — returns ActiveModel-enhanced instances
+- `handle.valid?` — check if aggregate passes DDD validation rules
+- `handle.errors` — list validation errors for this aggregate
+- `session.active_hecks!` — enable ActiveModel compatibility for all subsequent builds
+- `session.add_verb(word)` / `handle.verb(word)` — register custom verbs for command naming validation
+- Auto-normalize names to PascalCase (`"cat"` → `"Cat"`, `"adopt cat"` → `"AdoptCat"`)
+- Symbol type shorthand in handles: `:string`, `:integer`, `:boolean` resolve to Ruby classes
+- Default attribute type is String when omitted (`attr :name` same as `attr :name, String`)
 - Play mode compiles domain on the fly and executes commands against live in-memory app
+- Play mode wires command shortcuts onto aggregate classes (`Cat.meow`, `cat.meow`)
+- `define!` / `play!` toggling — switch between modeling and execution modes
 - Real-time event display and policy triggering feedback
 - Event history with timestamps, reset/replay capability
+- Clean `irb(hecks)` prompt in console
+- Suppressed backtraces by default — `backtrace!` / `quiet!` to toggle
 - `Hecks::TestHelper` for spec setup and constant cleanup
 
 ## Validation & DDD Rules
@@ -148,7 +174,8 @@
 - No self-references on aggregates
 - Value objects must not contain references
 - Aggregates must have at least one command
-- Command names must be verb phrases
+- Command names must be verb phrases (WordNet + custom verbs via `verbs.txt` or `add_verb`)
+- Custom verbs stored on Domain model and checked alongside `verbs.txt`
 - Reactive policy events and triggers must reference existing elements
 - Aggregate/value-object name collision detection
 - Ruby keyword and reserved attribute name detection
@@ -191,3 +218,6 @@
 - Domain gems are the bounded context boundaries
 - Constant hoisting promotes aggregates to top-level namespace for convenience
 - `Hecks::Model` attribute DSL — no generated constructors, declarative attribute definitions
+- `Hecks::Model` generates both readers and writers — mutable for exploration, commands for the record
+- `reset!` on aggregate instances — restores all attributes to constructor values, preserves identity
+- `CommandMethods.bind_shortcuts` shared between runtime and playground — same `cat.meow` API everywhere

@@ -32,6 +32,7 @@ module Hecks
         @hecks_attributes ||= []
         @hecks_attributes << { name: name.to_sym, default: default, freeze: freeze }
         attr_reader name
+        attr_writer name
         rebuild_initializer
       end
 
@@ -45,15 +46,25 @@ module Hecks
         attrs = @hecks_attributes.dup
         define_method(:initialize) do |id: nil, **kwargs|
           @id = id || SecureRandom.uuid
+          @_pristine = {}
           attrs.each do |attr|
             val = kwargs.fetch(attr[:name], attr[:default])
             val = val.freeze if attr[:freeze]
             instance_variable_set(:"@#{attr[:name]}", val)
+            @_pristine[attr[:name]] = val
           end
           validate!
           check_invariants!
         end
       end
+    end
+
+    # Restore all attributes to their constructor values
+    def reset!
+      @_pristine.each do |name, val|
+        instance_variable_set(:"@#{name}", val)
+      end
+      self
     end
 
     # Timestamps — set by persistence layer, not by domain logic
