@@ -43,7 +43,7 @@
 - `Hecks.boot(__dir__)` — find domain file, validate, build, load, and wire in one call
 - `Hecks.boot(__dir__, adapter: :sqlite)` — automatic SQL setup: Sequel connection, adapter generation, table creation
 - `Hecks.boot(__dir__) { persist_to :sqlite }` — boot block with domain connections
-- `Hecks.load(domain)` — load domain and wire runtime in one step, returns `Hecks::Services::Runtime`
+- `Hecks.load(domain)` — load domain and wire runtime in one step, returns `Hecks::Runtime`
 - `app["Pizza"]` — access aggregate repository
 - `app.on("EventName") { }` — subscribe to events at runtime
 - `app.run("CommandName", attrs)` — dispatch commands
@@ -120,11 +120,16 @@
 - Async subscriber dispatch via configurable `async { }` block (e.g., Sidekiq)
 - Async policy dispatch via configurable `async { }` block
 
-## Connections Architecture
-- HTTP, MCP, and SQL adapters live in `lib/hecks/connections/` — outside the domain boundary
-- Each connection is a gem candidate: `hecks-http`, `hecks-mcp`, `hecks-sqlite`
-- Core hecks gem runs standalone with memory adapter — zero dependencies
-- Add a gem, get a connection: `gem "hecks-sqlite"` enables `persist_to :sqlite`
+## Gem Architecture
+- Core `hecks` gem has zero runtime dependencies — runs standalone with memory adapter
+- Each connection is a top-level gem candidate at `lib/`:
+  - `hecks_persist` — SQL persistence (Sequel, SQLite, PostgreSQL, MySQL)
+  - `hecks_serve` — HTTP REST and JSON-RPC servers (WEBrick)
+  - `hecks_ai` — MCP server for AI agent integration
+  - `hecks_cli` — Thor-based CLI commands
+  - `active_hecks` — Rails integration (ActiveModel, Railtie, generators)
+- `require "hecks"` gives you the core; each connection is a separate require
+- Flattened namespace: `Hecks::Runtime`, `Hecks::EventBus`, `Hecks::Commands` (no `Services::` nesting)
 
 ## HTTP Servers
 - REST server (WEBrick) with auto-generated CRUD routes per aggregate
@@ -195,7 +200,7 @@
 - `define!` / `play!` toggling — switch between modeling and execution modes
 - Real-time event display and policy triggering feedback
 - Event history with timestamps, reset/replay capability
-- Clean `irb(hecks)` prompt in console
+- Dynamic REPL prompt: `hecks(domain mode)` shows context — `hecks(scratch define)`, `hecks(banking play)`
 - Suppressed backtraces by default — `backtrace!` / `quiet!` to toggle
 - `Hecks::TestHelper` for spec setup and constant cleanup
 
@@ -248,6 +253,10 @@
 - Configurable whitelists: `allow :find, :all`, etc.
 
 ## Architecture
+- The domain gem IS the domain — pure Ruby, zero dependencies
+- Hecks IS the services layer — wires connections to domains
+- Everything outside the domain boundary is a connection you plug in
+- Flattened namespace: `Hecks::Runtime`, not `Hecks::Services::Runtime`
 - Hexagonal / ports-and-adapters: domain layer has zero persistence or SQL knowledge
 - Operators are pure Specifications (`match?` only) — SQL translation lives in adapters
 - Domain gems are the bounded context boundaries
@@ -256,6 +265,7 @@
 - `Hecks::Model` generates both readers and writers — mutable for exploration, commands for the record
 - `reset!` on aggregate instances — restores all attributes to constructor values, preserves identity
 - `CommandMethods.bind_shortcuts` shared between runtime and playground — same `cat.meow` API everywhere
+- Rails generators registered dynamically via Railtie, not magic directory convention
 
 ## Self-Documenting README
 - `bin/generate-readme` or `hecks docs readme` generates README.md from template
