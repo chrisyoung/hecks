@@ -4,12 +4,17 @@
 # builds the gem, adds it to $LOAD_PATH, and returns a wired Runtime.
 # Supports memory (default) and SQL adapters. SQL adapters automatically
 # generate repository classes, create tables, and wire everything up.
+# Accepts an optional block for declaring domain connections (persist_to,
+# listens_to, sends_to) before the Runtime is created.
 #
 # Part of the top-level Hecks API. Mixed into the Hecks module via extend.
 #
 #   app = Hecks.boot(__dir__)
 #   app = Hecks.boot(__dir__, adapter: :sqlite)
-#   app = Hecks.boot(__dir__, adapter: { type: :sqlite, database: "app.db" })
+#   app = Hecks.boot(__dir__) do
+#     persist_to :sqlite
+#     sends_to :notifications, MyAdapter.new
+#   end
 #
 require_relative "boot/sql_boot"
 
@@ -19,8 +24,9 @@ module Hecks
     #
     # @param dir [String] directory containing hecks_domain.rb
     # @param adapter [Symbol, Hash] :memory (default), :sqlite, or { type: :sqlite, database: "path" }
+    # @param block [Proc] optional block evaluated on the domain module for connections
     # @return [Hecks::Services::Runtime]
-    def boot(dir, adapter: :memory)
+    def boot(dir, adapter: :memory, &block)
       domain_file = File.join(dir, "hecks_domain.rb")
       unless File.exist?(domain_file)
         raise Hecks::DomainLoadError, "No hecks_domain.rb found in #{dir}"
@@ -41,8 +47,27 @@ module Hecks
       require domain.gem_name
       load_generated_files(output, domain)
 
-      if sql_adapter?(adapter)
-        boot_with_sql(domain, adapter)
+      mod_name = domain.module_name + "Domain"
+      mod = Object.const_get(mod_name)
+      mod.extend(Hecks::DomainConnections) unless mod.respond_to?(:persist_to)
+
+      # adapter: keyword is shorthand for persist_to
+      unless adapter == :memory
+        if adapter.is_a?(Hash)
+          type = adapter[:type]
+          opts = adapter.reject { |k, _| k == :type }
+          mod.persist_to(type, **opts)
+        else
+          mod.persist_to(adapter)
+        end
+      end
+
+      # Evaluate the boot block on the domain module before creating Runtime
+      mod.instance_eval(&block) if block
+
+      effective_adapter = mod.connections[:persist]
+      if effective_adapter && sql_adapter_type?(effective_adapter[:type])
+        boot_with_sql(domain, effective_adapter)
       else
         Services::Runtime.new(domain)
       end
@@ -53,11 +78,15 @@ module Hecks
     def sql_adapter?(adapter)
       return false if adapter == :memory
       type = adapter.is_a?(Hash) ? adapter[:type] : adapter
+      sql_adapter_type?(type)
+    end
+
+    def sql_adapter_type?(type)
       [:sqlite, :postgres, :mysql, :mysql2].include?(type)
     end
 
-    def boot_with_sql(domain, adapter)
-      db = SqlBoot.connect(adapter)
+    def boot_with_sql(domain, adapter_config)
+      db = SqlBoot.connect(adapter_config)
       adapters = SqlBoot.setup(domain, db)
       Services::Runtime.new(domain) do
         adapters.each { |name, repo| adapter(name, repo) }

@@ -30,8 +30,8 @@ module Hecks
         domain = resolve_domain_option
         return unless domain
 
-        require_relative "../../http/openapi_generator"
-        require_relative "../../http/rpc_discovery"
+        require_relative "../../connections/http/openapi_generator"
+        require_relative "../../connections/http/rpc_discovery"
         require "webrick"
         require "json"
 

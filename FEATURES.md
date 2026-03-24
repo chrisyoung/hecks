@@ -30,9 +30,19 @@
 - Multi-domain support with shared event bus across domains
 - Domain version pinning and local path loading in configuration
 
+## Domain Connections
+- `persist_to :sqlite` — declare persistence adapter in boot block or on domain module
+- `sends_to :notifications, adapter` — forward all domain events to an outbound handler
+- `sends_to(:audit) { |event| ... }` — forward events to a block handler
+- `listens_to OtherDomain` — subscribe to another domain's event bus (cross-domain events)
+- `SomeDomain.connections` — inspect current connection configuration
+- `SomeDomain.event_bus` — access the domain's event bus for cross-domain wiring
+- Boot block syntax: `Hecks.boot(__dir__) { persist_to :sqlite; sends_to :audit, handler }`
+
 ## Runtime API
 - `Hecks.boot(__dir__)` — find domain file, validate, build, load, and wire in one call
 - `Hecks.boot(__dir__, adapter: :sqlite)` — automatic SQL setup: Sequel connection, adapter generation, table creation
+- `Hecks.boot(__dir__) { persist_to :sqlite }` — boot block with domain connections
 - `Hecks.load(domain)` — load domain and wire runtime in one step, returns `Hecks::Services::Runtime`
 - `app["Pizza"]` — access aggregate repository
 - `app.on("EventName") { }` — subscribe to events at runtime
@@ -104,10 +114,17 @@
 - Command bus middleware pipeline (e.g., logging, auth)
 - Re-entrant policy protection (skips policies already in-flight)
 - In-process event bus with `app.on("EventName") { |event| }` subscriptions
+- `event_bus.on_any { |event| }` wildcard subscription for cross-domain forwarding
 - DSL-defined event subscribers with `on_event "EventName" do |event| ... end`
 - Cross-aggregate event subscribers (e.g., Order subscribes to Pizza's CreatedPizza)
 - Async subscriber dispatch via configurable `async { }` block (e.g., Sidekiq)
 - Async policy dispatch via configurable `async { }` block
+
+## Connections Architecture
+- HTTP, MCP, and SQL adapters live in `lib/hecks/connections/` — outside the domain boundary
+- Each connection is a gem candidate: `hecks-http`, `hecks-mcp`, `hecks-sqlite`
+- Core hecks gem runs standalone with memory adapter — zero dependencies
+- Add a gem, get a connection: `gem "hecks-sqlite"` enables `persist_to :sqlite`
 
 ## HTTP Servers
 - REST server (WEBrick) with auto-generated CRUD routes per aggregate
