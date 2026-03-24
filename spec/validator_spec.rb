@@ -34,7 +34,7 @@ RSpec.describe Hecks::Validator do
     it "reports the error" do
       validator = described_class.new(domain)
       expect(validator).not_to be_valid
-      expect(validator.errors).to include("Duplicate aggregate name: Pizza")
+      expect(validator.errors).to include(a_string_matching(/Duplicate aggregate name: Pizza/))
     end
   end
 

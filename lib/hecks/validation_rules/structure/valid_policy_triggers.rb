@@ -16,14 +16,16 @@ module Hecks
         @domain.aggregates.each do |agg|
           agg.policies.select(&:reactive?).each do |policy|
             unless all_commands.include?(policy.trigger_command)
-              result << "Policy #{policy.name} in #{agg.name} triggers unknown command: #{policy.trigger_command}. The triggered command must exist in the domain."
+              hint = all_commands.any? ? " Available commands: #{all_commands.join(', ')}." : ""
+              result << "Policy #{policy.name} in #{agg.name} triggers unknown command: #{policy.trigger_command}.#{hint}"
             end
           end
         end
 
         @domain.policies.select(&:reactive?).each do |policy|
           unless all_commands.include?(policy.trigger_command)
-            result << "Domain policy #{policy.name} triggers unknown command: #{policy.trigger_command}. The triggered command must exist in the domain."
+            hint = all_commands.any? ? " Available commands: #{all_commands.join(', ')}." : ""
+            result << "Domain policy #{policy.name} triggers unknown command: #{policy.trigger_command}.#{hint}"
           end
         end
 
