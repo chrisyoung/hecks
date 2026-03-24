@@ -2,6 +2,8 @@
 
 Describe your business in Ruby. Hecks generates the code.
 
+{{content:hero}}
+
 - [The Seam](#the-seam) — the core architecture
 - [Quick Start](#quick-start) — zero to running domain
 - [The DSL](#the-dsl) — define your business
