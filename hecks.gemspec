@@ -18,12 +18,13 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = ">= 3.0"
 
-  spec.add_dependency "thor", "~> 1.0"
-  spec.add_dependency "sequel", "~> 5.0"
-  spec.add_dependency "rwordnet", ">= 1.0", "< 3.0"
-  spec.add_dependency "mcp", ">= 0.1", "< 2.0"
-
+  # No runtime dependencies — core hecks is standalone
+  # Optional — required by connections, not by core
+  spec.add_development_dependency "thor", "~> 1.0"
+  spec.add_development_dependency "sequel", "~> 5.0"
+  spec.add_development_dependency "sqlite3", ">= 1.4", "< 3.0"
+  spec.add_development_dependency "rwordnet", ">= 1.0", "< 3.0"
+  spec.add_development_dependency "mcp", ">= 0.1", "< 2.0"
   spec.add_development_dependency "rspec", "~> 3.0"
   spec.add_development_dependency "activemodel", ">= 6.0", "< 10.0"
-  spec.add_development_dependency "sqlite3", ">= 1.4", "< 3.0"
 end

@@ -5,7 +5,11 @@
 #   hecks docs <command>    — documentation tasks
 #   hecks gem <command>     — gem packaging (build, install)
 #
-require "thor"
+begin
+  require "thor"
+rescue LoadError
+  raise LoadError, "The hecks CLI requires thor. Add gem 'thor' to your Gemfile."
+end
 require "fileutils"
 
 module Hecks
