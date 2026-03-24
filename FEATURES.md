@@ -168,7 +168,8 @@
 - Auto-normalize names to PascalCase (`"cat"` → `"Cat"`, `"adopt cat"` → `"AdoptCat"`)
 - Symbol type shorthand in handles: `:string`, `:integer`, `:boolean` resolve to Ruby classes
 - Default attribute type is String when omitted (`attr :name` same as `attr :name, String`)
-- Play mode compiles domain on the fly and executes commands against live in-memory app
+- Play mode compiles domain on the fly with full Runtime (persistence, queries, events, policies)
+- Play mode persistence: `Cat.find(id)`, `Cat.all`, `Cat.count`, `Cat.where(...)` all work after executing commands
 - Play mode wires command shortcuts onto aggregate classes (`Cat.meow`, `cat.meow`)
 - `define!` / `play!` toggling — switch between modeling and execution modes
 - Real-time event display and policy triggering feedback

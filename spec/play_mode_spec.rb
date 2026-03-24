@@ -177,6 +177,45 @@ RSpec.describe "Play mode" do
     end
   end
 
+  describe "persistence" do
+    before { session.play! }
+
+    it "persists aggregates after execute" do
+      mod = Object.const_get("ScratchDomain")
+      result = session.execute("CreatePizza", name: "Margherita", style: "NY")
+      found = mod::Pizza.find(result.id)
+      expect(found.name).to eq("Margherita")
+    end
+
+    it "supports all" do
+      mod = Object.const_get("ScratchDomain")
+      session.execute("CreatePizza", name: "A", style: "NY")
+      session.execute("CreatePizza", name: "B", style: "Chicago")
+      expect(mod::Pizza.all.size).to eq(2)
+    end
+
+    it "supports count" do
+      mod = Object.const_get("ScratchDomain")
+      session.execute("Meow", name: "Henry")
+      session.execute("Meow", name: "Whiskers")
+      expect(mod::Cat.count).to eq(2)
+    end
+
+    it "persists via class method shortcuts" do
+      mod = Object.const_get("ScratchDomain")
+      pizza = mod::Pizza.create(name: "Pepperoni", style: "NY")
+      expect(mod::Pizza.find(pizza.id).name).to eq("Pepperoni")
+    end
+
+    it "reset clears repository data" do
+      mod = Object.const_get("ScratchDomain")
+      session.execute("CreatePizza", name: "Test", style: "NY")
+      expect(mod::Pizza.count).to eq(1)
+      session.reset!
+      expect(mod::Pizza.count).to eq(0)
+    end
+  end
+
   describe "define! / play! toggling" do
     it "can switch back to define mode" do
       session.play!

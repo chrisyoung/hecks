@@ -45,9 +45,15 @@ RSpec.describe Hecks::Session::Playground do
   before { allow($stdout).to receive(:puts) }
 
   describe "#execute" do
-    it "executes a command and returns an event" do
-      event = playground.execute("CreatePizza", name: "Pepperoni")
-      expect(event.name).to eq("Pepperoni")
+    it "executes a command and returns the aggregate" do
+      result = playground.execute("CreatePizza", name: "Pepperoni")
+      expect(result.name).to eq("Pepperoni")
+      expect(result.id).to be_a(String)
+    end
+
+    it "captures the event" do
+      playground.execute("CreatePizza", name: "Pepperoni")
+      event = playground.events.last
       expect(event.occurred_at).to be_a(Time)
     end
 
