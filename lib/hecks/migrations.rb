@@ -16,7 +16,7 @@ module Hecks
     autoload :MigrationRunner,  "hecks/migrations/migration_runner"
 
     module Strategies
-      autoload :SqlStrategy, "hecks/migration_strategies/sql_strategy"
+      autoload :SqlStrategy, "hecks/connections/sql/sql_strategy"
     end
   end
 end

@@ -16,7 +16,7 @@
 #     sends_to :notifications, MyAdapter.new
 #   end
 #
-require_relative "boot/sql_boot"
+require_relative "connections/sql/sql_boot"
 
 module Hecks
   module Boot
