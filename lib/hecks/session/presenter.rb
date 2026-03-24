@@ -1,8 +1,8 @@
 # Hecks::Session::Presenter
 #
 # Session mixin for human-readable output: describe, status, and inspect.
-# Part of the Session layer -- formats aggregate, command, and policy
-# summaries for REPL display.
+# Part of the Session layer -- formats aggregate, command, policy, query,
+# scope, and subscriber summaries for REPL display.
 #
 #   session.describe   # prints full domain summary
 #   session.status     # alias for describe
@@ -57,6 +57,21 @@ module Hecks
             agg.policies.each do |pol|
               lines << "    Policies: #{pol.name} (on #{pol.event_name} -> #{pol.trigger_command})"
             end
+          end
+
+          unless agg.queries.empty?
+            queries = agg.queries.map(&:name).join(", ")
+            lines << "    Queries: #{queries}"
+          end
+
+          unless agg.scopes.empty?
+            scopes = agg.scopes.map(&:name).join(", ")
+            lines << "    Scopes: #{scopes}"
+          end
+
+          unless agg.subscribers.empty?
+            subs = agg.subscribers.map { |s| "on #{s.event_name}" }.join(", ")
+            lines << "    Subscribers: #{subs}"
           end
 
           lines << ""

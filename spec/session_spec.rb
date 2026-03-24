@@ -137,6 +137,50 @@ RSpec.describe Hecks::Session do
     end
   end
 
+  describe "#describe with queries, scopes, and subscribers" do
+    it "includes queries in the output" do
+      session.aggregate "Pizza" do
+        attribute :name, String
+        command "CreatePizza" do
+          attribute :name, String
+        end
+        query "ByStyle" do |style|
+          { style: style }
+        end
+      end
+
+      expect { session.describe }.to output(/Queries: ByStyle/).to_stdout
+    end
+
+    it "includes scopes in the output" do
+      session.aggregate "Pizza" do
+        attribute :name, String
+        attribute :status, String
+        command "CreatePizza" do
+          attribute :name, String
+        end
+        scope :active, status: "active"
+        scope :large, size: "L"
+      end
+
+      expect { session.describe }.to output(/Scopes: active, large/).to_stdout
+    end
+
+    it "includes subscribers in the output" do
+      session.aggregate "Pizza" do
+        attribute :name, String
+        command "CreatePizza" do
+          attribute :name, String
+        end
+        on_event "CreatedPizza" do |event|
+          # subscriber logic
+        end
+      end
+
+      expect { session.describe }.to output(/Subscribers: on CreatedPizza/).to_stdout
+    end
+  end
+
   describe "#status" do
     it "is an alias for describe" do
       session.aggregate "Pizza" do
