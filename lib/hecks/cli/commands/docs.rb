@@ -1,14 +1,27 @@
-# Hecks::CLI::Domain#docs
+# Hecks::CLI::Domain#docs, Domain#readme
 #
 # Starts a WEBrick server hosting Swagger UI for a domain's API.
 # Generates OpenAPI 3.0 and JSON-RPC discovery specs on the fly and serves
 # them alongside an HTML page that loads Swagger UI from a CDN.
 #
+# The readme subcommand generates README.md from docs/readme_template.md
+# by replacing {{tags}} with content from docs/content/, docs/usage/,
+# and auto-generated tables from code.
+#
 #   hecks domain docs [--domain NAME] [--port 9393]
+#   hecks domain readme
 #
 module Hecks
   class CLI < Thor
     class Domain < Thor
+      desc "readme", "Generate README.md from docs/readme_template.md"
+      def readme
+        require_relative "../../readme_generator"
+        root = Dir.pwd
+        ReadmeGenerator.new(root).generate
+        say "Generated README.md", :green
+      end
+
       desc "docs", "Serve API documentation (Swagger UI)"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
