@@ -2,8 +2,6 @@
 
 Describe your business in Ruby. Hecks generates the code.
 
-Write a DSL that says what your things are, what you can do with them, and how to look them up. Hecks generates a complete Ruby gem — classes, tests, and all the plumbing. No ActiveRecord. No database setup. Just your business logic.
-
 ## The Seam
 
 A domain has a boundary. **Ports are the only way through it.**
@@ -57,1000 +55,841 @@ No adapter class needed unless you want one. Persistence is a port. Notification
 
 *Using Rails? See [how ActiveHecks bridges domain objects and Rails](docs/active_hecks.md).*
 
-## Hecks LOVES Rails
-
-Drop a Hecks domain gem into any Rails app and it just works. No ActiveRecord needed.
-
-```ruby
-# Gemfile
-gem "hecks"
-gem "pizzas_domain", path: "./pizzas_domain"
-
-# config/initializers/hecks.rb
-Hecks.configure do
-  domain "pizzas_domain"
-  adapter :sql, database: :mysql,
-    host: "localhost", user: "root", password: "secret", name: "pizzas"
-  include_ad_hoc_queries
-end
-```
-
-Then write controllers using query objects and familiar methods:
-
-```ruby
-class PizzasController < ApplicationController
-  def index
-    @pizzas = params[:style] ? Pizza.by_style(params[:style]) : Pizza.all
-  end
-
-  def create
-    @pizza = Pizza.create(name: params[:pizza][:name])
-    redirect_to pizza_path(@pizza)
-  end
-
-  def show
-    @pizza = Pizza.find(params[:id])
-  end
-
-  def destroy
-    Pizza.find(params[:id]).destroy
-    redirect_to pizzas_path
-  end
-end
-```
-
-```erb
-<%= form_with(model: @pizza) do |f| %>
-  <%= f.text_field :name %>
-  <%= f.submit %>
-<% end %>
-```
-
-`Pizza.create`, `Pizza.find`, `Pizza.all`, `pizza.update`, `pizza.destroy`, `pizza.toppings.create` — it feels like ActiveRecord, but it's your pure domain. Tests run against memory adapters automatically. No database setup needed.
-
-## [Why Hecks instead of ActiveRecord?](docs/why_hecks.md)
-
-Hecks was born out of frustration with ActiveRecord. Describing your business shouldn't be harder than `rails generate model` — so we made it just as easy. Pure objects, named lookups, any database, no lock-in. [Read more](docs/why_hecks.md). Coming from ActiveRecord? See [the migration guide](docs/active_record.md). For details on the Rails integration layer, see [ActiveHecks](docs/active_hecks.md).
-
-## Install
-
-```
-gem install hecks
-```
-
 ## Quick Start
 
+# hecks new — Scaffold a Project
+
+Create a complete Hecks project in one command.
+
+## Usage
+
 ```
-hecks new pizzas
-cd pizzas
+$ hecks new banking
+
+Created banking/
+  hecks_domain.rb
+  app.rb
+  Gemfile
+  spec/spec_helper.rb
+  .gitignore
+  .rspec
+
+Get started:
+  cd banking
+  bundle install
+  ruby app.rb
 ```
 
-This creates a `domain.rb` file:
+## What it generates
 
+**hecks_domain.rb** — starter domain definition:
 ```ruby
-Hecks.domain "Pizzas" do
-  aggregate "Pizza" do
+Hecks.domain "Banking" do
+  aggregate "Example" do
     attribute :name, String
 
-    validation :name, presence: true
-
-    command "CreatePizza" do
+    command "CreateExample" do
       attribute :name, String
     end
   end
 end
 ```
 
-Validate and build:
+**app.rb** — one-line boot:
+```ruby
+require "hecks"
+
+app = Hecks.boot(__dir__)
+
+# Start building:
+#   Example.create(name: "Hello")
+#   Example.all
+```
+
+## Hecks.boot
+
+`Hecks.boot(__dir__)` replaces the manual load/validate/build/require/wire dance:
+
+```ruby
+# Before (10 lines):
+domain_file = File.join(__dir__, "hecks_domain.rb")
+domain = eval(File.read(domain_file), nil, domain_file, 1)
+Hecks.validate(domain)
+output = Hecks.build(domain, output_dir: __dir__)
+$LOAD_PATH.unshift(File.join(output, "lib"))
+require "banking_domain"
+app = Hecks::Services::Runtime.new(domain)
+
+# After (1 line):
+app = Hecks.boot(__dir__)
+```
+
+It finds `hecks_domain.rb`, validates, builds the gem, loads it, and returns a Runtime.
+
+## Running
+
+```ruby
+require "hecks"
+app = Hecks.boot(__dir__)
+
+Example.create(name: "Widget")
+Example.create(name: "Gadget")
+Example.count  # => 2
+Example.all.each { |e| puts e.name }
+```
 
 ```
-hecks validate
-hecks build
+Widget
+Gadget
 ```
-
-This generates `pizzas_domain/` — a complete Ruby gem you can publish or add to any application's `Gemfile`. Each build auto-stamps a CalVer version like `2026.03.20.1`.
 
 ## The DSL
 
-### Describing Your Things
-
-Each thing in your business gets an `aggregate` block. It becomes a Ruby class with a unique ID and the attributes you define.
-
 ```ruby
-Hecks.domain "Pizzas" do
-  aggregate "Pizza" do
-    attribute :name, String
-    attribute :description, String
-    attribute :toppings, list_of("Topping")
-    attribute :price, Float
+Hecks.domain "Banking" do
+  aggregate "Account" do
+    attribute :customer_id, reference_to("Customer")
+    attribute :balance, Float
+    attribute :account_type, String
+    attribute :daily_limit, Float
+    attribute :status, String, default: "open"
+    attribute :ledger, list_of("LedgerEntry")
+
+    entity "LedgerEntry" do
+      attribute :amount, Float
+      attribute :description, String
+    end
+
+    command "OpenAccount" do
+      attribute :customer_id, String
+      attribute :account_type, String
+      attribute :daily_limit, Float
+    end
+
+    command "Deposit" do
+      attribute :account_id, String
+      attribute :amount, Float
+    end
+
+    command "Withdraw" do
+      attribute :account_id, String
+      attribute :amount, Float
+    end
+
+    validation :account_type, presence: true
+
+    invariant "balance must not be negative" do
+      balance >= 0
+    end
+
+    specification "LargeWithdrawal" do |withdrawal|
+      withdrawal.amount > 10_000
+    end
+
+    query "ByCustomer" do |cid|
+      where(customer_id: cid)
+    end
+  end
+
+  aggregate "Loan" do
+    attribute :customer_id, reference_to("Customer")
+    attribute :principal, Float
+    attribute :rate, Float
+    attribute :remaining_balance, Float
+
+    command "IssueLoan" do
+      attribute :customer_id, String
+      attribute :principal, Float
+      attribute :rate, Float
+    end
+
+    validation :principal, presence: true
+
+    specification "HighRisk" do |loan|
+      loan.principal > 50_000 && loan.rate > 10
+    end
+  end
+
+  # Domain-level policies — cross-aggregate reactions
+  policy "DisburseFunds" do
+    on "IssuedLoan"
+    trigger "Deposit"
+    map account_id: :account_id, principal: :amount
   end
 end
 ```
 
-### Embedded Details
+**Aggregates** are the core business objects -- each gets a unique ID, typed attributes, and commands that describe what you can do with them.
 
-Some things contain smaller pieces that don't have their own identity — a Topping on a Pizza, an Address on an Order. These are `value_object` blocks, and they're frozen once created.
+**Value objects** (via `value_object`) are frozen details embedded in an aggregate. **Entities** (via `entity`) are mutable sub-objects with their own identity.
+
+**Commands** become class methods: `Account.open(...)`, `Account.deposit(...)`. Each command auto-generates a domain event (`OpenedAccount`, `Deposited`).
+
+**Validations** are checked at creation time. **Invariants** enforce rules on the aggregate's state.
+
+**Specifications** are reusable predicates -- composable with `and`, `or`, `not`.
+
+**Policies** react to events by triggering other commands. `map` translates event attributes to command attributes. `condition` gates when the policy fires.
+
+## Play Mode
+
+# Play Mode Persistence
+
+Play mode now uses a full Runtime with memory adapters. Aggregates are persisted, queryable, and countable after executing commands.
+
+## Usage
 
 ```ruby
-aggregate "Pizza" do
-  attribute :toppings, list_of("Topping")
+session = Hecks.session("Demo")
+session.aggregate("Cat") do
+  attribute :name, String
+  command("Adopt") { attribute :name, String }
+end
 
-  value_object "Topping" do
-    attribute :name, String
-    attribute :amount, Integer
+session.play!
 
-    invariant "amount must be positive" do
-      amount > 0
+# Execute commands — aggregates are persisted
+whiskers = session.execute("Adopt", name: "Whiskers")
+session.execute("Adopt", name: "Mittens")
+
+# Find, all, count — they work
+Cat.find(whiskers.id)   # => #<Cat name="Whiskers">
+Cat.all.map(&:name)     # => ["Whiskers", "Mittens"]
+Cat.count               # => 2
+
+# Class method shortcuts also persist
+Cat.adopt(name: "Shadow")
+Cat.count               # => 3
+
+# Reset clears events AND repository data
+session.reset!
+Cat.count               # => 0
+```
+
+## Output
+
+```
+Command: Adopt
+  Event: Adopted
+    name: "Whiskers"
+
+Cat.count: 2
+Cat.all: ["Whiskers", "Mittens"]
+Cat.find(d67296b0...): Whiskers
+
+Cat.adopt(name: "Shadow"): Shadow
+Cat.count: 3
+
+Cleared all events and data
+Cat.count: 0
+```
+
+## What changed
+
+Play mode previously recorded events but didn't persist aggregates. Now it boots a real `Services::Runtime` with memory adapters, giving you the full command lifecycle: guard, handler, call, persist, emit, record. Same API as production, just in-memory.
+
+## Specifications
+
+Specifications are reusable business predicates defined in the DSL. Each becomes a class with a `satisfied_by?` method.
+
+```ruby
+aggregate "Loan" do
+  specification "HighRisk" do |loan|
+    loan.principal > 50_000 && loan.rate > 10
+  end
+end
+
+aggregate "Account" do
+  specification "LargeWithdrawal" do |withdrawal|
+    withdrawal.amount > 10_000
+  end
+end
+```
+
+Use them at runtime:
+
+```ruby
+high_risk = Loan::Specifications::HighRisk.new
+high_risk.satisfied_by?(loan)  # => true or false
+```
+
+Compose specifications with `and`, `or`, and `not`:
+
+```ruby
+high_risk = Loan::Specifications::HighRisk.new
+large     = Account::Specifications::LargeWithdrawal.new
+
+# Combine with logical operators
+risky_and_large = high_risk.and(large)
+risky_or_large  = high_risk.or(large)
+not_risky       = high_risk.not
+```
+
+## Policies
+
+# Policy Conditions
+
+Reactive policies can have a `condition` block that gates when they fire. The block receives the event and must return true for the policy to trigger.
+
+## Usage
+
+```ruby
+Hecks.domain "Banking" do
+  aggregate "Account" do
+    attribute :balance, Float
+
+    command "Withdraw" do
+      attribute :account_id, String
+      attribute :amount, Float
+    end
+
+    command "FlagSuspicious" do
+      attribute :account_id, String
+    end
+
+    # Only flag withdrawals over $10,000
+    policy "FraudAlert" do
+      on "Withdrew"
+      trigger "FlagSuspicious"
+      map account_id: :account_id
+      condition { |event| event.amount > 10_000 }
     end
   end
 end
 ```
 
-### Actions
-
-Actions describe what you can do. Each one becomes a short class method:
-
-- `CreatePizza` -> `Pizza.create(name:, description:)`
-- `PlaceOrder` -> `Order.place(pizza_id:, quantity:)`
-- `AddTopping` -> `Pizza.add_topping(...)`
+## Behavior
 
 ```ruby
-aggregate "Pizza" do
-  command "CreatePizza" do
-    attribute :name, String
-    attribute :description, String
+# Small withdrawal — policy does NOT fire
+Account.withdraw(account_id: acct.id, amount: 500.0)
+# => Withdrew event, no FraudAlert
+
+# Large withdrawal — policy fires
+Account.withdraw(account_id: acct.id, amount: 25_000.0)
+# => Withdrew event
+# => Policy: FraudAlert -> FlagSuspicious
+```
+
+## No condition = always fires
+
+Policies without a `condition` block fire on every matching event (backward compatible):
+
+```ruby
+policy "NotifyOnDeposit" do
+  on "Deposited"
+  trigger "SendReceipt"
+end
+# Fires on every Deposited event
+```
+
+## Domain-Level Policies
+
+# Domain-Level Policies
+
+Policies that bridge aggregates belong at the domain level, not inside any single aggregate.
+
+## Usage
+
+```ruby
+Hecks.domain "Banking" do
+  aggregate "Loan" do
+    attribute :customer_id, reference_to("Customer")
+    attribute :account_id, reference_to("Account")
+    attribute :principal, Float
+
+    command "IssueLoan" do
+      attribute :customer_id, String
+      attribute :account_id, String
+      attribute :principal, Float
+    end
   end
 
-  command "AddTopping" do
-    attribute :pizza_id, reference_to("Pizza")
-    attribute :topping, String
+  aggregate "Account" do
+    attribute :balance, Float
+
+    command "Deposit" do
+      attribute :account_id, String
+      attribute :amount, Float
+    end
+  end
+
+  # Domain-level: bridges Loan and Account
+  policy "DisburseFunds" do
+    on "IssuedLoan"
+    trigger "Deposit"
+    map account_id: :account_id, principal: :amount
   end
 end
 ```
 
-When you call `Pizza.create(name: "Margherita")`, here's what happens:
+## Output
 
-```mermaid
-flowchart LR
-    Call["Pizza.create(name:)"] --> Bus["CommandBus\ndispatches CreatePizza"]
-    Bus --> MW["Middleware\n(optional)"]
-    MW --> Event["CreatedPizza\nevent published"]
-    Event --> Save["Aggregate saved\nto repository"]
-    Event --> Policies["Policies triggered\n(if any listen)"]
+```
+$ ruby -Ilib examples/banking/app.rb
+
+--- Issue loan: $25,000 at 5.25% for 60 months ---
+  [event] Deposited $25000.00
+  [event] Loan issued: $25000.00 at 5.25%
+Alice checking after disbursement: $28000.00
 ```
 
-1. The command attributes are validated and a `CreatePizza` command object is built
-2. The `CommandBus` dispatches it through any registered middleware
-3. A `CreatedPizza` event is created and published on the `EventBus`
-4. The aggregate is constructed and saved to the repository
-5. Any policies listening for `CreatedPizza` fire their trigger commands
+The DisburseFunds policy fires when a loan is issued, maps `principal` to `amount`, and triggers a Deposit into the linked account. It lives at the domain level because it coordinates between Loan and Account.
 
-### Lookups
-
-Named lookups become class methods. Use `where`, `order`, `limit`, and comparison operators inside them.
+## Conditions work too
 
 ```ruby
-aggregate "Pizza" do
-  attribute :name, String
-  attribute :style, String
-  attribute :price, Float
-
-  query "Classics" do
-    where(style: "Classic").order(:name)
-  end
-
-  query "ByStyle" do |style|
-    where(style: style)
-  end
-
-  query "Expensive" do
-    where(price: gt(15.0))
-  end
+policy "SuspendOnDefault" do
+  on "DefaultedLoan"
+  trigger "SuspendCustomer"
+  map customer_id: :customer_id
+  condition { |event| event.reason != "administrative" }
 end
 ```
 
-```ruby
-Pizza.classics                    # named lookups, always available
-Pizza.by_style("Tropical")
-Pizza.expensive
-```
+## Aggregate-level policies still work
 
-### Rules & Requirements
+Policies scoped to a single aggregate stay inside the aggregate block. Both levels coexist.
 
-Requirements are checked when objects are created. Rules enforce business logic.
+## SQL Persistence
 
-```ruby
-aggregate "Pizza" do
-  attribute :name, String
-  attribute :price, Float
+# SQL Adapter Lifecycle
 
-  validation :name, presence: true
-  validation :price, type: Float
+One line to go from domain definition to SQL-backed persistence.
 
-  invariant "price must be positive" do
-    price > 0
-  end
-end
-```
-
-### Reactions
-
-When something happens, do something else. A `policy` listens for an event and triggers another action.
+## Usage
 
 ```ruby
-aggregate "Order" do
-  attribute :pizza_id, reference_to("Pizza")
-  attribute :quantity, Integer
-
-  command "PlaceOrder" do
-    attribute :pizza_id, reference_to("Pizza")
-    attribute :quantity, Integer
-  end
-
-  policy "ReserveIngredients" do
-    on "PlacedOrder"
-    trigger "ReserveStock"
-  end
-end
-```
-
-Mark a policy `async true` to dispatch it through a background job queue instead of inline:
-
-```ruby
-  policy "SendConfirmation" do
-    on "PlacedOrder"
-    trigger "SendEmail"
-    async true
-  end
-```
-
-Then register your queue adapter:
-
-```ruby
-# Plain Ruby
-app = Hecks::Services::Application.new(domain)
-app.async do |command_name, attrs|
-  MyWorker.perform_async(command_name, attrs)
-end
-
-# Rails
-Hecks.configure do
-  domain "pizzas_domain"
-  async do |command_name, attrs|
-    PolicyWorker.perform_async(command_name, attrs)
-  end
-end
-```
-
-Hecks serializes the event and hands it off. Your worker calls `app.run(command_name, **attrs)` to complete the dispatch. No async handler configured? Async policies fall back to inline dispatch.
-
-### References
-
-Things can reference other things by ID. Hecks enforces this at build time — no circular references, no reaching into other things' internals.
-
-```ruby
-aggregate "Order" do
-  attribute :pizza_id, reference_to("Pizza")  # ID reference, not a direct object
-end
-```
-
-### Multiple Domains
-
-Each domain is its own gem — a natural boundary. Multiple domains share one event bus, so reactions work across boundaries:
-
-```ruby
-# config/initializers/hecks.rb
-Hecks.configure do
-  domain "pizzas_domain"
-  domain "billing_domain"
-  adapter :sql, database: :postgres
-end
-```
-
-```ruby
-# billing_domain/domain.rb — reacts to events from pizzas_domain
-aggregate "Invoice" do
-  command "CreateInvoice" do
-    attribute :pizza_id, String
-    attribute :quantity, Integer
-  end
-
-  policy "BillOnOrder" do
-    on "PlacedOrder"          # from pizzas_domain
-    trigger "CreateInvoice"
-  end
-end
-```
-
-Domains can't access each other's classes. They communicate through events only.
-
-## Build-Time Checks
-
-Hecks catches mistakes when you build, not at runtime:
-
-| Rule | What it catches |
-|---|---|
-| **Things need actions** | A thing with no behavior defined |
-| **Action names must be verbs** | `PizzaData` instead of `CreatePizza` |
-| **Actions need attributes** | Empty actions with no payload |
-| **No self-references** | A thing referencing itself |
-| **No circular references** | Pizza -> Order and Order -> Pizza |
-| **No cross-module references** | Direct references across module boundaries |
-| **References must target things** | Referencing an embedded detail instead of a thing |
-| **Embedded details can't hold references** | References in a detail object |
-| **No name collisions** | A detail named the same as its parent |
-| **Reaction events must exist** | Reacting to an event that no action produces |
-| **Reaction triggers must exist** | Triggering an action that doesn't exist |
-| **No duplicate names** | Duplicate names in the same scope |
-
-In the REPL, bidirectional references are warned about immediately when you add the offending attribute. All other rules are checked at transition points (validate, play, build, save).
-
-## Generated Gem
-
-Running `hecks build` produces a gem with this structure:
-
-### Single Context
-
-```
-pizzas_domain/
-  lib/
-    pizzas_domain.rb                         # entry point + autoloads
-    pizzas_domain/
-      pizza/
-        pizza.rb                             # aggregate root
-        topping.rb                           # value object
-        commands/
-          create_pizza.rb
-        events/
-          created_pizza.rb
-      order/
-        order.rb
-        commands/
-          place_order.rb
-        events/
-          placed_order.rb
-        policies/
-          reserve_ingredients.rb
-      ports/
-        pizza_repository.rb                  # interface
-        order_repository.rb
-      adapters/
-        pizza_memory_repository.rb           # default in-memory adapter
-        order_memory_repository.rb
-  spec/
-    ...
-  pizzas_domain.gemspec
-```
-
-### Multiple Contexts
-
-```
-pizzas_domain/
-  lib/
-    pizzas_domain.rb
-    pizzas_domain/
-      ordering/                              # context directory
-        order/
-          order.rb                           # PizzasDomain::Ordering::Order
-          commands/place_order.rb
-          events/placed_order.rb
-        pizza/
-          pizza.rb                           # PizzasDomain::Ordering::Pizza
-      kitchen/                               # context directory
-        recipe/
-          recipe.rb                          # PizzasDomain::Kitchen::Recipe
-      ports/
-        ordering/
-          order_repository.rb
-        kitchen/
-          recipe_repository.rb
-      adapters/
-        ordering/
-          order_memory_repository.rb
-        kitchen/
-          recipe_memory_repository.rb
-```
-
-### Namespacing
-
-Single context:
-```
-Pizza                                        # hoisted to top level
-Pizza::Topping                               # value object
-Pizza::Commands::CreatePizza                 # command
-Pizza::Events::CreatedPizza                  # domain event
-```
-
-Multiple contexts:
-```
-Ordering::Order                              # context modules hoisted
-Ordering::Pizza
-Kitchen::Recipe
-```
-
-### Using the Generated Gem
-
-```ruby
-require "pizzas_domain"
-
-# Create an aggregate
-pizza = PizzasDomain::Pizza.new(name: "Margherita")
-pizza.id   # => "a3f2..."
-pizza.name # => "Margherita"
-
-# Value objects are frozen
-topping = PizzasDomain::Pizza::Topping.new(name: "Mozzarella", amount: 2)
-topping.frozen? # => true
-
-# Commands are immutable data
-cmd = PizzasDomain::Pizza::Commands::CreatePizza.new(name: "Pepperoni")
-cmd.frozen? # => true
-
-# Use the default memory adapter — works out of the box
-repo = PizzasDomain::Adapters::PizzaMemoryRepository.new
-repo.save(pizza)
-repo.find(pizza.id)  # => the pizza
-repo.all             # => [pizza]
-repo.count           # => 1
-repo.delete(pizza.id)
-```
-
-## Hecks Services
-
-The application services layer, organized into three concerns:
-
-- **Persistence** — `RepositoryMethods`, `CollectionMethods`, `ReferenceMethods` (find, save, create, etc.)
-- **Commands** — `CommandBus`, `CommandMethods` (dispatch, event firing)
-- **Querying** — `QueryBuilder`, `AdHocQueries`, `ScopeMethods`, `Operators` (where, order, limit, gt, lt)
-
-### Application Container
-
-```ruby
-# Plain Ruby — boot manually
 require "hecks"
-require "pizzas_domain"
 
-domain = eval(File.read("pizzas_domain/domain.rb"))
-app = Hecks::Services::Application.new(domain)
+# In-memory SQLite (great for development)
+app = Hecks.boot(__dir__, adapter: :sqlite)
 
-# Rails — use the config block
-Hecks.configure do
-  domain "pizzas_domain"
-  adapter :sql, database: :mysql,
-    host: "localhost", user: "root", password: "secret", name: "pizzas"
-  include_ad_hoc_queries  # opt-in: where, order, limit, find_by
-end
+# File-based SQLite
+app = Hecks.boot(__dir__, adapter: { type: :sqlite, database: "banking.db" })
+
+# PostgreSQL (future)
+app = Hecks.boot(__dir__, adapter: { type: :postgres, host: "localhost", database: "banking" })
 ```
 
-### Query Objects (always available)
+## What it does
 
-Define named queries in the DSL — they become class methods on the aggregate:
+`Hecks.boot` with an adapter option automatically:
+1. Requires Sequel
+2. Creates the database connection
+3. Generates SQL repository classes for each aggregate
+4. Creates tables from the domain IR (columns, types, join tables)
+5. Wires everything into a Runtime
 
-```ruby
-aggregate "Pizza" do
-  query "Classics" do
-    where(style: "Classic").order(:name)
-  end
-
-  query "ByStyle" do |style|
-    where(style: style)
-  end
-end
-```
+## Before and after
 
 ```ruby
-Pizza.classics                    # => [Margherita, Pepperoni]
-Pizza.by_style("Tropical")       # => [Hawaiian]
-```
-
-### Ad-Hoc Queries (opt-in)
-
-Enable `include_ad_hoc_queries` for the full ActiveRecord-style API:
-
-```ruby
-Pizza.where(style: "Classic")
-Pizza.where(price: gt(10)).order(:name)
-Pizza.order(:name).limit(5)
-Pizza.order(name: :desc).offset(10)
-Pizza.find_by(name: "Margherita")
-Pizza.limit(10)
-Pizza.first
-Pizza.last
-```
-
-### Persistence Methods
-
-Always available via `RepositoryMethods`:
-
-```ruby
-Pizza.find(id)
-Pizza.create(name: "Margherita", description: "Classic")
-Pizza.all
-Pizza.count
-Pizza.delete(id)
-
-pizza.save
-pizza.update(name: "Margherita Deluxe")
-pizza.destroy
-
-pizza.toppings.create(name: "Mozzarella", amount: 2)
-pizza.toppings.first.delete
-
-order = Order.place(pizza_id: pizza.id, quantity: 3)
-order.pizza  # => resolves the reference
-```
-
-### Collection Proxies
-
-List attributes with value objects get `.create`, `.delete`, `.count` and all `Enumerable` methods:
-
-```ruby
-pizza = Pizza.create(name: "Margherita")
-
-pizza.toppings.create(name: "Mozzarella", amount: 2)
-pizza.toppings.create(name: "Basil", amount: 1)
-pizza.toppings.count   # => 2
-pizza.toppings.each { |t| puts "#{t.name} x#{t.amount}" }
-pizza.toppings.first.delete
-pizza.toppings.clear
-```
-
-### Adapters
-
-Memory is the default. Switch to SQL with the config block. Hecks uses Sequel under the hood — supports SQLite, MySQL, and Postgres:
-
-```ruby
-# Rails — MySQL
-Hecks.configure do
-  domain "pizzas_domain"
-  adapter :sql, database: :mysql,
-    host: "localhost", user: "root", password: "secret", name: "pizzas"
-  include_ad_hoc_queries
-end
-
-# Postgres via URL
-Hecks.configure do
-  domain "pizzas_domain"
-  adapter :sql, url: "postgres://user:pass@host/pizzas"
-end
-
-# SQLite (default when no db config)
-Hecks.configure do
-  domain "pizzas_domain"
-  adapter :sql
-end
-
-# Plain Ruby — manual wiring with Sequel
+# Before (30+ lines):
 require "sequel"
-db = Sequel.sqlite("pizzas.db")
-app = Hecks::Services::Application.new(domain) do
-  adapter "Pizza", PizzasDomain::Adapters::PizzaSqlRepository.new(db)
-  adapter "Order", PizzasDomain::Adapters::OrderSqlRepository.new(db)
-end
-```
-
-Tests always run against memory — fast, isolated, no database. Production uses SQL. The domain code is identical either way.
-
-### Event Sourcing
-
-Enable `event_sourced: true` to persist every domain event alongside your SQL state. Full audit history with zero changes to domain code:
-
-```ruby
-Hecks.configure do
-  domain "pizzas_domain"
-  adapter :sql, database: :postgres, event_sourced: true
-end
-```
-
-Every command automatically records its event to a `domain_events` table:
-
-```ruby
-Pizza.create(name: "Margherita", style: "Classic")
-# => records CreatedPizza event
-
-Pizza.history(pizza.id)
-# => [{event_type: "CreatedPizza", data: {"name" => "Margherita"}, version: 1, ...}]
-```
-
-Regular SQL tables handle reads (queries stay fast). The events table provides full history for auditing, debugging, and future replay capabilities.
-
-### Migrations
-
-When using the SQL adapter, Hecks generates migration files to create and update your database schema. Migrations go to `db/hecks_migrate/` — separate from ActiveRecord's `db/migrate/` since these are raw SQL, not AR migrations.
-
-```bash
-# First time — generates full CREATE TABLE schema
-hecks generate:migrations --domain pizzas_domain
-
-# After updating the domain gem — generates incremental ALTER TABLE
-bundle update pizzas_domain
-hecks generate:migrations
-
-# Apply to database
-hecks db:migrate --database db/app.sqlite3
-```
-
-Hecks tracks what domain version your migrations were last generated from by saving a `.hecks_domain_snapshot.rb` file. On each run it diffs the current domain against the snapshot to produce only the changes. First run (no snapshot) generates the full schema.
-
-In Rails, you can also use generators and rake tasks:
-
-```bash
-rails generate active_hecks:migration
-rake hecks:db:migrate
-```
-
-Applied migrations are tracked in a `hecks_schema_migrations` table so they won't run twice.
-
-### Command Bus Middleware
-
-Register middleware that wraps every command dispatch:
-
-```ruby
-APP.use :logging do |command, next_handler|
-  Rails.logger.info "Command: #{command.class.name}"
-  result = next_handler.call
-  Rails.logger.info "Event: #{result.class.name}"
-  result
+db = Sequel.sqlite
+db.create_table(:accounts) { String :id, primary_key: true; Float :balance; ... }
+# ... repeat for every aggregate ...
+gen = Hecks::Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: mod)
+eval(gen.generate, TOPLEVEL_BINDING)
+# ... repeat for every aggregate ...
+app = Hecks::Services::Runtime.new(domain) do
+  adapter "Account", AccountSqlRepository.new(db)
+  # ... repeat ...
 end
 
-APP.use :transaction do |command, next_handler|
-  ActiveRecord::Base.transaction { next_handler.call }
-end
+# After (1 line):
+app = Hecks.boot(__dir__, adapter: :sqlite)
 ```
 
-Middleware chains like Rack — first registered wraps outermost. If any middleware raises, the command is rejected.
-
-### Multiple Contexts
+## Example
 
 ```ruby
-Ordering::Order.place(pizza_id: "abc", quantity: 3)
-Kitchen::Recipe.create(name: "Margherita", prep_time: 15)
+require "hecks"
+app = Hecks.boot(__dir__, adapter: :sqlite)
 
-# Cross-context events work via shared event bus
-APP.on("PlacedOrder") { |e| puts "Kitchen notified!" }
+Customer.register(name: "Alice", email: "alice@example.com")
+Account.open(customer_id: alice.id, account_type: "checking", daily_limit: 5000.0)
+Account.deposit(account_id: acct.id, amount: 1000.0)
+
+# Data persists in SQL
+Account.count  # => 1
+Account.find(acct.id).balance  # => 1000.0
 ```
 
-### Rails Integration
+## Error Messages
 
-```bash
-rails generate active_hecks:init
-```
+# Error Messages That Teach
 
-This creates:
-- `config/initializers/hecks.rb` — the config block
-- `app/models/HECKS_README.md` — explains the empty models folder
-- Adds `require "hecks/test_helper"` to your spec_helper
-
-For SQL persistence, generate and run migrations:
-
-```bash
-rails generate active_hecks:migration    # generates db/hecks_migrate/*.sql
-rake hecks:db:migrate             # applies pending migrations
-```
-
-Domain objects work with all Rails helpers — `form_with`, `link_to`, `render`, error display. Tests reset automatically between examples.
+Every validation error includes a suggestion for how to fix it.
 
 ## Examples
 
-The `examples/` directory contains runnable demos:
-
-### examples/pizzas/
-
-A standalone Hecks domain with three scripts:
-
-- **`app.rb`** — Full workflow: build gem, boot Application, `Pizza.create`, `pizza.toppings.create`, events, queries
-- **`repl_session.rb`** — Interactive domain building with the Session API, then play mode
-- **`sql_app.rb`** — SQL adapter generation with a live SQLite demo
-
-```bash
-ruby -Ilib examples/pizzas/app.rb
-ruby -Ilib examples/pizzas/repl_session.rb
-ruby -Ilib examples/pizzas/sql_app.rb
-```
-
-### examples/rails_app/
-
-A real Rails 7 app using a Hecks domain gem. Includes controllers, views, routes, the `Hecks.configure` initializer, and the SQL adapter wired for dev/production with memory for tests.
-
-```bash
-cd examples/rails_app
-bundle install
-rails generate active_hecks:init
-rails server
-```
-
-See `examples/rails_app/README.md` for the full walkthrough.
-
-## Interactive Console
-
-Hecks includes a REPL for building and exploring domains interactively.
-
-```
-hecks console
-```
-
-In a Rails project, `hecks console` auto-detects Rails and adapts behavior (shows `session.apply!` help, writes to `app/models/`).
-
-### Build Mode
-
-Build your domain incrementally using aggregate handles:
-
 ```ruby
-session = Hecks.session("Pizzas")
-
-pizza = session.aggregate("Pizza")
-pizza.add_attribute :name, String
-pizza.add_attribute :toppings, pizza.list_of("Topping")
-
-pizza.add_value_object "Topping" do
-  attribute :name, String
-  attribute :amount, Integer
-end
-
-pizza.add_validation :name, presence: true
-
-pizza.add_command "CreatePizza" do
-  attribute :name, String
-end
-#   + command CreatePizza -> CreatedPizza
-```
-
-Review what you've built:
-
-```ruby
-pizza.describe
-# Pizza
-#
-#   Attributes:
-#     name: String
-#     toppings: list_of(Topping)
-#   Value Objects:
-#     Topping (name: String, amount: Integer)
-#   Commands:
-#     CreatePizza (name: String) -> CreatedPizza
-#   Validations:
-#     name: presence
-
-pizza.preview           # show the generated Ruby code
-
-session.describe        # full domain overview
-session.validate        # check for errors
-session.save            # write domain.rb
-session.build           # generate the gem (CalVer auto-stamped)
-session.apply!          # write to app/models/ with migration diffs
-```
-
-Modify aggregates without reopening blocks:
-
-```ruby
-pizza.add_attribute :price, Float
-pizza.remove_attribute :price
-pizza.add_invariant("name can't be blank") { !name.empty? }
-```
-
-Bidirectional references are caught immediately:
-
-```ruby
-order = session.aggregate("Order")
-order.add_attribute :pizza_id, order.reference_to("Pizza")
-
-pizza.add_attribute :order_id, pizza.reference_to("Order")
-#   + attribute :order_id, reference_to(Order)
-#   !! WARNING: Bidirectional reference detected between Pizza and Order.
-#      Order already references Pizza. Aggregates should not reference
-#      each other — one side should use events/policies instead.
-```
-
-### Bounded Contexts in the REPL
-
-```ruby
-session = Hecks.session("Pizzas")
-
-ordering = session.context("Ordering")
-order = ordering.aggregate("Order")
-order.add_attribute :quantity, Integer
-order.add_command("PlaceOrder") { attribute :quantity, Integer }
-
-kitchen = session.context("Kitchen")
-recipe = kitchen.aggregate("Recipe")
-recipe.add_attribute :name, String
-recipe.add_command("CreateRecipe") { attribute :name, String }
-
-ordering.describe
-kitchen.describe
-session.describe        # shows all contexts
-```
-
-### Play Mode
-
-Switch to play mode to exercise your commands and see events fire:
-
-```ruby
-session.play!
-
-session.commands
-# => ["CreatePizza(name: String) -> CreatedPizza",
-#     "PlaceOrder(pizza_id: Pizza, quantity: Integer) -> PlacedOrder"]
-
-session.execute("CreatePizza", name: "Pepperoni")
-# Command: CreatePizza
-#   Event: CreatedPizza
-#     name: "Pepperoni"
-#     occurred_at: 2026-03-20 14:32:01
-
-session.execute("PlaceOrder", pizza_id: "abc-123", quantity: 3)
-# Command: PlaceOrder
-#   Event: PlacedOrder
-#     pizza_id: "abc-123"
-#     quantity: 3
-#     occurred_at: 2026-03-20 14:32:05
-#   Policy: ReserveIngredients -> ReserveStock
-
-session.events              # all fired events
-session.events_of("CreatedPizza")  # filter by type
-session.history             # numbered timeline
-session.reset!              # clear and start over
-
-session.build!              # back to build mode
-```
-
-### Exit Summary
-
-When leaving the REPL, Hecks shows pending actions:
-
-```
-Next steps:
-  Run migration: db/hecks_migrate/20260320143201_hecks_migration.sql
-  $ hecks db:migrate    (or: rake hecks:db:migrate)
-  Restart your Rails server to pick up model changes
-```
-
-Or if you have unsaved changes:
-
-```
-You have unsaved changes. Run session.apply! to update model files.
-```
-
-## Serve Your Domain
-
-One command to serve any domain as an API:
-
-```bash
-hecks serve pizzas_domain              # REST API + SSE on port 9292
-hecks serve pizzas_domain --rpc        # JSON-RPC
-hecks serve pizzas_domain --mcp        # MCP for AI agents
-hecks serve pizzas_domain --port 3001  # custom port
-```
-
-REST endpoints are generated from your DSL:
-
-```
-GET    /pizzas              → all pizzas
-GET    /pizzas/:id          → find by ID
-POST   /pizzas              → create (JSON body)
-PATCH  /pizzas/:id          → update
-DELETE /pizzas/:id          → delete
-GET    /pizzas/classics     → named lookup
-GET    /events              → SSE event stream
-```
-
-No code, no controllers, no routes file. The DSL is the API.
-
-## AI Tooling
-
-```bash
-hecks mcp                     # MCP server for building domains
-hecks serve domain --mcp      # MCP server for using domains
-```
-
-An AI agent can build a domain through MCP tools (`create_session`, `add_aggregate`, `validate`, `serve_domain`), or use an existing domain's commands and queries as tools.
-
-## CLI Reference
-
-| Command | Description |
-|---|---|
-| `hecks init [NAME]` | Create a new domain project |
-| `hecks build` | Generate the domain gem (CalVer auto-stamped) |
-| `hecks validate` | Validate the domain definition |
-| `hecks serve DOMAIN` | Serve domain as REST API + SSE |
-| `hecks serve DOMAIN --rpc` | Serve as JSON-RPC |
-| `hecks serve DOMAIN --mcp` | Serve as MCP tools for AI |
-| `hecks mcp` | MCP server for building domains |
-| `hecks console` | Start interactive REPL |
-| `hecks generate:sql` | Generate SQL schema and adapters |
-| `hecks generate:migrations` | Generate incremental SQL migrations |
-| `hecks db:migrate` | Run pending SQL migrations |
-| `hecks version` | Show current domain version |
-
-## Simple API
-
-For scripting or programmatic use:
-
-```ruby
-require "hecks"
-
-domain = Hecks.domain "Pizzas" do
+domain = Hecks.domain "Test" do
   aggregate "Pizza" do
     attribute :name, String
-    command "CreatePizza" do
-      attribute :name, String
-    end
+    # no commands — will fail validation
   end
 end
 
-Hecks.validate(domain)                        # => [true, []]
-Hecks.preview(domain, "Pizza")                # => generated Ruby source
-Hecks.build(domain, version: "2026.03.20.1")  # => "./pizzas_domain"
+valid, errors = Hecks.validate(domain)
+errors.each { |e| puts e }
 ```
+
+```
+Pizza has no commands. Add a command: command "CreatePizza" do attribute :name, String end
+```
+
+## More examples
+
+**Bad command name:**
+```
+Command Data in Pizza doesn't start with a verb. Try 'CreateData' or register
+a custom verb with add_verb('Data') or verbs.txt.
+```
+
+**Unknown reference:**
+```
+Reference 'Order' in Pizza.order_id not found. Available aggregates: Customer, Account.
+```
+
+**Missing policy event:**
+```
+Policy NotifyKitchen in Pizza references unknown event: Cooked.
+Known events: CreatedPizza, UpdatedPizza.
+```
+
+**Missing policy trigger:**
+```
+Policy NotifyKitchen in Pizza triggers unknown command: Cook.
+Available commands: CreatePizza, UpdatePizza.
+```
+
+**Bidirectional reference:**
+```
+Bidirectional reference between Pizza and Order. Remove the reference from
+one side — in DDD, only one aggregate should hold the reference. Use a
+domain-level policy to coordinate.
+```
+
+## Build-Time Checks
+
+| Rule | Description |
+|---|---|
+| CommandNaming | Rejects command names that do not start with a verb |
+| NameCollisions | Rejects aggregate root names that collide with their own value object |
+| ReservedNames | Rejects attribute names that are Ruby keywords, and aggregate names |
+| UniqueAggregateNames | Rejects duplicate aggregate names within a domain |
+| NoBidirectionalReferences | Rejects bidirectional references between aggregates (A->B and B->A) |
+| NoSelfReferences | Rejects aggregates that reference themselves |
+| NoValueObjectReferences | Rejects reference attributes on value objects |
+| ValidReferences | Rejects references to non-existent aggregates and references that |
+| AggregatesHaveCommands | Rejects aggregates that have no commands -- an aggregate without |
+| CommandsHaveAttributes | Rejects commands that have no attributes |
+| ValidPolicyEvents | Produces warnings (not errors) when policies listen for events not defined |
+| ValidPolicyTriggers | Rejects policies whose trigger_command does not match any command |
+
+## CLI Commands
+
+| Command | Description |
+|---|---|
+| `hecks build` | Validates the domain, assigns a CalVer version, and generates the domain gem |
+| `hecks console` | Launches an interactive REPL session via Session::ConsoleRunner |
+| `hecks docs` | Starts a WEBrick server hosting Swagger UI for a domain's API |
+| `hecks dump` | Extracts domain artifacts to the filesystem |
+| `hecks gem` | Gem packaging commands — build and install the hecks gem from its gemspec |
+| `hecks generate sinatra` | Scaffolds a Sinatra web app from a domain definition |
+| `hecks init` | Scaffolds a new Hecks domain in the current directory |
+| `hecks list` | Lists all installed Hecks domain gems found via RubyGems, showing |
+| `hecks mcp` | Starts an MCP (Model Context Protocol) server |
+| `hecks migrations` | Three migration-related subcommands: |
+| `hecks new project` | Scaffolds a new Hecks project directory with a domain definition, app.rb, |
+| `hecks serve` | Serves a domain over HTTP |
+| `hecks validate` | Validates the domain definition and prints a summary of all aggregates, |
+| `hecks version` | Shows the Hecks framework version, or the version of a specific domain gem |
+
+## Features
+
+## Domain Modeling DSL
+- Define domains with `Hecks.domain "Name" { }` block syntax
+- Define aggregates with attributes, commands, events, policies, queries, and scopes
+- Define value objects as immutable nested types within aggregates
+- Define typed attributes with String, Integer, Float, Boolean, JSON, etc.
+- Symbol type shorthand: `:string`, `:integer`, `:float`, `:boolean` resolve to Ruby classes
+- Default attribute type is String when omitted
+- Define collection attributes with `list_of("Type")` syntax
+- Define cross-aggregate references with `reference_to("Aggregate")`
+- Define commands with attributes, handlers, guards, read models, actors, and external system docs
+- Auto-infer domain events from commands (CreatePizza → CreatedPizza) with irregular verb support
+- Define entities within aggregates — sub-objects with identity (UUID), mutable, not frozen
+- Define specifications as reusable composable predicates (`satisfied_by?`, `and`, `or`, `not`)
+- Define guard policies (authorization blocks that gate command execution)
+- Define reactive policies (event-driven: on event → trigger command, with async option)
+- Domain-level policies for cross-aggregate concerns (outside any aggregate block)
+- Policy conditions: `condition { |event| event.amount > 10_000 }` — policy only fires when true
+- Policy attribute mapping: `map principal: :amount` translates event attrs to command attrs
+- Define command `call` blocks in DSL for inline business logic (prototyping and play mode)
+- Define event subscribers with `on_event` for arbitrary side-effect code on events
+- Define named queries with `where`, `order`, `limit`, `offset` chainable DSL
+- Define named scopes as hash conditions or lambda predicates
+- Define per-attribute validations (presence, uniqueness, length, format, custom)
+- Define indexes on aggregates with `index :field` and `index :field, unique: true`
+- Define aggregate-level and value-object-level invariants as block constraints
+- Define access-control ports that whitelist allowed methods per consumer
+- Import domains from event storm formats (Markdown and YAML)
+- Multi-domain support with shared event bus across domains
+- Domain version pinning and local path loading in configuration
+
+## Runtime API
+- `Hecks.boot(__dir__)` — find domain file, validate, build, load, and wire in one call
+- `Hecks.boot(__dir__, adapter: :sqlite)` — automatic SQL setup: Sequel connection, adapter generation, table creation
+- `Hecks.load(domain)` — load domain and wire runtime in one step, returns `Hecks::Services::Runtime`
+- `app["Pizza"]` — access aggregate repository
+- `app.on("EventName") { }` — subscribe to events at runtime
+- `app.run("CommandName", attrs)` — dispatch commands
+- `app.events` — event history
+- `app.async { }` — register async handler for policies and subscribers
+- `app.use { }` — register command bus middleware
+
+## Code Generation
+- Generate complete Ruby gems from domain definitions with `Hecks.build(domain)`
+- `Hecks.load(domain)` for fast in-memory eval without writing files (45x faster than build)
+- Generate aggregate classes with `Hecks::Model` mixin, auto-UUID, and timestamps
+- Generate command classes with full lifecycle (guard → handler → call → persist → emit → record)
+- Generate frozen event classes with `occurred_at` timestamps
+- Generate entity classes with `Hecks::Model` (UUID, mutable, identity equality)
+- Generate specification classes with `Hecks::Specification` mixin (composable predicates)
+- Generate query object classes with chainable query builder
+- Generate guard and reactive policy classes
+- Generate event subscriber classes under `Aggregate::Subscribers`
+- Generate frozen value object classes with invariant enforcement
+- Generate in-memory repository adapters
+- Generate SQL (Sequel-based) repository adapters with schema definitions
+- Generate SQL migration files from domain diffs
+- Generate behavioral RSpec specs — validations, identity, events, attributes, invariants (not just scaffolds)
+- Stacked codegen: constructors, `Aggregate.new(...)`, `attr_reader`, and spec args stack one-per-line when >2 args
+- Generate port enforcement stubs
+- Generate `require_relative` autoload registries
+- Generate complete gem scaffolds (gemspec, lib structure, etc.)
+- Preview generated source for any aggregate without writing files
+- Auto-include mixins by convention — no explicit `include` lines in generated files
+- Auto-generate OpenAPI, JSON-RPC discovery, JSON Schema, and glossary docs on build
+- Preserve custom `call` methods on regenerate — generator detects hand-edited logic and keeps it
+- CalVer versioning (YYYY.MM.DD.N) auto-assigned at build time
+- Resolve domains from installed gems, not just local files
+
+## Persistence
+- Memory adapter for fast, zero-setup in-process storage
+- SQL adapter via Sequel ORM supporting MySQL, PostgreSQL, and SQLite
+- Repository pattern: `find`, `all`, `count`, `save`, `delete` on aggregates
+- Instance-level `save`, `destroy`, `update` methods
+- Collection proxies for `list_of` attributes with `create`, `delete`, `each`, `count`
+- Automatic reference resolution with lazy loading from repository
+- Optional event sourcing with `EventRecorder` and `Aggregate.history(id)` replay
+
+## Querying
+- `where(field: value)` filtering on aggregates
+- `find_by(field: value)` for single-record lookup
+- `order(:field)` and `order(field: :desc)` sorting
+- OR conditions: `Pizza.where(style: "Classic").or(Pizza.where(style: "Tropical"))`
+- `exists?` check without loading all records
+- `pluck(:name)` for attribute-only results (single or multi-column)
+- Aggregations: `sum(:price)`, `min(:price)`, `max(:price)`, `average(:price)`
+- Batch operations: `delete_all`, `update_all(status: "archived")` (bypasses command bus)
+- Query operators: `gt`, `gte`, `lt`, `lte`, `not_eq`, `one_of` — pure domain layer, no SQL leakage
+- Named scopes callable as class methods (e.g., `Pizza.active`)
+- Ad-hoc query support enabled via `include_ad_hoc_queries` config
+- ConditionNode tree for composing AND/OR query conditions
+- In-memory query executor fallback when adapter lacks `query()` method
+
+## Command & Event System
+- Command bus with `app.run("CommandName", attrs)` dispatch
+- Short API: `app["Pizza"].create(name: "M")`
+- Class-level command methods: `Pizza.create(name: "M")`
+- Instance-level command methods: `cat.meow` auto-fills from instance attributes, `cat.meow(name: "Pow")` overrides
+- Mutable setters on aggregates — tweak state interactively, then fire commands that read from `self`
+- Commands return self with `.aggregate` and `.event` accessors
+- `Hecks::Command` mixin orchestrates full lifecycle (guard → handler → call → persist → emit → record)
+- `Hecks::Query` mixin — queries are self-contained like commands
+- Command bus middleware pipeline (e.g., logging, auth)
+- Re-entrant policy protection (skips policies already in-flight)
+- In-process event bus with `app.on("EventName") { |event| }` subscriptions
+- DSL-defined event subscribers with `on_event "EventName" do |event| ... end`
+- Cross-aggregate event subscribers (e.g., Order subscribes to Pizza's CreatedPizza)
+- Async subscriber dispatch via configurable `async { }` block (e.g., Sidekiq)
+- Async policy dispatch via configurable `async { }` block
+
+## HTTP Servers
+- REST server (WEBrick) with auto-generated CRUD routes per aggregate
+- Command routes mapped from POST/PATCH to domain commands
+- Query routes as `GET /aggregates/query_name?params`
+- Event listing endpoint
+- CORS support
+- JSON request/response serialization
+- JSON-RPC 2.0 server with single POST endpoint and proper error codes
+- OpenAPI 3.0 spec generation
+- JSON Schema generation for all domain types
+- JSON-RPC method discovery/registry
+
+## MCP (Model Context Protocol) Server
+- Stdio-based MCP server for AI agent integration (`hecks domain mcp`)
+- Session tools: create session, load domain from file
+- Aggregate tools: add/remove aggregates, attributes, commands, policies
+- Inspect tools: describe session overview, describe single aggregate
+- Build tools: validate session, build gem, preview aggregate code
+- Play tools: enter play mode, execute commands, show events, reset playground
+- Domain MCP server: expose commands, queries, and CRUD as MCP tools with input schemas
+- Serve domain tool: start HTTP/MCP server from within the MCP session
+
+## CLI Commands
+- `hecks new NAME` — scaffold a complete project (domain, app, Gemfile, specs, gitignore)
+- `hecks init [NAME]` — top-level shortcut for `hecks domain init`
+- `hecks domain build` — validate and generate versioned gem
+- `hecks domain serve [--rpc]` — start REST or JSON-RPC server
+- `hecks domain console [NAME]` — interactive REPL with domain loaded
+- `hecks domain validate` — check domain against DDD rules
+- `hecks domain dump` — show glossary, visualizer, and DSL output
+- `hecks domain init NAME` — scaffold a new `hecks_domain.rb` template
+- `hecks domain list` — show installed domain gems
+- `hecks domain mcp` — start MCP server
+- `hecks domain generate-sinatra` — scaffold a Sinatra app from domain
+- `hecks domain migrations [status|pending|create]` — schema migration management
+- `hecks docs update` — sync all file doc headers and READMEs
+- `hecks gem build` — build the hecks gem from gemspec
+- `hecks gem install` — build and install the hecks gem locally
+- `hecks version` / `hecks version DOMAIN` — show framework or domain version
+- All commands accept `--domain` flag consistently
+- Thor `exit_on_failure?` properly configured
+
+## Session & Playground
+- Interactive session for incremental domain building (`Hecks.session`)
+- REPL mode via `ConsoleRunner` with `describe`, `validate`, `build`, `play!`, `dump`, `save`
+- All session methods hoisted to top level in console (no `session.` prefix needed)
+- `_a` shortcut — always points to the last aggregate handle
+- `_d` shortcut — always points to the last built domain object
+- `help` command in console prints available commands
+- Persistent command history across sessions (`~/.hecks_history`)
+- Clean IRB exit handling (catches `:IRB_EXIT`)
+- AggregateHandle short method names: `attr`, `command`, `validation`, `value_object`, `entity`, `specification`, `policy`, `invariant`, `query`, `scope`, `on_event`, `verb`, `remove`
+- Duplicate attribute detection — raises on `attr :name` when `:name` already exists
+- `handle.build(**attrs)` — compile domain and return a live domain object instance
+- `handle.build` with `active_hecks!` — returns ActiveModel-enhanced instances
+- `handle.valid?` — check if aggregate passes DDD validation rules
+- `handle.errors` — list validation errors for this aggregate
+- `session.active_hecks!` — enable ActiveModel compatibility for all subsequent builds
+- `session.add_verb(word)` / `handle.verb(word)` — register custom verbs for command naming validation
+- Auto-normalize names to PascalCase (`"cat"` → `"Cat"`, `"adopt cat"` → `"AdoptCat"`)
+- Symbol type shorthand in handles: `:string`, `:integer`, `:boolean` resolve to Ruby classes
+- Default attribute type is String when omitted (`attr :name` same as `attr :name, String`)
+- Play mode compiles domain on the fly with full Runtime (persistence, queries, events, policies)
+- Play mode persistence: `Cat.find(id)`, `Cat.all`, `Cat.count`, `Cat.where(...)` all work after executing commands
+- Play mode wires command shortcuts onto aggregate classes (`Cat.meow`, `cat.meow`)
+- Describe output shows complete aggregate picture: attributes, VOs, entities, commands, validations, invariants, policies, queries, scopes, subscribers, specifications
+- `define!` / `play!` toggling — switch between modeling and execution modes
+- Real-time event display and policy triggering feedback
+- Event history with timestamps, reset/replay capability
+- Clean `irb(hecks)` prompt in console
+- Suppressed backtraces by default — `backtrace!` / `quiet!` to toggle
+- `Hecks::TestHelper` for spec setup and constant cleanup
+
+## Validation & DDD Rules
+- No duplicate aggregate names
+- References must target aggregate roots
+- No bidirectional references between aggregates
+- No self-references on aggregates
+- Value objects must not contain references
+- Aggregates must have at least one command
+- Command names must be verb phrases (WordNet + custom verbs via `verbs.txt` or `add_verb`)
+- Custom verbs stored on Domain model and checked alongside `verbs.txt`
+- Reactive policy events and triggers must reference existing elements
+- Aggregate/value-object/entity name collision detection
+- Entity references rejected (entities live inside aggregates, not referenced across them)
+- Ruby keyword and reserved attribute name detection
+- Every validation error includes an actionable fix suggestion
+
+## Migrations & Schema Evolution
+- `DomainDiff` detects added/removed aggregates, attributes, value objects, entities, indexes, commands, policies, validations, invariants, queries, scopes, subscribers, and specifications
+- `DomainDiff` detects changed policy wiring (event/trigger modifications)
+- `MigrationStrategy` dispatches diffs to adapter-specific migration generators
+- SQL migration strategy generates Sequel-compatible `db/hecks_migrate/` files
+- NOT NULL constraints auto-generated from `validation :field, presence: true`
+- UNIQUE constraints auto-generated from `validation :field, uniqueness: true`
+- DEFAULT values from `attribute :status, String, default: "draft"`
+- Foreign key cascading: `ON DELETE CASCADE` for join tables, `ON DELETE SET NULL` for references
+- `CREATE INDEX` / `DROP INDEX` from DSL `index` declarations
+- Auto-indexes on reference columns
+
+## Documentation Generation
+- Domain glossary: English descriptions of every aggregate, attribute, command, policy, validation, invariant
+- Domain visualizer: Mermaid class diagrams (structure) and flowcharts (command → event → policy)
+- `Hecks.visualize(domain)` for programmatic Mermaid output
+- Domain introspection: `domain.describe`, `domain.glossary`
+- DSL serializer: round-trip compiled domain back to DSL source code
+
+## Rails Integration (ActiveHecks)
+- `Hecks.configure` block for Rails initializers
+- Auto-registers domain gem constants in Rails app
+- SQL adapter config with database/host/name options
+- Shared event bus across Rails app lifecycle
+- Multi-domain support within a single Rails app
+- Async dispatch integration (e.g., Sidekiq)
+- Domain version pinning and local path loading
+
+## Port & Access Control
+- Port system restricts class and instance methods per consumer role
+- Raises `Hecks::PortAccessDenied` on unauthorized access
+- Configurable whitelists: `allow :find, :all`, etc.
 
 ## Architecture
+- Hexagonal / ports-and-adapters: domain layer has zero persistence or SQL knowledge
+- Operators are pure Specifications (`match?` only) — SQL translation lives in adapters
+- Domain gems are the bounded context boundaries
+- Constant hoisting promotes aggregates to top-level namespace for convenience
+- `Hecks::Model` attribute DSL — no generated constructors, declarative attribute definitions
+- `Hecks::Model` generates both readers and writers — mutable for exploration, commands for the record
+- `reset!` on aggregate instances — restores all attributes to constructor values, preserves identity
+- `CommandMethods.bind_shortcuts` shared between runtime and playground — same `cat.meow` API everywhere
 
-Hecks has three layers:
+## Examples
+- Pizzas domain: plain Ruby app with commands, queries, collection proxies, event history
+- Banking domain: 4 aggregates (Customer, Account, Transfer, Loan), real business logic in generated files, cross-aggregate policies with attribute mapping, specifications, entities, SQLite persistence
 
-**1. Hecks CLI** — The generator tool. Reads a Ruby DSL and produces pure domain gems with CalVer versioning.
+## Banking Example
 
-**2. Generated Domain Gem** — Pure Ruby, zero dependencies, built-in `autoload`. Contains aggregates, value objects, commands, events, policies, port interfaces, and default memory adapters. This is the artifact your applications depend on.
+The `examples/banking/` directory contains a complete domain with four aggregates: Customer, Account, Transfer, and Loan. It demonstrates cross-aggregate policies, specifications, entities, and business logic in generated command files.
 
-**3. Hecks Services** — The application runtime. Wires domains to adapters, dispatches commands, publishes events, executes policies. Maps commands to short aggregate class methods. Provides collection proxies for list attributes. Defaults to memory adapters. Optionally generates SQL adapters for persistence.
+Run it:
 
-**4. DomainDiff + MigrationStrategy** — Compares domain snapshots to detect structural changes (add/remove aggregates, attributes, value objects). Feeds changes to registered migration strategies that generate backend-specific migration files to `db/hecks_migrate/`.
-
-```mermaid
-flowchart TB
-    DSL["domain.rb<br/>(DSL definition)"] -->|hecks build| Gem["pizzas_domain gem<br/>(pure Ruby, CalVer)"]
-    Gem --> App["Hecks::Services::Application<br/>(command dispatch, event bus,<br/>adapter wiring, policies,<br/>collection proxies)"]
-    App --> Adapters["Adapters<br/>(memory, SQL, custom)"]
-
-    GenMig["hecks generate:migrations<br/>(snapshot vs current)"] --> Diff["DomainDiff<br/>(changes)"]
-    Diff --> Strategy["MigrationStrategy<br/>(SQL files to db/hecks_migrate/)"]
-    DbMig["hecks db:migrate"] --> Runner["MigrationRunner<br/>(applies pending .sql files,<br/>tracks in hecks_schema_migrations)"]
+```bash
+ruby -Ilib examples/banking/app.rb
 ```
 
-### Design Principles
+The scenario:
 
-- **Pure domain objects** — Aggregates have no persistence logic. No callbacks, no `belongs_to`.
-- **Queries are domain concepts** — Named queries in the DSL, ad-hoc queries opt-in.
-- **Any database** — SQLite, MySQL, Postgres via Sequel. One config line to switch.
-- **Feels like Ruby** — `Pizza.create(...)`, `Pizza.classics`, `pizza.toppings.create(...)`.
-- **Modular services** — Persistence, Querying, Commands are separate mixins.
-- **Batteries included** — Memory adapters by default. SQL is one config line away.
-- **DDD rules enforced** — 12 validation rules catch modeling mistakes at build time.
-- **CalVer versioning** — Every build auto-stamps `YYYY.MM.DD.N`.
-- **Immutability** — Value objects, commands, and events are frozen.
-- **Swap when ready** — Start with memory, switch to SQL, bring your own adapter.
+1. **Register** two customers (Alice and Bob)
+2. **Open accounts** -- checking and savings for Alice, checking for Bob
+3. **Deposit** funds into each account
+4. **Withdraw** from checking -- succeeds for $1,500, blocked for overdraft and daily limit
+5. **Transfer** $500 from Alice to Bob -- initiates, then completes
+6. **Issue a loan** -- $25,000 at 5.25% for 60 months, auto-disburses to Alice's checking via the `DisburseFunds` policy
+7. **Make loan payments** -- three payments of $450 reduce the remaining balance
+8. **Default a loan** -- Bob's loan defaults, triggering `SuspendOnDefault` policy which suspends Bob's customer record
+9. **Specifications** -- `HighRisk` checks whether a loan exceeds $50k principal and 10% rate
 
-## Project Structure
+Key output:
 
 ```
-hecks/
-  lib/hecks/
-    domain_model/
-      behavior/                       # Command, DomainEvent, Policy, Query
-      structure/                      # Domain, Aggregate, ValueObject, Attribute, ...
-    dsl/                              # DSL builders
-    generators/
-      context_aware.rb                # shared mixin
-      domain/                         # Aggregate, VO, Command, Event, Policy, Query
-      sql/                            # SqlAdapter, SqlBuilder, SqlMigration
-      infrastructure/                 # Port, MemoryAdapter, Autoload, Spec, DomainGem
-    services/
-      persistence/                    # RepositoryMethods, CollectionProxy, References
-      querying/                       # QueryBuilder, AdHocQueries, Scopes, Operators
-      commands/                       # CommandBus, CommandMethods, CommandRunner
-      aggregate_wiring.rb             # orchestrates mixin binding
-      application.rb                  # boot container
-    validation_rules/
-      naming/                         # CommandNaming, NameCollisions, Uniqueness
-      references/                     # ValidRefs, NoBidirectional, NoSelf, NoVO
-      structure/                      # AggregatesHaveCommands, Policies
-    migration_strategies/
-  active_hecks/                       # Rails integration
-  docs/
-    why_hecks.md
-  examples/
-    pizzas/                           # standalone domain example
-    rails_app/                        # Rails integration example
+Alice checking: $5000.00
+Blocked: Insufficient funds: balance $3500.0, withdrawal $99999.0
+Transfer: completed
+Alice checking after disbursement: $28000.00
+Loan status: defaulted
+Bob status: suspended
+Alice's $25k loan high risk? false
+Hypothetical $100k/15% loan high risk? true
 ```
+
+The domain-level policies (`DisburseFunds` and `SuspendOnDefault`) show cross-aggregate event-driven reactions with attribute mapping and conditions.
 
 ## License
 
