@@ -70,7 +70,7 @@ RSpec.describe Hecks::ReadmeGenerator do
 
     it "generates a markdown table for cli_commands tag" do
       write("docs/readme_template.md", "{{cli_commands}}")
-      write("lib/hecks/cli/commands/build.rb",
+      write("lib/hecks_cli/commands/build.rb",
         "# Hecks::CLI::Domain#build\n#\n# Validates and generates the domain gem.\n#\n")
 
       described_class.new(root).generate

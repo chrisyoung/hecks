@@ -81,7 +81,7 @@ module Hecks
 
     def cli_commands
       commands = []
-      Dir[File.join(@root, "lib/hecks/cli/commands/*.rb")].sort.each do |f|
+      Dir[File.join(@root, "lib/hecks_cli/commands/*.rb")].sort.each do |f|
         lines = File.readlines(f)
         next unless lines.first&.start_with?("# Hecks::")
 

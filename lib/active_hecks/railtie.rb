@@ -15,6 +15,11 @@
 #
 module ActiveHecks
   class Railtie < ::Rails::Railtie
+    generators do
+      require "active_hecks/generators/init_generator"
+      require "active_hecks/generators/migration_generator"
+    end
+
     initializer "active_hecks.setup", after: :load_config_initializers do
       if Hecks.configuration
         Hecks.configuration.boot!

@@ -20,9 +20,9 @@ module Hecks
       generator = Generators::Infrastructure::DomainGemGenerator.new(domain, version: version, output_dir: output_dir)
       gem_path = generator.generate
 
-      require_relative "connections/http/openapi_generator"
-      require_relative "connections/http/rpc_discovery"
-      require_relative "connections/http/json_schema_generator"
+      require_relative "../hecks_serve/openapi_generator"
+      require_relative "../hecks_serve/rpc_discovery"
+      require_relative "../hecks_serve/json_schema_generator"
       docs_dir = File.join(gem_path, "docs")
       FileUtils.mkdir_p(docs_dir)
       File.write(File.join(docs_dir, "openapi.json"), JSON.pretty_generate(HTTP::OpenapiGenerator.new(domain).generate))

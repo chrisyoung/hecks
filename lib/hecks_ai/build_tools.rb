@@ -43,7 +43,7 @@ module Hecks
         ) do |args|
           ctx.ensure_session!
           domain = ctx.session.send(:to_domain)
-          require_relative "../http/domain_server"
+          require "hecks_serve"
           port = args["port"] || 9292
           Thread.new { Hecks::HTTP::DomainServer.new(domain, port: port).run }
           "Serving domain on http://localhost:#{port}"

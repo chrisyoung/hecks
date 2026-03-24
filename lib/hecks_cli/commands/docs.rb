@@ -16,7 +16,7 @@ module Hecks
     class Domain < Thor
       desc "readme", "Generate README.md from docs/readme_template.md"
       def readme
-        require_relative "../../readme_generator"
+        require_relative "../../hecks/readme_generator"
         root = Dir.pwd
         ReadmeGenerator.new(root).generate
         say "Generated README.md", :green
@@ -30,8 +30,7 @@ module Hecks
         domain = resolve_domain_option
         return unless domain
 
-        require_relative "../../connections/http/openapi_generator"
-        require_relative "../../connections/http/rpc_discovery"
+        require "hecks_serve"
         require "webrick"
         require "json"
 
