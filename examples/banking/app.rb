@@ -138,6 +138,7 @@ domain = Hecks.domain "Banking" do
       on "DefaultedLoan"
       trigger "SuspendCustomer"
       map customer_id: :customer_id
+      condition { |event| event.respond_to?(:customer_id) && event.customer_id }
     end
   end
 end

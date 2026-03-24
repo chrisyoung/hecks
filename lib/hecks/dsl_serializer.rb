@@ -119,6 +119,9 @@ module Hecks
           lines << "      on \"#{pol.event_name}\""
           lines << "      trigger \"#{pol.trigger_command}\""
           lines << "      async true" if pol.async
+          if pol.condition
+            lines << "      condition { |event| #{Hecks::Utils.block_source(pol.condition)} }"
+          end
           lines << "    end"
         end
 
