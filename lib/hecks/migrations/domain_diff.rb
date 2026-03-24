@@ -38,11 +38,12 @@ module Hecks
             kind: :add_aggregate,
             context: nil,
             aggregate: new_agg.name,
-            details: { attributes: new_agg.attributes, value_objects: new_agg.value_objects }
+            details: { attributes: new_agg.attributes, value_objects: new_agg.value_objects, validations: new_agg.validations }
           )
         else
           result.concat(diff_attributes(old_agg, new_agg))
           result.concat(diff_value_objects(old_agg, new_agg))
+          result.concat(diff_indexes(old_agg, new_agg))
         end
       end
 
@@ -72,11 +73,13 @@ module Hecks
       # Added attributes
       (new_names - old_names).each do |name|
         attr = new_agg.attributes.find { |a| a.name == name }
+        validation = new_agg.validations.find { |v| v.field == attr.name }
         changes << Change.new(
           kind: :add_attribute,
           context: nil,
           aggregate: new_agg.name,
-          details: { name: attr.name, type: attr.type, list: attr.list?, reference: attr.reference? }
+          details: { name: attr.name, type: attr.type, list: attr.list?, reference: attr.reference?,
+                     default: attr.default, presence: validation&.presence?, uniqueness: validation&.uniqueness? }
         )
       end
 
@@ -115,6 +118,36 @@ module Hecks
           aggregate: new_agg.name,
           details: { name: name }
         )
+      end
+
+      changes
+    end
+
+    def diff_indexes(old_agg, new_agg)
+      changes = []
+      old_idx = (old_agg.indexes || []).map { |i| i[:fields] }
+      new_idx = (new_agg.indexes || []).map { |i| i[:fields] }
+
+      (new_agg.indexes || []).each do |idx|
+        unless old_idx.include?(idx[:fields])
+          changes << Change.new(
+            kind: :add_index,
+            context: nil,
+            aggregate: new_agg.name,
+            details: idx
+          )
+        end
+      end
+
+      (old_agg.indexes || []).each do |idx|
+        unless new_idx.include?(idx[:fields])
+          changes << Change.new(
+            kind: :remove_index,
+            context: nil,
+            aggregate: new_agg.name,
+            details: idx
+          )
+        end
       end
 
       changes

@@ -20,7 +20,7 @@ module Hecks
     class AggregateBuilder
       include AttributeCollector
 
-      attr_reader :attributes, :commands, :value_objects, :policies, :validations, :invariants, :scopes, :ports, :queries, :subscribers
+      attr_reader :attributes, :commands, :value_objects, :policies, :validations, :invariants, :scopes, :ports, :queries, :subscribers, :indexes
 
       def initialize(name)
         @name = name
@@ -34,6 +34,7 @@ module Hecks
         @ports = {}
         @queries = []
         @subscribers = []
+        @indexes = []
       end
 
       def value_object(name, &block)
@@ -78,6 +79,10 @@ module Hecks
         @queries << DomainModel::Behavior::Query.new(name: name, block: block)
       end
 
+      def index(*fields, unique: false)
+        @indexes << { fields: fields.map(&:to_sym), unique: unique }
+      end
+
       def on_event(event_name, async: false, &block)
         name = generate_subscriber_name(event_name.to_s)
         @subscribers << DomainModel::Behavior::EventSubscriber.new(
@@ -106,7 +111,8 @@ module Hecks
           scopes: @scopes,
           ports: @ports,
           queries: @queries,
-          subscribers: @subscribers
+          subscribers: @subscribers,
+          indexes: @indexes
         )
       end
 

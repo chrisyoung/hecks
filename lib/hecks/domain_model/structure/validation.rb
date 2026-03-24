@@ -28,6 +28,10 @@ module Hecks
       def type_rule
         rules[:type]
       end
+
+      def uniqueness?
+        !!rules[:uniqueness]
+      end
     end
     end
   end

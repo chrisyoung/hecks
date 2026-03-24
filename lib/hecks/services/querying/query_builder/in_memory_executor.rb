@@ -1,7 +1,8 @@
 # Hecks::Services::Querying::QueryBuilder::InMemoryExecutor
 #
-# Fallback query engine for adapters without native query support.
-# Filters, sorts, offsets, and limits results in Ruby. Included
+# Fallback query engine for adapters without native query support,
+# or when conditions include OR nodes. Filters using the condition
+# tree, then sorts, offsets, and limits results in Ruby. Included
 # into QueryBuilder and invoked when the repo lacks a #query method.
 #
 #   # Used internally by QueryBuilder#execute:
@@ -15,7 +16,7 @@ module Hecks
           private
 
           def in_memory_execute
-            results = @repo.all
+            results = @repo.respond_to?(:all) ? @repo.all : []
             results = apply_conditions(results)
             results = apply_order(results)
             results = apply_offset(results)
@@ -24,15 +25,9 @@ module Hecks
           end
 
           def apply_conditions(results)
-            return results if @conditions.empty?
+            return results if @condition_tree.conditions.empty? && @condition_tree.children.empty?
 
-            results.select do |obj|
-              @conditions.all? do |k, v|
-                next false unless obj.respond_to?(k)
-                actual = obj.send(k)
-                v.respond_to?(:match?) ? v.match?(actual) : actual == v
-              end
-            end
+            results.select { |obj| @condition_tree.match?(obj) }
           end
 
           def apply_order(results)

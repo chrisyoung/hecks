@@ -11,12 +11,22 @@
 - Auto-infer domain events from commands (CreatePizza → CreatedPizza) with irregular verb support
 - Define guard policies (authorization blocks that gate command execution)
 - Define reactive policies (event-driven: on event → trigger command, with async option)
+- Define event subscribers with `on_event` for arbitrary side-effect code on events
 - Define named queries with `where`, `order`, `limit`, `offset` chainable DSL
 - Define named scopes as hash conditions or lambda predicates
 - Define per-attribute validations (presence, length, format, custom)
 - Define aggregate-level and value-object-level invariants as block constraints
 - Define access-control ports that whitelist allowed methods per consumer
 - Import domains from event storm formats (Markdown and YAML)
+
+## Runtime API
+- `Hecks.load(domain)` — load domain and wire runtime in one step, returns `Hecks::Services::Runtime`
+- `app["Pizza"]` — access aggregate repository
+- `app.on("EventName") { }` — subscribe to events at runtime
+- `app.run("CommandName", attrs)` — dispatch commands
+- `app.events` — event history
+- `app.async { }` — register async handler for policies and subscribers
+- `app.use { }` — register command bus middleware
 
 ## Code Generation
 - Generate complete Ruby gems from domain definitions with `Hecks.build`
@@ -25,6 +35,7 @@
 - Generate frozen event classes with `occurred_at` timestamps
 - Generate query object classes with chainable query builder
 - Generate guard and reactive policy classes
+- Generate event subscriber classes under `Aggregate::Subscribers`
 - Generate frozen value object classes with invariant enforcement
 - Generate in-memory repository adapters
 - Generate SQL (Sequel-based) repository adapters with schema definitions
@@ -60,7 +71,10 @@
 - Class-level command methods: `Pizza.create(name: "M")`
 - Command bus middleware pipeline (e.g., logging, auth)
 - In-process event bus with `app.on("EventName") { |event| }` subscriptions
-- Async policy dispatch via configurable `async { }` block (e.g., Sidekiq)
+- DSL-defined event subscribers with `on_event "EventName" do |event| ... end`
+- Cross-aggregate event subscribers (e.g., Order subscribes to Pizza's CreatedPizza)
+- Async subscriber dispatch via configurable `async { }` block (e.g., Sidekiq)
+- Async policy dispatch via configurable `async { }` block
 
 ## HTTP Servers
 - REST server (WEBrick) with auto-generated CRUD routes per aggregate
