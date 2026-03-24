@@ -5,7 +5,11 @@
 # the root of the domain folder (one word per line). Part of the
 # ValidationRules::Naming group -- run by Hecks.validate.
 #
-require "rwordnet"
+begin
+  require "rwordnet"
+rescue LoadError
+  # rwordnet is optional — verb checking degrades to custom verbs only
+end
 
 module Hecks
   module ValidationRules
@@ -34,6 +38,7 @@ module Hecks
 
       def verb?(word, custom)
         return true if custom.any? { |v| v.downcase == word.downcase }
+        return false unless defined?(WordNet)
         WordNet::Lemma.find_all(word.downcase).any? { |l| l.pos == "v" }
       end
 
