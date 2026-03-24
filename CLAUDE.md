@@ -2,12 +2,13 @@
 
 ## Before every commit
 
-1. **Update docs** — sync all file doc headers and READMEs with current features
-2. **Run specs** — `bundle exec rspec --order defined` (430+ specs, all must pass)
-3. **Check file sizes** — no file over 200 lines (`find lib -name "*.rb" -exec wc -l {} + | sort -rn | head -5`)
-4. **Smoke test** — `ruby -Ilib examples/pizzas/app.rb`
-5. **Stage specifically** — don't `git add -A`, stage specific files to avoid Rails boilerplate leaking in
-6. **Update .gitignore** if new generated/temp files appear
+1. **Update FEATURES.md** — if new features were added, update FEATURES.md. Use `git diff --stat` to see what changed and add corresponding entries. Don't guess — read the diff.
+2. **Update docs** — sync all file doc headers and READMEs with current features
+3. **Run specs** — `bundle exec rspec --order defined` (790+ specs, all must pass)
+4. **Check file sizes** — no file over 200 lines (`find lib -name "*.rb" -exec wc -l {} + | sort -rn | head -5`)
+5. **Smoke test** — `ruby -Ilib examples/pizzas/app.rb`
+6. **Stage specifically** — don't `git add -A`, stage specific files to avoid Rails boilerplate leaking in
+7. **Update .gitignore** if new generated/temp files appear
 
 ## .gitignore reminders
 

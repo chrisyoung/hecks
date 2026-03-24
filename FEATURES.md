@@ -11,8 +11,12 @@
 - Define cross-aggregate references with `reference_to("Aggregate")`
 - Define commands with attributes, handlers, guards, read models, actors, and external system docs
 - Auto-infer domain events from commands (CreatePizza → CreatedPizza) with irregular verb support
+- Define entities within aggregates — sub-objects with identity (UUID), mutable, not frozen
+- Define specifications as reusable composable predicates (`satisfied_by?`, `and`, `or`, `not`)
 - Define guard policies (authorization blocks that gate command execution)
 - Define reactive policies (event-driven: on event → trigger command, with async option)
+- Policy attribute mapping: `map principal: :amount` translates event attrs to command attrs
+- Define command `call` blocks in DSL for inline business logic (prototyping and play mode)
 - Define event subscribers with `on_event` for arbitrary side-effect code on events
 - Define named queries with `where`, `order`, `limit`, `offset` chainable DSL
 - Define named scopes as hash conditions or lambda predicates
@@ -39,6 +43,8 @@
 - Generate aggregate classes with `Hecks::Model` mixin, auto-UUID, and timestamps
 - Generate command classes with full lifecycle (guard → handler → call → persist → emit → record)
 - Generate frozen event classes with `occurred_at` timestamps
+- Generate entity classes with `Hecks::Model` (UUID, mutable, identity equality)
+- Generate specification classes with `Hecks::Specification` mixin (composable predicates)
 - Generate query object classes with chainable query builder
 - Generate guard and reactive policy classes
 - Generate event subscriber classes under `Aggregate::Subscribers`
@@ -46,13 +52,15 @@
 - Generate in-memory repository adapters
 - Generate SQL (Sequel-based) repository adapters with schema definitions
 - Generate SQL migration files from domain diffs
-- Generate RSpec spec scaffolds per aggregate
+- Generate behavioral RSpec specs — validations, identity, events, attributes, invariants (not just scaffolds)
+- Stacked codegen: constructors, `Aggregate.new(...)`, `attr_reader`, and spec args stack one-per-line when >2 args
 - Generate port enforcement stubs
 - Generate `require_relative` autoload registries
 - Generate complete gem scaffolds (gemspec, lib structure, etc.)
 - Preview generated source for any aggregate without writing files
 - Auto-include mixins by convention — no explicit `include` lines in generated files
 - Auto-generate OpenAPI, JSON-RPC discovery, JSON Schema, and glossary docs on build
+- Preserve custom `call` methods on regenerate — generator detects hand-edited logic and keeps it
 - CalVer versioning (YYYY.MM.DD.N) auto-assigned at build time
 - Resolve domains from installed gems, not just local files
 
@@ -147,7 +155,7 @@
 - `help` command in console prints available commands
 - Persistent command history across sessions (`~/.hecks_history`)
 - Clean IRB exit handling (catches `:IRB_EXIT`)
-- AggregateHandle short method names: `attr`, `command`, `validation`, `value_object`, `policy`, `invariant`, `verb`, `remove`
+- AggregateHandle short method names: `attr`, `command`, `validation`, `value_object`, `entity`, `specification`, `policy`, `invariant`, `query`, `scope`, `on_event`, `verb`, `remove`
 - Duplicate attribute detection — raises on `attr :name` when `:name` already exists
 - `handle.build(**attrs)` — compile domain and return a live domain object instance
 - `handle.build` with `active_hecks!` — returns ActiveModel-enhanced instances
@@ -177,11 +185,12 @@
 - Command names must be verb phrases (WordNet + custom verbs via `verbs.txt` or `add_verb`)
 - Custom verbs stored on Domain model and checked alongside `verbs.txt`
 - Reactive policy events and triggers must reference existing elements
-- Aggregate/value-object name collision detection
+- Aggregate/value-object/entity name collision detection
+- Entity references rejected (entities live inside aggregates, not referenced across them)
 - Ruby keyword and reserved attribute name detection
 
 ## Migrations & Schema Evolution
-- `DomainDiff` detects added/removed aggregates, attributes, value objects, and indexes
+- `DomainDiff` detects added/removed aggregates, attributes, value objects, entities, and indexes
 - `MigrationStrategy` dispatches diffs to adapter-specific migration generators
 - SQL migration strategy generates Sequel-compatible `db/hecks_migrate/` files
 - NOT NULL constraints auto-generated from `validation :field, presence: true`
@@ -221,3 +230,7 @@
 - `Hecks::Model` generates both readers and writers — mutable for exploration, commands for the record
 - `reset!` on aggregate instances — restores all attributes to constructor values, preserves identity
 - `CommandMethods.bind_shortcuts` shared between runtime and playground — same `cat.meow` API everywhere
+
+## Examples
+- Pizzas domain: plain Ruby app with commands, queries, collection proxies, event history
+- Banking domain: 4 aggregates (Customer, Account, Transfer, Loan), real business logic in generated files, cross-aggregate policies with attribute mapping, specifications, entities, SQLite persistence
