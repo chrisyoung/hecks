@@ -12,9 +12,12 @@
 #   changes = DomainDiff.call(old_domain, new_domain)
 #   # => [Change.new(kind: :add_attribute, aggregate: "Pizza", details: {...}), ...]
 #
+require_relative "domain_diff/behavior_diff"
+
 module Hecks
   module Migrations
     class DomainDiff
+    include BehaviorDiff
     Change = Struct.new(:kind, :context, :aggregate, :details, keyword_init: true)
 
     def self.call(old_domain, new_domain)
@@ -41,10 +44,20 @@ module Hecks
             details: { attributes: new_agg.attributes, value_objects: new_agg.value_objects, validations: new_agg.validations }
           )
         else
+          # Structural diffs
           result.concat(diff_attributes(old_agg, new_agg))
           result.concat(diff_value_objects(old_agg, new_agg))
           result.concat(diff_entities(old_agg, new_agg))
           result.concat(diff_indexes(old_agg, new_agg))
+          # Behavioral diffs
+          result.concat(diff_commands(old_agg, new_agg))
+          result.concat(diff_policies(old_agg, new_agg))
+          result.concat(diff_validations(old_agg, new_agg))
+          result.concat(diff_invariants(old_agg, new_agg))
+          result.concat(diff_queries(old_agg, new_agg))
+          result.concat(diff_scopes(old_agg, new_agg))
+          result.concat(diff_subscribers(old_agg, new_agg))
+          result.concat(diff_specifications(old_agg, new_agg))
         end
       end
 

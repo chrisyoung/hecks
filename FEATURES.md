@@ -190,7 +190,8 @@
 - Ruby keyword and reserved attribute name detection
 
 ## Migrations & Schema Evolution
-- `DomainDiff` detects added/removed aggregates, attributes, value objects, entities, and indexes
+- `DomainDiff` detects added/removed aggregates, attributes, value objects, entities, indexes, commands, policies, validations, invariants, queries, scopes, subscribers, and specifications
+- `DomainDiff` detects changed policy wiring (event/trigger modifications)
 - `MigrationStrategy` dispatches diffs to adapter-specific migration generators
 - SQL migration strategy generates Sequel-compatible `db/hecks_migrate/` files
 - NOT NULL constraints auto-generated from `validation :field, presence: true`
