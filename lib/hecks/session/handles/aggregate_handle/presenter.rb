@@ -65,6 +65,26 @@ module Hecks
         nil
       end
 
+      def preview
+        agg = @builder.build
+        domain_module = @domain_module || "Domain"
+        gen = Generators::Domain::AggregateGenerator.new(agg, domain_module: domain_module)
+        puts gen.generate
+        nil
+      end
+
+      def valid?
+        errors.empty?
+      end
+
+      def errors
+        return [] unless @session
+        domain = @session.to_domain
+        validator = Validator.new(domain)
+        return [] if validator.valid?
+        validator.errors.select { |e| e.include?(@name) }
+      end
+
       def inspect
         "#<#{@name} (#{attributes.size} attributes, #{commands.size} commands)>"
       end

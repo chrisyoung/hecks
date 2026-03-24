@@ -1,0 +1,117 @@
+Hecks.domain "Banking" do
+  aggregate "Customer" do
+    attribute :name, String
+    attribute :email, String
+    attribute :status, String
+
+    validation :name, {:presence=>true}
+
+    validation :email, {:presence=>true}
+
+    command "RegisterCustomer" do
+      attribute :name, String
+      attribute :email, String
+    end
+
+    command "SuspendCustomer" do
+      attribute :customer_id, String
+    end
+  end
+
+  aggregate "Account" do
+    attribute :customer_id, reference_to("Customer")
+    attribute :balance, Float
+    attribute :account_type, String
+    attribute :daily_limit, Float
+    attribute :status, String
+
+    validation :account_type, {:presence=>true}
+
+    command "OpenAccount" do
+      attribute :customer_id, String
+      attribute :account_type, String
+      attribute :daily_limit, Float
+    end
+
+    command "Deposit" do
+      attribute :account_id, String
+      attribute :amount, Float
+    end
+
+    command "Withdraw" do
+      attribute :account_id, String
+      attribute :amount, Float
+    end
+
+    command "CloseAccount" do
+      attribute :account_id, String
+    end
+  end
+
+  aggregate "Transfer" do
+    attribute :from_account_id, reference_to("Account")
+    attribute :to_account_id, reference_to("Account")
+    attribute :amount, Float
+    attribute :status, String
+    attribute :memo, String
+
+    validation :amount, {:presence=>true}
+
+    command "InitiateTransfer" do
+      attribute :from_account_id, String
+      attribute :to_account_id, String
+      attribute :amount, Float
+      attribute :memo, String
+    end
+
+    command "CompleteTransfer" do
+      attribute :transfer_id, String
+    end
+
+    command "RejectTransfer" do
+      attribute :transfer_id, String
+    end
+  end
+
+  aggregate "Loan" do
+    attribute :customer_id, reference_to("Customer")
+    attribute :account_id, reference_to("Account")
+    attribute :principal, Float
+    attribute :rate, Float
+    attribute :term_months, Integer
+    attribute :remaining_balance, Float
+    attribute :status, String
+
+    validation :principal, {:presence=>true}
+
+    validation :rate, {:presence=>true}
+
+    command "IssueLoan" do
+      attribute :customer_id, String
+      attribute :account_id, String
+      attribute :principal, Float
+      attribute :rate, Float
+      attribute :term_months, Integer
+    end
+
+    command "MakePayment" do
+      attribute :loan_id, String
+      attribute :amount, Float
+    end
+
+    command "DefaultLoan" do
+      attribute :loan_id, String
+      attribute :customer_id, String
+    end
+
+    policy "DisburseFunds" do
+      on "IssuedLoan"
+      trigger "Deposit"
+    end
+
+    policy "SuspendOnDefault" do
+      on "DefaultedLoan"
+      trigger "SuspendCustomer"
+    end
+  end
+end

@@ -99,15 +99,9 @@ module Hecks
         end
 
         lines = []
-        lines << "      INVARIANTS = {"
-        @vo.invariants.each do |inv|
-          lines << "        #{inv.message.inspect} => #{source_from_block(inv.block)},"
-        end
-        lines << "      }.freeze"
-        lines << ""
         lines << "      def check_invariants!"
         @vo.invariants.each do |inv|
-          lines << "        raise InvariantError, #{inv.message.inspect} unless instance_eval(&INVARIANTS[#{inv.message.inspect}])"
+          lines << "        raise InvariantError, #{inv.message.inspect} unless instance_eval(&#{source_from_block(inv.block)})"
         end
         lines << "      end"
         lines

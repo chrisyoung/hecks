@@ -20,9 +20,14 @@ module Hecks
       end
 
       def example_args(thing)
-        thing.attributes.map do |attr|
+        parts = thing.attributes.map do |attr|
           "#{attr.name}: #{example_value(attr)}"
-        end.join(", ")
+        end
+        if parts.size <= 2
+          parts.join(", ")
+        else
+          "\n          " + parts.join(",\n          ") + "\n        "
+        end
       end
 
       def example_value(attr)
@@ -88,14 +93,31 @@ module Hecks
         RUBY
       end
 
+      def example_args_with(thing, **extra)
+        parts = thing.attributes.map do |attr|
+          "#{attr.name}: #{example_value(attr)}"
+        end
+        extra.each { |k, v| parts << "#{k}: #{v}" }
+        if parts.size <= 2
+          parts.join(", ")
+        else
+          "\n          " + parts.join(",\n          ") + "\n        "
+        end
+      end
+
       def example_args_without(thing, excluded_field)
-        thing.attributes.map do |attr|
+        parts = thing.attributes.map do |attr|
           if attr.name == excluded_field
             "#{attr.name}: nil"
           else
             "#{attr.name}: #{example_value(attr)}"
           end
-        end.join(", ")
+        end
+        if parts.size <= 2
+          parts.join(", ")
+        else
+          "\n          " + parts.join(",\n          ") + "\n        "
+        end
       end
     end
     end
