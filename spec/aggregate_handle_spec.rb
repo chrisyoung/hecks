@@ -139,6 +139,36 @@ RSpec.describe Hecks::Session::AggregateHandle do
     end
   end
 
+  describe "#describe with queries, scopes, and subscribers" do
+    it "includes queries" do
+      pizza = session.aggregate("Pizza")
+      pizza.add_attribute :name, String
+      pizza.add_command("CreatePizza") { attribute :name, String }
+      pizza.query("ByStyle") { |style| { style: style } }
+
+      expect { pizza.describe }.to output(/Queries:.*ByStyle/m).to_stdout
+    end
+
+    it "includes scopes" do
+      pizza = session.aggregate("Pizza")
+      pizza.add_attribute :name, String
+      pizza.add_attribute :status, String
+      pizza.add_command("CreatePizza") { attribute :name, String }
+      pizza.scope(:active, status: "active")
+
+      expect { pizza.describe }.to output(/Scopes:.*active/m).to_stdout
+    end
+
+    it "includes subscribers" do
+      pizza = session.aggregate("Pizza")
+      pizza.add_attribute :name, String
+      pizza.add_command("CreatePizza") { attribute :name, String }
+      pizza.on_event("CreatedPizza") { |e| }
+
+      expect { pizza.describe }.to output(/Subscribers:.*on CreatedPizza/m).to_stdout
+    end
+  end
+
   describe "#preview" do
     it "prints the generated code" do
       pizza = session.aggregate("Pizza")

@@ -1,7 +1,9 @@
 # Hecks::Session::AggregateHandle::Presenter
 #
-# Presentation methods for AggregateHandle: describe (detailed summary),
-# inspect (one-line), and the type_label helper for formatting types.
+# Presentation methods for AggregateHandle: describe (detailed summary with
+# attributes, VOs, entities, commands, validations, invariants, policies,
+# queries, scopes, subscribers, and specifications), inspect (one-line),
+# and the type_label helper for formatting types.
 #
 module Hecks
   class Session
@@ -70,6 +72,21 @@ module Hecks
           agg.policies.each do |pol|
             lines << "    #{pol.name} (on #{pol.event_name} -> #{pol.trigger_command})"
           end
+        end
+
+        unless agg.queries.empty?
+          lines << "  Queries:"
+          agg.queries.each { |q| lines << "    #{q.name}" }
+        end
+
+        unless agg.scopes.empty?
+          lines << "  Scopes:"
+          agg.scopes.each { |s| lines << "    #{s.name}" }
+        end
+
+        unless agg.subscribers.empty?
+          lines << "  Subscribers:"
+          agg.subscribers.each { |s| lines << "    on #{s.event_name}" }
         end
 
         unless agg.specifications.empty?

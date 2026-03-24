@@ -174,6 +174,7 @@
 - Play mode compiles domain on the fly with full Runtime (persistence, queries, events, policies)
 - Play mode persistence: `Cat.find(id)`, `Cat.all`, `Cat.count`, `Cat.where(...)` all work after executing commands
 - Play mode wires command shortcuts onto aggregate classes (`Cat.meow`, `cat.meow`)
+- Describe output shows complete aggregate picture: attributes, VOs, entities, commands, validations, invariants, policies, queries, scopes, subscribers, specifications
 - `define!` / `play!` toggling — switch between modeling and execution modes
 - Real-time event display and policy triggering feedback
 - Event history with timestamps, reset/replay capability

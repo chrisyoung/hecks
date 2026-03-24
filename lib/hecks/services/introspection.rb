@@ -90,6 +90,16 @@ module Hecks
             end
           end
 
+          unless agg.scopes.empty?
+            lines << "  Scopes:"
+            agg.scopes.each { |s| lines << "    #{s.name}" }
+          end
+
+          unless agg.subscribers.empty?
+            lines << "  Subscribers:"
+            agg.subscribers.each { |s| lines << "    on #{s.event_name}" }
+          end
+
           unless agg.specifications.empty?
             lines << "  Specifications:"
             agg.specifications.each { |s| lines << "    #{s.name}" }
