@@ -45,7 +45,7 @@ module Hecks
 
       def wire_query_objects(agg, agg_class)
         repo = @repositories[agg.name]
-        queries_mod = agg_class.const_get(:Queries) rescue nil
+        queries_mod = begin; agg_class.const_get(:Queries); rescue NameError; nil; end
 
         agg.queries.each do |query|
           method_name = Hecks::Utils.underscore(query.name).to_sym

@@ -10,7 +10,7 @@ module Hecks
     def build(domain, version: "0.1.0", output_dir: ".")
       valid, errors = validate(domain)
       unless valid
-        raise "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
+        raise Hecks::ValidationError, "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
       end
 
       ValidationRules::Naming::ReservedNames.reserved_attr_warnings(domain).each do |w|
@@ -41,14 +41,18 @@ module Hecks
       unless skip_validation
         validator = Validator.new(domain)
         unless validator.valid?
-          raise "Domain validation failed:\n#{validator.errors.map { |e| "  - #{e}" }.join("\n")}"
+          raise Hecks::ValidationError, "Domain validation failed:\n#{validator.errors.map { |e| "  - #{e}" }.join("\n")}"
         end
       end
 
       Object.send(:remove_const, mod) if Object.const_defined?(mod)
       gen = Generators::Infrastructure::DomainGemGenerator.new(domain, version: "0.0.0")
       source = gen.generate_source
-      eval(source, TOPLEVEL_BINDING, "(hecks:load:#{domain.name})")
+      begin
+        eval(source, TOPLEVEL_BINDING, "(hecks:load:#{domain.name})")
+      rescue SyntaxError, NameError => e
+        raise Hecks::DomainLoadError, "Failed to load domain '#{domain.name}': #{e.message}"
+      end
       @loaded_domains[mod] = key
       @domain_objects[mod] = domain
       Object.const_get(mod)

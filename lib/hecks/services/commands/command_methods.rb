@@ -12,11 +12,11 @@ module Hecks
       module CommandMethods
       def self.bind(klass, aggregate, bus, repo, defaults)
         agg_snake = Hecks::Utils.underscore(aggregate.name)
-        mod = klass.const_get(:Commands) rescue nil
+        mod = begin; klass.const_get(:Commands); rescue NameError; nil; end
         return unless mod
 
         aggregate.commands.each do |cmd|
-          cmd_class = mod.const_get(cmd.name) rescue nil
+          cmd_class = begin; mod.const_get(cmd.name); rescue NameError; nil; end
           next unless cmd_class
 
           # Auto-include mixin if not already included
