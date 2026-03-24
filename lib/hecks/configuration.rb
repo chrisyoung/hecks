@@ -10,9 +10,9 @@
 #   end
 #
 require "fileutils"
-require_relative "configuration/database_connection"
+require_relative "connections/sql/database_connection"
 require_relative "configuration/domain_loader"
-require_relative "configuration/sql_setup"
+require_relative "connections/sql/sql_setup"
 
 module Hecks
   class Configuration

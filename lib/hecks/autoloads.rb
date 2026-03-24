@@ -49,7 +49,7 @@ module Hecks
 
   module Generators
     autoload :Domain,         "hecks/generators/domain"
-    autoload :SQL,            "hecks/generators/sql"
+    autoload :SQL,            "hecks/connections/sql"
     autoload :Infrastructure, "hecks/generators/infrastructure"
   end
 

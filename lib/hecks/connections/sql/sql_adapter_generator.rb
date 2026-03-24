@@ -9,7 +9,6 @@
 #   gen.generate  # => "module PizzasDomain\n  module Adapters\n  ..."
 #
 require_relative "sql_builder"
-require "sequel"
 
 module Hecks
   module Generators
