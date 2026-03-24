@@ -26,7 +26,13 @@ module Hecks
         end
 
         builder = AggregateBuilder.new(name)
-        builder.instance_eval(&block) if block
+        begin
+          builder.instance_eval(&block) if block
+        rescue Hecks::Error
+          raise
+        rescue => e
+          raise Hecks::ValidationError, "Error in aggregate '#{name}': #{e.message}"
+        end
         @aggregates << builder.build
       end
 

@@ -14,7 +14,7 @@ module Hecks
         all_commands = @domain.aggregates.flat_map { |a| a.commands.map(&:name) }
 
         @domain.aggregates.each do |agg|
-          agg.policies.each do |policy|
+          agg.policies.select(&:reactive?).each do |policy|
             unless all_commands.include?(policy.trigger_command)
               result << "Policy #{policy.name} in #{agg.name} triggers unknown command: #{policy.trigger_command}. The triggered command must exist in the domain."
             end

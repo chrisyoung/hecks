@@ -19,7 +19,7 @@ module Hecks
           klass.define_method(method_name) do
             ref_id = send(ref_attr.name)
             return nil unless ref_id
-            Object.const_get(ref_type).find(ref_id) rescue nil
+            begin; Object.const_get(ref_type).find(ref_id); rescue NameError; nil; end
           end
         end
       end

@@ -30,7 +30,7 @@ module Hecks
         end
 
         # Wire recorder into command classes
-        cmd_mod = klass.const_get(:Commands) rescue nil
+        cmd_mod = begin; klass.const_get(:Commands); rescue NameError; nil; end
         return unless cmd_mod
         cmd_mod.constants.each do |name|
           cmd_class = cmd_mod.const_get(name)

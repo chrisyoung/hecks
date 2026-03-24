@@ -71,7 +71,10 @@ module Hecks
 
       agg_module = self.class.name.split("::")[0..-3].join("::")
       policy_class = Object.const_get("#{agg_module}::Policies::#{policy_name}")
-      policy_class.new.call(self)
+      result = policy_class.new.call(self)
+      unless result
+        raise Hecks::GuardRejected, "Guard #{policy_name} rejected #{self.class.name.split('::').last}"
+      end
     end
 
     def run_handler

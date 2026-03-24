@@ -16,7 +16,7 @@ module Hecks
           vo = aggregate.value_objects.find { |v| v.name == list_attr.type.to_s }
           next unless vo
           attr_name = list_attr.name
-          vo_class = klass.const_get(vo.name) rescue nil
+          vo_class = begin; klass.const_get(vo.name); rescue NameError; nil; end
           next unless vo_class
           repo_ref = repo
 

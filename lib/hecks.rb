@@ -24,10 +24,7 @@ require "json"
 # Suppress json-schema MultiJSON deprecation from mcp gem
 JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
 
-module Hecks
-  class PortAccessDenied < StandardError; end
-end
-
+require_relative "hecks/errors"
 require_relative "hecks/autoloads"
 require_relative "hecks/domain_inspector"
 require_relative "hecks/domain_builder_methods"
