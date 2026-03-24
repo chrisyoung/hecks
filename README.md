@@ -850,6 +850,14 @@ domain-level policy to coordinate.
 - `reset!` on aggregate instances — restores all attributes to constructor values, preserves identity
 - `CommandMethods.bind_shortcuts` shared between runtime and playground — same `cat.meow` API everywhere
 
+## Self-Documenting README
+- `bin/generate-readme` or `hecks docs readme` generates README.md from template
+- `docs/readme_template.md` — template with `{{tags}}` for content, usage, features, validation rules, CLI commands
+- `docs/content/*.md` — hand-written prose sections
+- `docs/usage/*.md` — runnable usage examples
+- Auto-generated tables from validation rule and CLI command doc headers
+- Missing content files produce `<!-- TODO -->` comments
+
 ## Examples
 - Pizzas domain: plain Ruby app with commands, queries, collection proxies, event history
 - Banking domain: 4 aggregates (Customer, Account, Transfer, Loan), real business logic in generated files, cross-aggregate policies with attribute mapping, specifications, entities, SQLite persistence
