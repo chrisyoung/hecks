@@ -31,6 +31,7 @@
 
 ## Runtime API
 - `Hecks.boot(__dir__)` — find domain file, validate, build, load, and wire in one call
+- `Hecks.boot(__dir__, adapter: :sqlite)` — automatic SQL setup: Sequel connection, adapter generation, table creation
 - `Hecks.load(domain)` — load domain and wire runtime in one step, returns `Hecks::Services::Runtime`
 - `app["Pizza"]` — access aggregate repository
 - `app.on("EventName") { }` — subscribe to events at runtime
