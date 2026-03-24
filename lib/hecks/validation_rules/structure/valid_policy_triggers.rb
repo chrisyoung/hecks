@@ -20,6 +20,13 @@ module Hecks
             end
           end
         end
+
+        @domain.policies.select(&:reactive?).each do |policy|
+          unless all_commands.include?(policy.trigger_command)
+            result << "Domain policy #{policy.name} triggers unknown command: #{policy.trigger_command}. The triggered command must exist in the domain."
+          end
+        end
+
         result
       end
     end

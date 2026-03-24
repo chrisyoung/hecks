@@ -136,6 +136,22 @@ module Hecks
         lines << "  end"
       end
 
+      @domain.policies.each do |pol|
+        lines << ""
+        lines << "  policy \"#{pol.name}\" do"
+        lines << "    on \"#{pol.event_name}\""
+        lines << "    trigger \"#{pol.trigger_command}\""
+        lines << "    async true" if pol.async
+        if pol.attribute_map.any?
+          mapping = pol.attribute_map.map { |from, to| "#{from}: :#{to}" }.join(", ")
+          lines << "    map #{mapping}"
+        end
+        if pol.condition
+          lines << "    condition { |event| #{Hecks::Utils.block_source(pol.condition)} }"
+        end
+        lines << "  end"
+      end
+
       lines << "end"
       lines.join("\n") + "\n"
     end

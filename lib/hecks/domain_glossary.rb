@@ -29,6 +29,15 @@ module Hecks
         lines << ""
       end
 
+      unless @domain.policies.empty?
+        lines << "## Domain Policies"
+        lines << ""
+        @domain.policies.each do |pol|
+          lines << policy_statement(@domain.name, pol)
+        end
+        lines << ""
+      end
+
       lines.concat(describe_relationships)
       lines
     end

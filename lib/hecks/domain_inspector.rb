@@ -25,12 +25,21 @@ module Hecks
     end
 
     def policies
-      each_aggregate.flat_map do |agg|
+      result = each_aggregate.flat_map do |agg|
         agg.policies.map do |pol|
           async = pol.async ? " [async]" : ""
           "#{agg.name}: #{pol.event_name} -> #{pol.trigger_command}#{async}"
         end
       end
+
+      @domain_objects.each_value do |domain|
+        domain.policies.each do |pol|
+          async = pol.async ? " [async]" : ""
+          result << "#{domain.name}: #{pol.event_name} -> #{pol.trigger_command}#{async}"
+        end
+      end
+
+      result
     end
 
     def aggregates

@@ -1,9 +1,11 @@
 # Hecks::DomainModel::Structure::Domain
 #
 # The root of the domain model intermediate representation. A domain holds
-# aggregates and provides helpers for naming (module_name, gem_name),
-# introspection (describe), glossary output (glossary), and Mermaid
-# visualization (to_mermaid, visualize).
+# aggregates and domain-level policies, and provides helpers for naming
+# (module_name, gem_name), introspection (describe), glossary output
+# (glossary), and Mermaid visualization (to_mermaid, visualize).
+# Domain-level policies are cross-aggregate reactive policies that don't
+# belong to any single aggregate.
 #
 # Part of the DomainModel IR layer. Built by DomainBuilder, consumed by every
 # generator and by the Application/Session at runtime.
@@ -18,12 +20,13 @@ module Hecks
   module DomainModel
     module Structure
     class Domain
-      attr_reader :name, :aggregates, :custom_verbs
+      attr_reader :name, :aggregates, :policies, :custom_verbs
       attr_accessor :source_path
 
-      def initialize(name:, aggregates: [], custom_verbs: [])
+      def initialize(name:, aggregates: [], policies: [], custom_verbs: [])
         @name = name
         @aggregates = aggregates
+        @policies = policies
         @custom_verbs = custom_verbs
       end
 
@@ -51,6 +54,16 @@ module Hecks
             lines << "    policy: #{pol.name} (#{pol.event_name} -> #{pol.trigger_command})#{async_label}"
           end
         end
+
+        unless policies.empty?
+          lines << ""
+          lines << "  Domain Policies:"
+          policies.each do |pol|
+            async_label = pol.async ? " [async]" : ""
+            lines << "    policy: #{pol.name} (#{pol.event_name} -> #{pol.trigger_command})#{async_label}"
+          end
+        end
+
         puts lines.join("\n")
         nil
       end
