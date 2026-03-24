@@ -17,10 +17,10 @@ module Hecks
         domain = resolve_domain_option
         return unless domain
         if options[:rpc]
-          require_relative "../../connections/http/rpc_server"
+          require "hecks_serve"
           HTTP::RpcServer.new(domain, port: options[:port]).run
         else
-          require_relative "../../connections/http/domain_server"
+          require "hecks_serve"
           HTTP::DomainServer.new(domain, port: options[:port]).run
         end
       end

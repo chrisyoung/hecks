@@ -19,10 +19,10 @@ module Hecks
             say "Domain not found: #{options[:domain]}", :red
             return
           end
-          require_relative "../../connections/mcp/domain_server"
+          require "hecks_ai"
           MCP::DomainServer.new(domain).run
         else
-          require_relative "../../connections/mcp_server"
+          require "hecks_ai"
           McpServer.new.run
         end
       end

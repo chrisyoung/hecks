@@ -9,11 +9,11 @@
 #   hecks domain mcp    # starts the server on stdio
 #
 require "mcp"
-require_relative "mcp/session_tools"
-require_relative "mcp/aggregate_tools"
-require_relative "mcp/inspect_tools"
-require_relative "mcp/build_tools"
-require_relative "mcp/play_tools"
+require_relative "session_tools"
+require_relative "aggregate_tools"
+require_relative "inspect_tools"
+require_relative "build_tools"
+require_relative "play_tools"
 
 module Hecks
   class McpServer

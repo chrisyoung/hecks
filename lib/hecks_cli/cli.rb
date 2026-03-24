@@ -150,7 +150,7 @@ module Hecks
       end
     end
 
-    Dir[File.join(__dir__, "cli/commands/*.rb")].each { |f| require f }
+    Dir[File.join(__dir__, "commands/*.rb")].each { |f| require f }
 
     desc "domain SUBCOMMAND ...ARGS", "Domain lifecycle commands"
     subcommand "domain", Domain

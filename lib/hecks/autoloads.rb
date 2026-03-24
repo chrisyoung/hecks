@@ -2,7 +2,9 @@
 #
 # Central autoload registry mapping every Hecks module to its source file.
 # Infrastructure layer — required by lib/hecks.rb to enable lazy loading
-# of all framework components (CLI, DSL, Generators, Services, HTTP, MCP, etc.).
+# of all framework components. Connection autoloads (HTTP, MCP, SQL, CLI)
+# live in their respective top-level entry points (hecks_serve, hecks_ai,
+# hecks_persist, hecks_cli).
 #
 module Hecks
   autoload :Command,        "hecks/command"
@@ -12,7 +14,7 @@ module Hecks
   autoload :Utils,          "hecks/utils"
   autoload :VERSION,        "hecks/version"
   autoload :Configuration,  "hecks/configuration"
-  autoload :CLI,            "hecks/cli"
+  autoload :CLI,            "hecks_cli/cli"
   autoload :Session,        "hecks/session"
   autoload :Validator,      "hecks/validator"
   autoload :Versioner,      "hecks/versioner"
@@ -49,7 +51,7 @@ module Hecks
 
   module Generators
     autoload :Domain,         "hecks/generators/domain"
-    autoload :SQL,            "hecks/connections/sql"
+    autoload :SQL,            "hecks_persist"
     autoload :Infrastructure, "hecks/generators/infrastructure"
   end
 
@@ -72,11 +74,11 @@ module Hecks
   autoload :Introspection,    "hecks/services/introspection"
 
   module HTTP
-    autoload :DomainServer,       "hecks/connections/http/domain_server"
-    autoload :RpcServer,          "hecks/connections/http/rpc_server"
-    autoload :RouteBuilder,       "hecks/connections/http/route_builder"
-    autoload :OpenapiGenerator,   "hecks/connections/http/openapi_generator"
-    autoload :RpcDiscovery,       "hecks/connections/http/rpc_discovery"
-    autoload :JsonSchemaGenerator, "hecks/connections/http/json_schema_generator"
+    autoload :DomainServer,       "hecks_serve/domain_server"
+    autoload :RpcServer,          "hecks_serve/rpc_server"
+    autoload :RouteBuilder,       "hecks_serve/route_builder"
+    autoload :OpenapiGenerator,   "hecks_serve/openapi_generator"
+    autoload :RpcDiscovery,       "hecks_serve/rpc_discovery"
+    autoload :JsonSchemaGenerator, "hecks_serve/json_schema_generator"
   end
 end
