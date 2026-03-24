@@ -82,8 +82,8 @@ module Hecks
 
     def inspect
       mode = @session&.play? ? "play" : "define"
-      name = @session&.name&.downcase || "hecks"
-      "#{name}(#{mode})"
+      name = @session&.name&.downcase || "scratch"
+      "hecks(#{name} #{mode})"
     end
 
     def to_s
