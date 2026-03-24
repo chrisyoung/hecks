@@ -16,7 +16,7 @@ module Hecks
   module DomainModel
     module Structure
       autoload :Domain,         "hecks/domain_model/structure/domain"
-autoload :Aggregate,      "hecks/domain_model/structure/aggregate"
+      autoload :Aggregate,      "hecks/domain_model/structure/aggregate"
       autoload :ValueObject,    "hecks/domain_model/structure/value_object"
       autoload :Attribute,      "hecks/domain_model/structure/attribute"
       autoload :Validation,     "hecks/domain_model/structure/validation"
