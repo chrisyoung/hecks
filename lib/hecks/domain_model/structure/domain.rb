@@ -18,12 +18,13 @@ module Hecks
   module DomainModel
     module Structure
     class Domain
-      attr_reader :name, :aggregates
+      attr_reader :name, :aggregates, :custom_verbs
       attr_accessor :source_path
 
-      def initialize(name:, aggregates: [])
+      def initialize(name:, aggregates: [], custom_verbs: [])
         @name = name
         @aggregates = aggregates
+        @custom_verbs = custom_verbs
       end
 
       def module_name

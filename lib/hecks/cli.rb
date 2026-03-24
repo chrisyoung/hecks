@@ -10,6 +10,18 @@ require "fileutils"
 
 module Hecks
   class CLI < Thor
+    def self.exit_on_failure?
+      true
+    end
+
+    # Top-level shortcuts — delegate to subcommands so users can type
+    # `hecks init` instead of `hecks domain init`.
+    desc "init [NAME]", "Initialize a Hecks domain (shortcut for `domain init`)"
+    def init(name = nil)
+      args = name ? [name] : []
+      Domain.start(["init"] + args)
+    end
+
     # Domain subcommand — holds all domain lifecycle commands.
     # Shared helpers for domain resolution live here; individual commands
     # are loaded from cli/commands/*.rb and reopen this class.
