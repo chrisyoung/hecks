@@ -6,15 +6,10 @@ Describe your business in Ruby. Hecks generates the code.
 - [Quick Start](#quick-start) — zero to running domain
 - [The DSL](#the-dsl) — define your business
 - [Play Mode](#play-mode) — explore with live objects
-- [Specifications](#specifications) — reusable business predicates
-- [Policies](#policies) — conditional event reactions
-- [Domain-Level Policies](#domain-level-policies) — cross-aggregate coordination
-- [SQL Persistence](#sql-persistence) — one-line database setup
-- [Error Messages](#error-messages) — errors that teach
-- [Build-Time Checks](#build-time-checks) — catch mistakes early
-- [CLI Commands](#cli-commands) — the full toolbox
+- [One-Line SQL](#one-line-sql)
 - [Banking Example](#banking-example) — a complete working domain
-- [All Features](FEATURES.md) — the complete list
+
+More: [Specifications](docs/content/specifications.md) · [Policies](docs/usage/policy_conditions.md) · [Domain-Level Policies](docs/usage/domain_level_policies.md) · [Error Messages](docs/usage/error_messages.md) · [Build-Time Checks](#build-time-checks) · [CLI Commands](#cli-commands) · [All Features](FEATURES.md)
 
 ## The Seam
 
@@ -22,7 +17,13 @@ Describe your business in Ruby. Hecks generates the code.
 
 ## Quick Start
 
-{{usage:hecks_new}}
+```
+$ hecks new banking
+$ cd banking
+$ ruby app.rb
+```
+
+That's it. One command scaffolds the project. `Hecks.boot(__dir__)` does the rest.
 
 ## The DSL
 
@@ -30,43 +31,48 @@ Describe your business in Ruby. Hecks generates the code.
 
 ## Play Mode
 
-{{usage:play_mode_persistence}}
+```ruby
+session = Hecks.session("Demo")
+session.aggregate("Cat") do
+  attribute :name, String
+  command("Adopt") { attribute :name, String }
+end
 
-## Specifications
+session.play!
 
-{{content:specifications}}
+whiskers = Cat.adopt(name: "Whiskers")
+Cat.adopt(name: "Mittens")
 
-## Policies
+Cat.count              # => 2
+Cat.find(whiskers.id)  # => #<Cat name="Whiskers">
 
-{{usage:policy_conditions}}
+whiskers.name = "Sir Whiskers"
+whiskers.reset!        # back to "Whiskers"
+```
 
-## Domain-Level Policies
+Sketch a domain, play with live objects, persist to memory. Same API as production.
 
-{{usage:domain_level_policies}}
+## One-Line SQL
 
-## SQL Persistence
+```ruby
+app = Hecks.boot(__dir__, adapter: :sqlite)
+```
 
-{{usage:sql_adapter}}
+One line. Tables created, adapters wired, data persisted to SQL. Works with SQLite, PostgreSQL, MySQL.
 
-## Error Messages
+## Banking Example
 
-{{usage:error_messages}}
+{{content:banking_example}}
 
 ## Build-Time Checks
 
 {{validation_rules}}
 
+Every error includes a fix suggestion. [See examples.](docs/usage/error_messages.md)
+
 ## CLI Commands
 
 {{cli_commands}}
-
-## All Features
-
-See [FEATURES.md](FEATURES.md) for the complete feature list.
-
-## Banking Example
-
-{{content:banking_example}}
 
 ## License
 
