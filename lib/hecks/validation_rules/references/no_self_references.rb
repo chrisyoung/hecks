@@ -13,7 +13,7 @@ module Hecks
         @domain.aggregates.each do |agg|
           agg.attributes.select(&:reference?).each do |attr|
             if attr.type.to_s == agg.name
-              result << "#{agg.name} references itself. An aggregate already has its own identity — self-references are unnecessary."
+              result << "#{agg.name} references itself. Use a value object or entity inside the aggregate instead of referencing the aggregate itself."
             end
           end
         end

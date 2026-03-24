@@ -14,7 +14,7 @@ module Hecks
         @domain.aggregates.each do |agg|
           agg.value_objects.each do |vo|
             vo.attributes.select(&:reference?).each do |attr|
-              result << "Value object #{vo.name} in #{agg.name} contains a reference to #{attr.type}. Value objects should not hold references — they are about values, not identity."
+              result << "Value object #{vo.name} in #{agg.name} contains a reference to #{attr.type}. Value objects can't reference aggregates. Move the reference to the parent aggregate #{agg.name} instead."
             end
           end
         end

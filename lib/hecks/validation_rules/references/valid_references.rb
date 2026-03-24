@@ -21,13 +21,13 @@ module Hecks
 
             # Check if referencing a value object instead of an aggregate
             if all_vo_names.include?(ref_name) && !all_aggregate_names.include?(ref_name)
-              result << "#{agg.name} references #{ref_name} which is a value object, not an aggregate root. References must target aggregate roots."
+              result << "#{agg.name} references #{ref_name} which is a value object, not an aggregate root. References must target aggregate roots. Move #{ref_name} to its own aggregate or reference the aggregate that owns it."
               next
             end
 
             # Check if referencing an entity instead of an aggregate
             if all_entity_names.include?(ref_name) && !all_aggregate_names.include?(ref_name)
-              result << "#{agg.name} references #{ref_name} which is an entity, not an aggregate root. References must target aggregate roots."
+              result << "#{agg.name} references #{ref_name} which is an entity, not an aggregate root. References must target aggregate roots. Promote #{ref_name} to its own aggregate or reference the aggregate that owns it."
               next
             end
 
@@ -35,7 +35,9 @@ module Hecks
               next # valid: same domain aggregate root
             end
 
-            result << "#{agg.name} references unknown aggregate: #{ref_name}"
+            available = all_aggregate_names.reject { |n| n == agg.name }
+            hint = available.any? ? " Available aggregates: #{available.join(', ')}." : ""
+            result << "#{agg.name} references unknown aggregate: #{ref_name}.#{hint}"
           end
         end
         result

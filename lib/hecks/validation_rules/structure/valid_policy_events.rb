@@ -19,14 +19,16 @@ module Hecks
         @domain.aggregates.each do |agg|
           agg.policies.each do |policy|
             unless all_events.include?(policy.event_name)
-              result << "Policy #{policy.name} in #{agg.name} listens for #{policy.event_name} (not in this domain — must come from another domain)"
+              hint = all_events.any? ? " Known events: #{all_events.join(', ')}." : ""
+              result << "Policy #{policy.name} in #{agg.name} listens for #{policy.event_name} (not in this domain — must come from another domain).#{hint}"
             end
           end
         end
 
         @domain.policies.each do |policy|
           unless all_events.include?(policy.event_name)
-            result << "Domain policy #{policy.name} listens for #{policy.event_name} (not in this domain — must come from another domain)"
+            hint = all_events.any? ? " Known events: #{all_events.join(', ')}." : ""
+            result << "Domain policy #{policy.name} listens for #{policy.event_name} (not in this domain — must come from another domain).#{hint}"
           end
         end
 

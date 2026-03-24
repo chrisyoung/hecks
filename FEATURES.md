@@ -195,6 +195,7 @@
 - Aggregate/value-object/entity name collision detection
 - Entity references rejected (entities live inside aggregates, not referenced across them)
 - Ruby keyword and reserved attribute name detection
+- Every validation error includes an actionable fix suggestion
 
 ## Migrations & Schema Evolution
 - `DomainDiff` detects added/removed aggregates, attributes, value objects, entities, indexes, commands, policies, validations, invariants, queries, scopes, subscribers, and specifications

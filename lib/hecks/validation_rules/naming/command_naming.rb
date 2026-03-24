@@ -18,7 +18,7 @@ module Hecks
           agg.commands.each do |cmd|
             first_word = cmd.name.split(/(?=[A-Z])/).first
             unless verb?(first_word, custom)
-              result << "Command #{cmd.name} in #{agg.name} doesn't start with a verb. Commands should express intent (e.g. Create#{agg.name}). Add custom verbs to verbs.txt."
+              result << "Command #{cmd.name} in #{agg.name} doesn't start with a verb. Try '#{suggest_verb(first_word, agg.name)}' or register '#{first_word}' as a custom verb in verbs.txt."
             end
           end
         end
@@ -26,6 +26,11 @@ module Hecks
       end
 
       private
+
+      def suggest_verb(first_word, agg_name)
+        suffix = first_word == agg_name ? "" : first_word
+        "Create#{agg_name}#{suffix}"
+      end
 
       def verb?(word, custom)
         return true if custom.any? { |v| v.downcase == word.downcase }

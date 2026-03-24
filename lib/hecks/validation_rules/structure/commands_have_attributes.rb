@@ -13,7 +13,7 @@ module Hecks
         @domain.aggregates.each do |agg|
           agg.commands.each do |cmd|
             if cmd.attributes.empty?
-              result << "Command #{cmd.name} in #{agg.name} has no attributes."
+              result << "Command #{cmd.name} in #{agg.name} has no attributes. Add at least one: attribute :name, String"
             end
           end
         end

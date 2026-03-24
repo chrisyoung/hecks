@@ -13,7 +13,7 @@ module Hecks
         result = []
         @domain.aggregates.each do |agg|
           if agg.commands.empty?
-            result << "#{agg.name} has no commands. An aggregate without commands is a data bag, not a behavior boundary."
+            result << "#{agg.name} has no commands. Add at least one: command 'Create#{agg.name}' do attribute :name, String end"
           end
         end
         result
