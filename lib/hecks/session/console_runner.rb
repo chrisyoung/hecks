@@ -141,7 +141,8 @@ module Hecks
       end
 
       if File.exist?("hecks_domain.rb")
-        domain = eval(File.read("hecks_domain.rb"), binding, "hecks_domain.rb")
+        Kernel.load("hecks_domain.rb")
+        domain = Hecks.last_domain
         session = Session.new(domain.name)
         domain.aggregates.each do |agg|
           session.aggregate_builders[agg.name] =

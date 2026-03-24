@@ -2,7 +2,7 @@
 #
 # Generates policy classes. Guard policies have a call(command) method.
 # Reactive policies declare EVENT, TRIGGER, and ASYNC constants. Part of
-# Generators::Domain, consumed by DomainGemGenerator and SourceBuilder.
+# Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
 #
 #   gen = PolicyGenerator.new(policy, domain_module: "PizzasDomain", aggregate_name: "Order")
 #   gen.generate

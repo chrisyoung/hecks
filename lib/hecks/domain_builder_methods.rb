@@ -12,7 +12,9 @@ module Hecks
     def domain(name, &block)
       builder = DSL::DomainBuilder.new(name)
       builder.instance_eval(&block)
-      builder.build
+      result = builder.build
+      Hecks.last_domain = result
+      result
     end
 
     def session(name)

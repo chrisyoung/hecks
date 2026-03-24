@@ -24,7 +24,8 @@ module Hecks
                end
 
         domain_file = File.join(base, "hecks_domain.rb")
-        domain_obj = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
+        Kernel.load(domain_file)
+        domain_obj = Hecks.last_domain
         domain_obj.source_path = domain_file
 
         gem_path = Hecks.build(domain_obj, output_dir: base)
@@ -49,7 +50,8 @@ module Hecks
                    end
 
         domain_file = File.join(gem_path, "hecks_domain.rb")
-        domain_obj = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
+        Kernel.load(domain_file)
+        domain_obj = Hecks.last_domain
         domain_obj.source_path = domain_file
         domain_module = Object.const_get(domain_obj.module_name + "Domain")
         [domain_obj, domain_module]

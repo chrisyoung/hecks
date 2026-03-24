@@ -4,7 +4,7 @@
 # equality (==, eql?, hash). Supports invariant checks, list attributes
 # that freeze on creation, and Ruby keyword-safe attribute names via
 # **kwargs. Part of Generators::Domain, consumed by DomainGemGenerator
-# and SourceBuilder.
+# and InMemoryLoader.
 #
 #   gen = ValueObjectGenerator.new(vo, domain_module: "PizzasDomain", aggregate_name: "Pizza")
 #   gen.generate  # => "module PizzasDomain\n  class Pizza\n    class Topping\n  ..."

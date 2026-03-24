@@ -3,8 +3,8 @@
 # Generates specification classes nested under Aggregate::Specifications.
 # Extracts the DSL block source and emits it as the body of a satisfied_by?
 # method. The Hecks::Specification mixin is injected at load time by
-# SourceBuilder (eval) or by const_missing (file-based gems). Part of
-# Generators::Domain, consumed by DomainGemGenerator and SourceBuilder.
+# InMemoryLoader or by const_missing (file-based gems). Part of
+# Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
 #
 #   gen = SpecificationGenerator.new(spec, domain_module: "BankingDomain", aggregate_name: "Loan")
 #   gen.generate

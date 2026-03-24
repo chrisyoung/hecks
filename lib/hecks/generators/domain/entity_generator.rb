@@ -3,7 +3,7 @@
 # Generates mutable sub-entity classes that include Hecks::Model. Entities
 # have UUID identity, identity-based equality, and are NOT frozen -- unlike
 # value objects. Supports invariant checks and list attributes.
-# Part of Generators::Domain, consumed by DomainGemGenerator and SourceBuilder.
+# Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
 #
 #   gen = EntityGenerator.new(entity, domain_module: "BankingDomain", aggregate_name: "Account")
 #   gen.generate  # => "module BankingDomain\n  class Account\n    class LedgerEntry\n  ..."

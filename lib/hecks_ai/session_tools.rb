@@ -21,7 +21,8 @@ module Hecks
           description: "Load an existing domain.rb file",
           input_schema: { type: "object", properties: { path: { type: "string", description: "Path to domain.rb" } }, required: ["path"] }
         ) do |args|
-          domain = eval(File.read(args["path"]), TOPLEVEL_BINDING, args["path"])
+          Kernel.load(args["path"])
+          domain = Hecks.last_domain
           ctx.session = Hecks.session(domain.name)
           domain.aggregates.each do |agg|
             handle = ctx.session.aggregate(agg.name)

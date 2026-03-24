@@ -29,6 +29,7 @@ require_relative "hecks/autoloads"
 require_relative "hecks/domain_inspector"
 require_relative "hecks/domain_builder_methods"
 require_relative "hecks/domain_compiler"
+require_relative "hecks/in_memory_loader"
 require_relative "hecks/event_storm_importer"
 require_relative "hecks/domain_visualizer_methods"
 require_relative "hecks/boot"
@@ -44,6 +45,24 @@ module Hecks
   @configuration = nil
   @loaded_domains = {}
   @domain_objects = {}
+  @last_domain = nil
+  @load_strategy = :files
+
+  def self.last_domain
+    @last_domain
+  end
+
+  def self.last_domain=(domain)
+    @last_domain = domain
+  end
+
+  def self.load_strategy
+    @load_strategy
+  end
+
+  def self.load_strategy=(strategy)
+    @load_strategy = strategy
+  end
 
   def self.configure(&block)
     @configuration = Configuration.new

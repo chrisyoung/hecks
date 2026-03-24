@@ -1,4 +1,5 @@
 require "hecks"
+Hecks.load_strategy = :memory
 require_relative "support/shared_boot"
 
 # Track constants hoisted to Object by Hecks::Runtime
