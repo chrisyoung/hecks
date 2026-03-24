@@ -42,9 +42,9 @@ module Hecks
       end
 
       def dump_file(domain, type)
-        require_relative "../../http/json_schema_generator"
-        require_relative "../../http/openapi_generator"
-        require_relative "../../http/rpc_discovery"
+        require_relative "../../connections/http/json_schema_generator"
+        require_relative "../../connections/http/openapi_generator"
+        require_relative "../../connections/http/rpc_discovery"
         case type
         when "schema"
           File.write("schema.json", JSON.pretty_generate(HTTP::JsonSchemaGenerator.new(domain).generate))

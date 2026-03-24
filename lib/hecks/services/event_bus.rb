@@ -19,6 +19,7 @@ module Hecks
 
       def initialize
         @listeners = Hash.new { |h, k| h[k] = [] }
+        @global_listeners = []
         @events = []
       end
 
@@ -26,10 +27,17 @@ module Hecks
         @listeners[event_name.to_s] << handler
       end
 
+      # Register a handler that receives every published event regardless of name.
+      # Used by sends_to connections for outbound event forwarding.
+      def on_any(&handler)
+        @global_listeners << handler
+      end
+
       def publish(event)
         @events << event
         event_name = event.class.name.split("::").last
         @listeners[event_name].each { |handler| handler.call(event) }
+        @global_listeners.each { |handler| handler.call(event) }
       end
 
       def clear

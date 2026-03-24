@@ -17,6 +17,7 @@ module Hecks
   autoload :Validator,      "hecks/validator"
   autoload :Versioner,      "hecks/versioner"
   autoload :Migrations,     "hecks/migrations"
+  autoload :DomainConnections, "hecks/domain_connections"
   autoload :DomainGlossary,  "hecks/domain_glossary"
   autoload :DomainVisualizer, "hecks/domain_visualizer"
   autoload :DslSerializer,      "hecks/dsl_serializer"
@@ -73,11 +74,11 @@ module Hecks
   end
 
   module HTTP
-    autoload :DomainServer,       "hecks/http/domain_server"
-    autoload :RpcServer,          "hecks/http/rpc_server"
-    autoload :RouteBuilder,       "hecks/http/route_builder"
-    autoload :OpenapiGenerator,   "hecks/http/openapi_generator"
-    autoload :RpcDiscovery,       "hecks/http/rpc_discovery"
-    autoload :JsonSchemaGenerator, "hecks/http/json_schema_generator"
+    autoload :DomainServer,       "hecks/connections/http/domain_server"
+    autoload :RpcServer,          "hecks/connections/http/rpc_server"
+    autoload :RouteBuilder,       "hecks/connections/http/route_builder"
+    autoload :OpenapiGenerator,   "hecks/connections/http/openapi_generator"
+    autoload :RpcDiscovery,       "hecks/connections/http/rpc_discovery"
+    autoload :JsonSchemaGenerator, "hecks/connections/http/json_schema_generator"
   end
 end

@@ -18,6 +18,7 @@ require_relative "runtime/repository_setup"
 require_relative "runtime/policy_setup"
 require_relative "runtime/subscriber_setup"
 require_relative "runtime/constant_hoisting"
+require_relative "runtime/connection_setup"
 
 module Hecks
   module Services
@@ -26,6 +27,7 @@ module Hecks
       include PolicySetup
       include SubscriberSetup
       include ConstantHoisting
+      include ConnectionSetup
 
       attr_reader :domain, :event_bus, :command_bus
 
@@ -34,6 +36,7 @@ module Hecks
         @port_name = port
         @mod_name = domain.module_name + "Domain"
         @mod = Object.const_get(@mod_name)
+        @mod.extend(Hecks::DomainConnections) unless @mod.respond_to?(:persist_to)
         @event_bus = event_bus || EventBus.new
         @repositories = {}
         @adapter_overrides = {}
@@ -45,6 +48,7 @@ module Hecks
         setup_command_bus
         setup_policies
         setup_subscribers
+        setup_connections
         AggregateWiring.new(@domain, @repositories, @command_bus, @mod, port_name: @port_name).wire!
         hoist_constants
       end
