@@ -33,8 +33,7 @@ RSpec.describe Hecks::HTTP::RouteBuilder do
   end
 
   before do
-    Hecks.load_domain(domain)
-    @app = Hecks::Services::Application.new(domain)
+    @app = Hecks.load(domain)
     @mod = PizzasDomain
     @routes = described_class.new(domain, @mod).build
   end

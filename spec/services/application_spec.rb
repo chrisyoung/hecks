@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Services::Application do
+RSpec.describe Hecks::Services::Runtime do
   let(:domain) do
     Hecks.domain "Pizzas" do
       aggregate "Pizza" do
@@ -34,13 +34,8 @@ RSpec.describe Hecks::Services::Application do
     end
   end
 
-  before do
-    # Generate and load the domain gem so classes are available
-    Hecks.load_domain(domain)
-  end
-
   describe "default configuration" do
-    subject(:app) { described_class.new(domain) }
+    subject(:app) { Hecks.load(domain) }
 
     it "creates memory repositories for each aggregate" do
       expect(app["Pizza"]).to be_a(PizzasDomain::Adapters::PizzaMemoryRepository)
@@ -70,7 +65,7 @@ RSpec.describe Hecks::Services::Application do
         def delete(id) = "custom_delete"
       end
 
-      app = described_class.new(domain) do
+      app = Hecks.load(domain) do
         adapter "Pizza", custom_repo.new
       end
 
@@ -79,7 +74,7 @@ RSpec.describe Hecks::Services::Application do
   end
 
   describe "aggregate command methods" do
-    let!(:app) { described_class.new(domain) }
+    let!(:app) { Hecks.load(domain) }
 
     it "defines class methods on aggregates for each command" do
       expect(PizzasDomain::Pizza).to respond_to(:create)
@@ -114,7 +109,7 @@ RSpec.describe Hecks::Services::Application do
   end
 
   describe "constant hoisting" do
-    let!(:app) { described_class.new(domain) }
+    let!(:app) { Hecks.load(domain) }
 
     it "hoists aggregates to top level" do
       expect(::Pizza).to eq(PizzasDomain::Pizza)
@@ -132,7 +127,7 @@ RSpec.describe Hecks::Services::Application do
 
   describe "#inspect" do
     it "shows a readable summary" do
-      app = described_class.new(domain)
+      app = Hecks.load(domain)
       expect(app.inspect).to include("Pizzas")
       expect(app.inspect).to include("2 repositories")
     end

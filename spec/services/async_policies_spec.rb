@@ -23,11 +23,9 @@ RSpec.describe "Async policies" do
     end
   end
 
-  before { Hecks.load_domain(domain, force: true) }
-
   it "calls the async handler instead of dispatching inline" do
     calls = []
-    app = Hecks::Services::Application.new(domain)
+    app = Hecks.load(domain, force: true)
     app.async do |command_name, attrs|
       calls << { command: command_name, attrs: attrs }
     end
@@ -40,7 +38,7 @@ RSpec.describe "Async policies" do
   end
 
   it "falls back to inline dispatch when no async handler is set" do
-    app = Hecks::Services::Application.new(domain)
+    app = Hecks.load(domain, force: true)
     app.run("PlaceOrder", item: "Widget")
 
     event_names = app.events.map { |e| e.class.name.split("::").last }
@@ -68,8 +66,7 @@ RSpec.describe "Async policies" do
       end
     end
 
-    Hecks.load_domain(sync_domain, force: true)
-    app = Hecks::Services::Application.new(sync_domain)
+    app = Hecks.load(sync_domain, force: true)
     app.async { |cmd, attrs| raise "should not be called" }
 
     app.run("CreateTask", title: "Test")

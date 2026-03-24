@@ -66,8 +66,13 @@ module Hecks
                 write_file(root, "#{base}/policies/#{Hecks::Utils.underscore(pol.name)}.rb", pol_gen.generate)
               end
 
+              agg.subscribers.each do |sub|
+                sub_gen = Domain::SubscriberGenerator.new(sub, domain_module: mod, aggregate_name: safe_name)
+                write_file(root, "#{base}/subscribers/#{Hecks::Utils.underscore(sub.name)}.rb", sub_gen.generate)
+              end
+
               # Create conventional folders even when empty
-              %w[commands events policies queries].each do |dir|
+              %w[commands events policies queries subscribers].each do |dir|
                 FileUtils.mkdir_p(File.join(root, base, dir))
               end
             end

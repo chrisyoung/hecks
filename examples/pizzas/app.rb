@@ -25,7 +25,7 @@ $LOAD_PATH.unshift(File.join(output, "lib"))
 require "pizzas_domain"
 
 # 5. Wire up the application with default memory adapters
-app = Hecks::Services::Application.new(domain)
+app = Hecks::Services::Runtime.new(domain)
 
 # 6. Subscribe to events
 app.on("CreatedPizza") do |event|

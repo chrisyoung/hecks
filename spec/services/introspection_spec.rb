@@ -36,8 +36,7 @@ RSpec.describe Hecks::Services::Introspection do
     end
   end
 
-  before { Hecks.load_domain(domain, force: true) }
-  let!(:app) { Hecks::Services::Application.new(domain) }
+  let!(:app) { Hecks.load(domain, force: true) }
 
   describe ".domain_def" do
     it "returns the aggregate IR" do

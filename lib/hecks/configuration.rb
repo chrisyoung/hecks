@@ -83,7 +83,7 @@ module Hecks
       adapter_type = @adapter_type
       db = @db
 
-      app = Services::Application.new(domain_obj, event_bus: @shared_event_bus) do
+      app = Services::Runtime.new(domain_obj, event_bus: @shared_event_bus) do
         if adapter_type == :sql
           domain_obj.aggregates.each do |agg|
             safe_name = Hecks::Utils.sanitize_constant(agg.name)

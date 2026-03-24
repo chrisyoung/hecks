@@ -36,10 +36,7 @@ RSpec.describe "Command Handlers" do
     end
   end
 
-  let!(:app) do
-    Hecks.load_domain(domain)
-    Hecks::Services::Application.new(domain)
-  end
+  let!(:app) { Hecks.load(domain) }
 
   let(:pizza_class) { PizzasDomain::Pizza }
   let(:order_class) { PizzasDomain::Order }
@@ -95,9 +92,7 @@ RSpec.describe "Command Handlers" do
     end
 
     it "works normally without a handler" do
-      Hecks.load_domain(plain_domain)
-
-      plain_app = Hecks::Services::Application.new(plain_domain)
+      plain_app = Hecks.load(plain_domain)
       PizzasDomain::Pizza.create(name: "Cheese")
 
       expect(plain_app.events.size).to eq(1)

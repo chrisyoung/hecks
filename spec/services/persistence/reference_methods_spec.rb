@@ -23,8 +23,7 @@ RSpec.describe Hecks::Services::Persistence::ReferenceMethods do
   end
 
   before do
-    Hecks.load_domain(domain)
-    @app = Hecks::Services::Application.new(domain)
+    @app = Hecks.load(domain)
   end
 
   it "resolves a reference to the correct aggregate" do

@@ -17,6 +17,7 @@ module Hecks
       autoload :PolicyGenerator,       "hecks/generators/domain/policy_generator"
       autoload :QueryGenerator,        "hecks/generators/domain/query_generator"
       autoload :QueryObjectGenerator,  "hecks/generators/domain/query_object_generator"
+      autoload :SubscriberGenerator,   "hecks/generators/domain/subscriber_generator"
     end
   end
 end

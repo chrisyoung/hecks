@@ -1,17 +1,17 @@
-# Hecks::Services::Application::ConstantHoisting
+# Hecks::Services::Runtime::ConstantHoisting
 #
 # Mixin that promotes aggregate classes from the domain module
 # namespace into the top-level Object namespace so they can be
 # referenced without the module prefix (e.g. Pizza instead of
 # PizzaDomain::Pizza).
 #
-#   class Application
+#   class Runtime
 #     include ConstantHoisting
 #   end
 #
 module Hecks
   module Services
-    class Application
+    class Runtime
       module ConstantHoisting
         private
 

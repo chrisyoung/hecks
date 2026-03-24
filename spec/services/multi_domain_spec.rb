@@ -44,11 +44,9 @@ RSpec.describe "Multi-domain with shared event bus" do
   end
 
   before do
-    [pizzas_domain, billing_domain].each { |d| Hecks.load_domain(d) }
-
     shared_bus = Hecks::Services::EventBus.new
-    @pizzas_app = Hecks::Services::Application.new(pizzas_domain, event_bus: shared_bus)
-    @billing_app = Hecks::Services::Application.new(billing_domain, event_bus: shared_bus)
+    @pizzas_app = Hecks.load(pizzas_domain, event_bus: shared_bus)
+    @billing_app = Hecks.load(billing_domain, event_bus: shared_bus)
   end
 
   it "each domain has its own aggregates" do

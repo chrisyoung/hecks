@@ -18,7 +18,8 @@ module Hecks
       autoload :Command,     "hecks/domain_model/behavior/command"
       autoload :DomainEvent, "hecks/domain_model/behavior/domain_event"
       autoload :Policy,      "hecks/domain_model/behavior/policy"
-      autoload :Query,       "hecks/domain_model/behavior/query"
+      autoload :Query,            "hecks/domain_model/behavior/query"
+      autoload :EventSubscriber, "hecks/domain_model/behavior/event_subscriber"
     end
   end
 end

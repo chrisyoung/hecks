@@ -37,8 +37,7 @@ RSpec.describe "Scopes" do
 
   describe "application wiring" do
     before do
-      Hecks.load_domain(domain)
-      @app = Hecks::Services::Application.new(domain)
+      @app = Hecks.load(domain)
     end
 
     it "defines hash scope as a class method" do

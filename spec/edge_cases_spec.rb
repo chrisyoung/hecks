@@ -2,8 +2,7 @@ require "spec_helper"
 
 RSpec.describe "Edge cases and error handling" do
   def boot(domain)
-    Hecks.load_domain(domain)
-    Hecks::Services::Application.new(domain)
+    Hecks.load(domain)
   end
 
   let(:domain) do

@@ -59,7 +59,8 @@ module Hecks
   end
 
   module Services
-    autoload :Application,      "hecks/services/application"
+    autoload :Runtime,           "hecks/services/runtime"
+    autoload :Application,      "hecks/services/runtime"
     autoload :AggregateWiring,  "hecks/services/aggregate_wiring"
     autoload :EventBus,         "hecks/services/event_bus"
     autoload :PortEnforcer,     "hecks/services/port_enforcer"

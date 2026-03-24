@@ -98,6 +98,14 @@ module Hecks
           lines << "    end"
         end
 
+        agg.subscribers.each do |sub|
+          lines << ""
+          async_opt = sub.async ? ", async: true" : ""
+          lines << "    on_event \"#{sub.event_name}\"#{async_opt} do |event|"
+          lines << "      #{Hecks::Utils.block_source(sub.block)}" if sub.block
+          lines << "    end"
+        end
+
         lines << "  end"
       end
 

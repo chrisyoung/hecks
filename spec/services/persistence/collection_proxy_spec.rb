@@ -21,8 +21,7 @@ RSpec.describe Hecks::Services::Persistence::CollectionProxy do
   end
 
   before do
-    Hecks.load_domain(domain)
-    @app = Hecks::Services::Application.new(domain)
+    @app = Hecks.load(domain)
     @pizza = PizzasDomain::Pizza.create(name: "Margherita")
   end
 

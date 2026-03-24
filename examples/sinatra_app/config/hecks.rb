@@ -6,7 +6,7 @@ domain_file = File.join(Gem.loaded_specs["pizzas_domain"]&.full_gem_path || "../
 DOMAIN = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
 
 # Boot with memory adapters (swap to SQL for production)
-APP = Hecks::Services::Application.new(DOMAIN)
+APP = Hecks::Services::Runtime.new(DOMAIN)
 
 # Uncomment for SQL persistence:
 # Hecks.configure do
