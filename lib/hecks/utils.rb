@@ -103,7 +103,9 @@ module Hecks
         stripped = l.strip
         break if depth == 0 && stripped == "end"
         body_lines << stripped
-        depth += 1 if stripped.match?(/\b(do|def|class|module|if|unless|case|begin)\b/)
+        # Only count block-opening keywords at the start of a line.
+        # Inline modifiers (raise "x" unless y) don't open blocks.
+        depth += 1 if stripped.match?(/\A(do|def|class|module|if|unless|case|begin)\b/)
         depth -= 1 if stripped == "end"
       end
       body_lines.reject(&:empty?).join("\n")

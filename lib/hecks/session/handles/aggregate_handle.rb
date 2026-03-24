@@ -97,6 +97,24 @@ module Hecks
       self
     end
 
+    def query(name, &block)
+      @builder.query(name, &block)
+      puts "  + query #{name}"
+      self
+    end
+
+    def scope(name, conditions = nil, &block)
+      @builder.scope(name, conditions, &block)
+      puts "  + scope #{name}"
+      self
+    end
+
+    def on_event(event_name, async: false, &block)
+      @builder.on_event(event_name, async: async, &block)
+      puts "  + subscriber on #{event_name}"
+      self
+    end
+
     # Keep add_ prefixed names for backward compat (MCP, specs, examples)
     alias_method :attribute, :attr
     alias_method :add_attribute, :attr
@@ -108,6 +126,8 @@ module Hecks
     alias_method :add_invariant, :invariant
     alias_method :add_policy, :policy
     alias_method :add_verb, :verb
+    alias_method :add_query, :query
+    alias_method :add_scope, :scope
 
     def attributes
       @builder.attributes.map(&:name)
@@ -119,29 +139,6 @@ module Hecks
 
     def value_objects
       @builder.value_objects.map { |vo| vo.is_a?(DomainModel::Structure::ValueObject) ? vo.name : vo.build.name }
-    end
-
-    # Returns true/false — is this aggregate valid?
-    def valid?
-      errors.empty?
-    end
-
-    # Returns array of validation error strings for this aggregate.
-    def errors
-      return [] unless @session
-      domain = @session.to_domain
-      validator = Validator.new(domain)
-      return [] if validator.valid?
-      validator.errors.select { |e| e.include?(@name) }
-    end
-
-    # Show the generated code for this aggregate
-    def preview
-      agg = @builder.build
-      domain_module = @domain_module || "Domain"
-      gen = Generators::Domain::AggregateGenerator.new(agg, domain_module: domain_module)
-      puts gen.generate
-      nil
     end
 
     # DSL helpers for use in blocks

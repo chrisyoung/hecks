@@ -30,7 +30,17 @@ module Hecks
                 end
               end
             else
-              lines << "    def initialize(#{constructor_params})"
+              params = constructor_params
+              if params.size <= 2
+                lines << "    def initialize(#{params.join(", ")})"
+              else
+                lines << "    def initialize("
+                params.each_with_index do |p, i|
+                  suffix = i < params.size - 1 ? "," : ""
+                  lines << "      #{p}#{suffix}"
+                end
+                lines << "    )"
+              end
               lines << "      @id = id || generate_id"
               @user_attrs.each do |attr|
                 if attr.list?
@@ -57,7 +67,7 @@ module Hecks
               end
             end
             params << "id: nil"
-            params.join(", ")
+            params
           end
         end
       end

@@ -34,11 +34,20 @@ module Hecks
         lines << "      class #{@command.name}"
         lines << "        emits \"#{@event.name}\"" if @event
         lines << ""
-        lines << "        attr_reader #{@command.attributes.map { |a| ":#{a.name}" }.join(", ")}"
+        attr_syms = @command.attributes.map { |a| ":#{a.name}" }
+        if attr_syms.size <= 2
+          lines << "        attr_reader #{attr_syms.join(", ")}"
+        else
+          attr_syms.each { |s| lines << "        attr_reader #{s}" }
+        end
         lines << ""
         lines.concat(initializer_lines)
         lines << ""
-        lines.concat(call_lines) if @aggregate && @event
+        if @command.call_body
+          lines.concat(custom_call_lines)
+        elsif @aggregate && @event
+          lines.concat(call_lines)
+        end
         lines << "      end"
         lines << "    end"
         lines << "  end"
@@ -48,6 +57,14 @@ module Hecks
 
       private
 
+      def custom_call_lines
+        source = Hecks::Utils.block_source(@command.call_body)
+        lines = ["        def call"]
+        source.split("\n").each { |l| lines << "          #{l}" }
+        lines << "        end"
+        lines
+      end
+
       def initializer_lines
         lines = []
         if @has_keyword_attrs
@@ -56,7 +73,17 @@ module Hecks
             lines << "          @#{attr.name} = kwargs[:#{attr.name}]"
           end
         else
-          lines << "        def initialize(#{constructor_params})"
+          params = constructor_params
+          if params.size <= 2
+            lines << "        def initialize(#{params.join(", ")})"
+          else
+            lines << "        def initialize("
+            params.each_with_index do |p, i|
+              suffix = i < params.size - 1 ? "," : ""
+              lines << "          #{p}#{suffix}"
+            end
+            lines << "        )"
+          end
           @command.attributes.each do |attr|
             lines << "          @#{attr.name} = #{attr.name}"
           end
@@ -78,7 +105,8 @@ module Hecks
       end
 
       def create_body
-        ["          #{@aggregate_name}.new(#{create_constructor_args})"]
+        args = create_constructor_args
+        format_new_call("          ", args)
       end
 
       def update_body
@@ -87,23 +115,21 @@ module Hecks
         if id_attr
           lines << "          existing = repository.find(#{id_attr.name})"
           lines << "          if existing"
-          lines << "            #{@aggregate_name}.new(#{update_constructor_args})"
+          lines.concat(format_new_call("            ", update_constructor_args))
           lines << "          else"
-          lines << "            #{@aggregate_name}.new(#{create_constructor_args})"
+          lines.concat(format_new_call("            ", create_constructor_args))
           lines << "          end"
         else
-          lines << "          #{@aggregate_name}.new(#{create_constructor_args})"
+          lines.concat(format_new_call("          ", create_constructor_args))
         end
         lines
       end
 
       def create_constructor_args
-        parts = []
-        agg_attrs.each do |a|
+        agg_attrs.each_with_object([]) do |a, parts|
           cmd_attr = @command.attributes.find { |c| c.name == a.name }
           parts << "#{a.name}: #{a.name}" if cmd_attr
         end
-        parts.join(", ")
       end
 
       def update_constructor_args
@@ -116,7 +142,22 @@ module Hecks
             parts << "#{a.name}: existing.#{a.name}"
           end
         end
-        parts.join(", ")
+        parts
+      end
+
+      # Format Aggregate.new(...) — inline if ≤2 args, stacked otherwise.
+      def format_new_call(indent, args)
+        if args.size <= 2
+          ["#{indent}#{@aggregate_name}.new(#{args.join(", ")})"]
+        else
+          lines = ["#{indent}#{@aggregate_name}.new("]
+          args.each_with_index do |arg, i|
+            comma = i < args.size - 1 ? "," : ""
+            lines << "#{indent}  #{arg}#{comma}"
+          end
+          lines << "#{indent})"
+          lines
+        end
       end
 
       def agg_attrs
@@ -125,7 +166,7 @@ module Hecks
       end
 
       def constructor_params
-        @command.attributes.map { |attr| "#{attr.name}: nil" }.join(", ")
+        @command.attributes.map { |attr| "#{attr.name}: nil" }
       end
     end
     end

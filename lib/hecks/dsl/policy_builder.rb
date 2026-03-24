@@ -20,6 +20,7 @@ module Hecks
         @event_name = nil
         @trigger_command = nil
         @async = false
+        @attribute_map = {}
       end
 
       def on(event_name)
@@ -34,6 +35,12 @@ module Hecks
         @async = flag
       end
 
+      # Map event attributes to command attributes:
+      #   map principal: :amount, account_id: :account_id
+      def map(**mapping)
+        @attribute_map.merge!(mapping)
+      end
+
       def build
         raise "Policy '#{@name}': missing 'on' (event name)" unless @event_name
         raise "Policy '#{@name}': missing 'trigger' (command name)" unless @trigger_command
@@ -41,7 +48,8 @@ module Hecks
           name: @name,
           event_name: @event_name,
           trigger_command: @trigger_command,
-          async: @async
+          async: @async,
+          attribute_map: @attribute_map
         )
       end
     end
