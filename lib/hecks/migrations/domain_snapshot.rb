@@ -22,7 +22,8 @@ module Hecks
     def self.load(path: DEFAULT_PATH)
       return nil unless File.exist?(path)
 
-      eval(File.read(path), TOPLEVEL_BINDING, path)
+      Kernel.load(path)
+      Hecks.last_domain
     end
 
     def self.exists?(path: DEFAULT_PATH)

@@ -2,9 +2,9 @@
 #
 # Generates query classes nested under Aggregate::Queries. Extracts the
 # DSL block source and emits it as the body of a call method. The
-# Hecks::Query mixin is injected at load time by SourceBuilder (eval)
-# or by const_missing (file-based gems). Part of Generators::Domain,
-# consumed by DomainGemGenerator and SourceBuilder.
+# Hecks::Query mixin is injected at load time by InMemoryLoader or by
+# const_missing (file-based gems). Part of Generators::Domain,
+# consumed by DomainGemGenerator and InMemoryLoader.
 #
 #   gen = QueryGenerator.new(query, domain_module: "PizzasDomain", aggregate_name: "Pizza")
 #   gen.generate

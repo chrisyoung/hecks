@@ -2,7 +2,7 @@
 #
 # Generates a complete domain gem on disk — aggregates, value objects, commands,
 # events, policies, queries, ports, adapters, specs, and a gemspec. Delegates
-# to FileWriter (disk I/O), SourceBuilder (eval-ready string), and SpecWriter
+# to FileWriter (disk I/O) and SpecWriter
 # (RSpec scaffolds). Part of the Generators::Infrastructure layer, invoked by
 # the CLI `hecks domain build` command and `Hecks.build`.
 #
@@ -11,7 +11,6 @@
 #
 require "fileutils"
 require_relative "domain_gem_generator/file_writer"
-require_relative "domain_gem_generator/source_builder"
 require_relative "domain_gem_generator/spec_writer"
 
 module Hecks
@@ -19,7 +18,6 @@ module Hecks
     module Infrastructure
     class DomainGemGenerator
       include FileWriter
-      include SourceBuilder
       include SpecWriter
 
       def initialize(domain, version: "0.1.0", output_dir: ".")

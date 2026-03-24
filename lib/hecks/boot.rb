@@ -32,7 +32,8 @@ module Hecks
         raise Hecks::DomainLoadError, "No hecks_domain.rb found in #{dir}"
       end
 
-      domain = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file, 1)
+      Kernel.load(domain_file)
+      domain = Hecks.last_domain
 
       valid, errors = validate(domain)
       unless valid

@@ -3,7 +3,7 @@
 # Parent module for infrastructure generators. Autoloads generators for
 # repository ports, memory adapters, autoload entry points, RSpec specs,
 # and the top-level domain gem generator (DomainGemGenerator). Part of
-# the Generators layer, consumed by DomainGemGenerator and SourceBuilder.
+# the Generators layer, consumed by DomainGemGenerator and InMemoryLoader.
 #
 module Hecks
   module Generators

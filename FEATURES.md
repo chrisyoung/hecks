@@ -53,7 +53,7 @@
 
 ## Code Generation
 - Generate complete Ruby gems from domain definitions with `Hecks.build(domain)`
-- `Hecks.load(domain)` for fast in-memory eval without writing files (45x faster than build)
+- `Hecks.load(domain)` loads domain in memory; uses file-based or fast in-memory strategy (via `Hecks.load_strategy`)
 - Generate aggregate classes with `Hecks::Model` mixin, auto-UUID, and timestamps
 - Generate command classes with full lifecycle (guard → handler → call → persist → emit → record)
 - Generate frozen event classes with `occurred_at` timestamps

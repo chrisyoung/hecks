@@ -115,7 +115,8 @@ module Hecks
       end
 
       def load_domain(file)
-        domain = eval(File.read(file), binding, file)
+        Kernel.load(file)
+        domain = Hecks.last_domain
         domain.source_path = file
         domain
       end

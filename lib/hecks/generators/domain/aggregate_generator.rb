@@ -4,7 +4,7 @@
 # attribute declarations via the Model DSL, plus validation and invariant
 # methods from the ValidationGeneration and InvariantGeneration mixins.
 # Identity, timestamps, and equality come from Hecks::Model at runtime.
-# Part of Generators::Domain, consumed by DomainGemGenerator and SourceBuilder.
+# Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
 #
 #   gen = AggregateGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."

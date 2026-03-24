@@ -3,7 +3,7 @@
 # Generates subscriber classes nested under Aggregate::Subscribers.
 # Each subscriber declares EVENT and ASYNC constants, and a call(event)
 # method whose body is extracted from the DSL block. Part of
-# Generators::Domain, consumed by DomainGemGenerator and SourceBuilder.
+# Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
 #
 #   gen = SubscriberGenerator.new(sub, domain_module: "PizzasDomain", aggregate_name: "Pizza")
 #   gen.generate

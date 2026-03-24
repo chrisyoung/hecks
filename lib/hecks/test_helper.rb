@@ -34,6 +34,10 @@ end
 # Auto-hook into RSpec if it's loaded
 if defined?(RSpec)
   RSpec.configure do |config|
+    config.before(:suite) do
+      Hecks.load_strategy = :memory
+    end
+
     config.after(:each) do
       Hecks::TestHelper.reset!
     end
