@@ -1,30 +1,72 @@
 # HecksAudit
 #
-# Connection gem that records an audit trail of every command execution.
-# Stores entries with command name, actor, tenant, timestamp, and attributes.
-# Registered as command bus middleware via Hecks.register_extension.
+# Audit trail extension that records an immutable log entry for every
+# domain event published on the event bus. Captures the event class name,
+# full attribute data, and timestamp. Optionally pairs with command bus
+# middleware to enrich entries with command name, actor, and tenant.
 #
+# Usage:
 #   require "hecks_audit"
-#   app = Hecks.load(domain)
-#   Pizza.create(name: "Margherita")
-#   PizzasDomain.audit_log
-#   # => [{ command: "CreatePizza", actor: "admin", tenant: "acme", at: ..., attributes: { name: "Margherita" } }]
 #
-Hecks.register_extension(:audit) do |domain_mod, _domain, runtime|
-  domain_mod.instance_variable_set(:@_audit_log, [])
-  domain_mod.define_singleton_method(:audit_log) { @_audit_log }
+#   app = Hecks.load(domain)
+#   audit = HecksAudit.new(app.event_bus)
+#
+#   # Optional: add command context via middleware
+#   app.use(:audit) { |cmd, nxt| audit.around_command(cmd, nxt) }
+#
+#   Pizza.create(name: "Margherita")
+#   audit.log.last[:event_name]  # => "CreatedPizza"
+#   audit.log.last[:event_data]  # => { name: "Margherita" }
+#
+class HecksAudit
+  attr_reader :log
 
-  runtime.use :audit do |command, next_handler|
-    result = next_handler.call
-    domain_mod.audit_log << {
+  def initialize(event_bus)
+    @log = []
+    @pending_context = nil
+    event_bus.on_any { |event| record(event) }
+  end
+
+  # Command bus middleware: sets command context for the next audit entry.
+  #
+  #   app.use(:audit) { |cmd, nxt| audit.around_command(cmd, nxt) }
+  #
+  def around_command(command, next_handler, actor: nil, tenant: nil)
+    @pending_context = {
       command: command.class.name.split("::").last,
-      actor: Hecks.actor&.respond_to?(:role) ? Hecks.actor.role : Hecks.actor&.to_s,
-      tenant: Hecks.tenant,
-      at: Time.now,
-      attributes: command.class.ancestors.include?(Hecks::Command) ?
-        command.instance_variables.reject { |v| [:@aggregate, :@event].include?(v) }
-          .map { |v| [v.to_s.delete("@").to_sym, command.instance_variable_get(v)] }.to_h : {}
+      actor: actor,
+      tenant: tenant
     }
-    result
+    next_handler.call
+  end
+
+  # Clear the audit log.
+  def clear
+    @log.clear
+  end
+
+  private
+
+  def record(event)
+    entry = {
+      command: @pending_context&.dig(:command),
+      actor: @pending_context&.dig(:actor),
+      tenant: @pending_context&.dig(:tenant),
+      timestamp: Time.now,
+      event_name: event.class.name.split("::").last,
+      event_data: extract_attrs(event)
+    }
+    @pending_context = nil
+    @log << entry
+  end
+
+  def extract_attrs(event)
+    params = event.class.instance_method(:initialize).parameters
+    params.each_with_object({}) do |(_, name), h|
+      next unless name
+      h[name] = event.send(name) if event.respond_to?(name)
+    end
+  rescue
+    {}
   end
 end

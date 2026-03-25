@@ -148,9 +148,15 @@ module Hecks
 
       def infer_events
         @commands.map do |command|
+          event_attrs = command.attributes.dup
+          command.passthroughs.each do |field|
+            next if event_attrs.any? { |a| a.name == field }
+            source = @attributes.find { |a| a.name == field }
+            event_attrs << source.dup if source
+          end
           DomainModel::Behavior::DomainEvent.new(
             name: command.inferred_event_name,
-            attributes: command.attributes
+            attributes: event_attrs
           )
         end
       end

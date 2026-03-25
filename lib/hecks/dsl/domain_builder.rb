@@ -28,6 +28,7 @@ module Hecks
         @services = []
         @attributes = []
         @tenancy = nil
+        @event_subscribers = []
       end
 
       def tenancy(strategy)
@@ -62,9 +63,14 @@ module Hecks
         @policies << builder.build
       end
 
+      def on_event(event_name, &block)
+        @event_subscribers << { event_name: event_name.to_s, block: block }
+      end
+
       def build
         DomainModel::Structure::Domain.new(
-          name: @name, aggregates: @aggregates, policies: @policies, services: @services, tenancy: @tenancy
+          name: @name, aggregates: @aggregates, policies: @policies,
+          services: @services, tenancy: @tenancy, event_subscribers: @event_subscribers
         )
       end
     end

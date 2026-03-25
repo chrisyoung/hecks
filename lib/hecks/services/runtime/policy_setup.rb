@@ -82,6 +82,9 @@ module Hecks
                 event_attrs
               end
 
+              # Merge static defaults (overrides mapped values for same key)
+              mapped_attrs = mapped_attrs.merge(policy.defaults) if policy.defaults.any?
+
               if policy.async && @async_handler
                 @async_handler.call(policy.trigger_command, mapped_attrs)
               else

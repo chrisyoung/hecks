@@ -26,9 +26,9 @@ module Hecks
   module DomainModel
     module Behavior
     class Policy
-      attr_reader :name, :event_name, :trigger_command, :async, :block, :attribute_map, :condition
+      attr_reader :name, :event_name, :trigger_command, :async, :block, :attribute_map, :condition, :defaults
 
-      def initialize(name:, event_name: nil, trigger_command: nil, async: false, block: nil, attribute_map: {}, condition: nil)
+      def initialize(name:, event_name: nil, trigger_command: nil, async: false, block: nil, attribute_map: {}, condition: nil, defaults: {})
         @name = name
         @event_name = event_name
         @trigger_command = trigger_command
@@ -36,6 +36,7 @@ module Hecks
         @block = block
         @attribute_map = attribute_map
         @condition = condition
+        @defaults = defaults
       end
 
       def guard?
