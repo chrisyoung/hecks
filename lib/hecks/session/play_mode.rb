@@ -5,7 +5,7 @@
 # Playground for actual execution.
 #
 #   session.play!
-#   session.execute("CreatePizza", name: "Margherita")
+#   Pizza.create_pizza(name: "Margherita")
 #   session.events
 #   session.history
 #   session.sketch!   # back to sketch mode
@@ -26,12 +26,23 @@ module Hecks
 
         @playground = Playground.new(domain)
         @mode = :play
-        puts "Entering play mode"
-        puts ""
-        puts "  commands                                # list available commands"
-        puts "  execute(\"CreatePizza\", name: \"Pepperoni\")"
-        puts "  events / history / reset!"
-        puts "  sketch!                                 # back to sketch mode"
+        first_agg = domain.aggregates.first
+        example_cmd = first_agg&.commands&.first
+        if first_agg && example_cmd
+          agg_name = first_agg.name
+          cmd_snake = Hecks::Utils.underscore(example_cmd.name)
+          puts "Entering play mode"
+          puts ""
+          puts "  #{agg_name}.#{cmd_snake}(...)            # run a command"
+          puts "  #{agg_name}.all / #{agg_name}.find(id)   # query"
+          puts "  events / history / reset!"
+          puts "  sketch!                                 # back to sketch mode"
+        else
+          puts "Entering play mode"
+          puts ""
+          puts "  browse                                  # see what's available"
+          puts "  sketch!                                 # back to sketch mode"
+        end
         puts ""
         self
       end
@@ -42,12 +53,6 @@ module Hecks
         @playground = nil
         puts "Back to sketch mode"
         self
-      end
-
-      # Play mode: execute a command
-      def execute(command_name, **attrs)
-        ensure_play_mode!
-        @playground.execute(command_name, **attrs)
       end
 
       # Play mode: list all events

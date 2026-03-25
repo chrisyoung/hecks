@@ -119,10 +119,11 @@ RSpec.describe "Command Handlers" do
       allow($stdout).to receive(:puts)
       session.play!
 
-      expect { session.execute("CreatePizza", name: "") }.to raise_error("No blank names")
+      mod = Object.const_get("PizzasDomain")
+      expect { mod::Pizza.create(name: "") }.to raise_error("No blank names")
       expect(session.events.size).to eq(0)
 
-      session.execute("CreatePizza", name: "Good")
+      mod::Pizza.create(name: "Good")
       expect(session.events.size).to eq(1)
       expect(handler_calls).to include(play_name: "Good")
     end

@@ -336,12 +336,9 @@ RSpec.describe Hecks::Session do
 
     it "executes commands in play mode" do
       session.play!
-      event = session.execute("CreatePizza", name: "Pepperoni")
+      mod = Object.const_get("PizzasDomain")
+      mod::Pizza.create(name: "Pepperoni")
       expect(session.events.size).to eq(1)
-    end
-
-    it "raises when calling play methods in build mode" do
-      expect { session.execute("CreatePizza", name: "X") }.to raise_error(/Not in play mode/)
     end
 
     it "refuses play mode for invalid domains" do
