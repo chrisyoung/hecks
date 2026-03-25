@@ -27,7 +27,7 @@ module Hecks
       def initialize(name:, attributes: [], value_objects: [], entities: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
                      scopes: [], ports: {}, queries: [], subscribers: [], indexes: [],
-                     specifications: [], lifecycle: nil)
+                     specifications: [], lifecycle: nil, versioned: false, attachable: false)
         @name = name
         @attributes = attributes
         @value_objects = value_objects
@@ -44,6 +44,16 @@ module Hecks
         @indexes = indexes
         @specifications = specifications
         @lifecycle = lifecycle
+        @versioned = versioned
+        @attachable = attachable
+      end
+
+      def versioned?
+        @versioned
+      end
+
+      def attachable?
+        @attachable
       end
 
     end

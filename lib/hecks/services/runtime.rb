@@ -17,6 +17,8 @@ require_relative "aggregate_wiring"
 require_relative "runtime/repository_setup"
 require_relative "runtime/policy_setup"
 require_relative "runtime/subscriber_setup"
+require_relative "runtime/read_model_setup"
+require_relative "runtime/workflow_setup"
 require_relative "runtime/constant_hoisting"
 require_relative "runtime/connection_setup"
 require_relative "service_wiring"
@@ -26,6 +28,8 @@ module Hecks
       include RepositorySetup
       include PolicySetup
       include SubscriberSetup
+      include ReadModelSetup
+      include WorkflowSetup
       include ConstantHoisting
       include ConnectionSetup
 
@@ -48,9 +52,11 @@ module Hecks
         setup_command_bus
         setup_policies
         setup_subscribers
+        setup_read_models
         setup_connections
         AggregateWiring.new(@domain, @repositories, @command_bus, @mod, port_name: @port_name).wire!
         ServiceWiring.bind(@domain, @mod, @command_bus)
+        setup_workflows
         hoist_constants
       end
 
@@ -89,7 +95,7 @@ module Hecks
         @event_bus.events
       end
 
-      # Replace a repository adapter (used by connection gems to swap
+      # Replace a repository adapter (used by extension gems to swap
       # memory adapters for SQL). Re-wires the aggregate after swapping.
       def swap_adapter(aggregate_name, repo)
         name = aggregate_name.to_s

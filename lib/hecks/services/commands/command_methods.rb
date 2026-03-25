@@ -2,9 +2,11 @@
 #
 # Wires command classes to repositories and event buses, then creates
 # shortcut methods on aggregate classes that delegate to command.call.
+# Also binds a .bulk method for composing queries with commands.
 #
 #   Commands.bind(PizzaClass, pizza_aggregate, bus, repo, defaults)
 #   Pizza.create(name: "Margherita")  # delegates to CreatePizza.call(...)
+#   Pizza.bulk(:retire, where: { status: "active" })  # batch command
 #
 #   Commands.bind_shortcuts(PizzaClass, pizza_aggregate) { |cmd| executor }
 #   # creates shortcut methods using a custom executor proc
@@ -41,6 +43,39 @@ module Hecks
         bind_shortcuts(klass, aggregate) do |cmd|
           cmd_class = mod.const_get(cmd.name)
           ->(attrs) { cmd_class.call(**attrs).aggregate }
+        end
+
+        bind_bulk(klass, aggregate)
+      end
+
+      # Adds a .bulk class method that composes queries with commands.
+      # Finds matching aggregates via where/all, optionally filters by
+      # specification, then executes a command on each match.
+      #
+      #   Widget.bulk(:retire, where: { status: "active" })
+      #   Widget.bulk(:suspend, where: {}, spec: HighRiskSpec)
+      #
+      def self.bind_bulk(klass, aggregate)
+        agg_snake = Hecks::Utils.underscore(aggregate.name)
+
+        klass.define_singleton_method(:bulk) do |command_method, where: {}, spec: nil|
+          items = if where.empty?
+            all
+          elsif respond_to?(:where)
+            self.where(**where).to_a
+          else
+            all.select do |item|
+              where.all? { |k, v| item.respond_to?(k) && item.send(k) == v }
+            end
+          end
+          if spec
+            spec_instance = spec.respond_to?(:new) ? spec.new : spec
+            items = items.select { |item| spec_instance.satisfied_by?(item) }
+          end
+          items.map do |item|
+            id_field = "#{agg_snake}_id"
+            send(command_method, **{ id_field.to_sym => item.id })
+          end
         end
       end
 

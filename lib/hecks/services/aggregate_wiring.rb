@@ -23,7 +23,6 @@ module Hecks
         end
       end
 
-      # Re-wire a single aggregate by name (used when swapping adapters).
       def wire_aggregate!(name)
         agg = @domain.aggregates.find { |a| a.name == name.to_s }
         wire_aggregate(agg) if agg
@@ -40,6 +39,8 @@ module Hecks
         Commands.bind(agg_class, agg, @command_bus, repo, defaults)
         Querying.bind(agg_class, agg)
         Introspection.bind(agg_class, agg)
+        Versioning.bind(agg_class, repo) if agg.versioned?
+        AttachmentMethods.bind(agg_class) if agg.attachable?
         wire_query_objects(agg, agg_class)
         PortEnforcer.new(port_name: @port_name).enforce!(agg, agg_class)
       end

@@ -22,6 +22,8 @@ module Hecks
       autoload :EventSubscriber, "hecks/domain_model/behavior/event_subscriber"
       autoload :Specification,   "hecks/domain_model/behavior/specification"
       autoload :Service,         "hecks/domain_model/behavior/service"
+      autoload :ReadModel,       "hecks/domain_model/behavior/read_model"
+      autoload :Workflow,        "hecks/domain_model/behavior/workflow"
     end
   end
 end
