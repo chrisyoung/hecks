@@ -38,12 +38,22 @@ module Hecks
         @indexes = []
         @specifications = []
         @lifecycle = nil
+        @versioned = false
+        @attachable = false
+      end
+
+      def versioned
+        @versioned = true
       end
 
       def lifecycle(field, default:, &block)
         builder = LifecycleBuilder.new(field, default: default)
         builder.instance_eval(&block) if block
         @lifecycle = builder.build
+      end
+
+      def attachable
+        @attachable = true
       end
 
       def value_object(name, &block)
@@ -134,7 +144,9 @@ module Hecks
           subscribers: @subscribers,
           indexes: @indexes,
           specifications: @specifications,
-          lifecycle: @lifecycle
+          lifecycle: @lifecycle,
+          versioned: @versioned,
+          attachable: @attachable
         )
       end
 
@@ -147,9 +159,9 @@ module Hecks
       end
 
       def infer_events
-        id_attr = DomainModel::Structure::Attribute.new(name: :aggregate_id, type: String)
+        aggregate_id_attr = DomainModel::Structure::Attribute.new(name: :aggregate_id, type: String)
         @commands.map do |command|
-          event_attrs = [id_attr] + command.attributes.dup
+          event_attrs = [aggregate_id_attr] + command.attributes.dup
           @attributes.each do |agg_attr|
             next if event_attrs.any? { |a| a.name == agg_attr.name }
             event_attrs << agg_attr

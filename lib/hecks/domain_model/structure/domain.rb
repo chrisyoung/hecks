@@ -20,14 +20,18 @@ module Hecks
   module DomainModel
     module Structure
     class Domain
-      attr_reader :name, :aggregates, :policies, :services, :custom_verbs, :tenancy, :event_subscribers
+      attr_reader :name, :aggregates, :policies, :services, :views, :workflows,
+                  :custom_verbs, :tenancy, :event_subscribers
       attr_accessor :source_path
 
-      def initialize(name:, aggregates: [], policies: [], services: [], custom_verbs: [], tenancy: nil, event_subscribers: [])
+      def initialize(name:, aggregates: [], policies: [], services: [], views: [],
+                     workflows: [], custom_verbs: [], tenancy: nil, event_subscribers: [])
         @name = name
         @aggregates = aggregates
         @policies = policies
         @services = services
+        @views = views
+        @workflows = workflows
         @custom_verbs = custom_verbs
         @tenancy = tenancy
         @event_subscribers = event_subscribers
