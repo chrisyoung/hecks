@@ -87,6 +87,14 @@ module Hecks
         @event_bus.events
       end
 
+      # Replace a repository adapter (used by connection gems to swap
+      # memory adapters for SQL). Re-wires the aggregate after swapping.
+      def swap_adapter(aggregate_name, repo)
+        name = aggregate_name.to_s
+        @repositories[name] = repo
+        AggregateWiring.new(@domain, @repositories, @command_bus, @mod, port_name: @port_name).wire_aggregate!(name)
+      end
+
       def inspect
         "#<Hecks::Runtime \"#{@domain.name}\" (#{@repositories.size} repositories)>"
       end

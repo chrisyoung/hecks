@@ -9,6 +9,12 @@
 #   require "hecks_serve"
 #   Hecks::HTTP::DomainServer.new(domain, port: 3000).run
 #
+Hecks.register_connection(:http) do |domain_mod, domain, _runtime|
+  domain_mod.define_singleton_method(:serve) do |port: 9292|
+    Hecks::HTTP::DomainServer.new(domain, port: port).run
+  end
+end
+
 module Hecks
   module HTTP
     autoload :DomainServer,       "hecks_serve/domain_server"
