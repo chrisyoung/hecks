@@ -11,10 +11,12 @@
 #     aggregate_name: "Pizza", aggregate: agg, event: evt)
 #   gen.generate
 #
+require_relative "command_generator/injection_helpers"
 module Hecks
   module Generators
     module Domain
     class CommandGenerator
+      include InjectionHelpers
 
       def initialize(command, domain_module:, aggregate_name:, aggregate: nil, event: nil)
         @command = command
@@ -116,6 +118,7 @@ module Hecks
         if id_attr
           lines << "          existing = repository.find(#{id_attr.name})"
           lines << "          if existing"
+          lines.concat(lifecycle_guard_lines("            "))
           lines.concat(format_new_call("            ", update_constructor_args))
           lines << "          else"
           lines.concat(format_new_call("            ", create_constructor_args))
@@ -151,22 +154,6 @@ module Hecks
         parts
       end
 
-      def inject_sets(args)
-        return unless @command.sets && !@command.sets.empty?
-        @command.sets.each do |field, value|
-          args.reject! { |a| a.start_with?("#{field}:") }
-          args << "#{field}: #{value.inspect}"
-        end
-      end
-
-      def inject_lifecycle_status(args)
-        return unless @aggregate&.lifecycle
-        target = @aggregate.lifecycle.target_for(@command.name)
-        return unless target
-        field = @aggregate.lifecycle.field
-        args.reject! { |p| p.start_with?("#{field}:") }
-        args << "#{field}: \"#{target}\""
-      end
 
       # Format Aggregate.new(...) — inline if ≤2 args, stacked otherwise.
       def format_new_call(indent, args)

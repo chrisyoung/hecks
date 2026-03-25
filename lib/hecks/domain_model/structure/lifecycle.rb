@@ -2,9 +2,10 @@
 #
 # State machine definition for an aggregate. Declares which field tracks
 # status, its default value, and which commands trigger which transitions.
+# Supports optional `from:` constraints to enforce valid source states.
 #
 #   Lifecycle.new(field: :status, default: "draft",
-#     transitions: { "ApproveModel" => "approved", "SuspendModel" => "suspended" })
+#     transitions: { "ApproveModel" => { target: "approved", from: "draft" } })
 #
 module Hecks
   module DomainModel
@@ -19,11 +20,17 @@ module Hecks
         end
 
         def states
-          ([default] + transitions.values).uniq
+          ([default] + transitions.values.map { |v| v.is_a?(Hash) ? v[:target] : v }).uniq
         end
 
         def target_for(command_name)
-          transitions[command_name]
+          entry = transitions[command_name]
+          entry.is_a?(Hash) ? entry[:target] : entry
+        end
+
+        def from_for(command_name)
+          entry = transitions[command_name]
+          entry.is_a?(Hash) ? entry[:from] : nil
         end
       end
     end

@@ -18,7 +18,14 @@ module Hecks
       end
 
       def transition(mapping)
-        mapping.each { |cmd, state| @transitions[cmd.to_s] = state.to_s }
+        from = mapping.delete(:from)
+        mapping.each do |command_name, target_state|
+          if from
+            @transitions[command_name.to_s] = { target: target_state.to_s, from: from.to_s }
+          else
+            @transitions[command_name.to_s] = target_state.to_s
+          end
+        end
       end
 
       def build
