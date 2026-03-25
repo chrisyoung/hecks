@@ -32,6 +32,7 @@ module Hecks
         lines << "  class #{@aggregate_name}"
         lines << "    module Commands"
         lines << "      class #{@command.name}"
+        lines << "        include Hecks::Command"
         lines << "        emits \"#{@event.name}\"" if @event
         lines << ""
         attr_syms = @command.attributes.map { |a| ":#{a.name}" }
