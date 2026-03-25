@@ -73,16 +73,16 @@ RSpec.describe "Exploratory: trying to break Hecks" do
 
   describe "rapid create and delete" do
     it "handles 100 creates" do
-      domain = Hecks.domain("Rapid") { aggregate("Item") { attribute :n, String; command("CreateItem") { attribute :n, String } } }
+      domain = Hecks.domain("Rapid") { aggregate("Item") { attribute :name, String; command("CreateItem") { attribute :name, String } } }
       boot(domain)
-      100.times { |i| RapidDomain::Item.create(n: "item_#{i}") }
+      100.times { |i| RapidDomain::Item.create(name: "item_#{i}") }
       expect(RapidDomain::Item.count).to eq(100)
     end
 
     it "handles create then immediate delete" do
-      domain = Hecks.domain("QuickDel") { aggregate("Item") { attribute :n, String; command("CreateItem") { attribute :n, String } } }
+      domain = Hecks.domain("QuickDel") { aggregate("Item") { attribute :name, String; command("CreateItem") { attribute :name, String } } }
       boot(domain)
-      item = QuickDelDomain::Item.create(n: "temp")
+      item = QuickDelDomain::Item.create(name: "temp")
       QuickDelDomain::Item.delete(item.id)
       expect(QuickDelDomain::Item.count).to eq(0)
       expect(QuickDelDomain::Item.find(item.id)).to be_nil
@@ -241,42 +241,42 @@ RSpec.describe "Exploratory: trying to break Hecks" do
 
   describe "OpenAPI generator edge cases" do
     it "handles domain with no queries" do
-      domain = Hecks.domain("NoQ") { aggregate("A") { attribute :n, String; command("CreateA") { attribute :n, String } } }
+      domain = Hecks.domain("NoQuery") { aggregate("Widget") { attribute :name, String; command("CreateWidget") { attribute :name, String } } }
       spec = Hecks::HTTP::OpenapiGenerator.new(domain).generate
-      expect(spec[:paths]).to have_key("/as")
+      expect(spec[:paths]).to have_key("/widgets")
       expect(spec[:paths]).to have_key("/events")
     end
 
     it "handles domain with JSON attributes" do
-      domain = Hecks.domain("JsonApi") { aggregate("A") { attribute :data, JSON; command("CreateA") { attribute :data, JSON } } }
+      domain = Hecks.domain("JsonApi") { aggregate("Widget") { attribute :data, JSON; command("CreateWidget") { attribute :data, JSON } } }
       spec = Hecks::HTTP::OpenapiGenerator.new(domain).generate
-      expect(spec[:components][:schemas]["A"][:properties][:data][:type]).to eq("object")
+      expect(spec[:components][:schemas]["Widget"][:properties][:data][:type]).to eq("object")
     end
 
     it "handles multiple aggregates" do
       domain = Hecks.domain("Multi") do
-        aggregate("A") { attribute :n, String; command("CreateA") { attribute :n, String } }
-        aggregate("B") { attribute :x, Integer; command("CreateB") { attribute :x, Integer } }
+        aggregate("Widget") { attribute :name, String; command("CreateWidget") { attribute :name, String } }
+        aggregate("Gadget") { attribute :count, Integer; command("CreateGadget") { attribute :count, Integer } }
       end
       spec = Hecks::HTTP::OpenapiGenerator.new(domain).generate
-      expect(spec[:paths]).to have_key("/as")
-      expect(spec[:paths]).to have_key("/bs")
-      expect(spec[:components][:schemas]).to have_key("A")
-      expect(spec[:components][:schemas]).to have_key("B")
+      expect(spec[:paths]).to have_key("/widgets")
+      expect(spec[:paths]).to have_key("/gadgets")
+      expect(spec[:components][:schemas]).to have_key("Widget")
+      expect(spec[:components][:schemas]).to have_key("Gadget")
     end
   end
 
   describe "JSON Schema generator edge cases" do
     it "handles domain with references" do
       domain = Hecks.domain("RefSchema") do
-        aggregate("A") { attribute :n, String; command("CreateA") { attribute :n, String } }
-        aggregate("B") { attribute :a_id, reference_to("A"); command("CreateB") { attribute :a_id, reference_to("A") } }
+        aggregate("Widget") { attribute :name, String; command("CreateWidget") { attribute :name, String } }
+        aggregate("Part") { attribute :widget_id, reference_to("Widget"); command("CreatePart") { attribute :widget_id, reference_to("Widget") } }
       end
       schema = Hecks::HTTP::JsonSchemaGenerator.new(domain).generate
-      ref_prop = schema[:definitions]["B"][:properties][:a_id]
+      ref_prop = schema[:definitions]["Part"][:properties][:widget_id]
       expect(ref_prop[:type]).to eq("string")
       expect(ref_prop[:format]).to eq("uuid")
-      expect(ref_prop[:description]).to include("A")
+      expect(ref_prop[:description]).to include("Widget")
     end
   end
 

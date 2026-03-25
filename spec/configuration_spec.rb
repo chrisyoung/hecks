@@ -28,8 +28,8 @@ RSpec.describe Hecks::Configuration do
     end
 
     it "domains are isolated — can't access each other's classes" do
-      domain_a = Hecks.domain("IsoA") { aggregate("Foo") { attribute :n, String; command("CreateFoo") { attribute :n, String } } }
-      domain_b = Hecks.domain("IsoB") { aggregate("Bar") { attribute :n, String; command("CreateBar") { attribute :n, String } } }
+      domain_a = Hecks.domain("IsoA") { aggregate("Foo") { attribute :name, String; command("CreateFoo") { attribute :name, String } } }
+      domain_b = Hecks.domain("IsoB") { aggregate("Bar") { attribute :name, String; command("CreateBar") { attribute :name, String } } }
 
       tmpdir = Dir.mktmpdir("hecks_iso_test")
       build_and_load(domain_a, tmpdir)
@@ -46,7 +46,7 @@ RSpec.describe Hecks::Configuration do
 
   describe "Application with external event_bus" do
     it "uses the provided event bus instead of creating one" do
-      domain = Hecks.domain("Ext") { aggregate("W") { attribute :n, String; command("CreateW") { attribute :n, String } } }
+      domain = Hecks.domain("Ext") { aggregate("Widget") { attribute :name, String; command("CreateWidget") { attribute :name, String } } }
       tmpdir = Dir.mktmpdir("hecks_ext_bus_test")
       build_and_load(domain, tmpdir)
 
@@ -55,7 +55,7 @@ RSpec.describe Hecks::Configuration do
 
       expect(app.event_bus).to equal(custom_bus)
 
-      ExtDomain::W.create(n: "test")
+      ExtDomain::Widget.create(name: "test")
       expect(custom_bus.events.size).to eq(1)
     end
   end

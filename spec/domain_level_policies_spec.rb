@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe "Domain-level policies" do
   describe "DSL and IR" do
     it "stores domain-level policies on the Domain" do
-      domain = Hecks.domain "T" do
+      domain = Hecks.domain "Banking" do
         aggregate "Loan" do
           attribute :amount, Float
           command "IssueLoan" do
@@ -34,24 +34,24 @@ RSpec.describe "Domain-level policies" do
     end
 
     it "keeps aggregate-level policies separate from domain-level" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Workflow" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
-          command "DoB" do
-            attribute :n, String
+          command "ProcessTask" do
+            attribute :name, String
           end
           policy "AggLevel" do
-            on "CreatedA"
-            trigger "DoB"
+            on "CreatedTask"
+            trigger "ProcessTask"
           end
         end
 
         policy "DomainLevel" do
-          on "CreatedA"
-          trigger "DoB"
+          on "CreatedTask"
+          trigger "ProcessTask"
         end
       end
 
@@ -62,25 +62,25 @@ RSpec.describe "Domain-level policies" do
     end
 
     it "accepts multiple domain-level policies" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Workflow" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
-          command "DoB" do
-            attribute :n, String
+          command "ProcessTask" do
+            attribute :name, String
           end
         end
 
         policy "P1" do
-          on "CreatedA"
-          trigger "DoB"
+          on "CreatedTask"
+          trigger "ProcessTask"
         end
 
         policy "P2" do
-          on "CreatedA"
-          trigger "DoB"
+          on "CreatedTask"
+          trigger "ProcessTask"
         end
       end
 
@@ -89,8 +89,8 @@ RSpec.describe "Domain-level policies" do
     end
 
     it "supports conditions on domain-level policies" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
+      domain = Hecks.domain "Workflow" do
+        aggregate "Task" do
           attribute :amount, Float
           command "Act" do
             attribute :amount, Float
@@ -109,11 +109,11 @@ RSpec.describe "Domain-level policies" do
     end
 
     it "defaults to empty policies when none defined" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Workflow" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
         end
       end
@@ -228,40 +228,40 @@ RSpec.describe "Domain-level policies" do
 
   describe "serializer" do
     it "serializes domain-level policies" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Serialization" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
         end
 
         policy "MyPolicy" do
-          on "CreatedA"
-          trigger "CreateA"
-          map n: :n
+          on "CreatedTask"
+          trigger "CreateTask"
+          map name: :name
         end
       end
 
       source = Hecks::DslSerializer.new(domain).serialize
       expect(source).to include('policy "MyPolicy"')
-      expect(source).to include('on "CreatedA"')
-      expect(source).to include('trigger "CreateA"')
-      expect(source).to include("map n: :n")
+      expect(source).to include('on "CreatedTask"')
+      expect(source).to include('trigger "CreateTask"')
+      expect(source).to include("map name: :name")
     end
 
     it "round-trips domain-level policies through eval" do
       domain = Hecks.domain "RoundTrip" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
         end
 
         policy "P1" do
-          on "CreatedA"
-          trigger "CreateA"
+          on "CreatedTask"
+          trigger "CreateTask"
         end
       end
 
@@ -270,24 +270,24 @@ RSpec.describe "Domain-level policies" do
 
       expect(reloaded.policies.size).to eq(1)
       expect(reloaded.policies.first.name).to eq("P1")
-      expect(reloaded.policies.first.event_name).to eq("CreatedA")
-      expect(reloaded.policies.first.trigger_command).to eq("CreateA")
+      expect(reloaded.policies.first.event_name).to eq("CreatedTask")
+      expect(reloaded.policies.first.trigger_command).to eq("CreateTask")
     end
   end
 
   describe "validation" do
     it "warns when domain-level policy event is not in this domain" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Validation" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
         end
 
         policy "External" do
           on "SomeExternalEvent"
-          trigger "CreateA"
+          trigger "CreateTask"
         end
       end
 
@@ -298,17 +298,17 @@ RSpec.describe "Domain-level policies" do
     end
 
     it "does not warn when domain-level policy event exists in domain" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Validation" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
         end
 
         policy "Internal" do
-          on "CreatedA"
-          trigger "CreateA"
+          on "CreatedTask"
+          trigger "CreateTask"
         end
       end
 
@@ -317,16 +317,16 @@ RSpec.describe "Domain-level policies" do
     end
 
     it "errors when domain-level policy trigger is unknown" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Validation" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
         end
 
         policy "Bad" do
-          on "CreatedA"
+          on "CreatedTask"
           trigger "NonexistentCommand"
         end
       end
@@ -338,17 +338,17 @@ RSpec.describe "Domain-level policies" do
     end
 
     it "accepts domain-level policy with valid trigger" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Validation" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
         end
 
         policy "Good" do
-          on "CreatedA"
-          trigger "CreateA"
+          on "CreatedTask"
+          trigger "CreateTask"
         end
       end
 
