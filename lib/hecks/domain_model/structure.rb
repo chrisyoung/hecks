@@ -28,6 +28,7 @@ module Hecks
       autoload :ReadModel,      "hecks/domain_model/structure/read_model"
       autoload :ExternalSystem, "hecks/domain_model/structure/external_system"
       autoload :Actor,          "hecks/domain_model/structure/actor"
+      autoload :Lifecycle,      "hecks/domain_model/structure/lifecycle"
     end
   end
 end

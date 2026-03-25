@@ -48,6 +48,7 @@ module Hecks
     autoload :AggregateRebuilder, "hecks/dsl/aggregate_rebuilder"
     autoload :PortBuilder,        "hecks/dsl/port_builder"
     autoload :ServiceBuilder,    "hecks/dsl/service_builder"
+    autoload :LifecycleBuilder,  "hecks/dsl/lifecycle_builder"
   end
 
   module Generators

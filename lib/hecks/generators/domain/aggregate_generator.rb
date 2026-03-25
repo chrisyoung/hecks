@@ -37,6 +37,12 @@ module Hecks
         @user_attrs.each do |attr|
           lines << "    attribute #{attribute_declaration(attr)}"
         end
+        if @aggregate.lifecycle
+          lines << ""
+          @aggregate.lifecycle.states.each do |state|
+            lines << "    def #{state}?; #{@aggregate.lifecycle.field} == \"#{state}\"; end"
+          end
+        end
         unless @aggregate.validations.empty? && @aggregate.invariants.empty?
           lines << ""
           lines << "    private"
