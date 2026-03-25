@@ -12,38 +12,38 @@ session = Hecks.session("Pizzas")
 
 # Build the Pizza aggregate incrementally
 pizza = session.aggregate("Pizza")
-pizza.add_attribute :name, String
-pizza.add_attribute :description, String
-pizza.add_attribute :toppings, pizza.list_of("Topping")
+pizza.attr :name, String
+pizza.attr :description, String
+pizza.attr :toppings, pizza.list_of("Topping")
 
-pizza.add_value_object "Topping" do
+pizza.value_object "Topping" do
   attribute :name, String
   attribute :amount, Integer
 end
 
-pizza.add_validation :name, presence: true
+pizza.validation :name, presence: true
 
-pizza.add_command "CreatePizza" do
+pizza.command "CreatePizza" do
   attribute :name, String
   attribute :description, String
 end
 
 # Build the Order aggregate
 order = session.aggregate("Order")
-order.add_attribute :pizza_id, order.reference_to("Pizza")
-order.add_attribute :quantity, Integer
+order.attr :pizza_id, order.reference_to("Pizza")
+order.attr :quantity, Integer
 
-order.add_command "PlaceOrder" do
+order.command "PlaceOrder" do
   attribute :pizza_id, reference_to("Pizza")
   attribute :quantity, Integer
 end
 
-order.add_command "ReserveStock" do
+order.command "ReserveStock" do
   attribute :pizza_id, reference_to("Pizza")
   attribute :quantity, Integer
 end
 
-order.add_policy "ReserveIngredients" do
+order.policy "ReserveIngredients" do
   on "PlacedOrder"
   trigger "ReserveStock"
 end

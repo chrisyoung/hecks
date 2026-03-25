@@ -7,17 +7,17 @@ RSpec.describe "Play mode" do
     allow($stdout).to receive(:puts)
 
     pizza = session.aggregate("Pizza")
-    pizza.add_attribute :name, String
-    pizza.add_attribute :style, String
-    pizza.add_command("CreatePizza") do
+    pizza.attr :name, String
+    pizza.attr :style, String
+    pizza.command("CreatePizza") do
       attribute :name, String
       attribute :style, String
     end
-    pizza.add_command("RenamePizza") { attribute :name, String }
+    pizza.command("RenamePizza") { attribute :name, String }
 
     cat = session.aggregate("Cat")
-    cat.add_attribute :name, String
-    cat.add_command("Meow") { attribute :name, String }
+    cat.attr :name, String
+    cat.command("Meow") { attribute :name, String }
   end
 
   describe "entering play mode" do
@@ -216,16 +216,16 @@ RSpec.describe "Play mode" do
     end
   end
 
-  describe "define! / play! toggling" do
-    it "can switch back to define mode" do
+  describe "sketch! / play! toggling" do
+    it "can switch back to sketch mode" do
       session.play!
-      session.define!
+      session.sketch!
       expect(session.play?).to be false
     end
 
     it "can re-enter play mode after changes" do
       cat = session.aggregate("Cat")
-      cat.add_command("Purr") { attribute :name, String }
+      cat.command("Purr") { attribute :name, String }
       session.play!
 
       mod = Object.const_get("ScratchDomain")

@@ -78,16 +78,16 @@ RSpec.describe "Bidirectional reference detection" do
       session = Hecks::Session.new("Test")
 
       pizza = session.aggregate("Pizza")
-      pizza.add_attribute :name, String
+      pizza.attr :name, String
 
       order = session.aggregate("Order")
-      order.add_attribute :pizza_id, order.reference_to("Pizza")
+      order.attr :pizza_id, order.reference_to("Pizza")
 
       # Now adding a back-reference from Pizza to Order should warn
       output = []
       allow($stdout).to receive(:puts) { |msg| output << msg }
 
-      pizza.add_attribute :order_id, pizza.reference_to("Order")
+      pizza.attr :order_id, pizza.reference_to("Order")
 
       warning = output.find { |msg| msg.to_s.include?("Bidirectional") }
       expect(warning).not_to be_nil
@@ -96,13 +96,13 @@ RSpec.describe "Bidirectional reference detection" do
     it "does not warn for one-directional references" do
       session = Hecks::Session.new("Test")
 
-      session.aggregate("Pizza").add_attribute :name, String
+      session.aggregate("Pizza").attr :name, String
 
       output = []
       allow($stdout).to receive(:puts) { |msg| output << msg }
 
       order = session.aggregate("Order")
-      order.add_attribute :pizza_id, order.reference_to("Pizza")
+      order.attr :pizza_id, order.reference_to("Pizza")
 
       warning = output.find { |msg| msg.to_s.include?("Bidirectional") }
       expect(warning).to be_nil

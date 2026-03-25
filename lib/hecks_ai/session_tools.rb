@@ -26,7 +26,7 @@ module Hecks
           ctx.session = Hecks.session(domain.name)
           domain.aggregates.each do |agg|
             handle = ctx.session.aggregate(agg.name)
-            agg.attributes.each { |a| handle.add_attribute(a.name, a.type) }
+            agg.attributes.each { |a| handle.attr(a.name, a.type) }
           end
           "Loaded: #{domain.name} (#{domain.aggregates.map(&:name).join(', ')})"
         end

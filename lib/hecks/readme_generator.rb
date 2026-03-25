@@ -26,6 +26,7 @@ module Hecks
       when "content"          then read_content("docs/content/#{arg}.md")
       when "usage"            then read_usage("docs/usage/#{arg}.md")
       when "features"         then features
+      when "smalltalk"        then smalltalk
       when "validation_rules" then validation_rules
       when "cli_commands"     then cli_commands
       else "<!-- unknown tag: {{#{tag}:#{arg}}} -->"
@@ -77,6 +78,22 @@ module Hecks
         rules << "| #{short_name} | #{desc} |"
       end
       "| Rule | Description |\n|---|---|\n#{rules.join("\n")}"
+    end
+
+    def smalltalk
+      require_relative "session/smalltalk_features"
+      lines = ["## Hecks Loves Smalltalk", ""]
+      Session::SmalltalkFeatures.all.each do |feature|
+        lines << "### #{feature[:name]}"
+        lines << ""
+        lines << feature[:description]
+        lines << ""
+        lines << "```ruby"
+        lines << feature[:example]
+        lines << "```"
+        lines << ""
+      end
+      lines.join("\n").strip
     end
 
     def cli_commands
