@@ -147,8 +147,9 @@ module Hecks
       end
 
       def infer_events
+        id_attr = DomainModel::Structure::Attribute.new(name: :aggregate_id, type: String)
         @commands.map do |command|
-          event_attrs = command.attributes.dup
+          event_attrs = [id_attr] + command.attributes.dup
           @attributes.each do |agg_attr|
             next if event_attrs.any? { |a| a.name == agg_attr.name }
             event_attrs << agg_attr
