@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="hecks_icon.svg" width="120" height="120" alt="Hecks">
+</p>
+
 # What the Hecks?!
 
 Describe your business in Ruby. Hecks generates the code.

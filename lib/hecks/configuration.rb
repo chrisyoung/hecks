@@ -78,7 +78,10 @@ module Hecks
       domain_obj, domain_module = load_domain(d)
       mod = domain_obj.module_name + "Domain"
       Hecks.instance_variable_get(:@domain_objects)[mod] = domain_obj
-      generate_adapters(domain_obj) if @adapter_type == :sql
+      if @adapter_type == :sql
+        generate_adapters(domain_obj)
+        Boot::SqlBoot.create_tables(domain_obj, @db)
+      end
 
       adapter_type = @adapter_type
       db = @db

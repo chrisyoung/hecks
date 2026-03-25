@@ -34,6 +34,7 @@ module Hecks
 
       Kernel.load(domain_file)
       domain = Hecks.last_domain
+      domain.source_path = domain_file
 
       valid, errors = validate(domain)
       unless valid
