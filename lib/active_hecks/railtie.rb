@@ -58,8 +58,9 @@ module ActiveHecks
 
         desc "Run pending Hecks SQL migrations"
         task "db:migrate" => :environment do
+          connection = hecks_connection
           runner = Hecks::Migrations::MigrationRunner.new(
-            connection: ActiveRecord::Base.connection,
+            connection: connection,
             migration_dir: ::Rails.root.join("db/hecks_migrate").to_s
           )
           applied = runner.run_all
@@ -70,6 +71,14 @@ module ActiveHecks
             applied.each { |f| puts "Applied #{f}" }
           end
         end
+      end
+
+      def hecks_connection
+        config = Hecks.configuration
+        db = config&.instance_variable_get(:@db)
+        return db if db # Sequel::Database — responds to #execute and #transaction
+
+        ActiveRecord::Base.connection
       end
     end
   end
