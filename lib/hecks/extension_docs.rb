@@ -53,6 +53,13 @@ module Hecks
         example: "# DSL: actor \"Admin\" on commands\n# App: Hecks.actor = current_user\n# Auth middleware checks role automatically"
       },
       {
+        gem: "hecks_pii",
+        name: "PII Protection",
+        description: "Mark attributes as PII — masking, redaction, and GDPR erasure",
+        gemfile: 'gem "hecks_pii"',
+        example: "# DSL: attribute :email, String, pii: true\n# Erasure: CatsDomain.erase_pii(customer_id)\n# Introspection: CatsDomain.pii_fields"
+      },
+      {
         gem: "hecks_tenancy",
         name: "Multi-tenancy",
         description: "Tenant isolation — same domain, different data per tenant",

@@ -17,12 +17,13 @@ module Hecks
     class Attribute
       attr_reader :name, :type, :default
 
-      def initialize(name:, type:, default: nil, list: false, reference: false)
+      def initialize(name:, type:, default: nil, list: false, reference: false, pii: false)
         @name = name.to_sym
         @type = type
         @default = default
         @list = list
         @reference = reference
+        @pii = pii
       end
 
       def list?
@@ -31,6 +32,10 @@ module Hecks
 
       def reference?
         @reference
+      end
+
+      def pii?
+        @pii
       end
 
       def json?
