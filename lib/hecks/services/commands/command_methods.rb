@@ -89,11 +89,22 @@ module Hecks
       #
       def self.bind_shortcuts(klass, aggregate)
         agg_snake = Hecks::Utils.underscore(aggregate.name)
+        agg_suffixes = agg_snake.split("_").each_index.map { |i|
+          agg_snake.split("_").drop(i).join("_")
+        }.uniq
 
         aggregate.commands.each do |cmd|
           executor = yield(cmd)
           full_name = Hecks::Utils.underscore(cmd.name)
-          method_name = full_name.sub(/_#{agg_snake}$/, "").to_sym
+          method_name = full_name
+          agg_suffixes.each do |suffix|
+            stripped = full_name.sub(/_#{suffix}$/, "")
+            if stripped != full_name
+              method_name = stripped
+              break
+            end
+          end
+          method_name = method_name.to_sym
 
           # Class method: Pizza.create(name: "Margherita")
           klass.define_singleton_method(method_name) do |**attrs|
