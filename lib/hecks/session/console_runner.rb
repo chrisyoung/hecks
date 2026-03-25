@@ -17,7 +17,7 @@ module Hecks
     %i[
       aggregates remove add_verb active_hecks!
       validate preview describe build save to_dsl status browse
-      play! sketch! execute events events_of commands history reset!
+      play! sketch! events events_of commands history reset!
     ].each do |m|
       define_method(m) do |*args, **kwargs, &block|
         @session.send(m, *args, **kwargs, &block)
