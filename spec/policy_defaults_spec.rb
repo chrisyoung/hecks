@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe "Policy defaults" do
   describe "DSL and IR" do
     it "stores defaults hash on the Policy IR" do
-      domain = Hecks.domain "T" do
+      domain = Hecks.domain "Auditing" do
         aggregate "Model" do
           attribute :name, String
           command "RegisterModel" do
@@ -36,17 +36,17 @@ RSpec.describe "Policy defaults" do
     end
 
     it "defaults to empty hash when no defaults declared" do
-      domain = Hecks.domain "T" do
-        aggregate "A" do
-          attribute :n, String
-          command "CreateA" do
-            attribute :n, String
+      domain = Hecks.domain "Defaults" do
+        aggregate "Task" do
+          attribute :name, String
+          command "CreateTask" do
+            attribute :name, String
           end
         end
 
         policy "Simple" do
-          on "CreatedA"
-          trigger "CreateA"
+          on "CreatedTask"
+          trigger "CreateTask"
         end
       end
 
