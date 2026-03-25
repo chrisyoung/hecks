@@ -89,6 +89,22 @@ module Hecks
     Thread.current[:hecks_tenant] = old
   end
 
+  def self.actor
+    Thread.current[:hecks_actor]
+  end
+
+  def self.actor=(actor)
+    Thread.current[:hecks_actor] = actor
+  end
+
+  def self.with_actor(actor)
+    old = Thread.current[:hecks_actor]
+    Thread.current[:hecks_actor] = actor
+    yield
+  ensure
+    Thread.current[:hecks_actor] = old
+  end
+
   def self.configure(&block)
     @configuration = Configuration.new
     @configuration.instance_eval(&block)
