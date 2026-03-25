@@ -18,13 +18,30 @@
 #
 module Hecks
   module DomainConnections
-    # Declare the persistence adapter for this domain.
+    # Declare the persistence adapter for this domain. Supports both unnamed
+    # (backward-compatible) and named connections for CQRS read/write separation.
     #
-    # @param adapter_type [Symbol] :memory (default), :sqlite, :postgres, :mysql
-    # @param options [Hash] additional adapter options (e.g., database: "path.db")
-    def persist_to(adapter_type, **options)
+    # @overload persist_to(adapter_type, **options)
+    #   Unnamed connection (stored under :default).
+    #   @param adapter_type [Symbol] :memory, :sqlite, :postgres, :mysql
+    #   @param options [Hash] adapter options (e.g., database: "path.db")
+    #
+    # @overload persist_to(name, adapter_type, **options)
+    #   Named connection for CQRS.
+    #   @param name [Symbol] connection name (e.g., :write, :read)
+    #   @param adapter_type [Symbol] :memory, :sqlite, :postgres, :mysql
+    #   @param options [Hash] adapter options
+    def persist_to(name_or_type, type_or_nil = nil, **options)
+      if type_or_nil
+        name = name_or_type
+        type = type_or_nil
+      else
+        name = :default
+        type = name_or_type
+      end
       @connections ||= default_connections
-      @connections[:persist] = { type: adapter_type, **options }
+      @connections[:persist] ||= {}
+      @connections[:persist][name] = { type: type, **options }
     end
 
     # Declare that this domain listens to events from another domain module.
@@ -65,7 +82,7 @@ module Hecks
     private
 
     def default_connections
-      { persist: nil, listens: [], sends: [] }
+      { persist: {}, listens: [], sends: [] }
     end
   end
 end

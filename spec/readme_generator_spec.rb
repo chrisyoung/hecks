@@ -80,6 +80,18 @@ RSpec.describe Hecks::ReadmeGenerator do
       expect(readme).to include("| `hecks build` | Validates and generates the domain gem |")
     end
 
+    it "generates a connections section from ConnectionDocs" do
+      write("docs/readme_template.md", "{{connections}}")
+
+      described_class.new(root).generate
+
+      readme = File.read(File.join(root, "README.md"))
+      expect(readme).to include("### SQLite")
+      expect(readme).to include('gem "hecks_sqlite"')
+      expect(readme).to include("### MCP Server")
+      expect(readme).to include("CatsDomain.mcp")
+    end
+
     it "marks unknown tags with an HTML comment" do
       write("docs/readme_template.md", "{{bogus:thing}}")
 

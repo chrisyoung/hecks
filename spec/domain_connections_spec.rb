@@ -8,14 +8,26 @@ RSpec.describe Hecks::DomainConnections do
   end
 
   describe "#persist_to" do
-    it "stores the persistence adapter config" do
+    it "stores unnamed adapter under :default" do
       mod.persist_to(:sqlite)
-      expect(mod.connections[:persist]).to eq({ type: :sqlite })
+      expect(mod.connections[:persist][:default]).to eq({ type: :sqlite })
     end
 
     it "accepts additional options" do
       mod.persist_to(:sqlite, database: "test.db")
-      expect(mod.connections[:persist]).to eq({ type: :sqlite, database: "test.db" })
+      expect(mod.connections[:persist][:default]).to eq({ type: :sqlite, database: "test.db" })
+    end
+
+    it "stores named adapter under given name" do
+      mod.persist_to(:write, :sqlite)
+      expect(mod.connections[:persist][:write]).to eq({ type: :sqlite })
+    end
+
+    it "supports multiple named connections for CQRS" do
+      mod.persist_to(:write, :sqlite)
+      mod.persist_to(:read, :sqlite, database: "read.db")
+      expect(mod.connections[:persist][:write]).to eq({ type: :sqlite })
+      expect(mod.connections[:persist][:read]).to eq({ type: :sqlite, database: "read.db" })
     end
   end
 
@@ -54,7 +66,7 @@ RSpec.describe Hecks::DomainConnections do
 
   describe "#connections" do
     it "returns default when nothing is configured" do
-      expect(mod.connections).to eq({ persist: nil, listens: [], sends: [] })
+      expect(mod.connections).to eq({ persist: {}, listens: [], sends: [] })
     end
   end
 
