@@ -8,6 +8,12 @@
 #   require "hecks_ai"
 #   Hecks::McpServer.new.run
 #
+Hecks.register_connection(:mcp) do |domain_mod, domain, _runtime|
+  domain_mod.define_singleton_method(:mcp) do |**opts|
+    Hecks::McpServer.new(**opts).run
+  end
+end
+
 module Hecks
   module MCP
     autoload :DomainServer,  "hecks_ai/domain_server"

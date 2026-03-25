@@ -47,6 +47,15 @@ module Hecks
   @domain_objects = {}
   @last_domain = nil
   @load_strategy = :files
+  @connection_registry = {}
+
+  def self.connection_registry
+    @connection_registry
+  end
+
+  def self.register_connection(name, &hook)
+    @connection_registry[name.to_sym] = hook
+  end
 
   def self.last_domain
     @last_domain

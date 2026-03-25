@@ -23,6 +23,12 @@ module Hecks
         end
       end
 
+      # Re-wire a single aggregate by name (used when swapping adapters).
+      def wire_aggregate!(name)
+        agg = @domain.aggregates.find { |a| a.name == name.to_s }
+        wire_aggregate(agg) if agg
+      end
+
       private
 
       def wire_aggregate(agg)
