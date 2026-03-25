@@ -55,6 +55,16 @@ module Hecks
         "Enter" => "Entered", "Order" => "Ordered", "Deliver" => "Delivered",
       }.freeze
 
+      # Multi-syllable verbs whose final consonant doubles in past tense.
+      DOUBLE_FINAL = %w[
+        Submit Admit Permit Commit Emit Omit Remit Transmit
+        Refer Confer Defer Infer Prefer Transfer
+        Occur Recur Incur Concur
+        Compel Expel Repel Propel
+        Control Patrol Enrol Fulfil
+        Begin Regret Abet Embed Equip
+      ].to_set.freeze
+
       def inferred_event_name
         verb, *rest = name.split(/(?=[A-Z])/)
         past_tense = if IRREGULAR_VERBS.key?(verb)
@@ -63,7 +73,7 @@ module Hecks
                        verb.sub(/y$/i, "ied")
                      elsif verb =~ /e$/
                        "#{verb}d"
-                     elsif verb =~ /\A[A-Z][^aeiou]*[aeiou][^aeiouwxy]\z/
+                     elsif DOUBLE_FINAL.include?(verb) || verb =~ /\A[A-Z][^aeiou]*[aeiou][^aeiouwxy]\z/
                        "#{verb}#{verb[-1]}ed"
                      else
                        "#{verb}ed"

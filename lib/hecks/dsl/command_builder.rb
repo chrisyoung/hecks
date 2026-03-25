@@ -65,8 +65,10 @@ module Hecks
         @sets.merge!(hash)
       end
 
+      # Declare aggregate fields auto-populated onto the emitted event:
+      #   passthrough :model_id, :vendor_id
       def passthrough(*fields)
-        @passthroughs.concat(fields.map(&:to_sym))
+        @passthroughs.concat(fields.map(&:to_s))
       end
 
       def build
