@@ -54,9 +54,10 @@ module Hecks
 
       runtime = Runtime.new(domain)
 
-      # Wire explicit adapter if specified
-      boot_adapter = adapter == :memory ? nil : adapter
-      effective = mod.connections[:persist] || boot_adapter_config(boot_adapter)
+      # Wire persistence: explicit adapter keyword or declared via persist_to
+      persist = mod.connections[:persist] || {}
+      boot_adapter = adapter == :memory ? nil : boot_adapter_config(adapter)
+      effective = persist[:default] || persist.values.first || boot_adapter
       if effective
         hook = Hecks.connection_registry[effective[:type]]
         if hook
@@ -73,7 +74,6 @@ module Hecks
     private
 
     def boot_adapter_config(adapter)
-      return nil unless adapter
       adapter.is_a?(Hash) ? adapter : { type: adapter }
     end
 

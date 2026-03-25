@@ -6,6 +6,8 @@
 #
 #   ReadmeGenerator.new(project_root).generate
 #
+require_relative "connection_docs"
+
 module Hecks
   class ReadmeGenerator
     def initialize(root)
@@ -26,6 +28,7 @@ module Hecks
       when "content"          then read_content("docs/content/#{arg}.md")
       when "usage"            then read_usage("docs/usage/#{arg}.md")
       when "features"         then features
+      when "connections"      then connections_section
       when "smalltalk"        then smalltalk
       when "validation_rules" then validation_rules
       when "cli_commands"     then cli_commands
@@ -80,6 +83,21 @@ module Hecks
       "| Rule | Description |\n|---|---|\n#{rules.join("\n")}"
     end
 
+    def cli_commands
+      commands = []
+      Dir[File.join(@root, "lib/hecks_cli/commands/*.rb")].sort.each do |f|
+        lines = File.readlines(f)
+        next unless lines.first&.start_with?("# Hecks::")
+
+        desc_line = lines[1..].find { |l| l.match?(/^# \S/) }
+        desc = desc_line&.sub(/^#\s*/, "")&.strip || ""
+        desc = desc.split(/\.(\s|$)/).first&.strip || desc
+        name = File.basename(f, ".rb").gsub("_", " ")
+        commands << "| `hecks #{name}` | #{desc} |"
+      end
+      "| Command | Description |\n|---|---|\n#{commands.join("\n")}"
+    end
+
     def smalltalk
       require_relative "session/smalltalk_features"
       lines = ["## Hecks Loves Smalltalk", ""]
@@ -96,19 +114,24 @@ module Hecks
       lines.join("\n").strip
     end
 
-    def cli_commands
-      commands = []
-      Dir[File.join(@root, "lib/hecks_cli/commands/*.rb")].sort.each do |f|
-        lines = File.readlines(f)
-        next unless lines.first&.start_with?("# Hecks::")
-
-        desc_line = lines[1..].find { |l| l.match?(/^# \S/) }
-        desc = desc_line&.sub(/^#\s*/, "")&.strip || ""
-        desc = desc.split(/\.(\s|$)/).first&.strip || desc
-        name = File.basename(f, ".rb").gsub("_", " ")
-        commands << "| `hecks #{name}` | #{desc} |"
+    def connections_section
+      entries = ConnectionDocs.all.map do |conn|
+        lines = []
+        lines << "### #{conn[:name]}"
+        lines << ""
+        lines << conn[:description]
+        lines << ""
+        lines << "```ruby"
+        lines << "# Gemfile"
+        lines << conn[:gemfile]
+        lines << "```"
+        lines << ""
+        lines << "```ruby"
+        lines << conn[:example]
+        lines << "```"
+        lines.join("\n")
       end
-      "| Command | Description |\n|---|---|\n#{commands.join("\n")}"
+      entries.join("\n\n")
     end
   end
 end
