@@ -23,7 +23,7 @@ module Hecks
           ctx.ensure_session!
           handle = ctx.session.aggregate(args["name"])
           (args["attributes"] || []).each do |attr|
-            handle.add_attribute(attr["name"].to_sym, ctx.resolve_type(attr["type"]))
+            handle.attr(attr["name"].to_sym, ctx.resolve_type(attr["type"]))
           end
           "Added #{args["name"]} with #{(args["attributes"] || []).size} attributes"
         end
@@ -45,7 +45,7 @@ module Hecks
           handle = ctx.session.aggregate(args["aggregate"])
           attrs = args["attributes"] || []
           resolved = attrs.map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
-          handle.add_command(args["name"]) do
+          handle.command(args["name"]) do
             resolved.each { |name, type| attribute name, type }
           end
           "Added action #{args["name"]} to #{args["aggregate"]}"
@@ -67,7 +67,7 @@ module Hecks
           ctx.ensure_session!
           handle = ctx.session.aggregate(args["aggregate"])
           resolved = (args["attributes"] || []).map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
-          handle.add_value_object(args["name"]) do
+          handle.value_object(args["name"]) do
             resolved.each { |name, type| attribute name, type }
           end
           "Added #{args["name"]} to #{args["aggregate"]}"
@@ -89,7 +89,7 @@ module Hecks
           ctx.ensure_session!
           handle = ctx.session.aggregate(args["aggregate"])
           resolved = (args["attributes"] || []).map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
-          handle.add_entity(args["name"]) do
+          handle.entity(args["name"]) do
             resolved.each { |name, type| attribute name, type }
           end
           "Added entity #{args["name"]} to #{args["aggregate"]}"
@@ -108,7 +108,7 @@ module Hecks
           handle = ctx.session.aggregate(args["aggregate"])
           rules = {}
           rules[:presence] = true if args["presence"]
-          handle.add_validation(args["field"].to_sym, rules)
+          handle.validation(args["field"].to_sym, rules)
           "Added validation on #{args["field"]} for #{args["aggregate"]}"
         end
 
@@ -127,7 +127,7 @@ module Hecks
           ctx.ensure_session!
           handle = ctx.session.aggregate(args["aggregate"])
           evt, trig = args["on_event"], args["trigger"]
-          handle.add_policy(args["name"]) { on evt; trigger trig }
+          handle.policy(args["name"]) { on evt; trigger trig }
           "When #{evt} → #{trig}"
         end
 

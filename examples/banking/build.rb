@@ -20,7 +20,7 @@ customer.value_object("Address") do
   attribute :zip, String
 end
 
-customer.add_attribute :address, customer.list_of("Address")
+customer.attr :address, customer.list_of("Address")
 
 customer.command("RegisterCustomer") do
   attribute :name, String
@@ -153,7 +153,7 @@ loan.value_object("PaymentScheduleEntry") do
   attribute :total_amount, Float
 end
 
-loan.add_attribute :payment_schedule, loan.list_of("PaymentScheduleEntry")
+loan.attr :payment_schedule, loan.list_of("PaymentScheduleEntry")
 
 loan.value_object("Disbursement") do
   attribute :amount, Float

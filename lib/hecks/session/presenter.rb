@@ -95,7 +95,7 @@ module Hecks
       end
 
       def inspect
-        mode_label = play? ? "play" : "build"
+        mode_label = play? ? "play" : "sketch"
         "#<Hecks::Session \"#{@name}\" [#{mode_label}] (#{@aggregate_builders.size} aggregates)>"
       end
     end

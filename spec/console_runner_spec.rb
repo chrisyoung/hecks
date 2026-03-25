@@ -20,15 +20,15 @@ RSpec.describe Hecks::Session::ConsoleRunner do
     end
   end
 
-  describe "#_a" do
-    it "returns the last aggregate handle" do
+  describe "named constants" do
+    it "hoists aggregate as a named constant" do
       runner.aggregate("Cat")
-      runner.aggregate("Dog")
-      expect(runner._a.name).to eq("Dog")
+      expect(described_class.const_get(:Cat)).to be_a(Hecks::Session::AggregateHandle)
     end
 
-    it "is nil before any aggregate" do
-      expect(runner._a).to be_nil
+    after do
+      described_class.send(:remove_const, :Cat) if described_class.const_defined?(:Cat, false)
+      described_class.send(:remove_const, :Dog) if described_class.const_defined?(:Dog, false)
     end
   end
 

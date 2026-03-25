@@ -185,8 +185,8 @@
 - Interactive session for incremental domain building (`Hecks.session`)
 - REPL mode via `ConsoleRunner` with `describe`, `validate`, `build`, `play!`, `dump`, `save`
 - All session methods hoisted to top level in console (no `session.` prefix needed)
-- `_a` shortcut — always points to the last aggregate handle
-- `_d` shortcut — always points to the last built domain object
+- Named constants: `aggregate("Cat")` creates `Cat` constant in the REPL
+- System browser: `browse` prints a tree of all domain elements
 - `help` command in console prints available commands
 - Persistent command history across sessions (`~/.hecks_history`)
 - Clean IRB exit handling (catches `:IRB_EXIT`)
@@ -205,10 +205,11 @@
 - Play mode persistence: `Cat.find(id)`, `Cat.all`, `Cat.count`, `Cat.where(...)` all work after executing commands
 - Play mode wires command shortcuts onto aggregate classes (`Cat.meow`, `cat.meow`)
 - Describe output shows complete aggregate picture: attributes, VOs, entities, commands, validations, invariants, policies, queries, scopes, subscribers, specifications
-- `define!` / `play!` toggling — switch between modeling and execution modes
+- `sketch!` / `play!` toggling — switch between modeling and execution modes
+- Message not understood: unknown methods suggest creating commands
 - Real-time event display and policy triggering feedback
 - Event history with timestamps, reset/replay capability
-- Dynamic REPL prompt: `hecks(domain mode)` shows context — `hecks(scratch define)`, `hecks(banking play)`
+- Dynamic REPL prompt: `hecks(domain mode)` shows context — `hecks(scratch sketch)`, `hecks(banking play)`
 - Suppressed backtraces by default — `backtrace!` / `quiet!` to toggle
 - `Hecks::TestHelper` for spec setup and constant cleanup
 

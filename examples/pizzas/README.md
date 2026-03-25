@@ -42,7 +42,7 @@ ruby -Ilib examples/pizzas/repl_session.rb
 What it demonstrates:
 - `Hecks.session("Pizzas")` to start a session
 - `session.aggregate("Pizza")` returns a handle
-- `pizza.add_attribute`, `pizza.add_command`, `pizza.add_value_object` for incremental building
+- `pizza.attr`, `pizza.command`, `pizza.value_object` for incremental building
 - `pizza.describe` and `session.describe` to review
 - `session.validate` to check DDD rules
 - `pizza.preview` to see generated code

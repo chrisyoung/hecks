@@ -15,6 +15,7 @@ require_relative "session/build_actions"
 require_relative "session/play_mode"
 require_relative "session/presenter"
 require_relative "session/handles/aggregate_handle"
+require_relative "session/system_browser"
 require_relative "session/console_runner"
 require_relative "session/playground"
 
@@ -23,6 +24,7 @@ module Hecks
     include BuildActions
     include PlayMode
     include Presenter
+    include SystemBrowser
 
     attr_reader :name, :playground, :aggregate_builders
 
@@ -32,7 +34,7 @@ module Hecks
       @handles = {}
       @custom_verbs = []
       @active_hecks = false
-      @mode = :build
+      @mode = :sketch
       @playground = nil
     end
 
@@ -40,8 +42,8 @@ module Hecks
       @mode
     end
 
-    def build?
-      @mode == :build
+    def sketch?
+      @mode == :sketch
     end
 
     def play?

@@ -8,7 +8,7 @@
 #   session.execute("CreatePizza", name: "Margherita")
 #   session.events
 #   session.history
-#   session.define!   # back to define mode
+#   session.sketch!   # back to sketch mode
 #
 module Hecks
   class Session
@@ -31,19 +31,18 @@ module Hecks
         puts "  commands                                # list available commands"
         puts "  execute(\"CreatePizza\", name: \"Pepperoni\")"
         puts "  events / history / reset!"
-        puts "  define!                                 # back to define mode"
+        puts "  sketch!                                 # back to sketch mode"
         puts ""
         self
       end
 
-      # Switch back to define mode
-      def define!
-        @mode = :build
+      # Switch back to sketch mode
+      def sketch!
+        @mode = :sketch
         @playground = nil
-        puts "Back to define mode"
+        puts "Back to sketch mode"
         self
       end
-      alias_method :build!, :define!
 
       # Play mode: execute a command
       def execute(command_name, **attrs)

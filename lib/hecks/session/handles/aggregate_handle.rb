@@ -9,18 +9,20 @@
 #
 #   session = Hecks.session("Pizzas")
 #   pizza = session.aggregate("Pizza")
-#   pizza.add_attribute(:name, String)
-#   pizza.add_command("CreatePizza") { attribute :name, String }
-#   pizza.add_validation(:name, presence: true)
+#   pizza.attr(:name, String)
+#   pizza.command("CreatePizza") { attribute :name, String }
+#   pizza.validation(:name, presence: true)
 #   pizza.describe   # prints a summary of the aggregate
 #   pizza.preview    # prints generated Ruby code
 #
 require_relative "aggregate_handle/presenter"
+require_relative "aggregate_handle/message_not_understood"
 
 module Hecks
   class Session
     class AggregateHandle
     include Presenter
+    include MessageNotUnderstood
 
     attr_reader :name
 
@@ -126,22 +128,6 @@ module Hecks
       puts "  + subscriber on #{event_name}"
       self
     end
-
-    # Keep add_ prefixed names for backward compat (MCP, specs, examples)
-    alias_method :attribute, :attr
-    alias_method :add_attribute, :attr
-    alias_method :attr_reader, :attr
-    alias_method :remove_attribute, :remove
-    alias_method :add_value_object, :value_object
-    alias_method :add_entity, :entity
-    alias_method :add_command, :command
-    alias_method :add_validation, :validation
-    alias_method :add_invariant, :invariant
-    alias_method :add_policy, :policy
-    alias_method :add_verb, :verb
-    alias_method :add_query, :query
-    alias_method :add_scope, :scope
-    alias_method :add_specification, :specification
 
     def attributes
       @builder.attributes.map(&:name)

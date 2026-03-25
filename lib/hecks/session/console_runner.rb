@@ -16,8 +16,8 @@ module Hecks
     # instead of `session.aggregate("Cat")` in the REPL.
     %i[
       aggregates remove add_verb active_hecks!
-      validate preview describe build save to_dsl status
-      play! define! execute events events_of commands history reset!
+      validate preview describe build save to_dsl status browse
+      play! sketch! execute events events_of commands history reset!
     ].each do |m|
       define_method(m) do |*args, **kwargs, &block|
         @session.send(m, *args, **kwargs, &block)
@@ -25,7 +25,14 @@ module Hecks
     end
 
     def aggregate(name, &block)
-      @last_aggregate = @session.aggregate(name, &block)
+      handle = @session.aggregate(name, &block)
+      const_name = Hecks::Utils.sanitize_constant(name).to_sym
+      @hoisted_handle_constants ||= []
+      unless self.class.const_defined?(const_name, false)
+        self.class.const_set(const_name, handle)
+        @hoisted_handle_constants << const_name
+      end
+      handle
     end
 
     # Override play! to hoist domain constants into ConsoleRunner's scope
@@ -48,15 +55,16 @@ module Hecks
       result
     end
 
-    # Remove hoisted constants and switch back to define mode
-    def define!
-      if @hoisted_constants
-        @hoisted_constants.each do |const_name|
+    # Remove hoisted constants and switch back to sketch mode
+    def sketch!
+      [@hoisted_constants, @hoisted_handle_constants].compact.each do |list|
+        list.each do |const_name|
           self.class.send(:remove_const, const_name) if self.class.const_defined?(const_name, false)
         end
-        @hoisted_constants = nil
       end
-      @session.define!
+      @hoisted_constants = nil
+      @hoisted_handle_constants = nil
+      @session.sketch!
     end
 
     def backtrace!
@@ -71,17 +79,13 @@ module Hecks
       nil
     end
 
-    def _a
-      @last_aggregate
-    end
-
     def help
       print_help
       nil
     end
 
     def inspect
-      mode = @session&.play? ? "play" : "define"
+      mode = @session&.play? ? "play" : "sketch"
       name = @session&.name&.downcase || "scratch"
       "hecks(#{name} #{mode})"
     end
@@ -160,13 +164,14 @@ module Hecks
 
     def print_help
       puts ""
-      puts "  aggregate(\"Pizza\")              # _a = last aggregate"
-      puts "  _a.attr :name                    # add attribute"
-      puts "  _a.command(\"Create\") { attribute :name, String }"
+      puts "  aggregate(\"Pizza\")              # creates Pizza constant"
+      puts "  Pizza.attr :name                 # add attribute"
+      puts "  Pizza.command(\"Create\") { attribute :name, String }"
       puts ""
+      puts "  browse                           # system browser"
       puts "  validate / describe / preview"
       puts "  play!                            # enter play mode"
-      puts "  execute(\"CreatePizza\", name: \"Margherita\")"
+      puts "  sketch!                          # back to sketch mode"
       puts "  save / build"
       puts ""
     end

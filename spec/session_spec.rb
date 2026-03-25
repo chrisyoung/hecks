@@ -275,7 +275,7 @@ RSpec.describe Hecks::Session do
   describe "#inspect" do
     it "shows a readable summary" do
       session.aggregate("Pizza") { attribute :name, String }
-      expect(session.inspect).to eq('#<Hecks::Session "Pizzas" [build] (1 aggregates)>')
+      expect(session.inspect).to eq('#<Hecks::Session "Pizzas" [sketch] (1 aggregates)>')
     end
   end
 
@@ -323,10 +323,10 @@ RSpec.describe Hecks::Session do
       expect(session).to be_play
     end
 
-    it "switches back to build mode" do
+    it "switches back to sketch mode" do
       session.play!
-      session.build!
-      expect(session).to be_build
+      session.sketch!
+      expect(session).to be_sketch
     end
 
     it "lists available commands" do
@@ -354,12 +354,29 @@ RSpec.describe Hecks::Session do
       end
 
       bad_session.play!
-      expect(bad_session).to be_build
+      expect(bad_session).to be_sketch
     end
 
     it "shows play in inspect" do
       session.play!
       expect(session.inspect).to include("[play]")
+    end
+  end
+
+  describe "#browse" do
+    before do
+      pizza = session.aggregate("Pizza")
+      pizza.attr :name, String
+      pizza.command("CreatePizza") { attribute :name, String }
+      session.aggregate("Order")
+    end
+
+    it "prints a tree of all aggregates" do
+      expect { session.browse }.to output(/Pizzas Domain.*Pizza.*Order/m).to_stdout
+    end
+
+    it "prints a single aggregate" do
+      expect { session.browse("Pizza") }.to output(/Pizza.*attributes.*commands/m).to_stdout
     end
   end
 end
