@@ -21,7 +21,6 @@
 - Define commands with attributes, handlers, guards, read models, actors, and external system docs
 - Auto-infer domain events from commands (CreatePizza → CreatedPizza) with irregular verb support
 - Command `sets` declaration: `sets status: "approved"` — static field assignments
-- Command `passthrough` fields: auto-populated from aggregate state onto events
 - Define command `call` blocks in DSL for inline business logic (prototyping and play mode)
 
 ### State Machines
