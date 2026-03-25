@@ -11,7 +11,7 @@
 #
 require_relative "hecks_persist"
 
-Hecks.register_connection(:postgres) do |domain_mod, domain, runtime|
+Hecks.register_extension(:postgres) do |domain_mod, domain, runtime|
   require "sequel"
   db = Sequel.connect(adapter: :postgres,
     host:     ENV.fetch("HECKS_DB_HOST", "localhost"),

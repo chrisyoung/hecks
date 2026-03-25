@@ -17,7 +17,7 @@ RSpec.describe "HecksTenancy" do
   before do
     @app = Hecks.load(domain)
     # Manually trigger tenancy connection hook
-    Hecks.connection_registry[:tenancy]&.call(
+    Hecks.extension_registry[:tenancy]&.call(
       Object.const_get("TenantTestDomain"), domain, @app
     )
   end

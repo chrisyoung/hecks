@@ -1,15 +1,15 @@
-# Hecks::ConnectionDocs
+# Hecks::ExtensionDocs
 #
-# Metadata registry for connection gems. Each entry describes a gem that
+# Metadata registry for extension gems. Each entry describes a gem that
 # extends Hecks with an external integration (database, server, AI, etc.).
 # Used by ReadmeGenerator to produce the {{connections}} section.
 #
-#   Hecks::ConnectionDocs.all
+#   Hecks::ExtensionDocs.all
 #   # => [{ gem: "hecks_sqlite", name: "SQLite", ... }, ...]
 #
 module Hecks
-  module ConnectionDocs
-    CONNECTIONS = [
+  module ExtensionDocs
+    EXTENSIONS = [
       {
         gem: "hecks_sqlite",
         name: "SQLite",
@@ -62,7 +62,7 @@ module Hecks
     ].freeze
 
     def self.all
-      CONNECTIONS
+      EXTENSIONS
     end
   end
 end

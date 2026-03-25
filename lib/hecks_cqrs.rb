@@ -47,6 +47,6 @@ module HecksCqrs
 end
 
 # Register with Hecks connection registry if available
-if defined?(Hecks) && Hecks.respond_to?(:connection_registry)
-  Hecks.connection_registry[:cqrs] = HecksCqrs
+if defined?(Hecks) && Hecks.respond_to?(:extension_registry)
+  Hecks.extension_registry[:cqrs] = HecksCqrs
 end

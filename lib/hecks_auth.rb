@@ -14,7 +14,7 @@
 #   Hecks.actor = OpenStruct.new(role: "Admin")
 #   Cat.adopt(name: "Whiskers")  # checks actor role against DSL
 #
-Hecks.register_connection(:auth) do |domain_mod, domain, runtime|
+Hecks.register_extension(:auth) do |domain_mod, domain, runtime|
   # Build a lookup of command class name → required actor roles
   actor_map = {}
   domain.aggregates.each do |agg|

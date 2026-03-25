@@ -17,4 +17,5 @@ module Hecks
   class PortAccessDenied < Error; end
   class Unauthenticated < Error; end
   class Unauthorized < Error; end
+  class RateLimitExceeded < Error; end
 end

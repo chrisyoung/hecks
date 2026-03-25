@@ -11,7 +11,7 @@
 #
 require_relative "hecks_persist"
 
-Hecks.register_connection(:sqlite) do |domain_mod, domain, runtime|
+Hecks.register_extension(:sqlite) do |domain_mod, domain, runtime|
   require "sequel"
   require "sqlite3"
   db = Sequel.sqlite

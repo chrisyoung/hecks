@@ -16,7 +16,7 @@
 #
 require_relative "hecks_tenancy/tenant_scoped_repository"
 
-Hecks.register_connection(:tenancy) do |domain_mod, domain, runtime|
+Hecks.register_extension(:tenancy) do |domain_mod, domain, runtime|
   next unless domain.tenancy
 
   domain.aggregates.each do |agg|

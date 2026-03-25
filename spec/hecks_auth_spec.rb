@@ -22,7 +22,7 @@ RSpec.describe "HecksAuth" do
 
   before do
     @app = Hecks.load(domain)
-    Hecks.connection_registry[:auth]&.call(
+    Hecks.extension_registry[:auth]&.call(
       Object.const_get("AuthTestDomain"), domain, @app
     )
   end
