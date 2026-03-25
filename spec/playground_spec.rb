@@ -67,6 +67,10 @@ RSpec.describe Hecks::Session::Playground do
       output = []
       allow($stdout).to receive(:puts) { |msg| output << msg }
 
+      order = playground.execute("CreatePizza", name: "Seed")
+      mod = Object.const_get("PizzasDomain")
+      seed = mod.const_get("Order").new(id: "abc-123", pizza_id: order.id, quantity: 1)
+      seed.save
       playground.execute("PlaceOrder", pizza_id: "abc-123", quantity: 2)
 
       expect(output).to include("Command: PlaceOrder")

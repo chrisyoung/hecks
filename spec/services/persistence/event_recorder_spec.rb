@@ -77,6 +77,8 @@ RSpec.describe Hecks::Persistence::EventRecorder do
 
     it "records events from update commands" do
       pizza = PizzasDomain::Pizza.create(name: "Margherita", style: "Classic")
+      seed = PizzasDomain::Order.new(id: pizza.id, pizza_id: pizza.id, quantity: 1)
+      seed.save
       PizzasDomain::Order.place(pizza_id: pizza.id, quantity: 3)
       events = PizzasDomain::Order.history(PizzasDomain::Order.first.id)
       expect(events.size).to eq(1)

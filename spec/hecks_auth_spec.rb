@@ -47,12 +47,14 @@ RSpec.describe "HecksAuth" do
 
   describe "command without actor" do
     it "always passes regardless of actor" do
-      expect { Account.check_balance(account_id: "123") }.not_to raise_error
+      account = Account.create(balance: 0.0)
+      expect { Account.check_balance(account_id: account.id) }.not_to raise_error
     end
 
     it "passes even with no actor set" do
       Hecks.actor = nil
-      expect { Account.check_balance(account_id: "123") }.not_to raise_error
+      account = Account.create(balance: 0.0)
+      expect { Account.check_balance(account_id: account.id) }.not_to raise_error
     end
   end
 

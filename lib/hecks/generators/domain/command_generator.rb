@@ -121,7 +121,7 @@ module Hecks
           lines.concat(lifecycle_guard_lines("            "))
           lines.concat(format_new_call("            ", update_constructor_args))
           lines << "          else"
-          lines.concat(format_new_call("            ", create_constructor_args))
+          lines << "            raise Hecks::Error, \"#{@aggregate_name} not found: \#{#{id_attr.name}}\""
           lines << "          end"
         else
           lines.concat(format_new_call("          ", create_constructor_args))

@@ -59,6 +59,8 @@ RSpec.describe "Multi-domain with shared event bus" do
 
   it "shares events across domains via the event bus" do
     pizza = PizzasDomain::Pizza.create(name: "Margherita")
+    seed = PizzasDomain::Order.new(id: pizza.id, pizza_id: pizza.id, quantity: 1)
+    seed.save
     PizzasDomain::Order.place(pizza_id: pizza.id, quantity: 3)
 
     # PlacedOrder event should be visible to both apps
@@ -71,6 +73,8 @@ RSpec.describe "Multi-domain with shared event bus" do
 
   it "policies react to events from other domains" do
     pizza = PizzasDomain::Pizza.create(name: "Margherita")
+    seed = PizzasDomain::Order.new(id: pizza.id, pizza_id: pizza.id, quantity: 1)
+    seed.save
 
     # PlaceOrder in pizzas_domain fires PlacedOrder
     # BillOnOrder policy in billing_domain reacts and triggers CreateInvoice

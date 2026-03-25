@@ -7,17 +7,16 @@ RSpec.describe "Policy dispatch with multi-word aggregate names" do
         attribute :name, String
         attribute :risk_level, String
 
-        command "RegisterAiModel" do
+        command "CreateAiModel" do
           attribute :name, String
         end
 
         command "ClassifyAiModel" do
-          attribute :model_id, String
           attribute :risk_level, String
         end
 
         policy "AutoClassify" do
-          on "RegisteredAiModel"
+          on "CreatedAiModel"
           trigger "ClassifyAiModel"
           defaults risk_level: "low"
         end
@@ -28,7 +27,7 @@ RSpec.describe "Policy dispatch with multi-word aggregate names" do
   before { @app = Hecks.load(domain) }
 
   it "policy triggers command on multi-word aggregate" do
-    AiModel.register(name: "GPT-5")
+    AiModel.create(name: "GPT-5")
     events = @app.events.map { |e| e.class.name.split("::").last }
     expect(events).to include("ClassifiedAiModel")
   end
