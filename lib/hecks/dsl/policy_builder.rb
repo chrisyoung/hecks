@@ -23,6 +23,7 @@ module Hecks
         @async = false
         @attribute_map = {}
         @condition = nil
+        @defaults = {}
       end
 
       def on(event_name)
@@ -43,6 +44,12 @@ module Hecks
         @attribute_map.merge!(mapping)
       end
 
+      # Inject static values into the triggered command alongside mapped attrs:
+      #   defaults entity_type: "AiModel", action: "registered"
+      def defaults(**hash)
+        @defaults.merge!(hash)
+      end
+
       # Conditional firing: policy only triggers when the block returns true.
       # The block receives the event object.
       #   condition { |event| event.amount > 10_000 }
@@ -59,7 +66,8 @@ module Hecks
           trigger_command: @trigger_command,
           async: @async,
           attribute_map: @attribute_map,
-          condition: @condition
+          condition: @condition,
+          defaults: @defaults
         )
       end
     end

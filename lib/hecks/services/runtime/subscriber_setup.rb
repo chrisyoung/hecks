@@ -29,6 +29,19 @@ module Hecks
               end
             end
           end
+
+          setup_domain_event_subscribers
+        end
+
+        def setup_domain_event_subscribers
+          return unless @domain.respond_to?(:event_subscribers)
+
+          @domain.event_subscribers.each do |sub|
+            block = sub[:block]
+            @event_bus.subscribe(sub[:event_name]) do |event|
+              block.call(event)
+            end
+          end
         end
       end
   end

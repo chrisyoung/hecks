@@ -4,7 +4,14 @@
 - Define domains with `Hecks.domain "Name" { }` block syntax
 - Define aggregates with attributes, commands, events, policies, queries, and scopes
 - Define value objects as immutable nested types within aggregates
-- Define typed attributes with String, Integer, Float, Boolean, JSON, etc.
+- Define typed attributes with String, Integer, Float, Boolean, JSON, Date, DateTime, etc.
+- Lifecycle DSL: `lifecycle :status, default: "draft" { transition "Approve" => "approved" }`
+- Generated status predicates: `model.draft?`, `model.approved?`
+- Command `sets` declaration: `sets status: "approved"` — static field assignments
+- Command `passthrough` fields: auto-populated from aggregate state onto events
+- Policy `defaults` for static attribute injection: `defaults entity_type: "AiModel"`
+- Domain-level `on_event` subscribers for cross-aggregate reactions
+- Domain services: `service "TransferMoney" { dispatch "Withdraw"; dispatch "Deposit" }`
 - Symbol type shorthand: `:string`, `:integer`, `:float`, `:boolean` resolve to Ruby classes
 - Default attribute type is String when omitted
 - Define collection attributes with `list_of("Type")` syntax

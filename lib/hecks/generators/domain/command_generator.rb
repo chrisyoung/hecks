@@ -127,13 +127,13 @@ module Hecks
       end
 
       def create_constructor_args
-        parts = []
-        agg_attrs.each do |a|
+        args = agg_attrs.each_with_object([]) do |a, parts|
           cmd_attr = @command.attributes.find { |c| c.name == a.name }
           parts << "#{a.name}: #{a.name}" if cmd_attr
         end
-        inject_lifecycle_status(parts)
-        parts
+        inject_sets(args)
+        inject_lifecycle_status(args)
+        args
       end
 
       def update_constructor_args
@@ -146,17 +146,26 @@ module Hecks
             parts << "#{a.name}: existing.#{a.name}"
           end
         end
+        inject_sets(parts)
         inject_lifecycle_status(parts)
         parts
       end
 
-      def inject_lifecycle_status(parts)
+      def inject_sets(args)
+        return unless @command.sets && !@command.sets.empty?
+        @command.sets.each do |field, value|
+          args.reject! { |a| a.start_with?("#{field}:") }
+          args << "#{field}: #{value.inspect}"
+        end
+      end
+
+      def inject_lifecycle_status(args)
         return unless @aggregate&.lifecycle
         target = @aggregate.lifecycle.target_for(@command.name)
         return unless target
         field = @aggregate.lifecycle.field
-        parts.reject! { |p| p.start_with?("#{field}:") }
-        parts << "#{field}: \"#{target}\""
+        args.reject! { |p| p.start_with?("#{field}:") }
+        args << "#{field}: \"#{target}\""
       end
 
       # Format Aggregate.new(...) — inline if ≤2 args, stacked otherwise.

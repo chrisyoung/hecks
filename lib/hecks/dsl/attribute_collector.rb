@@ -8,6 +8,8 @@
 #   attribute :toppings, list_of("Topping")
 #   attribute :order, reference_to("Order")
 #
+require "date"
+
 module Hecks
   module DSL
     module AttributeCollector
@@ -19,6 +21,8 @@ module Hecks
         symbol: Symbol, sym: Symbol,
         array: Array,
         hash: Hash,
+        date: Date,
+        datetime: DateTime,
       }.freeze
 
       def attribute(name, type = String, **options)

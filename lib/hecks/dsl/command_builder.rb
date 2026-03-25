@@ -31,6 +31,8 @@ module Hecks
         @read_models = []
         @external_systems = []
         @actors = []
+        @sets = {}
+        @passthroughs = []
       end
 
       def call(&block)
@@ -57,11 +59,21 @@ module Hecks
         @actors << DomainModel::Structure::Actor.new(name: name)
       end
 
+      # Declare static field assignments injected into the aggregate constructor:
+      #   sets status: "approved", outcome: "approved"
+      def sets(**hash)
+        @sets.merge!(hash)
+      end
+
+      def passthrough(*fields)
+        @passthroughs.concat(fields.map(&:to_sym))
+      end
+
       def build
         DomainModel::Behavior::Command.new(
           name: @name, attributes: @attributes, handler: @handler, guard_name: @guard_name,
           read_models: @read_models, external_systems: @external_systems, actors: @actors,
-          call_body: @call_body
+          call_body: @call_body, sets: @sets, passthroughs: @passthroughs
         )
       end
     end

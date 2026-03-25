@@ -31,6 +31,8 @@ module Hecks
           when "Integer" then "INTEGER"
           when "Float"   then "REAL"
           when "Boolean", "TrueClass", "FalseClass" then "BOOLEAN"
+          when "Date"     then "DATE"
+          when "DateTime" then "VARCHAR(255)"
           else "TEXT"
           end
         end
