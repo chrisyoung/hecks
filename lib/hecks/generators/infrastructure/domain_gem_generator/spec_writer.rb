@@ -16,8 +16,7 @@ module Hecks
 
           def generate_specs(root, gem_name, mod)
             sg = SpecGenerator.new(@domain)
-            spec_helper_path = File.join(root, "spec/spec_helper.rb")
-            write_file(root, "spec/spec_helper.rb", sg.generate_spec_helper) unless File.exist?(spec_helper_path)
+            write_file(root, "spec/spec_helper.rb", sg.generate_spec_helper)
             write_file(root, ".rspec", "--format documentation\n--color\n--require spec_helper\n")
             @domain.aggregates.each do |agg|
               snake = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name))

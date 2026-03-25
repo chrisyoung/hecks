@@ -35,6 +35,7 @@ module Hecks
 
       def generate_spec_helper
         <<~RUBY
+          require "hecks"
           require "#{@domain.gem_name}"
 
           RSpec.configure do |config|
