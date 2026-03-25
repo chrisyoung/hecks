@@ -26,6 +26,11 @@ module Hecks
         @aggregates = []
         @policies = []
         @attributes = []
+        @tenancy = nil
+      end
+
+      def tenancy(strategy)
+        @tenancy = strategy.to_sym
       end
 
       def aggregate(name, &block)
@@ -52,7 +57,7 @@ module Hecks
 
       def build
         DomainModel::Structure::Domain.new(
-          name: @name, aggregates: @aggregates, policies: @policies
+          name: @name, aggregates: @aggregates, policies: @policies, tenancy: @tenancy
         )
       end
     end

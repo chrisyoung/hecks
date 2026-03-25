@@ -73,6 +73,22 @@ module Hecks
     @load_strategy = strategy
   end
 
+  def self.tenant
+    Thread.current[:hecks_tenant]
+  end
+
+  def self.tenant=(tenant_id)
+    Thread.current[:hecks_tenant] = tenant_id&.to_s
+  end
+
+  def self.with_tenant(tenant_id)
+    old = Thread.current[:hecks_tenant]
+    Thread.current[:hecks_tenant] = tenant_id.to_s
+    yield
+  ensure
+    Thread.current[:hecks_tenant] = old
+  end
+
   def self.configure(&block)
     @configuration = Configuration.new
     @configuration.instance_eval(&block)

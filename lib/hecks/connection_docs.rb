@@ -45,6 +45,13 @@ module Hecks
         gemfile: 'gem "hecks_ai"',
         example: "CatsDomain.mcp"
       },
+      {
+        gem: "hecks_tenancy",
+        name: "Multi-tenancy",
+        description: "Tenant isolation — same domain, different data per tenant",
+        gemfile: 'gem "hecks_tenancy"',
+        example: "# Declare in DSL: tenancy :column\nHecks.tenant = \"acme\"\nCat.all  # only acme's cats"
+      },
     ].freeze
 
     def self.all
