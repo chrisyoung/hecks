@@ -33,12 +33,15 @@ module Hecks
       def example_value(attr)
         return "[]" if attr.list?
         return "\"ref-id-123\"" if attr.reference?
+        return attr.enum.first.inspect if attr.enum&.any?
 
         case attr.type.to_s
         when "String"  then "\"example\""
         when "Integer" then "1"
         when "Float"   then "1.0"
         when "Boolean", "TrueClass", "FalseClass" then "true"
+        when "Date"    then "Date.today"
+        when "DateTime" then "DateTime.now"
         else "\"example\""
         end
       end
