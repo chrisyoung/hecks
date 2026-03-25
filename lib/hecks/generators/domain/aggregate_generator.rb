@@ -43,12 +43,24 @@ module Hecks
             lines << "    def #{state}?; #{@aggregate.lifecycle.field} == \"#{state}\"; end"
           end
         end
-        unless @aggregate.validations.empty? && @aggregate.invariants.empty?
+        enum_attrs = @user_attrs.select(&:enum)
+        unless enum_attrs.empty?
+          lines << ""
+          enum_attrs.each do |attr|
+            values = attr.enum.map(&:inspect).join(", ")
+            lines << "    VALID_#{attr.name.to_s.upcase} = [#{values}].freeze"
+          end
+        end
+        unless @aggregate.validations.empty? && @aggregate.invariants.empty? && enum_attrs.empty?
           lines << ""
           lines << "    private"
           lines << ""
           lines.concat(validation_lines) unless @aggregate.validations.empty?
-          lines << "" unless @aggregate.validations.empty? || @aggregate.invariants.empty?
+          unless enum_attrs.empty?
+            lines << "" unless @aggregate.validations.empty?
+            lines.concat(enum_validation_lines(enum_attrs))
+          end
+          lines << "" unless (@aggregate.validations.empty? && enum_attrs.empty?) || @aggregate.invariants.empty?
           lines.concat(invariant_lines) unless @aggregate.invariants.empty?
         end
         lines << "  end"
@@ -57,6 +69,19 @@ module Hecks
       end
 
       private
+
+      def enum_validation_lines(enum_attrs)
+        lines = ["    def validate!"]
+        lines << "      super"
+        enum_attrs.each do |attr|
+          const = "VALID_#{attr.name.to_s.upcase}"
+          lines << "      if #{attr.name} && !#{const}.include?(#{attr.name})"
+          lines << "        raise self.class::ValidationError, \"#{attr.name} must be one of: \#{#{const}.join(', ')}, got: \#{#{attr.name}}\""
+          lines << "      end"
+        end
+        lines << "    end"
+        lines
+      end
 
       def attribute_declaration(attr)
         parts = [":#{attr.name}"]

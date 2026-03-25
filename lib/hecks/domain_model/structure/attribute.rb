@@ -15,15 +15,16 @@ module Hecks
   module DomainModel
     module Structure
     class Attribute
-      attr_reader :name, :type, :default
+      attr_reader :name, :type, :default, :enum
 
-      def initialize(name:, type:, default: nil, list: false, reference: false, pii: false)
+      def initialize(name:, type:, default: nil, list: false, reference: false, pii: false, enum: nil)
         @name = name.to_sym
         @type = type
         @default = default
         @list = list
         @reference = reference
         @pii = pii
+        @enum = enum
       end
 
       def list?
