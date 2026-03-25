@@ -16,11 +16,11 @@ module Hecks
     module Behavior
     class Command
       attr_reader :name, :attributes, :handler, :guard_name, :read_models,
-                  :external_systems, :actors, :call_body, :sets, :passthroughs
+                  :external_systems, :actors, :call_body, :sets
 
       def initialize(name:, attributes: [], handler: nil, guard_name: nil,
                      read_models: [], external_systems: [], actors: [],
-                     call_body: nil, sets: {}, passthroughs: [])
+                     call_body: nil, sets: {})
         @name = name
         @attributes = attributes
         @handler = handler
@@ -30,7 +30,6 @@ module Hecks
         @actors = actors
         @call_body = call_body
         @sets = sets
-        @passthroughs = passthroughs
       end
 
       IRREGULAR_VERBS = {
