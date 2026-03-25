@@ -59,6 +59,8 @@ RSpec.describe "Subscriber setup" do
 
   it "does not fire subscriber for unrelated events" do
     app = Hecks.load(domain, force: true)
+    seed = SubscriberTestDomain::Order.new(id: 42, pizza_id: 42, quantity: 1)
+    seed.save
     Order.place(pizza_id: 42)
     pizza_subs = $subscriber_log.select { |l| l.start_with?("pizza:") }
     expect(pizza_subs).to be_empty

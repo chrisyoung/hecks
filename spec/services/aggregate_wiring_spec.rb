@@ -51,6 +51,8 @@ RSpec.describe Hecks::AggregateWiring do
 
   it "binds CommandMethods (commands become class methods)" do
     pizza = PizzasDomain::Pizza.create(name: "Margherita", style: "Classic")
+    seed = PizzasDomain::Order.new(id: pizza.id, pizza_id: pizza.id, quantity: 1)
+    seed.save
     order = PizzasDomain::Order.place(pizza_id: pizza.id, quantity: 3)
     expect(order.quantity).to eq(3)
   end
@@ -64,6 +66,8 @@ RSpec.describe Hecks::AggregateWiring do
 
   it "binds ReferenceMethods (reference resolution)" do
     pizza = PizzasDomain::Pizza.create(name: "Margherita", style: "Classic")
+    seed = PizzasDomain::Order.new(id: pizza.id, pizza_id: pizza.id, quantity: 1)
+    seed.save
     order = PizzasDomain::Order.place(pizza_id: pizza.id, quantity: 3)
     expect(order.pizza.name).to eq("Margherita")
   end

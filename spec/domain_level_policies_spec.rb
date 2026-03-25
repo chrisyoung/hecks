@@ -217,6 +217,8 @@ RSpec.describe "Domain-level policies" do
       end
 
       app = Hecks.load(domain, force: true)
+      seed = MappingDomain::Account.new(id: "acc-1", amount: 0.0, account_id: "acc-1")
+      seed.save
       app.run("IssueLoan", principal: 25000.0, account_id: "acc-1")
 
       deposit_event = app.events.find { |e| e.class.name.split("::").last == "Deposited" }

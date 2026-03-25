@@ -262,6 +262,7 @@ RSpec.describe "SQL adapter integration" do
   describe "reference resolution" do
     it "resolves order.pizza" do
       pizza = PizzasDomain::Pizza.create(name: "Margherita", description: "Classic")
+      db[:orders].insert(id: pizza.id, pizza_id: pizza.id, quantity: 1, status: nil, created_at: Time.now.to_s, updated_at: Time.now.to_s)
       order = PizzasDomain::Order.place(pizza_id: pizza.id, quantity: 3)
       expect(order.pizza.name).to eq("Margherita")
     end

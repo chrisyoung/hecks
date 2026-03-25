@@ -53,6 +53,8 @@ RSpec.describe Hecks::Commands::CommandMethods do
   describe "update commands" do
     it "dispatches and persists" do
       pizza = PizzasDomain::Pizza.create(name: "Margherita", style: "Classic")
+      seed = PizzasDomain::Order.new(id: pizza.id, pizza_id: pizza.id, quantity: 1)
+      seed.save
       order = PizzasDomain::Order.place(pizza_id: pizza.id, quantity: 3)
       expect(order.quantity).to eq(3)
       expect(PizzasDomain::Order.find(order.id)).not_to be_nil

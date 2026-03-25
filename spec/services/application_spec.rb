@@ -101,6 +101,8 @@ RSpec.describe Hecks::Runtime do
     end
 
     it "works for other aggregates" do
+      seed = PizzasDomain::Order.new(id: "abc-123", pizza_id: "abc-123", quantity: 1)
+      seed.save
       order = PizzasDomain::Order.place(pizza_id: "abc-123", quantity: 3)
       expect(order).to be_a(PizzasDomain::Order)
       expect(order.pizza_id).to eq("abc-123")
