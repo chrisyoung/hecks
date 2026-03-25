@@ -19,6 +19,7 @@ require_relative "runtime/policy_setup"
 require_relative "runtime/subscriber_setup"
 require_relative "runtime/constant_hoisting"
 require_relative "runtime/connection_setup"
+require_relative "service_wiring"
 
 module Hecks
   class Runtime
@@ -49,6 +50,7 @@ module Hecks
         setup_subscribers
         setup_connections
         AggregateWiring.new(@domain, @repositories, @command_bus, @mod, port_name: @port_name).wire!
+        ServiceWiring.bind(@domain, @mod, @command_bus)
         hoist_constants
       end
 

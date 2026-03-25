@@ -21,6 +21,7 @@ module Hecks
       autoload :Query,            "hecks/domain_model/behavior/query"
       autoload :EventSubscriber, "hecks/domain_model/behavior/event_subscriber"
       autoload :Specification,   "hecks/domain_model/behavior/specification"
+      autoload :Service,         "hecks/domain_model/behavior/service"
     end
   end
 end

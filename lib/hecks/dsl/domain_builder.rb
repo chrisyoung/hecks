@@ -25,12 +25,19 @@ module Hecks
         @name = name
         @aggregates = []
         @policies = []
+        @services = []
         @attributes = []
         @tenancy = nil
       end
 
       def tenancy(strategy)
         @tenancy = strategy.to_sym
+      end
+
+      def service(name, &block)
+        builder = ServiceBuilder.new(name)
+        builder.instance_eval(&block) if block
+        @services << builder.build
       end
 
       def aggregate(name, &block)
@@ -57,7 +64,7 @@ module Hecks
 
       def build
         DomainModel::Structure::Domain.new(
-          name: @name, aggregates: @aggregates, policies: @policies, tenancy: @tenancy
+          name: @name, aggregates: @aggregates, policies: @policies, services: @services, tenancy: @tenancy
         )
       end
     end

@@ -47,6 +47,7 @@ module Hecks
     autoload :PolicyBuilder,      "hecks/dsl/policy_builder"
     autoload :AggregateRebuilder, "hecks/dsl/aggregate_rebuilder"
     autoload :PortBuilder,        "hecks/dsl/port_builder"
+    autoload :ServiceBuilder,    "hecks/dsl/service_builder"
   end
 
   module Generators
