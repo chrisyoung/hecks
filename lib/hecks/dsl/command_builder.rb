@@ -32,7 +32,6 @@ module Hecks
         @external_systems = []
         @actors = []
         @sets = {}
-        @passthroughs = []
       end
 
       def call(&block)
@@ -65,17 +64,11 @@ module Hecks
         @sets.merge!(hash)
       end
 
-      # Declare aggregate fields auto-populated onto the emitted event:
-      #   passthrough :model_id, :vendor_id
-      def passthrough(*fields)
-        @passthroughs.concat(fields.map(&:to_s))
-      end
-
       def build
         DomainModel::Behavior::Command.new(
           name: @name, attributes: @attributes, handler: @handler, guard_name: @guard_name,
           read_models: @read_models, external_systems: @external_systems, actors: @actors,
-          call_body: @call_body, sets: @sets, passthroughs: @passthroughs
+          call_body: @call_body, sets: @sets
         )
       end
     end
