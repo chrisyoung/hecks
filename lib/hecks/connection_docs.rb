@@ -46,6 +46,13 @@ module Hecks
         example: "CatsDomain.mcp"
       },
       {
+        gem: "hecks_auth",
+        name: "Auth",
+        description: "Authentication & authorization — actor-based access control on commands",
+        gemfile: 'gem "hecks_auth"',
+        example: "# DSL: actor \"Admin\" on commands\n# App: Hecks.actor = current_user\n# Auth middleware checks role automatically"
+      },
+      {
         gem: "hecks_tenancy",
         name: "Multi-tenancy",
         description: "Tenant isolation — same domain, different data per tenant",

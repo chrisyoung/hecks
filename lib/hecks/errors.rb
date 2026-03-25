@@ -15,4 +15,6 @@ module Hecks
   class MigrationError < Error; end
   class ConfigurationError < Error; end
   class PortAccessDenied < Error; end
+  class Unauthenticated < Error; end
+  class Unauthorized < Error; end
 end
