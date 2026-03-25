@@ -52,6 +52,9 @@
 - `app.use { }` — register command bus middleware
 
 ## Code Generation
+- Generated gems auto-boot: `require "cats_domain"` wires a Runtime with memory adapters
+- Generated gems include `hecks` as a dependency and auto-load `hecks_domain.rb`
+- Override with `CatsDomain.boot(adapter: :sqlite)` or `HECKS_SKIP_BOOT=1`
 - Generate complete Ruby gems from domain definitions with `Hecks.build(domain)`
 - `Hecks.load(domain)` loads domain in memory; uses file-based or fast in-memory strategy (via `Hecks.load_strategy`)
 - Generate aggregate classes with `Hecks::Model` mixin, auto-UUID, and timestamps
