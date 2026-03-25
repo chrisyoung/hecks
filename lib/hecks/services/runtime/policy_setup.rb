@@ -29,7 +29,17 @@ module Hecks
 
           agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(target_agg.name))
           agg_snake = Hecks::Utils.underscore(target_agg.name)
-          method_name = Hecks::Utils.underscore(command_name).sub(/_#{agg_snake}$/, "").to_sym
+          full_name = Hecks::Utils.underscore(command_name)
+          method_name = full_name
+          agg_snake.split("_").each_index do |i|
+            suffix = agg_snake.split("_").drop(i).join("_")
+            stripped = full_name.sub(/_#{suffix}$/, "")
+            if stripped != full_name
+              method_name = stripped
+              break
+            end
+          end
+          method_name = method_name.to_sym
 
           if agg_class.respond_to?(method_name)
             agg_class.send(method_name, **filtered_attrs)
