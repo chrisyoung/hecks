@@ -37,6 +37,13 @@ module Hecks
         @subscribers = []
         @indexes = []
         @specifications = []
+        @lifecycle = nil
+      end
+
+      def lifecycle(field, default:, &block)
+        builder = LifecycleBuilder.new(field, default: default)
+        builder.instance_eval(&block) if block
+        @lifecycle = builder.build
       end
 
       def value_object(name, &block)
@@ -126,7 +133,8 @@ module Hecks
           queries: @queries,
           subscribers: @subscribers,
           indexes: @indexes,
-          specifications: @specifications
+          specifications: @specifications,
+          lifecycle: @lifecycle
         )
       end
 
