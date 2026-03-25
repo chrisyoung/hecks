@@ -6,7 +6,7 @@
 #
 #   ReadmeGenerator.new(project_root).generate
 #
-require_relative "connection_docs"
+require_relative "extension_docs"
 
 module Hecks
   class ReadmeGenerator
@@ -115,7 +115,7 @@ module Hecks
     end
 
     def connections_section
-      entries = ConnectionDocs.all.map do |conn|
+      entries = ExtensionDocs.all.map do |conn|
         lines = []
         lines << "### #{conn[:name]}"
         lines << ""

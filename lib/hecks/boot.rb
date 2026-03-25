@@ -2,8 +2,8 @@
 #
 # Convenience method that loads a domain from a directory, validates it,
 # builds the gem, adds it to $LOAD_PATH, and returns a wired Runtime.
-# Defaults to memory adapters. Connection gems (hecks_sqlite, hecks_serve,
-# etc.) auto-wire via the connection registry when present.
+# Defaults to memory adapters. Extension gems (hecks_sqlite, hecks_serve,
+# etc.) auto-wire via the extension registry when present.
 #
 # Part of the top-level Hecks API. Mixed into the Hecks module via extend.
 #
@@ -59,7 +59,7 @@ module Hecks
       boot_adapter = adapter == :memory ? nil : boot_adapter_config(adapter)
       effective = persist[:default] || persist.values.first || boot_adapter
       if effective
-        hook = Hecks.connection_registry[effective[:type]]
+        hook = Hecks.extension_registry[effective[:type]]
         if hook
           hook.call(mod, domain, runtime)
         elsif sql_adapter_type?(effective[:type])

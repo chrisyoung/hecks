@@ -80,7 +80,7 @@ RSpec.describe Hecks::ReadmeGenerator do
       expect(readme).to include("| `hecks build` | Validates and generates the domain gem |")
     end
 
-    it "generates a connections section from ConnectionDocs" do
+    it "generates a connections section from ExtensionDocs" do
       write("docs/readme_template.md", "{{connections}}")
 
       described_class.new(root).generate

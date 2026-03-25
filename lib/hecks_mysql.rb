@@ -11,7 +11,7 @@
 #
 require_relative "hecks_persist"
 
-Hecks.register_connection(:mysql) do |domain_mod, domain, runtime|
+Hecks.register_extension(:mysql) do |domain_mod, domain, runtime|
   require "sequel"
   db = Sequel.connect(adapter: :mysql2,
     host:     ENV.fetch("HECKS_DB_HOST", "localhost"),

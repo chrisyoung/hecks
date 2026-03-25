@@ -31,7 +31,7 @@
 - Domain version pinning and local path loading in configuration
 
 ## Domain Connections
-- Connection registry: `Hecks.register_connection(:sqlite) { |mod, domain, runtime| ... }`
+- Extension registry: `Hecks.register_extension(:sqlite) { |mod, domain, runtime| ... }`
 - Per-database gems: `hecks_sqlite`, `hecks_postgres`, `hecks_mysql` — auto-wire when in Gemfile
 - `hecks_serve` registers `:http` — adds `CatsDomain.serve(port: 9292)`
 - `hecks_ai` registers `:mcp` — adds `CatsDomain.mcp`
