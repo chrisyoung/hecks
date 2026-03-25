@@ -96,7 +96,13 @@ module Hecks
       event_params = event_class.instance_method(:initialize).parameters.map { |_, n| n }
       attrs = {}
       event_params.each do |param|
-        attrs[param] = send(param) if respond_to?(param, true)
+        if param == :aggregate_id && aggregate
+          attrs[param] = aggregate.id
+        elsif respond_to?(param, true)
+          attrs[param] = send(param)
+        elsif aggregate&.respond_to?(param)
+          attrs[param] = aggregate.send(param)
+        end
       end
       @event = event_class.new(**attrs)
       self.class.event_bus&.publish(@event)
