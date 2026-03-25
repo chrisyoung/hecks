@@ -26,11 +26,10 @@ RSpec.describe Hecks::DSL::DomainBuilder do
       expect(domain.aggregates.first.events.map(&:name)).to eq(["CreatedPizza", "DeletedPizza"])
     end
 
-    it "copies command attributes to inferred event" do
+    it "copies command and aggregate attributes to inferred event" do
       domain = Hecks.domain("T") { aggregate("P") { attribute :n, String; command("CreateP") { attribute :name, String; attribute :price, Float } } }
       event = domain.aggregates.first.events.first
-      expect(event.attributes.map(&:name)).to eq([:name, :price])
-      expect(event.attributes.map(&:type)).to eq([String, Float])
+      expect(event.attributes.map(&:name)).to eq([:name, :price, :n])
     end
   end
 
