@@ -4,7 +4,11 @@
 
 # What the Hecks?!
 
-Describe your business in Ruby. Hecks generates the code.
+**AI can generate code. It can't enforce your architecture.**
+
+Hecks is a domain framework that validates your business model against DDD rules at build time, enforces bounded context boundaries through ports, and generates a portable Ruby gem from a 30-line DSL file. The generated gem has zero framework dependencies -- it runs in Rails, Sinatra, a script, or a test, unchanged.
+
+These aren't things you prompt for. They're compile-time guarantees: no circular references between aggregates, no commands without verb-phrase names, no value objects holding cross-aggregate references, no bidirectional coupling. Twelve rules, checked before a single line of code is generated. Every violation comes with a fix suggestion.
 
 ```ruby
 hecks(scratch sketch)> aggregate "Cat"
@@ -21,13 +25,9 @@ Command: Adopt
 
 hecks(scratch play)> Cat.count
 => 1
-
-hecks(scratch play)> cat.reset!
-hecks(scratch play)> cat.name
-=> "Whiskers"
 ```
 
-Most frameworks make the database the center of your application. Hecks makes your **business** the center. Databases, notifications, other domains, and HTTP are pluggable infrastructure -- all through the same port abstraction.
+Sketch a domain in the REPL. Play with live objects. Watch events fire and policies trigger. When it's right, `hecks build` generates a versioned gem with specs, ports, adapters, and documentation. Swap in SQLite, Postgres, or MySQL with one line. Serve it over HTTP or MCP with another. The domain never changes.
 
 ---
 
@@ -551,6 +551,16 @@ Hypothetical $100k/15% loan high risk? true
 | **Schema evolution** | Hand-written migrations | Auto-generated from domain diffs |
 
 ActiveRecord is the fastest path from idea to working CRUD app. Hecks is for when you want the domain to outlive the framework -- portable, testable, and explicit about every boundary.
+
+### Why not just have AI generate the code?
+
+AI is good at writing code. It's bad at maintaining constraints across a codebase over time.
+
+Ask Claude to generate a domain layer and you'll get something that works today. Next week, someone adds a bidirectional reference between aggregates. The week after, a command gets named "ProcessData" instead of a verb phrase. A month later, a value object holds a reference to an aggregate root. None of these are bugs -- the code runs fine. They're architectural violations that compound silently until the domain is unmaintainable.
+
+Hecks catches all of these at build time. It's not generating code from a prompt -- it's compiling a formal domain model through 12 DDD validation rules, then generating code that is structurally correct by construction. The generated gem has typed ports, event-driven policies, and bounded context boundaries that can't be bypassed. You can't accidentally couple two domains because the only way through is a port.
+
+Use AI to help you write the DSL. Use Hecks to guarantee the architecture holds.
 
 ## License
 
