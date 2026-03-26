@@ -310,8 +310,10 @@
 
 ### Claude Code Integration
 - `hecks claude` starts background file watchers, then launches Claude Code with `--dangerously-skip-permissions`
-- `hecks_watchers` component: FileSize, CrossRequire, Autoloads, SpecCoverage, Runner, LogReader, Logger
+- `hecks_watchers` component: FileSize, CrossRequire, Autoloads, SpecCoverage, DocReminder, PreCommit, Runner, LogReader, Logger
 - Watchers poll every second: file-size (180-line warning), cross-component require_relative, autoload registration
+- `PreCommit` runner consolidates all watchers into a single pre-commit hook call (CrossRequire blocks, rest advisory)
+- `DocReminder` watcher checks staged files for missing FEATURES.md and CHANGELOG updates
 - PostToolUse hook reads `tmp/watcher.log` after every Edit/Write/Bash so Claude sees watcher output inline
 - Watcher processes are cleaned up automatically when Claude exits
 - Bin scripts are thin wrappers that delegate to `HecksWatchers::*` classes

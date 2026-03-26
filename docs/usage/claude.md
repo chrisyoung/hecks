@@ -17,13 +17,19 @@ Watchers started (PID: 12345)
 
 ## Watchers
 
-The `hecks_watchers` component provides the watcher classes. Three run on every detected file change:
+The `hecks_watchers` component provides the watcher classes:
 
 - **HecksWatchers::FileSize** — warns when files approach the 200-line code limit (triggers at 180)
 - **HecksWatchers::CrossRequire** — fails if `require_relative` escapes a component boundary
 - **HecksWatchers::Autoloads** — warns when a new class/module file isn't registered in `autoloads.rb`
+- **HecksWatchers::SpecCoverage** — warns when a new lib file has no corresponding spec
+- **HecksWatchers::DocReminder** — reminds about FEATURES.md and CHANGELOG updates when lib files change
 
 The `bin/watch-*` scripts are thin wrappers that delegate to these classes.
+
+## Pre-Commit Hook
+
+`bin/pre-commit` (symlinked to `.git/hooks/pre-commit`) runs specs and all watchers on every commit. `HecksWatchers::PreCommit` consolidates the watchers into a single call — `CrossRequire` blocks the commit, the rest are advisory warnings.
 
 ## PostToolUse Hook
 
