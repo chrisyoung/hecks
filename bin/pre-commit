@@ -34,5 +34,14 @@ fi
 
 echo "Tests passed: ${duration}s"
 
-# Check for missing doc updates
+# Cross-component require_relative check (blocks commit)
+ruby bin/watch-cross-require 2>/dev/null
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+# Advisory watchers (warn but don't block)
+ruby bin/watch-file-size 2>/dev/null
 ruby bin/check-docs 2>/dev/null
+ruby bin/watch-spec-coverage 2>/dev/null
+ruby bin/watch-autoloads 2>/dev/null
