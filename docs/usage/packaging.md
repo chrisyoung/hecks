@@ -39,3 +39,26 @@ hecks_on_rails
 ```
 
 Extension packages auto-wire when present — no configuration needed.
+
+## Building and Installing Locally
+
+Build all component gems and the meta-gem:
+
+```bash
+$ hecks gem build
+Building hecksties...
+Building hecks_model...
+Building hecks meta-gem...
+```
+
+Build and install everything locally:
+
+```bash
+$ hecks gem install
+Building hecksties...
+Installed hecksties-2026.03.26.0.gem
+...
+Installed hecks-2026.03.26.0.gem
+```
+
+Components are built in dependency order. Missing components are skipped. The build stops on first failure.

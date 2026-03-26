@@ -308,6 +308,18 @@
 - Returns error type, command, aggregate, message, and fix suggestion as machine-readable JSON
 - AI agents can act on failures programmatically without string parsing
 
+### Claude Code Integration
+- `hecks claude` starts background file watchers, then launches Claude Code with `--dangerously-skip-permissions`
+- Watchers poll every second: file-size (180-line warning), cross-component require_relative, autoload registration
+- PostToolUse hook reads `tmp/watcher.log` after every Edit/Write/Bash so Claude sees watcher output inline
+- Watcher processes are cleaned up automatically when Claude exits
+
+### Gem Packaging
+- `hecks gem build` builds all component gems and the meta-gem via GemBuilder
+- `hecks gem install` builds, installs, and cleans up all component gems in dependency order
+- Components without a gemspec are skipped with a warning
+- Stops on first failure rather than continuing with a broken build
+
 ### Domain Flow Generation
 - `domain.flows` generates plain-English descriptions of reactive chains: command → event → policy → command
 - `domain.flows_mermaid` generates Mermaid sequence diagrams of the same flows

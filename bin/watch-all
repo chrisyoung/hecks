@@ -5,6 +5,9 @@
 PROJECT_ROOT = File.expand_path("..", __dir__)
 Dir.chdir(PROJECT_ROOT)
 
+LOG_FILE = File.join(PROJECT_ROOT, "tmp", "watcher.log")
+$stdout.sync = true
+
 # Track file mtimes
 $snapshot = {}
 
@@ -20,6 +23,11 @@ def run_watchers
   system("ruby bin/watch-autoloads 2>/dev/null")
 end
 
+def log(msg)
+  puts msg
+  File.open(LOG_FILE, "a") { |f| f.puts msg }
+end
+
 $snapshot = snapshot_files
 
 loop do
@@ -32,10 +40,10 @@ loop do
 
   unless changed.empty? && added.empty? && removed.empty?
     all = changed + added
-    puts "\n──── #{all.size} file(s) changed ────"
-    all.each { |f| puts "  #{f}" }
+    log "\n──── #{all.size} file(s) changed ────"
+    all.each { |f| log "  #{f}" }
     run_watchers
-    puts "────────────────────────────────"
+    log "────────────────────────────────"
     $snapshot = current
   end
 end

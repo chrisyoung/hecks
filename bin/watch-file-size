@@ -3,6 +3,12 @@
 # The hard limit is 200 — this catches files approaching it.
 
 LIMIT = 180
+LOG_FILE = File.join(File.expand_path("..", __dir__), "tmp", "watcher.log")
+
+def log(msg)
+  puts msg
+  File.open(LOG_FILE, "a") { |f| f.puts msg }
+end
 
 staged = `git diff --cached --name-only`.split("\n")
 rb_files = staged.select { |f| f.end_with?(".rb") && File.exist?(f) }
@@ -27,7 +33,7 @@ rb_files.each do |path|
 end
 
 unless violations.empty?
-  puts "\n⚠  Files approaching 200-line code limit:"
-  violations.each { |v| puts v }
-  puts ""
+  log "\n⚠  Files approaching 200-line code limit:"
+  violations.each { |v| log v }
+  log ""
 end

@@ -79,6 +79,14 @@ $ ruby app.rb
 
 One command scaffolds the project. `Hecks.boot(__dir__)` does the rest -- loads, validates, generates, and wires everything.
 
+### Developing with Claude Code
+
+`hecks claude` starts file watchers and launches Claude Code with dangerously-skip-permissions:
+
+```bash
+$ hecks claude
+```
+
 ## The Seam
 
 A domain has a boundary. **Ports are the only way through it.**
@@ -512,6 +520,7 @@ end
 | `hecks migrations` | Schema migration management |
 | `hecks llms` | Generate AI-readable domain summary (llms.txt) |
 | `hecks version` | Framework or domain gem version |
+| `hecks claude` | Start file watchers and launch Claude Code (see below) |
 
 ## AI-Native
 
@@ -572,6 +581,26 @@ When commands fail, errors return machine-readable JSON:
 ```
 
 AI agents can act on failures programmatically — no string parsing.
+
+### hecks claude
+
+A CLI command that starts background file watchers, then launches Claude Code with `--dangerously-skip-permissions` so it can work autonomously.
+
+```bash
+$ hecks claude
+Watchers started (PID: 12345)
+# Claude Code session opens
+```
+
+What it does:
+
+1. Kills any existing watcher processes
+2. Starts `watch-all` in the background -- polls every second for `.rb` file changes and runs three watchers:
+   - **watch-file-size** -- warns when files approach the 200-line code limit (triggers at 180)
+   - **watch-cross-require** -- fails if `require_relative` escapes a component boundary
+   - **watch-autoloads** -- warns when a new class/module file isn't registered in `autoloads.rb`
+3. Launches `claude --dangerously-skip-permissions`, passing through any extra arguments
+4. Cleans up watcher processes when Claude exits
 
 ## Banking Example
 
