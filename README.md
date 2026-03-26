@@ -29,6 +29,21 @@ hecks(scratch play)> Cat.count
 
 Sketch a domain in the REPL. Play with live objects. Watch events fire and policies trigger. When it's right, `hecks build` generates a versioned gem with specs, ports, adapters, and documentation. Swap in SQLite, Postgres, or MySQL with one line. Serve it over HTTP or MCP with another. The domain never changes.
 
+```bash
+# Serve it over HTTP
+$ hecks serve
+Listening on http://localhost:9292
+POST /cats/adopt    {"name": "Whiskers"}  => 201 Created
+GET  /cats          => [{"id": "...", "name": "Whiskers"}]
+
+# Or expose it as an MCP server for AI agents
+$ hecks mcp
+MCP server running on stdio
+Tools: adopt_cat, find_cat, all_cats, cat_count
+```
+
+Same domain. No code changes. HTTP and MCP are just ports -- plug them in, unplug them, the domain doesn't know or care.
+
 ---
 
 **Table of Contents**
