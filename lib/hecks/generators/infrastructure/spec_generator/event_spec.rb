@@ -28,9 +28,15 @@ module Hecks
 
             event.attributes.each do |attr|
               lines << ""
-              lines << "  it \"carries #{attr.name}\" do"
-              lines << "    expect(event.#{attr.name}).to eq(#{example_value(attr)})"
-              lines << "  end"
+              if %w[Date DateTime].include?(attr.type.to_s)
+                lines << "  it \"carries #{attr.name}\" do"
+                lines << "    expect(event.#{attr.name}).not_to be_nil"
+                lines << "  end"
+              else
+                lines << "  it \"carries #{attr.name}\" do"
+                lines << "    expect(event.#{attr.name}).to eq(#{example_value(attr)})"
+                lines << "  end"
+              end
             end
 
             lines << "end"

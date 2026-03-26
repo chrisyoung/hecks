@@ -20,19 +20,21 @@
 #   end
 #
 require "json"
+require "date"
+require "ostruct"
 
 # Suppress json-schema MultiJSON deprecation from mcp gem
 JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
 
 require_relative "hecks/errors"
 require_relative "hecks/autoloads"
-require_relative "hecks/domain_inspector"
-require_relative "hecks/domain_builder_methods"
-require_relative "hecks/domain_compiler"
-require_relative "hecks/in_memory_loader"
-require_relative "hecks/event_storm_importer"
-require_relative "hecks/domain_visualizer_methods"
-require_relative "hecks/boot"
+require_relative "hecks/domain/inspector"
+require_relative "hecks/domain/builder_methods"
+require_relative "hecks/domain/compiler"
+require_relative "hecks/domain/in_memory_loader"
+require_relative "hecks/domain/event_storm_importer"
+require_relative "hecks/domain/visualizer_methods"
+require_relative "hecks/runtime/boot"
 
 module Hecks
   extend DomainInspector
@@ -48,17 +50,76 @@ module Hecks
   @last_domain = nil
   @load_strategy = :files
   @extension_registry = {}
+  @extension_meta = {}
+  @cross_domain_queries = {}
+  @cross_domain_views = {}
 
   def self.extension_registry
     @extension_registry
+  end
+
+  def self.extension_meta
+    @extension_meta
   end
 
   def self.register_extension(name, &hook)
     @extension_registry[name.to_sym] = hook
   end
 
+  # Extensions call this to describe their config for generate:config.
+  #
+  #   Hecks.describe_extension(:sockets,
+  #     description: "WebSocket server for live domain events",
+  #     config: { port: { default: 9293, desc: "WebSocket port" } },
+  #     wires_to: :event_bus)
+  #
+  def self.describe_extension(name, description:, config: {}, wires_to: nil)
+    @extension_meta[name.to_sym] = {
+      description: description, config: config, wires_to: wires_to
+    }
+  end
+
   def self.last_domain
     @last_domain
+  end
+
+  def self.event_bus
+    @shared_event_bus
+  end
+
+  def self.queue
+    @queue ||= Queue::MemoryQueue.new
+  end
+
+  def self.queue=(q)
+    @queue = q
+  end
+
+  def self.cross_domain_query(name, &block)
+    require_relative "hecks/ports/queries/cross_domain_query"
+    @cross_domain_queries[name] = CrossDomainQuery.new(name, &block)
+  end
+
+  def self.query(name, **params)
+    q = @cross_domain_queries[name]
+    raise Error, "Unknown cross-domain query: #{name}" unless q
+    q.call(**params)
+  end
+
+  def self.cross_domain_queries
+    @cross_domain_queries
+  end
+
+  def self.cross_domain_view(name, &block)
+    require_relative "hecks/ports/event_bus/cross_domain_view"
+    view = CrossDomainView.new(name, &block)
+    @cross_domain_views[name] = view
+    view.subscribe(@shared_event_bus) if @shared_event_bus
+    view
+  end
+
+  def self.cross_domain_views
+    @cross_domain_views
   end
 
   def self.last_domain=(domain)
@@ -127,5 +188,11 @@ module Hecks
     Runtime.new(domain, **opts, &config)
   end
 
-  require "active_hecks/railtie" if defined?(::Rails::Railtie)
+  if defined?(::Rails::Railtie)
+    begin
+      require "active_hecks/railtie"
+    rescue LoadError
+      # active_hecks gem not installed
+    end
+  end
 end

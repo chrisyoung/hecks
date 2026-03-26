@@ -1,29 +1,35 @@
 class OrdersController < ApplicationController
   def index
-    if params[:status] == "pending"
-      @orders = Order.pending
-    else
-      @orders = Order.all
-    end
-  end
-
-  def new
-    @pizza = Pizza.find(params[:pizza_id])
-    redirect_to pizzas_path, alert: "Pizza not found" unless @pizza
-    @order = Order.new(pizza_id: @pizza.id, quantity: nil, status: nil)
+    @orders = Order.all
+    @pizzas = Pizza.all
+    @pricing = PricingConfig.all.first
   end
 
   def create
+    toppings = Array(params[:toppings]).reject(&:blank?).join(",")
     @order = Order.place(
-      pizza_id: order_params[:pizza_id],
-      quantity: order_params[:quantity].to_i
+      pizza_id: params[:pizza_id],
+      quantity: params[:quantity].to_i,
+      extra_toppings: toppings.presence
     )
-    redirect_to orders_path, notice: "Order placed!"
+    @pizzas = Pizza.all
+    @pricing = PricingConfig.all.first
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to orders_path }
+    end
+  rescue PizzasDomain::ValidationError => e
+    redirect_to orders_path, alert: e.message
   end
 
-  private
+  def cancel
+    Order.cancel_order(pizza_id: params[:id])
+    @order_id = params[:id]
 
-  def order_params
-    params.require(:order).permit(:pizza_id, :quantity)
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to orders_path }
+    end
   end
 end

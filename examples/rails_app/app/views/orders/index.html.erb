@@ -1,12 +1,64 @@
 <h1>Orders</h1>
 
-<% if @orders.empty? %>
-  <p>No orders yet. <%= link_to "Browse pizzas", pizzas_path %> and place one!</p>
-<% end %>
+<% extra_price = @pricing&.extra_topping_price || 200 %>
+<% all_toppings = @pizzas.flat_map { |p| (p.respond_to?(:toppings) && p.toppings) ? p.toppings.map { |t| t.respond_to?(:name) ? t.name : t.to_s } : [] }.uniq.sort %>
 
-<% @orders.each do |order| %>
+<h3>Menu</h3>
+<% @pizzas.each do |pizza| %>
   <div class="card">
-    <p><strong>Pizza:</strong> <%= order.pizza_id %></p>
-    <p><strong>Quantity:</strong> <%= order.quantity %></p>
+    <div style="display:flex; justify-content:space-between; align-items:start">
+      <div>
+        <strong><%= pizza.name %></strong> — <%= pizza.description %>
+        <% if pizza.price && pizza.price > 0 %>
+          <span style="color:green; font-weight:bold">$<%= "%.2f" % (pizza.price / 100.0) %></span>
+        <% end %>
+        <% if pizza.respond_to?(:toppings) && pizza.toppings&.any? %>
+          <div class="toppings" style="margin-top:4px">
+            Included: <% pizza.toppings.each do |t| %>
+              <span class="topping-tag"><%= t.respond_to?(:name) ? t.name : t %></span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%= form_with url: orders_path, method: :post, style: "margin-top:8px" do |f| %>
+      <%= f.hidden_field :pizza_id, value: pizza.id %>
+
+      <% if all_toppings.any? %>
+        <div style="margin:6px 0">
+          <label style="font-weight:bold; font-size:13px">Extra Toppings <small style="color:#666">(+$<%= "%.2f" % (extra_price / 100.0) %> each)</small></label>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px">
+            <% all_toppings.each do |topping_name| %>
+              <label style="font-weight:normal; font-size:13px">
+                <%= check_box_tag "toppings[]", topping_name %> <%= topping_name %>
+              </label>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <div style="display:flex; gap:8px; align-items:center; margin-top:6px">
+        <label style="font-weight:bold; font-size:13px; margin:0">Qty</label>
+        <%= f.number_field :quantity, value: 1, min: 1, style: "width:60px; padding:4px" %>
+        <%= f.submit "Add to Order", class: "btn btn-sm" %>
+      </div>
+    <% end %>
   </div>
 <% end %>
+
+<% if @pizzas.empty? %>
+  <em>No pizzas — <a href="<%= admin_pizzas_path %>">create some first</a></em>
+<% end %>
+
+<h3>Your Orders</h3>
+<table>
+  <thead>
+    <tr><th>Pizza</th><th>Extras</th><th>Qty</th><th>Total</th><th>Status</th><th></th></tr>
+  </thead>
+  <tbody id="orders-table">
+    <% @orders.each do |order| %>
+      <%= render partial: "orders/order_row", locals: { order: order, pizzas: @pizzas, extra_price: extra_price } %>
+    <% end %>
+  </tbody>
+</table>

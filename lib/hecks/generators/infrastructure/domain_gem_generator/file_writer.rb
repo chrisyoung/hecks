@@ -84,6 +84,11 @@ module Hecks
                 write_file(root, "#{base}/specifications/#{Hecks::Utils.underscore(spec.name)}.rb", spec_gen.generate)
               end
 
+              if agg.lifecycle
+                lc_gen = Domain::LifecycleGenerator.new(agg.lifecycle, domain_module: mod, aggregate_name: safe_name)
+                write_file(root, "#{base}/lifecycle.rb", lc_gen.generate)
+              end
+
               # Create conventional folders even when empty
               %w[commands events policies queries subscribers specifications].each do |dir|
                 FileUtils.mkdir_p(File.join(root, base, dir))
@@ -115,6 +120,30 @@ module Hecks
               snake = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name))
               write_file(root, "lib/#{gem_name}/adapters/#{snake}_memory_repository.rb",
                          Infrastructure::MemoryAdapterGenerator.new(agg, domain_module: mod).generate)
+            end
+          end
+
+          def generate_workflows(root, gem_name, mod)
+            @domain.workflows.each do |wf|
+              snake = Hecks::Utils.underscore(wf.name)
+              write_file(root, "lib/#{gem_name}/workflows/#{snake}.rb",
+                         Domain::WorkflowGenerator.new(wf, domain_module: mod).generate)
+            end
+          end
+
+          def generate_views(root, gem_name, mod)
+            @domain.views.each do |v|
+              snake = Hecks::Utils.underscore(v.name)
+              write_file(root, "lib/#{gem_name}/views/#{snake}.rb",
+                         Domain::ViewGenerator.new(v, domain_module: mod).generate)
+            end
+          end
+
+          def generate_services(root, gem_name, mod)
+            @domain.services.each do |svc|
+              snake = Hecks::Utils.underscore(svc.name)
+              write_file(root, "lib/#{gem_name}/services/#{snake}.rb",
+                         Domain::ServiceGenerator.new(svc, domain_module: mod).generate)
             end
           end
 

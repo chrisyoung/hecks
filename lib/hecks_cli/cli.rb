@@ -11,9 +11,12 @@ rescue LoadError
   raise LoadError, "The hecks CLI requires thor. Add gem 'thor' to your Gemfile."
 end
 require "fileutils"
+require_relative "conflict_handler"
 
 module Hecks
   class CLI < Thor
+    include ConflictHandler
+
     def self.exit_on_failure?
       true
     end
@@ -30,6 +33,8 @@ module Hecks
     # Shared helpers for domain resolution live here; individual commands
     # are loaded from cli/commands/*.rb and reopen this class.
     class Domain < Thor
+      include ConflictHandler
+
       private
 
       def find_domain_file

@@ -34,9 +34,12 @@ module Hecks
       end
 
       def generate_spec_helper
+        needs_date = @domain.aggregates.any? { |a|
+          a.attributes.any? { |attr| %w[Date DateTime].include?(attr.type.to_s) }
+        }
         <<~RUBY
           require "hecks"
-          require "#{@domain.gem_name}"
+          #{"require \"date\"\n" if needs_date}require "#{@domain.gem_name}"
 
           RSpec.configure do |config|
             config.expect_with :rspec do |expectations|

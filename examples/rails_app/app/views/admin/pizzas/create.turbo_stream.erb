@@ -1,0 +1,12 @@
+<%= turbo_stream.append "pizzas" do %>
+  <%= render partial: "admin/pizzas/pizza", locals: { pizza: @pizza } %>
+<% end %>
+
+<%= turbo_stream.replace "new-pizza-form" do %>
+  <%= form_with url: admin_pizzas_path, method: :post, id: "new-pizza-form" do |f| %>
+    <div><%= f.label :name %><%= f.text_field :name, required: true %></div>
+    <div><%= f.label :description %><%= f.text_field :description %></div>
+    <div><%= f.label :price, "Price (cents)" %><%= f.number_field :price, min: 0, placeholder: "e.g. 1299" %></div>
+    <%= f.submit "Create Pizza" %>
+  <% end %>
+<% end %>

@@ -21,7 +21,8 @@ module Hecks
         from = mapping.delete(:from)
         mapping.each do |command_name, target_state|
           if from
-            @transitions[command_name.to_s] = { target: target_state.to_s, from: from.to_s }
+            from_val = from.is_a?(Array) ? from.map(&:to_s) : from.to_s
+            @transitions[command_name.to_s] = { target: target_state.to_s, from: from_val }
           else
             @transitions[command_name.to_s] = target_state.to_s
           end

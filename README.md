@@ -108,6 +108,16 @@ $ ruby app.rb
 
 That's it. One command scaffolds the project. `Hecks.boot(__dir__)` does the rest.
 
+## Rails
+
+```
+$ rails generate active_hecks:init
+```
+
+One command. Domain objects work like ActiveRecord. Every event streams to the browser in real-time. No custom JavaScript.
+
+[Rails Setup](docs/usage/hecks_on_rails.md) · [HecksLive](docs/usage/hecks_live.md) · [Turbo Streams](docs/usage/turbo_streams.md) · [Generators](docs/usage/rails_generators.md) · [Packaging](docs/usage/packaging.md)
+
 ## The DSL
 
 ```ruby

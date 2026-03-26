@@ -28,7 +28,7 @@ module Hecks
 
       def generate
         lines = []
-        lines << "require 'hecks/model'"
+        lines << "require 'hecks/mixins/model'"
         lines << ""
         lines << "module #{@domain_module}"
         lines << "  class #{@safe_name}"
@@ -39,6 +39,7 @@ module Hecks
         end
         if @aggregate.lifecycle
           lines << ""
+          lines << "    # State predicates — see lifecycle.rb for full state machine"
           @aggregate.lifecycle.states.each do |state|
             lines << "    def #{state}?; #{@aggregate.lifecycle.field} == \"#{state}\"; end"
           end
@@ -48,18 +49,15 @@ module Hecks
           lines << ""
           enum_attrs.each do |attr|
             values = attr.enum.map(&:inspect).join(", ")
-            lines << "    VALID_#{attr.name.to_s.upcase} = [#{values}].freeze"
+            const = "VALID_#{attr.name.to_s.upcase}"
+            lines << "    #{const} = [#{values}].freeze unless defined?(#{const})"
           end
         end
         unless @aggregate.validations.empty? && @aggregate.invariants.empty? && enum_attrs.empty?
           lines << ""
           lines << "    private"
           lines << ""
-          lines.concat(validation_lines) unless @aggregate.validations.empty?
-          unless enum_attrs.empty?
-            lines << "" unless @aggregate.validations.empty?
-            lines.concat(enum_validation_lines(enum_attrs))
-          end
+          lines.concat(combined_validation_lines(enum_attrs))
           lines << "" unless (@aggregate.validations.empty? && enum_attrs.empty?) || @aggregate.invariants.empty?
           lines.concat(invariant_lines) unless @aggregate.invariants.empty?
         end
@@ -70,13 +68,21 @@ module Hecks
 
       private
 
-      def enum_validation_lines(enum_attrs)
+      def combined_validation_lines(enum_attrs)
         lines = ["    def validate!"]
-        lines << "      super"
+        @aggregate.validations.each do |v|
+          field = v.field
+          if v.rules[:presence]
+            lines << "      raise ValidationError, \"#{field} can't be blank\" if #{field}.nil? || (#{field}.respond_to?(:empty?) && #{field}.empty?)"
+          end
+          if v.rules[:type]
+            lines << "      raise ValidationError, \"#{field} must be a #{v.rules[:type]}\" unless #{field}.is_a?(#{v.rules[:type]})"
+          end
+        end
         enum_attrs.each do |attr|
           const = "VALID_#{attr.name.to_s.upcase}"
           lines << "      if #{attr.name} && !#{const}.include?(#{attr.name})"
-          lines << "        raise self.class::ValidationError, \"#{attr.name} must be one of: \#{#{const}.join(', ')}, got: \#{#{attr.name}}\""
+          lines << "        raise ValidationError, \"#{attr.name} must be one of: \#{#{const}.join(', ')}, got: \#{#{attr.name}}\""
           lines << "      end"
         end
         lines << "    end"

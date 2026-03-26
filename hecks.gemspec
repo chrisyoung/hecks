@@ -22,10 +22,13 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rwordnet", ">= 1.0", "< 3.0"
   spec.add_dependency "activemodel", ">= 6.0", "< 10.0"
 
-  # Optional — connection gems bring their own drivers
-  # gem "hecks_sqlite"  → sequel + sqlite3
+  # Optional — companion gems bring their own drivers
+  # gem "hecks_on_rails" → active_hecks + hecks_live (the works)
+  # gem "active_hecks"   → activemodel (validations, persistence, railtie)
+  # gem "hecks_live"     → turbo-rails (real-time Turbo Streams)
+  # gem "hecks_sqlite"   → sequel + sqlite3
   # gem "hecks_postgres" → sequel + pg
-  # gem "hecks_mysql"   → sequel + mysql2
+  # gem "hecks_mysql"    → sequel + mysql2
   spec.add_development_dependency "sequel", "~> 5.0"
   spec.add_development_dependency "sqlite3", ">= 1.4", "< 3.0"
   spec.add_development_dependency "thor", "~> 1.0"

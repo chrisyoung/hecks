@@ -1,0 +1,48 @@
+require "spec_helper"
+require "hecks/extensions/cqrs"
+
+RSpec.describe HecksCqrs do
+  let(:mod) do
+    m = Module.new
+    m.extend(Hecks::DomainConnections)
+    m
+  end
+
+  describe ".active?" do
+    it "returns false when no connections configured" do
+      expect(HecksCqrs.active?(mod)).to be false
+    end
+
+    it "returns false with a single unnamed connection" do
+      mod.persist_to(:sqlite)
+      expect(HecksCqrs.active?(mod)).to be false
+    end
+
+    it "returns true with multiple named connections" do
+      mod.persist_to(:write, :sqlite)
+      mod.persist_to(:read, :sqlite, database: "read.db")
+      expect(HecksCqrs.active?(mod)).to be true
+    end
+  end
+
+  describe ".connection_for" do
+    it "returns nil when no connections configured" do
+      expect(HecksCqrs.connection_for(mod, :write)).to be_nil
+    end
+
+    it "returns config for a named connection" do
+      mod.persist_to(:write, :sqlite)
+      expect(HecksCqrs.connection_for(mod, :write)).to eq({ type: :sqlite })
+    end
+
+    it "returns config for :default unnamed connection" do
+      mod.persist_to(:sqlite)
+      expect(HecksCqrs.connection_for(mod, :default)).to eq({ type: :sqlite })
+    end
+
+    it "returns nil for unknown connection name" do
+      mod.persist_to(:write, :sqlite)
+      expect(HecksCqrs.connection_for(mod, :read)).to be_nil
+    end
+  end
+end

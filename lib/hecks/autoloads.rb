@@ -7,23 +7,27 @@
 # hecks_persist, hecks_cli).
 #
 module Hecks
-  autoload :Command,        "hecks/command"
-  autoload :Model,           "hecks/model"
-  autoload :Query,           "hecks/query"
-  autoload :Specification,   "hecks/specification"
+  # Mixins (included into generated classes)
+  autoload :Command,        "hecks/mixins/command"
+  autoload :Model,          "hecks/mixins/model"
+  autoload :Query,          "hecks/mixins/query"
+  autoload :Specification,  "hecks/mixins/specification"
+
+  # Framework plumbing
   autoload :Utils,          "hecks/utils"
   autoload :VERSION,        "hecks/version"
-  autoload :Configuration,  "hecks/configuration"
+  autoload :Configuration,  "hecks/runtime/configuration"
   autoload :CLI,            "hecks_cli/cli"
   autoload :Session,        "hecks/session"
-  autoload :Validator,      "hecks/validator"
-  autoload :Versioner,      "hecks/versioner"
-  autoload :Migrations,     "hecks/migrations"
-  autoload :DomainConnections, "hecks/domain_connections"
-  autoload :DomainGlossary,  "hecks/domain_glossary"
-  autoload :DomainVisualizer, "hecks/domain_visualizer"
-  autoload :DslSerializer,      "hecks/dsl_serializer"
-  autoload :ConsoleRunner,      "hecks/console_runner"
+  autoload :Versioner,      "hecks/domain/versioner"
+  autoload :Migrations,     "hecks/domain/migrations"
+
+  # Domain tools
+  autoload :Validator,         "hecks/domain/validator"
+  autoload :DomainConnections, "hecks/domain/connections"
+  autoload :DomainGlossary,    "hecks/domain/glossary"
+  autoload :DomainVisualizer,  "hecks/domain/visualizer"
+  autoload :DslSerializer,     "hecks/domain/dsl_serializer"
 
   module ValidationRules
     autoload :BaseRule,    "hecks/validation_rules/base_rule"
@@ -69,26 +73,30 @@ module Hecks
     autoload :Result,        "hecks/event_storm/result"
   end
 
-  autoload :Runtime,          "hecks/services/runtime"
-  autoload :Application,      "hecks/services/runtime"
-  autoload :AggregateWiring,    "hecks/services/aggregate_wiring"
-  autoload :AttachmentMethods,  "hecks/services/attachment_methods"
-  autoload :EventBus,           "hecks/services/event_bus"
-  autoload :PortEnforcer,       "hecks/services/port_enforcer"
-  autoload :Persistence,        "hecks/services/persistence"
-  autoload :Querying,           "hecks/services/querying"
-  autoload :Commands,           "hecks/services/commands"
-  autoload :Introspection,      "hecks/services/introspection"
-  autoload :Versioning,         "hecks/services/versioning"
-  autoload :ReadModelWiring,    "hecks/services/read_model_wiring"
-  autoload :WorkflowExecutor,   "hecks/services/workflow_executor"
+  autoload :Runtime,           "hecks/runtime"
+  autoload :Application,       "hecks/runtime"
+  # PortWiring is included directly in Runtime, no autoload needed
+  autoload :AttachmentMethods, "hecks/runtime/attachment_methods"
+  autoload :EventBus,          "hecks/ports/event_bus/event_bus"
+  autoload :FilteredEventBus,  "hecks/ports/event_bus/filtered_event_bus"
+  autoload :CrossDomainQuery,  "hecks/ports/queries/cross_domain_query"
+  autoload :CrossDomainView,   "hecks/ports/event_bus/cross_domain_view"
+  autoload :Queue,             "hecks/ports/queue"
+  autoload :PortEnforcer,      "hecks/runtime/port_enforcer"
+  autoload :Persistence,       "hecks/ports/repository"
+  autoload :Querying,          "hecks/ports/queries"
+  autoload :Commands,          "hecks/ports/commands"
+  autoload :Introspection,     "hecks/runtime/introspection"
+  autoload :Versioning,        "hecks/runtime/versioning"
+  autoload :ViewBinding,       "hecks/runtime/view_binding"
+  autoload :WorkflowExecutor,  "hecks/runtime/workflow_executor"
 
   module HTTP
-    autoload :DomainServer,       "hecks_serve/domain_server"
-    autoload :RpcServer,          "hecks_serve/rpc_server"
-    autoload :RouteBuilder,       "hecks_serve/route_builder"
-    autoload :OpenapiGenerator,   "hecks_serve/openapi_generator"
-    autoload :RpcDiscovery,       "hecks_serve/rpc_discovery"
-    autoload :JsonSchemaGenerator, "hecks_serve/json_schema_generator"
+    autoload :DomainServer,       "hecks/extensions/serve/domain_server"
+    autoload :RpcServer,          "hecks/extensions/serve/rpc_server"
+    autoload :RouteBuilder,       "hecks/extensions/serve/route_builder"
+    autoload :OpenapiGenerator,   "hecks/generators/docs/openapi_generator"
+    autoload :RpcDiscovery,       "hecks/generators/docs/rpc_discovery"
+    autoload :JsonSchemaGenerator, "hecks/generators/docs/json_schema_generator"
   end
 end

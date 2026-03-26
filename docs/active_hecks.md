@@ -199,11 +199,24 @@ pizza.as_json         # => {"id" => "...", "name" => "", ...}
 
 ### `rails generate active_hecks:init`
 
-Detects the `*_domain/` directory in your Rails root and sets up:
+One command sets up everything:
 
-1. **Initializer** — `config/initializers/hecks.rb` with `Hecks.configure`
-2. **README** — `app/models/HECKS_README.md` explaining the setup (no ActiveRecord models)
-3. **Test helper** — injects `require "hecks/test_helper"` into your spec/test helper
+1. **Gem** — adds `hecks_on_rails` to Gemfile
+2. **Domain detection** — finds `*_domain` gems (local directories or installed)
+3. **Initializer** — `config/initializers/hecks.rb`
+4. **README** — `app/models/HECKS_README.md` explaining the setup
+5. **Test helper** — injects `require "hecks/test_helper"` into spec/test helpers
+6. **HecksLive** — runs `active_hecks:live` automatically (see below)
+
+### `rails generate active_hecks:live`
+
+Sets up real-time domain event streaming:
+
+1. Enables ActionCable in `config/application.rb`
+2. Creates `config/cable.yml` and channel files
+3. Mounts ActionCable at `/cable`
+4. Pins `@hotwired/turbo-rails` via importmap
+5. Adds `action_cable_meta_tag` and `turbo_stream_from "hecks_live_events"` to layout
 
 ### `rails generate active_hecks:migration`
 
@@ -211,12 +224,22 @@ Compares the current domain against a saved snapshot (`.hecks_domain_snapshot.rb
 
 ## Railtie
 
-The Railtie handles two things automatically:
+The Railtie handles three things automatically:
 
-1. **Boot** — calls `Hecks.configuration.boot!` after initializers load (via `after: :load_config_initializers`)
-2. **Rake tasks**:
+1. **Boot** — detects already-booted domain gems or boots them via `Hecks.configure`
+2. **Live events** — wires `event_bus.on_any` to `Turbo::StreamsChannel` for real-time broadcasting
+3. **Rake tasks**:
    - `rake hecks:generate:migrations` — diff domain snapshots, generate SQL
-   - `rake hecks:db:migrate` — run pending Hecks SQL migrations (uses `ActiveRecord::Base.connection`)
+   - `rake hecks:db:migrate` — run pending Hecks SQL migrations
+
+### URL Helper Compatibility
+
+Command results (from `Pizza.create`, etc.) work with Rails URL helpers:
+
+```ruby
+pizza = Pizza.create(name: "Margherita")
+admin_pizza_path(pizza)  # works — ActiveHecks patches to_param on command classes
+```
 
 ## What Stays Out of the Domain
 

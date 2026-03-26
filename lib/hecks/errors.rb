@@ -11,6 +11,8 @@ module Hecks
   class Error < StandardError; end
   class ValidationError < Error; end
   class GuardRejected < Error; end
+  class PreconditionError < Error; end
+  class PostconditionError < Error; end
   class DomainLoadError < Error; end
   class MigrationError < Error; end
   class ConfigurationError < Error; end
