@@ -1,0 +1,20 @@
+#!/bin/bash
+# Start file watchers, then launch Claude Code.
+# Usage: bin/hecks_claude
+
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+# Kill any existing watchers
+pkill -f "ruby bin/watch-all" 2>/dev/null
+
+# Start watchers in background
+ruby bin/watch-all &
+WATCHER_PID=$!
+echo "Watchers started (PID: $WATCHER_PID)"
+
+# Clean up watchers when Claude exits
+trap "kill $WATCHER_PID 2>/dev/null" EXIT
+
+# Launch Claude Code
+claude "$@"
