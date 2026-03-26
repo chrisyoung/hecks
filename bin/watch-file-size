@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+# Warns when any staged .rb file exceeds 180 lines of code (headers excluded).
+# The hard limit is 200 — this catches files approaching it.
+
+LIMIT = 180
+
+staged = `git diff --cached --name-only`.split("\n")
+rb_files = staged.select { |f| f.end_with?(".rb") && File.exist?(f) }
+exit 0 if rb_files.empty?
+
+violations = []
+rb_files.each do |path|
+  lines = File.readlines(path)
+  # Skip doc header (leading comment block before first non-comment, non-blank line)
+  in_header = true
+  code_lines = lines.reject do |line|
+    stripped = line.strip
+    if in_header && (stripped.start_with?("#") || stripped.empty?)
+      true
+    else
+      in_header = false
+      stripped.empty? || stripped.start_with?("#")
+    end
+  end
+  count = code_lines.size
+  violations << "  #{path}: #{count} lines (limit: 200)" if count > LIMIT
+end
+
+unless violations.empty?
+  puts "\n⚠  Files approaching 200-line code limit:"
+  violations.each { |v| puts v }
+  puts ""
+end
