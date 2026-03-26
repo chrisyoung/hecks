@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ruby bin/update-codebase-index 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; if echo \"$f\" | grep -q 'lib/hecks_cli/'; then rm -f hecks-*.gem && gem build hecks.gemspec --silent 2>/dev/null && gem install hecks-*.gem --no-document 2>/dev/null && echo '{\"systemMessage\":\"Reinstalled hecks gem\"}'; fi; }",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
