@@ -2,30 +2,8 @@
 # Warns when a new .rb file is added to a component's lib/ without
 # a corresponding _spec.rb in that component's spec/.
 
-staged = `git diff --cached --diff-filter=A --name-only`.split("\n")
-new_lib_files = staged.select { |f| f.match?(%r{^[^/]+/lib/.*\.rb$}) }
-exit 0 if new_lib_files.empty?
+$LOAD_PATH.unshift File.expand_path("../hecks_watchers/lib", __dir__)
+require "hecks_watchers"
 
-missing = []
-new_lib_files.each do |path|
-  # hecks_runtime/lib/hecks/runtime/boot.rb → hecks_runtime/spec/runtime/boot_spec.rb
-  parts = path.split("/")
-  component = parts[0]
-  relative = parts[2..].join("/")  # strip component/lib/
-  # Remove the hecks/ or hecks_cli/ prefix from the relative path
-  relative = relative.sub(%r{^hecks(_\w+)?/}, "")
-  spec_path = "#{component}/spec/#{relative.sub(/\.rb$/, "_spec.rb")}"
-
-  # Also check without nested dirs (some specs are at component/spec/ root)
-  base_spec = "#{component}/spec/#{File.basename(path, ".rb")}_spec.rb"
-
-  unless File.exist?(spec_path) || File.exist?(base_spec) || staged.include?(spec_path) || staged.include?(base_spec)
-    missing << "  #{path} → expected #{spec_path}"
-  end
-end
-
-unless missing.empty?
-  puts "\n📋 New lib files without specs:"
-  missing.each { |m| puts m }
-  puts ""
-end
+project_root = File.expand_path("..", __dir__)
+HecksWatchers::SpecCoverage.new(project_root: project_root).call

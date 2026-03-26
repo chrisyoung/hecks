@@ -18,7 +18,7 @@ RSpec.describe Hecks::GemBuilder do
     it "lists all component gems in dependency order" do
       expect(described_class::COMPONENTS).to eq(%w[
         hecksties hecks_model hecks_domain hecks_runtime
-        hecks_session hecks_cli hecks_persist
+        hecks_session hecks_cli hecks_persist hecks_watchers
       ])
     end
   end
@@ -93,8 +93,8 @@ RSpec.describe Hecks::GemBuilder do
         builder.install
         builds = commands.select { |c| c.start_with?("gem build") }
         installs = commands.select { |c| c.start_with?("gem install") }
-        expect(builds.length).to eq(8)
-        expect(installs.length).to eq(8)
+        expect(builds.length).to eq(9)
+        expect(installs.length).to eq(9)
         expect(builds.last).to eq("gem build hecks.gemspec")
       end
     end

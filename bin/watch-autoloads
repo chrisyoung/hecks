@@ -1,34 +1,8 @@
 #!/usr/bin/env ruby
 # Warns when a new class/module file is added but not registered in autoloads.rb.
 
-AUTOLOADS_PATH = "hecksties/lib/hecks/autoloads.rb"
-LOG_FILE = File.join(File.expand_path("..", __dir__), "tmp", "watcher.log")
+$LOAD_PATH.unshift File.expand_path("../hecks_watchers/lib", __dir__)
+require "hecks_watchers"
 
-def log(msg)
-  puts msg
-  File.open(LOG_FILE, "a") { |f| f.puts msg }
-end
-
-staged = `git diff --cached --diff-filter=A --name-only`.split("\n")
-new_lib_files = staged.select { |f| f.match?(%r{^[^/]+/lib/hecks/.*\.rb$}) }
-exit 0 if new_lib_files.empty?
-
-autoloads = File.exist?(AUTOLOADS_PATH) ? File.read(AUTOLOADS_PATH) : ""
-
-missing = []
-new_lib_files.each do |path|
-  # Extract the expected class name from the file
-  basename = File.basename(path, ".rb")
-  # snake_case → PascalCase
-  class_name = basename.split("_").map(&:capitalize).join
-  # Check if it's registered as an autoload
-  unless autoloads.include?(":#{class_name},") || autoloads.include?(":#{class_name} ")
-    missing << "  #{class_name} (#{path})"
-  end
-end
-
-unless missing.empty?
-  log "\n📦 New files possibly missing from autoloads.rb:"
-  missing.each { |m| log m }
-  log "  Check hecksties/lib/hecks/autoloads.rb\n\n"
-end
+project_root = File.expand_path("..", __dir__)
+HecksWatchers::Autoloads.new(project_root: project_root).call
