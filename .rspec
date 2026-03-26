@@ -1,3 +1,5 @@
 --format documentation
 --color
+-I hecks_spec
 --require spec_helper
+--pattern {hecksties,hecks_model,hecks_domain,hecks_runtime,hecks_session,hecks_cli,hecks_persist}/spec/**/*_spec.rb
