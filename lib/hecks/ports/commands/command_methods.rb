@@ -4,6 +4,15 @@
 # shortcut methods on aggregate classes that delegate to command.call.
 # Also binds a .bulk method for composing queries with commands.
 #
+# This module is the bridge between the domain IR (command definitions)
+# and the runtime Ruby classes. During boot, +bind+ iterates over each
+# command in an aggregate, sets up its repository, event bus, handler,
+# guard, and pre/postconditions, then creates convenient shortcut methods
+# so callers can write +Pizza.create(name: "Margherita")+ instead of
+# +PizzasDomain::Pizza::Commands::CreatePizza.call(name: "Margherita")+.
+#
+# == Usage
+#
 #   Commands.bind(PizzaClass, pizza_aggregate, bus, repo, defaults)
 #   Pizza.create(name: "Margherita")  # delegates to CreatePizza.call(...)
 #   Pizza.bulk(:retire, where: { status: "active" })  # batch command
@@ -14,6 +23,24 @@
 module Hecks
   module Commands
     module CommandMethods
+      # Wires command classes to their repository and event bus, then creates shortcut methods.
+      #
+      # For each command defined on the aggregate, this method:
+      # 1. Auto-includes the Hecks::Command mixin if not already present
+      # 2. Sets the repository, event bus, handler, guard, and command bus references
+      # 3. Copies pre/postconditions from the domain IR
+      # 4. Resolves the event name from the corresponding event definition
+      # 5. Creates class-level and instance-level shortcut methods via +bind_shortcuts+
+      # 6. Binds the +.bulk+ method via +bind_bulk+
+      #
+      # @param klass [Class] the aggregate class (e.g., +PizzasDomain::Pizza+)
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate
+      #   definition from the domain IR
+      # @param bus [Hecks::Commands::CommandBus] the command bus (used for middleware dispatch
+      #   and to access the event bus)
+      # @param repo [Object] the repository instance for persisting this aggregate
+      # @param defaults [Hash] default attribute values (currently unused but reserved)
+      # @return [void]
       def self.bind(klass, aggregate, bus, repo, defaults)
         mod = begin; klass.const_get(:Commands); rescue NameError; nil; end
         return unless mod
@@ -51,13 +78,21 @@ module Hecks
         bind_bulk(klass, aggregate)
       end
 
-      # Adds a .bulk class method that composes queries with commands.
-      # Finds matching aggregates via where/all, optionally filters by
-      # specification, then executes a command on each match.
+      # Adds a +.bulk+ class method that composes queries with commands.
       #
+      # The bulk method finds matching aggregates via +where+ or +all+,
+      # optionally filters by a specification object, then executes the
+      # named command on each match. This is useful for batch operations
+      # like retiring all active widgets.
+      #
+      # @example
       #   Widget.bulk(:retire, where: { status: "active" })
       #   Widget.bulk(:suspend, where: {}, spec: HighRiskSpec)
       #
+      # @param klass [Class] the aggregate class to receive the +.bulk+ method
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate
+      #   definition, used to derive the ID field name
+      # @return [void]
       def self.bind_bulk(klass, aggregate)
         agg_snake = Hecks::Utils.underscore(aggregate.name)
 
@@ -82,14 +117,24 @@ module Hecks
         end
       end
 
-      # Creates class and instance shortcut methods on an aggregate class.
-      # Yields each command; the block must return a callable that accepts
-      # a keyword hash and returns the result.
+      # Creates class-level and instance-level shortcut methods on an aggregate class.
       #
-      #   bind_shortcuts(Cat, cat_aggregate) do |cmd|
-      #     ->(attrs) { playground.execute(cmd.name, **attrs) }
-      #   end
+      # For each command, derives a shortcut method name by stripping the aggregate
+      # name suffix (e.g., +create_pizza+ becomes +create+). Then defines:
       #
+      # - A singleton (class) method: +Pizza.create(name: "Margherita")+
+      # - An instance method: +pizza.update(name: "New Name")+ that auto-fills
+      #   attributes from the instance's own accessors
+      #
+      # The block must return a callable that accepts a keyword hash and performs
+      # the command execution.
+      #
+      # @param klass [Class] the aggregate class to receive shortcut methods
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate definition
+      # @yield [cmd] called for each command; must return a callable executor
+      # @yieldparam cmd [Hecks::DomainModel::Behavior::Command] the command definition
+      # @yieldreturn [Proc] a proc that accepts a Hash of attributes and executes the command
+      # @return [void]
       def self.bind_shortcuts(klass, aggregate)
         agg_snake = Hecks::Utils.underscore(aggregate.name)
         agg_suffixes = agg_snake.split("_").each_index.map { |i|
@@ -114,7 +159,7 @@ module Hecks
             executor.call(attrs)
           end
 
-          # Instance method: cat.meow — auto-fills from self's attributes
+          # Instance method: cat.meow -- auto-fills from self's attributes
           cmd_attrs = cmd.attributes
           next if klass.method_defined?(method_name)
           klass.define_method(method_name) do |**overrides|

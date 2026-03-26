@@ -11,7 +11,7 @@
 module Hecks
   module Boot
     module SqlBoot
-      # Map domain type names to Sequel column types.
+      # Maps domain type names to Sequel column types for table creation.
       TYPE_MAP = {
         "String"  => String,
         "Integer" => Integer,
@@ -22,10 +22,13 @@ module Hecks
 
       module_function
 
-      # Connect to the database based on adapter config.
+      # Connects to a database based on adapter configuration.
       #
-      # @param adapter [Symbol, Hash] :sqlite or { type: :sqlite, database: "path.db" }
-      # @return [Sequel::Database]
+      # @param adapter [Symbol, Hash] :sqlite for in-memory SQLite, or a Hash
+      #   with :type, :database, and other connection options
+      # @return [Sequel::Database] the database connection
+      # @raise [ArgumentError] if the adapter type is unknown
+      # @raise [LoadError] if the sequel gem is not installed
       def connect(adapter)
         require_sequel!
         config = normalize_config(adapter)
@@ -42,10 +45,11 @@ module Hecks
         end
       end
 
-      # Full SQL setup: generate adapter classes, create tables, return repo map.
+      # Performs full SQL setup: generates adapter classes, creates tables,
+      # and returns instantiated repository objects.
       #
-      # @param domain [DomainModel::Structure::Domain]
-      # @param db [Sequel::Database]
+      # @param domain [DomainModel::Structure::Domain] the domain model
+      # @param db [Sequel::Database] the database connection
       # @return [Hash<String, Object>] adapter instances keyed by aggregate name
       def setup(domain, db)
         mod_name = domain.module_name + "Domain"
@@ -54,7 +58,11 @@ module Hecks
         instantiate_adapters(domain, db, mod_name)
       end
 
-      # Generate and eval SQL repository classes for each aggregate.
+      # Generates and evals SQL repository classes for each aggregate.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain model
+      # @param mod_name [String] the domain module name (e.g., "PizzasDomain")
+      # @return [void]
       def generate_adapters(domain, mod_name)
         domain.aggregates.each do |agg|
           gen = Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: mod_name)
@@ -62,7 +70,11 @@ module Hecks
         end
       end
 
-      # Create tables for all aggregates (idempotent -- skips existing tables).
+      # Creates database tables for all aggregates (idempotent -- skips existing).
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain model
+      # @param db [Sequel::Database] the database connection
+      # @return [void]
       def create_tables(domain, db)
         domain.aggregates.each do |agg|
           create_aggregate_table(agg, db)
@@ -70,7 +82,12 @@ module Hecks
         end
       end
 
-      # Instantiate SQL repository objects keyed by aggregate name.
+      # Instantiates SQL repository objects for all aggregates.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain model
+      # @param db [Sequel::Database] the database connection
+      # @param mod_name [String] the domain module name
+      # @return [Hash<String, Object>] repository instances keyed by aggregate name
       def instantiate_adapters(domain, db, mod_name)
         mod = Object.const_get(mod_name)
         adapters = {}
@@ -82,7 +99,14 @@ module Hecks
         adapters
       end
 
-      # Create the main table for an aggregate from its IR attributes.
+      # Creates the main table for an aggregate from its IR attributes.
+      #
+      # Includes an id primary key, all scalar attributes, and created_at/updated_at
+      # timestamps. Skips if the table already exists.
+      #
+      # @param agg [DomainModel::Structure::Aggregate] the aggregate
+      # @param db [Sequel::Database] the database connection
+      # @return [void]
       def create_aggregate_table(agg, db)
         tbl = table_name_for(agg)
         return if db.table_exists?(tbl)
@@ -96,7 +120,14 @@ module Hecks
         end
       end
 
-      # Create join tables for list-type value objects.
+      # Creates join tables for list-type value objects on an aggregate.
+      #
+      # Each join table has an id, a foreign key to the parent aggregate,
+      # and columns for all value object attributes.
+      #
+      # @param agg [DomainModel::Structure::Aggregate] the aggregate
+      # @param db [Sequel::Database] the database connection
+      # @return [void]
       def create_vo_join_tables(agg, db)
         agg_table = table_name_for(agg)
         agg_snake = Utils.underscore(Utils.sanitize_constant(agg.name))
@@ -115,7 +146,10 @@ module Hecks
         end
       end
 
-      # Pairs of [value_object, list_attribute] for list-type VOs on an aggregate.
+      # Returns pairs of [value_object, list_attribute] for list-type VOs.
+      #
+      # @param agg [DomainModel::Structure::Aggregate] the aggregate
+      # @return [Array<Array(ValueObject, Attribute)>] pairs of VO and its list attribute
       def list_vos(agg)
         agg.value_objects.filter_map do |vo|
           list_attr = agg.attributes.find { |a| a.list? && a.type.to_s == vo.name }
@@ -123,17 +157,31 @@ module Hecks
         end
       end
 
-      # Table name for an aggregate: underscore + pluralize.
+      # Computes the table name for an aggregate (underscore + pluralize).
+      #
+      # @param agg [DomainModel::Structure::Aggregate] the aggregate
+      # @return [Symbol] the table name as a symbol (e.g., :pizzas)
       def table_name_for(agg)
         (Utils.underscore(Utils.sanitize_constant(agg.name)) + "s").to_sym
       end
 
-      # Map a domain attribute to a Sequel column type.
+      # Maps a domain attribute to a Sequel column type.
+      #
+      # Reference attributes are stored as String (UUID foreign keys).
+      # Other types are looked up in TYPE_MAP, defaulting to String.
+      #
+      # @param attr [DomainModel::Structure::Attribute] the attribute
+      # @return [Class, Symbol] the Sequel column type
       def sequel_type(attr)
         return String if attr.reference?
         TYPE_MAP.fetch(attr.type.to_s, String)
       end
 
+      # Normalizes adapter config to a Hash with a :type key.
+      #
+      # @param adapter [Symbol, Hash] the adapter configuration
+      # @return [Hash] normalized config hash
+      # @raise [ArgumentError] if adapter is neither Symbol nor Hash
       def normalize_config(adapter)
         case adapter
         when Symbol then { type: adapter }
@@ -142,6 +190,10 @@ module Hecks
         end
       end
 
+      # Requires the sequel gem, raising a helpful error if missing.
+      #
+      # @return [void]
+      # @raise [LoadError] with installation instructions
       def require_sequel!
         require "sequel"
       rescue LoadError

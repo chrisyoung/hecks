@@ -16,6 +16,12 @@ module Hecks
         module FileWriter
           private
 
+          # Writes the +.gemspec+ file for the domain gem.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name (e.g. +"pizzas_domain"+)
+          # @param mod [String] PascalCase domain module name (e.g. +"PizzasDomain"+)
+          # @return [void]
           def generate_gemspec(root, gem_name, mod)
             write_file(root, "#{gem_name}.gemspec", <<~RUBY)
               Gem::Specification.new do |s|
@@ -30,10 +36,28 @@ module Hecks
             RUBY
           end
 
+          # Writes the autoload entry point file (+lib/<gem_name>.rb+) by
+          # delegating to +AutoloadGenerator#generate_entry_point+.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_entry_point(root, gem_name, mod)
             write_file(root, "lib/#{gem_name}.rb", AutoloadGenerator.new(@domain).generate_entry_point)
           end
 
+          # Writes all aggregate-related files: the aggregate class itself (with
+          # injected autoloads), value objects, entities, commands (preserving
+          # custom +call+ methods), events, policies, subscribers, specifications,
+          # and lifecycle definitions. Also creates conventional empty subdirectories
+          # (+commands/+, +events/+, +policies/+, +queries/+, +subscribers/+,
+          # +specifications/+) even when no files exist for those categories.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_aggregates(root, gem_name, mod)
             @domain.aggregates.each do |agg|
               safe_name = Hecks::Utils.sanitize_constant(agg.name)
@@ -96,6 +120,13 @@ module Hecks
             end
           end
 
+          # Writes query files for every aggregate into their respective
+          # +queries/+ subdirectories.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_queries(root, gem_name, mod)
             @domain.aggregates.each do |agg|
               safe = Hecks::Utils.sanitize_constant(agg.name)
@@ -107,6 +138,13 @@ module Hecks
             end
           end
 
+          # Writes repository port interface modules for every aggregate into
+          # the +ports/+ directory.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_ports(root, gem_name, mod)
             @domain.aggregates.each do |agg|
               snake = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name))
@@ -115,6 +153,13 @@ module Hecks
             end
           end
 
+          # Writes in-memory repository adapter classes for every aggregate into
+          # the +adapters/+ directory.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_adapters(root, gem_name, mod)
             @domain.aggregates.each do |agg|
               snake = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name))
@@ -123,6 +168,12 @@ module Hecks
             end
           end
 
+          # Writes workflow files into the +workflows/+ directory.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_workflows(root, gem_name, mod)
             @domain.workflows.each do |wf|
               snake = Hecks::Utils.underscore(wf.name)
@@ -131,6 +182,12 @@ module Hecks
             end
           end
 
+          # Writes view files into the +views/+ directory.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_views(root, gem_name, mod)
             @domain.views.each do |v|
               snake = Hecks::Utils.underscore(v.name)
@@ -139,6 +196,12 @@ module Hecks
             end
           end
 
+          # Writes service files into the +services/+ directory.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_services(root, gem_name, mod)
             @domain.services.each do |svc|
               snake = Hecks::Utils.underscore(svc.name)
@@ -147,20 +210,47 @@ module Hecks
             end
           end
 
+          # Writes the serialized DSL file (+hecks_domain.rb+) to the gem root.
+          # This file is loaded at boot time to reconstruct the domain IR without
+          # requiring the original DSL source.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @return [void]
           def generate_domain_rb(root)
             write_file(root, "hecks_domain.rb", DslSerializer.new(@domain).serialize)
           end
 
+          # Injects autoload declarations into an aggregate class body, immediately
+          # after the +class <AggName>+ line.
+          #
+          # @param code [String] the generated aggregate Ruby source
+          # @param autoloads [String] the autoload lines to inject
+          # @param agg_name [String] the PascalCase aggregate class name, used to
+          #   locate the injection point
+          # @return [String] the modified source with autoloads injected, or the
+          #   original source unchanged if +autoloads+ is blank
           def inject_autoloads(code, autoloads, agg_name)
             return code if autoloads.strip.empty?
             marker = "class #{agg_name}\n"
             code.sub(marker, "#{marker}#{autoloads}\n\n")
           end
 
-          # Write a command file, preserving any custom call method from an
-          # existing file on disk. If the DSL defines a call_body, that always
-          # wins. Otherwise, if the existing file has a call method that differs
-          # from the auto-generated one, splice it into the new content.
+          # Writes a command file to disk, preserving any custom +call+ method
+          # from an existing file. This prevents regeneration from overwriting
+          # user-written business logic.
+          #
+          # Precedence:
+          # 1. If the DSL defines a +call_body+, the generated code always wins
+          # 2. If an existing file has a +call+ method that differs from the
+          #    auto-generated one, the existing method is spliced into the new content
+          # 3. Otherwise, the generated content is written as-is
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param relative_path [String] path relative to +root+ for the command file
+          # @param new_content [String] the freshly generated command Ruby source
+          # @param command [Hecks::DomainModel::Behavior::Command] the command IR,
+          #   checked for +call_body+ to decide preservation behavior
+          # @return [void]
           def write_command_file(root, relative_path, new_content, command)
             full_path = File.join(root, relative_path)
             if !command.call_body && File.exist?(full_path)
@@ -174,6 +264,12 @@ module Hecks
             write_file(root, relative_path, new_content)
           end
 
+          # Writes content to a file, creating parent directories as needed.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param relative_path [String] path relative to +root+
+          # @param content [String] the file content to write
+          # @return [void]
           def write_file(root, relative_path, content)
             path = File.join(root, relative_path)
             FileUtils.mkdir_p(File.dirname(path))

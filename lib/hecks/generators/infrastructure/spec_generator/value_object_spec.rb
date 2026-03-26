@@ -8,6 +8,19 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module ValueObjectSpec
+          # Generates an RSpec spec file for a value object class.
+          #
+          # The generated spec covers:
+          # - Immutability: verifies the value object is frozen after construction
+          # - Structural equality: verifies two value objects with the same attributes
+          #   are equal
+          # - Invariants: generates TODO placeholders for each invariant rule
+          #
+          # @param value_object [Hecks::DomainModel::Structure::ValueObject] the
+          #   value object IR
+          # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the owning
+          #   aggregate, used to build the fully qualified class name
+          # @return [String] the complete RSpec file content
           def generate_value_object_spec(value_object, aggregate)
             safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
             fqn = full_class_name("#{safe_agg}::#{value_object.name}")

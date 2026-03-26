@@ -9,6 +9,21 @@
 module Hecks
   class CLI < Thor
     desc "new NAME", "Create a new Hecks project"
+    # Creates a new Hecks project directory with all starter files.
+    #
+    # Generates:
+    # - hecks_domain.rb: starter domain definition
+    # - app.rb: boot script with usage comments
+    # - Gemfile: with hecks dependency
+    # - spec/spec_helper.rb: RSpec setup with Hecks boot
+    # - .gitignore: ignores .gem files and domain output
+    # - .rspec: RSpec configuration
+    #
+    # Refuses to overwrite an existing directory.
+    #
+    # @param name [String] the project directory name (also used to derive
+    #   the PascalCase domain name)
+    # @return [void]
     def new_project(name)
       pascal = name.split(/[_\-\s]/).map(&:capitalize).join
       dir = name
@@ -45,6 +60,10 @@ module Hecks
 
     private
 
+    # Generates a starter domain template with one aggregate and command.
+    #
+    # @param name [String] the PascalCase domain name
+    # @return [String] the domain definition source code
     def domain_template(name)
       <<~RUBY
         Hecks.domain "#{name}" do
@@ -59,6 +78,9 @@ module Hecks
       RUBY
     end
 
+    # Generates the app.rb boot script.
+    #
+    # @return [String] the app.rb source code
     def app_template
       <<~RUBY
         require "hecks"
@@ -71,6 +93,10 @@ module Hecks
       RUBY
     end
 
+    # Generates the Gemfile, pointing to the local hecks gem if running
+    # from source, or the published gem otherwise.
+    #
+    # @return [String] the Gemfile content
     def gemfile_template
       hecks_spec = ::Gem.loaded_specs["hecks"]
       if hecks_spec && hecks_spec.full_gem_path != File.expand_path("../../../..", __FILE__)
@@ -86,6 +112,9 @@ module Hecks
       RUBY
     end
 
+    # Generates the spec/spec_helper.rb with Hecks boot.
+    #
+    # @return [String] the spec_helper.rb source code
     def spec_helper_template
       <<~RUBY
         require "hecks"
@@ -97,6 +126,9 @@ module Hecks
       RUBY
     end
 
+    # Generates the .gitignore content.
+    #
+    # @return [String] the gitignore content
     def gitignore_template
       <<~TEXT
         *.gem
@@ -104,6 +136,9 @@ module Hecks
       TEXT
     end
 
+    # Generates the .rspec configuration.
+    #
+    # @return [String] the .rspec content
     def rspec_template
       <<~TEXT
         --format documentation

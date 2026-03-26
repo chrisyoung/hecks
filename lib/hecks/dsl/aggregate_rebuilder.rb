@@ -11,7 +11,33 @@
 #
 module Hecks
   module DSL
+    # Reconstructs an AggregateBuilder from a previously built Aggregate IR object.
+    #
+    # AggregateRebuilder provides a single class method, +.from_aggregate+, that
+    # takes a +DomainModel::Structure::Aggregate+ and produces an +AggregateBuilder+
+    # pre-populated with equivalent DSL declarations. This enables round-trip
+    # serialization (build -> serialize -> deserialize -> rebuild) and is used by
+    # the interactive session/playground when loading saved domain definitions.
+    #
+    # Supported facets: attributes (including list and reference types), value
+    # objects, entities, commands (with their attributes), validations, scopes,
+    # reactive policies, and specifications.
+    #
+    # Not restored: ports, queries, guard policies (block-based policies),
+    # invariants, event subscribers, indexes, lifecycle, versioned/attachable flags.
     class AggregateRebuilder
+      # Reconstruct an AggregateBuilder from a built Aggregate IR object.
+      #
+      # Iterates over the aggregate's attributes, value objects, entities,
+      # commands, validations, scopes, reactive policies, and specifications,
+      # calling the corresponding DSL methods on a fresh AggregateBuilder.
+      #
+      # List and reference attributes are automatically wrapped in the
+      # appropriate +{ list: type }+ or +{ reference: type }+ hash form
+      # so that +AttributeCollector#attribute+ handles them correctly.
+      #
+      # @param aggregate [DomainModel::Structure::Aggregate] the aggregate IR to reconstruct from
+      # @return [AggregateBuilder] a builder pre-populated with equivalent declarations
       def self.from_aggregate(aggregate)
         builder = DSL::AggregateBuilder.new(aggregate.name)
         aggregate.attributes.each do |attr|

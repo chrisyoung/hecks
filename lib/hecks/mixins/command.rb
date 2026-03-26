@@ -6,6 +6,25 @@
 # The generated call method is pure domain logic — just build and return
 # the aggregate.
 #
+# == Lifecycle
+#
+# When +.call+ is invoked the following steps execute in order:
+# 1. Guard policy (+guarded_by+) -- rejects unauthorized commands
+# 2. Handler callback (+handler+) -- optional pre-processing hook
+# 3. Precondition checks -- domain invariants that must hold before execution
+# 4. +#call+ (user-defined) -- builds/modifies the aggregate; may be wrapped by command bus middleware
+# 5. Postcondition checks -- domain invariants that must hold after execution
+# 6. Persist aggregate via the wired repository
+# 7. Emit event via the wired event bus
+# 8. Record event in the event recorder for the aggregate
+#
+# == Chaining
+#
+# Commands can be chained fluently with +#then+. If any step raises, the
+# chain short-circuits and the error is captured on the originating command.
+#
+# == Usage
+#
 #   class CreatePizza
 #     emits "CreatedPizza"
 #
@@ -20,44 +39,106 @@
 #
 module Hecks
   module Command
+    # Hook called when a class includes +Hecks::Command+. Extends the class
+    # with +ClassMethods+ and defines +aggregate+ and +event+ readers on
+    # instances so callers can inspect command results.
+    #
+    # @param base [Class] the class including this module
+    # @return [void]
     def self.included(base)
       base.extend(ClassMethods)
       base.attr_reader :aggregate, :event
     end
 
+    # Class-level DSL and execution entry point for command classes.
+    #
+    # Provides configuration accessors (+repository+, +event_bus+, +handler+,
+    # +guarded_by+, +event_recorder+, +aggregate_type+, +command_bus+) that
+    # are wired during boot by the Hecks runtime.
     module ClassMethods
       attr_accessor :repository, :event_bus, :handler, :guarded_by,
                     :event_recorder, :aggregate_type, :command_bus
 
+      # Declares the event name emitted when this command succeeds.
+      # The event class is resolved at runtime from the aggregate's Events module.
+      #
+      # @param event_name [String] PascalCase event name (e.g. "CreatedPizza")
+      # @return [void]
       def emits(event_name)
         @event_name = event_name
       end
 
+      # Returns the declared event name for this command.
+      #
+      # @return [String, nil] the event name set via +emits+, or nil if none declared
       def event_name
         @event_name
       end
 
+      # Returns the list of registered precondition checks.
+      # Preconditions are validated before the command's +#call+ executes.
+      #
+      # @return [Array<DomainModel::Behavior::Condition>] registered preconditions
       def preconditions
         @preconditions ||= []
       end
 
+      # Returns the list of registered postcondition checks.
+      # Postconditions are validated after +#call+ returns, receiving the
+      # before and after states of the aggregate.
+      #
+      # @return [Array<DomainModel::Behavior::Condition>] registered postconditions
       def postconditions
         @postconditions ||= []
       end
 
+      # Registers a precondition that must hold before the command executes.
+      # The block is evaluated in the context of the command instance via
+      # +instance_exec+, so it has access to command attributes.
+      #
+      # @param message [String] human-readable description of the precondition (used in error messages)
+      # @yield block that returns truthy if the precondition holds
+      # @return [void]
+      # @raise [Hecks::PreconditionError] at execution time if the block returns falsey
       def precondition(message, &block)
         preconditions << DomainModel::Behavior::Condition.new(message: message, block: block)
       end
 
+      # Registers a postcondition that must hold after the command executes.
+      # The block receives the aggregate state before and after +#call+.
+      #
+      # @param message [String] human-readable description of the postcondition (used in error messages)
+      # @yield [before, after] block that returns truthy if the postcondition holds
+      # @yieldparam before [Object, nil] the aggregate before command execution (nil for creates)
+      # @yieldparam after [Object] the aggregate after command execution
+      # @return [void]
+      # @raise [Hecks::PostconditionError] at execution time if the block returns falsey
       def postcondition(message, &block)
         postconditions << DomainModel::Behavior::Condition.new(message: message, block: block)
       end
 
+      # Resolves the event class constant from the declared event name.
+      # Navigates up from the command's namespace to the aggregate module,
+      # then looks up +Events::<event_name>+.
+      #
+      # @return [Class] the event class (e.g. +Pizza::Events::CreatedPizza+)
+      # @raise [NameError] if the event class cannot be found
       def event_class
         agg_module = name.split("::")[0..-3].join("::")
         Object.const_get("#{agg_module}::Events::#{@event_name}")
       end
 
+      # Executes the full command lifecycle: guard, handler, preconditions,
+      # call, postconditions, persist, emit, and record.
+      #
+      # If a +command_bus+ with middleware is configured, the +#call+ step is
+      # dispatched through the middleware chain.
+      #
+      # @param attrs [Hash] keyword arguments forwarded to the command constructor
+      # @return [self] the command instance with +#aggregate+ and +#event+ populated
+      # @raise [Hecks::GuardRejected] if the guard policy rejects the command
+      # @raise [Hecks::PreconditionError] if any precondition fails
+      # @raise [Hecks::PostconditionError] if any postcondition fails
       def call(**attrs)
         cmd = new(**attrs)
         cmd.send(:run_guard)
@@ -79,6 +160,14 @@ module Hecks
 
     # Chain commands fluently. Yields self to block, returns the block's
     # result (which should be another command). Propagates chain history.
+    # If any step in the chain raises, the error is captured and subsequent
+    # +then+ calls are skipped (short-circuit).
+    #
+    # @yield [self] the current command instance
+    # @yieldreturn [Hecks::Command] the next command in the chain
+    # @return [Hecks::Command] the next command, or self if an error occurred
+    #
+    # @example
     #   AiModel.register(name: "X").then { |cmd| Assessment.initiate(model_id: cmd.id) }
     def then
       return self if @chain_error
@@ -92,13 +181,36 @@ module Hecks
       end
     end
 
+    # Returns true if no error occurred during chaining.
+    #
+    # @return [Boolean]
     def success? = @chain_error.nil?
+
+    # Returns the list of command steps in this chain.
+    #
+    # @return [Array<Hecks::Command>] all commands executed in the chain
     def steps = @chain_steps || [self]
+
+    # Returns the last command in the chain.
+    #
+    # @return [Hecks::Command]
     def last = steps.last
+
+    # Returns the error captured during chaining, if any.
+    #
+    # @return [Exception, nil]
     def error = @chain_error
 
-    # Delegate unknown methods to aggregate for backward compat.
-    # AiModel.register(name: "X").name => aggregate.name
+    # Delegates unknown methods to the aggregate for backward compatibility.
+    # This allows callers to access aggregate attributes directly on the command
+    # result (e.g. +cmd.name+ instead of +cmd.aggregate.name+).
+    #
+    # @param name [Symbol] the method name
+    # @param args [Array] positional arguments
+    # @param kwargs [Hash] keyword arguments
+    # @param block [Proc] optional block
+    # @return [Object] the return value from the aggregate method
+    # @raise [NoMethodError] if neither the command nor the aggregate responds
     def method_missing(name, *args, **kwargs, &block)
       if aggregate&.respond_to?(name)
         kwargs.empty? ? aggregate.send(name, *args, &block) : aggregate.send(name, *args, **kwargs, &block)
@@ -107,16 +219,29 @@ module Hecks
       end
     end
 
+    # Returns true if the aggregate responds to the given method.
+    #
+    # @param name [Symbol] the method name to check
+    # @param include_private [Boolean] whether to include private methods
+    # @return [Boolean]
     def respond_to_missing?(name, include_private = false)
       aggregate&.respond_to?(name, include_private) || super
     end
 
     private
 
+    # Returns the repository wired to this command's class.
+    #
+    # @return [Object] the repository instance (typically a Hecks memory or SQL adapter)
     def repository
       self.class.repository
     end
 
+    # Evaluates all registered preconditions in the command instance context.
+    # Raises +Hecks::PreconditionError+ on the first failure.
+    #
+    # @return [void]
+    # @raise [Hecks::PreconditionError] if any precondition block returns falsey
     def check_preconditions
       self.class.preconditions.each do |cond|
         unless instance_exec(&cond.block)
@@ -125,6 +250,13 @@ module Hecks
       end
     end
 
+    # Evaluates all registered postconditions, comparing the aggregate state
+    # before and after command execution.
+    #
+    # @param before [Object, nil] the aggregate state before execution
+    # @param after [Object] the aggregate state after execution
+    # @return [void]
+    # @raise [Hecks::PostconditionError] if any postcondition block returns falsey
     def check_postconditions(before, after)
       self.class.postconditions.each do |cond|
         unless cond.block.call(before, after)
@@ -133,6 +265,11 @@ module Hecks
       end
     end
 
+    # Attempts to find the existing aggregate for before/after postcondition
+    # comparison. Looks for an instance variable ending in +_id+ and uses it
+    # to fetch from the repository.
+    #
+    # @return [Object, nil] the existing aggregate, or nil if not found or no postconditions
     def find_existing_for_postcondition
       return nil if self.class.postconditions.empty?
       # Try to find the existing aggregate for before/after comparison
@@ -142,6 +279,11 @@ module Hecks
       repository&.find(id_val) rescue nil
     end
 
+    # Executes the guard policy if one is configured via +guarded_by+.
+    # Resolves the policy class from the aggregate's Policies module.
+    #
+    # @return [void]
+    # @raise [Hecks::GuardRejected] if the policy returns falsey
     def run_guard
       policy_name = self.class.guarded_by
       return unless policy_name
@@ -154,10 +296,18 @@ module Hecks
       end
     end
 
+    # Invokes the optional handler callback configured on the command class.
+    # Handlers are typically set during boot for cross-cutting concerns.
+    #
+    # @return [void]
     def run_handler
       self.class.handler&.call(self)
     end
 
+    # Persists the aggregate via the wired repository. Stamps created_at or
+    # updated_at timestamps automatically if the aggregate supports them.
+    #
+    # @return [void]
     def persist_aggregate
       return unless aggregate
       if aggregate.respond_to?(:stamp_created!) && aggregate.created_at.nil?
@@ -168,6 +318,11 @@ module Hecks
       repository.save(aggregate)
     end
 
+    # Builds and emits the event declared via +emits+. Introspects the event
+    # class constructor to map command attributes and aggregate attributes
+    # into event parameters. Publishes the event on the event bus.
+    #
+    # @return [Object] the constructed event instance
     def emit_event
       event_class = self.class.event_class
       event_params = event_class.instance_method(:initialize).parameters.map { |_, n| n }
@@ -186,6 +341,10 @@ module Hecks
       @event
     end
 
+    # Records the emitted event in the event recorder for the aggregate,
+    # enabling event sourcing and audit trails.
+    #
+    # @return [void]
     def record_event_for_aggregate
       recorder = self.class.event_recorder
       agg_type = self.class.aggregate_type

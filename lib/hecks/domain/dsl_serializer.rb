@@ -6,7 +6,10 @@
 # and reactive policies. Extracted from Session#to_dsl for standalone reuse.
 #
 # Part of the DSL layer. Used by the console session to dump editable domain
-# definitions and by round-trip tooling that loads then re-saves domains.
+# definitions, by DomainSnapshot for migration diffing, and by round-trip
+# tooling that loads then re-saves domains.
+#
+# The output is valid Ruby that can be eval'd to reconstruct the domain.
 #
 #   domain = Hecks.domain("Pizzas") { ... }
 #   DslSerializer.new(domain).serialize
@@ -14,10 +17,20 @@
 #
 module Hecks
   class DslSerializer
+    # Create a new serializer for the given domain.
+    #
+    # @param domain [Hecks::DomainModel::Domain] the domain IR to serialize
     def initialize(domain)
       @domain = domain
     end
 
+    # Serialize the domain into a DSL source string. The output is a complete
+    # +Hecks.domain+ block that, when evaluated, reconstructs an equivalent
+    # domain object. Includes all aggregates, their attributes, value objects,
+    # entities, validations, invariants, scopes, queries, specifications,
+    # commands, policies, and subscribers.
+    #
+    # @return [String] valid Ruby DSL source code ending with a newline
     def serialize
       lines = []
       lines << "Hecks.domain \"#{@domain.name}\" do"
@@ -158,6 +171,12 @@ module Hecks
 
     private
 
+    # Convert an attribute's type into its DSL representation. List attributes
+    # use +list_of("Type")+, references use +reference_to("Type")+, and
+    # scalar types are rendered as bare strings.
+    #
+    # @param attr [Hecks::DomainModel::Attribute] the attribute to format
+    # @return [String] DSL type expression (e.g., 'String', 'list_of("Topping")')
     def dsl_type(attr)
       if attr.list?
         "list_of(\"#{attr.type}\")"

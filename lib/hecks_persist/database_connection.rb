@@ -12,6 +12,15 @@ module Hecks
     module DatabaseConnection
       private
 
+      # Connects to a database based on the adapter options.
+      #
+      # Resolution order:
+      # 1. If :url is provided, connects directly via Sequel.connect
+      # 2. If :database type is provided, delegates to connect_by_type
+      # 3. If Rails is defined, auto-detects from Rails database config
+      # 4. Falls back to in-memory SQLite
+      #
+      # @return [Sequel::Database] the database connection
       def connect_database
         require "sequel"
 
@@ -26,6 +35,12 @@ module Hecks
         end
       end
 
+      # Connects to a specific database type using Sequel.
+      #
+      # @param opts [Hash] connection options with :database (Symbol), :host,
+      #   :user, :password, and :name keys
+      # @return [Sequel::Database] the database connection
+      # @raise [RuntimeError] if the database type is not :sqlite, :mysql, or :postgres
       def connect_by_type(opts)
         case opts[:database]
         when :mysql
@@ -41,6 +56,12 @@ module Hecks
         end
       end
 
+      # Auto-detects database configuration from Rails and connects via Sequel.
+      #
+      # Extracts the connection URL from ActiveRecord's db_config. Falls back
+      # to in-memory SQLite if no URL is found.
+      #
+      # @return [Sequel::Database] the database connection
       def connect_from_rails
         db_config = ActiveRecord::Base.connection_db_config
         url = db_config.try(:url) || db_config.configuration_hash[:url]

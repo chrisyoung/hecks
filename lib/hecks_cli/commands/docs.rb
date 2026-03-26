@@ -15,6 +15,12 @@ module Hecks
   class CLI < Thor
     class Domain < Thor
       desc "readme", "Generate README.md and extension docs"
+      # Generates README.md from the template and extension-specific documentation.
+      #
+      # Uses ReadmeGenerator to process docs/readme_template.md and
+      # ExtensionDocs to generate per-extension README files.
+      #
+      # @return [void]
       def readme
         require_relative "../../hecks/readme_generator"
         root = Dir.pwd
@@ -29,6 +35,13 @@ module Hecks
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
       option :port, type: :numeric, default: 9393, desc: "Port"
+      # Starts a WEBrick HTTP server serving Swagger UI for the domain's API.
+      #
+      # Generates OpenAPI 3.0 and JSON-RPC discovery specs from the domain
+      # model and serves them as JSON endpoints. The root path serves an HTML
+      # page that loads Swagger UI from a CDN pointing at /openapi.json.
+      #
+      # @return [void] runs until interrupted with Ctrl-C
       def docs
         domain = resolve_domain_option
         return unless domain
@@ -56,6 +69,10 @@ module Hecks
 
       private
 
+      # Generates the HTML page that loads Swagger UI from a CDN.
+      #
+      # @param port [Integer] the server port, used to construct the OpenAPI URL
+      # @return [String] the HTML content
       def swagger_html(port)
         <<~HTML
           <!DOCTYPE html>

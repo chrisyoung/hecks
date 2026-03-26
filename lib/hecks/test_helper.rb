@@ -1,21 +1,41 @@
-# Hecks::TestHelper
+# = Hecks::TestHelper
 #
-# Automatically resets Hecks state between tests. Clears all memory
-# adapter stores and event history so each test starts clean.
+# Test support module that automatically resets Hecks state between tests.
+# Clears all memory adapter stores and event bus history so each test starts
+# with a clean slate.
 #
-# For RSpec, just require it — it hooks in automatically:
+# Expects a global +APP+ constant holding a {Hecks::Runtime} instance,
+# which is the standard convention for Hecks test suites.
 #
-#   # spec_helper.rb or rails_helper.rb
+# == RSpec (auto-hooks)
+#
+# Just require this file and it hooks in automatically. It sets the load
+# strategy to +:memory+ before the suite and calls +reset!+ after each example.
+#
+#   # spec_helper.rb
 #   require "hecks/test_helper"
 #
-# For Minitest:
+# == Minitest
+#
+# Include the module and call +reset!+ manually in setup/teardown:
 #
 #   class ActiveSupport::TestCase
 #     include Hecks::TestHelper
+#
+#     teardown do
+#       Hecks::TestHelper.reset!
+#     end
 #   end
 #
 module Hecks
   module TestHelper
+    # Resets all runtime state for a clean test environment. Clears every
+    # aggregate's repository (memory adapter store) and the event bus history.
+    #
+    # Does nothing if the +APP+ constant is not defined or is not a
+    # {Hecks::Runtime} instance, making it safe to call unconditionally.
+    #
+    # @return [void]
     def self.reset!
       return unless defined?(APP) && APP.is_a?(Hecks::Runtime)
 

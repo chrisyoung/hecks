@@ -13,10 +13,26 @@ module Hecks
   module Generators
     module Infrastructure
     class AutoloadGenerator
+      # Creates a new AutoloadGenerator for a domain.
+      #
+      # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR
+      #   containing aggregates, workflows, views, and services
       def initialize(domain)
         @domain = domain
       end
 
+      # Generates the main entry point Ruby source for the domain gem.
+      #
+      # The generated file:
+      # - Requires +securerandom+
+      # - Declares the top-level domain module with +ValidationError+ and +InvariantError+
+      # - Emits +autoload+ statements for every aggregate, port, adapter, workflow,
+      #   view, and service
+      # - Appends an auto-boot block that loads the +hecks_domain.rb+ DSL file
+      #   and wires a +Hecks::Runtime+ when the gem is installed alongside Hecks
+      # - Defines +.boot+ and +.runtime+ singleton methods on the domain module
+      #
+      # @return [String] the complete Ruby source code for +lib/<gem_name>.rb+
       def generate_entry_point
         gem_name = @domain.gem_name
         mod = @domain.module_name + "Domain"
@@ -115,8 +131,20 @@ module Hecks
         lines.join("\n") + "\n"
       end
 
-      # Only generates value object autoloads. Commands, Events, Queries,
-      # and Policies are auto-discovered by Hecks::Model via const_missing.
+      # Generates +autoload+ declarations for value objects and entities within a
+      # single aggregate class body. Commands, Events, Queries, and Policies are
+      # intentionally omitted because they are auto-discovered at runtime via
+      # +const_missing+ in +Hecks::Model+.
+      #
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate
+      #   whose child types need autoload declarations
+      # @param gem_name [String] the snake_case gem name, used to build require paths
+      #   (e.g. +"pizzas_domain"+)
+      # @param domain_module [String] the PascalCase domain module name (unused in
+      #   current implementation but kept for interface consistency)
+      # @return [String] indented autoload lines joined by newlines, suitable for
+      #   injection into the aggregate class body; empty string if no value objects
+      #   or entities exist
       def generate_aggregate_autoloads(aggregate, gem_name, domain_module)
         safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
         snake = Hecks::Utils.underscore(safe_name)

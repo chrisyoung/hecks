@@ -7,11 +7,35 @@
 # Part of the DomainModel IR layer. Each child class is an intermediate
 # representation built by the DSL and consumed by generators.
 #
-#   Structure::Domain         # root container holding aggregates
-#   Structure::Aggregate      # DDD aggregate with commands, events, etc.
-#   Structure::ValueObject    # immutable object defined by its attributes
-#   Structure::Entity         # mutable sub-entity with identity (UUID)
-#   Structure::Attribute      # typed field on any structure
+# == Structural Hierarchy
+#
+# The classes in this namespace form a tree:
+#
+#   Structure::Domain              # root container holding aggregates and domain-level policies
+#     Structure::Aggregate         # DDD aggregate with commands, events, lifecycle, etc.
+#       Structure::Attribute       # typed field on any structure (aggregate, value object, entity, command, event)
+#       Structure::ValueObject     # immutable object defined by its attributes (no identity)
+#       Structure::Entity          # mutable sub-entity with identity (UUID)
+#       Structure::Validation      # attribute-level validation rule (presence, type, uniqueness)
+#       Structure::Invariant       # business rule that must always hold true
+#       Structure::Scope           # named query scope with static or callable conditions
+#       Structure::PortDefinition  # access-control port defining allowed methods per role
+#       Structure::Lifecycle       # state machine definition with transitions tied to commands
+#     Structure::ReadModel         # data view needed before issuing a command (Event Storming artifact)
+#     Structure::ExternalSystem    # third-party system outside the domain boundary
+#     Structure::Actor             # user role or persona that issues commands
+#
+# == Usage
+#
+# These classes are not instantiated directly by application code. They are
+# built by the DSL layer (DomainBuilder, AggregateBuilder, etc.) when parsing
+# a domain definition, and then consumed by generators, the runtime, and
+# visualization tools.
+#
+#   # Typical flow:
+#   domain = Hecks::DSL::DomainBuilder.new("Pizzas") { ... }.build
+#   domain.class  # => Hecks::DomainModel::Structure::Domain
+#   domain.aggregates.first.class  # => Hecks::DomainModel::Structure::Aggregate
 #
 module Hecks
   module DomainModel

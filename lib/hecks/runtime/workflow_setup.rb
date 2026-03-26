@@ -13,6 +13,17 @@ module Hecks
     module WorkflowSetup
       private
 
+      # Wires all workflows defined in the domain DSL as callable singleton
+      # methods on the domain module.
+      #
+      # For each workflow, creates a +WorkflowExecutor+ and defines a method
+      # named after the underscored workflow name (e.g., workflow "ProcessLoan"
+      # becomes +domain_mod.process_loan(**attrs)+).
+      #
+      # Returns immediately if the domain does not respond to +workflows+
+      # (backward compatibility with older domain definitions).
+      #
+      # @return [void]
       def setup_workflows
         return unless @domain.respond_to?(:workflows)
 

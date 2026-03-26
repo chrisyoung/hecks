@@ -10,6 +10,13 @@ module Hecks
   class CLI < Thor
     class Domain < Thor
       desc "context_map", "Show DDD context map of bounded contexts"
+      # Displays a context map of all bounded contexts and their relationships.
+      #
+      # Loads all domains, derives upstream/downstream relationships from
+      # reactive policies, identifies shared kernels, and prints a formatted
+      # summary with an ASCII diagram.
+      #
+      # @return [void]
       def context_map
         domains = load_all_domains
         return if domains.empty?
@@ -28,6 +35,15 @@ module Hecks
 
       private
 
+      # Derives upstream/downstream relationships from reactive policies.
+      #
+      # For each reactive policy across all domains, identifies the source
+      # domain (where the event originates) and target domain (where the
+      # triggered command lives). Deduplicates by upstream/downstream/event.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all loaded domains
+      # @return [Array<Hash>] relationship hashes with :upstream, :downstream,
+      #   :event, :command, :conditional, and :policy keys
       def derive_relationships(domains)
         rels = []
         domains.each do |consumer|
@@ -46,12 +62,28 @@ module Hecks
         rels.uniq { |r| [r[:upstream], r[:downstream], r[:event]] }
       end
 
+      # Collects all reactive policies from a domain (both aggregate-level
+      # and domain-level).
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain to inspect
+      # @return [Array<DomainModel::Behavior::Policy>] reactive policies
       def all_policies(domain)
         agg_policies = domain.aggregates.flat_map { |a| a.policies.select(&:reactive?) }
         domain_policies = domain.policies.select(&:reactive?)
         agg_policies + domain_policies
       end
 
+      # Finds shared kernels by detecting aggregates referenced by ID from
+      # multiple other contexts.
+      #
+      # Uses naming conventions to match _id attributes to known aggregate
+      # names across domains. A domain is a shared kernel if 2+ other domains
+      # reference its aggregates by ID.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @param relationships [Array<Hash>] the derived relationships (unused but
+      #   available for future pattern detection)
+      # @return [Array<String>] names of domains that are shared kernels
       def find_shared_kernels(domains, relationships)
         # A shared kernel is referenced by ID from multiple other contexts.
         # Check if other domains' aggregates have _id attributes whose name
@@ -81,6 +113,10 @@ module Hecks
         ref_counts.select { |_, referrers| referrers.size >= 2 }.keys
       end
 
+      # Prints a list of bounded contexts with their aggregates.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @return [void]
       def say_bounded_contexts(domains)
         say "Bounded Contexts:", :yellow
         domains.each do |d|
@@ -91,31 +127,55 @@ module Hecks
         say ""
       end
 
+      # Prints relationship details grouped by upstream/downstream pairs.
+      #
+      # Shows the integration pattern, event names, and whether the
+      # relationship is conditional.
+      #
+      # @param relationships [Array<Hash>] the derived relationships
+      # @param shared_kernels [Array<String>] names of shared kernel domains
+      # @return [void]
       def say_relationships(relationships, shared_kernels)
         say "Relationships:", :yellow
 
-        # Group by upstream→downstream pair
+        # Group by upstream->downstream pair
         pairs = relationships.group_by { |r| [r[:upstream], r[:downstream]] }
         pairs.each do |(upstream, downstream), rels|
           pattern = classify_pattern(upstream, downstream, shared_kernels, rels)
           events = rels.map { |r| r[:event] }.join(", ")
           cond = rels.any? { |r| r[:conditional] } ? " (conditional)" : ""
 
-          say "  #{upstream} → #{downstream}"
+          say "  #{upstream} -> #{downstream}"
           say "    Pattern:  #{pattern}"
           say "    Events:   #{events}#{cond}"
           say ""
         end
       end
 
+      # Classifies the DDD integration pattern for a relationship.
+      #
+      # @param upstream [String] upstream domain name
+      # @param downstream [String] downstream domain name
+      # @param shared_kernels [Array<String>] shared kernel domain names
+      # @param rels [Array<Hash>] relationships between this pair
+      # @return [String] human-readable pattern description
       def classify_pattern(upstream, downstream, shared_kernels, rels)
         if rels.any? { |r| r[:conditional] }
-          "Customer-Supplier (conditional — downstream filters events)"
+          "Customer-Supplier (conditional -- downstream filters events)"
         else
           "Customer-Supplier (upstream publishes, downstream reacts)"
         end
       end
 
+      # Prints an ASCII diagram of domain relationships.
+      #
+      # Shows each domain with its role (U=Upstream, D=Downstream, U/D=Both)
+      # and arrows to downstream targets.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @param relationships [Array<Hash>] the derived relationships
+      # @param shared_kernels [Array<String>] shared kernel domain names
+      # @return [void]
       def say_diagram(domains, relationships, shared_kernels)
         say "Diagram:", :yellow
         say ""

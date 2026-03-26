@@ -12,12 +12,30 @@ module Hecks
     module Infrastructure
     class PortGenerator
 
+      # Creates a new PortGenerator for a single aggregate.
+      #
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate
+      #   that needs a repository port interface
+      # @param domain_module [String] the PascalCase domain module name
+      #   (e.g. +"PizzasDomain"+)
       def initialize(aggregate, domain_module:)
         @aggregate = aggregate
         @domain_module = domain_module
         @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
       end
 
+      # Generates Ruby source for a repository port module.
+      #
+      # The generated module defines abstract interface methods that raise
+      # +NotImplementedError+ when called directly:
+      # - +find(id)+ -- retrieve an aggregate by its ID
+      # - +save(<snake_name>)+ -- persist an aggregate instance
+      # - +delete(id)+ -- remove an aggregate by its ID
+      #
+      # Concrete adapters (e.g. +MemoryAdapterGenerator+ output) include this
+      # module and implement the methods.
+      #
+      # @return [String] the complete Ruby source code for the port module
       def generate
         snake = Hecks::Utils.underscore(@safe_name)
         lines = []

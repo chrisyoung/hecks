@@ -1,18 +1,30 @@
 # Hecks::Connections::McpConnection
 #
-# Wraps the MCP server as a listens_to connection.
-# Starts a stdio MCP server exposing domain commands/queries as tools.
+# Wraps the MCP server as a +listens_to+ connection adapter. When a domain
+# declares +listens_to :mcp, transport: :stdio+, this connection boots a
+# DomainServer and exposes domain commands/queries as MCP tools over stdio.
+#
+# This is the adapter layer between the Hecks connection system and the
+# MCP::DomainServer. It implements the connection interface expected by
+# the Hecks runtime (+initialize+ with domain/runtime, +run+ to start).
 #
 #   listens_to :mcp, transport: :stdio
 #
 module Hecks
   module Connections
     class McpConnection
+      # Initializes the connection by creating a DomainServer for the given domain.
+      #
+      # @param domain [Hecks::DomainModel::Structure::Domain] the domain model to expose
+      # @param runtime [Hecks::Runtime] the runtime instance (unused, required by interface)
       def initialize(domain, runtime)
         @server = MCP::DomainServer.new(domain)
       end
 
-      def start
+      # Starts the MCP server over stdio transport. This method blocks until
+      # the transport is closed.
+      #
+      # @return [void]
         @server.run
       end
     end

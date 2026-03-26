@@ -1,15 +1,42 @@
 # Hecks::Persistence::CollectionMethods
 #
-# Binds collection proxy accessors onto aggregate classes. For each
-# list attribute with a value object, defines an instance method that
-# returns a CollectionProxy for persistence-aware mutations.
+# Binds collection proxy accessors onto aggregate classes during application boot.
+# For each list attribute whose type corresponds to a value object or entity defined
+# on the aggregate, this module defines an instance method that returns a
+# CollectionProxy -- a persistence-aware wrapper that supports create, delete,
+# and clear operations on the collection.
+#
+# This module is called by +Persistence.bind+ and should not be used directly.
+#
+# == How it works
+#
+# 1. Iterates over the aggregate's attributes that are marked as lists (+list?+)
+# 2. For each, finds the matching value object or entity definition
+# 3. Resolves the corresponding Ruby class constant on the aggregate class
+# 4. Defines an instance method (e.g., +toppings+) that returns a CollectionProxy
+#
+# == Usage
 #
 #   CollectionMethods.bind(PizzaClass, pizza_aggregate, repo)
+#   pizza = Pizza.create(name: "Margherita")
 #   pizza.toppings.create(name: "Mozzarella", amount: 2)
+#   pizza.toppings.count  # => 1
 #
 module Hecks
   module Persistence
     module CollectionMethods
+      # Defines collection accessor methods on the given aggregate class.
+      #
+      # For each list attribute on the aggregate whose type matches a value object
+      # or entity, defines an instance method that returns a CollectionProxy wrapping
+      # the underlying array with persistence-aware mutation methods.
+      #
+      # @param klass [Class] the aggregate class to augment (e.g., Pizza)
+      # @param aggregate [Hecks::DomainModel::Aggregate] the domain model metadata
+      #   describing this aggregate's attributes, value objects, and entities
+      # @param repo [Object] the repository adapter instance for persisting changes
+      #   when collection items are added or removed
+      # @return [void]
       def self.bind(klass, aggregate, repo)
         aggregate.attributes.select(&:list?).each do |list_attr|
           vo = aggregate.value_objects.find { |v| v.name == list_attr.type.to_s }

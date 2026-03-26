@@ -12,10 +12,20 @@ module Hecks
   module Generators
     module SQL
     class SqlMigrationGenerator
+      # Initializes a migration generator for a full domain.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain to generate SQL for
       def initialize(domain)
         @domain = domain
       end
 
+      # Generates CREATE TABLE SQL for the entire domain.
+      #
+      # Produces one table per aggregate with scalar attributes, plus join
+      # tables for list-type value objects and entities. Tables are separated
+      # by blank lines.
+      #
+      # @return [String] the complete SQL schema as a string
       def generate
         tables = []
 
@@ -42,6 +52,12 @@ module Hecks
         tables.join("\n\n")
       end
 
+      # Generates a CREATE TABLE statement for an aggregate's main table.
+      #
+      # Includes an id primary key and all scalar (non-list) attributes.
+      #
+      # @param agg [DomainModel::Structure::Aggregate] the aggregate
+      # @return [String] the CREATE TABLE SQL statement
       def generate_aggregate_table(agg)
         lines = []
         lines << "CREATE TABLE #{table_name(agg.name)} ("
@@ -62,6 +78,14 @@ module Hecks
         lines.join("\n")
       end
 
+      # Generates a CREATE TABLE statement for a value object's join table.
+      #
+      # Includes an id, a foreign key referencing the parent aggregate,
+      # and all value object attributes.
+      #
+      # @param vo [DomainModel::Structure::ValueObject] the value object
+      # @param parent_agg [DomainModel::Structure::Aggregate] the parent aggregate
+      # @return [String] the CREATE TABLE SQL statement
       def generate_value_object_table(vo, parent_agg)
         parent_table = table_name(parent_agg.name)
         vo_table = "#{parent_table}_#{table_name(vo.name)}"
@@ -80,6 +104,14 @@ module Hecks
         lines.join("\n")
       end
 
+      # Generates a CREATE TABLE statement for an entity's join table.
+      #
+      # Similar to value object tables but for entities (which have their own id).
+      # Includes an id, a foreign key to the parent aggregate, and all entity attributes.
+      #
+      # @param ent [DomainModel::Structure::Entity] the entity
+      # @param parent_agg [DomainModel::Structure::Aggregate] the parent aggregate
+      # @return [String] the CREATE TABLE SQL statement
       def generate_entity_table(ent, parent_agg)
         parent_table = table_name(parent_agg.name)
         ent_table = "#{parent_table}_#{table_name(ent.name)}"
@@ -100,6 +132,10 @@ module Hecks
 
       private
 
+      # Maps a domain attribute to its SQL column type.
+      #
+      # @param attr [DomainModel::Structure::Attribute] the attribute
+      # @return [String] the SQL type (e.g., "VARCHAR(255)", "INTEGER")
       def sql_type(attr)
         return "VARCHAR(36)" if attr.reference?
 
@@ -112,6 +148,10 @@ module Hecks
         end
       end
 
+      # Computes the SQL table name for a domain element (underscore + pluralized).
+      #
+      # @param name [String] the element name (e.g., "Pizza")
+      # @return [String] the table name (e.g., "pizzas")
       def table_name(name)
         Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(name)) + "s"
       end

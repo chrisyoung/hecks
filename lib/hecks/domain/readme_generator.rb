@@ -1,19 +1,39 @@
+require_relative "../extensions/docs"
+
 # Hecks::ReadmeGenerator
 #
 # Generates README.md from docs/readme_template.md by replacing {{tags}}
-# with content from the codebase. Hand-written prose in docs/content/,
-# usage examples in docs/usage/, auto-generated tables from code.
+# with content from the codebase. Supports hand-written prose in docs/content/,
+# usage examples in docs/usage/, and auto-generated tables from code inspection.
+#
+# Supported tags:
+# - {{content:name}} -- includes docs/content/name.md
+# - {{usage:name}} -- includes docs/usage/name.md (strips headers)
+# - {{features}} -- includes FEATURES.md (strips title)
+# - {{connections}} -- generates extension table grouped by category
+# - {{smalltalk}} -- generates Smalltalk-inspired features section
+# - {{validation_rules}} -- generates validation rules table from source
+# - {{cli_commands}} -- generates CLI commands table from source
+# - {{domain_summary}} -- generates aggregate summary table from hecks_domain.rb
+# - {{domain_dsl}} -- includes raw hecks_domain.rb in a code block
+# - {{domain_policies}} -- generates policy table from hecks_domain.rb
 #
 #   ReadmeGenerator.new(project_root).generate
 #
-require_relative "../extensions/docs"
 
 module Hecks
   class ReadmeGenerator
+    # @param root [String] absolute path to the project root directory
     def initialize(root)
       @root = root
     end
 
+    # Generate README.md by processing the template file. Reads
+    # docs/readme_template.md, replaces all {{tag}} and {{tag:arg}}
+    # placeholders with generated content, and writes the result to
+    # README.md in the project root.
+    #
+    # @return [String] the generated README content
     def generate
       template = File.read(File.join(@root, "docs/readme_template.md"))
       output = template.gsub(/\{\{(\w+)(?::(\w+))?\}\}/) { dispatch($1, $2) }
@@ -23,6 +43,11 @@ module Hecks
 
     private
 
+    # Route a template tag to the appropriate content generator method.
+    #
+    # @param tag [String] the tag name (e.g., "content", "features")
+    # @param arg [String, nil] optional argument after the colon
+    # @return [String] the replacement content for this tag
     def dispatch(tag, arg)
       case tag
       when "content"          then read_content("docs/content/#{arg}.md")
@@ -39,13 +64,20 @@ module Hecks
       end
     end
 
+    # Read a content file from the docs/content/ directory.
+    #
+    # @param path [String] relative path from project root
+    # @return [String] file content stripped of whitespace, or a TODO comment
     def read_content(path)
       full = File.join(@root, path)
       File.exist?(full) ? File.read(full).strip : "<!-- TODO: create #{path} -->"
     end
 
-    # Strip title headers and section headers from usage docs since
-    # the template provides its own section structure.
+    # Read a usage doc file, stripping title headers and section headers
+    # since the template provides its own section structure.
+    #
+    # @param path [String] relative path from project root
+    # @return [String] usage content with headers removed, or a TODO comment
     def read_usage(path)
       full = File.join(@root, path)
       return "<!-- TODO: create #{path} -->" unless File.exist?(full)
@@ -58,6 +90,9 @@ module Hecks
       lines.join.strip
     end
 
+    # Read FEATURES.md and strip the title header.
+    #
+    # @return [String] features content without the title, or a TODO comment
     def features
       path = File.join(@root, "FEATURES.md")
       return "<!-- TODO: create FEATURES.md -->" unless File.exist?(path)
@@ -66,6 +101,11 @@ module Hecks
       content.sub(/\A# .*\n+/, "").strip
     end
 
+    # Generate a markdown table of validation rules by scanning source files
+    # under lib/hecks/validation_rules/. Extracts the class name and first
+    # description sentence from each file's doc comment header.
+    #
+    # @return [String] markdown table with Rule and Description columns
     def validation_rules
       rules = []
       Dir[File.join(@root, "lib/hecks/validation_rules/**/*.rb")].sort.each do |f|
@@ -86,6 +126,11 @@ module Hecks
       "| Rule | Description |\n|---|---|\n#{rules.join("\n")}"
     end
 
+    # Generate a markdown table of CLI commands by scanning source files
+    # under lib/hecks_cli/commands/. Extracts the command name from the
+    # filename and description from the doc comment header.
+    #
+    # @return [String] markdown table with Command and Description columns
     def cli_commands
       commands = []
       Dir[File.join(@root, "lib/hecks_cli/commands/*.rb")].sort.each do |f|
@@ -101,6 +146,10 @@ module Hecks
       "| Command | Description |\n|---|---|\n#{commands.join("\n")}"
     end
 
+    # Generate the Smalltalk-inspired features section by loading feature
+    # definitions from Session::SmalltalkFeatures.
+    #
+    # @return [String] markdown sections with feature names, descriptions, and examples
     def smalltalk
       require_relative "../session/smalltalk_features"
       lines = ["## Hecks Loves Smalltalk", ""]
@@ -117,6 +166,10 @@ module Hecks
       lines.join("\n").strip
     end
 
+    # Generate the connections/extensions section grouped by category
+    # (persistence, realtime, rails, server, middleware).
+    #
+    # @return [String] markdown tables of extensions grouped by category
     def connections_section
       categories = {
         persistence: "Persistence",
@@ -135,6 +188,11 @@ module Hecks
       sections.join("\n\n")
     end
 
+    # Load the domain from hecks_domain.rb in the project root. Caches the
+    # result across multiple tag evaluations within the same generate call.
+    #
+    # @return [Hecks::DomainModel::Domain, nil] the loaded domain, or nil
+    #   if hecks_domain.rb does not exist
     def load_domain
       @_domain ||= begin
         path = File.join(@root, "hecks_domain.rb")
@@ -144,6 +202,10 @@ module Hecks
       end
     end
 
+    # Generate a markdown table summarizing all aggregates with their
+    # commands and value objects.
+    #
+    # @return [String] markdown table, or a TODO comment if no domain found
     def domain_summary
       domain = load_domain
       return "<!-- no hecks_domain.rb found -->" unless domain
@@ -158,6 +220,9 @@ module Hecks
       "#{header}\n#{rows.join("\n")}"
     end
 
+    # Include the raw hecks_domain.rb DSL source in a code block.
+    #
+    # @return [String] markdown code block, or a TODO comment if no domain found
     def domain_dsl
       path = File.join(@root, "hecks_domain.rb")
       return "<!-- no hecks_domain.rb found -->" unless File.exist?(path)
@@ -165,6 +230,9 @@ module Hecks
       "```ruby\n#{File.read(path).strip}\n```"
     end
 
+    # Generate a markdown table of domain-level reactive policies.
+    #
+    # @return [String] markdown table, "*None*", or a TODO comment
     def domain_policies
       domain = load_domain
       return "<!-- no hecks_domain.rb found -->" unless domain

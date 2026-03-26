@@ -1,25 +1,32 @@
 # Hecks::Validator
 #
-# Validates a domain model for DDD consistency. Enforces aggregate boundaries,
-# reference rules, command/event structure, policy wiring, and naming conventions.
+# Validates a domain model for DDD consistency. Runs all registered
+# validation rules and collects error messages. Each rule is a class
+# under ValidationRules:: that takes a domain and returns errors.
+#
+# Rules enforced:
+# - UniqueAggregateNames: no duplicate aggregate names
+# - NameCollisions: aggregate and value object names must not collide
+# - CommandNaming: command names should be verb phrases
+# - ReservedNames: warns about Ruby/system reserved attribute names
+# - ValidReferences: references must target existing aggregate roots
+# - NoBidirectionalReferences: no two aggregates referencing each other
+# - NoSelfReferences: aggregates must not reference themselves
+# - NoValueObjectReferences: value objects must not contain references
+# - AggregatesHaveCommands: every aggregate must have at least one command
+# - CommandsHaveAttributes: structural check on command attributes
+# - ValidPolicyEvents: policy events must match existing events
+# - ValidPolicyTriggers: policy triggers must name existing commands
 #
 #   validator = Validator.new(domain)
 #   validator.valid?   # => true/false
 #   validator.errors   # => ["Order references unknown aggregate: Widget"]
 #
-# Rules enforced:
-#   - No duplicate aggregate names
-#   - References must target aggregate roots
-#   - No bidirectional references between aggregates
-#   - No self-references on aggregates
-#   - Value objects must not contain references
-#   - Aggregates must have at least one command
-#   - Command names should be verb phrases
-#   - Policy events must exist, policy triggers must name existing commands
-#   - Aggregate and value object names must not collide
-#
 module Hecks
   class Validator
+    # Ordered list of validation rule classes to run. Each class must
+    # respond to .new(domain) and provide an #errors method returning
+    # an Array<String>.
     RULES = [
       ValidationRules::Naming::UniqueAggregateNames,
       ValidationRules::Naming::NameCollisions,
@@ -35,13 +42,19 @@ module Hecks
       ValidationRules::Structure::ValidPolicyTriggers,
     ].freeze
 
+    # @return [Array<String>] validation error messages (populated after #valid? is called)
     attr_reader :errors
 
+    # @param domain [Hecks::DomainModel::Domain] the domain to validate
     def initialize(domain)
       @domain = domain
       @errors = []
     end
 
+    # Run all validation rules and return whether the domain is valid.
+    # Populates #errors with any messages from failing rules.
+    #
+    # @return [Boolean] true if no validation errors were found
     def valid?
       @errors = RULES.flat_map { |rule| rule.new(@domain).errors }
       @errors.empty?

@@ -1,11 +1,23 @@
 # Hecks::MCP::SessionTools
 #
-# MCP tools for session management: create a new domain modeling session
-# or load an existing domain.rb file into a session.
+# MCP tools for session management. A session is the entry point for
+# domain modeling -- it must be created or loaded before any other tools
+# can be used. These tools set +ctx.session+ on the shared McpServer context.
+#
+# Registered tools:
+#   - +create_session+ -- start a new blank domain modeling session with a name
+#   - +load_domain+    -- load an existing domain.rb file and reconstruct the
+#     session from its aggregates and attributes
 #
 module Hecks
   module MCP
     module SessionTools
+      # Registers session management tools on the given MCP server.
+      #
+      # @param server [MCP::Server] the MCP server instance to register tools on
+      # @param ctx [Hecks::McpServer] the shared context; +ctx.session+ will be
+      #   set when either tool is invoked
+      # @return [void]
       def self.register(server, ctx)
         server.define_tool(
           name: "create_session",

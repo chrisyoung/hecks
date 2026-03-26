@@ -1,9 +1,9 @@
 # Hecks::CLI::Domain migration commands
 #
 # Three migration-related subcommands:
-#   generate:migrations — diffs the domain against a saved snapshot and generates SQL migration files
-#   generate:sql        — generates db/schema.sql and per-aggregate SQL adapter classes
-#   db:migrate          — runs pending SQL migrations against SQLite or ActiveRecord
+#   generate:migrations -- diffs the domain against a saved snapshot and generates SQL migration files
+#   generate:sql        -- generates db/schema.sql and per-aggregate SQL adapter classes
+#   db:migrate          -- runs pending SQL migrations against SQLite or ActiveRecord
 #
 #   hecks domain generate:migrations [--domain NAME]
 #   hecks domain generate:sql [--domain NAME]
@@ -16,6 +16,14 @@ module Hecks
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
       map "generate:migrations" => :generate_migrations
+      # Generates SQL migration files by diffing the current domain against
+      # its last saved snapshot.
+      #
+      # Loads the previous snapshot from db/hecks_domain_snapshot.json, computes
+      # a diff, and generates ALTER TABLE / CREATE TABLE SQL statements. Saves
+      # the current domain as the new snapshot after generation.
+      #
+      # @return [void]
       def generate_migrations
         domain = resolve_domain_option
         return unless domain
@@ -50,6 +58,13 @@ module Hecks
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
       map "generate:sql" => :generate_sql
+      # Generates db/schema.sql and per-aggregate SQL adapter classes.
+      #
+      # Produces a full CREATE TABLE schema and Sequel-based repository
+      # adapter classes for each aggregate. Adapter files are written into
+      # the domain gem's lib directory.
+      #
+      # @return [void]
       def generate_sql
         domain = resolve_domain_option
         return unless domain
@@ -78,6 +93,13 @@ module Hecks
       desc "db:migrate", "Run pending Hecks SQL migrations"
       option :database, type: :string, desc: "SQLite database path"
       map "db:migrate" => :db_migrate
+      # Runs pending SQL migrations from db/hecks_migrate/.
+      #
+      # Uses ActiveRecord's connection if available, otherwise requires
+      # a --database path for SQLite. Applies each unapplied migration
+      # in timestamp order.
+      #
+      # @return [void]
       def db_migrate
         connection = build_connection
         return unless connection
@@ -92,6 +114,12 @@ module Hecks
 
       private
 
+      # Builds a database connection for running migrations.
+      #
+      # Prefers ActiveRecord if available, otherwise requires a --database
+      # path for SQLite. Returns a wrapper object with an #execute method.
+      #
+      # @return [Object, nil] a connection object with #execute, or nil
       def build_connection
         db_path = options[:database]
         if defined?(::ActiveRecord)
@@ -108,6 +136,9 @@ module Hecks
         wrapper
       end
 
+      # Registers the SQL migration strategy if not already registered.
+      #
+      # @return [void]
       def register_sql_strategy
         unless Migrations::MigrationStrategy.for(:sql)
           Migrations::MigrationStrategy.register(:sql, Migrations::Strategies::SqlStrategy)

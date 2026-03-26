@@ -16,9 +16,18 @@
 module Hecks
   class CLI < Thor
     module ConflictHandler
-      # Write a file, showing a diff if it already exists with different content.
-      # Checks for --force option on the current Thor command.
-      # Returns true if the file was written, false if skipped.
+      # Writes a file, showing a diff if it already exists with different content.
+      #
+      # If the file does not exist, creates it (including parent directories).
+      # If the file exists with identical content, reports it as up to date.
+      # If the file exists with different content:
+      # - With --force: overwrites without prompting
+      # - With TTY: offers interactive resolution (overwrite/skip/diff/edit)
+      # - Without TTY: prints instructions and skips
+      #
+      # @param path [String] the file path to write
+      # @param new_content [String] the content to write
+      # @return [Boolean] true if the file was written, false if skipped
       def write_or_diff(path, new_content)
         unless File.exist?(path)
           dir = File.dirname(path)
@@ -54,6 +63,16 @@ module Hecks
 
       private
 
+      # Displays a colored unified diff between old and new content.
+      #
+      # Uses system `diff -u` with temp files, then replaces temp file paths
+      # with meaningful labels. Colors: red for deletions, green for additions,
+      # cyan for hunk headers.
+      #
+      # @param old_content [String] the existing file content
+      # @param new_content [String] the proposed new content
+      # @param path [String] the file path (used for labels)
+      # @return [void]
       def show_diff(old_content, new_content, path)
         require "tempfile"
         old_file = Tempfile.new(["old", File.extname(path)])
@@ -78,6 +97,17 @@ module Hecks
         new_file&.unlink
       end
 
+      # Offers interactive resolution for a file conflict.
+      #
+      # Loops until the user chooses an action:
+      # - y/yes: overwrite the file
+      # - n/no/enter: skip the file
+      # - d/diff: show the diff again
+      # - e/edit: open the file in $EDITOR
+      #
+      # @param path [String] the conflicting file path
+      # @param new_content [String] the proposed new content
+      # @return [Boolean] true if the file was written, false if skipped
       def resolve_interactively(path, new_content)
         loop do
           answer = ask("  [y]es overwrite / [n]o skip / [d]iff again / [e]dit in $EDITOR: ")
@@ -98,6 +128,14 @@ module Hecks
         end
       end
 
+      # Opens a file in the user's editor with the generated version as reference.
+      #
+      # Writes the generated content to a temp file so the user can reference it,
+      # then opens the existing file in $EDITOR (defaults to vim).
+      #
+      # @param path [String] the file to edit
+      # @param new_content [String] the generated content (saved as temp reference)
+      # @return [void]
       def open_in_editor(path, new_content)
         # Write generated version to a temp file for reference
         require "tempfile"

@@ -8,6 +8,18 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module EventSpec
+          # Generates an RSpec spec file for an event class.
+          #
+          # The generated spec covers:
+          # - Immutability: verifies the event is frozen after construction
+          # - Timestamp: verifies +occurred_at+ returns a +Time+ instance
+          # - Attribute carriage: verifies each attribute is accessible and returns
+          #   the expected example value (or is non-nil for Date/DateTime types)
+          #
+          # @param event [Hecks::DomainModel::Behavior::Event] the event IR
+          # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the owning
+          #   aggregate, used to build the fully qualified class name
+          # @return [String] the complete RSpec file content
           def generate_event_spec(event, aggregate)
             safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
             fqn = full_class_name("#{safe_agg}::Events::#{event.name}")

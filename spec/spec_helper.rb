@@ -1,4 +1,15 @@
 require "hecks"
+require "tmpdir"
+
+# Build and install the gem at test startup to catch packaging errors early
+Dir.mktmpdir do |dir|
+  gem_path = "#{dir}/hecks.gem"
+  output = `gem build #{File.expand_path("../hecks.gemspec", __dir__)} -o #{gem_path} 2>&1`
+  abort "Gem build failed!\n#{output}" unless $?.success?
+
+  output = `gem install #{gem_path} 2>&1`
+  abort "Gem install failed!\n#{output}" unless $?.success?
+end
 Hecks.load_strategy = :memory
 require_relative "support/shared_boot"
 

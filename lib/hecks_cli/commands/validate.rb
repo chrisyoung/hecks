@@ -12,6 +12,13 @@ module Hecks
       desc "validate", "Validate the domain definition"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
+      # Validates the domain definition and prints a detailed summary.
+      #
+      # If valid, prints each aggregate with its attributes, value objects,
+      # entities, commands, events, and policies. If invalid, prints all
+      # validation errors.
+      #
+      # @return [void]
       def validate
         domain = resolve_domain_option
         return unless domain

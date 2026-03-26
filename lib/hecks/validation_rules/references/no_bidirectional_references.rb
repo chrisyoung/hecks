@@ -1,13 +1,22 @@
 # Hecks::ValidationRules::References::NoBidirectionalReferences
 #
-# Rejects bidirectional references between aggregates (A->B and B->A).
-# Part of the ValidationRules::References group -- run by Hecks.validate.
+# Validates that no two aggregates reference each other (A->B and B->A).
+# Bidirectional references between aggregates create tight coupling and
+# make it impossible to determine ownership. The fix is to remove one
+# direction and use a policy to react to changes on the other side.
+#
+# Part of the ValidationRules::References group -- run by +Hecks.validate+.
 #
 module Hecks
   module ValidationRules
     module References
-    # No A -> B and B -> A
+    # No A -> B and B -> A references allowed.
     class NoBidirectionalReferences < BaseRule
+      # Builds a map of aggregate-to-reference-targets, then checks for any
+      # pair where both sides reference each other. Deduplicates errors so
+      # each bidirectional pair is reported only once (sorted alphabetically).
+      #
+      # @return [Array<String>] error messages for each bidirectional reference pair
       def errors
         result = []
         refs = {}

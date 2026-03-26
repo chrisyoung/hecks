@@ -17,11 +17,27 @@
 #
 module Hecks
   module DSL
+    # Builds a DomainModel::Behavior::Command from DSL declarations.
+    #
+    # CommandBuilder collects all facets of a command definition: its input
+    # attributes, an optional handler or call body, a guard policy reference,
+    # read model dependencies, external system dependencies, actors (roles),
+    # static field assignments (+sets+), and pre/postconditions. The +#build+
+    # method assembles these into an immutable Command IR object.
+    #
+    # Includes AttributeCollector for the +attribute+, +list_of+, and
+    # +reference_to+ DSL methods.
     class CommandBuilder
       include AttributeCollector
 
+      # @return [Array<DomainModel::Structure::Attribute>] the command's input attributes
       attr_reader :attributes
 
+      # Initialize a new command builder with the given command name.
+      #
+      # Sets up empty collections for all command facets.
+      #
+      # @param name [String] the command name (e.g. "CreatePizza", "UpdateAccount")
       def initialize(name)
         @name = name
         @attributes = []
@@ -36,44 +52,122 @@ module Hecks
         @postconditions = []
       end
 
+      # Set the call body block executed when the command runs.
+      #
+      # The call body is a lightweight inline handler evaluated in the context
+      # of the command runner. Use this for simple logic; use +handler+ for
+      # more complex execution.
+      #
+      # @yield block executed when the command is dispatched
+      # @return [void]
       def call(&block)
         @call_body = block
       end
 
+      # Set a custom handler block for command execution.
+      #
+      # The handler block receives the command and aggregate and performs
+      # the domain logic. Mutually usable with +call+, though +handler+
+      # takes precedence when both are set.
+      #
+      # @yield block that implements the command's domain logic
+      # @return [void]
       def handler(&block)
         @handler = block
       end
 
+      # Reference a guard policy by name that must pass before execution.
+      #
+      # The named policy must be defined on the same aggregate. It is
+      # evaluated before the command executes; if it fails, the command
+      # is rejected.
+      #
+      # @param name [String] the guard policy name (e.g. "MustBeAdmin")
+      # @return [void]
       def guarded_by(name)
         @guard_name = name
       end
 
+      # Declare a read model this command depends on.
+      #
+      # Read models document the data this command needs to make decisions.
+      # They are used for documentation, event storming visualization, and
+      # runtime dependency tracking.
+      #
+      # @param name [String] the read model name (e.g. "Menu & Availability")
+      # @return [void]
       def read_model(name)
         @read_models << DomainModel::Structure::ReadModel.new(name: name)
       end
 
+      # Declare an external system dependency for this command.
+      #
+      # External systems are third-party services or APIs that the command
+      # interacts with. Used for documentation and event storming visualization.
+      #
+      # @param name [String] the external system name (e.g. "PaymentGateway")
+      # @return [void]
       def external(name)
         @external_systems << DomainModel::Structure::ExternalSystem.new(name: name)
       end
 
+      # Declare an actor (role) that may issue this command.
+      #
+      # Actors represent the users or systems authorized to dispatch this
+      # command. Used for documentation, event storming visualization, and
+      # port-based access control.
+      #
+      # @param name [String] the actor/role name (e.g. "Customer", "Admin")
+      # @return [void]
       def actor(name)
         @actors << DomainModel::Structure::Actor.new(name: name)
       end
 
-      # Declare static field assignments injected into the aggregate constructor:
+      # Declare static field assignments injected into the aggregate on execution.
+      #
+      # These key-value pairs are merged into the aggregate's attributes when
+      # the command runs, useful for commands that always set certain fields
+      # to fixed values (e.g. setting status to "approved").
+      #
+      # @param hash [Hash{Symbol => Object}] field names mapped to their static values
+      # @return [void]
+      #
+      # @example
       #   sets status: "approved", outcome: "approved"
       def sets(**hash)
         @sets.merge!(hash)
       end
 
+      # Add a precondition that must hold before command execution.
+      #
+      # Preconditions are checked before the command handler runs. If any
+      # precondition fails, the command is rejected with the given message.
+      #
+      # @param message [String] human-readable description of the precondition
+      # @yield block that returns true when the precondition is satisfied
+      # @return [void]
       def precondition(message, &block)
         @preconditions << DomainModel::Behavior::Condition.new(message: message, block: block)
       end
 
+      # Add a postcondition that must hold after command execution.
+      #
+      # Postconditions are checked after the command handler runs. If any
+      # postcondition fails, the command's effects are rolled back.
+      #
+      # @param message [String] human-readable description of the postcondition
+      # @yield block that returns true when the postcondition is satisfied
+      # @return [void]
       def postcondition(message, &block)
         @postconditions << DomainModel::Behavior::Condition.new(message: message, block: block)
       end
 
+      # Build and return the DomainModel::Behavior::Command IR object.
+      #
+      # Assembles all collected facets into an immutable Command intermediate
+      # representation.
+      #
+      # @return [DomainModel::Behavior::Command] the fully built command IR object
       def build
         DomainModel::Behavior::Command.new(
           name: @name, attributes: @attributes, handler: @handler, guard_name: @guard_name,

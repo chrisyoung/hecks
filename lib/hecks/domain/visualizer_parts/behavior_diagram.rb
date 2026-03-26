@@ -1,7 +1,12 @@
 # Hecks::DomainVisualizer::BehaviorDiagram
 #
 # Builds the Mermaid flowchart portion showing command-to-event flows
-# and policy chains (event triggers command).
+# and policy chains (event triggers command). Mixed into DomainVisualizer.
+#
+# The flowchart uses Mermaid's LR (left-to-right) direction. Each aggregate
+# is rendered as a subgraph containing its commands (rectangles) and events
+# (rounded rectangles / stadium shapes). Policies are drawn as dotted arrows
+# connecting events to the commands they trigger, potentially across aggregates.
 #
 #   include BehaviorDiagram
 #   generate_behavior  # => "flowchart LR\n    subgraph Pizza\n    ..."
@@ -11,6 +16,11 @@ module Hecks
     module BehaviorDiagram
       private
 
+      # Generate the complete Mermaid flowchart string for the domain's
+      # behavioral model. Includes subgraphs for each aggregate and
+      # dotted-line policy links between events and commands.
+      #
+      # @return [String] Mermaid flowchart source code
       def generate_behavior
         lines = ["flowchart LR"]
 
@@ -37,6 +47,12 @@ module Hecks
         lines.join("\n")
       end
 
+      # Add dotted-line policy links to the diagram. Each policy connects
+      # an event node to a command node with a labeled edge showing the
+      # policy name and async status.
+      #
+      # @param lines [Array<String>] the diagram lines array to append to
+      # @return [void]
       def policy_links(lines)
         all_policies = @domain.aggregates.flat_map(&:policies) + @domain.policies
 
@@ -50,6 +66,11 @@ module Hecks
         end
       end
 
+      # Find the Mermaid node ID for a named event across all aggregates.
+      #
+      # @param event_name [String] the event name to search for
+      # @return [Array(String, String), nil] [aggregate_name, node_id] tuple,
+      #   or nil if the event is not found
       def find_event_node(event_name)
         @domain.aggregates.each do |agg|
           agg.events.each do |evt|
@@ -59,6 +80,11 @@ module Hecks
         nil
       end
 
+      # Find the Mermaid node ID for a named command across all aggregates.
+      #
+      # @param command_name [String] the command name to search for
+      # @return [Array(String, String), nil] [aggregate_name, node_id] tuple,
+      #   or nil if the command is not found
       def find_command_node(command_name)
         @domain.aggregates.each do |agg|
           agg.commands.each do |cmd|
@@ -68,6 +94,12 @@ module Hecks
         nil
       end
 
+      # Generate a unique Mermaid node identifier by combining the aggregate
+      # prefix with the element name.
+      #
+      # @param prefix [String] the aggregate name used as a namespace
+      # @param name [String] the command or event name
+      # @return [String] a unique node ID (e.g., "Pizza_CreatePizza")
       def node_id(prefix, name)
         "#{prefix}_#{name}"
       end

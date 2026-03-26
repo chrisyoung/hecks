@@ -13,6 +13,20 @@ module Hecks
       module SubscriberSetup
         private
 
+        # Wires all aggregate-level and domain-level event subscribers to the event bus.
+        #
+        # For each aggregate's subscribers:
+        # 1. Resolves the subscriber class from +ModuleDomain::AggregateName::Subscribers::SubscriberName+
+        # 2. Instantiates the subscriber (calling +.new+ once, shared across events)
+        # 3. Subscribes to the declared event name on the event bus
+        # 4. If the subscriber is async and an +@async_handler+ is registered,
+        #    delegates to the async handler with the subscriber's fully-qualified class name;
+        #    otherwise calls +handler.call(event)+ synchronously
+        #
+        # After aggregate subscribers, also wires domain-level event subscribers
+        # via +setup_domain_event_subscribers+.
+        #
+        # @return [void]
         def setup_subscribers
           @domain.aggregates.each do |agg|
             agg.subscribers.each do |sub|
@@ -33,6 +47,15 @@ module Hecks
           setup_domain_event_subscribers
         end
 
+        # Wires domain-level event subscribers (defined via +on_event+ in the domain DSL).
+        #
+        # These are simple block-based subscribers stored as hashes with +:event_name+
+        # and +:block+ keys. Each block is subscribed directly to the event bus.
+        #
+        # Returns immediately if the domain does not support +event_subscribers+
+        # (backward compatibility with older domain definitions).
+        #
+        # @return [void]
         def setup_domain_event_subscribers
           return unless @domain.respond_to?(:event_subscribers)
 

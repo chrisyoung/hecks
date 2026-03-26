@@ -1,14 +1,31 @@
 # Hecks::ExtensionDocs
 #
-# Metadata registry for extensions. Each entry describes what an
-# extension does, how to install it, and a usage example. Used by
-# ReadmeGenerator for the main README and for per-extension READMEs.
+# Metadata registry for all Hecks extensions. Each entry describes what an
+# extension does, which gem provides it, how to install it, and includes a
+# usage example. This registry serves two purposes:
 #
-#   Hecks::ExtensionDocs.all
-#   Hecks::ExtensionDocs.generate_readmes(root)
+# 1. Provides structured data used by ReadmeGenerator for the main project
+#    README and for per-extension documentation files.
+# 2. Offers programmatic access to extension metadata for tooling,
+#    introspection, and documentation generation.
+#
+# Extensions are grouped by category: +:persistence+, +:realtime+, +:rails+,
+# +:server+, and +:middleware+.
+#
+#   Hecks::ExtensionDocs.all                    # => Array of all extension hashes
+#   Hecks::ExtensionDocs.by_category            # => Hash grouped by category symbol
+#   Hecks::ExtensionDocs.generate_readmes(root) # => generates docs/extensions/*.md
 #
 module Hecks
   module ExtensionDocs
+    # @return [Array<Hash>] frozen array of extension metadata hashes. Each hash
+    #   contains keys:
+    #   - +:gem+ [String] - the gem name (e.g. "hecks_sqlite")
+    #   - +:name+ [String] - human-readable display name (e.g. "SQLite")
+    #   - +:category+ [Symbol] - grouping category (:persistence, :middleware, etc.)
+    #   - +:description+ [String] - one-line description of the extension
+    #   - +:gemfile+ [String] - the Gemfile line to install the gem
+    #   - +:example+ [String] - a Ruby code example showing usage
     EXTENSIONS = [
       {
         gem: "hecks_sqlite",
@@ -148,15 +165,33 @@ module Hecks
       },
     ].freeze
 
+    # Return the full list of extension metadata hashes.
+    #
+    # @return [Array<Hash>] all registered extension metadata entries
     def self.all
       EXTENSIONS
     end
 
+    # Return extensions grouped by their category symbol.
+    #
+    # @return [Hash{Symbol => Array<Hash>}] a hash where keys are category
+    #   symbols (e.g. +:persistence+, +:middleware+) and values are arrays
+    #   of extension metadata hashes belonging to that category
     def self.by_category
       EXTENSIONS.group_by { |e| e[:category] }
     end
 
-    # Generate a README for each extension from its source file header.
+    # Generate a Markdown README file for each extension that has a source
+    # file present under +root/lib/+. Files are written to +root/docs/extensions/+.
+    #
+    # Each generated README includes the extension name, description, install
+    # instructions, usage example, and (if available) details extracted from
+    # the source file's leading comment header.
+    #
+    # @param root [String] the project root directory path; expects source
+    #   files at +root/lib/<gem_name>.rb+ and writes output to
+    #   +root/docs/extensions/<gem_name>.md+
+    # @return [Array<String>] paths to all generated README files
     def self.generate_readmes(root)
       docs_dir = File.join(root, "docs", "extensions")
       Dir.mkdir(docs_dir) unless File.directory?(docs_dir)
@@ -176,6 +211,14 @@ module Hecks
       generated
     end
 
+    # Extract the leading comment block from a Ruby source file.
+    #
+    # Reads lines from the top of the file until a non-comment, non-blank
+    # line is encountered. Strips the "#" prefix from each line and removes
+    # the first line if it looks like a bare class/module name.
+    #
+    # @param path [String] absolute path to the Ruby source file
+    # @return [String] the extracted comment text, stripped of "#" prefixes
     def self.extract_header(path)
       lines = File.readlines(path)
       comment_lines = []
@@ -188,6 +231,11 @@ module Hecks
       comment_lines.join("\n").strip
     end
 
+    # Build a Markdown README string from extension metadata and a header.
+    #
+    # @param ext [Hash] extension metadata hash from {EXTENSIONS}
+    # @param header [String] extracted source file comment header
+    # @return [String] the complete Markdown README content
     def self.build_readme(ext, header)
       lines = []
       lines << "# #{ext[:name]}"

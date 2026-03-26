@@ -1,0 +1,13 @@
+---
+main: README.md
+title: "Hecks — Hexagonal DDD Framework for Ruby"
+markup: markdown
+output_dir: doc
+generator_name: darkfish
+template: rorvswild
+exclude:
+  - spec/
+  - examples/
+  - bin/
+  - .claude/
+  - vendor/

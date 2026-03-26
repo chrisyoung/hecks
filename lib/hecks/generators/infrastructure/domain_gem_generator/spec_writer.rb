@@ -14,6 +14,21 @@ module Hecks
         module SpecWriter
           private
 
+          # Writes all RSpec spec files for the domain gem.
+          #
+          # Creates:
+          # - +spec/spec_helper.rb+ with require lines and RSpec configuration
+          # - +.rspec+ with default formatter and color options
+          # - Per-aggregate specs (+spec/<agg>/<agg>_spec.rb+)
+          # - Value object specs (+spec/<agg>/<vo>_spec.rb+)
+          # - Entity specs (+spec/<agg>/<entity>_spec.rb+)
+          # - Command specs (+spec/<agg>/commands/<cmd>_spec.rb+)
+          # - Event specs (+spec/<agg>/events/<evt>_spec.rb+)
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name
+          # @param mod [String] PascalCase domain module name
+          # @return [void]
           def generate_specs(root, gem_name, mod)
             sg = SpecGenerator.new(@domain)
             write_file(root, "spec/spec_helper.rb", sg.generate_spec_helper)

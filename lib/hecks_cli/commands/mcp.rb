@@ -12,6 +12,17 @@ module Hecks
       desc "mcp", "Start MCP server — build domains (default) or serve one (--domain)"
       option :domain, type: :string, desc: "Domain gem name or path (serves it as MCP tools)"
       option :version, type: :string, desc: "Domain version"
+      # Starts an MCP server for AI agent integration.
+      #
+      # Two modes:
+      # - Without --domain: starts the build-oriented McpServer with tools for
+      #   creating and modifying domain definitions
+      # - With --domain: starts MCP::DomainServer exposing the specified domain's
+      #   aggregates, commands, and queries as callable MCP tools
+      #
+      # Requires the hecks_ai gem to be available.
+      #
+      # @return [void]
       def mcp
         if options[:domain]
           domain = resolve_domain(options[:domain])

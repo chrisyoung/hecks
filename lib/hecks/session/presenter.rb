@@ -4,13 +4,25 @@
 # Part of the Session layer -- formats aggregate, command, policy, query,
 # scope, and subscriber summaries for REPL display.
 #
+# The +describe+ method prints a complete domain overview including all
+# aggregates with their attributes, value objects, entities, commands,
+# validations, policies, queries, scopes, and subscribers. Domain-level
+# policies (cross-aggregate) are shown separately at the end.
+#
 #   session.describe   # prints full domain summary
 #   session.status     # alias for describe
 #
 module Hecks
   class Session
     module Presenter
-      # Describe the entire domain
+      # Print a full description of the domain and all its aggregates.
+      #
+      # Builds the domain, then iterates each aggregate printing its
+      # attributes, value objects, entities, commands (with event mappings),
+      # validations, policies, queries, scopes, and subscribers. Also
+      # prints domain-level policies at the end if any exist.
+      #
+      # @return [nil]
       def describe
         domain = to_domain
 
@@ -89,11 +101,16 @@ module Hecks
         nil
       end
 
-      # Show current domain state (alias for describe)
+      # Print current domain state. Alias for describe.
+      #
+      # @return [nil]
       def status
         describe
       end
 
+      # Return a compact string representation of the session.
+      #
+      # @return [String] e.g. '#<Hecks::Session "Pizzas" [play] (3 aggregates)>'
       def inspect
         mode_label = play? ? "play" : "sketch"
         "#<Hecks::Session \"#{@name}\" [#{mode_label}] (#{@aggregate_builders.size} aggregates)>"

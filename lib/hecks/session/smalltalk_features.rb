@@ -4,12 +4,24 @@
 # Each feature has a name, description, and example. The ReadmeGenerator
 # introspects this to build the "Hecks Loves Smalltalk" section.
 #
+# This is a data-only module with no instance methods. The FEATURES constant
+# holds a frozen array of hashes, each with :name, :description, and :example
+# keys. Use +SmalltalkFeatures.all+ to retrieve the full list.
+#
+# Features documented:
+# - Sketch & Play -- two-mode REPL workflow
+# - Named Constants -- aggregates become top-level constants
+# - System Browser -- tree-view browsing of domain elements
+# - Message Not Understood -- helpful NoMethodError suggestions
+#
 #   Hecks::Session::SmalltalkFeatures.all
 #   # => [{ name: "Sketch & Play", ... }, ...]
 #
 module Hecks
   class Session
     module SmalltalkFeatures
+      # Frozen array of Smalltalk-inspired feature descriptions.
+      # Each entry is a Hash with :name, :description, and :example keys.
       FEATURES = [
         {
           name: "Sketch & Play",
@@ -57,6 +69,10 @@ module Hecks
         },
       ].freeze
 
+      # Return all Smalltalk-inspired feature descriptions.
+      #
+      # @return [Array<Hash>] frozen array of feature hashes with :name,
+      #   :description, and :example keys
       def self.all
         FEATURES
       end

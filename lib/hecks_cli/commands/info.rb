@@ -10,6 +10,13 @@ module Hecks
   class CLI < Thor
     class Domain < Thor
       desc "info", "Show auto-wiring details for this project"
+      # Displays auto-wiring details for the current project.
+      #
+      # Shows all discovered domains with their aggregates, available
+      # extensions, local services, and cross-domain reactive policies
+      # with event flow direction.
+      #
+      # @return [void]
       def info
         domains = load_all_domains
         return if domains.empty?
@@ -22,6 +29,10 @@ module Hecks
 
       private
 
+      # Loads all domains from domains/ directory or hecks_domain.rb.
+      #
+      # @return [Array<DomainModel::Structure::Domain>] loaded domains,
+      #   or empty array if none found
       def load_all_domains
         domains_dir = File.join(Dir.pwd, "domains")
         if File.directory?(domains_dir)
@@ -36,6 +47,10 @@ module Hecks
         end
       end
 
+      # Prints all discovered domains with their aggregate names.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] the domains
+      # @return [void]
       def say_domains(domains)
         say "Domains (#{domains.size}):", :green
         domains.each do |d|
@@ -45,6 +60,9 @@ module Hecks
         say ""
       end
 
+      # Prints available Hecks extensions detected from the environment.
+      #
+      # @return [void]
       def say_extensions
         ext_dir = File.join(Dir.pwd, "Gemfile")
         available = []
@@ -59,6 +77,9 @@ module Hecks
         say ""
       end
 
+      # Prints local services found in the services/ directory.
+      #
+      # @return [void]
       def say_services
         svc_dir = File.join(Dir.pwd, "services")
         return unless File.directory?(svc_dir)
@@ -72,6 +93,13 @@ module Hecks
         say ""
       end
 
+      # Prints cross-domain reactive policies with event flow direction.
+      #
+      # For each reactive policy, shows the event name, triggered command,
+      # source domain, target domain, and whether it is conditional.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @return [void]
       def say_cross_domain_policies(domains)
         policies = []
         domains.each do |d|
@@ -102,6 +130,11 @@ module Hecks
         end
       end
 
+      # Finds which domain produces a given event.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @param event_name [String] the event name to search for
+      # @return [String] the domain name, or "?" if not found
       def find_event_source(domains, event_name)
         domains.each do |d|
           d.aggregates.each do |a|
@@ -111,6 +144,11 @@ module Hecks
         "?"
       end
 
+      # Finds which domain owns a given command.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @param command_name [String] the command name to search for
+      # @return [String] the domain name, or "?" if not found
       def find_command_target(domains, command_name)
         domains.each do |d|
           d.aggregates.each do |a|

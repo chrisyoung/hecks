@@ -20,10 +20,54 @@ module Hecks
   module DomainModel
     module Structure
     class Domain
-      attr_reader :name, :aggregates, :policies, :services, :views, :workflows,
-                  :custom_verbs, :tenancy, :event_subscribers
+      # @return [String] the human-readable domain name (e.g., "Pizzas", "Accounting")
+      attr_reader :name
+
+      # @return [Array<Aggregate>] the aggregates that make up this domain
+      attr_reader :aggregates
+
+      # @return [Array<Behavior::Policy>] cross-aggregate reactive policies at the domain level.
+      #   These policies listen for events from one aggregate and trigger commands on another.
+      attr_reader :policies
+
+      # @return [Array] domain services that orchestrate cross-aggregate operations
+      attr_reader :services
+
+      # @return [Array] view definitions for read-side projections
+      attr_reader :views
+
+      # @return [Array] workflow definitions that coordinate multi-step processes
+      attr_reader :workflows
+
+      # @return [Array<String>] custom HTTP verbs beyond the standard CRUD set,
+      #   used by the serve extension for non-standard API endpoints
+      attr_reader :custom_verbs
+
+      # @return [Object, nil] tenancy configuration for multi-tenant domains.
+      #   When set, the runtime scopes all repository operations to the current tenant.
+      attr_reader :tenancy
+
+      # @return [Array] event subscriber registrations at the domain level
+      attr_reader :event_subscribers
+
+      # @return [String, nil] the filesystem path where this domain's source files live.
+      #   Set after compilation or when loading from a gem. Used by generators to know
+      #   where to write output files.
       attr_accessor :source_path
 
+      # Creates a new Domain IR node.
+      #
+      # @param name [String] the domain name (e.g., "Pizzas"). Used to derive module_name and gem_name.
+      # @param aggregates [Array<Aggregate>] the aggregates in this domain
+      # @param policies [Array<Behavior::Policy>] domain-level cross-aggregate policies
+      # @param services [Array] domain service definitions
+      # @param views [Array] view/projection definitions
+      # @param workflows [Array] workflow definitions for multi-step processes
+      # @param custom_verbs [Array<String>] custom HTTP verbs for the serve extension
+      # @param tenancy [Object, nil] tenancy configuration, or nil for single-tenant
+      # @param event_subscribers [Array] domain-level event subscriber registrations
+      #
+      # @return [Domain] a new Domain instance
       def initialize(name:, aggregates: [], policies: [], services: [], views: [],
                      workflows: [], custom_verbs: [], tenancy: nil, event_subscribers: [])
         @name = name
@@ -37,14 +81,31 @@ module Hecks
         @event_subscribers = event_subscribers
       end
 
+      # Returns the sanitized Ruby constant name for this domain.
+      # Strips non-alphanumeric characters and converts to PascalCase.
+      #
+      # @return [String] a valid Ruby module name (e.g., "Pizzas", "OnlineStore")
       def module_name
         Hecks::Utils.sanitize_constant(name)
       end
 
+      # Returns the gem name for this domain's generated gem.
+      # Derived by underscoring the module_name and appending "_domain".
+      #
+      # @return [String] the gem name (e.g., "pizzas_domain", "online_store_domain")
       def gem_name
         Hecks::Utils.underscore(module_name) + "_domain"
       end
 
+      # Prints a human-readable tree of the domain's aggregates, commands,
+      # queries, and policies to stdout. Useful for quick introspection
+      # in the console or CLI.
+      #
+      # Each aggregate is printed with its attributes, followed by indented
+      # listings of commands (with their event mappings), queries, and policies.
+      # Domain-level policies are listed separately at the end.
+      #
+      # @return [nil]
       def describe
         lines = [name, ""]
         aggregates.each do |agg|
@@ -74,14 +135,28 @@ module Hecks
         puts lines.join("\n")
         nil
       end
+
+      # Prints a glossary of all domain terms (aggregate names, attribute names,
+      # command names, event names, etc.) to stdout. Delegates to Hecks::DomainGlossary.
+      #
+      # @return [nil]
       def glossary
         Hecks::DomainGlossary.new(self).print
       end
 
+      # Generates Mermaid diagram markup for this domain, including both
+      # structural (aggregate/value object relationships) and behavioral
+      # (command/event/policy flows) diagrams.
+      #
+      # @return [String] Mermaid-formatted diagram markup
       def to_mermaid
         Hecks::DomainVisualizer.new(self).generate
       end
 
+      # Prints Mermaid diagrams for this domain to stdout.
+      # Convenience wrapper around +to_mermaid+ that outputs directly.
+      #
+      # @return [nil]
       def visualize
         Hecks::DomainVisualizer.new(self).print
       end

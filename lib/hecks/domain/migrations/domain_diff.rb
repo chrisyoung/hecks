@@ -1,8 +1,19 @@
+require_relative "domain_diff/behavior_diff"
+
 # Hecks::Migrations::DomainDiff
 #
 # Compares two domain snapshots and produces a list of Change objects
-# describing what was added, removed, or modified. Adapter-agnostic —
+# describing what was added, removed, or modified. Adapter-agnostic --
 # the changes are structural, not tied to any persistence format.
+#
+# Detects changes in:
+# - Aggregates (add/remove)
+# - Attributes (add/remove on existing aggregates)
+# - Value objects (add/remove)
+# - Entities (add/remove)
+# - Indexes (add/remove)
+# - Commands, policies, validations, invariants, queries, scopes,
+#   subscribers, specifications (via BehaviorDiff mixin)
 #
 # Used by MigrationStrategies to detect what changed and generate
 # appropriate migration files.
@@ -12,23 +23,43 @@
 #   changes = DomainDiff.call(old_domain, new_domain)
 #   # => [Change.new(kind: :add_attribute, aggregate: "Pizza", details: {...}), ...]
 #
-require_relative "domain_diff/behavior_diff"
 
 module Hecks
   module Migrations
     class DomainDiff
     include BehaviorDiff
+
+    # Struct representing a single change between two domain versions.
+    #
+    # @!attribute kind [Symbol] the type of change (e.g., :add_aggregate,
+    #   :remove_attribute, :add_command)
+    # @!attribute context [Symbol, nil] :behavior for behavioral changes, nil
+    #   for structural changes
+    # @!attribute aggregate [String] the name of the affected aggregate
+    # @!attribute details [Hash] change-specific data (varies by kind)
     Change = Struct.new(:kind, :context, :aggregate, :details, keyword_init: true)
 
+    # Convenience class method to compute changes between two domains.
+    #
+    # @param old_domain [Hecks::DomainModel::Domain, nil] the previous domain version (nil for first build)
+    # @param new_domain [Hecks::DomainModel::Domain] the current domain version
+    # @return [Array<Change>] list of detected changes
     def self.call(old_domain, new_domain)
       new(old_domain, new_domain).changes
     end
 
+    # @param old_domain [Hecks::DomainModel::Domain, nil] the previous domain version
+    # @param new_domain [Hecks::DomainModel::Domain] the current domain version
     def initialize(old_domain, new_domain)
       @old = old_domain
       @new = new_domain
     end
 
+    # Compute all changes between the old and new domain versions. Iterates
+    # over new aggregates to find additions and modifications, then checks
+    # for removed aggregates.
+    #
+    # @return [Array<Change>] list of all detected changes
     def changes
       result = []
       old_aggs_by_name = (@old&.aggregates || []).each_with_object({}) { |a, h| h[a.name] = a }
@@ -79,6 +110,12 @@ module Hecks
 
     private
 
+    # Diff attributes between old and new versions of the same aggregate.
+    # Detects added and removed attributes by name comparison.
+    #
+    # @param old_agg [Hecks::DomainModel::Aggregate] the previous aggregate version
+    # @param new_agg [Hecks::DomainModel::Aggregate] the current aggregate version
+    # @return [Array<Change>] attribute-level changes
     def diff_attributes(old_agg, new_agg)
       changes = []
       old_names = old_agg.attributes.map(&:name)
@@ -110,6 +147,12 @@ module Hecks
       changes
     end
 
+    # Diff value objects between old and new versions of the same aggregate.
+    # Detects added and removed value objects by name comparison.
+    #
+    # @param old_agg [Hecks::DomainModel::Aggregate] the previous aggregate version
+    # @param new_agg [Hecks::DomainModel::Aggregate] the current aggregate version
+    # @return [Array<Change>] value object-level changes
     def diff_value_objects(old_agg, new_agg)
       changes = []
       old_vo_names = old_agg.value_objects.map(&:name)
@@ -137,6 +180,12 @@ module Hecks
       changes
     end
 
+    # Diff entities between old and new versions of the same aggregate.
+    # Detects added and removed entities by name comparison.
+    #
+    # @param old_agg [Hecks::DomainModel::Aggregate] the previous aggregate version
+    # @param new_agg [Hecks::DomainModel::Aggregate] the current aggregate version
+    # @return [Array<Change>] entity-level changes
     def diff_entities(old_agg, new_agg)
       changes = []
       old_ent_names = (old_agg.entities || []).map(&:name)
@@ -164,6 +213,12 @@ module Hecks
       changes
     end
 
+    # Diff indexes between old and new versions of the same aggregate.
+    # Compares indexes by their :fields arrays.
+    #
+    # @param old_agg [Hecks::DomainModel::Aggregate] the previous aggregate version
+    # @param new_agg [Hecks::DomainModel::Aggregate] the current aggregate version
+    # @return [Array<Change>] index-level changes
     def diff_indexes(old_agg, new_agg)
       changes = []
       old_idx = (old_agg.indexes || []).map { |i| i[:fields] }

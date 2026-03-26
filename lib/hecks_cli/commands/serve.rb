@@ -16,6 +16,17 @@ module Hecks
       option :rpc, type: :boolean, default: false, desc: "JSON-RPC"
       option :live, type: :boolean, default: false, desc: "WebSocket server"
       option :live_port, type: :numeric, default: 9293, desc: "WebSocket port"
+      # Starts an HTTP server for the domain.
+      #
+      # Two modes:
+      # - Default (REST): starts HTTP::DomainServer with RESTful routes and SSE
+      #   for real-time event streaming. Optionally includes WebSocket support
+      #   with --live.
+      # - JSON-RPC (--rpc): starts HTTP::RpcServer with JSON-RPC 2.0 endpoint
+      #
+      # Requires the hecks_serve gem to be available.
+      #
+      # @return [void] runs until interrupted
       def serve
         domain = resolve_domain_option
         return unless domain

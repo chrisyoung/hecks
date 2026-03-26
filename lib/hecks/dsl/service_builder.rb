@@ -12,19 +12,46 @@
 #
 module Hecks
   module DSL
+    # Builds a DomainModel::Behavior::Service from DSL declarations.
+    #
+    # ServiceBuilder defines a domain service -- a stateless operation that
+    # orchestrates multiple commands across different aggregates. Services
+    # have input attributes (declared via AttributeCollector) and a call body
+    # block that implements the orchestration logic.
+    #
+    # Within the call body, +dispatch(command_name, **attrs)+ is available
+    # to issue commands, and the service's own attributes are accessible
+    # as local methods.
+    #
+    # Includes AttributeCollector for the +attribute+, +list_of+, and
+    # +reference_to+ DSL methods.
     class ServiceBuilder
       include AttributeCollector
 
+      # Initialize a new service builder with the given service name.
+      #
+      # @param name [String] the service name (e.g. "TransferMoney", "ProcessRefund")
       def initialize(name)
         @name = name
         @attributes = []
         @call_body = nil
       end
 
+      # Set the call body block that implements the service's orchestration logic.
+      #
+      # The block is executed when the service is invoked at runtime. It has
+      # access to the service's attributes and can dispatch commands to
+      # multiple aggregates.
+      #
+      # @yield block implementing the service logic
+      # @return [void]
       def call(&block)
         @call_body = block
       end
 
+      # Build and return the DomainModel::Behavior::Service IR object.
+      #
+      # @return [DomainModel::Behavior::Service] the fully built service IR object
       def build
         DomainModel::Behavior::Service.new(
           name: @name,

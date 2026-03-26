@@ -1,3 +1,7 @@
+require_relative "openapi_generator/response_helpers"
+require_relative "openapi_generator/schema_builder"
+require_relative "openapi_generator/path_builder"
+
 # Hecks::HTTP::OpenapiGenerator
 #
 # Generates an OpenAPI 3.0 spec from a domain. Every aggregate gets
@@ -7,9 +11,6 @@
 # Schema building -> OpenapiGenerator::SchemaBuilder
 # Response helpers -> OpenapiGenerator::ResponseHelpers
 #
-require_relative "openapi_generator/response_helpers"
-require_relative "openapi_generator/schema_builder"
-require_relative "openapi_generator/path_builder"
 
 module Hecks
   module HTTP
@@ -18,10 +19,23 @@ module Hecks
       include SchemaBuilder
       include PathBuilder
 
+      # Creates a new OpenapiGenerator for a domain.
+      #
+      # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR
       def initialize(domain)
         @domain = domain
       end
 
+      # Generates an OpenAPI 3.0.0 specification document from the domain.
+      #
+      # The returned hash includes:
+      # - +openapi+ version string (+"3.0.0"+)
+      # - +info+ with title, version, and description
+      # - +paths+ built by +PathBuilder+ (CRUD + query + SSE events)
+      # - +components.schemas+ built by +SchemaBuilder+
+      #
+      # @return [Hash] an OpenAPI spec as a Ruby hash (suitable for
+      #   +JSON.generate+ or YAML serialization)
       def generate
         {
           openapi: "3.0.0",

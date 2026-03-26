@@ -12,11 +12,22 @@
 #
 module Hecks
   class Runtime
+      # Handles cross-domain event wiring for a Runtime instance. When a domain
+      # declares +listens_to+ connections, this module subscribes to the source
+      # domain's event bus and forwards events into the local bus. When a domain
+      # declares +sends_to+ connections, this module subscribes to the local bus
+      # and forwards events to the outbound handler (adapter or callable).
+      #
+      # Also exposes the event bus as an instance variable on the domain module,
+      # enabling other domains to subscribe via +SomeDomain.event_bus+.
       module ConnectionSetup
         private
 
-        # Wire listens_to and sends_to connections, and expose the event bus
-        # on the domain module so other domains can subscribe to it.
+        # Orchestrates connection wiring: exposes the event bus on the domain module,
+        # then wires any +listens_to+ and +sends_to+ connections declared via
+        # +DomainConnections+.
+        #
+        # @return [void]
         def setup_connections
           expose_event_bus
 
@@ -26,15 +37,21 @@ module Hecks
           wire_sends_to(@mod.connections[:sends])
         end
 
-        # Store the event bus on the domain module so other domains
-        # can call `SomeDomain.event_bus` to subscribe.
+        # Store the event bus on the domain module as +@event_bus+ so other domains
+        # can access it via +SomeDomain.event_bus+ for cross-domain subscriptions.
+        #
+        # @return [void]
         def expose_event_bus
           bus = @event_bus
           @mod.instance_variable_set(:@event_bus, bus)
         end
 
-        # Subscribe to each source domain's event bus, forwarding all
-        # events into our own bus.
+        # Subscribe to each source domain's event bus, forwarding all events
+        # into the local domain's event bus. Warns if a source domain's event bus
+        # is not available (e.g., if the source domain has not been booted yet).
+        #
+        # @param sources [Array<Module>, nil] source domain modules that have an +.event_bus+ method
+        # @return [void]
         def wire_listens_to(sources)
           return unless sources&.any?
 
@@ -49,8 +66,13 @@ module Hecks
           end
         end
 
-        # Subscribe to our event bus and forward all events to each
-        # outbound handler (adapter object or callable block).
+        # Subscribe to the local event bus and forward all events to each outbound
+        # target handler. Handlers can be callable objects (responding to +.call+)
+        # or adapter objects (responding to +.publish+).
+        #
+        # @param targets [Array<Hash>, nil] target entries, each containing a +:handler+ key
+        #   whose value responds to +.call+ or +.publish+
+        # @return [void]
         def wire_sends_to(targets)
           return unless targets&.any?
 

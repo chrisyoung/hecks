@@ -1,8 +1,11 @@
 # Hecks::Session::SystemBrowser
 #
 # Smalltalk-inspired system browser. Prints a navigable tree of all
-# domain elements — aggregates, attributes, commands, events, policies,
+# domain elements -- aggregates, attributes, commands, events, policies,
 # queries, specifications, and value objects.
+#
+# Mixed into Session. Uses Unicode box-drawing characters to render a
+# tree structure with proper connectors for last/non-last items.
 #
 #   session.browse              # full domain tree
 #   session.browse("Account")   # single aggregate
@@ -10,6 +13,14 @@
 module Hecks
   class Session
     module SystemBrowser
+      # Print a tree view of the domain or a single aggregate.
+      #
+      # When called without arguments, prints the full domain tree with all
+      # aggregates and their sections. When given an aggregate name, prints
+      # only that aggregate's tree.
+      #
+      # @param aggregate_name [String, nil] optional aggregate to browse; nil for all
+      # @return [nil]
       def browse(aggregate_name = nil)
         if aggregate_name
           builder = @aggregate_builders[normalize_name(aggregate_name)]
@@ -27,18 +38,34 @@ module Hecks
 
       private
 
+      # Render a single aggregate as a tree string with sections.
+      #
+      # Produces lines with Unicode box-drawing characters. The +last+ parameter
+      # controls whether this is the last aggregate in the list, which affects
+      # whether a vertical continuation line is drawn.
+      #
+      # @param agg [DomainModel::Structure::Aggregate] the built aggregate
+      # @param last [Boolean] true if this is the last aggregate (uses corner connector)
+      # @return [String] multi-line tree representation
       def browse_aggregate(agg, last: false)
-        prefix = last ? "  └── " : "  ├── "
-        indent = last ? "      " : "  │   "
+        prefix = last ? "  \u2514\u2500\u2500 " : "  \u251c\u2500\u2500 "
+        indent = last ? "      " : "  \u2502   "
         lines = ["#{prefix}#{agg.name}"]
         sections = browse_sections(agg)
         sections.each_with_index do |(label, items), i|
-          connector = i == sections.size - 1 ? "└── " : "├── "
+          connector = i == sections.size - 1 ? "\u2514\u2500\u2500 " : "\u251c\u2500\u2500 "
           lines << "#{indent}#{connector}#{label}: #{items}"
         end
         lines.join("\n")
       end
 
+      # Build the list of non-empty sections for an aggregate.
+      #
+      # Each section is a two-element array of [label, formatted_items_string].
+      # Only sections with at least one item are included.
+      #
+      # @param agg [DomainModel::Structure::Aggregate] the built aggregate
+      # @return [Array<Array(String, String)>] list of [label, items] pairs
       def browse_sections(agg)
         sections = []
         if agg.attributes.any?

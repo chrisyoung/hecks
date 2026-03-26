@@ -1,10 +1,19 @@
 # Hecks::MCP::DomainServer::QueryTools
 #
-# Registers MCP tools for domain queries. Each query on each aggregate
-# becomes a callable tool. Handles both parameterized and zero-arg queries.
+# Mixin that registers MCP tools for domain queries. Each query on each
+# aggregate becomes a callable MCP tool. Handles both parameterized queries
+# (with input arguments) and zero-argument queries.
 #
-# Mixed into DomainServer — expects @server, @domain, @mod, plus
-# helper method serialize_aggregate.
+# Query results that respond to +map+ (collections) are serialized element
+# by element, joined with newlines. Scalar results are converted with +to_s+.
+#
+# Mixed into DomainServer -- expects the following instance state:
+#   - +@server+ [MCP::Server] -- the MCP server to register tools on
+#   - +@domain+ [Hecks::DomainModel::Structure::Domain] -- the domain model
+#   - +@mod+ [Module] -- the generated domain module (e.g. PizzasDomain)
+#
+# Also expects this helper method from DomainServer:
+#   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
 #
 module Hecks
   module MCP
@@ -12,6 +21,10 @@ module Hecks
       module QueryTools
         private
 
+        # Iterates all aggregates in the domain and registers each of their
+        # queries as an MCP tool.
+        #
+        # @return [void]
         def register_query_tools
           @domain.aggregates.each do |agg|
             agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
@@ -21,6 +34,18 @@ module Hecks
           end
         end
 
+        # Registers a single query as an MCP tool. Inspects the query block's
+        # parameters to determine if it is zero-arg or parameterized, and
+        # builds the appropriate JSON Schema input.
+        #
+        # For zero-arg queries, the tool name is +"AggName_method_name"+ with
+        # no required inputs. For parameterized queries, each block parameter
+        # becomes a required string input.
+        #
+        # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate owning the query
+        # @param agg_class [Class] the generated Ruby class for the aggregate
+        # @param query [Object] the query object with +name+, +block+ (a Proc with parameters)
+        # @return [void]
         def register_query(agg, agg_class, query)
           method_name = Hecks::Utils.underscore(query.name).to_sym
           params = query.block.parameters

@@ -1,3 +1,6 @@
+require "fileutils"
+require_relative "sql_helpers"
+
 # Hecks::Migrations::Strategies::SqlStrategy
 #
 # Generates SQL migration files from domain changes. Produces ALTER TABLE
@@ -9,14 +12,27 @@
 #   strategy = SqlStrategy.new(output_dir: ".")
 #   strategy.generate(changes)
 #
-require "fileutils"
-require_relative "sql_helpers"
 
 module Hecks
   module Migrations
     module Strategies
       class SqlStrategy < MigrationStrategy
       include SqlHelpers
+
+      # Generates SQL migration content from a list of domain changes.
+      #
+      # Processes each change and produces the appropriate SQL statement:
+      # - :add_aggregate -> CREATE TABLE with all columns, indexes, and join tables
+      # - :remove_aggregate -> DROP TABLE
+      # - :add_attribute -> ALTER TABLE ADD COLUMN
+      # - :remove_attribute -> ALTER TABLE DROP COLUMN
+      # - :add_value_object -> CREATE TABLE for join table
+      # - :remove_value_object -> DROP TABLE for join table
+      # - :add_index -> CREATE INDEX
+      # - :remove_index -> DROP INDEX
+      #
+      # @param changes [Array<Migrations::Change>] the domain changes to migrate
+      # @return [String, nil] the SQL migration content, or nil if no changes
       def generate(changes)
         lines = []
 
@@ -45,6 +61,9 @@ module Hecks
         lines.compact.join("\n\n") + "\n"
       end
 
+      # Returns the migration file path with a timestamp prefix.
+      #
+      # @return [String] the file path (e.g., "db/hecks_migrate/20260326120000_hecks_migration.sql")
       def file_path
         timestamp = Time.now.strftime("%Y%m%d%H%M%S")
         "db/hecks_migrate/#{timestamp}_hecks_migration.sql"
@@ -52,6 +71,14 @@ module Hecks
 
       private
 
+      # Generates a CREATE TABLE statement for a new aggregate.
+      #
+      # Includes id primary key, all scalar attributes with NOT NULL/UNIQUE/DEFAULT
+      # constraints from validations, created_at/updated_at timestamps,
+      # auto-indexes on reference columns, and join tables for list value objects.
+      #
+      # @param change [Migrations::Change] the :add_aggregate change
+      # @return [String] the complete SQL for creating the table and related objects
       def generate_create_table(change)
         tables = []
         presence_fields = presence_fields_from(change.details[:validations])
@@ -80,6 +107,12 @@ module Hecks
         tables.compact.join("\n\n")
       end
 
+      # Generates a column definition string with type and constraints.
+      #
+      # @param attr [DomainModel::Structure::Attribute] the attribute
+      # @param presence_fields [Array<Symbol>] fields requiring NOT NULL
+      # @param unique_fields [Array<Symbol>] fields requiring UNIQUE
+      # @return [String] the column definition (e.g., "name VARCHAR(255) NOT NULL")
       def column_def(attr, presence_fields = [], unique_fields = [])
         parts = [attr.name.to_s, sql_type(attr)]
         if attr.reference?
@@ -92,6 +125,11 @@ module Hecks
         parts.join(" ")
       end
 
+      # Generates a CREATE TABLE for a value object's join table from a VO struct.
+      #
+      # @param aggregate_name [String] the parent aggregate name
+      # @param vo [DomainModel::Structure::ValueObject] the value object
+      # @return [String] the CREATE TABLE SQL statement
       def generate_create_join_table_from_vo(aggregate_name, vo)
         parent_table = table_name(aggregate_name)
         jt = join_table_name(aggregate_name, vo.name)
@@ -108,6 +146,13 @@ module Hecks
         "CREATE TABLE #{jt} (\n#{cols.join(",\n")}\n);"
       end
 
+      # Generates an ALTER TABLE ADD COLUMN statement for a new attribute.
+      #
+      # Skips list-type attributes (handled by join tables). Includes NOT NULL,
+      # UNIQUE, DEFAULT, and foreign key constraints based on change details.
+      #
+      # @param change [Migrations::Change] the :add_attribute change
+      # @return [String, nil] the ALTER TABLE SQL, or nil for list attributes
       def generate_add_column(change)
         d = change.details
         return nil if d[:list]
@@ -125,6 +170,10 @@ module Hecks
         "ALTER TABLE #{table_name(change.aggregate)} ADD COLUMN #{parts.join(" ")};"
       end
 
+      # Generates a CREATE TABLE for a value object's join table from a change.
+      #
+      # @param change [Migrations::Change] the :add_value_object change
+      # @return [String] the CREATE TABLE SQL statement
       def generate_create_join_table(change)
         parent_table = table_name(change.aggregate)
         vo_name = change.details[:name]
@@ -142,6 +191,11 @@ module Hecks
         "CREATE TABLE #{jt} (\n#{cols.join(",\n")}\n);"
       end
 
+      # Generates a CREATE INDEX statement.
+      #
+      # @param change [Migrations::Change] the :add_index change with :fields
+      #   and :unique in details
+      # @return [String] the CREATE INDEX SQL statement
       def generate_add_index(change)
         idx_name = index_name(change.aggregate, change.details[:fields])
         unique = change.details[:unique] ? "UNIQUE " : ""
@@ -149,11 +203,22 @@ module Hecks
         "CREATE #{unique}INDEX #{idx_name} ON #{table_name(change.aggregate)}(#{cols});"
       end
 
+      # Generates a DROP INDEX statement.
+      #
+      # @param change [Migrations::Change] the :remove_index change
+      # @return [String] the DROP INDEX SQL statement
       def generate_drop_index(change)
         idx_name = index_name(change.aggregate, change.details[:fields])
         "DROP INDEX IF EXISTS #{idx_name};"
       end
 
+      # Generates CREATE INDEX statements for reference columns on a new table.
+      #
+      # Automatically indexes all reference (foreign key) attributes for
+      # query performance.
+      #
+      # @param change [Migrations::Change] the :add_aggregate change
+      # @return [String, nil] the CREATE INDEX statements, or nil if no references
       def generate_indexes_for_table(change)
         return nil unless change.details[:attributes]
         agg_name = change.aggregate

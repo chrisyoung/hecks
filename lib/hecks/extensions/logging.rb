@@ -1,9 +1,14 @@
 # HecksLogging
 #
-# Connection gem that provides structured logging of command dispatch to $stdout.
-# Shows command name, duration in milliseconds, actor, and tenant.
-# Registered as command bus middleware via Hecks.register_extension.
+# Structured logging extension for the Hecks command bus. Logs every
+# command dispatch to +$stdout+ with the command name, execution duration
+# in milliseconds, and optional actor and tenant context. Uses
+# +Process::CLOCK_MONOTONIC+ for accurate timing.
 #
+# Output format:
+#   [hecks] CreatePizza 0.3ms actor=admin tenant=acme
+#
+# Usage:
 #   require "hecks_logging"
 #   app = Hecks.load(domain)
 #   Pizza.create(name: "Margherita")
@@ -15,6 +20,20 @@ Hecks.describe_extension(:logging,
   wires_to: :command_bus)
 
 Hecks.register_extension(:logging) do |_domain_mod, _domain, runtime|
+  # Register command bus middleware that logs each command execution.
+  #
+  # For each command dispatched:
+  # 1. Extracts the unqualified command class name (last segment after "::")
+  # 2. Reads the current actor role from Hecks.actor (if set and responds to #role)
+  # 3. Reads the current tenant from Hecks.tenant (if set)
+  # 4. Records the start time using monotonic clock
+  # 5. Calls next_handler to execute the command
+  # 6. Computes elapsed time in milliseconds (rounded to 1 decimal)
+  # 7. Prints a structured log line to $stdout
+  #
+  # @param command [Object] the command being dispatched
+  # @param next_handler [#call] the next handler in the middleware chain
+  # @return [Object] the return value of +next_handler.call+
   runtime.use :logging do |command, next_handler|
     cmd_name = command.class.name.split("::").last
     actor = Hecks.actor&.respond_to?(:role) ? Hecks.actor.role : nil
