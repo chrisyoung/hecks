@@ -2,6 +2,12 @@
 # Warns when a new class/module file is added but not registered in autoloads.rb.
 
 AUTOLOADS_PATH = "hecksties/lib/hecks/autoloads.rb"
+LOG_FILE = File.join(File.expand_path("..", __dir__), "tmp", "watcher.log")
+
+def log(msg)
+  puts msg
+  File.open(LOG_FILE, "a") { |f| f.puts msg }
+end
 
 staged = `git diff --cached --diff-filter=A --name-only`.split("\n")
 new_lib_files = staged.select { |f| f.match?(%r{^[^/]+/lib/hecks/.*\.rb$}) }
@@ -22,7 +28,7 @@ new_lib_files.each do |path|
 end
 
 unless missing.empty?
-  puts "\n📦 New files possibly missing from autoloads.rb:"
-  missing.each { |m| puts m }
-  puts "  Check hecksties/lib/hecks/autoloads.rb\n\n"
+  log "\n📦 New files possibly missing from autoloads.rb:"
+  missing.each { |m| log m }
+  log "  Check hecksties/lib/hecks/autoloads.rb\n\n"
 end

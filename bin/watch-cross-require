@@ -3,6 +3,12 @@
 # Cross-component loading must use bare `require`, not `require_relative`.
 
 COMPONENTS = %w[hecksties hecks_model hecks_domain hecks_runtime hecks_session hecks_cli hecks_persist hecks_on_rails].freeze
+LOG_FILE = File.join(File.expand_path("..", __dir__), "tmp", "watcher.log")
+
+def log(msg)
+  puts msg
+  File.open(LOG_FILE, "a") { |f| f.puts msg }
+end
 
 staged = `git diff --cached --name-only`.split("\n")
 rb_files = staged.select { |f| f.end_with?(".rb") && File.exist?(f) }
@@ -27,8 +33,8 @@ rb_files.each do |path|
 end
 
 unless violations.empty?
-  puts "\nBLOCKED: Cross-component require_relative detected:"
-  violations.each { |v| puts v }
-  puts "  Use bare `require` for cross-component loading.\n\n"
+  log "\nBLOCKED: Cross-component require_relative detected:"
+  violations.each { |v| log v }
+  log "  Use bare `require` for cross-component loading.\n\n"
   exit 1
 end

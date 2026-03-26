@@ -9,7 +9,12 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/chrisyoung/hecks"
   spec.license       = "MIT"
 
-  spec.files         = ["README.md", "FEATURES.md", "hecks_logo.png"]
+  spec.files         = [
+    "README.md", "FEATURES.md", "hecks_logo.png",
+    "bin/hecks", "bin/hecks_claude",
+    "bin/watch-all", "bin/watch-autoloads", "bin/watch-cli",
+    "bin/watch-cross-require", "bin/watch-file-size", "bin/watch-spec-coverage"
+  ]
   spec.bindir        = "bin"
   spec.executables   = ["hecks"]
 

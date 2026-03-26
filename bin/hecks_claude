@@ -1,15 +1,14 @@
 #!/bin/bash
 # Start file watchers, then launch Claude Code.
-# Usage: bin/hecks_claude
+# Usage: hecks_claude
 
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$PROJECT_ROOT"
+GEM_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Kill any existing watchers
-pkill -f "ruby bin/watch-all" 2>/dev/null
+pkill -f "ruby.*watch-all" 2>/dev/null
 
 # Start watchers in background
-ruby bin/watch-all &
+ruby "$GEM_DIR/bin/watch-all" &
 WATCHER_PID=$!
 echo "Watchers started (PID: $WATCHER_PID)"
 
@@ -17,4 +16,4 @@ echo "Watchers started (PID: $WATCHER_PID)"
 trap "kill $WATCHER_PID 2>/dev/null" EXIT
 
 # Launch Claude Code
-claude "$@"
+claude --dangerously-skip-permissions "$@"
