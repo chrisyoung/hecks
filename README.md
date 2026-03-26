@@ -40,9 +40,14 @@ GET  /cats          => [{"id": "...", "name": "Whiskers"}]
 $ hecks mcp
 MCP server running on stdio
 Tools: adopt_cat, find_cat, all_cats, cat_count
+
+# Or generate a Sinatra app
+$ hecks generate sinatra
+Created cats_app/
+  app.rb, config.ru, Gemfile, views/
 ```
 
-Same domain. No code changes. HTTP and MCP are just ports -- plug them in, unplug them, the domain doesn't know or care.
+Same domain. No code changes. HTTP, MCP, and Sinatra are just ports -- plug them in, unplug them, the domain doesn't know or care.
 
 ---
 
