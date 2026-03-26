@@ -30,35 +30,14 @@ hecks(scratch play)> Cat.count
 Sketch a domain in the REPL. Play with live objects. Watch events fire and policies trigger. When it's right, `hecks build` generates a versioned gem with specs, ports, adapters, and documentation. Swap in SQLite, Postgres, or MySQL with one line. Serve it over HTTP or MCP with another. The domain never changes.
 
 ```bash
-# Serve it over HTTP
+# Serve it over HTTP — auto-generates REST routes from your commands and queries
 $ hecks serve
-Listening on http://localhost:9292
-POST /cats/adopt    {"name": "Whiskers"}  => 201 Created
-GET  /cats          => [{"id": "...", "name": "Whiskers"}]
 
-# Or expose it as an MCP server for AI agents
+# Expose it as an MCP server — AI agents get typed tools for every command
 $ hecks mcp
-MCP server running on stdio
-Tools: adopt_cat, find_cat, all_cats, cat_count
 
-# Or generate a Sinatra app
-$ hecks generate sinatra
-Generated cats_domain_app/
-  Gemfile      — dependencies
-  config.ru    — rackup entry point
-  app.rb       — routes (edit this!)
-  config/hecks.rb — domain configuration
-
-$ cd cats_domain_app && bundle install && ruby app.rb
-```
-
-The generated Sinatra app has CRUD routes for every aggregate plus routes for named queries -- all derived from the DSL. Edit `app.rb` to add auth, middleware, custom endpoints. The domain stays untouched.
-
-```
-GET    /cats          — all cats
-GET    /cats/:id      — find by ID
-POST   /cats/adopt    — run command (JSON body)
-DELETE /cats/:id      — delete
+# Generate a Sinatra app — CRUD routes, named queries, config, ready to edit
+$ hecks generate sinatra && cd cats_domain_app && ruby app.rb
 ```
 
 REPL sketch → play with live objects → serve over HTTP → expose via MCP → generate a Sinatra app. All the same domain, zero code changes.
