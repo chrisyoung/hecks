@@ -1,12 +1,12 @@
-# Hecks::Migrations::Strategies::SqlHelpers
-#
-# Shared helpers for SQL migration generation: type mapping, naming
-# conventions, literal quoting, and validation extraction. Mixed into
-# SqlStrategy to keep it under the 200-line limit.
-#
 module Hecks
   module Migrations
     module Strategies
+      # Hecks::Migrations::Strategies::SqlHelpers
+      #
+      # Shared helpers for SQL migration generation: type mapping, naming
+      # conventions, literal quoting, and validation extraction. Mixed into
+      # SqlStrategy to keep it under the 200-line limit.
+      #
       module SqlHelpers
         # Computes the SQL table name for an aggregate (underscore + pluralized).
         #

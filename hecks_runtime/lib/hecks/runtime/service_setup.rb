@@ -1,14 +1,14 @@
-# Hecks::ServiceSetup
-#
-# Wires domain services onto the domain module as callable class methods.
-# Each service gets a method on the module (e.g., Banking.transfer_money)
-# that instantiates the service with its attributes and runs the call body.
-# The call body has access to `dispatch` for orchestrating commands.
-#
-#   ServiceSetup.bind(domain, mod, command_bus)
-#   Banking.transfer_money(source_id: "abc", target_id: "xyz", amount: 500)
-#
 module Hecks
+  # Hecks::ServiceSetup
+  #
+  # Wires domain services onto the domain module as callable class methods.
+  # Each service gets a method on the module (e.g., Banking.transfer_money)
+  # that instantiates the service with its attributes and runs the call body.
+  # The call body has access to `dispatch` for orchestrating commands.
+  #
+  #   ServiceSetup.bind(domain, mod, command_bus)
+  #   Banking.transfer_money(source_id: "abc", target_id: "xyz", amount: 500)
+  #
   module ServiceSetup
     # Binds all domain services as singleton methods on the domain module.
     #

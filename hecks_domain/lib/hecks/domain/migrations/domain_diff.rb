@@ -1,31 +1,30 @@
 require_relative "domain_diff/behavior_diff"
 
-# Hecks::Migrations::DomainDiff
-#
-# Compares two domain snapshots and produces a list of Change objects
-# describing what was added, removed, or modified. Adapter-agnostic --
-# the changes are structural, not tied to any persistence format.
-#
-# Detects changes in:
-# - Aggregates (add/remove)
-# - Attributes (add/remove on existing aggregates)
-# - Value objects (add/remove)
-# - Entities (add/remove)
-# - Indexes (add/remove)
-# - Commands, policies, validations, invariants, queries, scopes,
-#   subscribers, specifications (via BehaviorDiff mixin)
-#
-# Used by MigrationStrategies to detect what changed and generate
-# appropriate migration files.
-#
-#   old_domain = Hecks.domain("Pizzas") { ... }
-#   new_domain = Hecks.domain("Pizzas") { ... }
-#   changes = DomainDiff.call(old_domain, new_domain)
-#   # => [Change.new(kind: :add_attribute, aggregate: "Pizza", details: {...}), ...]
-#
-
 module Hecks
   module Migrations
+    # Hecks::Migrations::DomainDiff
+    #
+    # Compares two domain snapshots and produces a list of Change objects
+    # describing what was added, removed, or modified. Adapter-agnostic --
+    # the changes are structural, not tied to any persistence format.
+    #
+    # Detects changes in:
+    # - Aggregates (add/remove)
+    # - Attributes (add/remove on existing aggregates)
+    # - Value objects (add/remove)
+    # - Entities (add/remove)
+    # - Indexes (add/remove)
+    # - Commands, policies, validations, invariants, queries, scopes,
+    #   subscribers, specifications (via BehaviorDiff mixin)
+    #
+    # Used by MigrationStrategies to detect what changed and generate
+    # appropriate migration files.
+    #
+    #   old_domain = Hecks.domain("Pizzas") { ... }
+    #   new_domain = Hecks.domain("Pizzas") { ... }
+    #   changes = DomainDiff.call(old_domain, new_domain)
+    #   # => [Change.new(kind: :add_attribute, aggregate: "Pizza", details: {...}), ...]
+    #
     class DomainDiff
     include BehaviorDiff
 

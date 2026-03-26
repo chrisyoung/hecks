@@ -1,15 +1,15 @@
-# Hecks::CLI::StubGenerator
-#
-# Resolves a domain element by type and name, runs the appropriate code
-# generator, and returns a hash of { file_path => content } for writing.
-# Supports command, query, aggregate, workflow, service, policy, and
-# specification types.
-#
-#   gen = StubGenerator.new(domain, "command", "Withdraw")
-#   gen.generate  # => { "lib/banking_domain/account/commands/withdraw.rb" => "..." }
-#
 module Hecks
   class CLI < Thor
+    # Hecks::CLI::StubGenerator
+    #
+    # Resolves a domain element by type and name, runs the appropriate code
+    # generator, and returns a hash of { file_path => content } for writing.
+    # Supports command, query, aggregate, workflow, service, policy, and
+    # specification types.
+    #
+    #   gen = StubGenerator.new(domain, "command", "Withdraw")
+    #   gen.generate  # => { "lib/banking_domain/account/commands/withdraw.rb" => "..." }
+    #
     class StubGenerator
       # Initializes a StubGenerator for a specific element type and name.
       #

@@ -9,6 +9,13 @@ RSpec.describe Hecks::GemBuilder do
       FileUtils.mkdir_p(component_dir)
       FileUtils.touch(File.join(component_dir, "#{name}.gemspec"))
     end
+    version_dir = File.join(dir, "hecksties", "lib", "hecks")
+    FileUtils.mkdir_p(version_dir)
+    File.write(File.join(version_dir, "version.rb"), <<~RUBY)
+      module Hecks
+        VERSION = "0.0.0"
+      end
+    RUBY
   end
 
   let(:messages) { [] }
@@ -20,6 +27,36 @@ RSpec.describe Hecks::GemBuilder do
         hecksties hecks_model hecks_domain hecks_runtime
         hecks_session hecks_cli hecks_persist hecks_watchers
       ])
+    end
+  end
+
+  describe "#bump_version!" do
+    it "auto-increments the CalVer version in version.rb" do
+      Dir.mktmpdir do |dir|
+        setup_fake_project(dir)
+        builder = described_class.new(dir, output: output)
+        allow(builder).to receive(:system).and_return(true)
+        builder.build
+
+        version_content = File.read(File.join(dir, "hecksties", "lib", "hecks", "version.rb"))
+        today = Date.today.strftime("%Y.%m.%d")
+        expect(version_content).to include("VERSION = \"#{today}.1\"")
+      end
+    end
+
+    it "increments the build number on same-day builds" do
+      Dir.mktmpdir do |dir|
+        setup_fake_project(dir)
+        today = Date.today.strftime("%Y.%m.%d")
+        File.write(File.join(dir, ".hecks_version"), "#{today}.3")
+
+        builder = described_class.new(dir, output: output)
+        allow(builder).to receive(:system).and_return(true)
+        builder.build
+
+        version_content = File.read(File.join(dir, "hecksties", "lib", "hecks", "version.rb"))
+        expect(version_content).to include("VERSION = \"#{today}.4\"")
+      end
     end
   end
 
@@ -136,8 +173,9 @@ RSpec.describe "gem packaging smoke test" do
     end
   end
 
-  it "installed hecks gem can be required in a subprocess" do
-    result = `ruby -e 'require "hecks"; puts Hecks::VERSION' 2>&1`
+  it "hecks gem can be required in a subprocess" do
+    root = File.expand_path("../../..", __dir__)
+    result = `cd #{root} && bundle exec ruby -e 'require "hecks"; puts Hecks::VERSION' 2>&1`
     expect($?.success?).to be(true),
       "require 'hecks' failed in subprocess:\n#{result}"
   end

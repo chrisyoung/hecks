@@ -1,22 +1,22 @@
-# Hecks::Session::ConsoleRunner
-#
-# Launches an interactive IRB session pre-configured with a Hecks Session.
-# Loads hecks_domain.rb if present, otherwise starts a new empty session.
-#
-# The ConsoleRunner acts as the top-level binding for the IRB workspace,
-# delegating session methods (aggregate, validate, play!, etc.) so users
-# can call them directly without a +session.+ prefix. When aggregates are
-# defined, their handles are hoisted as constants on ConsoleRunner so that
-# +Pizza.attr :name, String+ works naturally. In play mode, domain module
-# constants are also hoisted so +Pizza.create(...)+ resolves correctly.
-#
-# Backtrace display is suppressed by default for cleaner REPL output;
-# call +backtrace!+ to enable full traces and +quiet!+ to suppress again.
-#
-#   ConsoleRunner.new(name: "Pizzas").run
-#
 module Hecks
   class Session
+    # Hecks::Session::ConsoleRunner
+    #
+    # Launches an interactive IRB session pre-configured with a Hecks Session.
+    # Loads hecks_domain.rb if present, otherwise starts a new empty session.
+    #
+    # The ConsoleRunner acts as the top-level binding for the IRB workspace,
+    # delegating session methods (aggregate, validate, play!, etc.) so users
+    # can call them directly without a +session.+ prefix. When aggregates are
+    # defined, their handles are hoisted as constants on ConsoleRunner so that
+    # +Pizza.attr :name, String+ works naturally. In play mode, domain module
+    # constants are also hoisted so +Pizza.create(...)+ resolves correctly.
+    #
+    # Backtrace display is suppressed by default for cleaner REPL output;
+    # call +backtrace!+ to enable full traces and +quiet!+ to suppress again.
+    #
+    #   ConsoleRunner.new(name: "Pizzas").run
+    #
     class ConsoleRunner
     # Create a new ConsoleRunner.
     #

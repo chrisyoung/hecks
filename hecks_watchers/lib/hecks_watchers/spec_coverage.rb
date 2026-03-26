@@ -1,12 +1,12 @@
-# HecksWatchers::SpecCoverage
-#
-# Warns when a new .rb file is added to a component's +lib/+ without a
-# corresponding +_spec.rb+ in that component's +spec/+.
-#
-#   watcher = HecksWatchers::SpecCoverage.new(project_root: Dir.pwd)
-#   watcher.call   # prints warnings for uncovered files
-#
 module HecksWatchers
+  # HecksWatchers::SpecCoverage
+  #
+  # Warns when a new .rb file is added to a component's +lib/+ without a
+  # corresponding +_spec.rb+ in that component's +spec/+.
+  #
+  #   watcher = HecksWatchers::SpecCoverage.new(project_root: Dir.pwd)
+  #   watcher.call   # prints warnings for uncovered files
+  #
   class SpecCoverage
     # @param project_root [String] path to the project root
     # @param logger [Logger, nil] optional logger; creates one if omitted

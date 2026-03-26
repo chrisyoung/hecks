@@ -1,22 +1,21 @@
 require "tmpdir"
 
-# Hecks::DomainCompiler
-#
-# Generates domain gems (build) and loads domains into memory (load_domain).
-# By default, load_domain uses InMemoryLoader to compile generated source
-# strings directly via RubyVM without disk I/O. The build method writes a
-# full gem to disk with documentation artifacts (OpenAPI, RPC, JSON Schema,
-# glossary).
-#
-# Extended onto the top-level Hecks module alongside DomainBuilderMethods.
-# Tests use InMemoryLoader for speed; production can use file-based loading
-# via the private load_domain_from_files fallback.
-#
-#   Hecks.build(domain, version: "2026.03.23.1")
-#   Hecks.load_domain(domain)
-#
-
 module Hecks
+  # Hecks::DomainCompiler
+  #
+  # Generates domain gems (build) and loads domains into memory (load_domain).
+  # By default, load_domain uses InMemoryLoader to compile generated source
+  # strings directly via RubyVM without disk I/O. The build method writes a
+  # full gem to disk with documentation artifacts (OpenAPI, RPC, JSON Schema,
+  # glossary).
+  #
+  # Extended onto the top-level Hecks module alongside DomainBuilderMethods.
+  # Tests use InMemoryLoader for speed; production can use file-based loading
+  # via the private load_domain_from_files fallback.
+  #
+  #   Hecks.build(domain, version: "2026.03.23.1")
+  #   Hecks.load_domain(domain)
+  #
   module DomainCompiler
     # Build a complete domain gem on disk. Validates the domain first, then
     # generates all Ruby source files, specs, and documentation artifacts

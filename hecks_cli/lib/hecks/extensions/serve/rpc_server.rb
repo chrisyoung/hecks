@@ -2,26 +2,25 @@ require "webrick"
 require "json"
 require "tmpdir"
 
-# Hecks::HTTP::RpcServer
-#
-# WEBrick-based JSON-RPC 2.0 server for a Hecks domain. Provides a single
-# POST endpoint that dispatches to commands, queries, and CRUD methods for
-# each aggregate. Boots the domain gem from a temporary directory (same
-# approach as {DomainServer}).
-#
-# RPC method naming conventions:
-# - Commands: use the command class name (e.g. "CreatePizza")
-# - Queries: use "AggregateName.query_name" (e.g. "Pizza.by_topping")
-# - CRUD: use "AggregateName.find", ".all", ".count", ".delete"
-#
-#   hecks domain serve pizzas_domain --rpc
-#
-#   # JSON-RPC request:
-#   # POST / {"jsonrpc":"2.0","method":"CreatePizza","params":{"name":"Margherita"},"id":1}
-#
-
 module Hecks
   module HTTP
+    # Hecks::HTTP::RpcServer
+    #
+    # WEBrick-based JSON-RPC 2.0 server for a Hecks domain. Provides a single
+    # POST endpoint that dispatches to commands, queries, and CRUD methods for
+    # each aggregate. Boots the domain gem from a temporary directory (same
+    # approach as {DomainServer}).
+    #
+    # RPC method naming conventions:
+    # - Commands: use the command class name (e.g. "CreatePizza")
+    # - Queries: use "AggregateName.query_name" (e.g. "Pizza.by_topping")
+    # - CRUD: use "AggregateName.find", ".all", ".count", ".delete"
+    #
+    #   hecks domain serve pizzas_domain --rpc
+    #
+    #   # JSON-RPC request:
+    #   # POST / {"jsonrpc":"2.0","method":"CreatePizza","params":{"name":"Margherita"},"id":1}
+    #
     class RpcServer
       # Initialize the RPC server, boot the domain, and register all methods.
       #

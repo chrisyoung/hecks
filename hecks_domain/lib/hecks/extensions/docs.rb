@@ -1,22 +1,22 @@
-# Hecks::ExtensionDocs
-#
-# Metadata registry for all Hecks extensions. Each entry describes what an
-# extension does, which gem provides it, how to install it, and includes a
-# usage example. This registry serves two purposes:
-#
-# 1. Provides structured data used by ReadmeGenerator for the main project
-#    README and for per-extension documentation files.
-# 2. Offers programmatic access to extension metadata for tooling,
-#    introspection, and documentation generation.
-#
-# Extensions are grouped by category: +:persistence+, +:realtime+, +:rails+,
-# +:server+, and +:middleware+.
-#
-#   Hecks::ExtensionDocs.all                    # => Array of all extension hashes
-#   Hecks::ExtensionDocs.by_category            # => Hash grouped by category symbol
-#   Hecks::ExtensionDocs.generate_readmes(root) # => generates docs/extensions/*.md
-#
 module Hecks
+  # Hecks::ExtensionDocs
+  #
+  # Metadata registry for all Hecks extensions. Each entry describes what an
+  # extension does, which gem provides it, how to install it, and includes a
+  # usage example. This registry serves two purposes:
+  #
+  # 1. Provides structured data used by ReadmeGenerator for the main project
+  #    README and for per-extension documentation files.
+  # 2. Offers programmatic access to extension metadata for tooling,
+  #    introspection, and documentation generation.
+  #
+  # Extensions are grouped by category: +:persistence+, +:realtime+, +:rails+,
+  # +:server+, and +:middleware+.
+  #
+  #   Hecks::ExtensionDocs.all                    # => Array of all extension hashes
+  #   Hecks::ExtensionDocs.by_category            # => Hash grouped by category symbol
+  #   Hecks::ExtensionDocs.generate_readmes(root) # => generates docs/extensions/*.md
+  #
   module ExtensionDocs
     # @return [Array<Hash>] frozen array of extension metadata hashes. Each hash
     #   contains keys:

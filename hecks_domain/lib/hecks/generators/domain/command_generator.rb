@@ -1,41 +1,40 @@
 require_relative "command_generator/injection_helpers"
 
-# Hecks::Generators::Domain::CommandGenerator
-#
-# Generates command classes with an emits declaration and a call method.
-# Create commands build a new aggregate; update commands look up an
-# existing one by ID and merge changed attributes. Handles Ruby keyword-
-# safe attribute names via **kwargs. The Hecks::Command mixin (included
-# at load time) provides event emission and handler wiring. Part of
-# Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
-#
-# == Create vs. Update Detection
-#
-# A command is classified as an "update" if it has an attribute matching
-# the aggregate's ID pattern (e.g., +pizza_id+ for a Pizza aggregate).
-# The ID attribute is found by +find_self_id_attr+, which tries the full
-# snake_case name first, then progressively shorter suffixes. If no ID
-# attribute is found, the command is classified as a "create".
-#
-# == Generated Structure
-#
-# The generated class is nested under +Aggregate::Commands+ and includes:
-# - +include Hecks::Command+ for event emission and handler wiring
-# - +emits "EventName"+ declaration if an event is associated
-# - +attr_reader+ declarations for all command attributes
-# - An +initialize+ method (keyword params or +**kwargs+ for keyword-safe names)
-# - A +call+ method that either creates a new aggregate or updates an existing one
-#
-# == Usage
-#
-#   gen = CommandGenerator.new(cmd, domain_module: "PizzasDomain",
-#     aggregate_name: "Pizza", aggregate: agg, event: evt)
-#   gen.generate
-#
-
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::CommandGenerator
+    #
+    # Generates command classes with an emits declaration and a call method.
+    # Create commands build a new aggregate; update commands look up an
+    # existing one by ID and merge changed attributes. Handles Ruby keyword-
+    # safe attribute names via **kwargs. The Hecks::Command mixin (included
+    # at load time) provides event emission and handler wiring. Part of
+    # Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # == Create vs. Update Detection
+    #
+    # A command is classified as an "update" if it has an attribute matching
+    # the aggregate's ID pattern (e.g., +pizza_id+ for a Pizza aggregate).
+    # The ID attribute is found by +find_self_id_attr+, which tries the full
+    # snake_case name first, then progressively shorter suffixes. If no ID
+    # attribute is found, the command is classified as a "create".
+    #
+    # == Generated Structure
+    #
+    # The generated class is nested under +Aggregate::Commands+ and includes:
+    # - +include Hecks::Command+ for event emission and handler wiring
+    # - +emits "EventName"+ declaration if an event is associated
+    # - +attr_reader+ declarations for all command attributes
+    # - An +initialize+ method (keyword params or +**kwargs+ for keyword-safe names)
+    # - A +call+ method that either creates a new aggregate or updates an existing one
+    #
+    # == Usage
+    #
+    #   gen = CommandGenerator.new(cmd, domain_module: "PizzasDomain",
+    #     aggregate_name: "Pizza", aggregate: agg, event: evt)
+    #   gen.generate
+    #
     class CommandGenerator
       include InjectionHelpers
 

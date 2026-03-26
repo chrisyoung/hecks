@@ -1,32 +1,32 @@
-# Hecks::Commands::CommandBus
-#
-# Dispatches commands through a middleware pipeline. Each middleware
-# wraps the next, like Rack middleware for commands. The bus resolves
-# command and event classes from the domain module, builds a middleware
-# chain, and publishes the resulting event on the event bus.
-#
-# == Middleware
-#
-# Middleware can be registered as blocks or objects. Each receives the
-# command and a +next_handler+ proc. Call +next_handler.call+ to continue
-# the chain; skip it to short-circuit.
-#
-# == Usage
-#
-#   bus = CommandBus.new(domain: domain, event_bus: event_bus)
-#
-#   bus.use :logging do |command, next_handler|
-#     puts "Dispatching #{command.class.name}"
-#     result = next_handler.call
-#     puts "Done"
-#     result
-#   end
-#
-#   bus.dispatch("CreatePizza", name: "Margherita")
-#   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
-#
 module Hecks
   module Commands
+    # Hecks::Commands::CommandBus
+    #
+    # Dispatches commands through a middleware pipeline. Each middleware
+    # wraps the next, like Rack middleware for commands. The bus resolves
+    # command and event classes from the domain module, builds a middleware
+    # chain, and publishes the resulting event on the event bus.
+    #
+    # == Middleware
+    #
+    # Middleware can be registered as blocks or objects. Each receives the
+    # command and a +next_handler+ proc. Call +next_handler.call+ to continue
+    # the chain; skip it to short-circuit.
+    #
+    # == Usage
+    #
+    #   bus = CommandBus.new(domain: domain, event_bus: event_bus)
+    #
+    #   bus.use :logging do |command, next_handler|
+    #     puts "Dispatching #{command.class.name}"
+    #     result = next_handler.call
+    #     puts "Done"
+    #     result
+    #   end
+    #
+    #   bus.dispatch("CreatePizza", name: "Margherita")
+    #   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
+    #
     class CommandBus
       # @return [Array<Hash>] registered middleware entries, each with :name and :handler keys
       attr_reader :middleware

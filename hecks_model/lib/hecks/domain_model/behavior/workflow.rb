@@ -1,39 +1,40 @@
-# Hecks::DomainModel::Behavior::Workflow
-#
-# Intermediate representation of a workflow -- a conditional multi-step
-# command orchestration. Each workflow has a name and an ordered array of
-# steps. Steps are either sequential commands (with optional attribute
-# mapping) or branches that evaluate a specification to choose a path.
-#
-# Workflows can also be scheduled (recurring or one-time) via the +schedule+
-# attribute, which holds a cron-like string or scheduling descriptor.
-#
-# == Step formats
-#
-# Steps are plain hashes in one of two forms:
-#
-# 1. Command step: <tt>{ command: "DoSomething", mapping: { from: :to } }</tt>
-#    Dispatches the named command with optional attribute remapping.
-#
-# 2. Branch step: <tt>{ branch: { spec: "SpecName", if_steps: [...], else_steps: [...] } }</tt>
-#    Evaluates the named specification; if truthy, runs +if_steps+; otherwise runs +else_steps+.
-#    Each sub-step follows the same format recursively.
-#
-# Part of the DomainModel IR layer. Built by WorkflowBuilder in the DSL,
-# consumed by WorkflowRunner at runtime to execute the step sequence.
-#
-#   workflow = Workflow.new(
-#     name: "LoanApproval",
-#     steps: [
-#       { command: "ScoreLoan", mapping: {} },
-#       { branch: { spec: "HighRisk", if_steps: [...], else_steps: [...] } }
-#     ]
-#   )
-#   workflow.scheduled?  # => false
-#
 module Hecks
   module DomainModel
     module Behavior
+
+      # Hecks::DomainModel::Behavior::Workflow
+      #
+      # Intermediate representation of a workflow -- a conditional multi-step
+      # command orchestration. Each workflow has a name and an ordered array of
+      # steps. Steps are either sequential commands (with optional attribute
+      # mapping) or branches that evaluate a specification to choose a path.
+      #
+      # Workflows can also be scheduled (recurring or one-time) via the +schedule+
+      # attribute, which holds a cron-like string or scheduling descriptor.
+      #
+      # == Step formats
+      #
+      # Steps are plain hashes in one of two forms:
+      #
+      # 1. Command step: <tt>{ command: "DoSomething", mapping: { from: :to } }</tt>
+      #    Dispatches the named command with optional attribute remapping.
+      #
+      # 2. Branch step: <tt>{ branch: { spec: "SpecName", if_steps: [...], else_steps: [...] } }</tt>
+      #    Evaluates the named specification; if truthy, runs +if_steps+; otherwise runs +else_steps+.
+      #    Each sub-step follows the same format recursively.
+      #
+      # Part of the DomainModel IR layer. Built by WorkflowBuilder in the DSL,
+      # consumed by WorkflowRunner at runtime to execute the step sequence.
+      #
+      #   workflow = Workflow.new(
+      #     name: "LoanApproval",
+      #     steps: [
+      #       { command: "ScoreLoan", mapping: {} },
+      #       { branch: { spec: "HighRisk", if_steps: [...], else_steps: [...] } }
+      #     ]
+      #   )
+      #   workflow.scheduled?  # => false
+      #
       class Workflow
         # @return [String] PascalCase workflow name (e.g. "LoanApproval")
         # @return [Array<Hash>] ordered list of step hashes. Each is either a

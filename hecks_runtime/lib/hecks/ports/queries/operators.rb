@@ -1,29 +1,29 @@
-# Hecks::Querying::Operators
-#
-# Comparison operator wrappers for the query DSL. Used as values in
-# +where+ conditions to express comparisons beyond simple equality.
-# Each operator implements +match?(actual)+ for in-memory filtering.
-# SQL translation is handled by the SQL adapter, not here -- keeping
-# the domain layer pure. All operators include the Operator marker
-# module so adapters can detect operator values vs. literal equality.
-#
-# == Available Operators
-#
-# - Gt -- greater than (+>+)
-# - Gte -- greater than or equal (+>=+)
-# - Lt -- less than (+<+)
-# - Lte -- less than or equal (+<=+)
-# - NotEq -- not equal (+!=+)
-# - In -- inclusion in a collection (+IN+)
-#
-# == Usage
-#
-#   Pizza.where(price: Operators::Gt.new(10))
-#   Pizza.where(status: Operators::NotEq.new("cancelled"))
-#   Pizza.where(style: Operators::In.new(["Classic", "Tropical"]))
-#
 module Hecks
   module Querying
+    # Hecks::Querying::Operators
+    #
+    # Comparison operator wrappers for the query DSL. Used as values in
+    # +where+ conditions to express comparisons beyond simple equality.
+    # Each operator implements +match?(actual)+ for in-memory filtering.
+    # SQL translation is handled by the SQL adapter, not here -- keeping
+    # the domain layer pure. All operators include the Operator marker
+    # module so adapters can detect operator values vs. literal equality.
+    #
+    # == Available Operators
+    #
+    # - Gt -- greater than (+>+)
+    # - Gte -- greater than or equal (+>=+)
+    # - Lt -- less than (+<+)
+    # - Lte -- less than or equal (+<=+)
+    # - NotEq -- not equal (+!=+)
+    # - In -- inclusion in a collection (+IN+)
+    #
+    # == Usage
+    #
+    #   Pizza.where(price: Operators::Gt.new(10))
+    #   Pizza.where(status: Operators::NotEq.new("cancelled"))
+    #   Pizza.where(style: Operators::In.new(["Classic", "Tropical"]))
+    #
     module Operators
         # Marker module included by all operator classes. Adapters check
         # +value.is_a?(Operators::Operator)+ to distinguish operator objects

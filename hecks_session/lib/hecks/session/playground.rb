@@ -1,34 +1,33 @@
 require_relative "playground/gem_bootstrap"
 require_relative "playground/runtime_resolver"
 
-# Hecks::Session::Playground
-#
-# Live execution sandbox that compiles a domain model into real Ruby classes,
-# boots a full Runtime with memory adapters, and lets you execute commands
-# with real persistence. Used by Session's "play" mode for rapid prototyping.
-#
-# Generates a temp gem, loads it, then creates a Runtime that wires
-# persistence, commands, queries, and the event bus. Aggregates are
-# persisted in memory -- find, all, count, where all work.
-#
-# The Playground intercepts the event bus's +publish+ method to capture every
-# emitted event into an internal list for inspection via +events+, +events_of+,
-# and +history+.
-#
-# Mixins:
-#   GemBootstrap    -- temp gem compilation and loading (compile!)
-#   RuntimeResolver -- command/event class resolution and policy checking
-#
-#   playground = Hecks::Session::Playground.new(domain)
-#   playground.execute("CreatePizza", name: "Margherita")
-#   Pizza.find(id)         # works -- persisted in memory
-#   Pizza.all              # works
-#   playground.events      # => [#<CreatedPizza ...>]
-#   playground.reset!      # clears events and repositories
-#
-
 module Hecks
   class Session
+    # Hecks::Session::Playground
+    #
+    # Live execution sandbox that compiles a domain model into real Ruby classes,
+    # boots a full Runtime with memory adapters, and lets you execute commands
+    # with real persistence. Used by Session's "play" mode for rapid prototyping.
+    #
+    # Generates a temp gem, loads it, then creates a Runtime that wires
+    # persistence, commands, queries, and the event bus. Aggregates are
+    # persisted in memory -- find, all, count, where all work.
+    #
+    # The Playground intercepts the event bus's +publish+ method to capture every
+    # emitted event into an internal list for inspection via +events+, +events_of+,
+    # and +history+.
+    #
+    # Mixins:
+    #   GemBootstrap    -- temp gem compilation and loading (compile!)
+    #   RuntimeResolver -- command/event class resolution and policy checking
+    #
+    #   playground = Hecks::Session::Playground.new(domain)
+    #   playground.execute("CreatePizza", name: "Margherita")
+    #   Pizza.find(id)         # works -- persisted in memory
+    #   Pizza.all              # works
+    #   playground.events      # => [#<CreatedPizza ...>]
+    #   playground.reset!      # clears events and repositories
+    #
     class Playground
     include GemBootstrap
     include RuntimeResolver

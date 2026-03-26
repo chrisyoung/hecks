@@ -1,24 +1,24 @@
-# Hecks::Generators::Domain::ServiceGenerator
-#
-# Generates domain service classes that orchestrate commands across
-# aggregates. Each service has attributes, a +call+ method whose body
-# comes from the DSL block, and returns +self+ with results attached.
-# Services are namespaced under +Domain::Services+.
-#
-# Domain services are used when a business operation spans multiple
-# aggregates or requires coordination logic that does not belong to
-# a single aggregate.
-#
-# Part of Generators::Domain.
-#
-# == Usage
-#
-#   gen = ServiceGenerator.new(service, domain_module: "ModelRegistryDomain")
-#   gen.generate
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::ServiceGenerator
+    #
+    # Generates domain service classes that orchestrate commands across
+    # aggregates. Each service has attributes, a +call+ method whose body
+    # comes from the DSL block, and returns +self+ with results attached.
+    # Services are namespaced under +Domain::Services+.
+    #
+    # Domain services are used when a business operation spans multiple
+    # aggregates or requires coordination logic that does not belong to
+    # a single aggregate.
+    #
+    # Part of Generators::Domain.
+    #
+    # == Usage
+    #
+    #   gen = ServiceGenerator.new(service, domain_module: "ModelRegistryDomain")
+    #   gen.generate
+    #
     class ServiceGenerator
 
       # Initializes the service generator.

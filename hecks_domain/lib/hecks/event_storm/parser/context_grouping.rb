@@ -1,18 +1,18 @@
-# Hecks::EventStorm::Parser::ContextGrouping
-#
-# Mixin that splits event storm text into bounded contexts and groups
-# parsed elements by context markers (## Bounded Context: Name).
-#
-# Architecture: included by Hecks::EventStorm::Parser. Relies on the host
-# class defining PATTERNS, ParsedContext, and the PatternMatching mixin
-# (for parse_line and normalize_name).
-#
-#   contexts = extract_contexts(lines)
-#   contexts.first.name  # => "Ordering"
-#
 module Hecks
   module EventStorm
     class Parser
+      # Hecks::EventStorm::Parser::ContextGrouping
+      #
+      # Mixin that splits event storm text into bounded contexts and groups
+      # parsed elements by context markers (## Bounded Context: Name).
+      #
+      # Architecture: included by Hecks::EventStorm::Parser. Relies on the host
+      # class defining PATTERNS, ParsedContext, and the PatternMatching mixin
+      # (for parse_line and normalize_name).
+      #
+      #   contexts = extract_contexts(lines)
+      #   contexts.first.name  # => "Ordering"
+      #
       module ContextGrouping
         private
 

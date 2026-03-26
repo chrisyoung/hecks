@@ -1,26 +1,27 @@
-# Hecks::DomainModel::Structure::Lifecycle
-#
-# State machine definition for an aggregate. Declares which field tracks
-# status, its default value, and which commands trigger which transitions.
-# Supports optional +from:+ constraints to enforce valid source states.
-#
-# Transitions are stored as a Hash keyed by command name. Each value is either:
-# - A simple String target state (e.g., "approved")
-# - A Hash with +:target+ and optional +:from+ keys for constrained transitions
-#
-# The lifecycle is consumed by the command runner at runtime to automatically
-# update the status field after a command succeeds, and to reject commands
-# when the aggregate is not in a valid source state.
-#
-#   Lifecycle.new(field: :status, default: "draft",
-#     transitions: {
-#       "ApproveModel" => { target: "approved", from: "draft" },
-#       "ArchiveModel" => "archived"
-#     })
-#
 module Hecks
   module DomainModel
     module Structure
+
+      # Hecks::DomainModel::Structure::Lifecycle
+      #
+      # State machine definition for an aggregate. Declares which field tracks
+      # status, its default value, and which commands trigger which transitions.
+      # Supports optional +from:+ constraints to enforce valid source states.
+      #
+      # Transitions are stored as a Hash keyed by command name. Each value is either:
+      # - A simple String target state (e.g., "approved")
+      # - A Hash with +:target+ and optional +:from+ keys for constrained transitions
+      #
+      # The lifecycle is consumed by the command runner at runtime to automatically
+      # update the status field after a command succeeds, and to reject commands
+      # when the aggregate is not in a valid source state.
+      #
+      #   Lifecycle.new(field: :status, default: "draft",
+      #     transitions: {
+      #       "ApproveModel" => { target: "approved", from: "draft" },
+      #       "ArchiveModel" => "archived"
+      #     })
+      #
       class Lifecycle
         # @return [Symbol] the attribute name that tracks the aggregate's current state
         #   (e.g., :status, :state). Must correspond to an attribute on the aggregate.

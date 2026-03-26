@@ -1,21 +1,21 @@
-# Hecks::DomainInspector
-#
-# Top-level introspection across all loaded domains. Provides summary
-# methods for commands, queries, policies, aggregates, and the glossary.
-# Extended onto the Hecks module so these are available as top-level
-# calls after domains have been loaded.
-#
-# Each method iterates over +@domain_objects+ (a Hash of module_name =>
-# Domain maintained by DomainCompiler) to collect information from all
-# loaded domains.
-#
-#   Hecks.commands   # => ["Pizza.CreatePizza(name: String) -> CreatedPizza"]
-#   Hecks.queries    # => ["Pizza.FindByName"]
-#   Hecks.policies   # => ["Pizza: CreatedPizza -> NotifyKitchen"]
-#   Hecks.aggregates # => ["Pizza (name: String, size: String)"]
-#   Hecks.glossary   # prints full glossary to stdout
-#
 module Hecks
+  # Hecks::DomainInspector
+  #
+  # Top-level introspection across all loaded domains. Provides summary
+  # methods for commands, queries, policies, aggregates, and the glossary.
+  # Extended onto the Hecks module so these are available as top-level
+  # calls after domains have been loaded.
+  #
+  # Each method iterates over +@domain_objects+ (a Hash of module_name =>
+  # Domain maintained by DomainCompiler) to collect information from all
+  # loaded domains.
+  #
+  #   Hecks.commands   # => ["Pizza.CreatePizza(name: String) -> CreatedPizza"]
+  #   Hecks.queries    # => ["Pizza.FindByName"]
+  #   Hecks.policies   # => ["Pizza: CreatedPizza -> NotifyKitchen"]
+  #   Hecks.aggregates # => ["Pizza (name: String, size: String)"]
+  #   Hecks.glossary   # prints full glossary to stdout
+  #
   module DomainInspector
     # List all commands across all loaded domains. Each entry shows the
     # aggregate, command name, parameters with types, and the resulting event.

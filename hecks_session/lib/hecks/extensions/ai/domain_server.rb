@@ -5,27 +5,26 @@ require_relative "domain_server/command_tools"
 require_relative "domain_server/query_tools"
 require_relative "domain_server/repository_tools"
 
-# Hecks::MCP::DomainServer
-#
-# Generates an MCP server from a compiled Hecks domain. Every command becomes
-# a callable tool, every query becomes a tool, and every aggregate gets
-# Find/All/Count repository tools. Boots with memory adapters for zero-setup,
-# no-database operation.
-#
-# Tool registration is split into three mixins:
-#   - +CommandTools+    -- one tool per command per aggregate
-#   - +QueryTools+      -- one tool per query per aggregate
-#   - +RepositoryTools+ -- Find/All/Count per aggregate
-#
-# This class handles the full lifecycle: building the domain gem into a temp
-# directory, loading it, booting a runtime with memory adapters, and registering
-# all tools on the MCP server.
-#
-#   hecks domain mcp --domain NAME
-#
-
 module Hecks
   module MCP
+    # Hecks::MCP::DomainServer
+    #
+    # Generates an MCP server from a compiled Hecks domain. Every command becomes
+    # a callable tool, every query becomes a tool, and every aggregate gets
+    # Find/All/Count repository tools. Boots with memory adapters for zero-setup,
+    # no-database operation.
+    #
+    # Tool registration is split into three mixins:
+    #   - +CommandTools+    -- one tool per command per aggregate
+    #   - +QueryTools+      -- one tool per query per aggregate
+    #   - +RepositoryTools+ -- Find/All/Count per aggregate
+    #
+    # This class handles the full lifecycle: building the domain gem into a temp
+    # directory, loading it, booting a runtime with memory adapters, and registering
+    # all tools on the MCP server.
+    #
+    #   hecks domain mcp --domain NAME
+    #
     class DomainServer
       include CommandTools
       include QueryTools

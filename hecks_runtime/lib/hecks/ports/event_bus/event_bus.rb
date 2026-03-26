@@ -1,25 +1,25 @@
-# Hecks::EventBus
-#
-# Simple in-process publish/subscribe event bus. Stores all published events
-# in an ordered log and notifies registered listeners by event class name.
-#
-# Supports two subscription modes:
-# - Named subscriptions via +subscribe(event_name)+ for specific event types
-# - Global subscriptions via +on_any+ for receiving every published event
-#
-# Part of the Ports layer. Used by the command runner and policy system to
-# decouple command execution from event handling and cross-cutting concerns.
-#
-# == Usage
-#
-#   bus = EventBus.new
-#   bus.subscribe("CreatedPizza") { |event| puts event.name }
-#   bus.on_any { |event| log(event) }
-#   bus.publish(pizza_created_event)
-#   bus.events  # => [#<CreatedPizza ...>]
-#   bus.clear   # empties the event log
-#
 module Hecks
+  # Hecks::EventBus
+  #
+  # Simple in-process publish/subscribe event bus. Stores all published events
+  # in an ordered log and notifies registered listeners by event class name.
+  #
+  # Supports two subscription modes:
+  # - Named subscriptions via +subscribe(event_name)+ for specific event types
+  # - Global subscriptions via +on_any+ for receiving every published event
+  #
+  # Part of the Ports layer. Used by the command runner and policy system to
+  # decouple command execution from event handling and cross-cutting concerns.
+  #
+  # == Usage
+  #
+  #   bus = EventBus.new
+  #   bus.subscribe("CreatedPizza") { |event| puts event.name }
+  #   bus.on_any { |event| log(event) }
+  #   bus.publish(pizza_created_event)
+  #   bus.events  # => [#<CreatedPizza ...>]
+  #   bus.clear   # empties the event log
+  #
   class EventBus
       # @return [Array<Object>] ordered list of all published events
       attr_reader :events

@@ -1,14 +1,15 @@
-# Hecks::ValidationRules::Structure::AggregatesHaveCommands
-#
-# Validates that every aggregate has at least one command. An aggregate
-# without commands is a data bag with no behavior boundary -- it should
-# either have commands added or be modeled as a value object.
-#
-# Part of the ValidationRules::Structure group -- run by +Hecks.validate+.
-#
 module Hecks
   module ValidationRules
     module Structure
+
+    # Hecks::ValidationRules::Structure::AggregatesHaveCommands
+    #
+    # Validates that every aggregate has at least one command. An aggregate
+    # without commands is a data bag with no behavior boundary -- it should
+    # either have commands added or be modeled as a value object.
+    #
+    # Part of the ValidationRules::Structure group -- run by +Hecks.validate+.
+    #
     # Every aggregate should have at least one command.
     class AggregatesHaveCommands < BaseRule
       # Checks each aggregate and reports an error if it has no commands.

@@ -1,24 +1,25 @@
-# Hecks::DomainModel::Behavior::Condition
-#
-# A named assertion on a command -- either a precondition (checked before
-# execution against the current aggregate state) or a postcondition
-# (checked after execution by comparing before/after state).
-#
-# Precondition blocks receive the current aggregate as a single argument
-# and must return truthy for the command to proceed. Postcondition blocks
-# receive two arguments (the aggregate state before and after execution)
-# and must return truthy for the command result to be accepted.
-#
-# Part of the DomainModel IR layer. Built by CommandBuilder's +precondition+
-# and +postcondition+ DSL methods, stored on Command IR nodes, and evaluated
-# at runtime by the CommandRunner.
-#
-#   pre  = Condition.new(message: "sufficient funds", block: ->(agg) { agg.balance >= 100 })
-#   post = Condition.new(message: "balance decreased", block: ->(before, after) { after.balance < before.balance })
-#
 module Hecks
   module DomainModel
     module Behavior
+
+      # Hecks::DomainModel::Behavior::Condition
+      #
+      # A named assertion on a command -- either a precondition (checked before
+      # execution against the current aggregate state) or a postcondition
+      # (checked after execution by comparing before/after state).
+      #
+      # Precondition blocks receive the current aggregate as a single argument
+      # and must return truthy for the command to proceed. Postcondition blocks
+      # receive two arguments (the aggregate state before and after execution)
+      # and must return truthy for the command result to be accepted.
+      #
+      # Part of the DomainModel IR layer. Built by CommandBuilder's +precondition+
+      # and +postcondition+ DSL methods, stored on Command IR nodes, and evaluated
+      # at runtime by the CommandRunner.
+      #
+      #   pre  = Condition.new(message: "sufficient funds", block: ->(agg) { agg.balance >= 100 })
+      #   post = Condition.new(message: "balance decreased", block: ->(before, after) { after.balance < before.balance })
+      #
       class Condition
         # @return [String] human-readable description of what this condition asserts,
         #   used in error messages when the condition fails

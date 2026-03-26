@@ -1,19 +1,19 @@
-# Hecks::FlowGenerator
-#
-# Analyzes a domain's reactive chains and produces human-readable flow
-# descriptions. Walks all aggregates to find commands and their inferred
-# events, then traces policy triggers to build chains:
-#   Command A -> Event A -> Policy P -> Command B -> Event B -> ...
-#
-# Detects cycles and marks them. Outputs two formats:
-#   - Plain English text via +generate_text+
-#   - Mermaid sequence diagrams via +generate_mermaid+
-#
-#   generator = Hecks::FlowGenerator.new(domain)
-#   puts generator.generate_text
-#   puts generator.generate_mermaid
-#
 module Hecks
+  # Hecks::FlowGenerator
+  #
+  # Analyzes a domain's reactive chains and produces human-readable flow
+  # descriptions. Walks all aggregates to find commands and their inferred
+  # events, then traces policy triggers to build chains:
+  #   Command A -> Event A -> Policy P -> Command B -> Event B -> ...
+  #
+  # Detects cycles and marks them. Outputs two formats:
+  #   - Plain English text via +generate_text+
+  #   - Mermaid sequence diagrams via +generate_mermaid+
+  #
+  #   generator = Hecks::FlowGenerator.new(domain)
+  #   puts generator.generate_text
+  #   puts generator.generate_mermaid
+  #
   class FlowGenerator
     # @param domain [Hecks::DomainModel::Structure::Domain] the domain to analyze
     def initialize(domain)

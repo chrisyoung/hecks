@@ -1,31 +1,31 @@
-# Hecks::FilteredEventBus
-#
-# Decorator around EventBus that enforces cross-domain event directionality.
-# Tags outgoing events with the publishing domain's +gem_name+, and filters
-# incoming events so only declared sources are received.
-#
-# When +allowed_sources+ is nil, all events pass through (open bus / backward-
-# compatible mode). When set, only events from those source domains (or events
-# with no source tag) are delivered to handlers.
-#
-# == How it works
-#
-# - +publish+ sets a +@_source_domain+ instance variable on the event before
-#   delegating to the inner bus. This tags the event with its origin domain.
-# - +subscribe+ and +on_any+ wrap handler blocks to check the source tag
-#   against the allowed sources list before invoking the original handler.
-#
-# == Usage
-#
-#   bus = FilteredEventBus.new(
-#     inner: shared_bus,
-#     domain_gem_name: "orders_domain",
-#     allowed_sources: ["inventory_domain"]
-#   )
-#   bus.publish(event)     # tags event with source "orders_domain"
-#   bus.subscribe("Foo") { |e| ... }  # only fires for events from inventory_domain
-#
 module Hecks
+  # Hecks::FilteredEventBus
+  #
+  # Decorator around EventBus that enforces cross-domain event directionality.
+  # Tags outgoing events with the publishing domain's +gem_name+, and filters
+  # incoming events so only declared sources are received.
+  #
+  # When +allowed_sources+ is nil, all events pass through (open bus / backward-
+  # compatible mode). When set, only events from those source domains (or events
+  # with no source tag) are delivered to handlers.
+  #
+  # == How it works
+  #
+  # - +publish+ sets a +@_source_domain+ instance variable on the event before
+  #   delegating to the inner bus. This tags the event with its origin domain.
+  # - +subscribe+ and +on_any+ wrap handler blocks to check the source tag
+  #   against the allowed sources list before invoking the original handler.
+  #
+  # == Usage
+  #
+  #   bus = FilteredEventBus.new(
+  #     inner: shared_bus,
+  #     domain_gem_name: "orders_domain",
+  #     allowed_sources: ["inventory_domain"]
+  #   )
+  #   bus.publish(event)     # tags event with source "orders_domain"
+  #   bus.subscribe("Foo") { |e| ... }  # only fires for events from inventory_domain
+  #
   class FilteredEventBus
     # @return [Array<Object>] delegated to the inner bus's event log
     attr_reader :events

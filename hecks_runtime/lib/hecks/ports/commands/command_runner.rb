@@ -1,20 +1,20 @@
-# Hecks::Commands::CommandRunner
-#
-# LEGACY -- replaced by CommandBus, which adds middleware support.
-# Kept for backward compatibility. New code should use CommandBus instead.
-#
-# Dispatches commands through the domain. Resolves command and event classes
-# from the domain module namespace, creates events by mapping command attributes
-# to event constructor parameters, and publishes them on the event bus.
-#
-# == Usage
-#
-#   runner = CommandRunner.new(domain: domain, repositories: repos, event_bus: bus)
-#   runner.run("CreatePizza", name: "Margherita")
-#   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
-#
 module Hecks
   module Commands
+    # Hecks::Commands::CommandRunner
+    #
+    # LEGACY -- replaced by CommandBus, which adds middleware support.
+    # Kept for backward compatibility. New code should use CommandBus instead.
+    #
+    # Dispatches commands through the domain. Resolves command and event classes
+    # from the domain module namespace, creates events by mapping command attributes
+    # to event constructor parameters, and publishes them on the event bus.
+    #
+    # == Usage
+    #
+    #   runner = CommandRunner.new(domain: domain, repositories: repos, event_bus: bus)
+    #   runner.run("CreatePizza", name: "Margherita")
+    #   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
+    #
     class CommandRunner
       # Initializes the runner with a domain definition, repositories, and event bus.
       #

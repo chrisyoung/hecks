@@ -1,22 +1,23 @@
-# Hecks::DSL::AggregateBuilder
-#
-# DSL builder for aggregate definitions. Collects attributes, value objects,
-# commands, policies, validations, invariants, scopes, ports, and queries,
-# then builds a DomainModel::Structure::Aggregate. Automatically infers
-# domain events from commands.
-#
-# The workhorse of the DSL layer -- used inside domain, context, and session
-# blocks to define aggregate roots.
-#
-#   builder = AggregateBuilder.new("Pizza")
-#   builder.attribute :name, String
-#   builder.command("CreatePizza") { attribute :name, String }
-#   builder.scope :large, size: "L"
-#   builder.port(:guest) { allow :find, :all }
-#   agg = builder.build  # => #<Aggregate name="Pizza" ...>
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::AggregateBuilder
+    #
+    # DSL builder for aggregate definitions. Collects attributes, value objects,
+    # commands, policies, validations, invariants, scopes, ports, and queries,
+    # then builds a DomainModel::Structure::Aggregate. Automatically infers
+    # domain events from commands.
+    #
+    # The workhorse of the DSL layer -- used inside domain, context, and session
+    # blocks to define aggregate roots.
+    #
+    #   builder = AggregateBuilder.new("Pizza")
+    #   builder.attribute :name, String
+    #   builder.command("CreatePizza") { attribute :name, String }
+    #   builder.scope :large, size: "L"
+    #   builder.port(:guest) { allow :find, :all }
+    #   agg = builder.build  # => #<Aggregate name="Pizza" ...>
+    #
     # Builds a DomainModel::Structure::Aggregate from DSL declarations.
     #
     # AggregateBuilder is the primary builder used inside +aggregate+ blocks in

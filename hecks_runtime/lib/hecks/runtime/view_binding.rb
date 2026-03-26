@@ -1,15 +1,15 @@
-# Hecks::ViewBinding
-#
-# Wires read model projections to the event bus at runtime. For each
-# read model, creates a module under the domain namespace with a .current
-# method that returns the projected state hash, and subscribes projection
-# procs to the event bus so state is updated as events are published.
-#
-#   ViewBinding.bind(view, event_bus, domain_mod)
-#   # After events are published:
-#   PizzasDomain::OrderSummary.current  # => { total_orders: 5 }
-#
 module Hecks
+  # Hecks::ViewBinding
+  #
+  # Wires read model projections to the event bus at runtime. For each
+  # read model, creates a module under the domain namespace with a .current
+  # method that returns the projected state hash, and subscribes projection
+  # procs to the event bus so state is updated as events are published.
+  #
+  #   ViewBinding.bind(view, event_bus, domain_mod)
+  #   # After events are published:
+  #   PizzasDomain::OrderSummary.current  # => { total_orders: 5 }
+  #
   class ViewBinding
     # Binds a view (read model) definition to the event bus and domain module.
     #

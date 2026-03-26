@@ -5,23 +5,22 @@ require_relative "spec_generator/command_spec"
 require_relative "spec_generator/event_spec"
 require_relative "spec_generator/entity_spec"
 
-# Hecks::Generators::Infrastructure::SpecGenerator
-#
-# Generates behavioral RSpec specs from domain IR. Produces specs that
-# describe what aggregates, commands, events, and value objects *do*,
-# not just that they exist. Each concept has its own mixin. Part of
-# Generators::Infrastructure, consumed by DomainGemGenerator::SpecWriter.
-#
-#   gen = SpecGenerator.new(domain)
-#   gen.generate_aggregate_spec(agg)
-#   gen.generate_command_spec(cmd, agg)
-#   gen.generate_event_spec(evt, agg)
-#   gen.generate_value_object_spec(vo, agg)
-#
-
 module Hecks
   module Generators
     module Infrastructure
+    # Hecks::Generators::Infrastructure::SpecGenerator
+    #
+    # Generates behavioral RSpec specs from domain IR. Produces specs that
+    # describe what aggregates, commands, events, and value objects *do*,
+    # not just that they exist. Each concept has its own mixin. Part of
+    # Generators::Infrastructure, consumed by DomainGemGenerator::SpecWriter.
+    #
+    #   gen = SpecGenerator.new(domain)
+    #   gen.generate_aggregate_spec(agg)
+    #   gen.generate_command_spec(cmd, agg)
+    #   gen.generate_event_spec(evt, agg)
+    #   gen.generate_value_object_spec(vo, agg)
+    #
     class SpecGenerator
       include SpecHelpers
       include AggregateSpec

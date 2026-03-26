@@ -1,27 +1,27 @@
-# Hecks::Generators::Domain::SpecificationGenerator
-#
-# Generates specification classes nested under Aggregate::Specifications.
-# Implements the Specification pattern -- each specification has a
-# +satisfied_by?+ method that tests whether a domain object meets certain
-# criteria. The method's parameters and body are extracted from the DSL block.
-#
-# If the DSL block has no explicit parameters, the method receives a single
-# +object+ parameter by default.
-#
-# The Hecks::Specification mixin is injected at load time by InMemoryLoader
-# or by const_missing (file-based gems), providing composability (+and+, +or+,
-# +not+ combinators).
-#
-# Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
-#
-# == Usage
-#
-#   gen = SpecificationGenerator.new(spec, domain_module: "BankingDomain", aggregate_name: "Loan")
-#   gen.generate
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::SpecificationGenerator
+    #
+    # Generates specification classes nested under Aggregate::Specifications.
+    # Implements the Specification pattern -- each specification has a
+    # +satisfied_by?+ method that tests whether a domain object meets certain
+    # criteria. The method's parameters and body are extracted from the DSL block.
+    #
+    # If the DSL block has no explicit parameters, the method receives a single
+    # +object+ parameter by default.
+    #
+    # The Hecks::Specification mixin is injected at load time by InMemoryLoader
+    # or by const_missing (file-based gems), providing composability (+and+, +or+,
+    # +not+ combinators).
+    #
+    # Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # == Usage
+    #
+    #   gen = SpecificationGenerator.new(spec, domain_module: "BankingDomain", aggregate_name: "Loan")
+    #   gen.generate
+    #
     class SpecificationGenerator
 
       # Initializes the specification generator.

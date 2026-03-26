@@ -1,11 +1,11 @@
-# HecksWatchers::LogReader
-#
-# Reads and clears +tmp/watcher.log+ so Claude Code sessions see watcher
-# output. Called by the PostToolUse hook.
-#
-#   HecksWatchers::LogReader.call("/path/to/project")
-#
 module HecksWatchers
+  # HecksWatchers::LogReader
+  #
+  # Reads and clears +tmp/watcher.log+ so Claude Code sessions see watcher
+  # output. Called by the PostToolUse hook.
+  #
+  #   HecksWatchers::LogReader.call("/path/to/project")
+  #
   class LogReader
     # Reads the log file, prints its contents, and clears it.
     #

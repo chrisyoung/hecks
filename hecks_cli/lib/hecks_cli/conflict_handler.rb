@@ -1,20 +1,20 @@
-# Hecks::CLI::ConflictHandler
-#
-# Mixin for CLI generators that write files. When a target file already
-# exists, shows a unified diff and offers interactive resolution. Supports
-# --force to overwrite without prompting. Uses system `diff -u` for real
-# unified diffs with proper insertion/deletion handling.
-#
-#   class Domain < Thor
-#     include ConflictHandler
-#
-#     def some_generator
-#       write_or_diff("app.rb", new_content)
-#     end
-#   end
-#
 module Hecks
   class CLI < Thor
+    # Hecks::CLI::ConflictHandler
+    #
+    # Mixin for CLI generators that write files. When a target file already
+    # exists, shows a unified diff and offers interactive resolution. Supports
+    # --force to overwrite without prompting. Uses system `diff -u` for real
+    # unified diffs with proper insertion/deletion handling.
+    #
+    #   class Domain < Thor
+    #     include ConflictHandler
+    #
+    #     def some_generator
+    #       write_or_diff("app.rb", new_content)
+    #     end
+    #   end
+    #
     module ConflictHandler
       # Writes a file, showing a diff if it already exists with different content.
       #

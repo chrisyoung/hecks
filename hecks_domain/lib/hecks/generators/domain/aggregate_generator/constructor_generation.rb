@@ -1,24 +1,24 @@
-# Hecks::Generators::Domain::AggregateGenerator::ConstructorGeneration
-#
-# Mixin that generates an initialize method for aggregates with keyword
-# arguments, identity assignment, and default handling. Currently unused --
-# Hecks::Model provides identity, timestamps, and equality at runtime.
-# Retained for potential future use when aggregates need explicit constructors.
-#
-# When +@has_keyword_attrs+ is true (i.e., an attribute name collides with a
-# Ruby keyword), generates a +**kwargs+ constructor. Otherwise, generates
-# named keyword parameters with defaults.
-#
-# == Usage
-#
-#   class AggregateGenerator
-#     include ConstructorGeneration
-#   end
-#
 module Hecks
   module Generators
     module Domain
       class AggregateGenerator
+        # Hecks::Generators::Domain::AggregateGenerator::ConstructorGeneration
+        #
+        # Mixin that generates an initialize method for aggregates with keyword
+        # arguments, identity assignment, and default handling. Currently unused --
+        # Hecks::Model provides identity, timestamps, and equality at runtime.
+        # Retained for potential future use when aggregates need explicit constructors.
+        #
+        # When +@has_keyword_attrs+ is true (i.e., an attribute name collides with a
+        # Ruby keyword), generates a +**kwargs+ constructor. Otherwise, generates
+        # named keyword parameters with defaults.
+        #
+        # == Usage
+        #
+        #   class AggregateGenerator
+        #     include ConstructorGeneration
+        #   end
+        #
         module ConstructorGeneration
           private
 

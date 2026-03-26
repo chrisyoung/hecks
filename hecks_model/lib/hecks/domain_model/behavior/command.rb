@@ -1,19 +1,20 @@
-# Hecks::DomainModel::Behavior::Command
-#
-# Intermediate representation of a domain command -- an intent to change state.
-# Each command carries attributes, optional read models, external systems,
-# and actors. Can infer a corresponding event name by converting the verb
-# to past tense (CreatePizza -> CreatedPizza).
-#
-# Part of the DomainModel IR layer. Built by CommandBuilder or EventStorm
-# parser, consumed by CommandGenerator and event inference in AggregateBuilder.
-#
-#   cmd = Command.new(name: "CreatePizza", attributes: [Attribute.new(name: :name, type: String)])
-#   cmd.inferred_event_name  # => "CreatedPizza"
-#
 module Hecks
   module DomainModel
     module Behavior
+
+    # Hecks::DomainModel::Behavior::Command
+    #
+    # Intermediate representation of a domain command -- an intent to change state.
+    # Each command carries attributes, optional read models, external systems,
+    # and actors. Can infer a corresponding event name by converting the verb
+    # to past tense (CreatePizza -> CreatedPizza).
+    #
+    # Part of the DomainModel IR layer. Built by CommandBuilder or EventStorm
+    # parser, consumed by CommandGenerator and event inference in AggregateBuilder.
+    #
+    #   cmd = Command.new(name: "CreatePizza", attributes: [Attribute.new(name: :name, type: String)])
+    #   cmd.inferred_event_name  # => "CreatedPizza"
+    #
     class Command
       # @return [String] PascalCase command name, e.g. "CreatePizza"
       # @return [Array<Hecks::DomainModel::Structure::Attribute>] input attributes for the command

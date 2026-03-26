@@ -1,17 +1,17 @@
-# Hecks::Generators::Infrastructure::DomainGemGenerator::LlmsTxtWriter
-#
-# Mixin that generates an llms.txt file for domain gems produced by
-# DomainGemGenerator. The llms.txt provides AI assistants with structured
-# context about the domain: aggregates, attributes, commands, queries,
-# validation rules, invariants, policy chains, and usage examples.
-#
-#   # Mixed into DomainGemGenerator:
-#   generate_llms_txt(root, gem_name, mod)
-#
 module Hecks
   module Generators
     module Infrastructure
       class DomainGemGenerator
+        # Hecks::Generators::Infrastructure::DomainGemGenerator::LlmsTxtWriter
+        #
+        # Mixin that generates an llms.txt file for domain gems produced by
+        # DomainGemGenerator. The llms.txt provides AI assistants with structured
+        # context about the domain: aggregates, attributes, commands, queries,
+        # validation rules, invariants, policy chains, and usage examples.
+        #
+        #   # Mixed into DomainGemGenerator:
+        #   generate_llms_txt(root, gem_name, mod)
+        #
         module LlmsTxtWriter
           private
 

@@ -1,20 +1,21 @@
-# Hecks::DSL::PolicyBuilder
-#
-# DSL builder for reactive policy definitions. Binds an event name to a
-# trigger command, creating the wiring for event-driven workflows. Supports
-# an optional `condition` block that gates when the policy fires.
-#
-# Part of the DSL layer, nested under AggregateBuilder. Policies enable
-# cross-context communication by reacting to events from any context.
-#
-#   builder = PolicyBuilder.new("FraudAlert")
-#   builder.on "Withdrew"
-#   builder.trigger "FlagSuspicious"
-#   builder.condition { |event| event.amount > 10_000 }
-#   policy = builder.build  # => #<Policy name="FraudAlert" condition=... ...>
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::PolicyBuilder
+    #
+    # DSL builder for reactive policy definitions. Binds an event name to a
+    # trigger command, creating the wiring for event-driven workflows. Supports
+    # an optional `condition` block that gates when the policy fires.
+    #
+    # Part of the DSL layer, nested under AggregateBuilder. Policies enable
+    # cross-context communication by reacting to events from any context.
+    #
+    #   builder = PolicyBuilder.new("FraudAlert")
+    #   builder.on "Withdrew"
+    #   builder.trigger "FlagSuspicious"
+    #   builder.condition { |event| event.amount > 10_000 }
+    #   policy = builder.build  # => #<Policy name="FraudAlert" condition=... ...>
+    #
     # Builds a DomainModel::Behavior::Policy from reactive policy declarations.
     #
     # PolicyBuilder wires domain events to command triggers, forming the backbone

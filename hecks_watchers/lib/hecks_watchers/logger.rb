@@ -1,12 +1,12 @@
-# HecksWatchers::Logger
-#
-# Shared logging for all watchers. Writes to both stdout and a log file
-# that the PostToolUse hook reads to surface warnings in Claude sessions.
-#
-#   logger = HecksWatchers::Logger.new("/path/to/project")
-#   logger.log("⚠  file too long")
-#
 module HecksWatchers
+  # HecksWatchers::Logger
+  #
+  # Shared logging for all watchers. Writes to both stdout and a log file
+  # that the PostToolUse hook reads to surface warnings in Claude sessions.
+  #
+  #   logger = HecksWatchers::Logger.new("/path/to/project")
+  #   logger.log("⚠  file too long")
+  #
   class Logger
     # @param project_root [String] path to the project root
     def initialize(project_root)

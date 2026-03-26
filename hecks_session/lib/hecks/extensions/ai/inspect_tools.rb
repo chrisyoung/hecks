@@ -1,21 +1,21 @@
-# Hecks::MCP::InspectTools
-#
-# MCP tools for read-only domain introspection. These tools let AI agents
-# examine the current domain model without modifying it.
-#
-# Registered tools:
-#   - +describe_domain+  -- full structured JSON of the domain (aggregates,
-#     commands, queries, value objects, validations, policies, services)
-#   - +list_aggregates+  -- comma-separated list of aggregate names
-#   - +preview_code+     -- generated Ruby source code for an aggregate (or all)
-#   - +show_dsl+         -- the raw Hecks DSL source that defines the domain
-#
-# All tools require an active session (enforced via +ctx.ensure_session!+).
-#
 require_relative "domain_serializer"
 
 module Hecks
   module MCP
+    # Hecks::MCP::InspectTools
+    #
+    # MCP tools for read-only domain introspection. These tools let AI agents
+    # examine the current domain model without modifying it.
+    #
+    # Registered tools:
+    #   - +describe_domain+  -- full structured JSON of the domain (aggregates,
+    #     commands, queries, value objects, validations, policies, services)
+    #   - +list_aggregates+  -- comma-separated list of aggregate names
+    #   - +preview_code+     -- generated Ruby source code for an aggregate (or all)
+    #   - +show_dsl+         -- the raw Hecks DSL source that defines the domain
+    #
+    # All tools require an active session (enforced via +ctx.ensure_session!+).
+    #
     module InspectTools
       # Registers all domain inspection tools on the given MCP server.
       #

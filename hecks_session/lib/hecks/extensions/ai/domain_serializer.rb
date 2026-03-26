@@ -1,19 +1,19 @@
-# Hecks::MCP::DomainSerializer
-#
-# Serializes a Hecks domain model into structured JSON for MCP tool responses.
-# Converts the full domain IR (aggregates, commands, queries, policies,
-# validations, invariants, value objects, entities, services) into a nested
-# Hash suitable for JSON output.
-#
-# Used by InspectTools#describe_domain to give AI agents a complete, parseable
-# view of the domain in a single call.
-#
-#   domain = session.to_domain
-#   json = Hecks::MCP::DomainSerializer.call(domain)
-#   # => { domain: "Pizzas", aggregates: [...], policies: [...], services: [...] }
-#
 module Hecks
   module MCP
+    # Hecks::MCP::DomainSerializer
+    #
+    # Serializes a Hecks domain model into structured JSON for MCP tool responses.
+    # Converts the full domain IR (aggregates, commands, queries, policies,
+    # validations, invariants, value objects, entities, services) into a nested
+    # Hash suitable for JSON output.
+    #
+    # Used by InspectTools#describe_domain to give AI agents a complete, parseable
+    # view of the domain in a single call.
+    #
+    #   domain = session.to_domain
+    #   json = Hecks::MCP::DomainSerializer.call(domain)
+    #   # => { domain: "Pizzas", aggregates: [...], policies: [...], services: [...] }
+    #
     module DomainSerializer
       # Serializes a full domain model into a structured Hash.
       #

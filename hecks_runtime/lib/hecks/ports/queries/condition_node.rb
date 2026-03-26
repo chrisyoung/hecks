@@ -1,26 +1,26 @@
-# Hecks::Querying::ConditionNode
-#
-# Tree structure for composing AND/OR query conditions. Leaf AND nodes
-# hold a conditions hash; OR nodes combine two child trees. Used by
-# QueryBuilder to represent composite conditions that can be arbitrarily
-# nested. Each adapter evaluates the tree via +match?(obj)+ for in-memory
-# filtering or builds its own expression (e.g., SQL WHERE clause).
-#
-# == Node Types
-#
-# - +:and+ -- all conditions and children must match. A leaf AND node has
-#   a conditions hash and no children. A compound AND node has children.
-# - +:or+ -- at least one child must match. Always has exactly two children.
-#
-# == Usage
-#
-#   node = ConditionNode.and(style: "Classic")
-#   node = node.merge(name: "Margherita")
-#   combined = ConditionNode.or(node, ConditionNode.and(style: "Tropical"))
-#   combined.match?(pizza)  # => true if either branch matches
-#
 module Hecks
   module Querying
+    # Hecks::Querying::ConditionNode
+    #
+    # Tree structure for composing AND/OR query conditions. Leaf AND nodes
+    # hold a conditions hash; OR nodes combine two child trees. Used by
+    # QueryBuilder to represent composite conditions that can be arbitrarily
+    # nested. Each adapter evaluates the tree via +match?(obj)+ for in-memory
+    # filtering or builds its own expression (e.g., SQL WHERE clause).
+    #
+    # == Node Types
+    #
+    # - +:and+ -- all conditions and children must match. A leaf AND node has
+    #   a conditions hash and no children. A compound AND node has children.
+    # - +:or+ -- at least one child must match. Always has exactly two children.
+    #
+    # == Usage
+    #
+    #   node = ConditionNode.and(style: "Classic")
+    #   node = node.merge(name: "Margherita")
+    #   combined = ConditionNode.or(node, ConditionNode.and(style: "Tropical"))
+    #   combined.match?(pizza)  # => true if either branch matches
+    #
     class ConditionNode
         # @return [Symbol] the node type, either +:and+ or +:or+
         attr_reader :type

@@ -1,22 +1,22 @@
-# Hecks::MCP::PlayTools
-#
-# MCP tools for play mode -- an interactive playground where AI agents can
-# execute domain commands against an in-memory runtime and observe the results.
-# Play mode boots the domain with memory adapters so commands produce real
-# side effects (events, state changes) without needing a database.
-#
-# Registered tools:
-#   - +enter_play_mode+   -- switch the session to play mode
-#   - +exit_play_mode+    -- switch back to build mode
-#   - +execute_command+   -- run a named command with attributes
-#   - +list_commands+     -- show all available commands in the domain
-#   - +show_history+      -- display the event timeline from executed commands
-#   - +reset_playground+  -- clear all events and state, start fresh
-#
-# All tools require an active session (enforced via +ctx.ensure_session!+).
-#
 module Hecks
   module MCP
+    # Hecks::MCP::PlayTools
+    #
+    # MCP tools for play mode -- an interactive playground where AI agents can
+    # execute domain commands against an in-memory runtime and observe the results.
+    # Play mode boots the domain with memory adapters so commands produce real
+    # side effects (events, state changes) without needing a database.
+    #
+    # Registered tools:
+    #   - +enter_play_mode+   -- switch the session to play mode
+    #   - +exit_play_mode+    -- switch back to build mode
+    #   - +execute_command+   -- run a named command with attributes
+    #   - +list_commands+     -- show all available commands in the domain
+    #   - +show_history+      -- display the event timeline from executed commands
+    #   - +reset_playground+  -- clear all events and state, start fresh
+    #
+    # All tools require an active session (enforced via +ctx.ensure_session!+).
+    #
     module PlayTools
       # Registers all play mode tools on the given MCP server.
       #

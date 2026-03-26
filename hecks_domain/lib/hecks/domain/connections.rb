@@ -1,24 +1,24 @@
-# Hecks::DomainConnections
-#
-# Mixin extended onto generated domain modules (e.g., PizzasDomain) to declare
-# what crosses the domain boundary. Two things cross: data (persist_to) and
-# events (listens_to / sends_to). Everything outside the boundary is a connection.
-#
-# Part of the top-level Hecks API. Extended onto domain modules during boot.
-# Connections are declarative -- they describe the wiring, not the implementation.
-# The runtime reads these declarations to set up actual adapters and event routing.
-#
-#   app = Hecks.boot(__dir__) do
-#     persist_to :sqlite
-#     listens_to DeliveryDomain
-#     sends_to :notifications, SendgridAdapter.new
-#   end
-#
-#   # Or after boot:
-#   PizzasDomain.persist_to :sqlite
-#   PizzasDomain.connections  # => { persist: { type: :sqlite }, ... }
-#
 module Hecks
+  # Hecks::DomainConnections
+  #
+  # Mixin extended onto generated domain modules (e.g., PizzasDomain) to declare
+  # what crosses the domain boundary. Two things cross: data (persist_to) and
+  # events (listens_to / sends_to). Everything outside the boundary is a connection.
+  #
+  # Part of the top-level Hecks API. Extended onto domain modules during boot.
+  # Connections are declarative -- they describe the wiring, not the implementation.
+  # The runtime reads these declarations to set up actual adapters and event routing.
+  #
+  #   app = Hecks.boot(__dir__) do
+  #     persist_to :sqlite
+  #     listens_to DeliveryDomain
+  #     sends_to :notifications, SendgridAdapter.new
+  #   end
+  #
+  #   # Or after boot:
+  #   PizzasDomain.persist_to :sqlite
+  #   PizzasDomain.connections  # => { persist: { type: :sqlite }, ... }
+  #
   module DomainConnections
     # Declare the persistence adapter for this domain. Supports both unnamed
     # (backward-compatible) and named connections for CQRS read/write separation.

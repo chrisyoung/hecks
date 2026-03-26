@@ -1,15 +1,16 @@
-# Hecks::ValidationRules::Naming::ReservedNames
-#
-# Validates that attribute names are not Ruby keywords and that aggregate
-# names form valid Ruby constants. Also provides a class method for
-# generating non-blocking warnings about reserved attribute names (+id+,
-# +created_at+, +updated_at+) that override auto-generated fields.
-#
-# Part of the ValidationRules::Naming group -- run by +Hecks.validate+.
-#
 module Hecks
   module ValidationRules
     module Naming
+
+    # Hecks::ValidationRules::Naming::ReservedNames
+    #
+    # Validates that attribute names are not Ruby keywords and that aggregate
+    # names form valid Ruby constants. Also provides a class method for
+    # generating non-blocking warnings about reserved attribute names (+id+,
+    # +created_at+, +updated_at+) that override auto-generated fields.
+    #
+    # Part of the ValidationRules::Naming group -- run by +Hecks.validate+.
+    #
     class ReservedNames < BaseRule
       # Checks aggregate names for valid Ruby constant format and attribute
       # names for Ruby keyword conflicts.

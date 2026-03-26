@@ -1,15 +1,16 @@
-# Hecks::DSL::LifecycleBuilder
-#
-# DSL builder for state machine declarations on aggregates. Collects
-# command-to-state transitions and builds a Lifecycle IR object.
-#
-#   builder = LifecycleBuilder.new(:status, default: "draft")
-#   builder.transition "ApproveModel" => "approved"
-#   builder.transition "SuspendModel" => "suspended"
-#   lifecycle = builder.build
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::LifecycleBuilder
+    #
+    # DSL builder for state machine declarations on aggregates. Collects
+    # command-to-state transitions and builds a Lifecycle IR object.
+    #
+    #   builder = LifecycleBuilder.new(:status, default: "draft")
+    #   builder.transition "ApproveModel" => "approved"
+    #   builder.transition "SuspendModel" => "suspended"
+    #   lifecycle = builder.build
+    #
     # Builds a DomainModel::Structure::Lifecycle from transition declarations.
     #
     # LifecycleBuilder defines a state machine on a single aggregate field.

@@ -1,18 +1,18 @@
-# Hecks::EventStorm::Parser::PatternMatching
-#
-# Mixin that provides pattern matching and line-parsing logic for the event
-# storm parser. Identifies actors, commands, events, policies, aggregates,
-# read models, external systems, and hotspots from individual text lines.
-#
-# Architecture: included by Hecks::EventStorm::Parser. Relies on the host
-# class defining PATTERNS and ParsedElement.
-#
-#   parsed = parse_line("Actor: Chef  [PlacePizza] >>PizzaPlaced<<")
-#   parsed[:command].name  # => "PlacePizza"
-#
 module Hecks
   module EventStorm
     class Parser
+      # Hecks::EventStorm::Parser::PatternMatching
+      #
+      # Mixin that provides pattern matching and line-parsing logic for the event
+      # storm parser. Identifies actors, commands, events, policies, aggregates,
+      # read models, external systems, and hotspots from individual text lines.
+      #
+      # Architecture: included by Hecks::EventStorm::Parser. Relies on the host
+      # class defining PATTERNS and ParsedElement.
+      #
+      #   parsed = parse_line("Actor: Chef  [PlacePizza] >>PizzaPlaced<<")
+      #   parsed[:command].name  # => "PlacePizza"
+      #
       module PatternMatching
         private
 

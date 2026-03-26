@@ -1,25 +1,25 @@
-# Hecks::Querying::AdHocQueries
-#
-# Opt-in mixin that provides ActiveRecord-style query methods (where,
-# find_by, first, last, order, limit, offset) on aggregate classes.
-# All repository references are closure-captured for per-application isolation,
-# meaning each booted application gets its own repository binding.
-#
-# These methods are the primary entry points for querying aggregates.
-# Each returns a QueryBuilder instance (except find_by, which returns
-# a single record or nil), enabling method chaining.
-#
-# == Usage
-#
-#   Hecks::Querying::AdHocQueries.bind(Pizza, repo)
-#
-#   Pizza.where(style: "Classic").order(:name).limit(5)
-#   Pizza.order(:name).limit(5)
-#   Pizza.limit(10).offset(20)
-#   Pizza.find_by(name: "Margherita")  # => single Pizza or nil
-#
 module Hecks
   module Querying
+    # Hecks::Querying::AdHocQueries
+    #
+    # Opt-in mixin that provides ActiveRecord-style query methods (where,
+    # find_by, first, last, order, limit, offset) on aggregate classes.
+    # All repository references are closure-captured for per-application isolation,
+    # meaning each booted application gets its own repository binding.
+    #
+    # These methods are the primary entry points for querying aggregates.
+    # Each returns a QueryBuilder instance (except find_by, which returns
+    # a single record or nil), enabling method chaining.
+    #
+    # == Usage
+    #
+    #   Hecks::Querying::AdHocQueries.bind(Pizza, repo)
+    #
+    #   Pizza.where(style: "Classic").order(:name).limit(5)
+    #   Pizza.order(:name).limit(5)
+    #   Pizza.limit(10).offset(20)
+    #   Pizza.find_by(name: "Margherita")  # => single Pizza or nil
+    #
     module AdHocQueries
       # Binds query class methods onto an aggregate class.
       #

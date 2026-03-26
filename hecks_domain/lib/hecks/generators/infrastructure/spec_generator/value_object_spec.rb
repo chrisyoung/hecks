@@ -1,12 +1,12 @@
-# Hecks::Generators::Infrastructure::SpecGenerator::ValueObjectSpec
-#
-# Generates RSpec specs for value objects: immutability, equality,
-# and invariant enforcement. Mixed into SpecGenerator.
-#
 module Hecks
   module Generators
     module Infrastructure
       class SpecGenerator
+        # Hecks::Generators::Infrastructure::SpecGenerator::ValueObjectSpec
+        #
+        # Generates RSpec specs for value objects: immutability, equality,
+        # and invariant enforcement. Mixed into SpecGenerator.
+        #
         module ValueObjectSpec
           # Generates an RSpec spec file for a value object class.
           #

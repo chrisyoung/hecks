@@ -1,17 +1,18 @@
-# Hecks::ValidationRules::Structure::ValidPolicyEvents
-#
-# Produces advisory warnings (not blocking errors) when policies listen for
-# events that are not defined in the current domain. Cross-domain events are
-# valid -- they arrive via the shared event bus from other domains -- so this
-# rule only warns to help catch typos or missing event definitions.
-#
-# Checks both aggregate-level policies and domain-level policies.
-#
-# Part of the ValidationRules::Structure group -- run by +Hecks.validate+.
-#
 module Hecks
   module ValidationRules
     module Structure
+
+    # Hecks::ValidationRules::Structure::ValidPolicyEvents
+    #
+    # Produces advisory warnings (not blocking errors) when policies listen for
+    # events that are not defined in the current domain. Cross-domain events are
+    # valid -- they arrive via the shared event bus from other domains -- so this
+    # rule only warns to help catch typos or missing event definitions.
+    #
+    # Checks both aggregate-level policies and domain-level policies.
+    #
+    # Part of the ValidationRules::Structure group -- run by +Hecks.validate+.
+    #
     class ValidPolicyEvents < BaseRule
       # Returns no errors. This rule only produces warnings.
       #

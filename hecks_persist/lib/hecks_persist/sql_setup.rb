@@ -1,11 +1,11 @@
-# Hecks::Configuration::SqlSetup
-#
-# Generates and evals SQL adapter classes for each aggregate at boot time.
-# These adapters wrap Sequel datasets and implement the repository port.
-# Mixed into Configuration to provide SQL persistence setup during Hecks.configure.
-#
 module Hecks
   class Configuration
+    # Hecks::Configuration::SqlSetup
+    #
+    # Generates and evals SQL adapter classes for each aggregate at boot time.
+    # These adapters wrap Sequel datasets and implement the repository port.
+    # Mixed into Configuration to provide SQL persistence setup during Hecks.configure.
+    #
     module SqlSetup
       private
 

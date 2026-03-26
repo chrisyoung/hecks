@@ -1,27 +1,27 @@
-# Hecks::InMemoryLoader
-#
-# Fast domain loading without disk I/O. Generates source strings from each
-# generator and compiles them in memory with virtual filenames for stack
-# traces. This is the default loading strategy used by DomainCompiler#load_domain.
-#
-# The loader orchestrates all domain generators in dependency order:
-# 1. Module shell (top-level constant with error classes)
-# 2. Ports (repository interfaces)
-# 3. Memory adapters (default in-memory persistence)
-# 4. Aggregate root classes
-# 5. Value objects and entities
-# 6. Events, policies, subscribers
-# 7. Specifications, commands, queries (with mixin injection)
-# 8. Workflows, views, services
-#
-# Commands, queries, and specifications get their respective mixins
-# (Hecks::Command, Hecks::Query, Hecks::Specification) injected via
-# source-level string manipulation before compilation.
-#
-#   InMemoryLoader.load(domain, "PizzasDomain")
-#   # => defines PizzasDomain module with all aggregate classes
-#
 module Hecks
+  # Hecks::InMemoryLoader
+  #
+  # Fast domain loading without disk I/O. Generates source strings from each
+  # generator and compiles them in memory with virtual filenames for stack
+  # traces. This is the default loading strategy used by DomainCompiler#load_domain.
+  #
+  # The loader orchestrates all domain generators in dependency order:
+  # 1. Module shell (top-level constant with error classes)
+  # 2. Ports (repository interfaces)
+  # 3. Memory adapters (default in-memory persistence)
+  # 4. Aggregate root classes
+  # 5. Value objects and entities
+  # 6. Events, policies, subscribers
+  # 7. Specifications, commands, queries (with mixin injection)
+  # 8. Workflows, views, services
+  #
+  # Commands, queries, and specifications get their respective mixins
+  # (Hecks::Command, Hecks::Query, Hecks::Specification) injected via
+  # source-level string manipulation before compilation.
+  #
+  #   InMemoryLoader.load(domain, "PizzasDomain")
+  #   # => defines PizzasDomain module with all aggregate classes
+  #
   module InMemoryLoader
     # Load an entire domain into memory by generating and evaluating source
     # code for all domain components. Creates the top-level module constant

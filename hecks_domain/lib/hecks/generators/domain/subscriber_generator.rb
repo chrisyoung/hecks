@@ -1,25 +1,25 @@
-# Hecks::Generators::Domain::SubscriberGenerator
-#
-# Generates subscriber classes nested under Aggregate::Subscribers.
-# Each subscriber declares +EVENT+ and +ASYNC+ constants, and a +call+
-# method whose body is extracted from the DSL block. Subscribers react
-# to domain events and execute side effects (e.g., sending notifications,
-# updating external systems).
-#
-# The +EVENT+ constant identifies which event the subscriber listens for.
-# The +ASYNC+ constant indicates whether the subscriber should be dispatched
-# asynchronously by the event bus.
-#
-# Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
-#
-# == Usage
-#
-#   gen = SubscriberGenerator.new(sub, domain_module: "PizzasDomain", aggregate_name: "Pizza")
-#   gen.generate
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::SubscriberGenerator
+    #
+    # Generates subscriber classes nested under Aggregate::Subscribers.
+    # Each subscriber declares +EVENT+ and +ASYNC+ constants, and a +call+
+    # method whose body is extracted from the DSL block. Subscribers react
+    # to domain events and execute side effects (e.g., sending notifications,
+    # updating external systems).
+    #
+    # The +EVENT+ constant identifies which event the subscriber listens for.
+    # The +ASYNC+ constant indicates whether the subscriber should be dispatched
+    # asynchronously by the event bus.
+    #
+    # Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # == Usage
+    #
+    #   gen = SubscriberGenerator.new(sub, domain_module: "PizzasDomain", aggregate_name: "Pizza")
+    #   gen.generate
+    #
     class SubscriberGenerator
 
       # Initializes the subscriber generator.

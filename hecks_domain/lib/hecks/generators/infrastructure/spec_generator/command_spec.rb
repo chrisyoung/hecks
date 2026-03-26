@@ -1,12 +1,12 @@
-# Hecks::Generators::Infrastructure::SpecGenerator::CommandSpec
-#
-# Generates RSpec specs for commands: attribute assignment and
-# event emission declarations. Mixed into SpecGenerator.
-#
 module Hecks
   module Generators
     module Infrastructure
       class SpecGenerator
+        # Hecks::Generators::Infrastructure::SpecGenerator::CommandSpec
+        #
+        # Generates RSpec specs for commands: attribute assignment and
+        # event emission declarations. Mixed into SpecGenerator.
+        #
         module CommandSpec
           # Generates an RSpec spec file for a command class.
           #

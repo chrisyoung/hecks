@@ -1,23 +1,23 @@
-# Hecks::Generators::Domain::QueryGenerator
-#
-# Generates query classes nested under Aggregate::Queries. Extracts the
-# DSL block source and emits it as the body of a +call+ method. The
-# Hecks::Query mixin is injected at load time by InMemoryLoader or by
-# const_missing (file-based gems). Part of Generators::Domain,
-# consumed by DomainGemGenerator and InMemoryLoader.
-#
-# Query classes encapsulate read-side logic that operates on the repository.
-# The block's parameters become the +call+ method's parameters, and its
-# source becomes the method body.
-#
-# == Usage
-#
-#   gen = QueryGenerator.new(query, domain_module: "PizzasDomain", aggregate_name: "Pizza")
-#   gen.generate
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::QueryGenerator
+    #
+    # Generates query classes nested under Aggregate::Queries. Extracts the
+    # DSL block source and emits it as the body of a +call+ method. The
+    # Hecks::Query mixin is injected at load time by InMemoryLoader or by
+    # const_missing (file-based gems). Part of Generators::Domain,
+    # consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # Query classes encapsulate read-side logic that operates on the repository.
+    # The block's parameters become the +call+ method's parameters, and its
+    # source becomes the method body.
+    #
+    # == Usage
+    #
+    #   gen = QueryGenerator.new(query, domain_module: "PizzasDomain", aggregate_name: "Pizza")
+    #   gen.generate
+    #
     class QueryGenerator
 
       # Initializes the query generator.

@@ -1,23 +1,23 @@
-# Hecks::MCP::DomainServer::QueryTools
-#
-# Mixin that registers MCP tools for domain queries. Each query on each
-# aggregate becomes a callable MCP tool. Handles both parameterized queries
-# (with input arguments) and zero-argument queries.
-#
-# Query results that respond to +map+ (collections) are serialized element
-# by element, joined with newlines. Scalar results are converted with +to_s+.
-#
-# Mixed into DomainServer -- expects the following instance state:
-#   - +@server+ [MCP::Server] -- the MCP server to register tools on
-#   - +@domain+ [Hecks::DomainModel::Structure::Domain] -- the domain model
-#   - +@mod+ [Module] -- the generated domain module (e.g. PizzasDomain)
-#
-# Also expects this helper method from DomainServer:
-#   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
-#
 module Hecks
   module MCP
     class DomainServer
+      # Hecks::MCP::DomainServer::QueryTools
+      #
+      # Mixin that registers MCP tools for domain queries. Each query on each
+      # aggregate becomes a callable MCP tool. Handles both parameterized queries
+      # (with input arguments) and zero-argument queries.
+      #
+      # Query results that respond to +map+ (collections) are serialized element
+      # by element, joined with newlines. Scalar results are converted with +to_s+.
+      #
+      # Mixed into DomainServer -- expects the following instance state:
+      #   - +@server+ [MCP::Server] -- the MCP server to register tools on
+      #   - +@domain+ [Hecks::DomainModel::Structure::Domain] -- the domain model
+      #   - +@mod+ [Module] -- the generated domain module (e.g. PizzasDomain)
+      #
+      # Also expects this helper method from DomainServer:
+      #   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
+      #
       module QueryTools
         private
 

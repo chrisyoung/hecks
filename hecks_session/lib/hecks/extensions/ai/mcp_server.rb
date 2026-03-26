@@ -5,31 +5,30 @@ require_relative "inspect_tools"
 require_relative "build_tools"
 require_relative "play_tools"
 
-# Hecks::McpServer
-#
-# MCP (Model Context Protocol) server that exposes the Hecks Session API
-# as tools for AI agents. This is the main entry point for the interactive
-# domain modeling MCP server (as opposed to DomainServer which serves a
-# pre-built domain).
-#
-# Registers five tool groups:
-#   - +SessionTools+    -- create/load domain sessions
-#   - +AggregateTools+  -- add/remove domain structures
-#   - +InspectTools+    -- read-only domain introspection
-#   - +BuildTools+      -- validate, build, save, serve
-#   - +PlayTools+       -- interactive playground for testing
-#
-# The server runs over stdio transport and acts as a shared context (+ctx+)
-# for all tool modules, providing:
-#   - +session+ accessor for the current Hecks::Session
-#   - +ensure_session!+ guard method
-#   - +resolve_type+ for converting type strings to Ruby types
-#   - +capture_output+ for capturing stdout during block execution
-#
-#   hecks domain mcp    # starts the server on stdio
-#
-
 module Hecks
+  # Hecks::McpServer
+  #
+  # MCP (Model Context Protocol) server that exposes the Hecks Session API
+  # as tools for AI agents. This is the main entry point for the interactive
+  # domain modeling MCP server (as opposed to DomainServer which serves a
+  # pre-built domain).
+  #
+  # Registers five tool groups:
+  #   - +SessionTools+    -- create/load domain sessions
+  #   - +AggregateTools+  -- add/remove domain structures
+  #   - +InspectTools+    -- read-only domain introspection
+  #   - +BuildTools+      -- validate, build, save, serve
+  #   - +PlayTools+       -- interactive playground for testing
+  #
+  # The server runs over stdio transport and acts as a shared context (+ctx+)
+  # for all tool modules, providing:
+  #   - +session+ accessor for the current Hecks::Session
+  #   - +ensure_session!+ guard method
+  #   - +resolve_type+ for converting type strings to Ruby types
+  #   - +capture_output+ for capturing stdout during block execution
+  #
+  #   hecks domain mcp    # starts the server on stdio
+  #
   class McpServer
     # The current Hecks::Session instance, set after +create_session+ or
     # +load_domain+ tool is called. +nil+ until a session is established.

@@ -1,22 +1,22 @@
-# Hecks::Generators::Domain::EntityGenerator
-#
-# Generates mutable sub-entity classes that include Hecks::Model. Entities
-# have UUID identity, identity-based equality, and are NOT frozen -- unlike
-# value objects. Supports invariant checks and list attributes.
-# Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
-#
-# Entities are nested inside their parent aggregate class (e.g.,
-# +BankingDomain::Account::LedgerEntry+). They get their own +attribute+
-# declarations and optional +check_invariants!+ method.
-#
-# == Usage
-#
-#   gen = EntityGenerator.new(entity, domain_module: "BankingDomain", aggregate_name: "Account")
-#   gen.generate  # => "module BankingDomain\n  class Account\n    class LedgerEntry\n  ..."
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::EntityGenerator
+    #
+    # Generates mutable sub-entity classes that include Hecks::Model. Entities
+    # have UUID identity, identity-based equality, and are NOT frozen -- unlike
+    # value objects. Supports invariant checks and list attributes.
+    # Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # Entities are nested inside their parent aggregate class (e.g.,
+    # +BankingDomain::Account::LedgerEntry+). They get their own +attribute+
+    # declarations and optional +check_invariants!+ method.
+    #
+    # == Usage
+    #
+    #   gen = EntityGenerator.new(entity, domain_module: "BankingDomain", aggregate_name: "Account")
+    #   gen.generate  # => "module BankingDomain\n  class Account\n    class LedgerEntry\n  ..."
+    #
     class EntityGenerator
 
       # Initializes the entity generator.

@@ -1,26 +1,26 @@
-# Hecks::Querying::ScopeMethods
-#
-# Binds named scope methods onto aggregate classes. Scopes are defined
-# in the domain DSL and represent reusable, named query filters. Each
-# scope becomes a singleton method on the aggregate class that returns
-# a QueryBuilder instance.
-#
-# Scopes can be static (fixed conditions hash) or callable (a lambda
-# that receives arguments and returns a conditions hash).
-#
-# == Usage
-#
-#   # In the domain DSL:
-#   scope :classics, style: "Classic"
-#   scope :priced_above, ->(min) { { price: Operators::Gt.new(min) } }
-#
-#   # After binding:
-#   ScopeMethods.bind(PizzaClass, pizza_aggregate)
-#   Pizza.classics          # => QueryBuilder with where(style: "Classic")
-#   Pizza.priced_above(10)  # => QueryBuilder with where(price: Gt(10))
-#
 module Hecks
   module Querying
+    # Hecks::Querying::ScopeMethods
+    #
+    # Binds named scope methods onto aggregate classes. Scopes are defined
+    # in the domain DSL and represent reusable, named query filters. Each
+    # scope becomes a singleton method on the aggregate class that returns
+    # a QueryBuilder instance.
+    #
+    # Scopes can be static (fixed conditions hash) or callable (a lambda
+    # that receives arguments and returns a conditions hash).
+    #
+    # == Usage
+    #
+    #   # In the domain DSL:
+    #   scope :classics, style: "Classic"
+    #   scope :priced_above, ->(min) { { price: Operators::Gt.new(min) } }
+    #
+    #   # After binding:
+    #   ScopeMethods.bind(PizzaClass, pizza_aggregate)
+    #   Pizza.classics          # => QueryBuilder with where(style: "Classic")
+    #   Pizza.priced_above(10)  # => QueryBuilder with where(price: Gt(10))
+    #
     module ScopeMethods
         # Binds all scopes from the aggregate definition as class methods.
         #

@@ -1,28 +1,28 @@
-# Hecks::Validator
-#
-# Validates a domain model for DDD consistency. Runs all registered
-# validation rules and collects error messages. Each rule is a class
-# under ValidationRules:: that takes a domain and returns errors.
-#
-# Rules enforced:
-# - UniqueAggregateNames: no duplicate aggregate names
-# - NameCollisions: aggregate and value object names must not collide
-# - CommandNaming: command names should be verb phrases
-# - ReservedNames: warns about Ruby/system reserved attribute names
-# - ValidReferences: references must target existing aggregate roots
-# - NoBidirectionalReferences: no two aggregates referencing each other
-# - NoSelfReferences: aggregates must not reference themselves
-# - NoValueObjectReferences: value objects must not contain references
-# - AggregatesHaveCommands: every aggregate must have at least one command
-# - CommandsHaveAttributes: structural check on command attributes
-# - ValidPolicyEvents: policy events must match existing events
-# - ValidPolicyTriggers: policy triggers must name existing commands
-#
-#   validator = Validator.new(domain)
-#   validator.valid?   # => true/false
-#   validator.errors   # => ["Order references unknown aggregate: Widget"]
-#
 module Hecks
+  # Hecks::Validator
+  #
+  # Validates a domain model for DDD consistency. Runs all registered
+  # validation rules and collects error messages. Each rule is a class
+  # under ValidationRules:: that takes a domain and returns errors.
+  #
+  # Rules enforced:
+  # - UniqueAggregateNames: no duplicate aggregate names
+  # - NameCollisions: aggregate and value object names must not collide
+  # - CommandNaming: command names should be verb phrases
+  # - ReservedNames: warns about Ruby/system reserved attribute names
+  # - ValidReferences: references must target existing aggregate roots
+  # - NoBidirectionalReferences: no two aggregates referencing each other
+  # - NoSelfReferences: aggregates must not reference themselves
+  # - NoValueObjectReferences: value objects must not contain references
+  # - AggregatesHaveCommands: every aggregate must have at least one command
+  # - CommandsHaveAttributes: structural check on command attributes
+  # - ValidPolicyEvents: policy events must match existing events
+  # - ValidPolicyTriggers: policy triggers must name existing commands
+  #
+  #   validator = Validator.new(domain)
+  #   validator.valid?   # => true/false
+  #   validator.errors   # => ["Order references unknown aggregate: Widget"]
+  #
   class Validator
     # Ordered list of validation rule classes to run. Each class must
     # respond to .new(domain) and provide an #errors method returning

@@ -1,12 +1,12 @@
-# HecksWatchers::FileSize
-#
-# Warns when any staged .rb file exceeds the warning threshold (180 lines
-# of code, excluding doc headers). The hard limit is 200.
-#
-#   watcher = HecksWatchers::FileSize.new(project_root: Dir.pwd)
-#   watcher.call   # prints warnings for oversized files
-#
 module HecksWatchers
+  # HecksWatchers::FileSize
+  #
+  # Warns when any staged .rb file exceeds the warning threshold (180 lines
+  # of code, excluding doc headers). The hard limit is 200.
+  #
+  #   watcher = HecksWatchers::FileSize.new(project_root: Dir.pwd)
+  #   watcher.call   # prints warnings for oversized files
+  #
   class FileSize
     LIMIT = 180
 

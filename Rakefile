@@ -1,4 +1,3 @@
-gem "rdoc", "6.7.0"
 require "sdoc"
 require "rdoc/task"
 

@@ -1,23 +1,23 @@
-# Hecks::MCP::AggregateTools
-#
-# MCP tools for building domain structure: add/remove aggregates, commands,
-# value objects, entities, validations, and policies. Each tool delegates to
-# the Session's AggregateHandle API to mutate the in-memory domain model.
-#
-# This module is stateless -- it registers tool definitions on the given MCP
-# server and closes over the shared context (+ctx+) for session access.
-#
-# Registered tools:
-#   - +add_aggregate+     -- create a new aggregate root with optional attributes
-#   - +add_command+       -- add a command (action) to an aggregate
-#   - +add_value_object+  -- add an embedded value object to an aggregate
-#   - +add_entity+        -- add a sub-entity with identity to an aggregate
-#   - +add_validation+    -- add a validation rule to an aggregate field
-#   - +add_policy+        -- add a reactive policy (event -> trigger) to an aggregate
-#   - +remove_aggregate+  -- remove an aggregate from the domain
-#
 module Hecks
   module MCP
+    # Hecks::MCP::AggregateTools
+    #
+    # MCP tools for building domain structure: add/remove aggregates, commands,
+    # value objects, entities, validations, and policies. Each tool delegates to
+    # the Session's AggregateHandle API to mutate the in-memory domain model.
+    #
+    # This module is stateless -- it registers tool definitions on the given MCP
+    # server and closes over the shared context (+ctx+) for session access.
+    #
+    # Registered tools:
+    #   - +add_aggregate+     -- create a new aggregate root with optional attributes
+    #   - +add_command+       -- add a command (action) to an aggregate
+    #   - +add_value_object+  -- add an embedded value object to an aggregate
+    #   - +add_entity+        -- add a sub-entity with identity to an aggregate
+    #   - +add_validation+    -- add a validation rule to an aggregate field
+    #   - +add_policy+        -- add a reactive policy (event -> trigger) to an aggregate
+    #   - +remove_aggregate+  -- remove an aggregate from the domain
+    #
     module AggregateTools
       # Registers all aggregate structure tools on the given MCP server.
       #

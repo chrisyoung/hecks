@@ -1,28 +1,28 @@
-# Hecks::Generators::Domain::WorkflowGenerator
-#
-# Generates workflow classes that orchestrate multi-step domain processes
-# with conditional branching. Workflows are namespaced under +Domain::Workflows+.
-#
-# Each workflow class includes:
-# - A +STEPS+ constant -- an array of step hashes, where each step is either
-#   a command reference (+{ command: "CommandName" }+) or a branch with
-#   specification-based conditions (+{ branch: { spec: ..., when_satisfied: ..., otherwise: ... } }+)
-# - A +call(**attrs)+ method that executes steps in sequence, evaluates branches,
-#   and collects results
-#
-# Branching supports specification-based routing: if a specification is satisfied,
-# one set of commands runs; otherwise, an alternate set runs.
-#
-# Part of Generators::Domain.
-#
-# == Usage
-#
-#   gen = WorkflowGenerator.new(workflow, domain_module: "ModelRegistryDomain")
-#   gen.generate
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::WorkflowGenerator
+    #
+    # Generates workflow classes that orchestrate multi-step domain processes
+    # with conditional branching. Workflows are namespaced under +Domain::Workflows+.
+    #
+    # Each workflow class includes:
+    # - A +STEPS+ constant -- an array of step hashes, where each step is either
+    #   a command reference (+{ command: "CommandName" }+) or a branch with
+    #   specification-based conditions (+{ branch: { spec: ..., when_satisfied: ..., otherwise: ... } }+)
+    # - A +call(**attrs)+ method that executes steps in sequence, evaluates branches,
+    #   and collects results
+    #
+    # Branching supports specification-based routing: if a specification is satisfied,
+    # one set of commands runs; otherwise, an alternate set runs.
+    #
+    # Part of Generators::Domain.
+    #
+    # == Usage
+    #
+    #   gen = WorkflowGenerator.new(workflow, domain_module: "ModelRegistryDomain")
+    #   gen.generate
+    #
     class WorkflowGenerator
 
       # Initializes the workflow generator.

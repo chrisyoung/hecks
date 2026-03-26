@@ -1,23 +1,24 @@
-# Hecks::DomainModel::Structure::PortDefinition
-#
-# Represents a named port that defines which methods are accessible
-# through a particular access level (e.g., :guest, :admin).
-#
-# A port is attached to an aggregate and contains a list of allowed
-# method names. Used by the Application layer to enforce access control
-# -- when a request comes through a specific port, only the methods
-# listed in that port's +allowed_methods+ can be invoked.
-#
-# Ports implement the Ports & Adapters (hexagonal) pattern: each port
-# is a named boundary with a restricted interface into the domain.
-#
-#   port = PortDefinition.new(name: :guest, allowed_methods: [:find, :all, :where])
-#   port.allows?(:find)    # => true
-#   port.allows?(:create)  # => false
-#
 module Hecks
   module DomainModel
     module Structure
+
+    # Hecks::DomainModel::Structure::PortDefinition
+    #
+    # Represents a named port that defines which methods are accessible
+    # through a particular access level (e.g., :guest, :admin).
+    #
+    # A port is attached to an aggregate and contains a list of allowed
+    # method names. Used by the Application layer to enforce access control
+    # -- when a request comes through a specific port, only the methods
+    # listed in that port's +allowed_methods+ can be invoked.
+    #
+    # Ports implement the Ports & Adapters (hexagonal) pattern: each port
+    # is a named boundary with a restricted interface into the domain.
+    #
+    #   port = PortDefinition.new(name: :guest, allowed_methods: [:find, :all, :where])
+    #   port.allows?(:find)    # => true
+    #   port.allows?(:create)  # => false
+    #
     class PortDefinition
       # @return [Symbol] the port name identifying the access level or role (e.g., :guest, :admin, :api)
       attr_reader :name

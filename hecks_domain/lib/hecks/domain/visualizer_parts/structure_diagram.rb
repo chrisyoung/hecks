@@ -1,19 +1,19 @@
-# Hecks::DomainVisualizer::StructureDiagram
-#
-# Builds the Mermaid classDiagram portion showing aggregates, attributes,
-# value objects, entities, and inter-aggregate references. Mixed into
-# DomainVisualizer.
-#
-# Aggregates are rendered as classes with their attributes. Value objects
-# and entities are rendered as separate classes composed into (*--) their
-# parent aggregate. Entities additionally show a +id : UUID attribute.
-# Cross-aggregate references are drawn as directed associations (-->).
-#
-#   include StructureDiagram
-#   generate_structure  # => "classDiagram\n    class Pizza { ... }\n"
-#
 module Hecks
   class DomainVisualizer
+    # Hecks::DomainVisualizer::StructureDiagram
+    #
+    # Builds the Mermaid classDiagram portion showing aggregates, attributes,
+    # value objects, entities, and inter-aggregate references. Mixed into
+    # DomainVisualizer.
+    #
+    # Aggregates are rendered as classes with their attributes. Value objects
+    # and entities are rendered as separate classes composed into (*--) their
+    # parent aggregate. Entities additionally show a +id : UUID attribute.
+    # Cross-aggregate references are drawn as directed associations (-->).
+    #
+    #   include StructureDiagram
+    #   generate_structure  # => "classDiagram\n    class Pizza { ... }\n"
+    #
     module StructureDiagram
       private
 

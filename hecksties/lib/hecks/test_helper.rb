@@ -1,33 +1,33 @@
-# = Hecks::TestHelper
-#
-# Test support module that automatically resets Hecks state between tests.
-# Clears all memory adapter stores and event bus history so each test starts
-# with a clean slate.
-#
-# Expects a global +APP+ constant holding a {Hecks::Runtime} instance,
-# which is the standard convention for Hecks test suites.
-#
-# == RSpec (auto-hooks)
-#
-# Just require this file and it hooks in automatically. It sets the load
-# strategy to +:memory+ before the suite and calls +reset!+ after each example.
-#
-#   # spec_helper.rb
-#   require "hecks/test_helper"
-#
-# == Minitest
-#
-# Include the module and call +reset!+ manually in setup/teardown:
-#
-#   class ActiveSupport::TestCase
-#     include Hecks::TestHelper
-#
-#     teardown do
-#       Hecks::TestHelper.reset!
-#     end
-#   end
-#
 module Hecks
+  # = Hecks::TestHelper
+  #
+  # Test support module that automatically resets Hecks state between tests.
+  # Clears all memory adapter stores and event bus history so each test starts
+  # with a clean slate.
+  #
+  # Expects a global +APP+ constant holding a {Hecks::Runtime} instance,
+  # which is the standard convention for Hecks test suites.
+  #
+  # == RSpec (auto-hooks)
+  #
+  # Just require this file and it hooks in automatically. It sets the load
+  # strategy to +:memory+ before the suite and calls +reset!+ after each example.
+  #
+  #   # spec_helper.rb
+  #   require "hecks/test_helper"
+  #
+  # == Minitest
+  #
+  # Include the module and call +reset!+ manually in setup/teardown:
+  #
+  #   class ActiveSupport::TestCase
+  #     include Hecks::TestHelper
+  #
+  #     teardown do
+  #       Hecks::TestHelper.reset!
+  #     end
+  #   end
+  #
   module TestHelper
     # Resets all runtime state for a clean test environment. Clears every
     # aggregate's repository (memory adapter store) and the event bus history.

@@ -1,17 +1,18 @@
-# Hecks::ValidationRules::Structure::ValidPolicyTriggers
-#
-# Validates that reactive policies reference commands that actually exist
-# in the domain. A reactive policy's +trigger_command+ must match a command
-# defined on some aggregate; otherwise the policy can never fire.
-#
-# Checks both aggregate-level reactive policies and domain-level reactive
-# policies. Non-reactive policies (those without a trigger_command) are skipped.
-#
-# Part of the ValidationRules::Structure group -- run by +Hecks.validate+.
-#
 module Hecks
   module ValidationRules
     module Structure
+
+    # Hecks::ValidationRules::Structure::ValidPolicyTriggers
+    #
+    # Validates that reactive policies reference commands that actually exist
+    # in the domain. A reactive policy's +trigger_command+ must match a command
+    # defined on some aggregate; otherwise the policy can never fire.
+    #
+    # Checks both aggregate-level reactive policies and domain-level reactive
+    # policies. Non-reactive policies (those without a trigger_command) are skipped.
+    #
+    # Part of the ValidationRules::Structure group -- run by +Hecks.validate+.
+    #
     # Policy trigger must name an existing command somewhere in the domain.
     class ValidPolicyTriggers < BaseRule
       # Checks all reactive policies (aggregate-scoped and domain-level) and

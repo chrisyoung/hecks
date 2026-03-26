@@ -1,26 +1,26 @@
-# Hecks::Persistence::ReferenceMethods
-#
-# Binds reference resolution methods onto aggregate classes during application boot.
-# For each attribute marked as a reference (+reference_to+), defines a convenience
-# method that resolves the referenced aggregate by looking up its ID.
-#
-# For example, if an Order aggregate has a +pizza_id+ attribute declared as
-# +reference_to: "Pizza"+, this module defines an +order.pizza+ method that
-# calls +Pizza.find(order.pizza_id)+.
-#
-# Reference resolution is lazy -- the lookup happens each time the method is called,
-# not at load time. If the referenced class cannot be found (NameError) or the ID
-# is nil, the method returns nil.
-#
-# == Usage
-#
-#   ReferenceMethods.bind(OrderClass, order_aggregate)
-#   order = Order.find(1)
-#   order.pizza      # => Pizza instance (calls Pizza.find(order.pizza_id))
-#   order.pizza_id   # => the raw ID value (original attribute)
-#
 module Hecks
   module Persistence
+    # Hecks::Persistence::ReferenceMethods
+    #
+    # Binds reference resolution methods onto aggregate classes during application boot.
+    # For each attribute marked as a reference (+reference_to+), defines a convenience
+    # method that resolves the referenced aggregate by looking up its ID.
+    #
+    # For example, if an Order aggregate has a +pizza_id+ attribute declared as
+    # +reference_to: "Pizza"+, this module defines an +order.pizza+ method that
+    # calls +Pizza.find(order.pizza_id)+.
+    #
+    # Reference resolution is lazy -- the lookup happens each time the method is called,
+    # not at load time. If the referenced class cannot be found (NameError) or the ID
+    # is nil, the method returns nil.
+    #
+    # == Usage
+    #
+    #   ReferenceMethods.bind(OrderClass, order_aggregate)
+    #   order = Order.find(1)
+    #   order.pizza      # => Pizza instance (calls Pizza.find(order.pizza_id))
+    #   order.pizza_id   # => the raw ID value (original attribute)
+    #
     module ReferenceMethods
       # Defines reference resolution methods on the given aggregate class.
       #

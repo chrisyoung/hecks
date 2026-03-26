@@ -1,19 +1,20 @@
-# Hecks::DomainModel::Structure::Attribute
-#
-# Represents a typed attribute on an aggregate, value object, command, or event.
-# Supports scalar types (String, Integer), list types, and cross-aggregate
-# references.
-#
-# The most granular building block in the DomainModel IR. Used by every builder
-# and every generator.
-#
-#   attr = Attribute.new(name: :name, type: String)
-#   json_attr = Attribute.new(name: :points, type: JSON)
-#   json_attr.json?  # => true
-#
 module Hecks
   module DomainModel
     module Structure
+
+    # Hecks::DomainModel::Structure::Attribute
+    #
+    # Represents a typed attribute on an aggregate, value object, command, or event.
+    # Supports scalar types (String, Integer), list types, and cross-aggregate
+    # references.
+    #
+    # The most granular building block in the DomainModel IR. Used by every builder
+    # and every generator.
+    #
+    #   attr = Attribute.new(name: :name, type: String)
+    #   json_attr = Attribute.new(name: :points, type: JSON)
+    #   json_attr.json?  # => true
+    #
     class Attribute
       # @return [Symbol] the attribute name as a symbol (e.g., :name, :status, :email)
       attr_reader :name

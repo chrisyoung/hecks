@@ -1,16 +1,15 @@
-# Hecks::LlmsGenerator
-#
-# Walks the domain IR and produces an AI-readable plain text summary suitable
-# for llms.txt files. Includes domain name, aggregates with attributes and
-# types, commands with parameters, queries, specifications, policies with
-# event-command mappings, validation rules, invariants, and reactive flow
-# chains.
-#
-#   Hecks::LlmsGenerator.new(domain).generate  # => String (plain text)
-#   Hecks::LlmsGenerator.new(domain).print     # prints to stdout
-#
-
 module Hecks
+  # Hecks::LlmsGenerator
+  #
+  # Walks the domain IR and produces an AI-readable plain text summary suitable
+  # for llms.txt files. Includes domain name, aggregates with attributes and
+  # types, commands with parameters, queries, specifications, policies with
+  # event-command mappings, validation rules, invariants, and reactive flow
+  # chains.
+  #
+  #   Hecks::LlmsGenerator.new(domain).generate  # => String (plain text)
+  #   Hecks::LlmsGenerator.new(domain).print     # prints to stdout
+  #
   class LlmsGenerator
     # @param domain [Hecks::DomainModel::Structure::Domain] the domain IR
     def initialize(domain)

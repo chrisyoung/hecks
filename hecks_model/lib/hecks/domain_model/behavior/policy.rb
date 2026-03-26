@@ -1,36 +1,37 @@
-# Hecks::DomainModel::Behavior::Policy
-#
-# Intermediate representation of a domain policy. Policies come in two forms:
-#
-# 1. *Reactive policies* trigger a command in response to an event (cross-context
-#    communication). They listen for a named event and dispatch a command when
-#    fired. An optional +condition+ block can gate whether the policy fires,
-#    and an +attribute_map+ can transform event data into command attributes.
-#    The +defaults+ hash provides fallback values for command attributes not
-#    present on the event.
-#
-# 2. *Guard policies* carry a block that validates a command before execution.
-#    If the block returns falsy, the command is rejected.
-#
-# Part of the DomainModel IR layer. Built by PolicyBuilder (reactive) or
-# AggregateBuilder (guard), consumed by generators and the Application layer.
-# Use {#reactive?} and {#guard?} to distinguish the two forms.
-#
-#   # Reactive policy: event -> command (conditional)
-#   policy = Policy.new(name: "FraudAlert", event_name: "Withdrew",
-#                       trigger_command: "FlagSuspicious",
-#                       condition: ->(event) { event.amount > 10_000 })
-#   policy.reactive?   # => true
-#   policy.condition   # => #<Proc ...>
-#
-#   # Guard policy: block validates a command
-#   guard = Policy.new(name: "MustBeAdmin", block: ->(cmd) { cmd.role == "admin" })
-#   guard.guard?      # => true
-#   guard.reactive?   # => false
-#
 module Hecks
   module DomainModel
     module Behavior
+
+    # Hecks::DomainModel::Behavior::Policy
+    #
+    # Intermediate representation of a domain policy. Policies come in two forms:
+    #
+    # 1. *Reactive policies* trigger a command in response to an event (cross-context
+    #    communication). They listen for a named event and dispatch a command when
+    #    fired. An optional +condition+ block can gate whether the policy fires,
+    #    and an +attribute_map+ can transform event data into command attributes.
+    #    The +defaults+ hash provides fallback values for command attributes not
+    #    present on the event.
+    #
+    # 2. *Guard policies* carry a block that validates a command before execution.
+    #    If the block returns falsy, the command is rejected.
+    #
+    # Part of the DomainModel IR layer. Built by PolicyBuilder (reactive) or
+    # AggregateBuilder (guard), consumed by generators and the Application layer.
+    # Use {#reactive?} and {#guard?} to distinguish the two forms.
+    #
+    #   # Reactive policy: event -> command (conditional)
+    #   policy = Policy.new(name: "FraudAlert", event_name: "Withdrew",
+    #                       trigger_command: "FlagSuspicious",
+    #                       condition: ->(event) { event.amount > 10_000 })
+    #   policy.reactive?   # => true
+    #   policy.condition   # => #<Proc ...>
+    #
+    #   # Guard policy: block validates a command
+    #   guard = Policy.new(name: "MustBeAdmin", block: ->(cmd) { cmd.role == "admin" })
+    #   guard.guard?      # => true
+    #   guard.reactive?   # => false
+    #
     class Policy
       # @return [String] unique policy name (e.g. "FraudAlert", "MustBeAdmin")
       # @return [String, nil] event name that triggers this reactive policy, or nil for guards

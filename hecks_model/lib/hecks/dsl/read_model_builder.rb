@@ -1,15 +1,16 @@
-# Hecks::DSL::ReadModelBuilder
-#
-# DSL builder for read model definitions. Collects event projections
-# and builds a DomainModel::Behavior::ReadModel. Each projection maps
-# an event name to a proc that transforms state.
-#
-#   builder = ReadModelBuilder.new("OrderSummary")
-#   builder.project("PlacedOrder") { |event, state| state.merge(total: event.quantity) }
-#   rm = builder.build  # => #<ReadModel name="OrderSummary" ...>
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::ReadModelBuilder
+    #
+    # DSL builder for read model definitions. Collects event projections
+    # and builds a DomainModel::Behavior::ReadModel. Each projection maps
+    # an event name to a proc that transforms state.
+    #
+    #   builder = ReadModelBuilder.new("OrderSummary")
+    #   builder.project("PlacedOrder") { |event, state| state.merge(total: event.quantity) }
+    #   rm = builder.build  # => #<ReadModel name="OrderSummary" ...>
+    #
     # Builds a DomainModel::Behavior::ReadModel from projection declarations.
     #
     # ReadModelBuilder defines a denormalized read-side view that is built by

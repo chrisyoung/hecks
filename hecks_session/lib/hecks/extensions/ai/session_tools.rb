@@ -1,16 +1,16 @@
-# Hecks::MCP::SessionTools
-#
-# MCP tools for session management. A session is the entry point for
-# domain modeling -- it must be created or loaded before any other tools
-# can be used. These tools set +ctx.session+ on the shared McpServer context.
-#
-# Registered tools:
-#   - +create_session+ -- start a new blank domain modeling session with a name
-#   - +load_domain+    -- load an existing domain.rb file and reconstruct the
-#     session from its aggregates and attributes
-#
 module Hecks
   module MCP
+    # Hecks::MCP::SessionTools
+    #
+    # MCP tools for session management. A session is the entry point for
+    # domain modeling -- it must be created or loaded before any other tools
+    # can be used. These tools set +ctx.session+ on the shared McpServer context.
+    #
+    # Registered tools:
+    #   - +create_session+ -- start a new blank domain modeling session with a name
+    #   - +load_domain+    -- load an existing domain.rb file and reconstruct the
+    #     session from its aggregates and attributes
+    #
     module SessionTools
       # Registers session management tools on the given MCP server.
       #

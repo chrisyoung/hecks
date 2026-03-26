@@ -1,16 +1,16 @@
-# Hecks::Runtime::PortSetup
-#
-# Wires all five ports onto aggregate classes: repository (persistence),
-# commands, queries, introspection, versioning, attachments, and port
-# enforcement. Called once during Runtime initialization and again when
-# an adapter is swapped.
-#
-#   class Runtime
-#     include PortSetup
-#   end
-#
 module Hecks
   class Runtime
+    # Hecks::Runtime::PortSetup
+    #
+    # Wires all five ports onto aggregate classes: repository (persistence),
+    # commands, queries, introspection, versioning, attachments, and port
+    # enforcement. Called once during Runtime initialization and again when
+    # an adapter is swapped.
+    #
+    #   class Runtime
+    #     include PortSetup
+    #   end
+    #
     module PortSetup
       private
 

@@ -1,19 +1,19 @@
-# Hecks::Migrations::MigrationRunner
-#
-# Executes pending SQL migration files from db/hecks_migrate/ against a
-# database connection. Tracks applied migrations in a hecks_schema_migrations
-# table to avoid re-running them. Wraps each migration in a transaction
-# when the connection supports it.
-#
-# The connection is duck-typed -- any object responding to #execute(sql).
-# In Rails, pass ActiveRecord::Base.connection. For SQLite, wrap the db.
-#
-#   runner = MigrationRunner.new(connection: ActiveRecord::Base.connection)
-#   runner.pending   # => ["20260321120000_hecks_migration.sql"]
-#   runner.run_all   # applies pending migrations
-#
 module Hecks
   module Migrations
+    # Hecks::Migrations::MigrationRunner
+    #
+    # Executes pending SQL migration files from db/hecks_migrate/ against a
+    # database connection. Tracks applied migrations in a hecks_schema_migrations
+    # table to avoid re-running them. Wraps each migration in a transaction
+    # when the connection supports it.
+    #
+    # The connection is duck-typed -- any object responding to #execute(sql).
+    # In Rails, pass ActiveRecord::Base.connection. For SQLite, wrap the db.
+    #
+    #   runner = MigrationRunner.new(connection: ActiveRecord::Base.connection)
+    #   runner.pending   # => ["20260321120000_hecks_migration.sql"]
+    #   runner.run_all   # applies pending migrations
+    #
     class MigrationRunner
 
     # Name of the tracking table that records which migrations have been applied.

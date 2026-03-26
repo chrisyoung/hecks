@@ -1,14 +1,14 @@
-# Hecks::WorkflowExecutor
-#
-# Executes workflow steps in order against the runtime's command bus.
-# At branches, evaluates the named specification against the last command
-# result to choose the if_steps or else_steps path. Uses the domain module
-# to resolve specification classes.
-#
-#   executor = WorkflowExecutor.new(workflow, command_bus, domain_mod)
-#   result = executor.call(principal: 75_000)
-#
 module Hecks
+  # Hecks::WorkflowExecutor
+  #
+  # Executes workflow steps in order against the runtime's command bus.
+  # At branches, evaluates the named specification against the last command
+  # result to choose the if_steps or else_steps path. Uses the domain module
+  # to resolve specification classes.
+  #
+  #   executor = WorkflowExecutor.new(workflow, command_bus, domain_mod)
+  #   result = executor.call(principal: 75_000)
+  #
   class WorkflowExecutor
     # Creates a new workflow executor.
     #

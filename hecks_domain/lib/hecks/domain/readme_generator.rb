@@ -1,27 +1,26 @@
 require_relative "../extensions/docs"
 
-# Hecks::ReadmeGenerator
-#
-# Generates README.md from docs/readme_template.md by replacing {{tags}}
-# with content from the codebase. Supports hand-written prose in docs/content/,
-# usage examples in docs/usage/, and auto-generated tables from code inspection.
-#
-# Supported tags:
-# - {{content:name}} -- includes docs/content/name.md
-# - {{usage:name}} -- includes docs/usage/name.md (strips headers)
-# - {{features}} -- includes FEATURES.md (strips title)
-# - {{connections}} -- generates extension table grouped by category
-# - {{smalltalk}} -- generates Smalltalk-inspired features section
-# - {{validation_rules}} -- generates validation rules table from source
-# - {{cli_commands}} -- generates CLI commands table from source
-# - {{domain_summary}} -- generates aggregate summary table from hecks_domain.rb
-# - {{domain_dsl}} -- includes raw hecks_domain.rb in a code block
-# - {{domain_policies}} -- generates policy table from hecks_domain.rb
-#
-#   ReadmeGenerator.new(project_root).generate
-#
-
 module Hecks
+  # Hecks::ReadmeGenerator
+  #
+  # Generates README.md from docs/readme_template.md by replacing {{tags}}
+  # with content from the codebase. Supports hand-written prose in docs/content/,
+  # usage examples in docs/usage/, and auto-generated tables from code inspection.
+  #
+  # Supported tags:
+  # - {{content:name}} -- includes docs/content/name.md
+  # - {{usage:name}} -- includes docs/usage/name.md (strips headers)
+  # - {{features}} -- includes FEATURES.md (strips title)
+  # - {{connections}} -- generates extension table grouped by category
+  # - {{smalltalk}} -- generates Smalltalk-inspired features section
+  # - {{validation_rules}} -- generates validation rules table from source
+  # - {{cli_commands}} -- generates CLI commands table from source
+  # - {{domain_summary}} -- generates aggregate summary table from hecks_domain.rb
+  # - {{domain_dsl}} -- includes raw hecks_domain.rb in a code block
+  # - {{domain_policies}} -- generates policy table from hecks_domain.rb
+  #
+  #   ReadmeGenerator.new(project_root).generate
+  #
   class ReadmeGenerator
     # @param root [String] absolute path to the project root directory
     def initialize(root)

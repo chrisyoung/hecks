@@ -1,11 +1,11 @@
-# Hecks::HTTP::RpcDiscovery
-#
-# Generates a JSON-RPC discovery document listing all available methods
-# for a domain: commands, queries, and CRUD operations (find, all, count, delete)
-# per aggregate. Used by RpcServer to advertise its capabilities.
-#
 module Hecks
   module HTTP
+    # Hecks::HTTP::RpcDiscovery
+    #
+    # Generates a JSON-RPC discovery document listing all available methods
+    # for a domain: commands, queries, and CRUD operations (find, all, count, delete)
+    # per aggregate. Used by RpcServer to advertise its capabilities.
+    #
     class RpcDiscovery
       # Creates a new RpcDiscovery generator for a domain.
       #

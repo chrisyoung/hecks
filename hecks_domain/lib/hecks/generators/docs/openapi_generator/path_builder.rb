@@ -1,13 +1,13 @@
-# Hecks::HTTP::OpenapiGenerator::PathBuilder
-#
-# Builds OpenAPI path entries from domain aggregates. Each aggregate
-# gets CRUD paths and query paths; a shared /events SSE path is added.
-#
-# Mixed into OpenapiGenerator to keep path logic separate from schemas.
-#
 module Hecks
   module HTTP
     class OpenapiGenerator
+      # Hecks::HTTP::OpenapiGenerator::PathBuilder
+      #
+      # Builds OpenAPI path entries from domain aggregates. Each aggregate
+      # gets CRUD paths and query paths; a shared /events SSE path is added.
+      #
+      # Mixed into OpenapiGenerator to keep path logic separate from schemas.
+      #
       module PathBuilder
         private
 

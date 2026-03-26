@@ -1,14 +1,14 @@
-# Hecks::GemBuilder
-#
-# Builds and installs all Hecks component gems from their subdirectories,
-# then the meta-gem. Each component is built from its own directory so that
-# Dir globs in gemspecs resolve correctly.
-#
-#   builder = Hecks::GemBuilder.new("/path/to/hecks")
-#   builder.build      # build all .gem files
-#   builder.install    # build + install all gems
-#
 module Hecks
+  # Hecks::GemBuilder
+  #
+  # Builds and installs all Hecks component gems from their subdirectories,
+  # then the meta-gem. Each component is built from its own directory so that
+  # Dir globs in gemspecs resolve correctly.
+  #
+  #   builder = Hecks::GemBuilder.new("/path/to/hecks")
+  #   builder.build      # build all .gem files
+  #   builder.install    # build + install all gems
+  #
   class GemBuilder
     COMPONENTS = %w[
       hecksties hecks_model hecks_domain hecks_runtime
@@ -24,10 +24,12 @@ module Hecks
       @output = output
     end
 
-    # Builds all component gems and the meta-gem.
+    # Builds all component gems and the meta-gem. Auto-increments the
+    # CalVer version before building.
     #
     # @return [Boolean] true if all builds succeeded
     def build
+      bump_version!
       COMPONENTS.each do |name|
         next if skip_missing?(name)
         return false unless build_component(name)
@@ -37,9 +39,11 @@ module Hecks
     end
 
     # Builds and installs all component gems, then the meta-gem.
+    # Auto-increments the CalVer version before building.
     #
     # @return [Boolean] true if all builds and installs succeeded
     def install
+      bump_version!
       COMPONENTS.each do |name|
         next if skip_missing?(name)
         return false unless install_component(name)
@@ -56,6 +60,16 @@ module Hecks
     end
 
     private
+
+    def bump_version!
+      versioner = Hecks::Versioner.new(root)
+      new_version = versioner.next
+      version_file = File.join(root, "hecksties", "lib", "hecks", "version.rb")
+      content = File.read(version_file)
+      updated = content.gsub(/VERSION = ".*"/, "VERSION = \"#{new_version}\"")
+      File.write(version_file, updated)
+      @output.call("Version: #{new_version}", :green)
+    end
 
     def component_dir(name)
       File.join(root, name)

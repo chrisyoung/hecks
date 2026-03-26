@@ -1,29 +1,29 @@
-# Hecks::Generators::Domain::PolicyGenerator
-#
-# Generates policy classes nested under Aggregate::Policies. Supports two
-# types of policies:
-#
-# == Guard Policies
-# Guard policies have a +call+ method with parameters extracted from the DSL
-# block. They run synchronously before a command executes and can prevent it
-# by raising an error. The block's source becomes the method body.
-#
-# == Reactive Policies
-# Reactive policies respond to domain events by dispatching trigger commands.
-# They declare +EVENT+, +TRIGGER+, +ASYNC+, +MAP+, and +DEFAULTS+ constants.
-# The +call(event)+ method maps event attributes to command attributes and
-# dispatches the trigger command.
-#
-# Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
-#
-# == Usage
-#
-#   gen = PolicyGenerator.new(policy, domain_module: "PizzasDomain", aggregate_name: "Order")
-#   gen.generate
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::PolicyGenerator
+    #
+    # Generates policy classes nested under Aggregate::Policies. Supports two
+    # types of policies:
+    #
+    # == Guard Policies
+    # Guard policies have a +call+ method with parameters extracted from the DSL
+    # block. They run synchronously before a command executes and can prevent it
+    # by raising an error. The block's source becomes the method body.
+    #
+    # == Reactive Policies
+    # Reactive policies respond to domain events by dispatching trigger commands.
+    # They declare +EVENT+, +TRIGGER+, +ASYNC+, +MAP+, and +DEFAULTS+ constants.
+    # The +call(event)+ method maps event attributes to command attributes and
+    # dispatches the trigger command.
+    #
+    # Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # == Usage
+    #
+    #   gen = PolicyGenerator.new(policy, domain_module: "PizzasDomain", aggregate_name: "Order")
+    #   gen.generate
+    #
     class PolicyGenerator
 
       # Initializes the policy generator.

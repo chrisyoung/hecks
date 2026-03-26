@@ -1,18 +1,18 @@
-# Hecks::Generators::Infrastructure::DomainGemGenerator::FileWriter
-#
-# Mixin that writes generated domain files to disk — aggregates, value objects,
-# commands, events, policies, queries, ports, adapters, gemspec, entry point,
-# and hecks_domain.rb (serialized DSL). Preserves custom call methods in
-# command files across regeneration cycles. Part of DomainGemGenerator,
-# consumed by DomainGemGenerator#generate.
-#
-#   # Mixed into DomainGemGenerator:
-#   generate_aggregates(root, gem_name, mod)
-#
 module Hecks
   module Generators
     module Infrastructure
       class DomainGemGenerator
+        # Hecks::Generators::Infrastructure::DomainGemGenerator::FileWriter
+        #
+        # Mixin that writes generated domain files to disk — aggregates, value objects,
+        # commands, events, policies, queries, ports, adapters, gemspec, entry point,
+        # and hecks_domain.rb (serialized DSL). Preserves custom call methods in
+        # command files across regeneration cycles. Part of DomainGemGenerator,
+        # consumed by DomainGemGenerator#generate.
+        #
+        #   # Mixed into DomainGemGenerator:
+        #   generate_aggregates(root, gem_name, mod)
+        #
         module FileWriter
           private
 

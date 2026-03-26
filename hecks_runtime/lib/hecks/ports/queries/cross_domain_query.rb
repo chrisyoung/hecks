@@ -1,27 +1,27 @@
-# Hecks::CrossDomainQuery
-#
-# A read-only query that spans multiple bounded contexts. Registered at
-# the application level via +Hecks.cross_domain_query+, it resolves
-# aggregate classes from any booted domain using the +from+ helper.
-#
-# Cross-domain queries are the only sanctioned way to read data across
-# bounded context boundaries. They enforce read-only access -- mutations
-# must go through the owning domain's command bus.
-#
-# == Registration
-#
-#   Hecks.cross_domain_query "ComplianceCheck" do |model_id:|
-#     model   = from("ModelRegistry", "AiModel").find(model_id)
-#     reviews = from("Compliance", "ComplianceReview").by_model(model_id)
-#     { model: model, reviews: reviews }
-#   end
-#
-# == Execution
-#
-#   result = Hecks.query("ComplianceCheck", model_id: "abc")
-#   # => { model: #<AiModel>, reviews: [#<ComplianceReview>, ...] }
-#
 module Hecks
+  # Hecks::CrossDomainQuery
+  #
+  # A read-only query that spans multiple bounded contexts. Registered at
+  # the application level via +Hecks.cross_domain_query+, it resolves
+  # aggregate classes from any booted domain using the +from+ helper.
+  #
+  # Cross-domain queries are the only sanctioned way to read data across
+  # bounded context boundaries. They enforce read-only access -- mutations
+  # must go through the owning domain's command bus.
+  #
+  # == Registration
+  #
+  #   Hecks.cross_domain_query "ComplianceCheck" do |model_id:|
+  #     model   = from("ModelRegistry", "AiModel").find(model_id)
+  #     reviews = from("Compliance", "ComplianceReview").by_model(model_id)
+  #     { model: model, reviews: reviews }
+  #   end
+  #
+  # == Execution
+  #
+  #   result = Hecks.query("ComplianceCheck", model_id: "abc")
+  #   # => { model: #<AiModel>, reviews: [#<ComplianceReview>, ...] }
+  #
   class CrossDomainQuery
     # @return [String] the registered name of this cross-domain query
     attr_reader :name

@@ -1,19 +1,19 @@
-# Hecks::Migrations::DomainSnapshot
-#
-# Saves and loads domain DSL snapshots for migration diffing. When
-# migrations are generated, the current domain is serialized to a
-# snapshot file using DslSerializer. On the next run, the snapshot is
-# loaded as the "old" domain to diff against the current one.
-#
-# The snapshot file is valid Ruby DSL code that reconstructs the domain
-# when evaluated. The default location is +.hecks_domain_snapshot.rb+
-# in the project root.
-#
-#   DomainSnapshot.save(domain, path: ".hecks_domain_snapshot.rb")
-#   old_domain = DomainSnapshot.load(path: ".hecks_domain_snapshot.rb")
-#
 module Hecks
   module Migrations
+    # Hecks::Migrations::DomainSnapshot
+    #
+    # Saves and loads domain DSL snapshots for migration diffing. When
+    # migrations are generated, the current domain is serialized to a
+    # snapshot file using DslSerializer. On the next run, the snapshot is
+    # loaded as the "old" domain to diff against the current one.
+    #
+    # The snapshot file is valid Ruby DSL code that reconstructs the domain
+    # when evaluated. The default location is +.hecks_domain_snapshot.rb+
+    # in the project root.
+    #
+    #   DomainSnapshot.save(domain, path: ".hecks_domain_snapshot.rb")
+    #   old_domain = DomainSnapshot.load(path: ".hecks_domain_snapshot.rb")
+    #
     class DomainSnapshot
 
     # Default file path for the snapshot file, relative to the project root.

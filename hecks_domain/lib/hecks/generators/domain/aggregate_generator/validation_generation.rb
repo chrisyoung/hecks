@@ -1,24 +1,24 @@
-# Hecks::Generators::Domain::AggregateGenerator::ValidationGeneration
-#
-# Mixin that generates the +validate!+ method for aggregate classes.
-# Produces presence and type checks based on the aggregate's validation
-# rules defined in the DSL. If no validations are defined, generates a
-# no-op method. Part of Generators::Domain, mixed into AggregateGenerator.
-#
-# Note: In current usage, AggregateGenerator calls +combined_validation_lines+
-# (defined on itself) which also handles enum checks. This module's
-# +validation_lines+ method is the standalone variant without enum support.
-#
-# == Usage
-#
-#   class AggregateGenerator
-#     include ValidationGeneration
-#   end
-#
 module Hecks
   module Generators
     module Domain
       class AggregateGenerator
+        # Hecks::Generators::Domain::AggregateGenerator::ValidationGeneration
+        #
+        # Mixin that generates the +validate!+ method for aggregate classes.
+        # Produces presence and type checks based on the aggregate's validation
+        # rules defined in the DSL. If no validations are defined, generates a
+        # no-op method. Part of Generators::Domain, mixed into AggregateGenerator.
+        #
+        # Note: In current usage, AggregateGenerator calls +combined_validation_lines+
+        # (defined on itself) which also handles enum checks. This module's
+        # +validation_lines+ method is the standalone variant without enum support.
+        #
+        # == Usage
+        #
+        #   class AggregateGenerator
+        #     include ValidationGeneration
+        #   end
+        #
         module ValidationGeneration
           private
 

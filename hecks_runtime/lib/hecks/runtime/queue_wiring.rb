@@ -1,14 +1,14 @@
-# Hecks::Boot::QueueWiring
-#
-# Wires up a MemoryQueue with a command resolver that dispatches across
-# all booted domain runtimes. Used by boot_multi to enable cross-domain
-# command dispatch via the queue.
-#
-#   include QueueWiring
-#   wire_queue(domains, runtimes)
-#
 module Hecks
   module Boot
+    # Hecks::Boot::QueueWiring
+    #
+    # Wires up a MemoryQueue with a command resolver that dispatches across
+    # all booted domain runtimes. Used by boot_multi to enable cross-domain
+    # command dispatch via the queue.
+    #
+    #   include QueueWiring
+    #   wire_queue(domains, runtimes)
+    #
     module QueueWiring
       # Creates a global +Hecks.queue+ backed by a +MemoryQueue+ whose resolver
       # can find and dispatch any command across all booted domain runtimes.
