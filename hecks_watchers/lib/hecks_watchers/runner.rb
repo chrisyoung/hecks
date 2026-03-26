@@ -39,7 +39,7 @@ module HecksWatchers
       removed = @snapshot.keys - current.keys
 
       unless changed.empty? && added.empty? && removed.empty?
-        all = changed + added
+        all = (changed + added).uniq
         @logger.log "\n──── #{all.size} file(s) changed ────"
         all.each { |f| @logger.log "  #{f}" }
         run_watchers
