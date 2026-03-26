@@ -43,8 +43,22 @@ Tools: adopt_cat, find_cat, all_cats, cat_count
 
 # Or generate a Sinatra app
 $ hecks generate sinatra
-Created cats_app/
-  app.rb, config.ru, Gemfile, views/
+Generated cats_domain_app/
+  Gemfile      — dependencies
+  config.ru    — rackup entry point
+  app.rb       — routes (edit this!)
+  config/hecks.rb — domain configuration
+
+$ cd cats_domain_app && bundle install && ruby app.rb
+```
+
+The generated Sinatra app has CRUD routes for every aggregate plus routes for named queries -- all derived from the DSL. Edit `app.rb` to add auth, middleware, custom endpoints. The domain stays untouched.
+
+```
+GET    /cats          — all cats
+GET    /cats/:id      — find by ID
+POST   /cats/adopt    — run command (JSON body)
+DELETE /cats/:id      — delete
 ```
 
 REPL sketch → play with live objects → serve over HTTP → expose via MCP → generate a Sinatra app. All the same domain, zero code changes.
