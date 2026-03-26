@@ -2,48 +2,11 @@
 # Polls every second for .rb file changes and runs all watchers.
 # Started automatically when Claude Code opens the project.
 
-PROJECT_ROOT = File.expand_path("..", __dir__)
-Dir.chdir(PROJECT_ROOT)
+$LOAD_PATH.unshift File.expand_path("../hecks_watchers/lib", __dir__)
+require "hecks_watchers"
 
-LOG_FILE = File.join(PROJECT_ROOT, "tmp", "watcher.log")
+project_root = File.expand_path("..", __dir__)
 $stdout.sync = true
 
-# Track file mtimes
-$snapshot = {}
-
-def snapshot_files
-  Dir.glob("*/lib/**/*.rb").each_with_object({}) do |f, h|
-    h[f] = File.mtime(f) rescue nil
-  end
-end
-
-def run_watchers
-  system("ruby bin/watch-file-size 2>/dev/null")
-  system("ruby bin/watch-cross-require 2>/dev/null")
-  system("ruby bin/watch-autoloads 2>/dev/null")
-end
-
-def log(msg)
-  puts msg
-  File.open(LOG_FILE, "a") { |f| f.puts msg }
-end
-
-$snapshot = snapshot_files
-
-loop do
-  sleep 1
-  current = snapshot_files
-
-  changed = current.keys.select { |f| current[f] != $snapshot[f] }
-  added = current.keys - $snapshot.keys
-  removed = $snapshot.keys - current.keys
-
-  unless changed.empty? && added.empty? && removed.empty?
-    all = changed + added
-    log "\n──── #{all.size} file(s) changed ────"
-    all.each { |f| log "  #{f}" }
-    run_watchers
-    log "────────────────────────────────"
-    $snapshot = current
-  end
-end
+runner = HecksWatchers::Runner.new(project_root: project_root)
+runner.start

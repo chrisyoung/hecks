@@ -2,38 +2,9 @@
 # Warns when any staged .rb file exceeds 180 lines of code (headers excluded).
 # The hard limit is 200 — this catches files approaching it.
 
-LIMIT = 180
-LOG_FILE = File.join(File.expand_path("..", __dir__), "tmp", "watcher.log")
+$LOAD_PATH.unshift File.expand_path("../hecks_watchers/lib", __dir__)
+require "hecks_watchers"
 
-def log(msg)
-  puts msg
-  File.open(LOG_FILE, "a") { |f| f.puts msg }
-end
-
-staged = `git diff --cached --name-only`.split("\n")
-rb_files = staged.select { |f| f.end_with?(".rb") && File.exist?(f) }
-exit 0 if rb_files.empty?
-
-violations = []
-rb_files.each do |path|
-  lines = File.readlines(path)
-  # Skip doc header (leading comment block before first non-comment, non-blank line)
-  in_header = true
-  code_lines = lines.reject do |line|
-    stripped = line.strip
-    if in_header && (stripped.start_with?("#") || stripped.empty?)
-      true
-    else
-      in_header = false
-      stripped.empty? || stripped.start_with?("#")
-    end
-  end
-  count = code_lines.size
-  violations << "  #{path}: #{count} lines (limit: 200)" if count > LIMIT
-end
-
-unless violations.empty?
-  log "\n⚠  Files approaching 200-line code limit:"
-  violations.each { |v| log v }
-  log ""
-end
+project_root = File.expand_path("..", __dir__)
+results = HecksWatchers::FileSize.new(project_root: project_root).call
+exit(results.empty? ? 0 : 0)

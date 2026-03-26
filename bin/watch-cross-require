@@ -2,39 +2,9 @@
 # Fails if any staged file has a require_relative that escapes its component.
 # Cross-component loading must use bare `require`, not `require_relative`.
 
-COMPONENTS = %w[hecksties hecks_model hecks_domain hecks_runtime hecks_session hecks_cli hecks_persist hecks_on_rails].freeze
-LOG_FILE = File.join(File.expand_path("..", __dir__), "tmp", "watcher.log")
+$LOAD_PATH.unshift File.expand_path("../hecks_watchers/lib", __dir__)
+require "hecks_watchers"
 
-def log(msg)
-  puts msg
-  File.open(LOG_FILE, "a") { |f| f.puts msg }
-end
-
-staged = `git diff --cached --name-only`.split("\n")
-rb_files = staged.select { |f| f.end_with?(".rb") && File.exist?(f) }
-exit 0 if rb_files.empty?
-
-violations = []
-rb_files.each do |path|
-  component = COMPONENTS.find { |c| path.start_with?("#{c}/") }
-  next unless component
-
-  File.readlines(path).each_with_index do |line, i|
-    next unless line =~ /require_relative\s+["']([^"']+)/
-    target = $1
-    # Resolve relative to the file's directory
-    dir = File.dirname(path)
-    resolved = File.expand_path(target, dir)
-    # Check if it escapes the component
-    unless resolved.include?("/#{component}/")
-      violations << "  #{path}:#{i + 1}: require_relative \"#{target}\" escapes #{component}/"
-    end
-  end
-end
-
-unless violations.empty?
-  log "\nBLOCKED: Cross-component require_relative detected:"
-  violations.each { |v| log v }
-  log "  Use bare `require` for cross-component loading.\n\n"
-  exit 1
-end
+project_root = File.expand_path("..", __dir__)
+results = HecksWatchers::CrossRequire.new(project_root: project_root).call
+exit(results.empty? ? 0 : 1)

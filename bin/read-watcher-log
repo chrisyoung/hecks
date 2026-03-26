@@ -2,11 +2,8 @@
 # Reads and clears tmp/watcher.log so Claude Code sessions see watcher output.
 # Called by the PostToolUse hook.
 
-log_file = File.join(File.expand_path("..", __dir__), "tmp", "watcher.log")
-exit 0 unless File.exist?(log_file)
+$LOAD_PATH.unshift File.expand_path("../hecks_watchers/lib", __dir__)
+require "hecks_watchers"
 
-content = File.read(log_file).strip
-exit 0 if content.empty?
-
-File.write(log_file, "")
-puts content
+project_root = File.expand_path("..", __dir__)
+HecksWatchers::LogReader.call(project_root)

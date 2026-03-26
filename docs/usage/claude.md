@@ -17,11 +17,13 @@ Watchers started (PID: 12345)
 
 ## Watchers
 
-Three watchers run on every detected file change:
+The `hecks_watchers` component provides the watcher classes. Three run on every detected file change:
 
-- **watch-file-size** — warns when files approach the 200-line code limit (triggers at 180)
-- **watch-cross-require** — fails if `require_relative` escapes a component boundary
-- **watch-autoloads** — warns when a new class/module file isn't registered in `autoloads.rb`
+- **HecksWatchers::FileSize** — warns when files approach the 200-line code limit (triggers at 180)
+- **HecksWatchers::CrossRequire** — fails if `require_relative` escapes a component boundary
+- **HecksWatchers::Autoloads** — warns when a new class/module file isn't registered in `autoloads.rb`
+
+The `bin/watch-*` scripts are thin wrappers that delegate to these classes.
 
 ## PostToolUse Hook
 
