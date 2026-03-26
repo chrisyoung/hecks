@@ -31,11 +31,19 @@ module Hecks
             agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
             name = agg.name
             klass = agg_class
+            attr_list = agg.attributes.map { |a| "#{a.name}: #{a.ruby_type}" }.join(", ")
 
             @server.define_tool(
               name: "Find#{name}",
-              description: "Find a #{name} by ID",
-              input_schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] }
+              description: "Looks up a single #{name} by its unique ID (UUID string). " \
+                           "Parameter: id (string, required). Example: \"abc-123\". " \
+                           "Returns: #{name} object with fields (#{attr_list}, id, created_at, updated_at), " \
+                           "or \"Not found\" if no #{name} exists with that ID.",
+              input_schema: {
+                type: "object",
+                properties: { id: { type: "string", description: "UUID of the #{name} to find. Example: \"abc-123\"" } },
+                required: ["id"]
+              }
             ) do |args|
               result = klass.find(args["id"])
               result ? serialize_aggregate(result) : "Not found"
@@ -43,7 +51,9 @@ module Hecks
 
             @server.define_tool(
               name: "All#{name}s",
-              description: "List all #{name}s",
+              description: "Lists every #{name} instance in the repository. Takes no parameters. " \
+                           "Returns: newline-separated list of all #{name} objects, each with fields " \
+                           "(#{attr_list}, id, created_at, updated_at). Returns empty string if none exist.",
               input_schema: { type: "object", properties: {} }
             ) do |_|
               klass.all.map { |r| serialize_aggregate(r) }.join("\n")
@@ -51,7 +61,8 @@ module Hecks
 
             @server.define_tool(
               name: "Count#{name}s",
-              description: "Count #{name}s",
+              description: "Returns the total number of #{name} instances in the repository. " \
+                           "Takes no parameters. Returns: a single integer as a string (e.g. \"5\").",
               input_schema: { type: "object", properties: {} }
             ) do |_|
               klass.count.to_s

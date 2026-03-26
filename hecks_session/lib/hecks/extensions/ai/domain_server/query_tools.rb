@@ -50,21 +50,27 @@ module Hecks
           method_name = Hecks::Utils.underscore(query.name).to_sym
           params = query.block.parameters
           klass = agg_class
+          attr_list = agg.attributes.map { |a| "#{a.name}: #{a.ruby_type}" }.join(", ")
 
           if params.empty?
+            desc = build_query_description(agg, method_name, [], attr_list)
             @server.define_tool(
               name: "#{agg.name}_#{method_name}",
-              description: "#{agg.name}.#{method_name} — lookup",
+              description: desc,
               input_schema: { type: "object", properties: {} }
             ) do |_|
               results = klass.send(method_name)
               results.respond_to?(:map) ? results.map { |r| serialize_aggregate(r) }.join("\n") : results.to_s
             end
           else
-            props = params.each_with_object({}) { |(_, name), h| h[name.to_s] = { type: "string" } }
+            param_names = params.map { |_, name| name.to_s }
+            props = params.each_with_object({}) do |(_, name), h|
+              h[name.to_s] = { type: "string", description: "#{name} (string, required). Example: \"example_#{name}\"" }
+            end
+            desc = build_query_description(agg, method_name, param_names, attr_list)
             @server.define_tool(
               name: "#{agg.name}_#{method_name}",
-              description: "#{agg.name}.#{method_name} — lookup",
+              description: desc,
               input_schema: { type: "object", properties: props, required: props.keys }
             ) do |args|
               values = params.map { |_, name| args[name.to_s] }
@@ -72,6 +78,26 @@ module Hecks
               results.respond_to?(:map) ? results.map { |r| serialize_aggregate(r) }.join("\n") : results.to_s
             end
           end
+        end
+
+        # Builds a rich description for a query tool including what it does,
+        # accepted parameters, and the shape of the result set.
+        #
+        # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate
+        # @param method_name [Symbol] the query method name
+        # @param param_names [Array<String>] parameter names (empty for zero-arg queries)
+        # @param attr_list [String] comma-separated attribute descriptions for the return shape
+        # @return [String] the full description
+        def build_query_description(agg, method_name, param_names, attr_list)
+          parts = []
+          parts << "Queries the #{agg.name} aggregate using the #{method_name} finder."
+          if param_names.any?
+            parts << "Accepts parameters: #{param_names.join(', ')} (all required, string type)."
+          else
+            parts << "Takes no parameters."
+          end
+          parts << "Returns: newline-separated list of #{agg.name} objects, each with fields (#{attr_list}, id, created_at, updated_at)."
+          parts.join(" ")
         end
       end
     end

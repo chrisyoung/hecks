@@ -56,6 +56,8 @@ module Hecks
         puts ""
         @routes.each { |r| puts "  #{r[:method].ljust(6)} #{r[:path]}" }
         puts "  GET    /events (SSE)"
+        puts "  GET    /_openapi"
+        puts "  GET    /_schema"
         start_websocket_server if @live
         puts ""
 
@@ -85,6 +87,18 @@ module Hecks
           # SSE not supported in basic WEBrick — return event list instead
           res["Content-Type"] = "application/json"
           res.body = JSON.generate(@app.events.map { |e| { type: e.class.name.split("::").last, occurred_at: e.occurred_at.iso8601 } })
+          return
+        end
+
+        if req.path == "/_openapi"
+          res["Content-Type"] = "application/json"
+          res.body = JSON.generate(Hecks::HTTP::OpenapiGenerator.new(@domain).generate)
+          return
+        end
+
+        if req.path == "/_schema"
+          res["Content-Type"] = "application/json"
+          res.body = JSON.generate(Hecks::HTTP::JsonSchemaGenerator.new(@domain).generate)
           return
         end
 

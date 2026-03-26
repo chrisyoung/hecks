@@ -1,5 +1,6 @@
 require "fileutils"
 require_relative "domain_gem_generator/file_writer"
+require_relative "domain_gem_generator/llms_txt_writer"
 require_relative "domain_gem_generator/spec_writer"
 
 # Hecks::Generators::Infrastructure::DomainGemGenerator
@@ -19,6 +20,7 @@ module Hecks
     module Infrastructure
     class DomainGemGenerator
       include FileWriter
+      include LlmsTxtWriter
       include SpecWriter
 
       # Creates a new DomainGemGenerator.
@@ -68,6 +70,7 @@ module Hecks
         generate_services(root, gem_name, mod)
         generate_specs(root, gem_name, mod)
         generate_domain_rb(root)
+        generate_llms_txt(root, gem_name, mod)
 
         root
       end
