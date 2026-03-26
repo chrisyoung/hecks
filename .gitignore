@@ -24,3 +24,5 @@ examples/rails_app/.rubocop.yml
 examples/rails_app/.ruby-version
 db/migrate/*_hecks_migration.sql
 HECKS_README.md
+.claude/settings.local.json
+.claude/worktrees/
