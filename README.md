@@ -48,6 +48,7 @@ Sketch a domain in the REPL. Play with live objects. Watch events fire and polic
 - [CLI Commands](#cli-commands)
 - [Banking Example](#banking-example)
 - [How Hecks Compares](#how-hecks-compares)
+- [Why Not Just Have AI Generate the Code?](#why-not-just-have-ai-generate-the-code)
 
 More: [Specifications](docs/content/specifications.md) | [Policies](docs/usage/policy_conditions.md) | [Domain-Level Policies](docs/usage/domain_level_policies.md) | [Error Messages](docs/usage/error_messages.md) | [All Features](FEATURES.md)
 
