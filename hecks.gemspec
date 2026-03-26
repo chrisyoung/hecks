@@ -1,45 +1,25 @@
-lib = File.expand_path("hecksties/lib", __dir__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "hecks/version"
+require_relative "hecksties/lib/hecks/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "hecks"
   spec.version       = Hecks::VERSION
   spec.authors       = ["Christopher Young"]
   spec.summary       = "Hexagonal DDD framework for Ruby"
-  spec.description   = "Define domains with a Ruby DSL, generate pure versioned domain gems"
-  spec.homepage      = "https://github.com/christopheryoung/hecks"
+  spec.description   = "Meta-gem that installs all Hecks components: core, model, domain, runtime, session, CLI, and persistence"
+  spec.homepage      = "https://github.com/chrisyoung/hecks"
   spec.license       = "MIT"
 
-  spec.files         = Dir["{hecksties,hecks_model,hecks_domain,hecks_runtime,hecks_session,hecks_cli,hecks_persist}/lib/**/*", "bin/*"]
+  spec.files         = ["README.md", "FEATURES.md", "hecks_logo.png"]
   spec.bindir        = "bin"
   spec.executables   = ["hecks"]
-  spec.require_paths = %w[
-    hecksties/lib
-    hecks_model/lib
-    hecks_domain/lib
-    hecks_runtime/lib
-    hecks_session/lib
-    hecks_cli/lib
-    hecks_persist/lib
-  ]
 
   spec.required_ruby_version = ">= 3.0"
 
-  # Runtime — core has zero heavy dependencies
-  spec.add_dependency "rwordnet", ">= 1.0", "< 3.0"
-  spec.add_dependency "activemodel", ">= 6.0", "< 10.0"
-
-  # Optional — companion gems bring their own drivers
-  # gem "hecks_on_rails" → active_hecks + hecks_live (the works)
-  # gem "active_hecks"   → activemodel (validations, persistence, railtie)
-  # gem "hecks_live"     → turbo-rails (real-time Turbo Streams)
-  # gem "hecks_sqlite"   → sequel + sqlite3
-  # gem "hecks_postgres" → sequel + pg
-  # gem "hecks_mysql"    → sequel + mysql2
-  spec.add_development_dependency "sequel", "~> 5.0"
-  spec.add_development_dependency "sqlite3", ">= 1.4", "< 3.0"
-  spec.add_development_dependency "thor", "~> 1.0"
-  spec.add_development_dependency "mcp", ">= 0.1", "< 2.0"
-  spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_dependency "hecksties",      Hecks::VERSION
+  spec.add_dependency "hecks_model",    Hecks::VERSION
+  spec.add_dependency "hecks_domain",   Hecks::VERSION
+  spec.add_dependency "hecks_runtime",  Hecks::VERSION
+  spec.add_dependency "hecks_session",  Hecks::VERSION
+  spec.add_dependency "hecks_cli",      Hecks::VERSION
+  spec.add_dependency "hecks_persist",  Hecks::VERSION
 end
