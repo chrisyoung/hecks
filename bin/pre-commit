@@ -35,14 +35,6 @@ fi
 
 echo "Tests passed: ${duration}s"
 
-# Cross-component require_relative check (blocks commit)
-ruby bin/watch-cross-require 2>/dev/null
-if [ $? -ne 0 ]; then
-  exit 1
-fi
-
-# Advisory watchers (warn but don't block)
-ruby bin/watch-file-size 2>/dev/null
-ruby bin/check-docs 2>/dev/null
-ruby bin/watch-spec-coverage 2>/dev/null
-ruby bin/watch-autoloads 2>/dev/null
+# Run all watchers (cross-require blocks; others are advisory)
+ruby -I hecks_watchers/lib -r hecks_watchers -e \
+  'exit(HecksWatchers::PreCommit.new(project_root: Dir.pwd).call ? 0 : 1)'
