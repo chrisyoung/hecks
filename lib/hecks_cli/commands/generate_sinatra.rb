@@ -14,6 +14,7 @@ module Hecks
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
       option :dir, type: :string, desc: "Output directory (default: {domain}_app)"
+      option :force, type: :boolean, desc: "Overwrite without prompting"
       def generate_sinatra
         domain = resolve_domain_option
         return unless domain
@@ -28,10 +29,10 @@ module Hecks
         FileUtils.mkdir_p(dir)
         FileUtils.mkdir_p(File.join(dir, "config"))
 
-        File.write(File.join(dir, "Gemfile"), sinatra_gemfile(domain))
-        File.write(File.join(dir, "config.ru"), sinatra_config_ru)
-        File.write(File.join(dir, "app.rb"), sinatra_app_rb(domain))
-        File.write(File.join(dir, "config/hecks.rb"), sinatra_hecks_config(domain))
+        write_or_diff(File.join(dir, "Gemfile"), sinatra_gemfile(domain))
+        write_or_diff(File.join(dir, "config.ru"), sinatra_config_ru)
+        write_or_diff(File.join(dir, "app.rb"), sinatra_app_rb(domain))
+        write_or_diff(File.join(dir, "config/hecks.rb"), sinatra_hecks_config(domain))
 
         say "Generated Sinatra app: #{dir}/", :green
         say "  Gemfile      — dependencies"

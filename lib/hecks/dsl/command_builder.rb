@@ -32,6 +32,8 @@ module Hecks
         @external_systems = []
         @actors = []
         @sets = {}
+        @preconditions = []
+        @postconditions = []
       end
 
       def call(&block)
@@ -64,11 +66,20 @@ module Hecks
         @sets.merge!(hash)
       end
 
+      def precondition(message, &block)
+        @preconditions << DomainModel::Behavior::Condition.new(message: message, block: block)
+      end
+
+      def postcondition(message, &block)
+        @postconditions << DomainModel::Behavior::Condition.new(message: message, block: block)
+      end
+
       def build
         DomainModel::Behavior::Command.new(
           name: @name, attributes: @attributes, handler: @handler, guard_name: @guard_name,
           read_models: @read_models, external_systems: @external_systems, actors: @actors,
-          call_body: @call_body, sets: @sets
+          call_body: @call_body, sets: @sets,
+          preconditions: @preconditions, postconditions: @postconditions
         )
       end
     end

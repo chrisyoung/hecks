@@ -100,8 +100,8 @@ RSpec.describe "Edge cases and error handling" do
 
     it "destroy returns self" do
       w = EdgeDomain::Widget.create(name: "Temp")
-      result = w.destroy
-      expect(result).to equal(w)
+      result = w.aggregate.destroy
+      expect(result).to equal(w.aggregate)
     end
   end
 
@@ -152,7 +152,7 @@ RSpec.describe "Edge cases and error handling" do
     it "two aggregates with same ID are equal" do
       w = EdgeDomain::Widget.create(name: "Test")
       found = EdgeDomain::Widget.find(w.id)
-      expect(w).to eq(found)
+      expect(w.aggregate).to eq(found)
     end
 
     it "two aggregates with different IDs are not equal" do

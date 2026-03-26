@@ -47,6 +47,13 @@ module Hecks
         @event_subscribers << { event_name: event_name.to_s, block: block }
       end
 
+      # Load partial domain definitions from a file.
+      #   load_from "domain/aggregates/models.rb"
+      def load_from(path)
+        full = File.expand_path(path, @_source_dir || Dir.pwd)
+        instance_eval(File.read(full), full, 1)
+      end
+
       def aggregate(name, &block)
         if @aggregates.any? { |a| a.name == name }
           raise ArgumentError, "Duplicate aggregate name: #{name}"

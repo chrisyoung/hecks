@@ -41,14 +41,29 @@ module Hecks
       end
 
       def generate_reactive
+        map = @policy.attribute_map
+        defaults = @policy.respond_to?(:defaults) ? @policy.defaults : {}
         lines = []
         lines << "module #{@domain_module}"
         lines << "  class #{@aggregate_name}"
         lines << "    module Policies"
         lines << "      class #{@policy.name}"
-        lines << "        def self.event   = \"#{@policy.event_name}\""
-        lines << "        def self.trigger = \"#{@policy.trigger_command}\""
-        lines << "        def self.async   = #{@policy.async}"
+        lines << "        EVENT   = #{@policy.event_name.inspect}"
+        lines << "        TRIGGER = #{@policy.trigger_command.inspect}"
+        lines << "        ASYNC   = #{@policy.async}"
+        lines << "        MAP     = #{map.inspect}.freeze" unless map.empty?
+        lines << "        DEFAULTS = #{defaults.inspect}.freeze" unless defaults.empty?
+        lines << ""
+        lines << "        def self.event   = EVENT"
+        lines << "        def self.trigger = TRIGGER"
+        lines << "        def self.async   = ASYNC"
+        lines << ""
+        lines << "        attr_reader :result"
+        lines << ""
+        lines << "        def call(event)"
+        lines << "          # Maps event attrs and dispatches trigger command"
+        lines << "          self"
+        lines << "        end"
         lines << "      end"
         lines << "    end"
         lines << "  end"

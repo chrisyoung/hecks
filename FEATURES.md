@@ -248,11 +248,44 @@
 
 ## Rails Integration (ActiveHecks)
 - `Hecks.configure` block for Rails initializers
+- Auto-detects `*_domain` gems in the Gemfile — zero config needed
 - Auto-registers domain gem constants in Rails app
 - SQL adapter config with database/host/name options
 - Multi-domain support within a single Rails app
 - Rails generators registered dynamically via Railtie
+- `to_param` patched on command results — URL helpers work naturally
+- `rails generate active_hecks:init` — one command sets up everything:
+  - Adds `hecks_on_rails` to Gemfile
+  - Detects domain gems (local directories or installed gems)
+  - Creates initializer and app/models/HECKS_README.md
+  - Enables ActionCable, creates cable.yml, mounts at /cable
+  - Pins Turbo via importmap, adds turbo_stream_from to layout
+  - Wires test helpers into spec/test files
+- `rails generate active_hecks:live` — standalone live event setup
+- `rails generate active_hecks:migration` — SQL migrations from domain changes
+
+## HecksLive — Real-Time Domain Events
+- Zero-config real-time event streaming via ActionCable + Turbo Streams
+- Every domain event auto-broadcasts to connected browsers
+- Railtie wires `event_bus.on_any` → `Turbo::StreamsChannel.broadcast_prepend_to`
+- Views just need `<%= turbo_stream_from "hecks_live_events" %>` and `<div id="event-feed">`
+- No custom JavaScript — standard Rails Turbo Streams
+- Works across page navigations with `data-turbo-permanent`
+- Stdout fallback when ActionCable is not available (plain Ruby apps)
+- Custom channels via `HecksLive::Channel` subclass with `subscribe_to`
+
+## Packaging
+- Core, ActiveModel, real-time, and persistence ship as separate packages
+- `hecks_on_rails` bundles everything for Rails apps
+- Extensions auto-wire when present — no configuration needed
+- See [Packaging](docs/usage/packaging.md) for the full breakdown
+
+## Code Generation — list_of Semantics
+- Commands that add to `list_of` collections generate proper append logic
+- `AddTopping` command generates `existing.toppings + [Topping.new(name: topping)]`
+- `CollectionProxy` supports `+` operator for generated command compatibility
 
 ## Examples
 - Pizzas domain: plain Ruby app with commands, queries, collection proxies, event history
+- Rails pizza shop: full Turbo Streams app with admin, ordering, toppings, pricing, live events
 - Banking domain: 4 aggregates, cross-aggregate policies, specifications, entities, SQLite

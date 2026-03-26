@@ -20,12 +20,12 @@ module Hecks
 
       FileUtils.mkdir_p(File.join(dir, "spec"))
 
-      File.write(File.join(dir, "hecks_domain.rb"), domain_template(pascal))
-      File.write(File.join(dir, "app.rb"), app_template)
-      File.write(File.join(dir, "Gemfile"), gemfile_template)
-      File.write(File.join(dir, "spec", "spec_helper.rb"), spec_helper_template)
-      File.write(File.join(dir, ".gitignore"), gitignore_template)
-      File.write(File.join(dir, ".rspec"), rspec_template)
+      write_or_diff(File.join(dir, "hecks_domain.rb"), domain_template(pascal))
+      write_or_diff(File.join(dir, "app.rb"), app_template)
+      write_or_diff(File.join(dir, "Gemfile"), gemfile_template)
+      write_or_diff(File.join(dir, "spec", "spec_helper.rb"), spec_helper_template)
+      write_or_diff(File.join(dir, ".gitignore"), gitignore_template)
+      write_or_diff(File.join(dir, ".rspec"), rspec_template)
 
       say "Created #{dir}/", :green
       say "  hecks_domain.rb"

@@ -75,7 +75,12 @@ module Hecks
       @active_hecks = true
       domain = to_domain
       mod = Hecks.load_domain(domain, force: true, skip_validation: true)
-      require "active_hecks"
+      begin
+        require "active_hecks"
+      rescue LoadError
+        puts "active_hecks gem not installed. Add it to your Gemfile."
+        return mod
+      end
       ActiveHecks.activate(mod, domain: domain)
       puts "ActiveHecks loaded for #{domain.module_name}Domain"
       mod

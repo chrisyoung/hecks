@@ -14,12 +14,15 @@
 module Hecks
   class CLI < Thor
     class Domain < Thor
-      desc "readme", "Generate README.md from docs/readme_template.md"
+      desc "readme", "Generate README.md and extension docs"
       def readme
         require_relative "../../hecks/readme_generator"
         root = Dir.pwd
         ReadmeGenerator.new(root).generate
         say "Generated README.md", :green
+
+        files = Hecks::ExtensionDocs.generate_readmes(root)
+        files.each { |f| say "Generated #{f}", :green }
       end
 
       desc "docs", "Serve API documentation (Swagger UI)"

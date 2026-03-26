@@ -1,36 +1,58 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Hecks Pizza Shop</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
-    <%= stylesheet_link_tag "application" %>
-    <style>
-      body { font-family: -apple-system, system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-      h1 { color: #333; }
-      a { color: #0066cc; }
-      .notice { color: green; padding: 10px; background: #e6ffe6; margin-bottom: 15px; border-radius: 4px; }
-      .alert { color: red; padding: 10px; background: #ffe6e6; margin-bottom: 15px; border-radius: 4px; }
-      .card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 6px; }
-      .actions { margin-top: 10px; }
-      .actions a { margin-right: 10px; }
-      form div { margin-bottom: 10px; }
-      label { display: block; font-weight: bold; margin-bottom: 3px; }
-      input[type="text"], textarea, input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-      input[type="submit"] { background: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-      nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
-      nav a { margin-right: 15px; font-weight: bold; text-decoration: none; }
-      .errors { color: red; background: #fff0f0; padding: 10px; border: 1px solid #ffcccc; border-radius: 4px; margin-bottom: 15px; }
-    </style>
-  </head>
-  <body>
-    <nav>
-      <%= link_to "Pizzas", pizzas_path %>
-      <%= link_to "Orders", orders_path %>
-    </nav>
-    <% if notice %><p class="notice"><%= notice %></p><% end %>
-    <% if alert %><p class="alert"><%= alert %></p><% end %>
-    <%= yield %>
-  </body>
+<head>
+  <title>Hecks Pizza Shop</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= action_cable_meta_tag %>
+  <%= javascript_importmap_tags %>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+    h1 { color: #333; }
+    nav { margin-bottom: 20px; padding: 10px 0; border-bottom: 2px solid #eee; }
+    nav a { margin-right: 15px; text-decoration: none; color: #0066cc; font-weight: bold; }
+    nav a:hover { text-decoration: underline; }
+    .alert { background: #fee; border: 1px solid #fcc; color: #c00; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+    .card { border: 1px solid #ddd; padding: 12px; margin: 8px 0; border-radius: 6px; }
+    .card:hover { background: #f9f9f9; }
+    .toppings { font-size: 13px; color: #666; margin-top: 4px; }
+    .topping-tag { display: inline-block; background: #eef; padding: 2px 8px; border-radius: 10px; margin: 2px; font-size: 12px; }
+    form div { margin-bottom: 8px; }
+    label { display: block; font-weight: bold; margin-bottom: 3px; }
+    input[type="text"], input[type="number"], select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    input[type="submit"], .btn { background: #0066cc; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 14px; }
+    input[type="submit"]:hover, .btn:hover { background: #0055aa; }
+    .btn-danger { background: #cc3333; }
+    .btn-danger:hover { background: #aa2222; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .event-feed { height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 13px; }
+    .event-item { border-bottom: 1px solid #eee; padding: 6px 0; }
+    .event-type { font-weight: bold; color: #0066cc; }
+    .event-data { color: #666; }
+    .status-pending { color: #cc8800; }
+    .status-cancelled { color: #cc3333; text-decoration: line-through; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <nav>
+    <%= link_to "Orders", root_path %>
+    <%= link_to "Admin: Pizzas", admin_pizzas_path %>
+  </nav>
+
+  <% if flash[:alert] %>
+    <div class="alert"><%= flash[:alert] %></div>
+  <% end %>
+
+  <%= yield %>
+
+  <div id="hecks-live" data-turbo-permanent style="margin-top:30px; border-top:2px solid #eee; padding-top:15px">
+    <h3>Live Events <small style="color:green">via HecksLive</small></h3>
+    <%= turbo_stream_from "hecks_live_events" %>
+    <div id="event-feed" class="event-feed">
+      <em>Listening for domain events...</em>
+    </div>
+  </div>
+</body>
 </html>

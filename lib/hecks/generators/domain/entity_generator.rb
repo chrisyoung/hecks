@@ -21,7 +21,7 @@ module Hecks
 
       def generate
         lines = []
-        lines << "require 'hecks/model'"
+        lines << "require 'hecks/mixins/model'"
         lines << ""
         lines << "module #{@domain_module}"
         lines << "  class #{@aggregate_name}"

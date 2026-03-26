@@ -25,7 +25,9 @@ module Hecks
         @aggregate = aggregate
         @event = event
         @has_keyword_attrs = @command.attributes.any? { |a| Hecks::Utils.ruby_keyword?(a.name) }
-        @is_create = @command.name.start_with?("Create")
+        agg_snake = Hecks::Utils.underscore(aggregate_name)
+        @self_id_attr = find_self_id_attr(agg_snake)
+        @is_create = @self_id_attr.nil?
       end
 
       def generate
@@ -36,6 +38,7 @@ module Hecks
         lines << "      class #{@command.name}"
         lines << "        include Hecks::Command"
         lines << "        emits \"#{@event.name}\"" if @event
+        lines.concat(condition_declarations)
         lines << ""
         attr_syms = @command.attributes.map { |a| ":#{a.name}" }
         if attr_syms.size <= 2
@@ -59,6 +62,12 @@ module Hecks
       end
 
       private
+
+      def condition_declarations
+        conds = @command.preconditions.map { |c| "        # precondition: #{c.message}" } +
+                @command.postconditions.map { |c| "        # postcondition: #{c.message}" }
+        conds.any? ? [""] + conds : []
+      end
 
       def custom_call_lines
         source = Hecks::Utils.block_source(@command.call_body)
@@ -114,7 +123,7 @@ module Hecks
 
       def update_body
         lines = []
-        id_attr = @command.attributes.find { |a| a.name.to_s.end_with?("_id") }
+        id_attr = @self_id_attr
         if id_attr
           lines << "          existing = repository.find(#{id_attr.name})"
           lines << "          if existing"
@@ -145,6 +154,10 @@ module Hecks
           cmd_attr = @command.attributes.find { |c| c.name == a.name }
           if cmd_attr
             parts << "#{a.name}: #{a.name}"
+          elsif (append = find_list_append(a))
+            vo_class = a.type
+            cmd_name = append.name
+            parts << "#{a.name}: existing.#{a.name} + [#{vo_class}.new(name: #{cmd_name})]"
           else
             parts << "#{a.name}: existing.#{a.name}"
           end
@@ -153,7 +166,6 @@ module Hecks
         inject_lifecycle_status(parts)
         parts
       end
-
 
       # Format Aggregate.new(...) — inline if ≤2 args, stacked otherwise.
       def format_new_call(indent, args)
@@ -177,6 +189,18 @@ module Hecks
 
       def constructor_params
         @command.attributes.map { |attr| "#{attr.name}: nil" }
+      end
+
+      # Find the command attribute that references this aggregate's own ID.
+      # Tries full name first (regulatory_framework_id), then suffix variants (framework_id).
+      def find_self_id_attr(agg_snake)
+        parts = agg_snake.split("_")
+        parts.each_index do |i|
+          suffix = parts.drop(i).join("_") + "_id"
+          attr = @command.attributes.find { |a| a.name.to_s == suffix }
+          return attr if attr
+        end
+        nil
       end
     end
     end

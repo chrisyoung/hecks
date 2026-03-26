@@ -53,6 +53,36 @@ module Hecks
         end
         lines << "  end"
 
+        unless @domain.workflows.empty?
+          lines << ""
+          lines << "  module Workflows"
+          @domain.workflows.each do |wf|
+            snake = Hecks::Utils.underscore(wf.name)
+            lines << "    autoload :#{wf.name}, \"#{gem_name}/workflows/#{snake}\""
+          end
+          lines << "  end"
+        end
+
+        unless @domain.views.empty?
+          lines << ""
+          lines << "  module Views"
+          @domain.views.each do |v|
+            snake = Hecks::Utils.underscore(v.name)
+            lines << "    autoload :#{v.name}, \"#{gem_name}/views/#{snake}\""
+          end
+          lines << "  end"
+        end
+
+        unless @domain.services.empty?
+          lines << ""
+          lines << "  module Services"
+          @domain.services.each do |svc|
+            snake = Hecks::Utils.underscore(svc.name)
+            lines << "    autoload :#{svc.name}, \"#{gem_name}/services/#{snake}\""
+          end
+          lines << "  end"
+        end
+
         lines << "end"
         lines << ""
         lines << "# Auto-boot: wire a Runtime when hecks is available and gem is installed."
@@ -102,6 +132,10 @@ module Hecks
         aggregate.entities.each do |ent|
           ent_snake = Hecks::Utils.underscore(ent.name)
           lines << "#{base_indent}autoload :#{ent.name}, \"#{base}/#{ent_snake}\""
+        end
+
+        if aggregate.lifecycle
+          lines << "#{base_indent}autoload :Lifecycle, \"#{base}/lifecycle\""
         end
 
         lines.join("\n")

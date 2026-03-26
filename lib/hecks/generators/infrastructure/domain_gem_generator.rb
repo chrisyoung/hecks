@@ -39,6 +39,9 @@ module Hecks
         generate_queries(root, gem_name, mod)
         generate_ports(root, gem_name, mod)
         generate_adapters(root, gem_name, mod)
+        generate_workflows(root, gem_name, mod)
+        generate_views(root, gem_name, mod)
+        generate_services(root, gem_name, mod)
         generate_specs(root, gem_name, mod)
         generate_domain_rb(root)
 

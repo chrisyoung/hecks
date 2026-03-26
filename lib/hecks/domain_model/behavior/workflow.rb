@@ -17,11 +17,16 @@ module Hecks
   module DomainModel
     module Behavior
       class Workflow
-        attr_reader :name, :steps
+        attr_reader :name, :steps, :schedule
 
-        def initialize(name:, steps: [])
+        def initialize(name:, steps: [], schedule: nil)
           @name = name
           @steps = steps
+          @schedule = schedule
+        end
+
+        def scheduled?
+          !@schedule.nil?
         end
       end
     end

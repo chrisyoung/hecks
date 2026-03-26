@@ -20,6 +20,10 @@ module Hecks
       autoload :QueryObjectGenerator,  "hecks/generators/domain/query_object_generator"
       autoload :SubscriberGenerator,      "hecks/generators/domain/subscriber_generator"
       autoload :SpecificationGenerator,  "hecks/generators/domain/specification_generator"
+      autoload :LifecycleGenerator,     "hecks/generators/domain/lifecycle_generator"
+      autoload :ServiceGenerator,       "hecks/generators/domain/service_generator"
+      autoload :WorkflowGenerator,      "hecks/generators/domain/workflow_generator"
+      autoload :ViewGenerator,          "hecks/generators/domain/view_generator"
     end
   end
 end

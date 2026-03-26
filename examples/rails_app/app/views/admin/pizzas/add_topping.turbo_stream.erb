@@ -1,0 +1,12 @@
+<%= turbo_stream.remove "no-toppings-#{@pizza_id}" %>
+
+<%= turbo_stream.append "toppings_#{@pizza_id}" do %>
+  <span class="topping-tag"><%= @topping_name %></span>
+<% end %>
+
+<%= turbo_stream.replace "topping-form-#{@pizza_id}" do %>
+  <%= form_with url: add_topping_admin_pizza_path(id: @pizza_id), method: :post, id: "topping-form-#{@pizza_id}", style: "display:inline-flex; gap:6px; align-items:center" do |f| %>
+    <%= f.text_field :topping_name, placeholder: "Add topping...", size: 15, style: "padding:4px 8px" %>
+    <%= f.submit "Add", class: "btn btn-sm" %>
+  <% end %>
+<% end %>

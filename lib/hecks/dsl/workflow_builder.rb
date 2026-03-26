@@ -17,10 +17,21 @@ module Hecks
       def initialize(name)
         @name = name
         @steps = []
+        @schedule = nil
       end
 
-      def step(command_name, **mapping)
-        @steps << { command: command_name.to_s, mapping: mapping }
+      def schedule(interval)
+        @schedule = interval
+      end
+
+      def step(command_name = nil, **mapping, &block)
+        if block
+          step_builder = ScheduledStepBuilder.new(command_name)
+          step_builder.instance_eval(&block)
+          @steps << step_builder.build
+        else
+          @steps << { command: command_name.to_s, mapping: mapping }
+        end
       end
 
       def branch(&block)
@@ -30,7 +41,32 @@ module Hecks
       end
 
       def build
-        DomainModel::Behavior::Workflow.new(name: @name, steps: @steps)
+        DomainModel::Behavior::Workflow.new(name: @name, steps: @steps, schedule: @schedule)
+      end
+    end
+
+    class ScheduledStepBuilder
+      def initialize(name)
+        @name = name
+        @find_aggregate = nil
+        @find_spec = nil
+        @find_query = nil
+        @trigger_command = nil
+      end
+
+      def find(aggregate_name, spec: nil, query: nil)
+        @find_aggregate = aggregate_name
+        @find_spec = spec
+        @find_query = query
+      end
+
+      def trigger(command_name)
+        @trigger_command = command_name
+      end
+
+      def build
+        { name: @name, find_aggregate: @find_aggregate, find_spec: @find_spec,
+          find_query: @find_query, trigger: @trigger_command }
       end
     end
 

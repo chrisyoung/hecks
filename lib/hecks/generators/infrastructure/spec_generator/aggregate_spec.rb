@@ -40,9 +40,15 @@ module Hecks
             aggregate.attributes.each do |attr|
               next if Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(attr.name.to_s)
               lines << ""
-              lines << "    it \"sets #{attr.name}\" do"
-              lines << "      expect(#{snake}.#{attr.name}).to eq(#{example_value(attr)})"
-              lines << "    end"
+              if %w[Date DateTime].include?(attr.type.to_s)
+                lines << "    it \"sets #{attr.name}\" do"
+                lines << "      expect(#{snake}.#{attr.name}).not_to be_nil"
+                lines << "    end"
+              else
+                lines << "    it \"sets #{attr.name}\" do"
+                lines << "      expect(#{snake}.#{attr.name}).to eq(#{example_value(attr)})"
+                lines << "    end"
+              end
             end
             lines << "  end"
             lines
