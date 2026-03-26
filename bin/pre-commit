@@ -21,14 +21,15 @@ if [ -z "$duration" ]; then
   exit 0
 fi
 
-# Compare: fail if over 1 second
-over_limit=$(echo "$duration > 1.5" | bc -l)
+# Compare: fail if over the limit (default: 1.5s, configurable via env var)
+limit=${SPEC_RUN_LENGTH_IN_SECONDS:-1.5}
+over_limit=$(echo "$duration > $limit" | bc -l)
 if [ "$over_limit" = "1" ]; then
   examples=$(echo "$output" | grep "examples" | head -1)
-  echo "COMMIT BLOCKED: Tests took ${duration}s (limit: 1.5s)"
+  echo "COMMIT BLOCKED: Tests took ${duration}s (limit: ${limit}s)"
   echo "  $examples"
   echo ""
-  echo "  Optimize tests or increase the limit in .git/hooks/pre-commit"
+  echo "  Set SPEC_RUN_LENGTH_IN_SECONDS to adjust the limit"
   exit 1
 fi
 

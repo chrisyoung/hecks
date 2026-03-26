@@ -1,19 +1,6 @@
 require "hecks"
 require "tmpdir"
 
-# Build and install each component gem at test startup to catch packaging errors early
-root = File.expand_path("..", __dir__)
-Dir.mktmpdir do |dir|
-  %w[hecksties hecks_model hecks_domain hecks_runtime hecks_session hecks_cli hecks_persist].each do |component|
-    gemspec = File.join(root, component, "#{component}.gemspec")
-    next unless File.exist?(gemspec)
-    gem_path = "#{dir}/#{component}.gem"
-    output = `gem build #{gemspec} -o #{gem_path} 2>&1`
-    abort "Gem build failed for #{component}!\n#{output}" unless $?.success?
-    output = `gem install #{gem_path} 2>&1`
-    abort "Gem install failed for #{component}!\n#{output}" unless $?.success?
-  end
-end
 Hecks.load_strategy = :memory
 require_relative "support/shared_boot"
 

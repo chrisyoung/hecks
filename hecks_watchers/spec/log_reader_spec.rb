@@ -1,4 +1,5 @@
 require "spec_helper"
+require "hecks_watchers"
 
 RSpec.describe HecksWatchers::LogReader do
   it "reads and clears the log file" do

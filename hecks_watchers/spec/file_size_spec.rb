@@ -1,4 +1,5 @@
 require "spec_helper"
+require "hecks_watchers"
 
 RSpec.describe HecksWatchers::FileSize do
   def setup_project(dir)
@@ -12,11 +13,16 @@ RSpec.describe HecksWatchers::FileSize do
     File.write(full, Array.new(lines) { |i| "line_#{i}" }.join("\n"))
   end
 
+  def watcher_with_staged(dir, files)
+    w = described_class.new(project_root: dir)
+    w.define_singleton_method(:staged_rb_files) { files }
+    w
+  end
+
   it "returns empty when no staged files" do
     Dir.mktmpdir do |dir|
       setup_project(dir)
-      watcher = described_class.new(project_root: dir)
-      allow(watcher).to receive(:`).and_return("")
+      watcher = watcher_with_staged(dir, [])
       expect(watcher.call).to eq([])
     end
   end
@@ -25,8 +31,7 @@ RSpec.describe HecksWatchers::FileSize do
     Dir.mktmpdir do |dir|
       setup_project(dir)
       write_rb(dir, "hecks_model/lib/big.rb", 190)
-      watcher = described_class.new(project_root: dir)
-      allow(watcher).to receive(:`).and_return("hecks_model/lib/big.rb\n")
+      watcher = watcher_with_staged(dir, ["hecks_model/lib/big.rb"])
       result = nil
       expect { result = watcher.call }.to output(/approaching 200-line/).to_stdout
       expect(result).not_to be_empty
@@ -37,13 +42,12 @@ RSpec.describe HecksWatchers::FileSize do
     Dir.mktmpdir do |dir|
       setup_project(dir)
       header = Array.new(50) { "# comment" }.join("\n") + "\n"
-      code = Array.new(170) { |i| "code_#{i}" }.join("\n")
+      code = Array.new(190) { |i| "code_#{i}" }.join("\n")
       File.write(File.join(dir, "hecks_model/lib/with_header.rb"), header + code)
-      watcher = described_class.new(project_root: dir)
-      allow(watcher).to receive(:`).and_return("hecks_model/lib/with_header.rb\n")
+      watcher = watcher_with_staged(dir, ["hecks_model/lib/with_header.rb"])
       result = nil
       expect { result = watcher.call }.to output(/approaching/).to_stdout
-      expect(result.first).to include("170 lines")
+      expect(result.first).to include("190 lines")
     end
   end
 end

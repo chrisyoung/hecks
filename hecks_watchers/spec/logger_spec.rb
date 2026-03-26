@@ -1,4 +1,5 @@
 require "spec_helper"
+require "hecks_watchers"
 
 RSpec.describe HecksWatchers::Logger do
   it "writes to stdout and the log file" do

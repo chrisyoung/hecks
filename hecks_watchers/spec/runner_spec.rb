@@ -1,4 +1,5 @@
 require "spec_helper"
+require "hecks_watchers"
 
 RSpec.describe HecksWatchers::Runner do
   def setup_project(dir)
