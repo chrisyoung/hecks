@@ -1,4 +1,4 @@
-lib = File.expand_path("lib", __dir__)
+lib = File.expand_path("hecksties/lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "hecks/version"
 
@@ -11,10 +11,18 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/christopheryoung/hecks"
   spec.license       = "MIT"
 
-  spec.files         = Dir["lib/**/*", "bin/*"]
+  spec.files         = Dir["{hecksties,hecks_model,hecks_domain,hecks_runtime,hecks_session,hecks_cli,hecks_persist}/lib/**/*", "bin/*"]
   spec.bindir        = "bin"
   spec.executables   = ["hecks"]
-  spec.require_paths = ["lib"]
+  spec.require_paths = %w[
+    hecksties/lib
+    hecks_model/lib
+    hecks_domain/lib
+    hecks_runtime/lib
+    hecks_session/lib
+    hecks_cli/lib
+    hecks_persist/lib
+  ]
 
   spec.required_ruby_version = ">= 3.0"
 
