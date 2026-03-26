@@ -47,7 +47,7 @@ Created cats_app/
   app.rb, config.ru, Gemfile, views/
 ```
 
-Same domain. No code changes. HTTP, MCP, and Sinatra are just ports -- plug them in, unplug them, the domain doesn't know or care.
+REPL sketch → play with live objects → serve over HTTP → expose via MCP → generate a Sinatra app. All the same domain, zero code changes.
 
 ---
 
