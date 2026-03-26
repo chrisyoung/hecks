@@ -47,19 +47,62 @@ module Hecks
         def register_command(agg, agg_class, cmd)
           method_name = derive_method_name(cmd.name, agg.name)
           props = cmd.attributes.each_with_object({}) do |attr, h|
-            h[attr.name.to_s] = { type: json_type(attr), description: "#{attr.name} (#{attr.ruby_type})" }
+            desc = "#{attr.name} (#{attr.ruby_type}, required)"
+            desc += ". Allowed values: #{attr.enum.join(', ')}" if attr.enum
+            desc += ". Example: #{example_value(attr)}"
+            h[attr.name.to_s] = { type: json_type(attr), description: desc }
+            h[attr.name.to_s][:enum] = attr.enum if attr.enum
           end
           required = cmd.attributes.map { |a| a.name.to_s }
           klass = agg_class
+          description = build_command_description(agg, cmd, required)
 
           @server.define_tool(
             name: cmd.name,
-            description: "#{cmd.name} — #{agg.name} action",
+            description: description,
             input_schema: { type: "object", properties: props, required: required }
           ) do |args|
             attrs = args.transform_keys(&:to_sym)
             result = klass.send(method_name, **attrs)
             serialize_aggregate(result)
+          end
+        end
+
+        # Builds a rich description for a command tool including what it does,
+        # required attributes, emitted event, guard info, and return shape.
+        #
+        # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate
+        # @param cmd [Hecks::DomainModel::Behavior::Command] the command
+        # @param required [Array<String>] required parameter names
+        # @return [String] the full description
+        def build_command_description(agg, cmd, required)
+          parts = []
+          parts << "Executes the #{cmd.name} command on the #{agg.name} aggregate."
+          parts << "Required attributes: #{required.join(', ')}." unless required.empty?
+          parts << "Emits event: #{cmd.inferred_event_name}."
+          parts << "Guard: #{cmd.guard_name} (may reject the command)." if cmd.guard_name
+          if cmd.preconditions.any?
+            parts << "Preconditions: #{cmd.preconditions.map(&:description).compact.join('; ')}."
+          end
+          attr_list = agg.attributes.map { |a| "#{a.name}: #{a.ruby_type}" }.join(", ")
+          parts << "Returns: JSON object with #{agg.name} fields (#{attr_list}, id, created_at, updated_at)."
+          parts.join(" ")
+        end
+
+        # Returns a representative example value for a domain attribute,
+        # suitable for inclusion in a tool description.
+        #
+        # @param attr [Hecks::DomainModel::Structure::Attribute] the attribute
+        # @return [String] an example value
+        def example_value(attr)
+          return attr.enum.first if attr.enum
+          case attr.ruby_type
+          when "Integer" then "42"
+          when "Float" then "9.99"
+          when "Date" then "2025-01-15"
+          when "DateTime" then "2025-01-15T10:30:00Z"
+          when "JSON" then '{"key": "value"}'
+          else "\"example_#{attr.name}\""
           end
         end
       end

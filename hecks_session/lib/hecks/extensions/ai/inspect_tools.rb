@@ -4,14 +4,16 @@
 # examine the current domain model without modifying it.
 #
 # Registered tools:
-#   - +describe_domain+  -- full description of the domain (aggregates, commands,
-#     value objects, validations, policies, queries)
+#   - +describe_domain+  -- full structured JSON of the domain (aggregates,
+#     commands, queries, value objects, validations, policies, services)
 #   - +list_aggregates+  -- comma-separated list of aggregate names
 #   - +preview_code+     -- generated Ruby source code for an aggregate (or all)
 #   - +show_dsl+         -- the raw Hecks DSL source that defines the domain
 #
 # All tools require an active session (enforced via +ctx.ensure_session!+).
 #
+require_relative "domain_serializer"
+
 module Hecks
   module MCP
     module InspectTools
@@ -24,11 +26,12 @@ module Hecks
       def self.register(server, ctx)
         server.define_tool(
           name: "describe_domain",
-          description: "Show everything in the domain",
+          description: "Returns the complete domain model as structured JSON — aggregates, commands, queries, policies, validations, and their relationships. Use this as your first call to understand the domain.",
           input_schema: { type: "object", properties: {} }
         ) do |_|
           ctx.ensure_session!
-          ctx.capture_output { ctx.session.describe }
+          domain = ctx.session.to_domain
+          JSON.generate(DomainSerializer.call(domain))
         end
 
         server.define_tool(

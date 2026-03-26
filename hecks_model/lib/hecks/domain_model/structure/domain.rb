@@ -132,6 +132,13 @@ module Hecks
           end
         end
 
+        flow_text = Hecks::FlowGenerator.new(self).generate_text
+        unless flow_text == "No reactive flows found."
+          lines << ""
+          lines << "  Reactive Flows:"
+          flow_text.each_line { |l| lines << "    #{l.rstrip}" }
+        end
+
         puts lines.join("\n")
         nil
       end
@@ -159,6 +166,20 @@ module Hecks
       # @return [nil]
       def visualize
         Hecks::DomainVisualizer.new(self).print
+      end
+
+      # Generate plain English descriptions of the domain's reactive flows.
+      #
+      # @return [String] flow descriptions
+      def flows
+        Hecks::FlowGenerator.new(self).generate_text
+      end
+
+      # Generate a Mermaid sequence diagram of the domain's reactive flows.
+      #
+      # @return [String] Mermaid sequenceDiagram markup
+      def flows_mermaid
+        Hecks::FlowGenerator.new(self).generate_mermaid
       end
     end
     end
