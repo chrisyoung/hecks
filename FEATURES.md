@@ -285,6 +285,40 @@
 - `AddTopping` command generates `existing.toppings + [Topping.new(name: topping)]`
 - `CollectionProxy` supports `+` operator for generated command compatibility
 
+## AI-Native
+
+### llms.txt Generation
+- `hecks llms` generates AI-readable domain summary with aggregates, commands, types, policies, flows
+- `hecks build` includes `llms.txt` in every generated domain gem for automatic agent discovery
+- Covers attributes with types, commands with parameters, validation rules, invariants, reactive chains
+
+### MCP Server
+- `hecks mcp` exposes all domain commands, queries, and repository operations as typed MCP tools
+- `describe_domain` tool returns the entire domain model as structured JSON in one call
+- Tool descriptions include parameter constraints, example values, return shapes, and guard conditions
+- Rich descriptions for command tools: required attributes, emitted event, guards that might reject
+
+### Self-Discoverable HTTP API
+- `GET /_openapi` returns the OpenAPI 3.0 spec as JSON
+- `GET /_schema` returns JSON Schema definitions
+- AI agents hitting the HTTP API can self-discover every endpoint and type
+
+### Structured JSON Errors
+- All error classes (`GuardRejected`, `ValidationError`, `PreconditionError`, etc.) have `as_json`/`to_json`
+- Returns error type, command, aggregate, message, and fix suggestion as machine-readable JSON
+- AI agents can act on failures programmatically without string parsing
+
+### Domain Flow Generation
+- `domain.flows` generates plain-English descriptions of reactive chains: command → event → policy → command
+- `domain.flows_mermaid` generates Mermaid sequence diagrams of the same flows
+- Cycle detection with `[CYCLIC]` markers
+- Included in `domain.describe` output and `hecks dump`
+
+### Domain Serialization
+- `DomainSerializer.call(domain)` returns complete domain as structured Hash/JSON
+- Aggregates with attributes (name, type, flags), commands, queries, specifications, policies, validations, invariants, value objects, entities
+- Domain-level policies and services included
+
 ## Examples
 - Pizzas domain: plain Ruby app with commands, queries, collection proxies, event history
 - Rails pizza shop: full Turbo Streams app with admin, ordering, toppings, pricing, live events

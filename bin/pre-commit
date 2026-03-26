@@ -33,3 +33,6 @@ if [ "$over_limit" = "1" ]; then
 fi
 
 echo "Tests passed: ${duration}s"
+
+# Check for missing doc updates
+ruby bin/check-docs 2>/dev/null

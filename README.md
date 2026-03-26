@@ -60,6 +60,7 @@ REPL sketch → play with live objects → serve over HTTP → expose via MCP �
 - [Rails Integration](#rails-integration)
 - [CLI Commands](#cli-commands)
 - [Banking Example](#banking-example)
+- [AI-Native](#ai-native)
 - [How Hecks Compares](#how-hecks-compares)
 - [Why Not Just Have AI Generate the Code?](#why-not-just-have-ai-generate-the-code)
 
@@ -509,7 +510,68 @@ end
 | `hecks init` | Scaffold a new domain in the current directory |
 | `hecks list` | List all installed Hecks domain gems |
 | `hecks migrations` | Schema migration management |
+| `hecks llms` | Generate AI-readable domain summary (llms.txt) |
 | `hecks version` | Framework or domain gem version |
+
+## AI-Native
+
+Hecks treats AI agents as first-class consumers. Every domain is self-describing — agents don't need documentation, they query the domain directly.
+
+### MCP Server
+
+```bash
+$ hecks mcp
+```
+
+AI agents get typed tools for every command, query, and repository operation. Tool descriptions include parameter constraints, example values, return shapes, and guard conditions. One call to `describe_domain` returns the entire model as structured JSON — aggregates, commands, policies, and their relationships.
+
+### llms.txt
+
+```bash
+$ hecks llms > llms.txt
+```
+
+Generates an AI-readable summary: aggregates with types, commands with parameters, policies with trigger conditions, reactive flow chains. `hecks build` also includes an `llms.txt` in every generated domain gem, so any agent working in a project gets instant context.
+
+### Reactive Flows
+
+```ruby
+domain.flows
+# Flow: Loan Issuance → Disbursement
+#   1. IssueLoan (Loan) → IssuedLoan
+#   2. [Policy: DisburseFunds] on IssuedLoan → Deposit (Account)
+#   3. Deposit (Account) → Deposited
+
+domain.flows_mermaid  # Mermaid sequence diagram
+```
+
+Auto-generated from the policy graph. Shows how commands chain through events and policies — the "how things connect" picture that AI agents can't infer from code alone.
+
+### Self-Discoverable HTTP API
+
+```bash
+$ hecks serve
+# GET /_openapi  → OpenAPI 3.0 spec
+# GET /_schema   → JSON Schema definitions
+```
+
+AI agents hitting the HTTP API can self-discover every endpoint, parameter type, and response shape without documentation.
+
+### Structured Errors
+
+When commands fail, errors return machine-readable JSON:
+
+```json
+{
+  "error": "GuardRejected",
+  "command": "Withdraw",
+  "aggregate": "Account",
+  "message": "Insufficient funds",
+  "fix": "Check balance before withdrawing"
+}
+```
+
+AI agents can act on failures programmatically — no string parsing.
 
 ## Banking Example
 
