@@ -14,7 +14,7 @@ hecks(scratch sketch)> Cat.attr :name
 hecks(scratch sketch)> Cat.command("Adopt") { attribute :name }
   + command Adopt -> Adopted
 
-hecks(scratch play)> cat = Cat.adopt(name: "Whiskers")
+hecks(scratch play)> Cat.adopt(name: "Whiskers")
 Command: Adopt
   Event: Adopted
     name: "Whiskers"

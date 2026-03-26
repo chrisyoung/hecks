@@ -1,3 +1,13 @@
+require_relative "runtime/port_setup"
+require_relative "runtime/repository_setup"
+require_relative "runtime/policy_setup"
+require_relative "runtime/subscriber_setup"
+require_relative "runtime/view_setup"
+require_relative "runtime/workflow_setup"
+require_relative "runtime/constant_hoisting"
+require_relative "runtime/connection_setup"
+require_relative "runtime/service_setup"
+
 # Hecks::Runtime
 #
 # The runtime container that wires a domain to adapters, dispatches
@@ -13,17 +23,28 @@
 #     adapter "Pizza", my_sql_repo
 #   end
 #
-require_relative "runtime/port_setup"
-require_relative "runtime/repository_setup"
-require_relative "runtime/policy_setup"
-require_relative "runtime/subscriber_setup"
-require_relative "runtime/view_setup"
-require_relative "runtime/workflow_setup"
-require_relative "runtime/constant_hoisting"
-require_relative "runtime/connection_setup"
-require_relative "runtime/service_setup"
 
 module Hecks
+  # The central runtime container for a Hecks domain. Orchestrates the full
+  # lifecycle of a domain application: wiring repositories to aggregates,
+  # setting up the command bus with middleware, registering event-driven
+  # policies and subscribers, hoisting aggregate constants to top-level,
+  # and establishing cross-domain connections.
+  #
+  # Runtime is the object returned by +Hecks.boot+ and +Hecks.load+.
+  # It holds all repositories, the event bus, and the command bus for a
+  # single domain. In multi-domain setups, each domain gets its own Runtime
+  # instance, potentially sharing a filtered event bus.
+  #
+  # Includes several setup mixins that each handle one aspect of wiring:
+  # - PortSetup -- wires aggregate ports (command methods, query methods, repository methods)
+  # - RepositorySetup -- creates memory-backed repositories for each aggregate
+  # - PolicySetup -- registers event-triggered policies on the event bus
+  # - SubscriberSetup -- registers event subscribers defined in the DSL
+  # - ViewSetup -- sets up read-model views
+  # - WorkflowSetup -- wires multi-step workflow definitions
+  # - ConstantHoisting -- promotes aggregate classes to top-level constants
+  # - ConnectionSetup -- wires cross-domain event connections (listens_to/sends_to)
   class Runtime
       include PortSetup
       include RepositorySetup
@@ -34,8 +55,24 @@ module Hecks
       include ConstantHoisting
       include ConnectionSetup
 
-      attr_reader :domain, :event_bus, :command_bus
+      # @return [Hecks::DomainModel::Structure::Domain] the domain IR object this runtime is wired to
+      attr_reader :domain
 
+      # @return [Hecks::EventBus] the event bus used for publishing and subscribing to domain events
+      attr_reader :event_bus
+
+      # @return [Hecks::Commands::CommandBus] the command bus that dispatches commands through middleware
+      attr_reader :command_bus
+
+      # Boots the runtime: wires repositories, policies, subscribers, and the command bus.
+      # Evaluates an optional configuration block in the context of the runtime instance,
+      # allowing adapter overrides and middleware registration before wiring completes.
+      #
+      # @param domain [Hecks::DomainModel::Structure::Domain] the compiled domain IR object
+      # @param port [Symbol, nil] optional port name (reserved for future use)
+      # @param event_bus [Hecks::EventBus, nil] optional shared event bus; creates a new one if nil
+      # @yield optional configuration block evaluated in the runtime's instance context
+      # @return [Hecks::Runtime]
       def initialize(domain, port: nil, event_bus: nil, &config)
         @domain = domain
         @port_name = port
@@ -61,55 +98,98 @@ module Hecks
         hoist_constants
       end
 
-      # Register command bus middleware
+      # Register command bus middleware. Middleware wraps every command dispatch,
+      # allowing cross-cutting concerns like logging, authorization, or auditing.
+      #
+      # @param name [Symbol, String, nil] optional middleware name for identification
+      # @yield block that receives the command and a +next_middleware+ callable
+      # @return [void]
       def use(name = nil, &block)
         @command_bus.use(name, &block)
       end
 
-      # Configuration DSL: override adapter for an aggregate
+      # Configuration DSL: override the default memory adapter for a specific aggregate
+      # with a custom repository object (e.g., SQL-backed repository).
+      #
+      # @param aggregate_name [String, Symbol] the aggregate name (e.g., "Pizza")
+      # @param adapter_obj [Object] a repository object that responds to CRUD methods
+      # @return [void]
       def adapter(aggregate_name, adapter_obj)
         @adapter_overrides[aggregate_name.to_s] = adapter_obj
       end
 
-      # Get the repository for an aggregate
+      # Retrieve the repository for a named aggregate.
+      #
+      # @param name [String, Symbol] the aggregate name (e.g., "Pizza")
+      # @return [Object] the repository (memory adapter or custom adapter) for the aggregate
       def [](name)
         @repositories[name.to_s]
       end
 
-      # Execute a command through the command bus (with middleware)
+      # Execute a command through the command bus, passing it through all registered
+      # middleware before reaching the command runner.
+      #
+      # @param command_name [String, Symbol] the fully qualified command name (e.g., "CreatePizza")
+      # @param attrs [Hash] the command attributes/parameters
+      # @return [Object] the result of the command execution (typically the affected entity)
       def run(command_name, **attrs)
         @command_bus.dispatch(command_name, **attrs)
       end
 
-      # Register an async handler for policies marked async: true
+      # Register an async handler for policies marked +async: true+ in the DSL.
+      # The handler receives an event and is responsible for scheduling deferred work
+      # (e.g., enqueuing a background job).
+      #
+      # @yield [event] block that handles async event processing
+      # @return [void]
       def async(&handler)
         @async_handler = handler
       end
 
-      # Subscribe to an event
+      # Subscribe to a named event on the event bus.
+      #
+      # @param event_name [String, Symbol] the event name to subscribe to (e.g., "PizzaCreated")
+      # @yield [event] block called when the event is published
+      # @return [void]
       def on(event_name, &handler)
         @event_bus.subscribe(event_name, &handler)
       end
 
-      # All published events
+      # Returns all events that have been published on the event bus since boot.
+      #
+      # @return [Array<Hash>] list of event hashes with :name and :payload keys
       def events
         @event_bus.events
       end
 
-      # Replace a repository adapter (used by extension gems to swap
-      # memory adapters for SQL). Re-wires the aggregate after swapping.
+      # Replace a repository adapter for a named aggregate. Used by extension gems
+      # (e.g., hecks_sqlite) to swap memory adapters for persistent ones after boot.
+      # Re-wires the aggregate's port methods after swapping.
+      #
+      # @param aggregate_name [String, Symbol] the aggregate name (e.g., "Pizza")
+      # @param repo [Object] the replacement repository object
+      # @return [void]
       def swap_adapter(aggregate_name, repo)
         name = aggregate_name.to_s
         @repositories[name] = repo
         wire_aggregate!(name)
       end
 
+      # Returns a human-readable summary of this runtime instance, showing the
+      # domain name and number of wired repositories.
+      #
+      # @return [String] inspection string
       def inspect
         "#<Hecks::Runtime \"#{@domain.name}\" (#{@repositories.size} repositories)>"
       end
 
       private
 
+      # Creates the command bus, binding it to the domain and event bus.
+      # The command bus dispatches commands to the appropriate aggregate
+      # command runner and publishes resulting events.
+      #
+      # @return [void]
       def setup_command_bus
         @command_bus = Commands::CommandBus.new(
           domain: @domain,
@@ -118,6 +198,7 @@ module Hecks
       end
     end
 
-  # Backward compatibility
+  # Backward compatibility alias so existing code referencing
+  # +Hecks::Application+ continues to work.
   Application = Runtime
 end
