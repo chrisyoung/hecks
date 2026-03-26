@@ -16,12 +16,26 @@ module Hecks
       module ContextGrouping
         private
 
+        # Extracts all bounded contexts from the document lines.
+        #
+        # Splits lines by context markers, parses each chunk into a ParsedContext,
+        # and filters out empty contexts (those with no recognized elements).
+        #
+        # @param lines [Array<String>] all lines of the event storm document
+        # @return [Array<ParsedContext>] non-empty parsed contexts
         def extract_contexts(lines)
           chunks = split_by_context(lines)
           contexts = chunks.map { |name, ctx_lines| parse_context(name, ctx_lines) }
           contexts.reject { |ctx| ctx.elements.empty? }
         end
 
+        # Splits document lines into chunks delimited by context headers.
+        #
+        # Lines before the first context header are grouped under "Default".
+        # Each chunk is a [name, lines] pair.
+        #
+        # @param lines [Array<String>] all document lines
+        # @return [Array<Array(String, Array<String>)>] pairs of [context_name, lines]
         def split_by_context(lines)
           contexts = []
           current_name = "Default"
@@ -42,6 +56,16 @@ module Hecks
           contexts
         end
 
+        # Parses a single bounded context's lines into a ParsedContext.
+        #
+        # Iterates through cleaned lines, using parse_line (from PatternMatching)
+        # to identify elements. Tracks a "current command" to associate aggregates,
+        # read models, and external systems with the most recent command.
+        # After parsing, wires policies to their trigger commands.
+        #
+        # @param name [String] the bounded context name
+        # @param lines [Array<String>] the lines belonging to this context
+        # @return [ParsedContext] the parsed context with all its elements
         def parse_context(name, lines)
           elements = []
           current_command = nil
@@ -93,6 +117,15 @@ module Hecks
           ParsedContext.new(name: name, elements: elements)
         end
 
+        # Wires policies to the next command that follows them in element order.
+        #
+        # For each policy element, finds the next :command element after it in the
+        # array and sets the policy's :trigger metadata to that command's name.
+        # This implements the event storm convention where a policy triggers the
+        # command that follows it in the flow.
+        #
+        # @param elements [Array<ParsedElement>] the elements array (mutated in place)
+        # @return [void]
         def wire_policies_to_commands(elements)
           elements.each_with_index do |el, i|
             next unless el.type == :policy

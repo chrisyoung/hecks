@@ -10,10 +10,23 @@
 module Hecks
   module HTTP
     class JsonSchemaGenerator
+      # Creates a new JsonSchemaGenerator for a domain.
+      #
+      # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR
       def initialize(domain)
         @domain = domain
       end
 
+      # Generates a JSON Schema (2020-12) document describing all domain types.
+      #
+      # The returned hash includes:
+      # - +$schema+ pointing to the JSON Schema 2020-12 meta-schema
+      # - +title+ and +description+ metadata
+      # - +definitions+ containing schemas for every aggregate, value object,
+      #   entity, command, event, and query in the domain
+      #
+      # @return [Hash] a JSON Schema document as a Ruby hash (suitable for
+      #   +JSON.generate+ or +to_json+)
       def generate
         {
           "$schema" => "https://json-schema.org/draft/2020-12/schema",
@@ -25,6 +38,11 @@ module Hecks
 
       private
 
+      # Builds the +definitions+ hash containing schemas for all domain types.
+      # Iterates over every aggregate and its children (value objects, entities,
+      # commands, events, queries).
+      #
+      # @return [Hash] a map of definition names to JSON Schema objects
       def build_definitions
         defs = {}
         @domain.aggregates.each do |agg|
@@ -38,6 +56,13 @@ module Hecks
         defs
       end
 
+      # Builds a JSON Schema object definition for an aggregate, including +id+,
+      # all declared attributes, +created_at+, and +updated_at+. List attributes
+      # are rendered as arrays with +$ref+ items when the target type is a known
+      # value object or entity.
+      #
+      # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate
+      # @return [Hash] JSON Schema object definition
       def aggregate_def(agg)
         props = { id: { type: "string", format: "uuid" } }
         required = ["id"]
@@ -56,18 +81,32 @@ module Hecks
         { type: "object", properties: props, required: required }
       end
 
+      # Builds a JSON Schema object definition for a value object.
+      #
+      # @param vo [Hecks::DomainModel::Structure::ValueObject] the value object
+      # @return [Hash] JSON Schema object definition
       def value_object_def(vo)
         props = {}
         vo.attributes.each { |attr| props[attr.name] = property(attr) }
         { type: "object", properties: props }
       end
 
+      # Builds a JSON Schema object definition for an entity, including a
+      # required +id+ field.
+      #
+      # @param ent [Hecks::DomainModel::Structure::Entity] the entity
+      # @return [Hash] JSON Schema object definition with +id+ in +required+
       def entity_def(ent)
         props = { id: { type: "string", format: "uuid" } }
         ent.attributes.each { |attr| props[attr.name] = property(attr) }
         { type: "object", properties: props, required: ["id"] }
       end
 
+      # Builds a JSON Schema object definition for a command. All attributes
+      # are listed in +required+.
+      #
+      # @param cmd [Hecks::DomainModel::Behavior::Command] the command
+      # @return [Hash] JSON Schema object definition
       def command_def(cmd)
         props = {}
         required = []
@@ -78,12 +117,23 @@ module Hecks
         { type: "object", properties: props, required: required }
       end
 
+      # Builds a JSON Schema object definition for an event, including an
+      # +occurred_at+ timestamp field.
+      #
+      # @param evt [Hecks::DomainModel::Behavior::Event] the event
+      # @return [Hash] JSON Schema object definition
       def event_def(evt)
         props = { occurred_at: { type: "string", format: "date-time" } }
         evt.attributes.each { |attr| props[attr.name] = property(attr) }
         { type: "object", properties: props }
       end
 
+      # Builds a JSON Schema-like definition for a query, listing its parameters
+      # and declaring that it returns an array of the owning aggregate.
+      #
+      # @param agg [Hecks::DomainModel::Structure::Aggregate] the owning aggregate
+      # @param query [Hecks::DomainModel::Behavior::Query] the query
+      # @return [Hash] a definition with +description+, +parameters+, and +returns+
       def query_def(agg, query)
         params = query.block.parameters
         {
@@ -93,6 +143,16 @@ module Hecks
         }
       end
 
+      # Maps a single domain attribute to a JSON Schema property definition.
+      #
+      # - JSON attributes -> +type: ["object", "array"]+
+      # - Reference attributes -> +type: "string", format: "uuid"+
+      # - +Integer+ -> +type: "integer"+
+      # - +Float+ -> +type: "number"+
+      # - All others -> +type: "string"+
+      #
+      # @param attr [Hecks::DomainModel::Structure::Attribute] the attribute
+      # @return [Hash] a JSON Schema property definition
       def property(attr)
         if attr.json?
           { type: ["object", "array"] }

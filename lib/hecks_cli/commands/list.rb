@@ -9,6 +9,12 @@ module Hecks
   class CLI < Thor
     class Domain < Thor
       desc "list", "List installed Hecks domain gems"
+      # Lists all installed Hecks domain gems.
+      #
+      # Searches all gem specifications for those containing hecks_domain.rb
+      # and displays each gem name with its installed version(s).
+      #
+      # @return [void]
       def list
         domains = find_installed_domains
         if domains.empty?

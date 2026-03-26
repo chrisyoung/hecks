@@ -10,6 +10,18 @@ module Hecks
     class Domain < Thor
       desc "init [NAME]", "Initialize a Hecks domain in the current directory"
       option :force, type: :boolean, desc: "Overwrite without prompting"
+      # Initializes a Hecks domain in the current directory.
+      #
+      # Creates three files:
+      # - hecks_domain.rb: the domain definition with a starter aggregate
+      # - verbs.txt: for custom action verbs (WordNet handles most automatically)
+      # - .hecks_version: CalVer version tracking file
+      #
+      # If name is not provided, derives it from the current directory name
+      # by splitting on underscores/hyphens/spaces and PascalCasing.
+      #
+      # @param name [String, nil] the domain name in PascalCase; auto-derived if nil
+      # @return [void]
       def init(name = nil)
         name ||= File.basename(Dir.pwd).split(/[_\-\s]/).map(&:capitalize).join
         write_or_diff("hecks_domain.rb", domain_template(name))

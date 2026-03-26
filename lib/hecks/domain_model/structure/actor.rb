@@ -14,8 +14,16 @@ module Hecks
   module DomainModel
     module Structure
     class Actor
+      # @return [String] the name of this actor role (e.g., "Customer", "Admin", "Warehouse Staff")
       attr_reader :name
 
+      # Creates a new Actor.
+      #
+      # @param name [String] the human-readable name of the actor role. This should
+      #   correspond to a persona identified during Event Storming -- the person or
+      #   system role that initiates commands in the domain.
+      #
+      # @return [Actor] a new Actor instance
       def initialize(name:)
         @name = name
       end

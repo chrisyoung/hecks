@@ -9,13 +9,34 @@
 #
 module Hecks
   class Configuration
+    # Private mixin for Configuration that handles loading domain definitions
+    # from either installed RubyGems or local filesystem paths. When loading
+    # from a local path, the domain gem is built on the fly via +Hecks.build+
+    # and its +lib/+ directory is added to +$LOAD_PATH+.
+    #
+    # Both loading strategies:
+    # 1. Locate and evaluate the +hecks_domain.rb+ file to get the domain IR
+    # 2. Set +source_path+ on the domain object for later reference
+    # 3. Return a +[domain_obj, domain_module]+ tuple
     module DomainLoader
       private
 
+      # Dispatches domain loading to the appropriate strategy based on whether
+      # a +:path+ key is present in the domain entry.
+      #
+      # @param d [Hash] domain entry with :gem_name, :version, :path keys
+      # @return [Array(Hecks::DomainModel::Structure::Domain, Module)] tuple of domain IR and domain module
       def load_domain(d)
         d[:path] ? load_from_path(d) : load_from_gem(d)
       end
 
+      # Loads a domain from a local filesystem path. Resolves the path relative
+      # to Rails root (if Rails is defined) or the current working directory.
+      # Evaluates +hecks_domain.rb+, builds the gem via +Hecks.build+, adds the
+      # generated +lib/+ to +$LOAD_PATH+, and requires all generated files.
+      #
+      # @param d [Hash] domain entry with :gem_name and :path keys
+      # @return [Array(Hecks::DomainModel::Structure::Domain, Module)] tuple of domain IR and domain module
       def load_from_path(d)
         base = if defined?(::Rails)
                  ::Rails.root.join(d[:path]).to_s
@@ -37,6 +58,12 @@ module Hecks
         [domain_obj, domain_module]
       end
 
+      # Loads a domain from an installed RubyGem. Optionally pins the gem version,
+      # then requires it and locates the gem's +hecks_domain.rb+ for IR loading.
+      # Falls back to Rails root or current directory if the gem spec is not found.
+      #
+      # @param d [Hash] domain entry with :gem_name and optional :version keys
+      # @return [Array(Hecks::DomainModel::Structure::Domain, Module)] tuple of domain IR and domain module
       def load_from_gem(d)
         gem d[:gem_name], d[:version] if d[:version]
         require d[:gem_name]

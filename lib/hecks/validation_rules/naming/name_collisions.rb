@@ -1,13 +1,21 @@
 # Hecks::ValidationRules::Naming::NameCollisions
 #
-# Rejects aggregate root names that collide with their own value object
-# names. Part of the ValidationRules::Naming group -- run by Hecks.validate.
+# Validates that aggregate root names do not collide with their own value
+# object or entity names. Such collisions create ambiguity in the generated
+# code since both would map to the same Ruby constant within the aggregate
+# module.
+#
+# Part of the ValidationRules::Naming group -- run by +Hecks.validate+.
 #
 module Hecks
   module ValidationRules
     module Naming
-    # Aggregate root name must not collide with its value object or entity names
+    # Aggregate root name must not collide with its value object or entity names.
     class NameCollisions < BaseRule
+      # Checks all aggregates for name collisions between the aggregate root
+      # and its value objects or entities.
+      #
+      # @return [Array<String>] error messages for each collision found
       def errors
         result = []
         @domain.aggregates.each do |agg|

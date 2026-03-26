@@ -8,6 +8,18 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module CommandSpec
+          # Generates an RSpec spec file for a command class.
+          #
+          # The generated spec covers:
+          # - Attribute assignment: verifies each attribute is accessible and returns
+          #   the expected example value
+          # - Event emission: verifies that +described_class.event_name+ returns the
+          #   inferred event name for the command
+          #
+          # @param command [Hecks::DomainModel::Behavior::Command] the command IR
+          # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the owning
+          #   aggregate, used to build the fully qualified class name
+          # @return [String] the complete RSpec file content
           def generate_command_spec(command, aggregate)
             safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
             fqn = full_class_name("#{safe_agg}::Commands::#{command.name}")

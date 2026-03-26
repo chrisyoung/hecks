@@ -1,13 +1,19 @@
 # Hecks::ValidationRules::Naming::UniqueAggregateNames
 #
-# Rejects duplicate aggregate names within a domain. Part of the
-# ValidationRules::Naming group -- run by Hecks.validate.
+# Validates that all aggregate names within a domain are unique. Duplicate
+# aggregate names would cause constant collisions in the generated Ruby code
+# and ambiguity in command routing.
+#
+# Part of the ValidationRules::Naming group -- run by +Hecks.validate+.
 #
 module Hecks
   module ValidationRules
     module Naming
-    # Aggregates must have unique names
+    # Aggregates must have unique names within a domain.
     class UniqueAggregateNames < BaseRule
+      # Checks for duplicate aggregate names and returns an error for each.
+      #
+      # @return [Array<String>] error messages listing each duplicated aggregate name
       def errors
         names = @domain.aggregates.map(&:name)
         duplicates = names.select { |n| names.count(n) > 1 }.uniq

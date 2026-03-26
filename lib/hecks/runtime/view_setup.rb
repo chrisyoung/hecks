@@ -13,6 +13,16 @@ module Hecks
     module ViewSetup
       private
 
+      # Wires all view (read model) projections defined in the domain DSL.
+      #
+      # Iterates through +@domain.views+ and delegates to +ViewBinding.bind+
+      # for each one, which creates the view module under the domain namespace
+      # and subscribes projection procs to the event bus.
+      #
+      # Returns immediately if the domain does not respond to +views+
+      # (backward compatibility with older domain definitions).
+      #
+      # @return [void]
       def setup_views
         return unless @domain.respond_to?(:views)
 

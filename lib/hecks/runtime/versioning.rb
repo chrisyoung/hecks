@@ -9,6 +9,19 @@
 #
 module Hecks
   module Versioning
+    # Binds version tracking to an aggregate class and its repository.
+    #
+    # Wraps the repository's +save+ method to snapshot the aggregate's current
+    # state (all +hecks_attributes+) before persisting the update. Each snapshot
+    # is stored in an in-memory hash keyed by aggregate ID.
+    #
+    # Also defines two class methods on the aggregate:
+    # - +versions(id)+ -- returns the full version history for an aggregate
+    # - +at_version(id, version_number)+ -- returns a specific version's state hash
+    #
+    # @param klass [Class] the aggregate class to add versioning to
+    # @param repo [Object] the repository instance whose +save+ method will be wrapped
+    # @return [void]
     def self.bind(klass, repo)
       version_store = {}
 

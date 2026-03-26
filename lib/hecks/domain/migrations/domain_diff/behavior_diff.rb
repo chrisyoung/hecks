@@ -2,7 +2,13 @@
 #
 # Detects changes in behavioral domain elements: commands, policies,
 # validations, invariants, queries, scopes, subscribers, and
-# specifications. Mixed into DomainDiff.
+# specifications. Mixed into DomainDiff to separate behavioral diffing
+# from structural diffing.
+#
+# Behavioral changes have +context: :behavior+ in their Change objects,
+# distinguishing them from structural changes (which have +context: nil+).
+# This distinction lets migration strategies ignore behavioral changes
+# that don't affect storage schemas.
 #
 module Hecks
   module Migrations
@@ -10,10 +16,24 @@ module Hecks
       module BehaviorDiff
         private
 
+        # Diff commands between old and new aggregate versions.
+        # Delegates to the generic diff_named_collection helper.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @return [Array<Change>] command add/remove changes
         def diff_commands(old_agg, new_agg)
           diff_named_collection(old_agg, new_agg, :commands, :command)
         end
 
+        # Diff reactive policies between old and new aggregate versions.
+        # Unlike other behavioral elements, policies can also be "changed"
+        # (rewired) when their event or trigger command is modified while
+        # the policy name stays the same.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @return [Array<Change>] policy add/remove/change changes
         def diff_policies(old_agg, new_agg)
           changes = []
           old_pols = old_agg.policies.select(&:reactive?)
@@ -51,6 +71,12 @@ module Hecks
           changes
         end
 
+        # Diff validations between old and new aggregate versions.
+        # Compares by field name to detect added and removed validation rules.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @return [Array<Change>] validation add/remove changes
         def diff_validations(old_agg, new_agg)
           changes = []
           old_fields = old_agg.validations.map(&:field)
@@ -74,6 +100,12 @@ module Hecks
           changes
         end
 
+        # Diff invariants between old and new aggregate versions.
+        # Compares by message string to detect added and removed invariants.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @return [Array<Change>] invariant add/remove changes
         def diff_invariants(old_agg, new_agg)
           old_msgs = old_agg.invariants.map(&:message)
           new_msgs = new_agg.invariants.map(&:message)
@@ -96,14 +128,33 @@ module Hecks
           changes
         end
 
+        # Diff queries between old and new aggregate versions.
+        # Delegates to the generic diff_named_collection helper.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @return [Array<Change>] query add/remove changes
         def diff_queries(old_agg, new_agg)
           diff_named_collection(old_agg, new_agg, :queries, :query)
         end
 
+        # Diff scopes between old and new aggregate versions.
+        # Delegates to the generic diff_named_collection helper.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @return [Array<Change>] scope add/remove changes
         def diff_scopes(old_agg, new_agg)
           diff_named_collection(old_agg, new_agg, :scopes, :scope)
         end
 
+        # Diff subscribers between old and new aggregate versions.
+        # Compares by subscriber name and includes the event name in
+        # the details for added subscribers.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @return [Array<Change>] subscriber add/remove changes
         def diff_subscribers(old_agg, new_agg)
           old_names = (old_agg.subscribers || []).map(&:name)
           new_names = (new_agg.subscribers || []).map(&:name)
@@ -127,11 +178,25 @@ module Hecks
           changes
         end
 
+        # Diff specifications between old and new aggregate versions.
+        # Delegates to the generic diff_named_collection helper.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @return [Array<Change>] specification add/remove changes
         def diff_specifications(old_agg, new_agg)
           diff_named_collection(old_agg, new_agg, :specifications, :specification)
         end
 
-        # Generic add/remove for named collections (commands, queries, scopes, specs)
+        # Generic add/remove diffing for any named collection on an aggregate.
+        # Compares items by their +name+ attribute and produces add/remove
+        # Change objects with the appropriate kind prefix.
+        #
+        # @param old_agg [Hecks::DomainModel::Aggregate] previous aggregate version
+        # @param new_agg [Hecks::DomainModel::Aggregate] current aggregate version
+        # @param method [Symbol] the collection accessor method (e.g., :commands, :queries)
+        # @param kind_prefix [Symbol] the Change kind prefix (e.g., :command -> :add_command)
+        # @return [Array<Change>] add/remove changes for the collection
         def diff_named_collection(old_agg, new_agg, method, kind_prefix)
           old_items = (old_agg.send(method) || [])
           new_items = (new_agg.send(method) || [])

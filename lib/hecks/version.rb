@@ -1,11 +1,13 @@
-# Hecks::VERSION
+# = Hecks::VERSION
 #
-# Defines the current version of the Hecks gem itself (not generated domains).
-# Used by the gemspec and CLI for version reporting.
+# Defines the current version of the Hecks gem itself. This is the
+# *framework* version, separate from individual domain versions managed
+# by {Hecks::Versioner} (which uses CalVer: YYYY.MM.DD.N).
 #
-# This is the framework version, separate from domain versions managed by
-# Hecks::Versioner.
+# Used by the gemspec for gem packaging and by the CLI for +hecks --version+
+# output.
 #
+# @example
 #   Hecks::VERSION  # => "0.1.0"
 #
 module Hecks

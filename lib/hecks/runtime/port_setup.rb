@@ -14,15 +14,43 @@ module Hecks
     module PortSetup
       private
 
+      # Wires all ports for every aggregate in the domain.
+      #
+      # Iterates through each aggregate definition and calls +wire_aggregate+
+      # to bind persistence, commands, querying, introspection, versioning,
+      # attachments, query objects, and port enforcement.
+      #
+      # @return [void]
       def wire_ports!
         @domain.aggregates.each { |agg| wire_aggregate(agg) }
       end
 
+      # Re-wires ports for a single aggregate by name.
+      #
+      # Useful when an adapter is swapped at runtime and only one aggregate
+      # needs to be re-wired without re-initializing the entire domain.
+      #
+      # @param name [String, Symbol] the name of the aggregate to re-wire
+      # @return [void]
       def wire_aggregate!(name)
         agg = @domain.aggregates.find { |a| a.name == name.to_s }
         wire_aggregate(agg) if agg
       end
 
+      # Wires all port bindings for a single aggregate.
+      #
+      # This is the core wiring method that binds:
+      # - Persistence (find, all, save, delete, etc.) via the repository
+      # - Commands (create, update, and custom commands) via the command bus
+      # - Querying (where, first, last, count) for in-memory filtering
+      # - Introspection (hecks_attributes, hecks_aggregate) for reflection
+      # - Versioning (versions, at_version) if the aggregate is versioned
+      # - Attachments (attach, attachments) if the aggregate is attachable
+      # - Query objects defined in the DSL
+      # - Port enforcement to restrict methods based on the active port
+      #
+      # @param agg [Hecks::DomainModel::Aggregate] the aggregate definition from the domain model
+      # @return [void]
       def wire_aggregate(agg)
         agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
         repo = @repositories[agg.name]
@@ -38,10 +66,30 @@ module Hecks
         PortEnforcer.new(port_name: @port_name).enforce!(agg, agg_class)
       end
 
+      # Builds a default values hash for the aggregate's attributes.
+      #
+      # List-type attributes default to an empty array; all others default to nil.
+      # These defaults are passed to the Commands binding so that new aggregates
+      # are initialized with sensible values for omitted attributes.
+      #
+      # @param agg [Hecks::DomainModel::Aggregate] the aggregate definition
+      # @return [Hash{String => Array, nil}] attribute name to default value mapping
       def build_defaults(agg)
         agg.attributes.each_with_object({}) { |attr, h| h[attr.name] = attr.list? ? [] : nil }
       end
 
+      # Wires DSL-defined query objects as class methods on the aggregate class.
+      #
+      # For each query defined on the aggregate:
+      # - If a matching query class exists under +AggClass::Queries+ and responds
+      #   to +repository=+, injects the repository and creates a class method
+      #   that delegates to +query_class.call+
+      # - Otherwise, creates a class method that evaluates the query's block
+      #   against a new +QueryBuilder+ instance backed by the repository
+      #
+      # @param agg [Hecks::DomainModel::Aggregate] the aggregate definition
+      # @param agg_class [Class] the runtime aggregate class to add query methods to
+      # @return [void]
       def wire_query_objects(agg, agg_class)
         repo = @repositories[agg.name]
         queries_mod = begin; agg_class.const_get(:Queries); rescue NameError; nil; end

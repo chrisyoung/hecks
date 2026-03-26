@@ -1,6 +1,6 @@
 # Hecks::CLI::Gem
 #
-# Gem packaging commands — build and install the hecks gem from its gemspec.
+# Gem packaging commands -- build and install the hecks gem from its gemspec.
 # Shells out to `gem build` and `gem install` from the project root directory.
 #
 #   hecks gem build
@@ -10,6 +10,9 @@ module Hecks
   class CLI < Thor
     class Gem < Thor
       desc "build", "Build the hecks gem from gemspec"
+      # Builds the hecks gem by running `gem build hecks.gemspec` in the project root.
+      #
+      # @return [void]
       def build
         root = gem_root
         return unless root
@@ -17,6 +20,12 @@ module Hecks
       end
 
       desc "install", "Build and install the hecks gem locally"
+      # Builds the hecks gem and installs it locally.
+      #
+      # Runs `gem build` then `gem install` on the resulting .gem file.
+      # Selects the most recently modified .gem file if multiple exist.
+      #
+      # @return [void]
       def install
         root = gem_root
         return unless root
@@ -40,6 +49,9 @@ module Hecks
 
       private
 
+      # Locates the gem root directory by checking for hecks.gemspec.
+      #
+      # @return [String, nil] the project root path, or nil if gemspec not found
       def gem_root
         root = Dir.pwd
         gemspec = ::File.join(root, "hecks.gemspec")

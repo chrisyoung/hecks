@@ -1,22 +1,40 @@
-# Hecks::HTTP::DomainServer
-#
-# WEBrick-based REST server that serves a domain over HTTP with CORS support.
-# Builds the domain gem into a temp directory, boots it, then delegates route
-# generation to RouteBuilder. Also exposes a /events endpoint for event history.
-# With --live, starts a WebSocket server alongside HTTP via HecksSockets.
-#
-#   hecks domain serve pizzas_domain
-#   hecks domain serve pizzas_domain --live
-#
 require "webrick"
 require "json"
 require "stringio"
 require "tmpdir"
 require_relative "route_builder"
 
+# Hecks::HTTP::DomainServer
+#
+# WEBrick-based REST server that serves a Hecks domain over HTTP with CORS
+# support. On initialization, builds the domain gem into a temp directory,
+# boots it, and delegates route generation to {RouteBuilder}. Exposes CRUD
+# endpoints for each aggregate, query endpoints, and a +/events+ endpoint
+# that returns the domain's event history as JSON.
+#
+# Optionally supports WebSocket live events via the +hecks_sockets+ gem.
+# When +--live+ is enabled, a WebSocket server runs alongside HTTP on a
+# separate port.
+#
+#   hecks domain serve pizzas_domain
+#   hecks domain serve pizzas_domain --live
+#
+
 module Hecks
   module HTTP
     class DomainServer
+      # Initialize the server, boot the domain gem, and build routes.
+      #
+      # Builds the domain gem into a temporary directory, requires it,
+      # creates a Runtime, and generates REST routes via RouteBuilder.
+      #
+      # @param domain [Hecks::Domain] the domain definition to serve
+      # @param port [Integer] the TCP port for the HTTP server (default: 9292)
+      # @param live [Boolean] whether to start a WebSocket server alongside
+      #   HTTP for real-time event streaming (default: false)
+      # @param live_port [Integer] the TCP port for the WebSocket server
+      #   (default: 9293, only used when +live+ is true)
+      # @return [DomainServer] a new server instance ready to run
       def initialize(domain, port: 9292, live: false, live_port: 9293)
         @domain = domain
         @port = port
@@ -26,6 +44,13 @@ module Hecks
         boot_domain
       end
 
+      # Start the WEBrick HTTP server and begin handling requests.
+      #
+      # Prints the route table to stdout, optionally starts the WebSocket
+      # server, then enters the WEBrick event loop. Blocks until the process
+      # receives an INT signal (Ctrl-C).
+      #
+      # @return [void]
       def run
         puts "Hecks serving #{@domain.name} on http://localhost:#{@port}"
         puts ""
@@ -42,6 +67,16 @@ module Hecks
 
       private
 
+      # Dispatch an incoming HTTP request to the appropriate route handler.
+      #
+      # Sets CORS headers on every response. Handles OPTIONS preflight
+      # requests by returning immediately. Routes +/events+ to the event
+      # history endpoint. For all other paths, finds a matching route and
+      # delegates to its handler lambda.
+      #
+      # @param req [WEBrick::HTTPRequest] the incoming HTTP request
+      # @param res [WEBrick::HTTPResponse] the outgoing HTTP response
+      # @return [void]
       def handle(req, res)
         set_cors(res)
         return if req.request_method == "OPTIONS"
@@ -71,6 +106,13 @@ module Hecks
         res.body = JSON.generate(error: e.message)
       end
 
+      # Start a WebSocket server for real-time event streaming.
+      #
+      # Requires the +hecks_sockets+ gem and starts an async WebSocket
+      # server on the configured live_port. If the gem is not available,
+      # prints a warning and continues without WebSocket support.
+      #
+      # @return [void]
       def start_websocket_server
         require "hecks_sockets"
         handler = HecksSockets::WebsocketHandler.new(@domain, @app)
@@ -81,6 +123,13 @@ module Hecks
         warn "[hecks] hecks_sockets gem not found — skipping WebSocket server"
       end
 
+      # Build the domain gem into a temp directory and boot it.
+      #
+      # Creates a temporary directory, builds the domain gem there,
+      # adds its lib path to $LOAD_PATH, requires all generated files,
+      # then creates a Runtime and generates routes via RouteBuilder.
+      #
+      # @return [void]
       def boot_domain
         mod_name = @domain.module_name + "Domain"
         unless Object.const_defined?(mod_name)
@@ -96,31 +145,63 @@ module Hecks
         @routes = RouteBuilder.new(@domain, @mod).build
       end
 
+      # Check if a route pattern matches a request path.
+      #
+      # Splits both pattern and path by "/" and compares segment by segment.
+      # Pattern segments starting with ":" are treated as wildcards that
+      # match any value.
+      #
+      # @param pattern [String] the route pattern (e.g. "/pizzas/:id")
+      # @param path [String] the actual request path (e.g. "/pizzas/abc123")
+      # @return [Boolean] true if the path matches the pattern
       def match?(pattern, path)
         pp = pattern.split("/"); ap = path.split("/")
         pp.size == ap.size && pp.zip(ap).all? { |p, a| p.start_with?(":") || p == a }
       end
 
+      # Set CORS headers on the response to allow cross-origin requests.
+      #
+      # @param res [WEBrick::HTTPResponse] the response to add headers to
+      # @return [void]
       def set_cors(res)
         res["Access-Control-Allow-Origin"] = "*"
         res["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS"
         res["Access-Control-Allow-Headers"] = "Content-Type"
       end
 
-      # Wraps WEBrick::HTTPRequest to look like Rack::Request for RouteBuilder
+      # Wraps a WEBrick::HTTPRequest to provide a consistent interface
+      # for route handlers, similar to Rack::Request. Exposes path, params,
+      # body, and request_method.
       class RequestWrapper
-        attr_reader :path, :params
+        # @return [String] the request path (e.g. "/pizzas/abc123")
+        attr_reader :path
 
+        # @return [Hash] the parsed query string parameters
+        attr_reader :params
+
+        # Wrap a WEBrick request, extracting path and query params.
+        #
+        # @param req [WEBrick::HTTPRequest] the raw WEBrick request to wrap
+        # @return [RequestWrapper] a new wrapper instance
         def initialize(req)
           @req = req
           @path = req.path
           @params = req.query
         end
 
+        # Return the request body as a StringIO for consistent reading.
+        #
+        # Wraps the raw body string (or empty string if nil) in a StringIO
+        # so handlers can call +.read+ regardless of the actual body type.
+        #
+        # @return [StringIO] the request body as a readable IO object
         def body
           ::StringIO.new(@req.body || "")
         end
 
+        # Return the HTTP method of the request.
+        #
+        # @return [String] the HTTP method (e.g. "GET", "POST", "PATCH", "DELETE")
         def request_method
           @req.request_method
         end

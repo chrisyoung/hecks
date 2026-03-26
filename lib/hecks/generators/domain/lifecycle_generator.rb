@@ -1,8 +1,18 @@
 # Hecks::Generators::Domain::LifecycleGenerator
 #
-# Generates a Lifecycle class for an aggregate's state machine. Contains
-# the field name, default state, transitions (with from-guards), state
-# constants, and predicate methods. Implements call for uniform interface.
+# Generates a Lifecycle class for an aggregate's state machine. The lifecycle
+# encodes the field that holds state, the default state, valid states, and
+# transitions between states triggered by commands.
+#
+# The generated class includes:
+# - +FIELD+ -- the attribute name that holds the state (e.g., +:status+)
+# - +DEFAULT+ -- the initial state value (e.g., "draft")
+# - +STATES+ -- array of all valid state strings
+# - +TRANSITIONS+ -- hash mapping command names to target states (with optional +from+ guards)
+# - A +call(current_state, command_name)+ method that resolves the target state
+# - State predicate methods for each state (e.g., +active?+, +archived?+)
+#
+# == Usage
 #
 #   gen = LifecycleGenerator.new(lifecycle, domain_module: "ModelRegistryDomain", aggregate_name: "AiModel")
 #   gen.generate
@@ -12,12 +22,25 @@ module Hecks
     module Domain
     class LifecycleGenerator
 
+      # Initializes the lifecycle generator.
+      #
+      # @param lifecycle [Object] the lifecycle model object; provides +field+, +default+,
+      #   +states+, and +transitions+
+      # @param domain_module [String] the Ruby module name to wrap the generated class in
+      # @param aggregate_name [String] the name of the parent aggregate class
       def initialize(lifecycle, domain_module:, aggregate_name:)
         @lifecycle = lifecycle
         @domain_module = domain_module
         @aggregate_name = aggregate_name
       end
 
+      # Generates the full Ruby source code for the Lifecycle class.
+      #
+      # Produces a class nested under the aggregate with constants for field,
+      # default state, valid states, and transitions. Includes a +call+ method
+      # for resolving state transitions and predicate methods for each state.
+      #
+      # @return [String] the generated Ruby source code, newline-terminated
       def generate
         lines = []
         lines << "module #{@domain_module}"

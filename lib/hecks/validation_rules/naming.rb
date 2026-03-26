@@ -1,8 +1,14 @@
 # Hecks::ValidationRules::Naming
 #
-# Naming convention rules: command verb prefixes, no duplicate names,
-# unique aggregate names, and reserved name detection. Part of the
-# ValidationRules layer -- autoloads individual rule classes.
+# Naming convention rules for domain validation. This module groups rules that
+# enforce proper naming throughout the domain model:
+#
+# - +CommandNaming+ -- commands must start with a verb (uses WordNet + custom verbs)
+# - +NameCollisions+ -- aggregate root names must not collide with value object/entity names
+# - +UniqueAggregateNames+ -- no duplicate aggregate names within a domain
+# - +ReservedNames+ -- rejects Ruby keywords as attribute names and invalid aggregate constants
+#
+# All rules are autoloaded and executed as part of +Hecks.validate+.
 #
 module Hecks
   module ValidationRules

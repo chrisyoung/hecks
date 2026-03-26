@@ -14,6 +14,13 @@ module Hecks
       module SqlBuilder
       private
 
+      # Generates the insert method body for saving a new aggregate to the database.
+      #
+      # Produces a method that inserts scalar attributes into the main table
+      # and iterates over list value objects to insert into join tables.
+      # JSON attributes are serialized with JSON.generate.
+      #
+      # @return [Array<String>] lines of Ruby source code for the insert method
       def insert_lines
         col_hash = scalar_attributes.map { |a| a.json? ? "#{a.name}: JSON.generate(#{snake_name}.#{a.name} || nil)" : "#{a.name}: #{snake_name}.#{a.name}" }
         col_hash << "id: #{snake_name}.id"
@@ -30,6 +37,13 @@ module Hecks
         lines
       end
 
+      # Generates the update method body for updating an existing aggregate.
+      #
+      # Updates scalar attributes on the main table, then replaces all
+      # join table rows for list value objects (delete + re-insert).
+      # JSON attributes are serialized with JSON.generate.
+      #
+      # @return [Array<String>] lines of Ruby source code for the update method
       def update_lines
         col_hash = scalar_attributes.map { |a| a.json? ? "#{a.name}: JSON.generate(#{snake_name}.#{a.name} || nil)" : "#{a.name}: #{snake_name}.#{a.name}" }
         col_hash << "created_at: #{snake_name}.created_at&.iso8601"
@@ -49,6 +63,13 @@ module Hecks
         lines
       end
 
+      # Generates the build method body for constructing an aggregate from a DB row.
+      #
+      # Loads join table rows for list value objects, constructs VO instances,
+      # and assembles the aggregate with all attributes. Parses created_at and
+      # updated_at timestamps from stored strings.
+      #
+      # @return [Array<String>] lines of Ruby source code for the build method
       def build_lines
         attr_assigns = scalar_attributes.map do |a|
           if a.json?
@@ -85,6 +106,13 @@ module Hecks
         lines
       end
 
+      # Generates insert statements for a value object's join table rows.
+      #
+      # Produces a loop that inserts each VO instance with a new UUID,
+      # the parent aggregate's ID as foreign key, and all VO attributes.
+      #
+      # @param vo [DomainModel::Structure::ValueObject] the value object
+      # @return [Array<String>] lines of Ruby source code for the VO insert loop
       def insert_vo_lines(vo)
         vo_table = "#{table_name}_#{Hecks::Utils.underscore(vo.name)}s"
         attr_name = @aggregate.attributes.find { |a| a.list? && a.type.to_s == vo.name }&.name
@@ -99,6 +127,12 @@ module Hecks
         lines
       end
 
+      # Generates delete statements for value object join table rows.
+      #
+      # Produces statements that delete all join table rows for a given
+      # aggregate ID before the aggregate itself is deleted.
+      #
+      # @return [Array<String>] lines of Ruby source code for VO deletion
       def delete_vo_lines
         lines = []
         list_value_objects.each do |vo|

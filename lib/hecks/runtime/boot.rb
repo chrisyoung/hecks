@@ -1,3 +1,8 @@
+require_relative "cross_domain_validator"
+require_relative "event_directionality"
+require_relative "queue_wiring"
+require_relative "../ports/event_bus/filtered_event_bus"
+
 # Hecks::Boot
 #
 # Convenience method that loads a domain from a directory, validates it,
@@ -14,24 +19,50 @@
 #   app = Hecks.boot(__dir__, adapter: :sqlite)
 #   apps = Hecks.boot(__dir__)  # returns array if hecks_domains/ exists
 #
-require_relative "cross_domain_validator"
-require_relative "event_directionality"
-require_relative "queue_wiring"
-require_relative "../ports/event_bus/filtered_event_bus"
 
 module Hecks
+  # Handles the full boot sequence for Hecks applications. Mixed into the
+  # +Hecks+ module to provide +Hecks.boot(dir)+. Responsible for:
+  #
+  # 1. Discovering domain definition files (+hecks_domain.rb+ or +hecks_domains/+)
+  # 2. Loading and compiling domain DSL into IR
+  # 3. Building generated gem code and adding to +$LOAD_PATH+
+  # 4. Creating Runtime instances with appropriate adapters
+  # 5. Wiring persistence extensions (SQLite, Postgres, etc.)
+  # 6. Firing non-persistence extensions (HTTP, audit, auth, etc.)
+  # 7. Loading application service files from +services/+
+  #
+  # For multi-domain setups, also handles cross-domain validation,
+  # event directionality filtering, and queue wiring.
   module Boot
     include CrossDomainValidator
     include QueueWiring
 
     # Load, validate, build, and wire a domain from a directory.
+    # This is the primary entry point for standalone Hecks applications.
     #
-    # @param dir [String] directory containing hecks_domain.rb
-    # @param adapter [Symbol, Hash] :memory (default), :sqlite, :postgres, etc.
-    # @param block [Proc] optional block evaluated on the domain module for connections
-    # @return [Hecks::Runtime]
-    # Non-persistence extension gems — auto-required if available.
-    # Persistence (sqlite/postgres/mysql) is explicit via adapter: keyword.
+    # For single-domain apps, expects a +hecks_domain.rb+ file in +dir+.
+    # For multi-domain apps, expects a +hecks_domains/+ directory containing
+    # one +.rb+ file per domain.
+    #
+    # The boot sequence:
+    # 1. Auto-requires available extensions
+    # 2. Detects single vs multi-domain layout
+    # 3. Loads the domain DSL file(s) and compiles to IR
+    # 4. Builds the generated gem(s) and adds to +$LOAD_PATH+
+    # 5. Creates Runtime(s) with memory adapters by default
+    # 6. Wires persistence adapter if specified via +adapter:+ or +persist_to+
+    # 7. Fires non-persistence extensions
+    # 8. Auto-loads +services/*.rb+ if the directory exists
+    #
+    # @param dir [String] directory containing +hecks_domain.rb+ or +hecks_domains/+.
+    #   Defaults to +Dir.pwd+.
+    # @param adapter [Symbol, Hash] persistence adapter. +:memory+ (default), +:sqlite+,
+    #   +:postgres+, etc. Pass a Hash for detailed config (e.g., +{ type: :sqlite, path: "db.sqlite" }+).
+    # @yield optional block evaluated on the domain module for declaring connections
+    # @return [Hecks::Runtime] for single-domain apps
+    # @return [Array<Hecks::Runtime>] for multi-domain apps
+    # @raise [Hecks::DomainLoadError] if no domain definition file is found
     def boot(dir = Dir.pwd, adapter: :memory, &block)
       require_relative "load_extensions"
       LoadExtensions.require_auto
@@ -96,6 +127,14 @@ module Hecks
     # Persistence extensions are keyed by adapter type (:sqlite, :postgres, etc.)
     PERSISTENCE_EXTENSIONS = %i[sqlite postgres mysql mysql2].freeze
 
+    # Fires all non-persistence extensions that are registered in the extension registry.
+    # In explicit mode (when +auto_wire+ or +extension+ was called), only fires
+    # extensions that were explicitly enabled. In auto mode, fires all registered extensions.
+    #
+    # @param mod [Module] the domain module (e.g., +PizzaDomain+)
+    # @param domain [Hecks::DomainModel::Structure::Domain] the compiled domain IR
+    # @param runtime [Hecks::Runtime] the runtime instance to wire extensions into
+    # @return [void]
     def fire_extensions(mod, domain, runtime)
       config = Hecks.configuration
       explicit = config&.extensions_explicit?
@@ -108,6 +147,18 @@ module Hecks
       end
     end
 
+    # Boots multiple domains from a +hecks_domains/+ directory. Creates a shared
+    # event bus with filtered directionality so each domain only receives events
+    # it should listen to. Validates that no cross-domain +reference_to+ attributes
+    # exist (enforces bounded context separation).
+    #
+    # @param dir [String] the application root directory
+    # @param domains_dir [String] path to the +hecks_domains/+ directory
+    # @param adapter [Symbol, Hash] persistence adapter type
+    # @yield optional configuration block
+    # @return [Array<Hecks::Runtime>] one Runtime per domain
+    # @raise [Hecks::DomainLoadError] if the domains directory is empty
+    # @raise [Hecks::ValidationError] if cross-domain references are detected
     def boot_multi(dir, domains_dir, adapter: :memory, &block)
       domain_files = Dir[File.join(domains_dir, "*.rb")].sort
       raise Hecks::DomainLoadError, "No .rb files in #{domains_dir}" if domain_files.empty?
@@ -149,15 +200,27 @@ module Hecks
       runtimes
     end
 
-    # Load hand-edited stub files from lib/<gem_name>/ that override
+    # Load hand-edited stub files from +lib/<gem_name>/+ that override
     # in-memory generated classes. Stubs reopen the same classes, so
     # methods defined in stubs replace the generated defaults.
+    #
+    # @param dir [String] the application root directory
+    # @param domain [Hecks::DomainModel::Structure::Domain] the domain whose stubs to load
+    # @return [void]
     def load_stubs(dir, domain)
       stubs_dir = File.join(dir, "lib", domain.gem_name)
       return unless File.directory?(stubs_dir)
       Dir[File.join(stubs_dir, "**/*.rb")].sort.each { |f| Kernel.load(f) }
     end
 
+    # Creates a FilteredEventBus for a domain in a multi-domain setup.
+    # The filter restricts which source domains' events this domain can receive,
+    # based on the directionality map built from reactive policy introspection.
+    #
+    # @param shared_bus [Hecks::EventBus] the shared event bus across all domains
+    # @param domain [Hecks::DomainModel::Structure::Domain] the domain to create a filtered bus for
+    # @param all_domains [Array<Hecks::DomainModel::Structure::Domain>] all domains in the multi-domain setup
+    # @return [Hecks::FilteredEventBus, Hecks::EventBus] a filtered bus, or the shared bus if no directionality exists
     def filtered_bus(shared_bus, domain, all_domains)
       @_directionality ||= EventDirectionality.build(all_domains)
       return shared_bus unless @_directionality.any?
@@ -168,14 +231,30 @@ module Hecks
       )
     end
 
+    # Normalizes the adapter parameter into a config hash.
+    # If already a Hash, returns it as-is. If a Symbol, wraps it as +{ type: adapter }+.
+    #
+    # @param adapter [Symbol, Hash] the adapter specification
+    # @return [Hash] normalized adapter config with at least a +:type+ key
     def boot_adapter_config(adapter)
       adapter.is_a?(Hash) ? adapter : { type: adapter }
     end
 
+    # Checks whether the given adapter type is a SQL-based adapter.
+    #
+    # @param type [Symbol] the adapter type to check
+    # @return [Boolean] true if the type is :sqlite, :postgres, :mysql, or :mysql2
     def sql_adapter_type?(type)
       [:sqlite, :postgres, :mysql, :mysql2].include?(type)
     end
 
+    # Connects to a SQL database and sets up adapter repositories for all aggregates,
+    # then swaps them into the runtime.
+    #
+    # @param domain [Hecks::DomainModel::Structure::Domain] the domain to wire
+    # @param adapter_config [Hash] adapter configuration with +:type+ and connection details
+    # @param runtime [Hecks::Runtime] the runtime whose adapters to swap
+    # @return [void]
     def boot_with_sql(domain, adapter_config, runtime)
       db = SqlBoot.connect(adapter_config)
       adapters = SqlBoot.setup(domain, db)

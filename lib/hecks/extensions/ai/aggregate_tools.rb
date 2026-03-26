@@ -1,12 +1,33 @@
 # Hecks::MCP::AggregateTools
 #
 # MCP tools for building domain structure: add/remove aggregates, commands,
-# value objects, validations, and policies. Each tool delegates to the
-# Session's AggregateHandle API.
+# value objects, entities, validations, and policies. Each tool delegates to
+# the Session's AggregateHandle API to mutate the in-memory domain model.
+#
+# This module is stateless -- it registers tool definitions on the given MCP
+# server and closes over the shared context (+ctx+) for session access.
+#
+# Registered tools:
+#   - +add_aggregate+     -- create a new aggregate root with optional attributes
+#   - +add_command+       -- add a command (action) to an aggregate
+#   - +add_value_object+  -- add an embedded value object to an aggregate
+#   - +add_entity+        -- add a sub-entity with identity to an aggregate
+#   - +add_validation+    -- add a validation rule to an aggregate field
+#   - +add_policy+        -- add a reactive policy (event -> trigger) to an aggregate
+#   - +remove_aggregate+  -- remove an aggregate from the domain
 #
 module Hecks
   module MCP
     module AggregateTools
+      # Registers all aggregate structure tools on the given MCP server.
+      #
+      # Each tool calls +ctx.ensure_session!+ before executing, and uses
+      # +ctx.resolve_type+ to convert type strings into Ruby types.
+      #
+      # @param server [MCP::Server] the MCP server instance to register tools on
+      # @param ctx [Hecks::McpServer] the shared context providing session access,
+      #   +ensure_session!+, and +resolve_type+ helpers
+      # @return [void]
       def self.register(server, ctx)
         server.define_tool(
           name: "add_aggregate",

@@ -11,6 +11,13 @@ module Hecks
       desc "version", "Show Hecks version, or domain version (--domain)"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
+      # Displays the Hecks framework version or a specific domain's version.
+      #
+      # Without --domain, prints the Hecks::VERSION constant.
+      # With --domain, resolves the domain and checks for a gem version
+      # via RubyGems, falling back to the local CalVer version file.
+      #
+      # @return [void]
       def version
         if options[:domain]
           domain = resolve_domain(options[:domain])

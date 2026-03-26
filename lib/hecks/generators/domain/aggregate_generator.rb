@@ -1,3 +1,6 @@
+require_relative "aggregate_generator/validation_generation"
+require_relative "aggregate_generator/invariant_generation"
+
 # Hecks::Generators::Domain::AggregateGenerator
 #
 # Generates aggregate root classes that include Hecks::Model. Emits
@@ -6,11 +9,18 @@
 # Identity, timestamps, and equality come from Hecks::Model at runtime.
 # Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
 #
+# The generated class includes:
+# - +attribute+ declarations for each user-defined attribute
+# - State predicate methods if a lifecycle is defined (e.g., +active?+, +archived?+)
+# - Enum constant arrays (e.g., +VALID_STATUS+) for attributes with enum constraints
+# - A private +validate!+ method combining presence checks, type checks, and enum checks
+# - A private +check_invariants!+ method for domain invariants
+#
+# == Usage
+#
 #   gen = AggregateGenerator.new(agg, domain_module: "PizzasDomain")
 #   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."
 #
-require_relative "aggregate_generator/validation_generation"
-require_relative "aggregate_generator/invariant_generation"
 
 module Hecks
   module Generators
@@ -19,6 +29,12 @@ module Hecks
       include ValidationGeneration
       include InvariantGeneration
 
+      # Initializes the generator with an aggregate model object and output context.
+      #
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate to generate code for;
+      #   provides +name+, +attributes+, +validations+, +invariants+, and +lifecycle+
+      # @param domain_module [String] the Ruby module name to wrap the generated class in
+      #   (e.g., "PizzasDomain")
       def initialize(aggregate, domain_module:)
         @aggregate = aggregate
         @domain_module = domain_module
@@ -26,6 +42,17 @@ module Hecks
         @user_attrs = @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
       end
 
+      # Generates the full Ruby source code for the aggregate root class.
+      #
+      # Produces a complete module-wrapped class definition including:
+      # - A +require+ for the Hecks::Model mixin
+      # - +attribute+ declarations for each non-reserved attribute
+      # - State predicate methods from the lifecycle (if present)
+      # - Enum constant definitions for constrained attributes
+      # - A combined +validate!+ method (presence, type, and enum checks)
+      # - A +check_invariants!+ method for domain invariants
+      #
+      # @return [String] the generated Ruby source code, newline-terminated
       def generate
         lines = []
         lines << "require 'hecks/mixins/model'"
@@ -68,6 +95,12 @@ module Hecks
 
       private
 
+      # Generates the combined +validate!+ method lines including presence checks,
+      # type checks, and enum validation for constrained attributes.
+      #
+      # @param enum_attrs [Array<Hecks::DomainModel::Structure::Attribute>] attributes
+      #   that have enum constraints defined
+      # @return [Array<String>] lines of Ruby source code for the validate! method
       def combined_validation_lines(enum_attrs)
         lines = ["    def validate!"]
         @aggregate.validations.each do |v|
@@ -89,6 +122,13 @@ module Hecks
         lines
       end
 
+      # Formats a single attribute declaration for the Hecks::Model DSL.
+      #
+      # List attributes get +default: []+ and +freeze: true+. Attributes with
+      # explicit defaults get +default: <value>+. Plain attributes get just the name.
+      #
+      # @param attr [Hecks::DomainModel::Structure::Attribute] the attribute to declare
+      # @return [String] the formatted attribute declaration (e.g., ":name" or ":toppings, default: [], freeze: true")
       def attribute_declaration(attr)
         parts = [":#{attr.name}"]
         if attr.list?

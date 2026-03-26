@@ -1,16 +1,33 @@
+require "tmpdir"
+
 # Hecks::DomainCompiler
 #
 # Generates domain gems (build) and loads domains into memory (load_domain).
-# By default, load_domain writes to a tmpdir and Kernel.loads the files.
-# Tests can inject a faster in-memory strategy via Hecks.load_strategy.
+# By default, load_domain uses InMemoryLoader to compile generated source
+# strings directly via RubyVM without disk I/O. The build method writes a
+# full gem to disk with documentation artifacts (OpenAPI, RPC, JSON Schema,
+# glossary).
+#
+# Extended onto the top-level Hecks module alongside DomainBuilderMethods.
+# Tests use InMemoryLoader for speed; production can use file-based loading
+# via the private load_domain_from_files fallback.
 #
 #   Hecks.build(domain, version: "2026.03.23.1")
 #   Hecks.load_domain(domain)
 #
-require "tmpdir"
 
 module Hecks
   module DomainCompiler
+    # Build a complete domain gem on disk. Validates the domain first, then
+    # generates all Ruby source files, specs, and documentation artifacts
+    # (OpenAPI JSON, RPC discovery, JSON Schema, glossary markdown).
+    #
+    # @param domain [Hecks::DomainModel::Domain] the domain to compile
+    # @param version [String] gem version string (default "0.1.0"); typically
+    #   a CalVer string from Versioner (e.g., "2026.03.23.1")
+    # @param output_dir [String] parent directory for the generated gem (default ".")
+    # @return [String] absolute path to the generated gem root directory
+    # @raise [Hecks::ValidationError] if domain validation fails
     def build(domain, version: "0.1.0", output_dir: ".")
       valid, errors = validate(domain)
       unless valid
@@ -37,6 +54,21 @@ module Hecks
       gem_path
     end
 
+    # Load a domain into memory so its module (e.g., PizzasDomain) becomes
+    # available as a Ruby constant. Uses InMemoryLoader to compile generated
+    # source without writing to disk. Caches the loaded module by domain
+    # object_id to avoid redundant reloads unless +force+ is true.
+    #
+    # If the domain module already exists and was loaded from the same domain
+    # object, returns the cached constant immediately. Otherwise, removes
+    # the old constant, regenerates, and loads fresh.
+    #
+    # @param domain [Hecks::DomainModel::Domain] the domain to load
+    # @param force [Boolean] reload even if already cached (default false)
+    # @param skip_validation [Boolean] skip validation before loading (default false)
+    # @return [Module] the loaded domain module constant (e.g., PizzasDomain)
+    # @raise [Hecks::ValidationError] if validation fails and skip_validation is false
+    # @raise [Hecks::DomainLoadError] if generated code has syntax or naming errors
     def load_domain(domain, force: false, skip_validation: false)
       mod = domain.module_name + "Domain"
       key = domain.object_id
@@ -62,6 +94,12 @@ module Hecks
 
     private
 
+    # Fallback file-based loading strategy. Generates the full gem to a tmpdir,
+    # manipulates $LOAD_PATH, and uses Kernel.load to evaluate each file.
+    # Not used by default -- InMemoryLoader is preferred for speed.
+    #
+    # @param domain [Hecks::DomainModel::Domain] the domain to load from files
+    # @return [void]
     def load_domain_from_files(domain)
       @tmp_roots ||= {}
       gem_name = domain.gem_name

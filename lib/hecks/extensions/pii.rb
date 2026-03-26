@@ -1,7 +1,17 @@
 # HecksPii
 #
-# PII protection extension for Hecks domains. Reads `pii: true` markers
-# on attributes and provides masking, redaction, and erasure capabilities.
+# PII (Personally Identifiable Information) protection extension for Hecks
+# domains. Reads +pii: true+ markers on aggregate attributes and provides
+# masking, redaction, and GDPR-compliant erasure capabilities.
+#
+# When registered, this extension adds two methods to the domain module:
+# - +erase_pii(entity_id)+ -- nullifies all PII fields on the entity across
+#   all aggregates (for GDPR right-to-erasure compliance)
+# - +pii_fields+ -- returns a hash mapping aggregate names to their PII
+#   field names for introspection
+#
+# When the audit extension is also loaded, PII values in audit log entries
+# are automatically masked via command bus middleware.
 #
 # Future gem: hecks_pii
 #
@@ -16,7 +26,17 @@
 #   CatsDomain.erase_pii(customer_id)
 #
 module HecksPii
-  # Mask a value for display (audit logs, etc.)
+  # Mask a string value for display, preserving the first and last characters
+  # and replacing all middle characters with asterisks. Returns "[REDACTED]"
+  # for strings shorter than 4 characters.
+  #
+  # @param value [String, nil] the value to mask
+  # @return [String, nil] the masked string, or nil if value was nil
+  #
+  # @example
+  #   HecksPii.mask("john@example.com")  # => "j**************m"
+  #   HecksPii.mask("Jo")                # => "[REDACTED]"
+  #   HecksPii.mask(nil)                 # => nil
   def self.mask(value)
     return nil if value.nil?
     s = value.to_s
@@ -24,7 +44,14 @@ module HecksPii
     "#{s[0]}#{"*" * (s.length - 2)}#{s[-1]}"
   end
 
-  # Get PII field names for an aggregate
+  # Return an array of attribute names marked as PII on the given aggregate.
+  #
+  # Filters the aggregate's attributes by the +pii?+ predicate and extracts
+  # their symbolic names.
+  #
+  # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate
+  #   definition whose attributes are inspected
+  # @return [Array<Symbol>] names of attributes marked with +pii: true+
   def self.pii_fields(aggregate)
     aggregate.attributes.select(&:pii?).map(&:name)
   end
@@ -36,7 +63,14 @@ Hecks.describe_extension(:pii,
   wires_to: :repository)
 
 Hecks.register_extension(:pii) do |domain_mod, domain, runtime|
-  # Add erase_pii method to domain module
+  # Add erase_pii method to domain module.
+  #
+  # Iterates all aggregates, finds those with PII fields, locates the entity
+  # by ID, and saves a new instance with all PII fields set to nil. This
+  # implements GDPR right-to-erasure by nullifying PII data in-place.
+  #
+  # @param entity_id [String] the ID of the entity to erase PII from
+  # @return [void]
   domain_mod.define_singleton_method(:erase_pii) do |entity_id|
     domain.aggregates.each do |agg|
       pii_names = HecksPii.pii_fields(agg)
@@ -54,7 +88,12 @@ Hecks.register_extension(:pii) do |domain_mod, domain, runtime|
     end
   end
 
-  # Add pii_fields introspection to domain module
+  # Add pii_fields introspection to domain module.
+  #
+  # Returns a hash mapping aggregate names (as symbols) to arrays of PII
+  # field names. Only includes aggregates that have at least one PII field.
+  #
+  # @return [Hash{Symbol => Array<Symbol>}] aggregate name to PII field names
   domain_mod.define_singleton_method(:pii_fields) do
     domain.aggregates.each_with_object({}) do |agg, h|
       fields = HecksPii.pii_fields(agg)
@@ -62,7 +101,12 @@ Hecks.register_extension(:pii) do |domain_mod, domain, runtime|
     end
   end
 
-  # Patch audit extension to mask PII if both are loaded
+  # Patch audit extension to mask PII if both extensions are loaded.
+  #
+  # When the audit extension is registered, this adds a :pii_mask middleware
+  # that runs after each command. It checks if the command's aggregate has
+  # PII fields, and if so, masks those values in the most recent audit log
+  # entry to prevent PII from appearing in audit trails.
   if Hecks.extension_registry[:audit]
     pii_lookup = {}
     domain.aggregates.each do |agg|

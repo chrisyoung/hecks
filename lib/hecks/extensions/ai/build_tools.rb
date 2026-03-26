@@ -1,11 +1,26 @@
 # Hecks::MCP::BuildTools
 #
-# MCP tools for domain lifecycle: validate the domain, generate the gem,
-# save DSL to a file, and serve the domain as an HTTP REST API.
+# MCP tools for domain lifecycle operations: validate the domain model,
+# generate the domain gem, save the DSL source to a file, and serve the
+# domain as an HTTP REST API with SSE events.
+#
+# All tools require an active session (enforced via +ctx.ensure_session!+).
+#
+# Registered tools:
+#   - +validate+      -- check the domain for structural errors
+#   - +build_gem+     -- generate a Ruby gem from the domain model
+#   - +save_dsl+      -- persist the domain DSL to a .rb file
+#   - +serve_domain+  -- start an HTTP server exposing the domain as REST endpoints
 #
 module Hecks
   module MCP
     module BuildTools
+      # Registers all build/lifecycle tools on the given MCP server.
+      #
+      # @param server [MCP::Server] the MCP server instance to register tools on
+      # @param ctx [Hecks::McpServer] the shared context providing session access,
+      #   +ensure_session!+, and +capture_output+ helpers
+      # @return [void]
       def self.register(server, ctx)
         server.define_tool(
           name: "validate",

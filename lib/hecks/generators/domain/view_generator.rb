@@ -1,8 +1,22 @@
 # Hecks::Generators::Domain::ViewGenerator
 #
 # Generates CQRS view (read model) classes that subscribe to domain events
-# and maintain projected state. Implements call for uniform interface.
+# and maintain projected state. Views are namespaced under +Domain::Views+.
+#
+# Each view class includes:
+# - A +PROJECTIONS+ constant listing the event names it handles
+# - A +call(event, state)+ method that dispatches to the appropriate
+#   +project_<event_name>+ method based on the event's class name
+# - Individual +project_<event_name>+ methods whose bodies come from
+#   the DSL projection blocks
+#
+# The +call+ method uses the event's class name (underscore-cased) to find
+# the matching projection method. If no projection handles the event, the
+# current state is returned unchanged.
+#
 # Part of Generators::Domain.
+#
+# == Usage
 #
 #   gen = ViewGenerator.new(view, domain_module: "ComplianceDomain")
 #   gen.generate
@@ -12,11 +26,23 @@ module Hecks
     module Domain
     class ViewGenerator
 
+      # Initializes the view generator.
+      #
+      # @param view [Object] the view model object; provides +name+ and +projections+
+      #   (a Hash or array of hashes mapping event names to projection blocks)
+      # @param domain_module [String] the Ruby module name to wrap the generated class in
       def initialize(view, domain_module:)
         @view = view
         @domain_module = domain_module
       end
 
+      # Generates the full Ruby source code for the view class.
+      #
+      # Produces a class under +Domain::Views+ with a +PROJECTIONS+ constant,
+      # a +call+ dispatcher method, and individual +project_<event>+ methods
+      # for each projection.
+      #
+      # @return [String] the generated Ruby source code, newline-terminated
       def generate
         lines = []
         lines << "module #{@domain_module}"

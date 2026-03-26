@@ -1,3 +1,5 @@
+require "set"
+
 # Hecks::Runtime::PolicySetup
 #
 # Mixin that subscribes both aggregate-level and domain-level policies
@@ -9,13 +11,24 @@
 #     include PolicySetup
 #   end
 #
-require "set"
 
 module Hecks
   class Runtime
       module PolicySetup
         private
 
+        # Dispatches a command triggered by a policy, routing it to the correct
+        # aggregate class method or falling back to the command bus.
+        #
+        # Finds the aggregate that owns the target command, filters the event
+        # attributes to only include keys the command accepts, and attempts
+        # to call the method directly on the aggregate class. If no matching
+        # class method exists, dispatches through the command bus instead.
+        #
+        # @param command_name [Symbol, String] the name of the command to dispatch
+        # @param event_attrs [Hash] attributes extracted from the triggering event,
+        #   keyed by parameter name (Symbol keys)
+        # @return [Object] the result of the command execution
         def dispatch_policy_command(command_name, event_attrs)
           target_agg = @domain.aggregates.find do |a|
             a.commands.any? { |c| c.name == command_name.to_s }
@@ -48,6 +61,14 @@ module Hecks
           end
         end
 
+        # Initializes the re-entrancy guard set and subscribes all reactive
+        # policies (both aggregate-level and domain-level) to their trigger
+        # events on the event bus.
+        #
+        # Aggregate-level policies are keyed as "AggName.PolicyName";
+        # domain-level policies are keyed as "domain.PolicyName".
+        #
+        # @return [void]
         def setup_policies
           @policies_in_flight = Set.new
 
@@ -64,6 +85,22 @@ module Hecks
           end
         end
 
+        # Subscribes a single policy to its trigger event on the event bus.
+        #
+        # When the event fires, this handler:
+        # 1. Checks the re-entrancy guard -- skips if this policy is already in-flight
+        # 2. Evaluates the optional condition block -- skips if it returns false
+        # 3. Extracts event attributes by inspecting the event's initialize parameters
+        # 4. Applies the policy's attribute_map to rename keys, or passes attrs through
+        # 5. Merges any static defaults defined on the policy
+        # 6. Dispatches the trigger command (async if configured, sync otherwise)
+        #
+        # Errors during policy execution are caught and logged via +warn+.
+        #
+        # @param policy [Hecks::DomainModel::Policy] the policy definition from the DSL
+        # @param policy_key [String] unique key for re-entrancy tracking
+        #   (e.g., "Pizza.AutoConfirm" or "domain.NotifyAdmin")
+        # @return [void]
         def subscribe_policy(policy, policy_key)
           @event_bus.subscribe(policy.event_name) do |event|
             if @policies_in_flight.include?(policy_key)

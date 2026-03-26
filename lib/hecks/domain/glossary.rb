@@ -1,24 +1,37 @@
+require_relative "glossary/text_helpers"
+require_relative "glossary/statement_builders"
+
 # Hecks::DomainGlossary
 #
 # Walks the domain IR and produces plain-English statements that describe
-# the domain model. Use it to validate your reasoning about the domain.
+# the domain model. Each aggregate, its attributes, value objects, entities,
+# commands, queries, validations, invariants, and policies are rendered as
+# human-readable sentences. Use it to validate your reasoning about the domain
+# with non-technical stakeholders.
 #
-#   Hecks::DomainGlossary.new(domain).generate
-#   Hecks::DomainGlossary.new(domain).print
-#   domain.glossary
+# Also generates a "Relationships" section for cross-aggregate references
+# and a "Domain Policies" section for domain-level reactive policies.
 #
-require_relative "glossary/text_helpers"
-require_relative "glossary/statement_builders"
+#   Hecks::DomainGlossary.new(domain).generate  # => Array<String> of lines
+#   Hecks::DomainGlossary.new(domain).print      # prints to stdout
+#   domain.glossary                               # convenience method
+#
 
 module Hecks
   class DomainGlossary
     include TextHelpers
     include StatementBuilders
 
+    # @param domain [Hecks::DomainModel::Domain] the domain IR to describe
     def initialize(domain)
       @domain = domain
     end
 
+    # Generate the full glossary as an array of markdown-formatted lines.
+    # Includes a title, per-aggregate sections, domain-level policies,
+    # and a relationships section.
+    #
+    # @return [Array<String>] lines of markdown text
     def generate
       lines = []
       lines << "# #{@domain.name} Domain Glossary"
@@ -42,15 +55,26 @@ module Hecks
       lines
     end
 
+    # Print the full glossary to stdout.
+    #
+    # @return [nil]
     def print
       puts generate.join("\n")
       nil
     end
 
+    # Generate glossary lines for a single aggregate only.
+    #
+    # @param agg [Hecks::DomainModel::Aggregate] the aggregate to describe
+    # @return [Array<String>] lines of markdown text for this aggregate
     def generate_for(agg)
       describe_aggregate(agg)
     end
 
+    # Print the glossary for a single aggregate to stdout.
+    #
+    # @param agg [Hecks::DomainModel::Aggregate] the aggregate to describe
+    # @return [nil]
     def print_for(agg)
       puts generate_for(agg).join("\n")
       nil
@@ -58,6 +82,12 @@ module Hecks
 
     private
 
+    # Build glossary lines for one aggregate, including its attributes,
+    # value objects, entities, commands, queries, validations, invariants,
+    # and aggregate-level policies.
+    #
+    # @param agg [Hecks::DomainModel::Aggregate] the aggregate to describe
+    # @return [Array<String>] lines of markdown text
     def describe_aggregate(agg)
       lines = []
       lines << "## #{agg.name}"

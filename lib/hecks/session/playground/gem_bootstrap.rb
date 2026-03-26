@@ -1,3 +1,5 @@
+require "tmpdir"
+
 # Hecks::Session::Playground::GemBootstrap
 #
 # Compiles a domain model into a temporary gem and loads it into the runtime.
@@ -5,13 +7,17 @@
 # and loading all generated Ruby files into the current process.
 #
 # Mixed into Playground to separate gem compilation from command execution.
+# The compile! method is called during Playground initialization.
+#
+# Generated files in commands/ and queries/ directories are skipped during
+# eager loading because they rely on const_missing to auto-include their
+# respective mixins when first accessed.
 #
 #   class Playground
 #     include GemBootstrap
 #     # provides: compile!
 #   end
 #
-require "tmpdir"
 
 module Hecks
   class Session
@@ -19,6 +25,14 @@ module Hecks
       module GemBootstrap
         private
 
+        # Compile the domain into a temporary gem and load it into the process.
+        #
+        # Creates a temp directory, generates a full gem using DomainGemGenerator,
+        # adds the gem's lib/ to $LOAD_PATH, loads the entry point, then eagerly
+        # loads all non-command/query files. Commands and queries are left for
+        # lazy loading via const_missing.
+        #
+        # @return [void]
         def compile!
           @tmpdir = Dir.mktmpdir("hecks_playground")
           generator = Generators::Infrastructure::DomainGemGenerator.new(@domain, version: "0.0.0", output_dir: @tmpdir)

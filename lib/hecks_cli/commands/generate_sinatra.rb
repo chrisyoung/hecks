@@ -15,6 +15,12 @@ module Hecks
       option :version, type: :string, desc: "Domain version"
       option :dir, type: :string, desc: "Output directory (default: {domain}_app)"
       option :force, type: :boolean, desc: "Overwrite without prompting"
+      # Scaffolds a complete Sinatra application from the domain definition.
+      #
+      # Resolves the domain, determines the output directory, and generates
+      # all application files. Uses ConflictHandler for safe file writing.
+      #
+      # @return [void]
       def generate_sinatra
         domain = resolve_domain_option
         return unless domain
@@ -25,6 +31,14 @@ module Hecks
 
       private
 
+      # Generates the full Sinatra app directory structure.
+      #
+      # Creates the output directory and config/ subdirectory, then writes
+      # Gemfile, config.ru, app.rb, and config/hecks.rb. Prints next steps.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain to scaffold from
+      # @param dir [String] the output directory path
+      # @return [void]
       def generate_sinatra_app(domain, dir)
         FileUtils.mkdir_p(dir)
         FileUtils.mkdir_p(File.join(dir, "config"))
@@ -46,6 +60,10 @@ module Hecks
         say "  ruby app.rb"
       end
 
+      # Generates the Gemfile content for the Sinatra app.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain (for gem reference)
+      # @return [String] the Gemfile content
       def sinatra_gemfile(domain)
         <<~RUBY
           source "https://rubygems.org"
@@ -57,6 +75,9 @@ module Hecks
         RUBY
       end
 
+      # Generates the config.ru content for Rack.
+      #
+      # @return [String] the config.ru content
       def sinatra_config_ru
         <<~RUBY
           require_relative "app"
@@ -64,6 +85,17 @@ module Hecks
         RUBY
       end
 
+      # Generates the main app.rb with CRUD and query routes for all aggregates.
+      #
+      # For each aggregate, generates:
+      # - GET routes for each custom query
+      # - GET /resources for listing all
+      # - GET /resources/:id for finding by ID
+      # - POST /resources for creation (if a Create* command exists)
+      # - DELETE /resources/:id for deletion
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain
+      # @return [String] the app.rb source code
       def sinatra_app_rb(domain)
         mod = domain.module_name + "Domain"
         routes = []
@@ -131,6 +163,13 @@ module Hecks
         RUBY
       end
 
+      # Generates the config/hecks.rb configuration file for the Sinatra app.
+      #
+      # Loads the domain gem, evaluates its hecks_domain.rb, and boots Hecks
+      # with memory adapters. Includes commented-out SQL configuration.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain
+      # @return [String] the configuration file content
       def sinatra_hecks_config(domain)
         <<~RUBY
           require "hecks"

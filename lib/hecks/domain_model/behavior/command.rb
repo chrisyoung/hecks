@@ -15,10 +15,35 @@ module Hecks
   module DomainModel
     module Behavior
     class Command
+      # @return [String] PascalCase command name, e.g. "CreatePizza"
+      # @return [Array<Hecks::DomainModel::Structure::Attribute>] input attributes for the command
+      # @return [String, nil] name of a custom handler class, or nil for default handling
+      # @return [String, nil] name of the guard policy to run before execution
+      # @return [Array<String>] names of read models this command depends on
+      # @return [Array<String>] names of external systems this command interacts with
+      # @return [Array<String>] actor roles allowed to invoke this command
+      # @return [Proc, nil] custom call body block for the command handler
+      # @return [Hash{Symbol => Object}] attribute defaults to set on the aggregate after execution
+      # @return [Array<Condition>] preconditions checked before command execution
+      # @return [Array<Condition>] postconditions checked after command execution
       attr_reader :name, :attributes, :handler, :guard_name, :read_models,
                   :external_systems, :actors, :call_body, :sets,
                   :preconditions, :postconditions
 
+      # Creates a new Command IR node.
+      #
+      # @param name [String] PascalCase command name (e.g. "CreatePizza")
+      # @param attributes [Array<Hecks::DomainModel::Structure::Attribute>] input attributes
+      # @param handler [String, nil] custom handler class name
+      # @param guard_name [String, nil] guard policy name to validate before execution
+      # @param read_models [Array<String>] read model names this command references
+      # @param external_systems [Array<String>] external system names this command calls
+      # @param actors [Array<String>] role names allowed to invoke this command
+      # @param call_body [Proc, nil] custom handler body block
+      # @param sets [Hash{Symbol => Object}] attribute values to assign on the aggregate post-execution
+      # @param preconditions [Array<Condition>] conditions that must hold before execution
+      # @param postconditions [Array<Condition>] conditions that must hold after execution
+      # @return [Command]
       def initialize(name:, attributes: [], handler: nil, guard_name: nil,
                      read_models: [], external_systems: [], actors: [],
                      call_body: nil, sets: {}, preconditions: [], postconditions: [])
@@ -35,6 +60,9 @@ module Hecks
         @postconditions = postconditions
       end
 
+      # Lookup table of irregular English verb past tenses, keyed by PascalCase verb.
+      # Used by {#inferred_event_name} to handle verbs that don't follow standard
+      # "-ed" suffixing rules (e.g. "Send" -> "Sent", "Buy" -> "Bought").
       IRREGULAR_VERBS = {
         "Send" => "Sent", "Build" => "Built", "Buy" => "Bought",
         "Run" => "Ran", "Set" => "Set", "Put" => "Put",
@@ -57,7 +85,10 @@ module Hecks
         "Enter" => "Entered", "Order" => "Ordered", "Deliver" => "Delivered",
       }.freeze
 
-      # Multi-syllable verbs whose final consonant doubles in past tense.
+      # Set of multi-syllable verbs whose final consonant doubles in past tense.
+      # For example, "Submit" -> "Submitted", "Refer" -> "Referred".
+      # Used by {#inferred_event_name} as a special case before applying
+      # the default "-ed" suffix rule.
       DOUBLE_FINAL = %w[
         Submit Admit Permit Commit Emit Omit Remit Transmit
         Refer Confer Defer Infer Prefer Transfer
@@ -67,6 +98,24 @@ module Hecks
         Begin Regret Abet Embed Equip
       ].to_set.freeze
 
+      # Converts the command verb to past tense to derive the corresponding
+      # domain event name. Splits the PascalCase name on uppercase boundaries,
+      # converts the leading verb to past tense, and rejoins the remaining
+      # noun segments.
+      #
+      # The conversion handles three categories:
+      # 1. Irregular verbs via the {IRREGULAR_VERBS} lookup table
+      # 2. Verbs ending in consonant+y (e.g. "Deny" -> "Denied")
+      # 3. Verbs ending in "e" (e.g. "Create" -> "Created")
+      # 4. Verbs requiring doubled final consonant (e.g. "Submit" -> "Submitted")
+      # 5. Default: append "ed" (e.g. "Add" -> "Added")
+      #
+      # @return [String] the inferred past-tense event name (e.g. "CreatedPizza")
+      #
+      # @example
+      #   Command.new(name: "CreatePizza").inferred_event_name  # => "CreatedPizza"
+      #   Command.new(name: "SubmitOrder").inferred_event_name  # => "SubmittedOrder"
+      #   Command.new(name: "SendInvoice").inferred_event_name  # => "SentInvoice"
       def inferred_event_name
         verb, *rest = name.split(/(?=[A-Z])/)
         past_tense = if IRREGULAR_VERBS.key?(verb)

@@ -1,20 +1,28 @@
-# Hecks::MCP::DomainServer
-#
-# Generates an MCP server from a domain. Every command becomes a tool,
-# every query becomes a tool, every aggregate gets find/all/count.
-# Boots with memory adapters — zero setup, no database.
-#
-# Tool registration is split into three mixins:
-#   CommandTools, QueryTools, RepositoryTools
-#
-#   hecks domain mcp --domain NAME
-#
 require "mcp"
 require "tmpdir"
 
 require_relative "domain_server/command_tools"
 require_relative "domain_server/query_tools"
 require_relative "domain_server/repository_tools"
+
+# Hecks::MCP::DomainServer
+#
+# Generates an MCP server from a compiled Hecks domain. Every command becomes
+# a callable tool, every query becomes a tool, and every aggregate gets
+# Find/All/Count repository tools. Boots with memory adapters for zero-setup,
+# no-database operation.
+#
+# Tool registration is split into three mixins:
+#   - +CommandTools+    -- one tool per command per aggregate
+#   - +QueryTools+      -- one tool per query per aggregate
+#   - +RepositoryTools+ -- Find/All/Count per aggregate
+#
+# This class handles the full lifecycle: building the domain gem into a temp
+# directory, loading it, booting a runtime with memory adapters, and registering
+# all tools on the MCP server.
+#
+#   hecks domain mcp --domain NAME
+#
 
 module Hecks
   module MCP
@@ -23,6 +31,10 @@ module Hecks
       include QueryTools
       include RepositoryTools
 
+      # Builds an MCP server from the given domain. Compiles the domain gem,
+      # loads it, boots a runtime, and registers all command/query/repository tools.
+      #
+      # @param domain [Hecks::DomainModel::Structure::Domain] the domain model to serve
       def initialize(domain)
         @domain = domain
         @server = ::MCP::Server.new(
@@ -32,13 +44,20 @@ module Hecks
         boot_and_register
       end
 
-      def run
+      # Starts the MCP server using stdio transport. Blocks until the transport
+      # is closed by the client.
+      #
+      # @return [void]
         require "mcp/server/transports/stdio_transport"
         ::MCP::Server::Transports::StdioTransport.new(@server).open
       end
 
       private
 
+      # Orchestrates the full boot sequence: build gem, load it, boot runtime,
+      # and register all tool groups.
+      #
+      # @return [void]
       def boot_and_register
         build_and_load
         boot_application
@@ -47,6 +66,13 @@ module Hecks
         register_repository_tools
       end
 
+      # Builds the domain gem into a temp directory (if not already loaded) and
+      # requires it. Sets +@mod+ to the generated domain module constant.
+      #
+      # If the domain module is already defined in the Ruby runtime (e.g., from
+      # a prior load), it reuses it without rebuilding.
+      #
+      # @return [void]
       def build_and_load
         mod_name = @domain.module_name + "Domain"
         if Object.const_defined?(mod_name)
@@ -62,6 +88,10 @@ module Hecks
         end
       end
 
+      # Boots a Hecks::Runtime for the domain and binds repository methods
+      # (find, all, count, etc.) onto each aggregate class.
+      #
+      # @return [void]
       def boot_application
         @app = Runtime.new(@domain)
         @domain.aggregates.each do |agg|
@@ -70,6 +100,15 @@ module Hecks
         end
       end
 
+      # Derives the Ruby method name for a command by stripping the aggregate
+      # name suffix from the command name. For example, +CreatePizza+ on the
+      # +Pizza+ aggregate yields +:create+.
+      #
+      # Falls back to the full underscored command name if no suffix matches.
+      #
+      # @param cmd_name [String] the PascalCase command name (e.g. "CreatePizza")
+      # @param agg_name [String] the PascalCase aggregate name (e.g. "Pizza")
+      # @return [Symbol] the derived method name (e.g. +:create+)
       def derive_method_name(cmd_name, agg_name)
         full = Hecks::Utils.underscore(cmd_name)
         snake_agg = Hecks::Utils.underscore(agg_name)
@@ -82,6 +121,10 @@ module Hecks
         full.to_sym
       end
 
+      # Converts a domain attribute's Ruby type to a JSON Schema type string.
+      #
+      # @param attr [Hecks::DomainModel::Structure::Attribute] the attribute to inspect
+      # @return [String] the JSON Schema type: "integer", "number", or "string"
       def json_type(attr)
         case attr.ruby_type
         when "Integer" then "integer"
@@ -90,6 +133,11 @@ module Hecks
         end
       end
 
+      # Serializes a domain aggregate instance into a human-readable string
+      # showing its class name and attribute values.
+      #
+      # @param obj [Object] a domain aggregate instance
+      # @return [String] e.g. "Pizza(name: \"Margherita\", size: \"large\")"
       def serialize_aggregate(obj)
         attrs = Hecks::Utils.object_attr_names(obj).map do |name|
           next unless obj.respond_to?(name)

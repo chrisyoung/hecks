@@ -1,8 +1,14 @@
 # HecksTenancy
 #
-# Multi-tenancy connection for Hecks domains. Wraps repositories with
-# tenant-scoped proxies so each tenant sees isolated data. Declare
-# the strategy in the DSL with `tenancy :column`.
+# Multi-tenancy extension for Hecks domains. Wraps repositories with
+# tenant-scoped proxies so each tenant sees isolated data. The tenant
+# identity is set globally via +Hecks.tenant = "acme"+ and all subsequent
+# repository operations are scoped to that tenant.
+#
+# Currently supports the +:column+ strategy (declared in the DSL with
+# +tenancy :column+), which maintains separate in-memory repository
+# instances keyed by tenant ID. Only activates when the domain has
+# tenancy configured.
 #
 # Future gem: hecks_tenancy
 #
@@ -13,6 +19,8 @@
 #   # Console
 #   Hecks.tenant = "acme"
 #   Cat.create(name: "Whiskers")   # stored under acme
+#   Hecks.tenant = "beta"
+#   Cat.all                        # => [] (beta has no cats)
 #
 require_relative "tenancy_support/tenant_scoped_repository"
 
@@ -21,6 +29,17 @@ Hecks.describe_extension(:tenancy,
   config: { strategy: { default: :column, desc: "Tenancy strategy" } },
   wires_to: :repository)
 
+# Register the tenancy extension. On boot:
+# 1. Checks if the domain has tenancy configured (skips if not)
+# 2. For each aggregate, wraps the existing repository with a
+#    TenantScopedRepository proxy
+# 3. Swaps the original adapter with the tenant-scoped proxy in the runtime
+#
+# @param domain_mod [Module] the domain module constant (e.g. CatsDomain)
+# @param domain [Hecks::Domain] the parsed domain definition; must respond
+#   to +tenancy+ returning a truthy value for the extension to activate
+# @param runtime [Hecks::Runtime] the runtime instance whose adapters will be
+#   wrapped with tenant-scoped proxies
 Hecks.register_extension(:tenancy) do |domain_mod, domain, runtime|
   next unless domain.tenancy
 

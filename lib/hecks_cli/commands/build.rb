@@ -11,6 +11,13 @@ module Hecks
       desc "build", "Generate the domain gem"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
+      # Validates the domain definition, assigns a CalVer version, and generates
+      # the domain gem with all aggregates, commands, and documentation.
+      #
+      # Exits with status 1 if no domain file is found. Prints validation errors
+      # and returns early if the domain is invalid.
+      #
+      # @return [void]
       def build
         domain = resolve_domain_option
         unless domain

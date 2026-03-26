@@ -1,14 +1,25 @@
 # Hecks::ValidationRules::References::ValidReferences
 #
-# Rejects references to non-existent aggregates and references that
-# target value objects instead of aggregate roots. Part of the
-# ValidationRules::References group -- run by Hecks.validate.
+# Validates that all +reference_to+ attributes target existing aggregate roots.
+# Catches three kinds of mistakes:
+# 1. Referencing a value object instead of an aggregate root
+# 2. Referencing an entity instead of an aggregate root
+# 3. Referencing a name that does not exist in the domain at all
+#
+# Each error includes an actionable hint (promote to aggregate, reference
+# the owning aggregate, or lists available aggregates).
+#
+# Part of the ValidationRules::References group -- run by +Hecks.validate+.
 #
 module Hecks
   module ValidationRules
     module References
-    # References must target aggregate roots
+    # References must target aggregate roots.
     class ValidReferences < BaseRule
+      # Checks each aggregate's reference attributes to ensure they point at
+      # existing aggregate roots (not value objects, entities, or unknown names).
+      #
+      # @return [Array<String>] error messages for invalid references
       def errors
         result = []
         all_aggregate_names = @domain.aggregates.map(&:name)

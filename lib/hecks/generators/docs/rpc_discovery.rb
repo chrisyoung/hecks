@@ -7,10 +7,27 @@
 module Hecks
   module HTTP
     class RpcDiscovery
+      # Creates a new RpcDiscovery generator for a domain.
+      #
+      # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR
       def initialize(domain)
         @domain = domain
       end
 
+      # Generates a JSON-RPC discovery document listing all available methods.
+      #
+      # The returned hash includes:
+      # - +name+ -- the domain name with "RPC" suffix
+      # - +description+ -- generator attribution
+      # - +methods+ -- an array of method descriptors, each with +name+,
+      #   +description+, and +params+
+      #
+      # Methods are generated for:
+      # - Every command on every aggregate (params from command attributes)
+      # - Every query on every aggregate (params from query block parameters)
+      # - Built-in CRUD operations per aggregate: +find+, +all+, +count+, +delete+
+      #
+      # @return [Hash] a discovery document as a Ruby hash
       def generate
         {
           name: "#{@domain.name} RPC",
@@ -21,6 +38,11 @@ module Hecks
 
       private
 
+      # Builds the array of method descriptors for all aggregates.
+      # Each descriptor has +name+ (String), +description+ (String), and
+      # +params+ (Array of Hashes with +name+ and +type+ keys).
+      #
+      # @return [Array<Hash>] method descriptor objects
       def build_methods
         methods = []
         @domain.aggregates.each do |agg|

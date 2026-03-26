@@ -5,6 +5,8 @@
 # in the compiled gem module.
 #
 # Mixed into Playground to separate class resolution from execution logic.
+# All methods are private since they are internal helpers used by Playground's
+# execute method and initialization.
 #
 #   class Playground
 #     include RuntimeResolver
@@ -18,6 +20,15 @@ module Hecks
       module RuntimeResolver
         private
 
+        # Resolve a command class constant from the compiled domain module.
+        #
+        # Walks the domain IR to find which aggregate owns the command, then
+        # looks up the class under that aggregate's Commands namespace. This
+        # avoids polluting other aggregates' namespaces via const_missing.
+        #
+        # @param command_name [String] the command class name (e.g. "CreatePizza")
+        # @return [Class] the resolved command class
+        # @raise [RuntimeError] if no aggregate owns a command with that name
         def resolve_command(command_name)
           mod = Object.const_get(@mod_name)
 
@@ -33,6 +44,15 @@ module Hecks
           raise "Unknown command: #{command_name}. Available: #{available_commands.join(', ')}"
         end
 
+        # Resolve the event class that corresponds to a given command.
+        #
+        # Commands and events are paired by index within an aggregate (the
+        # first command maps to the first event, etc.). Looks up the event
+        # class in the aggregate's Events namespace.
+        #
+        # @param command_name [String] the command class name (e.g. "CreatePizza")
+        # @return [Class] the resolved event class (e.g. PizzasDomain::Pizza::Events::CreatedPizza)
+        # @raise [RuntimeError] if no event is mapped for the given command
         def resolve_event_for(command_name)
           mod = Object.const_get(@mod_name)
 
@@ -49,6 +69,13 @@ module Hecks
           raise "No event mapped for command: #{command_name}"
         end
 
+        # Find the domain IR command definition by name.
+        #
+        # Searches all aggregates for a command with the given name and returns
+        # the DomainModel::Structure::Command struct (not the generated class).
+        #
+        # @param command_name [String] the command name to find
+        # @return [DomainModel::Structure::Command, nil] the command definition, or nil if not found
         def resolve_domain_command(command_name)
           @domain.aggregates.each do |agg|
             agg.commands.each do |cmd|
@@ -58,14 +85,27 @@ module Hecks
           nil
         end
 
+        # List all command names across all aggregates.
+        #
+        # @return [Array<String>] command names from the domain IR
         def available_commands
           @domain.aggregates.flat_map { |a| a.commands.map(&:name) }
         end
 
+        # Collect all policy definitions from all aggregates.
+        #
+        # @return [Array<DomainModel::Structure::Policy>] all policies in the domain
         def collect_policies
           @domain.aggregates.flat_map(&:policies)
         end
 
+        # Find policies that should fire in response to a given event.
+        #
+        # Matches policies whose +event_name+ equals the short class name
+        # of the provided event object.
+        #
+        # @param event [Object] an event instance with a class name like "PizzasDomain::Pizza::Events::CreatedPizza"
+        # @return [Array<DomainModel::Structure::Policy>] policies triggered by this event
         def check_policies(event)
           event_name = event.class.name.split("::").last
           @policies.select { |p| p.event_name == event_name }

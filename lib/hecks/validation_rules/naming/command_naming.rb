@@ -1,9 +1,14 @@
 # Hecks::ValidationRules::Naming::CommandNaming
 #
-# Rejects command names that do not start with a verb. Uses WordNet
-# for detection. Custom verbs can be added in a verbs.txt file at
-# the root of the domain folder (one word per line). Part of the
-# ValidationRules::Naming group -- run by Hecks.validate.
+# Validates that command names start with a verb (e.g. +CreatePizza+,
+# +UpdateOrder+). Uses WordNet for verb detection when the +rwordnet+ gem
+# is available; falls back to custom verbs only when it is not.
+#
+# Custom verbs can be registered in two ways:
+# 1. Via +domain.custom_verbs+ (an array of strings)
+# 2. Via a +verbs.txt+ file at the root of the domain folder (one word per line)
+#
+# Part of the ValidationRules::Naming group -- run by +Hecks.validate+.
 #
 begin
   require "rwordnet"
@@ -15,6 +20,10 @@ module Hecks
   module ValidationRules
     module Naming
     class CommandNaming < BaseRule
+      # Checks all commands across all aggregates and returns errors for any
+      # command whose name does not start with a recognized verb.
+      #
+      # @return [Array<String>] error messages for commands with non-verb prefixes
       def errors
         custom = load_custom_verbs
         result = []
@@ -31,17 +40,33 @@ module Hecks
 
       private
 
+      # Suggests an alternative verb-prefixed command name when the original
+      # does not start with a verb.
+      #
+      # @param first_word [String] the non-verb first word of the command name
+      # @param agg_name [String] the aggregate name for context
+      # @return [String] a suggested command name (e.g. "CreatePizzaFoo")
       def suggest_verb(first_word, agg_name)
         suffix = first_word == agg_name ? "" : first_word
         "Create#{agg_name}#{suffix}"
       end
 
+      # Checks whether a word is a recognized verb, either from the custom
+      # verbs list or via WordNet lookup.
+      #
+      # @param word [String] the word to check (case-insensitive)
+      # @param custom [Array<String>] custom verbs registered by the domain
+      # @return [Boolean] true if the word is a recognized verb
       def verb?(word, custom)
         return true if custom.any? { |v| v.downcase == word.downcase }
         return false unless defined?(WordNet)
         WordNet::Lemma.find_all(word.downcase).any? { |l| l.pos == "v" }
       end
 
+      # Loads custom verbs from +domain.custom_verbs+ and from a +verbs.txt+
+      # file located alongside the domain source file.
+      #
+      # @return [Array<String>] combined list of custom verbs
       def load_custom_verbs
         verbs = @domain.respond_to?(:custom_verbs) ? Array(@domain.custom_verbs) : []
         if @domain.respond_to?(:source_path) && @domain.source_path

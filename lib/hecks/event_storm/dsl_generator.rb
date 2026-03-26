@@ -14,11 +14,24 @@
 module Hecks
   module EventStorm
     class DslGenerator
+      # Initializes a DslGenerator from a parse result.
+      #
+      # @param parse_result [Parser::ParseResult] the intermediate representation
+      #   produced by Parser or YamlParser
+      # @param name [String, nil] optional domain name override; falls back to
+      #   parse_result.domain_name, then "MyDomain"
       def initialize(parse_result, name: nil)
         @parse_result = parse_result
         @name = name || parse_result.domain_name || "MyDomain"
       end
 
+      # Generates the Hecks DSL source code string.
+      #
+      # Produces a complete Hecks.domain block with aggregate, command, and
+      # policy declarations. Includes TODO comments for attributes that need
+      # manual addition. Appends any parser warnings as Ruby comments.
+      #
+      # @return [String] the generated DSL source code, terminated with a newline
       def generate
         lines = ["# Auto-generated from event storm"]
         lines << "Hecks.domain \"#{@name}\" do"
@@ -68,6 +81,14 @@ module Hecks
 
       private
 
+      # Groups parsed elements by aggregate for DSL generation.
+      #
+      # Commands are grouped under their declared aggregate. Unassigned commands
+      # (no aggregate metadata) are placed on the first aggregate or "Default".
+      # Policies are assigned to the aggregate owning their trigger command.
+      #
+      # @param elements [Array<Parser::ParsedElement>] all parsed elements
+      # @return [Hash<String, Hash>] mapping aggregate name to { commands: [...], policies: [...] }
       def group_by_aggregate(elements)
         aggregates = {}
         unassigned = []
@@ -100,6 +121,11 @@ module Hecks
         aggregates
       end
 
+      # Finds the aggregate that owns a given trigger command.
+      #
+      # @param elements [Array<Parser::ParsedElement>] all parsed elements
+      # @param trigger_name [String] the command name to look up
+      # @return [String, nil] the aggregate name, or nil if not found
       def find_aggregate_for_trigger(elements, trigger_name)
         elements.each do |el|
           next unless el.type == :command && el.name == trigger_name
@@ -108,6 +134,10 @@ module Hecks
         nil
       end
 
+      # Appends parser warnings as Ruby comments to the output lines.
+      #
+      # @param lines [Array<String>] the output lines array (mutated in place)
+      # @return [void]
       def append_warnings(lines)
         @parse_result.warnings.each do |w|
           lines << "  # WARNING: #{w}"

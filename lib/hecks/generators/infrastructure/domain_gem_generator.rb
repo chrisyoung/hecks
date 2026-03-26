@@ -1,3 +1,7 @@
+require "fileutils"
+require_relative "domain_gem_generator/file_writer"
+require_relative "domain_gem_generator/spec_writer"
+
 # Hecks::Generators::Infrastructure::DomainGemGenerator
 #
 # Generates a complete domain gem on disk — aggregates, value objects, commands,
@@ -9,9 +13,6 @@
 #   gen = DomainGemGenerator.new(domain, output_dir: "./generated")
 #   gen.generate  # => path to generated gem root
 #
-require "fileutils"
-require_relative "domain_gem_generator/file_writer"
-require_relative "domain_gem_generator/spec_writer"
 
 module Hecks
   module Generators
@@ -20,12 +21,35 @@ module Hecks
       include FileWriter
       include SpecWriter
 
+      # Creates a new DomainGemGenerator.
+      #
+      # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR
+      # @param version [String] SemVer string written into the generated gemspec
+      #   (default: +"0.1.0"+)
+      # @param output_dir [String] filesystem path where the gem directory will be
+      #   created (default: +"."+, current working directory)
       def initialize(domain, version: "0.1.0", output_dir: ".")
         @domain = domain
         @version = version
         @output_dir = output_dir
       end
 
+      # Generates the complete domain gem on disk.
+      #
+      # Creates the gem root directory under +output_dir+ and writes:
+      # - A +.gemspec+ file
+      # - An autoload entry point (+lib/<gem_name>.rb+)
+      # - Aggregate classes with injected autoloads for value objects/entities
+      # - Value object, entity, command, event, policy, subscriber, and
+      #   specification files for every aggregate
+      # - Query files under each aggregate's +queries/+ subdirectory
+      # - Repository port modules under +ports/+
+      # - In-memory adapter classes under +adapters/+
+      # - Workflow, view, and service files
+      # - RSpec specs for all aggregates, value objects, entities, commands, events
+      # - A +hecks_domain.rb+ file containing the serialized DSL
+      #
+      # @return [String] the absolute path to the generated gem root directory
       def generate
         gem_name = @domain.gem_name
         mod = @domain.module_name + "Domain"

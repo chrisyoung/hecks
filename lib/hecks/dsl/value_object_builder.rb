@@ -14,19 +14,43 @@
 #
 module Hecks
   module DSL
+    # Builds a DomainModel::Structure::ValueObject from DSL declarations.
+    #
+    # ValueObjectBuilder collects attributes and invariants for an immutable,
+    # equality-by-value type embedded within an aggregate. Value objects have
+    # no identity of their own -- two value objects with the same attribute
+    # values are considered equal. They are always immutable; changes produce
+    # new instances.
+    #
+    # Includes AttributeCollector for the +attribute+, +list_of+, and
+    # +reference_to+ DSL methods.
     class ValueObjectBuilder
       include AttributeCollector
 
+      # Initialize a new value object builder with the given type name.
+      #
+      # @param name [String] the value object type name (e.g. "Address", "Money")
       def initialize(name)
         @name = name
         @attributes = []
         @invariants = []
       end
 
+      # Define an invariant constraint on this value object.
+      #
+      # Invariants are boolean conditions that must always hold true for the
+      # value object to be in a valid state. They are checked at construction.
+      #
+      # @param message [String] human-readable description of the invariant
+      # @yield block that returns true when the invariant holds, false when violated
+      # @return [void]
       def invariant(message, &block)
         @invariants << DomainModel::Structure::Invariant.new(message: message, block: block)
       end
 
+      # Build and return the DomainModel::Structure::ValueObject IR object.
+      #
+      # @return [DomainModel::Structure::ValueObject] the fully built value object IR object
       def build
         DomainModel::Structure::ValueObject.new(
           name: @name,

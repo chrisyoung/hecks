@@ -1,3 +1,5 @@
+require_relative "collection_item"
+
 # Hecks::Persistence::CollectionProxy
 #
 # Wraps a list attribute on an aggregate, providing create/delete/count
@@ -8,18 +10,38 @@
 # persistence-aware mutations. Items are wrapped in CollectionItem so
 # they support .delete directly.
 #
+# == Persistence model
+#
+# When a mutation occurs (create, delete, clear), the proxy:
+# 1. Builds a new items array with the change applied
+# 2. Reconstructs the owner aggregate with the updated collection
+# 3. Saves the new owner to the repository
+# 4. Updates the local items reference to reflect the change
+#
+# This follows the immutable aggregate pattern -- aggregates are rebuilt
+# rather than mutated in place.
+#
+# == Usage
+#
 #   pizza = Pizza.create(name: "Margherita")
 #   pizza.toppings.create(name: "Mozzarella", amount: 2)
-#   pizza.toppings.count          # => 2
+#   pizza.toppings.count          # => 1
 #   pizza.toppings.first.delete   # removes and persists
+#   pizza.toppings.empty?         # => true
 #
-require_relative "collection_item"
 
 module Hecks
   module Persistence
     class CollectionProxy
         include Enumerable
 
+        # Wraps a list attribute with persistence-aware mutation methods.
+        #
+        # @param items [Array] the current items in the collection (raw value objects)
+        # @param owner [Object] the aggregate instance that owns this collection
+        # @param attr_name [Symbol] the name of the list attribute on the owner (e.g., :toppings)
+        # @param value_object_class [Class] the class used to instantiate new items (e.g., Topping)
+        # @param repo [Object] the repository adapter for persisting the owner after mutations
         def initialize(items:, owner:, attr_name:, value_object_class:, repo:)
           @items = items || []
           @owner = owner
@@ -28,6 +50,14 @@ module Hecks
           @repo = repo
         end
 
+        # Creates a new item, appends it to the collection, and persists the owner.
+        #
+        # Instantiates a new value object from the given attributes, appends it to
+        # the collection, rebuilds the owner aggregate, and saves it to the repository.
+        #
+        # @param attrs [Hash] keyword arguments passed to the value object constructor
+        # @return [Hecks::Persistence::CollectionItem] the newly created item wrapped
+        #   in a CollectionItem for delete support
         def create(**attrs)
           item = @value_object_class.new(**attrs)
           new_items = @items + [item]
@@ -35,6 +65,13 @@ module Hecks
           wrap(item)
         end
 
+        # Removes the first matching item from the collection and persists the owner.
+        #
+        # If the item is a CollectionItem, unwraps it first. Only removes the first
+        # occurrence that matches by equality, leaving duplicates intact.
+        #
+        # @param item [Object, Hecks::Persistence::CollectionItem] the item to remove
+        # @return [Object] the item that was passed in (unchanged)
         def delete(item)
           raw = item.is_a?(CollectionItem) ? item.__raw__ : item
           found = false
@@ -43,62 +80,115 @@ module Hecks
           item
         end
 
+        # Removes all items from the collection and persists the owner.
+        #
+        # @return [Hecks::Persistence::CollectionProxy] self, now empty
         def clear
           rebuild_owner([])
           self
         end
 
+        # Yields each item wrapped in a CollectionItem.
+        # Required by Enumerable to support map, select, reject, etc.
+        #
+        # @yield [Hecks::Persistence::CollectionItem] each item in the collection
+        # @return [void]
         def each(&block)
           @items.each { |item| block.call(wrap(item)) }
         end
 
+        # Returns the number of items in the collection.
+        #
+        # @return [Integer] the count of items
         def size
           @items.size
         end
         alias count size
         alias length size
 
+        # Returns true if the collection has no items.
+        #
+        # @return [Boolean] true when the collection is empty
         def empty?
           @items.empty?
         end
 
+        # Returns true if any item matches the optional block condition.
+        # Without a block, returns true if any items exist.
+        #
+        # @yield [Object] optional block to test each raw item
+        # @return [Boolean] true if any item matches
         def any?(&block)
           block ? @items.any?(&block) : @items.any?
         end
 
+        # Returns the first item wrapped in a CollectionItem, or nil if empty.
+        #
+        # @return [Hecks::Persistence::CollectionItem, nil] the first item or nil
         def first
           item = @items.first
           item ? wrap(item) : nil
         end
 
+        # Returns the last item wrapped in a CollectionItem, or nil if empty.
+        #
+        # @return [Hecks::Persistence::CollectionItem, nil] the last item or nil
         def last
           item = @items.last
           item ? wrap(item) : nil
         end
 
+        # Returns the item at the given index wrapped in a CollectionItem, or nil.
+        #
+        # @param index [Integer] the zero-based index into the collection
+        # @return [Hecks::Persistence::CollectionItem, nil] the item at the index or nil
         def [](index)
           item = @items[index]
           item ? wrap(item) : nil
         end
 
+        # Returns all items as an Array of CollectionItem wrappers.
+        #
+        # @return [Array<Hecks::Persistence::CollectionItem>] all items wrapped
         def to_a
           @items.map { |item| wrap(item) }
         end
 
+        # Concatenates the raw items with another array.
+        # Does not persist -- returns a plain Array.
+        #
+        # @param other [Array] the array to concatenate with
+        # @return [Array] a new array combining items from both
         def +(other)
           @items + Array(other)
         end
 
+        # Returns a string representation of the underlying items array.
+        #
+        # @return [String] the inspect output of the raw items
         def inspect
           @items.inspect
         end
 
         private
 
+        # Wraps a raw value object in a CollectionItem for delete support.
+        #
+        # @param item [Object] the raw value object to wrap
+        # @return [Hecks::Persistence::CollectionItem] the wrapped item
         def wrap(item)
           CollectionItem.new(item, self)
         end
 
+        # Rebuilds the owner aggregate with an updated collection and persists it.
+        #
+        # Reconstructs the owner by reading all current attribute values and
+        # substituting the collection attribute with the new items. Creates a new
+        # aggregate instance (immutable pattern), preserves timestamps, saves to
+        # the repository, and updates the local state.
+        #
+        # @param new_items [Array] the new set of items for the collection attribute
+        # @return [Object] the newly constructed owner aggregate instance
         def rebuild_owner(new_items)
           attrs = { id: @owner.id }
           if @owner.class.respond_to?(:hecks_attributes)

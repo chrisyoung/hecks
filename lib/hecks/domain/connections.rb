@@ -5,6 +5,8 @@
 # events (listens_to / sends_to). Everything outside the boundary is a connection.
 #
 # Part of the top-level Hecks API. Extended onto domain modules during boot.
+# Connections are declarative -- they describe the wiring, not the implementation.
+# The runtime reads these declarations to set up actual adapters and event routing.
 #
 #   app = Hecks.boot(__dir__) do
 #     persist_to :sqlite
@@ -31,6 +33,8 @@ module Hecks
     #   @param name [Symbol] connection name (e.g., :write, :read)
     #   @param adapter_type [Symbol] :memory, :sqlite, :postgres, :mysql
     #   @param options [Hash] adapter options
+    #
+    # @return [void]
     def persist_to(name_or_type, type_or_nil = nil, **options)
       if type_or_nil
         name = name_or_type
@@ -48,6 +52,7 @@ module Hecks
     # The source must have been booted and expose an event_bus.
     #
     # @param source [Module] another domain module (e.g., DeliveryDomain)
+    # @return [void]
     def listens_to(source)
       @connections ||= default_connections
       @connections[:listens] << source
@@ -59,28 +64,35 @@ module Hecks
     # @param name_or_domain [Symbol, Module] channel name or target domain
     # @param adapter [Object, nil] object responding to #call or #publish
     # @param block [Proc] alternative handler block
+    # @return [void]
     def sends_to(name_or_domain, adapter = nil, &block)
       @connections ||= default_connections
       handler = adapter || block
       @connections[:sends] << { name: name_or_domain, handler: handler }
     end
 
-    # Return the current connection configuration hash.
+    # Return the current connection configuration hash. Contains three keys:
+    # +:persist+ (Hash of named adapter configs), +:listens+ (Array of source
+    # modules), and +:sends+ (Array of outbound channel hashes).
     #
-    # @return [Hash] { persist: nil|Hash, listens: Array, sends: Array }
+    # @return [Hash{Symbol => Hash, Array}] the connections configuration
     def connections
       @connections || default_connections
     end
 
     # Expose the event bus set by Runtime for cross-domain subscriptions.
+    # Set during boot by the runtime layer; nil if the domain has not been booted.
     #
-    # @return [Hecks::EventBus, nil]
+    # @return [Hecks::EventBus, nil] the domain's event bus, or nil if not booted
     def event_bus
       @event_bus
     end
 
     private
 
+    # Build the default (empty) connections hash.
+    #
+    # @return [Hash{Symbol => Hash, Array}]
     def default_connections
       { persist: {}, listens: [], sends: [] }
     end

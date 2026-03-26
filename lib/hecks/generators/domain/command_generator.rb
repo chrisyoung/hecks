@@ -1,3 +1,5 @@
+require_relative "command_generator/injection_helpers"
+
 # Hecks::Generators::Domain::CommandGenerator
 #
 # Generates command classes with an emits declaration and a call method.
@@ -7,17 +9,46 @@
 # at load time) provides event emission and handler wiring. Part of
 # Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
 #
+# == Create vs. Update Detection
+#
+# A command is classified as an "update" if it has an attribute matching
+# the aggregate's ID pattern (e.g., +pizza_id+ for a Pizza aggregate).
+# The ID attribute is found by +find_self_id_attr+, which tries the full
+# snake_case name first, then progressively shorter suffixes. If no ID
+# attribute is found, the command is classified as a "create".
+#
+# == Generated Structure
+#
+# The generated class is nested under +Aggregate::Commands+ and includes:
+# - +include Hecks::Command+ for event emission and handler wiring
+# - +emits "EventName"+ declaration if an event is associated
+# - +attr_reader+ declarations for all command attributes
+# - An +initialize+ method (keyword params or +**kwargs+ for keyword-safe names)
+# - A +call+ method that either creates a new aggregate or updates an existing one
+#
+# == Usage
+#
 #   gen = CommandGenerator.new(cmd, domain_module: "PizzasDomain",
 #     aggregate_name: "Pizza", aggregate: agg, event: evt)
 #   gen.generate
 #
-require_relative "command_generator/injection_helpers"
+
 module Hecks
   module Generators
     module Domain
     class CommandGenerator
       include InjectionHelpers
 
+      # Initializes the command generator.
+      #
+      # @param command [Hecks::DomainModel::Behavior::Command] the command model object;
+      #   provides +name+, +attributes+, +preconditions+, +postconditions+, +call_body+, and +sets+
+      # @param domain_module [String] the Ruby module name to wrap the generated class in
+      # @param aggregate_name [String] the name of the parent aggregate class (e.g., "Pizza")
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate, nil] the aggregate model object,
+      #   used to map command attributes to aggregate constructor args; nil if not available
+      # @param event [Object, nil] the associated domain event; if present, an +emits+ declaration
+      #   is added and the +call+ method constructs the aggregate
       def initialize(command, domain_module:, aggregate_name:, aggregate: nil, event: nil)
         @command = command
         @domain_module = domain_module
@@ -30,6 +61,9 @@ module Hecks
         @is_create = @self_id_attr.nil?
       end
 
+      # Generates the full Ruby source code for the command class.
+      #
+      # @return [String] the generated Ruby source code, newline-terminated
       def generate
         lines = []
         lines << "module #{@domain_module}"
@@ -63,12 +97,19 @@ module Hecks
 
       private
 
+      # Generates comment lines for preconditions and postconditions.
+      #
+      # @return [Array<String>] comment lines prefixed with "# precondition:" or "# postcondition:",
+      #   or an empty array if no conditions are defined
       def condition_declarations
         conds = @command.preconditions.map { |c| "        # precondition: #{c.message}" } +
                 @command.postconditions.map { |c| "        # postcondition: #{c.message}" }
         conds.any? ? [""] + conds : []
       end
 
+      # Generates lines for a custom +call+ method using the command's DSL-provided block.
+      #
+      # @return [Array<String>] lines of Ruby source code for the custom call method
       def custom_call_lines
         source = Hecks::Utils.block_source(@command.call_body)
         lines = ["        def call"]
@@ -77,6 +118,12 @@ module Hecks
         lines
       end
 
+      # Generates the +initialize+ method lines.
+      #
+      # Uses +**kwargs+ when any attribute name is a Ruby keyword; otherwise uses
+      # named keyword parameters with multi-line formatting for 3+ params.
+      #
+      # @return [Array<String>] lines of Ruby source code for the initialize method
       def initializer_lines
         lines = []
         if @has_keyword_attrs
@@ -104,6 +151,9 @@ module Hecks
         lines
       end
 
+      # Generates the standard +call+ method that either creates or updates an aggregate.
+      #
+      # @return [Array<String>] lines of Ruby source code for the call method
       def call_lines
         lines = []
         lines << "        def call"
@@ -116,11 +166,23 @@ module Hecks
         lines
       end
 
+      # Generates the body of a create command's +call+ method.
+      #
+      # Constructs a new aggregate instance with attributes mapped from the command.
+      #
+      # @return [Array<String>] lines of Ruby source for the Aggregate.new(...) call
       def create_body
         args = create_constructor_args
         format_new_call("          ", args)
       end
 
+      # Generates the body of an update command's +call+ method.
+      #
+      # Looks up an existing aggregate by ID, applies lifecycle guards if applicable,
+      # and constructs a new aggregate instance merging existing and changed attributes.
+      # Raises +Hecks::Error+ if the entity is not found.
+      #
+      # @return [Array<String>] lines of Ruby source for the find-and-update logic
       def update_body
         lines = []
         id_attr = @self_id_attr
@@ -138,6 +200,12 @@ module Hecks
         lines
       end
 
+      # Builds the argument list for creating a new aggregate from scratch.
+      #
+      # Maps command attributes to aggregate constructor keyword args, then
+      # injects +sets+ overrides and lifecycle status transitions.
+      #
+      # @return [Array<String>] keyword argument strings (e.g., ["name: name", "status: \"active\""])
       def create_constructor_args
         args = agg_attrs.each_with_object([]) do |a, parts|
           cmd_attr = @command.attributes.find { |c| c.name == a.name }
@@ -148,6 +216,13 @@ module Hecks
         args
       end
 
+      # Builds the argument list for updating an existing aggregate.
+      #
+      # Preserves the existing ID and carries forward unchanged attributes from
+      # the existing aggregate. Changed attributes come from the command. List
+      # attributes with singular command counterparts get append semantics.
+      #
+      # @return [Array<String>] keyword argument strings for the Aggregate.new call
       def update_constructor_args
         parts = ["id: existing.id"]
         agg_attrs.each do |a|
@@ -167,7 +242,11 @@ module Hecks
         parts
       end
 
-      # Format Aggregate.new(...) — inline if ≤2 args, stacked otherwise.
+      # Format Aggregate.new(...) -- inline if <=2 args, stacked otherwise.
+      #
+      # @param indent [String] the whitespace prefix for each line
+      # @param args [Array<String>] the keyword argument strings
+      # @return [Array<String>] formatted lines for the Aggregate.new call
       def format_new_call(indent, args)
         if args.size <= 2
           ["#{indent}#{@aggregate_name}.new(#{args.join(", ")})"]
@@ -182,17 +261,33 @@ module Hecks
         end
       end
 
+      # Returns the aggregate's non-reserved attributes.
+      #
+      # Filters out reserved attributes (id, created_at, updated_at) that are
+      # managed by Hecks::Model automatically.
+      #
+      # @return [Array<Hecks::DomainModel::Structure::Attribute>] the user-defined attributes,
+      #   or an empty array if no aggregate is set
       def agg_attrs
         return [] unless @aggregate
         @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
       end
 
+      # Builds keyword parameter strings for the command's constructor.
+      #
+      # @return [Array<String>] parameter strings with nil defaults (e.g., ["name: nil", "size: nil"])
       def constructor_params
         @command.attributes.map { |attr| "#{attr.name}: nil" }
       end
 
       # Find the command attribute that references this aggregate's own ID.
-      # Tries full name first (regulatory_framework_id), then suffix variants (framework_id).
+      #
+      # Tries full name first (e.g., +regulatory_framework_id+), then progressively
+      # shorter suffix variants (e.g., +framework_id+). This determines whether the
+      # command is an update (ID attribute found) or a create (not found).
+      #
+      # @param agg_snake [String] the underscore-cased aggregate name (e.g., "regulatory_framework")
+      # @return [Hecks::DomainModel::Structure::Attribute, nil] the matching ID attribute, or nil
       def find_self_id_attr(agg_snake)
         parts = agg_snake.split("_")
         parts.each_index do |i|

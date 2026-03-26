@@ -13,12 +13,28 @@ module Hecks
     module Infrastructure
     class MemoryAdapterGenerator
 
+      # Creates a new MemoryAdapterGenerator for a single aggregate.
+      #
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate
+      #   that needs an in-memory repository
+      # @param domain_module [String] the PascalCase domain module name
+      #   (e.g. +"PizzasDomain"+)
       def initialize(aggregate, domain_module:)
         @aggregate = aggregate
         @domain_module = domain_module
         @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
       end
 
+      # Generates Ruby source for an in-memory repository adapter class.
+      #
+      # The generated class:
+      # - Includes the corresponding port module (+Ports::<Agg>Repository+)
+      # - Stores aggregates in a +@store+ hash keyed by ID
+      # - Implements +find(id)+, +save(agg)+, +delete(id)+, +all+, +count+, +clear+
+      # - Provides a +query+ method supporting +conditions+ (hash or Operator objects),
+      #   +order_key+/+order_direction+, +limit+, and +offset+
+      #
+      # @return [String] the complete Ruby source code for the adapter class
       def generate
         snake = Hecks::Utils.underscore(@safe_name)
         port_path = "Ports::#{@safe_name}Repository"
@@ -66,6 +82,10 @@ module Hecks
 
       private
 
+      # Generates the lines of the +query+ method body for the memory adapter.
+      #
+      # @param indent [Integer] number of leading spaces for indentation
+      # @return [Array<String>] the lines of the +query+ method
       def query_lines(indent)
         pad = " " * indent
         [

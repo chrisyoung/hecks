@@ -13,12 +13,26 @@
 module Hecks
   module EventStorm
     class DomainBuilder
+      # Initializes a DomainBuilder from a parse result.
+      #
+      # @param parse_result [Parser::ParseResult] the intermediate representation
+      #   produced by Parser or YamlParser, containing contexts, elements, and warnings
+      # @param name [String, nil] optional domain name override; falls back to
+      #   parse_result.domain_name, then "MyDomain"
       def initialize(parse_result, name: nil)
         @parse_result = parse_result
         @name = name || parse_result.domain_name || "MyDomain"
         @warnings = parse_result.warnings
       end
 
+      # Builds the domain object from the parse result.
+      #
+      # Flattens all bounded context elements into a single list, groups them
+      # by aggregate, validates event consistency, and constructs the Domain
+      # with fully wired aggregates.
+      #
+      # @return [DomainModel::Structure::Domain] the built domain containing
+      #   aggregates with commands, events, and policies
       def build
         # Flatten all context elements into a single aggregate list
         all_elements = @parse_result.contexts.flat_map(&:elements)
@@ -28,6 +42,15 @@ module Hecks
 
       private
 
+      # Groups parsed elements into aggregates with commands, events, and policies.
+      #
+      # Commands are assigned to their declared aggregate. Commands without an
+      # aggregate are collected as "unassigned" and placed on the first aggregate.
+      # Policies are assigned to the aggregate that owns their trigger command.
+      # Events are inferred from command names.
+      #
+      # @param elements [Array<Parser::ParsedElement>] all elements from all contexts
+      # @return [Array<DomainModel::Structure::Aggregate>] built aggregate objects
       def group_by_aggregate(elements)
         aggregate_commands = {}
         aggregate_policies = {}
@@ -72,6 +95,13 @@ module Hecks
         end
       end
 
+      # Constructs a Command domain object from a parsed element.
+      #
+      # Extracts read_models and external_systems from the element's metadata
+      # and wraps them as domain model structures.
+      #
+      # @param element [Parser::ParsedElement] a parsed element with type :command
+      # @return [DomainModel::Behavior::Command] the constructed command
       def build_command(element)
         read_models = (element.meta[:read_models] || []).map do |name|
           DomainModel::Structure::ReadModel.new(name: name)
@@ -87,6 +117,11 @@ module Hecks
         )
       end
 
+      # Constructs a Policy domain object from a parsed element.
+      #
+      # @param element [Parser::ParsedElement] a parsed element with type :policy
+      # @return [DomainModel::Behavior::Policy] the constructed policy with
+      #   event_name and trigger_command set from metadata
       def build_policy(element)
         DomainModel::Behavior::Policy.new(
           name: element.name,
@@ -95,6 +130,14 @@ module Hecks
         )
       end
 
+      # Finds the aggregate that owns a given trigger command name.
+      #
+      # Searches all elements for a command matching trigger_name and returns
+      # its declared aggregate name, or nil if not found.
+      #
+      # @param elements [Array<Parser::ParsedElement>] all parsed elements
+      # @param trigger_name [String] the command name to search for
+      # @return [String, nil] the aggregate name, or nil if not found
       def find_aggregate_for_trigger(elements, trigger_name)
         elements.each do |el|
           next unless el.type == :command && el.name == trigger_name
@@ -103,6 +146,13 @@ module Hecks
         nil
       end
 
+      # Infers domain events from a list of commands.
+      #
+      # Each command produces one event whose name is derived from the command
+      # name via Command#inferred_event_name (e.g., "PlaceOrder" -> "OrderPlaced").
+      #
+      # @param commands [Array<DomainModel::Behavior::Command>] commands to infer from
+      # @return [Array<DomainModel::Behavior::DomainEvent>] inferred events
       def infer_events(commands)
         commands.map do |cmd|
           DomainModel::Behavior::DomainEvent.new(
@@ -112,6 +162,14 @@ module Hecks
         end
       end
 
+      # Validates that event storm events match inferred events from commands.
+      #
+      # Compares explicitly declared event names from the storm against events
+      # inferred from command names. Appends warnings for mismatches (case
+      # differences or missing commands).
+      #
+      # @param elements [Array<Parser::ParsedElement>] all parsed elements
+      # @return [void]
       def validate_events(elements)
         storm_events = elements.select { |e| e.type == :event }.map(&:name)
         commands = elements.select { |e| e.type == :command }

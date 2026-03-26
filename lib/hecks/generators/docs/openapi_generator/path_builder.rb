@@ -11,6 +11,11 @@ module Hecks
       module PathBuilder
         private
 
+        # Builds all OpenAPI path entries for the domain. Iterates over every
+        # aggregate to create CRUD paths and query paths, then adds a shared
+        # +/events+ SSE endpoint.
+        #
+        # @return [Hash] a map of URL paths to OpenAPI path item objects
         def build_paths
           paths = {}
           @domain.aggregates.each do |agg|
@@ -22,6 +27,12 @@ module Hecks
           paths
         end
 
+        # Builds CRUD path entries for a single aggregate: list/create on
+        # +/<slug>+ and find/update/delete on +/<slug>/{id}+.
+        #
+        # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate
+        # @param slug [String] the pluralized snake_case URL segment
+        # @return [Hash] path entries for the CRUD operations
         def crud_paths(agg, slug)
           name = agg.name
           paths = {}
@@ -40,6 +51,13 @@ module Hecks
           paths
         end
 
+        # Builds the POST operation for creating an aggregate. Returns +nil+ if
+        # no command starting with "Create" exists.
+        #
+        # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate
+        # @param slug [String] the pluralized snake_case URL segment (unused but
+        #   kept for interface consistency)
+        # @return [Hash, nil] the POST operation object, or nil
         def post_path(agg, slug)
           cmd = agg.commands.find { |c| c.name.start_with?("Create") }
           return nil unless cmd
@@ -50,6 +68,11 @@ module Hecks
           }
         end
 
+        # Builds the PATCH operation for updating an aggregate. Returns +nil+ if
+        # no command starting with "Update" exists.
+        #
+        # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate
+        # @return [Hash, nil] the PATCH operation object, or nil
         def patch_path(agg)
           cmd = agg.commands.find { |c| c.name.start_with?("Update") }
           return nil unless cmd
@@ -61,6 +84,12 @@ module Hecks
           }
         end
 
+        # Builds GET path entries for each query defined on the aggregate.
+        # Query parameters are derived from the query block's parameter list.
+        #
+        # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate
+        # @param slug [String] the pluralized snake_case URL segment
+        # @return [Hash] path entries for query operations
         def query_paths(agg, slug)
           paths = {}
           agg.queries.each do |query|
@@ -79,6 +108,9 @@ module Hecks
           paths
         end
 
+        # Builds the +/events+ SSE (Server-Sent Events) path entry.
+        #
+        # @return [Hash] the path item object for the events endpoint
         def events_path
           { get: { summary: "SSE event stream", responses: { "200" => { description: "Server-Sent Events stream" } } } }
         end

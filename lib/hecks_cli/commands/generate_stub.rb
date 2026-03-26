@@ -1,3 +1,5 @@
+require_relative "../stub_generator"
+
 # Hecks::CLI::Domain#generate_stub
 #
 # Scaffolds a single domain file for hand-editing. After boot switched to
@@ -9,7 +11,6 @@
 #   hecks domain generate:stub Query ActiveUsers
 #   hecks domain generate:stub Aggregate Pizza
 #
-require_relative "../stub_generator"
 
 module Hecks
   class CLI < Thor
@@ -18,6 +19,14 @@ module Hecks
       map "generate:stub" => :generate_stub
       option :domain, type: :string, desc: "Domain gem name or path"
       option :force, type: :boolean, desc: "Overwrite without prompting"
+      # Generates a stub file for a specific domain element.
+      #
+      # Resolves the domain, delegates to StubGenerator to produce the file
+      # contents, and writes each file using write_or_diff for conflict handling.
+      #
+      # @param type [String] the element type (e.g., "Command", "Query", "Aggregate")
+      # @param name [String] the element name (e.g., "Withdraw", "ActiveUsers")
+      # @return [void]
       def generate_stub(type, name)
         domain = resolve_domain_option
         return unless domain

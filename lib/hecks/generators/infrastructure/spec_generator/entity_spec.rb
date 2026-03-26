@@ -8,6 +8,19 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module EntitySpec
+          # Generates an RSpec spec file for a sub-entity class.
+          #
+          # The generated spec covers:
+          # - UUID identity: verifies the entity has a UUID-formatted +id+
+          # - Mutability: verifies the entity is not frozen (entities are mutable,
+          #   unlike value objects)
+          # - Identity-based equality: two entities with the same ID are equal
+          # - Invariants: generates TODO placeholders for each invariant rule
+          #
+          # @param entity [Hecks::DomainModel::Structure::Entity] the entity IR
+          # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the owning
+          #   aggregate, used to build the fully qualified class name
+          # @return [String] the complete RSpec file content
           def generate_entity_spec(entity, aggregate)
             safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
             fqn = full_class_name("#{safe_agg}::#{entity.name}")

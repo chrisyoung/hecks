@@ -1,3 +1,5 @@
+require_relative "../domain_introspector"
+
 # Hecks::CLI::Domain#generate_config
 #
 # Generates a functional Hecks configuration from the current auto-wiring.
@@ -8,7 +10,6 @@
 #
 #   hecks domain generate:config
 #
-require_relative "../domain_introspector"
 
 module Hecks
   class CLI < Thor
@@ -17,6 +18,14 @@ module Hecks
       map "generate:config" => :generate_config
       option :domain, type: :string, desc: "Domain gem name or path"
       option :force, type: :boolean, desc: "Overwrite without prompting"
+      # Generates a Hecks configuration file reflecting the current domain wiring.
+      #
+      # Discovers domains (single or multi), detects available extensions,
+      # reports cross-domain connections, and writes the config to app.rb
+      # (standalone) or config/initializers/hecks.rb (Rails). Uses
+      # ConflictHandler to show diffs if the file already exists.
+      #
+      # @return [void]
       def generate_config
         detect_extensions
 
@@ -35,10 +44,18 @@ module Hecks
 
       private
 
+      # Checks if the current directory is a Rails application.
+      #
+      # @return [Boolean] true if config/application.rb exists
       def rails_app?
         File.exist?("config/application.rb")
       end
 
+      # Discovers domains from --domain option, hecks_domain.rb, hecks_domains/,
+      # or *_domain/ subdirectories.
+      #
+      # @return [Array<DomainModel::Structure::Domain>, nil] discovered domains,
+      #   or nil if none found
       def discover_domains
         if options[:domain]
           domain = resolve_domain(options[:domain])
@@ -61,6 +78,10 @@ module Hecks
         nil
       end
 
+      # Reports discovered domains and cross-domain connections to the console.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] the discovered domains
+      # @return [void]
       def report_discovery(domains)
         say "Found #{domains.size} domain#{"s" if domains.size > 1}:", :green
         domains.each { |d| say "  #{d.name}" }
@@ -90,11 +111,18 @@ module Hecks
         say ""
       end
 
+      # Requires all auto-detectable Hecks extensions.
+      #
+      # @return [void]
       def detect_extensions
         require_relative "../../hecks/load_extensions"
         Hecks::LoadExtensions.require_auto
       end
 
+      # Builds a Hecks.configure block for a single domain.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain
+      # @return [String] the configuration source code
       def build_config(domain)
         meta = Hecks.extension_meta
         lines = []
@@ -106,6 +134,10 @@ module Hecks
         lines.join("\n") + "\n"
       end
 
+      # Builds a Hecks.configure block for multiple domains with cross-domain wiring.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @return [String] the configuration source code
       def build_multi_config(domains)
         meta = Hecks.extension_meta
         intro = DomainIntrospector.new(domains)
@@ -119,6 +151,9 @@ module Hecks
         lines.join("\n") + "\n"
       end
 
+      # Generates adapter configuration lines with commented alternatives.
+      #
+      # @return [Array<String>] lines for the adapter section
       def adapter_lines
         lines = [""]
         lines << "  adapter :memory"
@@ -128,6 +163,14 @@ module Hecks
         lines
       end
 
+      # Generates domain declaration lines for a single domain in a multi-domain config.
+      #
+      # Includes sends_to and listens_to declarations if the domain has
+      # cross-domain event connections.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain
+      # @param intro [DomainIntrospector] the introspector with listener/sender maps
+      # @return [Array<String>] configuration lines for this domain
       def domain_lines(domain, intro)
         in_deps = intro.listeners[domain.gem_name]
         out_deps = intro.senders[domain.gem_name]
@@ -154,6 +197,10 @@ module Hecks
         lines
       end
 
+      # Generates auto_wire and extension configuration lines (commented out).
+      #
+      # @param meta [Hash] extension metadata from Hecks.extension_meta
+      # @return [Array<String>] commented configuration lines
       def auto_wire_lines(meta)
         lines = []
         lines << "  # auto_wire"

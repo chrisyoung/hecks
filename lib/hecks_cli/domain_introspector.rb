@@ -12,8 +12,20 @@
 module Hecks
   class CLI < Thor
     class DomainIntrospector
-      attr_reader :listeners, :senders
+      # @return [Hash<String, Hash<String, Array>>] map of listener_gem_name =>
+      #   { source_gem_name => [policies] }. For each domain, which other domains'
+      #   events does it react to?
+      attr_reader :listeners
 
+      # @return [Hash<String, Hash<String, Array>>] map of source_gem_name =>
+      #   { listener_gem_name => [policies] }. For each domain, which other domains
+      #   consume its events?
+      attr_reader :senders
+
+      # Builds listener and sender maps by introspecting reactive policies
+      # across all provided domains.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains to analyze
       def initialize(domains)
         @gem_names = domains.each_with_object({}) { |d, h| h[d.name] = d.gem_name }
         origins = build_event_origin_map(domains)
@@ -23,7 +35,10 @@ module Hecks
 
       private
 
-      # Map event names to the gem_name of the domain that produces them.
+      # Maps event names to the gem_name of the domain that produces them.
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @return [Hash<String, String>] event_name => gem_name
       def build_event_origin_map(domains)
         origins = {}
         domains.each do |d|
@@ -34,8 +49,12 @@ module Hecks
         origins
       end
 
-      # For each domain, find reactive policies that listen to events from
-      # other domains. Keyed by gem_name.
+      # Builds the listener map: for each domain, which reactive policies
+      # listen to events from other domains?
+      #
+      # @param domains [Array<DomainModel::Structure::Domain>] all domains
+      # @param event_origins [Hash<String, String>] event_name => source gem_name
+      # @return [Hash<String, Hash<String, Array>>] listener_gem => { source_gem => [policies] }
       def build_listener_map(domains, event_origins)
         listeners = {}
         domains.each do |d|
@@ -51,8 +70,12 @@ module Hecks
         listeners
       end
 
-      # Invert the listener map: for each source domain, which target domains
-      # consume its events?
+      # Inverts the listener map to produce a sender map.
+      #
+      # For each source domain, which target domains consume its events?
+      #
+      # @param listeners [Hash<String, Hash<String, Array>>] the listener map
+      # @return [Hash<String, Hash<String, Array>>] source_gem => { listener_gem => [policies] }
       def build_sender_map(listeners)
         senders = {}
         listeners.each do |listener_gem, sources|
