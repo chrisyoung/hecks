@@ -1,21 +1,20 @@
 require "yaml"
 
-# Hecks::EventStorm::YamlParser
-#
-# Parses a YAML event storm document into the same ParseResult structure
-# as the ASCII Parser. Accepts a structured YAML format that maps directly
-# to event storm concepts: contexts, aggregates, commands, policies, etc.
-#
-# The YAML format is an alternative to the ASCII notation -- both produce
-# identical ParseResult objects consumed by DomainBuilder and DslGenerator.
-#
-#   parser = YamlParser.new(File.read("storm.yml"))
-#   result = parser.parse
-#   result.contexts.first.name  # => "Ordering"
-#
-
 module Hecks
   module EventStorm
+    # Hecks::EventStorm::YamlParser
+    #
+    # Parses a YAML event storm document into the same ParseResult structure
+    # as the ASCII Parser. Accepts a structured YAML format that maps directly
+    # to event storm concepts: contexts, aggregates, commands, policies, etc.
+    #
+    # The YAML format is an alternative to the ASCII notation -- both produce
+    # identical ParseResult objects consumed by DomainBuilder and DslGenerator.
+    #
+    #   parser = YamlParser.new(File.read("storm.yml"))
+    #   result = parser.parse
+    #   result.contexts.first.name  # => "Ordering"
+    #
     class YamlParser
       # Initializes a YamlParser from YAML source text.
       #

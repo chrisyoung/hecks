@@ -1,16 +1,16 @@
-# Hecks::CLI::DomainIntrospector
-#
-# Analyzes cross-domain event wiring by introspecting reactive policies.
-# Builds maps of which domains produce events consumed by other domains'
-# policies, yielding listener (who I react to) and sender (who reacts to me)
-# relationships. All map keys use gem_name (snake_case) for consistency.
-#
-#   introspector = DomainIntrospector.new(domains)
-#   introspector.listeners   # { "identity_domain" => { "model_registry_domain" => [pol, ...] } }
-#   introspector.senders     # { "model_registry_domain" => { "identity_domain" => [pol, ...] } }
-#
 module Hecks
   class CLI < Thor
+    # Hecks::CLI::DomainIntrospector
+    #
+    # Analyzes cross-domain event wiring by introspecting reactive policies.
+    # Builds maps of which domains produce events consumed by other domains'
+    # policies, yielding listener (who I react to) and sender (who reacts to me)
+    # relationships. All map keys use gem_name (snake_case) for consistency.
+    #
+    #   introspector = DomainIntrospector.new(domains)
+    #   introspector.listeners   # { "identity_domain" => { "model_registry_domain" => [pol, ...] } }
+    #   introspector.senders     # { "model_registry_domain" => { "identity_domain" => [pol, ...] } }
+    #
     class DomainIntrospector
       # @return [Hash<String, Hash<String, Array>>] map of listener_gem_name =>
       #   { source_gem_name => [policies] }. For each domain, which other domains'

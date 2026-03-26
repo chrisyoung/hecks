@@ -1,14 +1,14 @@
-# Hecks::DomainGlossary::TextHelpers
-#
-# English text utilities for glossary generation -- articles, pluralization,
-# humanization, and list formatting. Mixed into DomainGlossary and
-# StatementBuilders to produce grammatically correct sentences.
-#
-# These are simple heuristics, not a full NLP library. They handle the
-# common cases found in domain model names (PascalCase nouns).
-#
 module Hecks
   class DomainGlossary
+    # Hecks::DomainGlossary::TextHelpers
+    #
+    # English text utilities for glossary generation -- articles, pluralization,
+    # humanization, and list formatting. Mixed into DomainGlossary and
+    # StatementBuilders to produce grammatically correct sentences.
+    #
+    # These are simple heuristics, not a full NLP library. They handle the
+    # common cases found in domain model names (PascalCase nouns).
+    #
     module TextHelpers
       private
 

@@ -1,21 +1,21 @@
-# Hecks::Session::AggregateHandle::MessageNotUnderstood
-#
-# Smalltalk-inspired: unknown messages on an aggregate handle suggest
-# creating a command. Instead of a bare NoMethodError, the user gets
-# a helpful message with the exact code to create the command.
-#
-# This module overrides +method_missing+ on AggregateHandle so that
-# any unrecognized method call produces a NoMethodError whose message
-# includes the list of available commands and a copy-pasteable example
-# for creating the missing command.
-#
-#   Cat.feed
-#   # => Cat doesn't understand 'feed'.
-#   #    Create it with: Cat.command("Feed") { attribute :name, String }
-#
 module Hecks
   class Session
     class AggregateHandle
+      # Hecks::Session::AggregateHandle::MessageNotUnderstood
+      #
+      # Smalltalk-inspired: unknown messages on an aggregate handle suggest
+      # creating a command. Instead of a bare NoMethodError, the user gets
+      # a helpful message with the exact code to create the command.
+      #
+      # This module overrides +method_missing+ on AggregateHandle so that
+      # any unrecognized method call produces a NoMethodError whose message
+      # includes the list of available commands and a copy-pasteable example
+      # for creating the missing command.
+      #
+      #   Cat.feed
+      #   # => Cat doesn't understand 'feed'.
+      #   #    Create it with: Cat.command("Feed") { attribute :name, String }
+      #
       module MessageNotUnderstood
         # Handle unknown method calls with a helpful suggestion message.
         #

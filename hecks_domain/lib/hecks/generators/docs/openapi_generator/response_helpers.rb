@@ -1,14 +1,14 @@
-# Hecks::HTTP::OpenapiGenerator::ResponseHelpers
-#
-# Shared OpenAPI response/parameter helpers used by both PathBuilder
-# and SchemaBuilder. Provides ok_array, ok_object, ok_message,
-# id_param, and request_body builders.
-#
-# Mixed into OpenapiGenerator for use across all builder modules.
-#
 module Hecks
   module HTTP
     class OpenapiGenerator
+      # Hecks::HTTP::OpenapiGenerator::ResponseHelpers
+      #
+      # Shared OpenAPI response/parameter helpers used by both PathBuilder
+      # and SchemaBuilder. Provides ok_array, ok_object, ok_message,
+      # id_param, and request_body builders.
+      #
+      # Mixed into OpenapiGenerator for use across all builder modules.
+      #
       module ResponseHelpers
         private
 

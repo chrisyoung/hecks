@@ -1,15 +1,16 @@
-# Hecks::ValidationRules::References::NoValueObjectReferences
-#
-# Validates that value objects do not contain +reference_to+ attributes.
-# Value objects represent values (not identity), so they should not hold
-# references to aggregate roots. The reference should be moved to the
-# parent aggregate instead.
-#
-# Part of the ValidationRules::References group -- run by +Hecks.validate+.
-#
 module Hecks
   module ValidationRules
     module References
+
+    # Hecks::ValidationRules::References::NoValueObjectReferences
+    #
+    # Validates that value objects do not contain +reference_to+ attributes.
+    # Value objects represent values (not identity), so they should not hold
+    # references to aggregate roots. The reference should be moved to the
+    # parent aggregate instead.
+    #
+    # Part of the ValidationRules::References group -- run by +Hecks.validate+.
+    #
     # Value objects should not contain reference_to attributes.
     class NoValueObjectReferences < BaseRule
       # Checks each value object within each aggregate for reference attributes.

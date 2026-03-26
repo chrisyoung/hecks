@@ -1,13 +1,14 @@
-# Hecks::ValidationRules::Structure::CommandsHaveAttributes
-#
-# Validates that every command has at least one attribute. A command with
-# no attributes carries no data and cannot meaningfully modify an aggregate.
-#
-# Part of the ValidationRules::Structure group -- run by +Hecks.validate+.
-#
 module Hecks
   module ValidationRules
     module Structure
+
+    # Hecks::ValidationRules::Structure::CommandsHaveAttributes
+    #
+    # Validates that every command has at least one attribute. A command with
+    # no attributes carries no data and cannot meaningfully modify an aggregate.
+    #
+    # Part of the ValidationRules::Structure group -- run by +Hecks.validate+.
+    #
     # Commands must have at least one attribute.
     class CommandsHaveAttributes < BaseRule
       # Checks each command within each aggregate and reports an error

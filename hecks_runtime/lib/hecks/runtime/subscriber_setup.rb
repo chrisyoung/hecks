@@ -1,15 +1,15 @@
-# Hecks::Runtime::SubscriberSetup
-#
-# Mixin that wires DSL-defined event subscribers to the event bus at
-# boot time. Sync subscribers fire inline; async subscribers are passed
-# to the registered async handler.
-#
-#   class Runtime
-#     include SubscriberSetup
-#   end
-#
 module Hecks
   class Runtime
+      # Hecks::Runtime::SubscriberSetup
+      #
+      # Mixin that wires DSL-defined event subscribers to the event bus at
+      # boot time. Sync subscribers fire inline; async subscribers are passed
+      # to the registered async handler.
+      #
+      #   class Runtime
+      #     include SubscriberSetup
+      #   end
+      #
       module SubscriberSetup
         private
 

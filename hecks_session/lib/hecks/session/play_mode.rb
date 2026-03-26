@@ -1,25 +1,25 @@
-# Hecks::Session::PlayMode
-#
-# Session mixin for play-mode: executing commands against a live compiled
-# domain and inspecting events. Part of the Session layer -- delegates to
-# Playground for actual execution.
-#
-# Play mode compiles the current domain definition into a temporary gem,
-# boots a Runtime with in-memory adapters, and lets you execute commands
-# and query repositories. All events are captured and can be inspected.
-#
-# Switching between modes:
-# - +play!+ validates the domain, compiles it, and enters play mode
-# - +sketch!+ tears down the playground and returns to sketch mode
-#
-#   session.play!
-#   Pizza.create_pizza(name: "Margherita")
-#   session.events
-#   session.history
-#   session.sketch!   # back to sketch mode
-#
 module Hecks
   class Session
+    # Hecks::Session::PlayMode
+    #
+    # Session mixin for play-mode: executing commands against a live compiled
+    # domain and inspecting events. Part of the Session layer -- delegates to
+    # Playground for actual execution.
+    #
+    # Play mode compiles the current domain definition into a temporary gem,
+    # boots a Runtime with in-memory adapters, and lets you execute commands
+    # and query repositories. All events are captured and can be inspected.
+    #
+    # Switching between modes:
+    # - +play!+ validates the domain, compiles it, and enters play mode
+    # - +sketch!+ tears down the playground and returns to sketch mode
+    #
+    #   session.play!
+    #   Pizza.create_pizza(name: "Margherita")
+    #   session.events
+    #   session.history
+    #   session.sketch!   # back to sketch mode
+    #
     module PlayMode
       # Switch to play mode by compiling the domain and booting a live runtime.
       #

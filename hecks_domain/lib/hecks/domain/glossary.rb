@@ -1,23 +1,22 @@
 require_relative "glossary/text_helpers"
 require_relative "glossary/statement_builders"
 
-# Hecks::DomainGlossary
-#
-# Walks the domain IR and produces plain-English statements that describe
-# the domain model. Each aggregate, its attributes, value objects, entities,
-# commands, queries, validations, invariants, and policies are rendered as
-# human-readable sentences. Use it to validate your reasoning about the domain
-# with non-technical stakeholders.
-#
-# Also generates a "Relationships" section for cross-aggregate references
-# and a "Domain Policies" section for domain-level reactive policies.
-#
-#   Hecks::DomainGlossary.new(domain).generate  # => Array<String> of lines
-#   Hecks::DomainGlossary.new(domain).print      # prints to stdout
-#   domain.glossary                               # convenience method
-#
-
 module Hecks
+  # Hecks::DomainGlossary
+  #
+  # Walks the domain IR and produces plain-English statements that describe
+  # the domain model. Each aggregate, its attributes, value objects, entities,
+  # commands, queries, validations, invariants, and policies are rendered as
+  # human-readable sentences. Use it to validate your reasoning about the domain
+  # with non-technical stakeholders.
+  #
+  # Also generates a "Relationships" section for cross-aggregate references
+  # and a "Domain Policies" section for domain-level reactive policies.
+  #
+  #   Hecks::DomainGlossary.new(domain).generate  # => Array<String> of lines
+  #   Hecks::DomainGlossary.new(domain).print      # prints to stdout
+  #   domain.glossary                               # convenience method
+  #
   class DomainGlossary
     include TextHelpers
     include StatementBuilders

@@ -1,15 +1,15 @@
-# Hecks::CLI::Gem
-#
-# Gem packaging commands -- delegates to GemBuilder to build and install
-# all Hecks component gems from their subdirectories.
-#
-#   hecks gem build
-#   hecks gem install
-#
 require_relative "../gem_builder"
 
 module Hecks
   class CLI < Thor
+    # Hecks::CLI::Gem
+    #
+    # Gem packaging commands -- delegates to GemBuilder to build and install
+    # all Hecks component gems from their subdirectories.
+    #
+    #   hecks gem build
+    #   hecks gem install
+    #
     class Gem < Thor
       desc "build", "Build all component gems and the meta-gem"
       # Builds every component gem from its own directory, then the meta-gem.

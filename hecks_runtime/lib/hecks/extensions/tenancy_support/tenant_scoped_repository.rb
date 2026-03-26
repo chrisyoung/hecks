@@ -1,20 +1,20 @@
-# HecksTenancy::TenantScopedRepository
-#
-# Repository proxy that isolates data per tenant. Wraps a repository class
-# and maintains separate instances keyed by tenant ID (from +Hecks.tenant+).
-# All standard repository operations (find, save, delete, all, count, clear,
-# query) delegate to the current tenant's dedicated repository instance.
-#
-# When +Hecks.tenant+ is nil, operations fall back to a "__default__" tenant.
-# Each tenant gets a lazily-instantiated repository of the wrapped class.
-#
-#   proxy = TenantScopedRepository.new(PizzaMemoryRepository)
-#   Hecks.tenant = "acme"
-#   proxy.save(pizza)     # stored under acme
-#   Hecks.tenant = "beta"
-#   proxy.all             # => [] (beta has nothing)
-#
 module HecksTenancy
+  # HecksTenancy::TenantScopedRepository
+  #
+  # Repository proxy that isolates data per tenant. Wraps a repository class
+  # and maintains separate instances keyed by tenant ID (from +Hecks.tenant+).
+  # All standard repository operations (find, save, delete, all, count, clear,
+  # query) delegate to the current tenant's dedicated repository instance.
+  #
+  # When +Hecks.tenant+ is nil, operations fall back to a "__default__" tenant.
+  # Each tenant gets a lazily-instantiated repository of the wrapped class.
+  #
+  #   proxy = TenantScopedRepository.new(PizzaMemoryRepository)
+  #   Hecks.tenant = "acme"
+  #   proxy.save(pizza)     # stored under acme
+  #   Hecks.tenant = "beta"
+  #   proxy.all             # => [] (beta has nothing)
+  #
   class TenantScopedRepository
     # Create a new tenant-scoped proxy wrapping the given repository class.
     #

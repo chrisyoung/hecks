@@ -1,17 +1,18 @@
-# Hecks::ValidationRules::References
-#
-# Reference integrity rules for domain validation. This module groups rules
-# that enforce correct usage of aggregate references:
-#
-# - +ValidReferences+ -- references must target existing aggregate roots (not value objects or entities)
-# - +NoBidirectionalReferences+ -- no mutual A->B and B->A references between aggregates
-# - +NoSelfReferences+ -- aggregates cannot reference themselves
-# - +NoValueObjectReferences+ -- value objects cannot contain reference_to attributes
-#
-# All rules are autoloaded and executed as part of +Hecks.validate+.
-#
 module Hecks
   module ValidationRules
+
+    # Hecks::ValidationRules::References
+    #
+    # Reference integrity rules for domain validation. This module groups rules
+    # that enforce correct usage of aggregate references:
+    #
+    # - +ValidReferences+ -- references must target existing aggregate roots (not value objects or entities)
+    # - +NoBidirectionalReferences+ -- no mutual A->B and B->A references between aggregates
+    # - +NoSelfReferences+ -- aggregates cannot reference themselves
+    # - +NoValueObjectReferences+ -- value objects cannot contain reference_to attributes
+    #
+    # All rules are autoloaded and executed as part of +Hecks.validate+.
+    #
     module References
       autoload :ValidReferences,           "hecks/validation_rules/references/valid_references"
       autoload :NoBidirectionalReferences, "hecks/validation_rules/references/no_bidirectional_references"

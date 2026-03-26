@@ -1,18 +1,18 @@
-# Hecks::EventStormImporter
-#
-# Parses event storm documents (ASCII or YAML format) and produces a domain
-# object plus DSL source code. Supports both file paths and inline content
-# strings. Auto-detects YAML vs ASCII format based on file extension and
-# content patterns.
-#
-# Extended onto the top-level Hecks module to provide +Hecks.from_event_storm+.
-# The result includes the built domain, generated DSL code, and any parser
-# warnings (e.g., unrecognized lines or ambiguous aggregates).
-#
-#   Hecks.from_event_storm("event_storm.yml")
-#   Hecks.from_event_storm("event_storm.md", name: "Pizzas")
-#
 module Hecks
+  # Hecks::EventStormImporter
+  #
+  # Parses event storm documents (ASCII or YAML format) and produces a domain
+  # object plus DSL source code. Supports both file paths and inline content
+  # strings. Auto-detects YAML vs ASCII format based on file extension and
+  # content patterns.
+  #
+  # Extended onto the top-level Hecks module to provide +Hecks.from_event_storm+.
+  # The result includes the built domain, generated DSL code, and any parser
+  # warnings (e.g., unrecognized lines or ambiguous aggregates).
+  #
+  #   Hecks.from_event_storm("event_storm.yml")
+  #   Hecks.from_event_storm("event_storm.md", name: "Pizzas")
+  #
   module EventStormImporter
     # Import an event storm document and produce a domain with DSL source.
     # Accepts either a file path or a raw content string. Detects YAML format

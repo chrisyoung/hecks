@@ -1,21 +1,21 @@
-# Hecks::DslSerializer
-#
-# Serializes a built Domain back into DSL source code. Handles all DSL
-# constructs: attributes, value objects, validations, invariants, scopes,
-# queries, commands (with guarded_by, read models, external systems, actors),
-# and reactive policies. Extracted from Session#to_dsl for standalone reuse.
-#
-# Part of the DSL layer. Used by the console session to dump editable domain
-# definitions, by DomainSnapshot for migration diffing, and by round-trip
-# tooling that loads then re-saves domains.
-#
-# The output is valid Ruby that can be eval'd to reconstruct the domain.
-#
-#   domain = Hecks.domain("Pizzas") { ... }
-#   DslSerializer.new(domain).serialize
-#   # => 'Hecks.domain "Pizzas" do ...'
-#
 module Hecks
+  # Hecks::DslSerializer
+  #
+  # Serializes a built Domain back into DSL source code. Handles all DSL
+  # constructs: attributes, value objects, validations, invariants, scopes,
+  # queries, commands (with guarded_by, read models, external systems, actors),
+  # and reactive policies. Extracted from Session#to_dsl for standalone reuse.
+  #
+  # Part of the DSL layer. Used by the console session to dump editable domain
+  # definitions, by DomainSnapshot for migration diffing, and by round-trip
+  # tooling that loads then re-saves domains.
+  #
+  # The output is valid Ruby that can be eval'd to reconstruct the domain.
+  #
+  #   domain = Hecks.domain("Pizzas") { ... }
+  #   DslSerializer.new(domain).serialize
+  #   # => 'Hecks.domain "Pizzas" do ...'
+  #
   class DslSerializer
     # Create a new serializer for the given domain.
     #

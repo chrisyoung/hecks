@@ -1,18 +1,18 @@
-# Hecks::Connections::HttpConnection
-#
-# Connection wrapper that packages the HTTP REST server as a +listens_to+
-# connection for declarative boot blocks. Wraps a {Hecks::HTTP::DomainServer}
-# instance and provides +start+ to begin serving HTTP requests.
-#
-# Used internally when a domain declares an HTTP listener in its boot block.
-# The connection is instantiated with the domain definition, runtime, and
-# optional port, then started to begin handling requests.
-#
-#   # In a domain boot block:
-#   listens_to :http, port: 3000
-#
 module Hecks
   module Connections
+    # Hecks::Connections::HttpConnection
+    #
+    # Connection wrapper that packages the HTTP REST server as a +listens_to+
+    # connection for declarative boot blocks. Wraps a {Hecks::HTTP::DomainServer}
+    # instance and provides +start+ to begin serving HTTP requests.
+    #
+    # Used internally when a domain declares an HTTP listener in its boot block.
+    # The connection is instantiated with the domain definition, runtime, and
+    # optional port, then started to begin handling requests.
+    #
+    #   # In a domain boot block:
+    #   listens_to :http, port: 3000
+    #
     class HttpConnection
       # Create a new HTTP connection wrapping a DomainServer.
       #

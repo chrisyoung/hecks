@@ -1,13 +1,13 @@
-# Hecks::HTTP::OpenapiGenerator::SchemaBuilder
-#
-# Builds OpenAPI component schemas from domain aggregates. Maps DSL
-# attribute types to OpenAPI types (integer, number, object, string).
-#
-# Mixed into OpenapiGenerator to keep schema logic separate from paths.
-#
 module Hecks
   module HTTP
     class OpenapiGenerator
+      # Hecks::HTTP::OpenapiGenerator::SchemaBuilder
+      #
+      # Builds OpenAPI component schemas from domain aggregates. Maps DSL
+      # attribute types to OpenAPI types (integer, number, object, string).
+      #
+      # Mixed into OpenapiGenerator to keep schema logic separate from paths.
+      #
       module SchemaBuilder
         private
 

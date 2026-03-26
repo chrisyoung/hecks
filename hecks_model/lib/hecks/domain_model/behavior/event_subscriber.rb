@@ -1,28 +1,29 @@
-# Hecks::DomainModel::Behavior::EventSubscriber
-#
-# Intermediate representation of a DSL-defined event subscriber -- an
-# arbitrary code block that fires when a named event is published.
-# Unlike reactive policies (which must trigger a command), subscribers
-# can run any code: logging, notifications, cross-aggregate side effects.
-#
-# Subscribers are registered on the EventBus at boot time. When an event
-# matching +event_name+ is published, the +block+ is called with the event
-# as its argument. The +async+ flag hints to the runtime whether the
-# subscriber should be dispatched synchronously or asynchronously.
-#
-# Part of the DomainModel IR layer. Built by AggregateBuilder#on_event
-# and consumed by SubscriberGenerator to produce subscriber classes.
-#
-#   sub = EventSubscriber.new(
-#     name: "OnCreatedPizza",
-#     event_name: "CreatedPizza",
-#     block: proc { |event| puts event.name },
-#     async: false
-#   )
-#
 module Hecks
   module DomainModel
     module Behavior
+
+    # Hecks::DomainModel::Behavior::EventSubscriber
+    #
+    # Intermediate representation of a DSL-defined event subscriber -- an
+    # arbitrary code block that fires when a named event is published.
+    # Unlike reactive policies (which must trigger a command), subscribers
+    # can run any code: logging, notifications, cross-aggregate side effects.
+    #
+    # Subscribers are registered on the EventBus at boot time. When an event
+    # matching +event_name+ is published, the +block+ is called with the event
+    # as its argument. The +async+ flag hints to the runtime whether the
+    # subscriber should be dispatched synchronously or asynchronously.
+    #
+    # Part of the DomainModel IR layer. Built by AggregateBuilder#on_event
+    # and consumed by SubscriberGenerator to produce subscriber classes.
+    #
+    #   sub = EventSubscriber.new(
+    #     name: "OnCreatedPizza",
+    #     event_name: "CreatedPizza",
+    #     block: proc { |event| puts event.name },
+    #     async: false
+    #   )
+    #
     class EventSubscriber
       # @return [String] unique name for this subscriber, typically "On<EventName>"
       # @return [String] the domain event name this subscriber listens for

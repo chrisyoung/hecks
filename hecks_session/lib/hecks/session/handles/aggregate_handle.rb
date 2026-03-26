@@ -1,30 +1,29 @@
 require_relative "aggregate_handle/presenter"
 require_relative "aggregate_handle/message_not_understood"
 
-# Hecks::Session::AggregateHandle
-#
-# Interactive handle for incrementally building a single aggregate in the
-# REPL. Wraps an AggregateBuilder and provides add/remove methods that
-# print feedback as you go.
-#
-# Part of the Session layer -- returned by Session#aggregate to allow
-# step-by-step aggregate construction without full DSL blocks.
-#
-# Includes:
-# - Presenter          -- describe, preview, valid?, errors, inspect
-# - MessageNotUnderstood -- Smalltalk-style helpful NoMethodError messages
-#
-#   session = Hecks.session("Pizzas")
-#   pizza = session.aggregate("Pizza")
-#   pizza.attr(:name, String)
-#   pizza.command("CreatePizza") { attribute :name, String }
-#   pizza.validation(:name, presence: true)
-#   pizza.describe   # prints a summary of the aggregate
-#   pizza.preview    # prints generated Ruby code
-#
-
 module Hecks
   class Session
+    # Hecks::Session::AggregateHandle
+    #
+    # Interactive handle for incrementally building a single aggregate in the
+    # REPL. Wraps an AggregateBuilder and provides add/remove methods that
+    # print feedback as you go.
+    #
+    # Part of the Session layer -- returned by Session#aggregate to allow
+    # step-by-step aggregate construction without full DSL blocks.
+    #
+    # Includes:
+    # - Presenter          -- describe, preview, valid?, errors, inspect
+    # - MessageNotUnderstood -- Smalltalk-style helpful NoMethodError messages
+    #
+    #   session = Hecks.session("Pizzas")
+    #   pizza = session.aggregate("Pizza")
+    #   pizza.attr(:name, String)
+    #   pizza.command("CreatePizza") { attribute :name, String }
+    #   pizza.validation(:name, presence: true)
+    #   pizza.describe   # prints a summary of the aggregate
+    #   pizza.preview    # prints generated Ruby code
+    #
     class AggregateHandle
     include Presenter
     include MessageNotUnderstood

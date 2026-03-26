@@ -1,12 +1,12 @@
-# Hecks::Generators::Infrastructure::SpecGenerator::AggregateSpec
-#
-# Generates behavioral RSpec specs for aggregate classes: construction,
-# validations, invariants, and identity. Mixed into SpecGenerator.
-#
 module Hecks
   module Generators
     module Infrastructure
       class SpecGenerator
+        # Hecks::Generators::Infrastructure::SpecGenerator::AggregateSpec
+        #
+        # Generates behavioral RSpec specs for aggregate classes: construction,
+        # validations, invariants, and identity. Mixed into SpecGenerator.
+        #
         module AggregateSpec
           # Generates a complete RSpec spec file for an aggregate class.
           #

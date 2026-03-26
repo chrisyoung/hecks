@@ -49,11 +49,11 @@ RSpec.describe "hecks new CLI command" do
     Dir.chdir(tmpdir) do
       cli = Hecks::CLI.new
       cli.invoke(:new_project, ["bootable"])
-
-      domain_content = File.read("bootable/hecks_domain.rb")
-      domain = eval(domain_content, TOPLEVEL_BINDING, "bootable/hecks_domain.rb", 1)
-      valid, errors = Hecks.validate(domain)
-      expect(valid).to be true
     end
+
+    domain_content = File.read(File.join(tmpdir, "bootable/hecks_domain.rb"))
+    domain = eval(domain_content, TOPLEVEL_BINDING, "bootable/hecks_domain.rb", 1)
+    valid, errors = Hecks.validate(domain)
+    expect(valid).to be true
   end
 end

@@ -1,20 +1,21 @@
-# Hecks::DSL::EntityBuilder
-#
-# DSL builder for sub-entity definitions within aggregates. Collects attributes
-# and invariants, then builds a DomainModel::Structure::Entity. Entities have
-# identity (UUID), are mutable, and use identity-based equality.
-#
-# Part of the DSL layer, nested under AggregateBuilder. The resulting entity
-# is embedded within its parent aggregate.
-#
-#   builder = EntityBuilder.new("LedgerEntry")
-#   builder.attribute :amount, Float
-#   builder.attribute :description, String
-#   builder.invariant("amount positive") { amount > 0 }
-#   entity = builder.build  # => #<Entity name="LedgerEntry" ...>
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::EntityBuilder
+    #
+    # DSL builder for sub-entity definitions within aggregates. Collects attributes
+    # and invariants, then builds a DomainModel::Structure::Entity. Entities have
+    # identity (UUID), are mutable, and use identity-based equality.
+    #
+    # Part of the DSL layer, nested under AggregateBuilder. The resulting entity
+    # is embedded within its parent aggregate.
+    #
+    #   builder = EntityBuilder.new("LedgerEntry")
+    #   builder.attribute :amount, Float
+    #   builder.attribute :description, String
+    #   builder.invariant("amount positive") { amount > 0 }
+    #   entity = builder.build  # => #<Entity name="LedgerEntry" ...>
+    #
     # Builds a DomainModel::Structure::Entity from DSL declarations.
     #
     # EntityBuilder collects attributes and invariants for a sub-entity that

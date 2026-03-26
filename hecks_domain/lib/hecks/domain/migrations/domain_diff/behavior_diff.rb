@@ -1,18 +1,18 @@
-# Hecks::Migrations::DomainDiff::BehaviorDiff
-#
-# Detects changes in behavioral domain elements: commands, policies,
-# validations, invariants, queries, scopes, subscribers, and
-# specifications. Mixed into DomainDiff to separate behavioral diffing
-# from structural diffing.
-#
-# Behavioral changes have +context: :behavior+ in their Change objects,
-# distinguishing them from structural changes (which have +context: nil+).
-# This distinction lets migration strategies ignore behavioral changes
-# that don't affect storage schemas.
-#
 module Hecks
   module Migrations
     class DomainDiff
+      # Hecks::Migrations::DomainDiff::BehaviorDiff
+      #
+      # Detects changes in behavioral domain elements: commands, policies,
+      # validations, invariants, queries, scopes, subscribers, and
+      # specifications. Mixed into DomainDiff to separate behavioral diffing
+      # from structural diffing.
+      #
+      # Behavioral changes have +context: :behavior+ in their Change objects,
+      # distinguishing them from structural changes (which have +context: nil+).
+      # This distinction lets migration strategies ignore behavioral changes
+      # that don't affect storage schemas.
+      #
       module BehaviorDiff
         private
 

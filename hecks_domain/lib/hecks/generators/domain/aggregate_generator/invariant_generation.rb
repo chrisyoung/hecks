@@ -1,20 +1,20 @@
-# Hecks::Generators::Domain::AggregateGenerator::InvariantGeneration
-#
-# Mixin that generates the +check_invariants!+ method for aggregate classes.
-# Converts DSL invariant blocks into runtime proc-based checks that raise
-# +InvariantError+ when violated. If no invariants are defined, generates
-# a no-op method. Part of Generators::Domain, mixed into AggregateGenerator.
-#
-# == Usage
-#
-#   class AggregateGenerator
-#     include InvariantGeneration
-#   end
-#
 module Hecks
   module Generators
     module Domain
       class AggregateGenerator
+        # Hecks::Generators::Domain::AggregateGenerator::InvariantGeneration
+        #
+        # Mixin that generates the +check_invariants!+ method for aggregate classes.
+        # Converts DSL invariant blocks into runtime proc-based checks that raise
+        # +InvariantError+ when violated. If no invariants are defined, generates
+        # a no-op method. Part of Generators::Domain, mixed into AggregateGenerator.
+        #
+        # == Usage
+        #
+        #   class AggregateGenerator
+        #     include InvariantGeneration
+        #   end
+        #
         module InvariantGeneration
           private
 

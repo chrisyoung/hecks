@@ -1,34 +1,34 @@
-# Hecks::Persistence::RepositoryMethods
-#
-# Adds CRUD persistence methods to aggregate classes. Bound automatically
-# by +Persistence.bind+ during application boot. Uses +hecks_attributes+
-# metadata for introspection when available, falling back to constructor
-# parameter reflection.
-#
-# == Class methods added
-#
-# - +.find(id)+ -- looks up an aggregate by ID
-# - +.all+ -- returns all persisted aggregates
-# - +.count+ -- returns the total number of persisted aggregates
-# - +.delete(id)+ -- removes an aggregate by ID
-# - +.first+ / +.last+ -- convenience accessors
-# - +.create(**attrs)+ -- instantiates, stamps, saves, and returns a new aggregate
-#
-# == Instance methods added
-#
-# - +#save+ -- persists the current aggregate to the repository
-# - +#update(**attrs)+ -- rebuilds the aggregate with new attributes and persists
-# - +#destroy+ -- removes the aggregate from the repository
-# - +#destroyed?+ -- returns true if +destroy+ has been called
-#
-# == Usage
-#
-#   Pizza.find(id) / Pizza.all / Pizza.count
-#   Pizza.create(name: "Margherita")
-#   pizza.save / pizza.update(name: "New") / pizza.destroy
-#
 module Hecks
   module Persistence
+    # Hecks::Persistence::RepositoryMethods
+    #
+    # Adds CRUD persistence methods to aggregate classes. Bound automatically
+    # by +Persistence.bind+ during application boot. Uses +hecks_attributes+
+    # metadata for introspection when available, falling back to constructor
+    # parameter reflection.
+    #
+    # == Class methods added
+    #
+    # - +.find(id)+ -- looks up an aggregate by ID
+    # - +.all+ -- returns all persisted aggregates
+    # - +.count+ -- returns the total number of persisted aggregates
+    # - +.delete(id)+ -- removes an aggregate by ID
+    # - +.first+ / +.last+ -- convenience accessors
+    # - +.create(**attrs)+ -- instantiates, stamps, saves, and returns a new aggregate
+    #
+    # == Instance methods added
+    #
+    # - +#save+ -- persists the current aggregate to the repository
+    # - +#update(**attrs)+ -- rebuilds the aggregate with new attributes and persists
+    # - +#destroy+ -- removes the aggregate from the repository
+    # - +#destroyed?+ -- returns true if +destroy+ has been called
+    #
+    # == Usage
+    #
+    #   Pizza.find(id) / Pizza.all / Pizza.count
+    #   Pizza.create(name: "Margherita")
+    #   pizza.save / pizza.update(name: "New") / pizza.destroy
+    #
     module RepositoryMethods
       # Binds CRUD class and instance methods onto the given aggregate class.
       #

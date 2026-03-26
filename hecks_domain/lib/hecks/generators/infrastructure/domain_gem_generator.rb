@@ -3,21 +3,20 @@ require_relative "domain_gem_generator/file_writer"
 require_relative "domain_gem_generator/llms_txt_writer"
 require_relative "domain_gem_generator/spec_writer"
 
-# Hecks::Generators::Infrastructure::DomainGemGenerator
-#
-# Generates a complete domain gem on disk — aggregates, value objects, commands,
-# events, policies, queries, ports, adapters, specs, and a gemspec. Delegates
-# to FileWriter (disk I/O) and SpecWriter
-# (RSpec scaffolds). Part of the Generators::Infrastructure layer, invoked by
-# the CLI `hecks domain build` command and `Hecks.build`.
-#
-#   gen = DomainGemGenerator.new(domain, output_dir: "./generated")
-#   gen.generate  # => path to generated gem root
-#
-
 module Hecks
   module Generators
     module Infrastructure
+    # Hecks::Generators::Infrastructure::DomainGemGenerator
+    #
+    # Generates a complete domain gem on disk — aggregates, value objects, commands,
+    # events, policies, queries, ports, adapters, specs, and a gemspec. Delegates
+    # to FileWriter (disk I/O) and SpecWriter
+    # (RSpec scaffolds). Part of the Generators::Infrastructure layer, invoked by
+    # the CLI `hecks domain build` command and `Hecks.build`.
+    #
+    #   gen = DomainGemGenerator.new(domain, output_dir: "./generated")
+    #   gen.generate  # => path to generated gem root
+    #
     class DomainGemGenerator
       include FileWriter
       include LlmsTxtWriter

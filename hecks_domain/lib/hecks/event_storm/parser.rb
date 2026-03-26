@@ -1,26 +1,25 @@
 require_relative "parser/pattern_matching"
 require_relative "parser/context_grouping"
 
-# Hecks::EventStorm::Parser
-#
-# Parses an ASCII event storm document into a structured intermediate
-# representation. Recognizes bounded contexts, commands, events, aggregates,
-# policies, actors, read models, external systems, and hotspots.
-#
-# The notation uses bracket shapes to encode concept types:
-#   >>Event<<  [Command]  (Aggregate)  {When X, Y}  <ReadModel>
-#   [[External]]  Actor: Name  !!Hotspot!!
-#
-# Pattern matching logic lives in Parser::PatternMatching; context splitting
-# and element grouping live in Parser::ContextGrouping.
-#
-#   parser = Parser.new(File.read("storm.md"))
-#   result = parser.parse
-#   result.contexts.first.name  # => "Ordering"
-#
-
 module Hecks
   module EventStorm
+    # Hecks::EventStorm::Parser
+    #
+    # Parses an ASCII event storm document into a structured intermediate
+    # representation. Recognizes bounded contexts, commands, events, aggregates,
+    # policies, actors, read models, external systems, and hotspots.
+    #
+    # The notation uses bracket shapes to encode concept types:
+    #   >>Event<<  [Command]  (Aggregate)  {When X, Y}  <ReadModel>
+    #   [[External]]  Actor: Name  !!Hotspot!!
+    #
+    # Pattern matching logic lives in Parser::PatternMatching; context splitting
+    # and element grouping live in Parser::ContextGrouping.
+    #
+    #   parser = Parser.new(File.read("storm.md"))
+    #   result = parser.parse
+    #   result.contexts.first.name  # => "Ordering"
+    #
     class Parser
       include PatternMatching
       include ContextGrouping

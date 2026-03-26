@@ -3,36 +3,35 @@ require "hecks_persist/database_connection"
 require_relative "configuration/domain_loader"
 require "hecks_persist/sql_setup"
 
-# Hecks::Configuration
-#
-# Wires Hecks into an application. Supports single or multiple domains with
-# pluggable adapters (memory or SQL). Extensions can be auto-wired or
-# explicitly declared. The auto_wire DSL detects available extensions and
-# enables them declaratively.
-#
-#   # Auto-wire everything:
-#   Hecks.configure do
-#     domain "pizzas_domain"
-#     auto_wire
-#   end
-#
-#   # Auto-wire with overrides:
-#   Hecks.configure do
-#     domain "pizzas_domain"
-#     auto_wire except: [:pii]
-#     extension :sockets, port: 4000
-#   end
-#
-#   # Fully explicit:
-#   Hecks.configure do
-#     domain "pizzas_domain"
-#     adapter :sqlite
-#     extension :http, port: 9292
-#     extension :audit
-#   end
-#
-
 module Hecks
+  # Hecks::Configuration
+  #
+  # Wires Hecks into an application. Supports single or multiple domains with
+  # pluggable adapters (memory or SQL). Extensions can be auto-wired or
+  # explicitly declared. The auto_wire DSL detects available extensions and
+  # enables them declaratively.
+  #
+  #   # Auto-wire everything:
+  #   Hecks.configure do
+  #     domain "pizzas_domain"
+  #     auto_wire
+  #   end
+  #
+  #   # Auto-wire with overrides:
+  #   Hecks.configure do
+  #     domain "pizzas_domain"
+  #     auto_wire except: [:pii]
+  #     extension :sockets, port: 4000
+  #   end
+  #
+  #   # Fully explicit:
+  #   Hecks.configure do
+  #     domain "pizzas_domain"
+  #     adapter :sqlite
+  #     extension :http, port: 9292
+  #     extension :audit
+  #   end
+  #
   # Manages the full configuration and boot lifecycle for Hecks applications,
   # particularly in Rails or gem-based setups where +Hecks.configure+ is used
   # instead of +Hecks.boot+. Provides a DSL for declaring domains, adapters,

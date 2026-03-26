@@ -1,12 +1,12 @@
-# Hecks::Generators::Infrastructure::SpecGenerator::EventSpec
-#
-# Generates RSpec specs for events: frozen state, timestamp,
-# and attribute carriage. Mixed into SpecGenerator.
-#
 module Hecks
   module Generators
     module Infrastructure
       class SpecGenerator
+        # Hecks::Generators::Infrastructure::SpecGenerator::EventSpec
+        #
+        # Generates RSpec specs for events: frozen state, timestamp,
+        # and attribute carriage. Mixed into SpecGenerator.
+        #
         module EventSpec
           # Generates an RSpec spec file for an event class.
           #

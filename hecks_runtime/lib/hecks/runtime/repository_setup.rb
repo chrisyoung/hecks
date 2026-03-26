@@ -1,15 +1,15 @@
-# Hecks::Runtime::RepositorySetup
-#
-# Mixin that creates a memory-adapter repository for each aggregate,
-# unless an explicit adapter override was supplied in the Runtime
-# config block.
-#
-#   class Runtime
-#     include RepositorySetup
-#   end
-#
 module Hecks
   class Runtime
+      # Hecks::Runtime::RepositorySetup
+      #
+      # Mixin that creates a memory-adapter repository for each aggregate,
+      # unless an explicit adapter override was supplied in the Runtime
+      # config block.
+      #
+      #   class Runtime
+      #     include RepositorySetup
+      #   end
+      #
       module RepositorySetup
         private
 

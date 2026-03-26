@@ -1,37 +1,36 @@
 require_relative "condition_node"
 require_relative "query_builder/in_memory_executor"
 
-# Hecks::Querying::QueryBuilder
-#
-# Chainable query interface for aggregate repositories. Collects query
-# parameters (conditions, ordering, limit, offset) and delegates execution
-# to the adapter's +query+ method when possible, falling back to in-memory
-# filtering via InMemoryExecutor for complex conditions or simple adapters.
-#
-# QueryBuilder is immutable-by-convention: every chaining method (+where+,
-# +order+, +limit+, +offset+, +or+) returns a new QueryBuilder via +dup+,
-# leaving the original unchanged. This makes it safe to store and reuse
-# intermediate queries.
-#
-# Includes Enumerable, so all standard Ruby collection methods (map, select,
-# reduce, etc.) work on query results.
-#
-# == Condition Composition
-#
-# Conditions are stored as a ConditionNode tree. +where+ adds AND conditions;
-# +or+ combines two queries with OR logic. Operator objects (Gt, Lt, In, etc.)
-# can be used as values for non-equality comparisons.
-#
-# == Usage
-#
-#   Pizza.where(style: "Classic").order(:name).limit(5)
-#   Pizza.where(style: "Classic").or(Pizza.where(style: "Tropical"))
-#   Pizza.find_by(name: "Margherita")
-#   Pizza.where(price: Operators::Gt.new(10)).pluck(:name)
-#
-
 module Hecks
   module Querying
+    # Hecks::Querying::QueryBuilder
+    #
+    # Chainable query interface for aggregate repositories. Collects query
+    # parameters (conditions, ordering, limit, offset) and delegates execution
+    # to the adapter's +query+ method when possible, falling back to in-memory
+    # filtering via InMemoryExecutor for complex conditions or simple adapters.
+    #
+    # QueryBuilder is immutable-by-convention: every chaining method (+where+,
+    # +order+, +limit+, +offset+, +or+) returns a new QueryBuilder via +dup+,
+    # leaving the original unchanged. This makes it safe to store and reuse
+    # intermediate queries.
+    #
+    # Includes Enumerable, so all standard Ruby collection methods (map, select,
+    # reduce, etc.) work on query results.
+    #
+    # == Condition Composition
+    #
+    # Conditions are stored as a ConditionNode tree. +where+ adds AND conditions;
+    # +or+ combines two queries with OR logic. Operator objects (Gt, Lt, In, etc.)
+    # can be used as values for non-equality comparisons.
+    #
+    # == Usage
+    #
+    #   Pizza.where(style: "Classic").order(:name).limit(5)
+    #   Pizza.where(style: "Classic").or(Pizza.where(style: "Tropical"))
+    #   Pizza.find_by(name: "Margherita")
+    #   Pizza.where(price: Operators::Gt.new(10)).pluck(:name)
+    #
     class QueryBuilder
       include Enumerable
       include InMemoryExecutor

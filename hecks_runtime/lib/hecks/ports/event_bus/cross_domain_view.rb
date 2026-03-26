@@ -1,31 +1,31 @@
-# Hecks::CrossDomainView
-#
-# An event-driven read model that projects events from multiple bounded
-# contexts into a single in-memory state. Subscribes to the shared event
-# bus and applies projection functions as events arrive.
-#
-# Each projection is a named function that receives the event and the current
-# state, and returns the new state. State is accumulated as a Hash that grows
-# as events are processed. The view can be reset to its initial empty state.
-#
-# == Lifecycle
-#
-# 1. Create the view with projections via a DSL block
-# 2. Subscribe it to an event bus (typically the shared cross-domain bus)
-# 3. As events are published, projections update the state
-# 4. Query +state+ at any time for the current read model
-#
-# == Usage
-#
-#   view = Hecks.cross_domain_view "RiskDashboard" do
-#     project("RegisteredModel") { |e, s| s.merge(total: (s[:total] || 0) + 1) }
-#     project("ReportedIncident") { |e, s| s.merge(incidents: (s[:incidents] || 0) + 1) }
-#   end
-#
-#   view.state  # => { total: 5, incidents: 2 }
-#   view.reset  # => clears state back to {}
-#
 module Hecks
+  # Hecks::CrossDomainView
+  #
+  # An event-driven read model that projects events from multiple bounded
+  # contexts into a single in-memory state. Subscribes to the shared event
+  # bus and applies projection functions as events arrive.
+  #
+  # Each projection is a named function that receives the event and the current
+  # state, and returns the new state. State is accumulated as a Hash that grows
+  # as events are processed. The view can be reset to its initial empty state.
+  #
+  # == Lifecycle
+  #
+  # 1. Create the view with projections via a DSL block
+  # 2. Subscribe it to an event bus (typically the shared cross-domain bus)
+  # 3. As events are published, projections update the state
+  # 4. Query +state+ at any time for the current read model
+  #
+  # == Usage
+  #
+  #   view = Hecks.cross_domain_view "RiskDashboard" do
+  #     project("RegisteredModel") { |e, s| s.merge(total: (s[:total] || 0) + 1) }
+  #     project("ReportedIncident") { |e, s| s.merge(incidents: (s[:incidents] || 0) + 1) }
+  #   end
+  #
+  #   view.state  # => { total: 5, incidents: 2 }
+  #   view.reset  # => clears state back to {}
+  #
   class CrossDomainView
     # @return [String] the name of this view (e.g., "RiskDashboard")
     attr_reader :name

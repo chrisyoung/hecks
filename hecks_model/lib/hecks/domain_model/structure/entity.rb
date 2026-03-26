@@ -1,28 +1,29 @@
-# Hecks::DomainModel::Structure::Entity
-#
-# Intermediate representation of a sub-entity within an aggregate. Entities
-# have identity (UUID), are mutable, and use identity-based equality -- unlike
-# value objects which are immutable and compared by attributes.
-#
-# Entities are owned by their parent aggregate and cannot exist independently.
-# They are always accessed through the aggregate root. Generated entity classes
-# include Hecks::Model, which provides identity, attribute accessors, and
-# invariant enforcement.
-#
-# Part of the DomainModel IR layer. Built by EntityBuilder and consumed by
-# EntityGenerator to produce classes that include Hecks::Model.
-#
-#   entity = Entity.new(
-#     name: "LedgerEntry",
-#     attributes: [Attribute.new(name: :amount, type: Float)],
-#     invariants: [Invariant.new(message: "amount positive", block: proc { amount > 0 })]
-#   )
-#   entity.name        # => "LedgerEntry"
-#   entity.attributes  # => [#<Attribute ...>]
-#
 module Hecks
   module DomainModel
     module Structure
+
+    # Hecks::DomainModel::Structure::Entity
+    #
+    # Intermediate representation of a sub-entity within an aggregate. Entities
+    # have identity (UUID), are mutable, and use identity-based equality -- unlike
+    # value objects which are immutable and compared by attributes.
+    #
+    # Entities are owned by their parent aggregate and cannot exist independently.
+    # They are always accessed through the aggregate root. Generated entity classes
+    # include Hecks::Model, which provides identity, attribute accessors, and
+    # invariant enforcement.
+    #
+    # Part of the DomainModel IR layer. Built by EntityBuilder and consumed by
+    # EntityGenerator to produce classes that include Hecks::Model.
+    #
+    #   entity = Entity.new(
+    #     name: "LedgerEntry",
+    #     attributes: [Attribute.new(name: :amount, type: Float)],
+    #     invariants: [Invariant.new(message: "amount positive", block: proc { amount > 0 })]
+    #   )
+    #   entity.name        # => "LedgerEntry"
+    #   entity.attributes  # => [#<Attribute ...>]
+    #
     class Entity
       # @return [String] the PascalCase name of this entity (e.g., "LedgerEntry", "LineItem")
       attr_reader :name

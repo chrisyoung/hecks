@@ -1,31 +1,32 @@
-# Hecks::DomainModel::Behavior
-#
-# Namespace for domain behavior representations: commands (intent to change
-# state), events (records of what happened), policies (reactive rules and
-# guards), queries (named lookups), specifications (reusable predicates),
-# workflows (multi-step orchestrations), services (cross-aggregate orchestration),
-# read models (event-driven projections), and event subscribers (arbitrary
-# event handlers).
-#
-# Part of the DomainModel IR layer. Each child class is a plain data object
-# (intermediate representation) built by the DSL builders and consumed by
-# generators to produce runtime domain code.
-#
-# == Child classes
-#
-#   Behavior::Command         # intent to change aggregate state
-#   Behavior::Condition       # pre/postcondition assertion on a command
-#   Behavior::DomainEvent     # record that something happened
-#   Behavior::EventSubscriber # arbitrary code block fired on an event
-#   Behavior::Policy          # reactive rule (event->command) or guard block
-#   Behavior::Query           # named, reusable lookup
-#   Behavior::ReadModel       # event-driven denormalized projection
-#   Behavior::Service         # cross-aggregate orchestration
-#   Behavior::Specification   # named, reusable boolean predicate
-#   Behavior::Workflow        # conditional multi-step command orchestration
-#
 module Hecks
   module DomainModel
+
+    # Hecks::DomainModel::Behavior
+    #
+    # Namespace for domain behavior representations: commands (intent to change
+    # state), events (records of what happened), policies (reactive rules and
+    # guards), queries (named lookups), specifications (reusable predicates),
+    # workflows (multi-step orchestrations), services (cross-aggregate orchestration),
+    # read models (event-driven projections), and event subscribers (arbitrary
+    # event handlers).
+    #
+    # Part of the DomainModel IR layer. Each child class is a plain data object
+    # (intermediate representation) built by the DSL builders and consumed by
+    # generators to produce runtime domain code.
+    #
+    # == Child classes
+    #
+    #   Behavior::Command         # intent to change aggregate state
+    #   Behavior::Condition       # pre/postcondition assertion on a command
+    #   Behavior::DomainEvent     # record that something happened
+    #   Behavior::EventSubscriber # arbitrary code block fired on an event
+    #   Behavior::Policy          # reactive rule (event->command) or guard block
+    #   Behavior::Query           # named, reusable lookup
+    #   Behavior::ReadModel       # event-driven denormalized projection
+    #   Behavior::Service         # cross-aggregate orchestration
+    #   Behavior::Specification   # named, reusable boolean predicate
+    #   Behavior::Workflow        # conditional multi-step command orchestration
+    #
     module Behavior
       autoload :Command,     "hecks/domain_model/behavior/command"
       autoload :Condition,   "hecks/domain_model/behavior/condition"

@@ -1,32 +1,32 @@
-# Hecks::Persistence
-#
-# The top-level module for all persistence-related concerns in the Hecks framework.
-# Groups CRUD repository methods, collection proxies for list attributes,
-# reference resolution for cross-aggregate lookups, and optional event sourcing
-# via EventRecorder.
-#
-# This module acts as the wiring layer between domain aggregate classes and their
-# underlying storage. It is called during application boot to attach persistence
-# behavior to each aggregate class without polluting the domain model itself.
-#
-# == Usage
-#
-#   Persistence.bind(PizzaClass, pizza_aggregate, repo)
-#   # Now PizzaClass has .create, .find, .all, #save, #update, #destroy, etc.
-#
-#   Persistence.bind_event_recorder(PizzaClass, recorder)
-#   # Now PizzaClass.history(id) returns event history
-#
-# == Submodules
-#
-# - +RepositoryMethods+ -- CRUD class/instance methods (find, create, save, update, destroy)
-# - +CollectionMethods+ -- Accessor methods for list attributes returning CollectionProxy
-# - +CollectionProxy+   -- Persistence-aware wrapper around list attributes
-# - +CollectionItem+    -- Delegator wrapper for individual items in a collection
-# - +ReferenceMethods+  -- Resolves reference_to attributes into aggregate lookups
-# - +EventRecorder+     -- SQL-backed event store for event-sourced aggregates
-#
 module Hecks
+  # Hecks::Persistence
+  #
+  # The top-level module for all persistence-related concerns in the Hecks framework.
+  # Groups CRUD repository methods, collection proxies for list attributes,
+  # reference resolution for cross-aggregate lookups, and optional event sourcing
+  # via EventRecorder.
+  #
+  # This module acts as the wiring layer between domain aggregate classes and their
+  # underlying storage. It is called during application boot to attach persistence
+  # behavior to each aggregate class without polluting the domain model itself.
+  #
+  # == Usage
+  #
+  #   Persistence.bind(PizzaClass, pizza_aggregate, repo)
+  #   # Now PizzaClass has .create, .find, .all, #save, #update, #destroy, etc.
+  #
+  #   Persistence.bind_event_recorder(PizzaClass, recorder)
+  #   # Now PizzaClass.history(id) returns event history
+  #
+  # == Submodules
+  #
+  # - +RepositoryMethods+ -- CRUD class/instance methods (find, create, save, update, destroy)
+  # - +CollectionMethods+ -- Accessor methods for list attributes returning CollectionProxy
+  # - +CollectionProxy+   -- Persistence-aware wrapper around list attributes
+  # - +CollectionItem+    -- Delegator wrapper for individual items in a collection
+  # - +ReferenceMethods+  -- Resolves reference_to attributes into aggregate lookups
+  # - +EventRecorder+     -- SQL-backed event store for event-sourced aggregates
+  #
   module Persistence
       autoload :RepositoryMethods, "hecks/ports/repository/repository_methods"
       autoload :CollectionMethods, "hecks/ports/repository/collection_methods"

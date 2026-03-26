@@ -1,18 +1,19 @@
-# Hecks::DSL::WorkflowBuilder
-#
-# DSL builder for workflow definitions. Collects sequential steps and
-# conditional branches, then builds a DomainModel::Behavior::Workflow.
-#
-#   builder = WorkflowBuilder.new("LoanApproval")
-#   builder.step "ScoreLoan", score: :principal
-#   builder.branch do
-#     when_spec("HighRisk") { step "ReviewLoan" }
-#     otherwise { step "ApproveLoan" }
-#   end
-#   workflow = builder.build
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::WorkflowBuilder
+    #
+    # DSL builder for workflow definitions. Collects sequential steps and
+    # conditional branches, then builds a DomainModel::Behavior::Workflow.
+    #
+    #   builder = WorkflowBuilder.new("LoanApproval")
+    #   builder.step "ScoreLoan", score: :principal
+    #   builder.branch do
+    #     when_spec("HighRisk") { step "ReviewLoan" }
+    #     otherwise { step "ApproveLoan" }
+    #   end
+    #   workflow = builder.build
+    #
     # Builds a DomainModel::Behavior::Workflow from step and branch declarations.
     #
     # WorkflowBuilder defines multi-step orchestrations that compose commands

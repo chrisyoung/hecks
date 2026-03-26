@@ -1,27 +1,27 @@
-# Hecks::Commands::CommandMethods
-#
-# Wires command classes to repositories and event buses, then creates
-# shortcut methods on aggregate classes that delegate to command.call.
-# Also binds a .bulk method for composing queries with commands.
-#
-# This module is the bridge between the domain IR (command definitions)
-# and the runtime Ruby classes. During boot, +bind+ iterates over each
-# command in an aggregate, sets up its repository, event bus, handler,
-# guard, and pre/postconditions, then creates convenient shortcut methods
-# so callers can write +Pizza.create(name: "Margherita")+ instead of
-# +PizzasDomain::Pizza::Commands::CreatePizza.call(name: "Margherita")+.
-#
-# == Usage
-#
-#   Commands.bind(PizzaClass, pizza_aggregate, bus, repo, defaults)
-#   Pizza.create(name: "Margherita")  # delegates to CreatePizza.call(...)
-#   Pizza.bulk(:retire, where: { status: "active" })  # batch command
-#
-#   Commands.bind_shortcuts(PizzaClass, pizza_aggregate) { |cmd| executor }
-#   # creates shortcut methods using a custom executor proc
-#
 module Hecks
   module Commands
+    # Hecks::Commands::CommandMethods
+    #
+    # Wires command classes to repositories and event buses, then creates
+    # shortcut methods on aggregate classes that delegate to command.call.
+    # Also binds a .bulk method for composing queries with commands.
+    #
+    # This module is the bridge between the domain IR (command definitions)
+    # and the runtime Ruby classes. During boot, +bind+ iterates over each
+    # command in an aggregate, sets up its repository, event bus, handler,
+    # guard, and pre/postconditions, then creates convenient shortcut methods
+    # so callers can write +Pizza.create(name: "Margherita")+ instead of
+    # +PizzasDomain::Pizza::Commands::CreatePizza.call(name: "Margherita")+.
+    #
+    # == Usage
+    #
+    #   Commands.bind(PizzaClass, pizza_aggregate, bus, repo, defaults)
+    #   Pizza.create(name: "Margherita")  # delegates to CreatePizza.call(...)
+    #   Pizza.bulk(:retire, where: { status: "active" })  # batch command
+    #
+    #   Commands.bind_shortcuts(PizzaClass, pizza_aggregate) { |cmd| executor }
+    #   # creates shortcut methods using a custom executor proc
+    #
     module CommandMethods
       # Wires command classes to their repository and event bus, then creates shortcut methods.
       #

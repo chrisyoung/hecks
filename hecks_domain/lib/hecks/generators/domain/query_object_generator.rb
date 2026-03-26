@@ -1,23 +1,23 @@
-# Hecks::Generators::Domain::QueryObjectGenerator
-#
-# Generates query modules (e.g. PizzaQueries) under Domain::Queries.
-# Each scalar, non-reference attribute gets a +by_<attribute>+ method that
-# delegates to +where()+. These modules are mixed into repositories to
-# provide typed finder methods for querying aggregates by attribute values.
-#
-# Only scalar attributes are included -- list attributes and reference
-# attributes are excluded since they cannot be directly queried with +where+.
-#
-# Part of Generators::Domain, consumed by DomainGemGenerator.
-#
-# == Usage
-#
-#   gen = QueryObjectGenerator.new(agg, domain_module: "PizzasDomain")
-#   gen.generate  # => "module PizzasDomain\n  module Queries\n    module PizzaQueries\n  ..."
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::QueryObjectGenerator
+    #
+    # Generates query modules (e.g. PizzaQueries) under Domain::Queries.
+    # Each scalar, non-reference attribute gets a +by_<attribute>+ method that
+    # delegates to +where()+. These modules are mixed into repositories to
+    # provide typed finder methods for querying aggregates by attribute values.
+    #
+    # Only scalar attributes are included -- list attributes and reference
+    # attributes are excluded since they cannot be directly queried with +where+.
+    #
+    # Part of Generators::Domain, consumed by DomainGemGenerator.
+    #
+    # == Usage
+    #
+    #   gen = QueryObjectGenerator.new(agg, domain_module: "PizzasDomain")
+    #   gen.generate  # => "module PizzasDomain\n  module Queries\n    module PizzaQueries\n  ..."
+    #
     class QueryObjectGenerator
 
       # Initializes the query object generator.

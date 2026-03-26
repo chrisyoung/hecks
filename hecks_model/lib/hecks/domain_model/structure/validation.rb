@@ -1,24 +1,25 @@
-# Hecks::DomainModel::Structure::Validation
-#
-# A validation rule for an aggregate attribute. Supports presence checks,
-# type constraints, and uniqueness enforcement. Rules are stored as a hash
-# (e.g. +{ presence: true, type: String, uniqueness: true }+).
-#
-# Validations are distinct from invariants: validations check individual
-# attributes against simple rules (present? correct type? unique?), while
-# invariants enforce cross-attribute business rules with custom logic.
-#
-# Part of the DomainModel IR layer. Built by the DSL validation helpers and
-# consumed by generators to produce attribute validation logic.
-#
-#   v = Validation.new(field: :name, rules: { presence: true, type: String })
-#   v.presence?    # => true
-#   v.type_rule    # => String
-#   v.uniqueness?  # => false
-#
 module Hecks
   module DomainModel
     module Structure
+
+    # Hecks::DomainModel::Structure::Validation
+    #
+    # A validation rule for an aggregate attribute. Supports presence checks,
+    # type constraints, and uniqueness enforcement. Rules are stored as a hash
+    # (e.g. +{ presence: true, type: String, uniqueness: true }+).
+    #
+    # Validations are distinct from invariants: validations check individual
+    # attributes against simple rules (present? correct type? unique?), while
+    # invariants enforce cross-attribute business rules with custom logic.
+    #
+    # Part of the DomainModel IR layer. Built by the DSL validation helpers and
+    # consumed by generators to produce attribute validation logic.
+    #
+    #   v = Validation.new(field: :name, rules: { presence: true, type: String })
+    #   v.presence?    # => true
+    #   v.type_rule    # => String
+    #   v.uniqueness?  # => false
+    #
     class Validation
       # @return [Symbol] the attribute name this validation applies to (e.g., :name, :email, :status)
       attr_reader :field

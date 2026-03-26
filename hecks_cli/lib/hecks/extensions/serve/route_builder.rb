@@ -1,19 +1,18 @@
 require "time"
 
-# Hecks::HTTP::RouteBuilder
-#
-# Generates REST route definitions from a domain's aggregates. For each
-# aggregate, produces standard CRUD routes (GET index, GET show, POST create,
-# PATCH update, DELETE) and custom query routes. Each route is a Hash with
-# +:method+, +:path+, and +:handler+ (a lambda that processes a request).
-#
-# Used by {Hecks::HTTP::DomainServer} to build its routing table. The
-# generated handlers call the domain's aggregate class methods directly
-# (e.g. +Pizza.all+, +Pizza.create+, +Pizza.find+).
-#
-
 module Hecks
   module HTTP
+    # Hecks::HTTP::RouteBuilder
+    #
+    # Generates REST route definitions from a domain's aggregates. For each
+    # aggregate, produces standard CRUD routes (GET index, GET show, POST create,
+    # PATCH update, DELETE) and custom query routes. Each route is a Hash with
+    # +:method+, +:path+, and +:handler+ (a lambda that processes a request).
+    #
+    # Used by {Hecks::HTTP::DomainServer} to build its routing table. The
+    # generated handlers call the domain's aggregate class methods directly
+    # (e.g. +Pizza.all+, +Pizza.create+, +Pizza.find+).
+    #
     class RouteBuilder
       # Initialize the builder with a domain definition and its module constant.
       #

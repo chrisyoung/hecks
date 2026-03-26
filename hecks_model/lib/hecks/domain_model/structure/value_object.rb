@@ -1,32 +1,33 @@
-# Hecks::DomainModel::Structure::ValueObject
-#
-# Intermediate representation of a DDD value object -- an immutable object
-# defined entirely by its attributes, with no identity. Value objects can
-# also carry invariants (runtime constraints).
-#
-# Value objects differ from entities in two key ways:
-# 1. They have no identity -- two value objects with the same attributes are equal
-# 2. They are immutable -- once created, their attributes cannot change
-#
-# Generated value object classes are frozen after initialization and use
-# attribute-based equality (==). They include Hecks::Model with the
-# value_object flag set.
-#
-# Part of the DomainModel IR layer. Built by ValueObjectBuilder and consumed
-# by ValueObjectGenerator to produce frozen, equality-by-value classes.
-#
-#   vo = ValueObject.new(
-#     name: "Address",
-#     attributes: [Attribute.new(name: :street, type: String)],
-#     invariants: [Invariant.new(message: "street required", block: proc { !street.nil? })]
-#   )
-#   vo.name        # => "Address"
-#   vo.attributes  # => [#<Attribute ...>]
-#   vo.invariants  # => [#<Invariant ...>]
-#
 module Hecks
   module DomainModel
     module Structure
+
+    # Hecks::DomainModel::Structure::ValueObject
+    #
+    # Intermediate representation of a DDD value object -- an immutable object
+    # defined entirely by its attributes, with no identity. Value objects can
+    # also carry invariants (runtime constraints).
+    #
+    # Value objects differ from entities in two key ways:
+    # 1. They have no identity -- two value objects with the same attributes are equal
+    # 2. They are immutable -- once created, their attributes cannot change
+    #
+    # Generated value object classes are frozen after initialization and use
+    # attribute-based equality (==). They include Hecks::Model with the
+    # value_object flag set.
+    #
+    # Part of the DomainModel IR layer. Built by ValueObjectBuilder and consumed
+    # by ValueObjectGenerator to produce frozen, equality-by-value classes.
+    #
+    #   vo = ValueObject.new(
+    #     name: "Address",
+    #     attributes: [Attribute.new(name: :street, type: String)],
+    #     invariants: [Invariant.new(message: "street required", block: proc { !street.nil? })]
+    #   )
+    #   vo.name        # => "Address"
+    #   vo.attributes  # => [#<Attribute ...>]
+    #   vo.invariants  # => [#<Invariant ...>]
+    #
     class ValueObject
       # @return [String] the PascalCase name of this value object (e.g., "Address", "Money", "DateRange")
       attr_reader :name

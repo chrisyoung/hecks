@@ -16,7 +16,8 @@ module Hecks
     #
     # @return [void]
     def claude(*args)
-      script = ::Gem.bin_path("hecks", "hecks_claude")
+      local = File.expand_path("../../../../bin/hecks_claude", __dir__)
+      script = File.exist?(local) ? local : ::Gem.bin_path("hecks", "hecks_claude")
       exec script, *args
     rescue ::Gem::Exception
       say "hecks_claude not found. Is the hecks gem installed?", :red

@@ -1,21 +1,21 @@
-# Hecks::Generators::Domain::CommandGenerator::InjectionHelpers
-#
-# Extracted helpers for injecting sets, lifecycle status, and lifecycle
-# guard lines into generated command constructor args. Mixed into
-# CommandGenerator to keep the main file under 200 lines.
-#
-# These helpers modify the argument arrays that are passed to +Aggregate.new+
-# in the generated +call+ method, handling:
-# - Explicit field overrides from the DSL's +sets+ declarations
-# - Lifecycle state transitions (setting the status field to the target state)
-# - Lifecycle guard checks (ensuring the aggregate is in the correct state
-#   before allowing a transition)
-# - List append detection (mapping singular command attrs to plural aggregate attrs)
-#
 module Hecks
   module Generators
     module Domain
       class CommandGenerator
+        # Hecks::Generators::Domain::CommandGenerator::InjectionHelpers
+        #
+        # Extracted helpers for injecting sets, lifecycle status, and lifecycle
+        # guard lines into generated command constructor args. Mixed into
+        # CommandGenerator to keep the main file under 200 lines.
+        #
+        # These helpers modify the argument arrays that are passed to +Aggregate.new+
+        # in the generated +call+ method, handling:
+        # - Explicit field overrides from the DSL's +sets+ declarations
+        # - Lifecycle state transitions (setting the status field to the target state)
+        # - Lifecycle guard checks (ensuring the aggregate is in the correct state
+        #   before allowing a transition)
+        # - List append detection (mapping singular command attrs to plural aggregate attrs)
+        #
         module InjectionHelpers
           private
 

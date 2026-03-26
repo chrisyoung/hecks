@@ -2,18 +2,17 @@ require_relative "openapi_generator/response_helpers"
 require_relative "openapi_generator/schema_builder"
 require_relative "openapi_generator/path_builder"
 
-# Hecks::HTTP::OpenapiGenerator
-#
-# Generates an OpenAPI 3.0 spec from a domain. Every aggregate gets
-# CRUD paths, every query gets a GET path. Types derived from DSL.
-#
-# Path building  -> OpenapiGenerator::PathBuilder
-# Schema building -> OpenapiGenerator::SchemaBuilder
-# Response helpers -> OpenapiGenerator::ResponseHelpers
-#
-
 module Hecks
   module HTTP
+    # Hecks::HTTP::OpenapiGenerator
+    #
+    # Generates an OpenAPI 3.0 spec from a domain. Every aggregate gets
+    # CRUD paths, every query gets a GET path. Types derived from DSL.
+    #
+    # Path building  -> OpenapiGenerator::PathBuilder
+    # Schema building -> OpenapiGenerator::SchemaBuilder
+    # Response helpers -> OpenapiGenerator::ResponseHelpers
+    #
     class OpenapiGenerator
       include ResponseHelpers
       include SchemaBuilder

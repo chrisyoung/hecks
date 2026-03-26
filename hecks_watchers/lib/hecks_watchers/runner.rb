@@ -1,12 +1,12 @@
-# HecksWatchers::Runner
-#
-# Polls the project for .rb file changes every second and runs all
-# watchers when changes are detected. This replaces +bin/watch-all+.
-#
-#   runner = HecksWatchers::Runner.new(project_root: Dir.pwd)
-#   runner.start   # blocks, polling forever
-#
 module HecksWatchers
+  # HecksWatchers::Runner
+  #
+  # Polls the project for .rb file changes every second and runs all
+  # watchers when changes are detected. This replaces +bin/watch-all+.
+  #
+  #   runner = HecksWatchers::Runner.new(project_root: Dir.pwd)
+  #   runner.start   # blocks, polling forever
+  #
   class Runner
     # @param project_root [String] path to the project root
     # @param interval [Numeric] seconds between polls (default: 1)

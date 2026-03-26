@@ -1,17 +1,17 @@
-# Hecks::Session::SystemBrowser
-#
-# Smalltalk-inspired system browser. Prints a navigable tree of all
-# domain elements -- aggregates, attributes, commands, events, policies,
-# queries, specifications, and value objects.
-#
-# Mixed into Session. Uses Unicode box-drawing characters to render a
-# tree structure with proper connectors for last/non-last items.
-#
-#   session.browse              # full domain tree
-#   session.browse("Account")   # single aggregate
-#
 module Hecks
   class Session
+    # Hecks::Session::SystemBrowser
+    #
+    # Smalltalk-inspired system browser. Prints a navigable tree of all
+    # domain elements -- aggregates, attributes, commands, events, policies,
+    # queries, specifications, and value objects.
+    #
+    # Mixed into Session. Uses Unicode box-drawing characters to render a
+    # tree structure with proper connectors for last/non-last items.
+    #
+    #   session.browse              # full domain tree
+    #   session.browse("Account")   # single aggregate
+    #
     module SystemBrowser
       # Print a tree view of the domain or a single aggregate.
       #

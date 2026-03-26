@@ -1,17 +1,18 @@
-# Hecks::DSL::ServiceBuilder
-#
-# DSL builder for domain service definitions. Services orchestrate
-# multiple commands across aggregates. The call block has access to
-# `dispatch(command_name, **attrs)` and the service's own attributes.
-#
-#   builder = ServiceBuilder.new("TransferMoney")
-#   builder.attribute :source_id, String
-#   builder.attribute :amount, Float
-#   builder.call { dispatch("Withdraw", account_id: source_id, amount: amount) }
-#   service = builder.build
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::ServiceBuilder
+    #
+    # DSL builder for domain service definitions. Services orchestrate
+    # multiple commands across aggregates. The call block has access to
+    # `dispatch(command_name, **attrs)` and the service's own attributes.
+    #
+    #   builder = ServiceBuilder.new("TransferMoney")
+    #   builder.attribute :source_id, String
+    #   builder.attribute :amount, Float
+    #   builder.call { dispatch("Withdraw", account_id: source_id, amount: amount) }
+    #   service = builder.build
+    #
     # Builds a DomainModel::Behavior::Service from DSL declarations.
     #
     # ServiceBuilder defines a domain service -- a stateless operation that

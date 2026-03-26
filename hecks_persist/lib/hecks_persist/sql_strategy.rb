@@ -1,21 +1,20 @@
 require "fileutils"
 require_relative "sql_helpers"
 
-# Hecks::Migrations::Strategies::SqlStrategy
-#
-# Generates SQL migration files from domain changes. Produces ALTER TABLE
-# statements for attribute changes and CREATE TABLE for new aggregates.
-# Supports NOT NULL (from presence validations), UNIQUE (from uniqueness
-# validations), DEFAULT values, foreign key cascading, and indexes.
-# Output goes to db/hecks_migrate/ to avoid conflicts with ActiveRecord.
-#
-#   strategy = SqlStrategy.new(output_dir: ".")
-#   strategy.generate(changes)
-#
-
 module Hecks
   module Migrations
     module Strategies
+      # Hecks::Migrations::Strategies::SqlStrategy
+      #
+      # Generates SQL migration files from domain changes. Produces ALTER TABLE
+      # statements for attribute changes and CREATE TABLE for new aggregates.
+      # Supports NOT NULL (from presence validations), UNIQUE (from uniqueness
+      # validations), DEFAULT values, foreign key cascading, and indexes.
+      # Output goes to db/hecks_migrate/ to avoid conflicts with ActiveRecord.
+      #
+      #   strategy = SqlStrategy.new(output_dir: ".")
+      #   strategy.generate(changes)
+      #
       class SqlStrategy < MigrationStrategy
       include SqlHelpers
 

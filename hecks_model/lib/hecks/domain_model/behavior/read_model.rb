@@ -1,27 +1,28 @@
-# Hecks::DomainModel::Behavior::ReadModel
-#
-# Intermediate representation of a read model -- an event-driven projection
-# that maintains a denormalized view of domain state. Each read model has a
-# name and a hash of projections mapping event names to transformation procs.
-#
-# When a domain event is published, the corresponding projection proc is called
-# with the event and the current projection state, producing an updated view.
-# Read models enable CQRS by separating the read side (optimized for queries)
-# from the write side (commands and aggregates).
-#
-# Part of the DomainModel IR layer. Built by ReadModelBuilder, consumed by
-# ReadModelWiring at runtime to create queryable projections.
-#
-#   rm = ReadModel.new(
-#     name: "OrderSummary",
-#     projections: { "PlacedOrder" => proc { |event, state| state.merge(total: event.total) } }
-#   )
-#   rm.name         # => "OrderSummary"
-#   rm.projections  # => { "PlacedOrder" => #<Proc> }
-#
 module Hecks
   module DomainModel
     module Behavior
+
+      # Hecks::DomainModel::Behavior::ReadModel
+      #
+      # Intermediate representation of a read model -- an event-driven projection
+      # that maintains a denormalized view of domain state. Each read model has a
+      # name and a hash of projections mapping event names to transformation procs.
+      #
+      # When a domain event is published, the corresponding projection proc is called
+      # with the event and the current projection state, producing an updated view.
+      # Read models enable CQRS by separating the read side (optimized for queries)
+      # from the write side (commands and aggregates).
+      #
+      # Part of the DomainModel IR layer. Built by ReadModelBuilder, consumed by
+      # ReadModelWiring at runtime to create queryable projections.
+      #
+      #   rm = ReadModel.new(
+      #     name: "OrderSummary",
+      #     projections: { "PlacedOrder" => proc { |event, state| state.merge(total: event.total) } }
+      #   )
+      #   rm.name         # => "OrderSummary"
+      #   rm.projections  # => { "PlacedOrder" => #<Proc> }
+      #
       class ReadModel
         # @return [String] PascalCase read model name (e.g. "OrderSummary")
         # @return [Hash{String => Proc}] mapping of event names to projection procs.

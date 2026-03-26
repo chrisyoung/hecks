@@ -1,36 +1,36 @@
-# Hecks::Query
-#
-# Mixin for generated query classes. Provides repository wiring and
-# delegates query methods (where, order, limit, etc.) to a QueryBuilder.
-# The generated call method is pure domain logic -- describes the query.
-#
-# == How it works
-#
-# When +.call+ is invoked, a new query instance is created and a +QueryBuilder+
-# is initialized against the wired repository. The user-defined +#call+ method
-# uses DSL methods (+where+, +order+, +limit+, +offset+) to build the query.
-# The resulting +QueryBuilder+ is chainable and lazily evaluated.
-#
-# == Comparison operators
-#
-# For range and inequality queries, use the operator helpers inside +#call+:
-# +gt+, +gte+, +lt+, +lte+, +not_eq+, +one_of+. These return operator
-# objects that the QueryBuilder interprets.
-#
-# == Usage
-#
-#   class Classics
-#     include Hecks::Query
-#
-#     def call
-#       where(style: "Classic").order(:name)
-#     end
-#   end
-#
-#   Classics.call          # => QueryBuilder (chainable)
-#   Classics.call.to_a     # => [#<Pizza>, ...]
-#
 module Hecks
+  # Hecks::Query
+  #
+  # Mixin for generated query classes. Provides repository wiring and
+  # delegates query methods (where, order, limit, etc.) to a QueryBuilder.
+  # The generated call method is pure domain logic -- describes the query.
+  #
+  # == How it works
+  #
+  # When +.call+ is invoked, a new query instance is created and a +QueryBuilder+
+  # is initialized against the wired repository. The user-defined +#call+ method
+  # uses DSL methods (+where+, +order+, +limit+, +offset+) to build the query.
+  # The resulting +QueryBuilder+ is chainable and lazily evaluated.
+  #
+  # == Comparison operators
+  #
+  # For range and inequality queries, use the operator helpers inside +#call+:
+  # +gt+, +gte+, +lt+, +lte+, +not_eq+, +one_of+. These return operator
+  # objects that the QueryBuilder interprets.
+  #
+  # == Usage
+  #
+  #   class Classics
+  #     include Hecks::Query
+  #
+  #     def call
+  #       where(style: "Classic").order(:name)
+  #     end
+  #   end
+  #
+  #   Classics.call          # => QueryBuilder (chainable)
+  #   Classics.call.to_a     # => [#<Pizza>, ...]
+  #
   module Query
     # Hook called when a class includes +Hecks::Query+. Extends the class
     # with +ClassMethods+ for repository wiring.

@@ -1,15 +1,15 @@
-# Hecks::Runtime::WorkflowSetup
-#
-# Mixin that binds workflow executors as callable methods on the domain
-# module at boot time. Each workflow becomes a method that accepts keyword
-# arguments and executes the workflow steps through the command bus.
-#
-#   class Runtime
-#     include WorkflowSetup
-#   end
-#
 module Hecks
   class Runtime
+    # Hecks::Runtime::WorkflowSetup
+    #
+    # Mixin that binds workflow executors as callable methods on the domain
+    # module at boot time. Each workflow becomes a method that accepts keyword
+    # arguments and executes the workflow steps through the command bus.
+    #
+    #   class Runtime
+    #     include WorkflowSetup
+    #   end
+    #
     module WorkflowSetup
       private
 

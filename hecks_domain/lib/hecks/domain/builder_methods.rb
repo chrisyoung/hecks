@@ -1,19 +1,19 @@
-# Hecks::DomainBuilderMethods
-#
-# DSL entry points for defining, validating, and previewing domains.
-# This module is extended onto the top-level Hecks module to provide
-# the primary API for domain construction. It wraps the DSL builders,
-# validator, and code generators behind simple top-level methods.
-#
-# These methods are the main interface for creating and inspecting
-# domain models before they are compiled or loaded.
-#
-#   Hecks.domain("Pizzas") { ... }
-#   Hecks.validate(domain)
-#   Hecks.preview(domain, "Pizza")
-#   Hecks.session("Pizzas")
-#
 module Hecks
+  # Hecks::DomainBuilderMethods
+  #
+  # DSL entry points for defining, validating, and previewing domains.
+  # This module is extended onto the top-level Hecks module to provide
+  # the primary API for domain construction. It wraps the DSL builders,
+  # validator, and code generators behind simple top-level methods.
+  #
+  # These methods are the main interface for creating and inspecting
+  # domain models before they are compiled or loaded.
+  #
+  #   Hecks.domain("Pizzas") { ... }
+  #   Hecks.validate(domain)
+  #   Hecks.preview(domain, "Pizza")
+  #   Hecks.session("Pizzas")
+  #
   module DomainBuilderMethods
     # Define a new domain using the Hecks DSL. Evaluates the given block
     # inside a DomainBuilder, which collects aggregate definitions, policies,

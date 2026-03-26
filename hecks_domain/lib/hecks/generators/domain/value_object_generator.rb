@@ -1,30 +1,30 @@
-# Hecks::Generators::Domain::ValueObjectGenerator
-#
-# Generates frozen, immutable value object classes with value-based
-# equality (+==+, +eql?+, +hash+). Value objects are nested inside their
-# parent aggregate class (e.g., +PizzasDomain::Pizza::Topping+).
-#
-# Supports:
-# - Invariant checks via +check_invariants!+ called before freeze
-# - List attributes that are frozen on creation
-# - Ruby keyword-safe attribute names via +**kwargs+ constructor form
-# - Value-based equality comparing all attributes
-# - Proper +hash+ implementation for use in Sets and as Hash keys
-#
-# When any attribute name is a Ruby keyword (e.g., +class+, +end+), the
-# generator switches to +**kwargs+ form and uses +send+ for attribute
-# access in equality/hash methods to avoid syntax errors.
-#
-# Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
-#
-# == Usage
-#
-#   gen = ValueObjectGenerator.new(vo, domain_module: "PizzasDomain", aggregate_name: "Pizza")
-#   gen.generate  # => "module PizzasDomain\n  class Pizza\n    class Topping\n  ..."
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::ValueObjectGenerator
+    #
+    # Generates frozen, immutable value object classes with value-based
+    # equality (+==+, +eql?+, +hash+). Value objects are nested inside their
+    # parent aggregate class (e.g., +PizzasDomain::Pizza::Topping+).
+    #
+    # Supports:
+    # - Invariant checks via +check_invariants!+ called before freeze
+    # - List attributes that are frozen on creation
+    # - Ruby keyword-safe attribute names via +**kwargs+ constructor form
+    # - Value-based equality comparing all attributes
+    # - Proper +hash+ implementation for use in Sets and as Hash keys
+    #
+    # When any attribute name is a Ruby keyword (e.g., +class+, +end+), the
+    # generator switches to +**kwargs+ form and uses +send+ for attribute
+    # access in equality/hash methods to avoid syntax errors.
+    #
+    # Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # == Usage
+    #
+    #   gen = ValueObjectGenerator.new(vo, domain_module: "PizzasDomain", aggregate_name: "Pizza")
+    #   gen.generate  # => "module PizzasDomain\n  class Pizza\n    class Topping\n  ..."
+    #
     class ValueObjectGenerator
 
       # Initializes the value object generator.

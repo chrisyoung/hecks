@@ -1,18 +1,18 @@
-# Hecks::DomainVisualizer::BehaviorDiagram
-#
-# Builds the Mermaid flowchart portion showing command-to-event flows
-# and policy chains (event triggers command). Mixed into DomainVisualizer.
-#
-# The flowchart uses Mermaid's LR (left-to-right) direction. Each aggregate
-# is rendered as a subgraph containing its commands (rectangles) and events
-# (rounded rectangles / stadium shapes). Policies are drawn as dotted arrows
-# connecting events to the commands they trigger, potentially across aggregates.
-#
-#   include BehaviorDiagram
-#   generate_behavior  # => "flowchart LR\n    subgraph Pizza\n    ..."
-#
 module Hecks
   class DomainVisualizer
+    # Hecks::DomainVisualizer::BehaviorDiagram
+    #
+    # Builds the Mermaid flowchart portion showing command-to-event flows
+    # and policy chains (event triggers command). Mixed into DomainVisualizer.
+    #
+    # The flowchart uses Mermaid's LR (left-to-right) direction. Each aggregate
+    # is rendered as a subgraph containing its commands (rectangles) and events
+    # (rounded rectangles / stadium shapes). Policies are drawn as dotted arrows
+    # connecting events to the commands they trigger, potentially across aggregates.
+    #
+    #   include BehaviorDiagram
+    #   generate_behavior  # => "flowchart LR\n    subgraph Pizza\n    ..."
+    #
     module BehaviorDiagram
       private
 

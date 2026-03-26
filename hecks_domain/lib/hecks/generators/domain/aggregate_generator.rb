@@ -1,30 +1,29 @@
 require_relative "aggregate_generator/validation_generation"
 require_relative "aggregate_generator/invariant_generation"
 
-# Hecks::Generators::Domain::AggregateGenerator
-#
-# Generates aggregate root classes that include Hecks::Model. Emits
-# attribute declarations via the Model DSL, plus validation and invariant
-# methods from the ValidationGeneration and InvariantGeneration mixins.
-# Identity, timestamps, and equality come from Hecks::Model at runtime.
-# Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
-#
-# The generated class includes:
-# - +attribute+ declarations for each user-defined attribute
-# - State predicate methods if a lifecycle is defined (e.g., +active?+, +archived?+)
-# - Enum constant arrays (e.g., +VALID_STATUS+) for attributes with enum constraints
-# - A private +validate!+ method combining presence checks, type checks, and enum checks
-# - A private +check_invariants!+ method for domain invariants
-#
-# == Usage
-#
-#   gen = AggregateGenerator.new(agg, domain_module: "PizzasDomain")
-#   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."
-#
-
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::AggregateGenerator
+    #
+    # Generates aggregate root classes that include Hecks::Model. Emits
+    # attribute declarations via the Model DSL, plus validation and invariant
+    # methods from the ValidationGeneration and InvariantGeneration mixins.
+    # Identity, timestamps, and equality come from Hecks::Model at runtime.
+    # Part of Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # The generated class includes:
+    # - +attribute+ declarations for each user-defined attribute
+    # - State predicate methods if a lifecycle is defined (e.g., +active?+, +archived?+)
+    # - Enum constant arrays (e.g., +VALID_STATUS+) for attributes with enum constraints
+    # - A private +validate!+ method combining presence checks, type checks, and enum checks
+    # - A private +check_invariants!+ method for domain invariants
+    #
+    # == Usage
+    #
+    #   gen = AggregateGenerator.new(agg, domain_module: "PizzasDomain")
+    #   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."
+    #
     class AggregateGenerator
       include ValidationGeneration
       include InvariantGeneration

@@ -1,3 +1,7 @@
+require "hecks"
+begin; require "active_hecks"; rescue LoadError; end
+begin; require "hecks_live"; rescue LoadError; end
+
 # HecksOnRails
 #
 # Bundles ActiveHecks + HecksLive for Rails applications.
@@ -6,9 +10,5 @@
 #   # Gemfile
 #   gem "hecks_on_rails"
 #
-require "hecks"
-begin; require "active_hecks"; rescue LoadError; end
-begin; require "hecks_live"; rescue LoadError; end
-
 module HecksOnRails
 end

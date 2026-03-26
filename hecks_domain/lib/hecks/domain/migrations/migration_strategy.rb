@@ -1,28 +1,28 @@
-# Hecks::Migrations::MigrationStrategy
-#
-# Base class for adapter-specific migration generators. Each strategy
-# knows how to turn domain Change objects into migration files for its
-# storage backend. Maintains a class-level registry of strategies so
-# that +run_all+ can dispatch changes to all registered backends.
-#
-# Subclass and implement #generate and #file_path to create a custom strategy:
-#
-#   class RedisMigrationStrategy < Hecks::Migrations::MigrationStrategy
-#     def generate(changes)
-#       # return migration content string, or nil if nothing to do
-#     end
-#
-#     def file_path
-#       "db/redis/#{timestamp}_migration.rb"
-#     end
-#   end
-#
-# Register strategies so MigrationStrategy.run_all picks them up:
-#
-#   Hecks::Migrations::MigrationStrategy.register(:redis, RedisMigrationStrategy)
-#
 module Hecks
   module Migrations
+    # Hecks::Migrations::MigrationStrategy
+    #
+    # Base class for adapter-specific migration generators. Each strategy
+    # knows how to turn domain Change objects into migration files for its
+    # storage backend. Maintains a class-level registry of strategies so
+    # that +run_all+ can dispatch changes to all registered backends.
+    #
+    # Subclass and implement #generate and #file_path to create a custom strategy:
+    #
+    #   class RedisMigrationStrategy < Hecks::Migrations::MigrationStrategy
+    #     def generate(changes)
+    #       # return migration content string, or nil if nothing to do
+    #     end
+    #
+    #     def file_path
+    #       "db/redis/#{timestamp}_migration.rb"
+    #     end
+    #   end
+    #
+    # Register strategies so MigrationStrategy.run_all picks them up:
+    #
+    #   Hecks::Migrations::MigrationStrategy.register(:redis, RedisMigrationStrategy)
+    #
     class MigrationStrategy
 
     # Class-level registry mapping strategy names to their classes.

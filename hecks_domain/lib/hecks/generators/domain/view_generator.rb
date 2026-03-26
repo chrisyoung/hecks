@@ -1,29 +1,29 @@
-# Hecks::Generators::Domain::ViewGenerator
-#
-# Generates CQRS view (read model) classes that subscribe to domain events
-# and maintain projected state. Views are namespaced under +Domain::Views+.
-#
-# Each view class includes:
-# - A +PROJECTIONS+ constant listing the event names it handles
-# - A +call(event, state)+ method that dispatches to the appropriate
-#   +project_<event_name>+ method based on the event's class name
-# - Individual +project_<event_name>+ methods whose bodies come from
-#   the DSL projection blocks
-#
-# The +call+ method uses the event's class name (underscore-cased) to find
-# the matching projection method. If no projection handles the event, the
-# current state is returned unchanged.
-#
-# Part of Generators::Domain.
-#
-# == Usage
-#
-#   gen = ViewGenerator.new(view, domain_module: "ComplianceDomain")
-#   gen.generate
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::ViewGenerator
+    #
+    # Generates CQRS view (read model) classes that subscribe to domain events
+    # and maintain projected state. Views are namespaced under +Domain::Views+.
+    #
+    # Each view class includes:
+    # - A +PROJECTIONS+ constant listing the event names it handles
+    # - A +call(event, state)+ method that dispatches to the appropriate
+    #   +project_<event_name>+ method based on the event's class name
+    # - Individual +project_<event_name>+ methods whose bodies come from
+    #   the DSL projection blocks
+    #
+    # The +call+ method uses the event's class name (underscore-cased) to find
+    # the matching projection method. If no projection handles the event, the
+    # current state is returned unchanged.
+    #
+    # Part of Generators::Domain.
+    #
+    # == Usage
+    #
+    #   gen = ViewGenerator.new(view, domain_module: "ComplianceDomain")
+    #   gen.generate
+    #
     class ViewGenerator
 
       # Initializes the view generator.

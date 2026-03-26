@@ -1,43 +1,43 @@
-# Hecks::Command
-#
-# Mixin for generated command classes. Orchestrates the full command lifecycle:
-# run guard policy, run handler, execute call (with optional middleware),
-# persist aggregate, emit event, and record event.
-# The generated call method is pure domain logic — just build and return
-# the aggregate.
-#
-# == Lifecycle
-#
-# When +.call+ is invoked the following steps execute in order:
-# 1. Guard policy (+guarded_by+) -- rejects unauthorized commands
-# 2. Handler callback (+handler+) -- optional pre-processing hook
-# 3. Precondition checks -- domain invariants that must hold before execution
-# 4. +#call+ (user-defined) -- builds/modifies the aggregate; may be wrapped by command bus middleware
-# 5. Postcondition checks -- domain invariants that must hold after execution
-# 6. Persist aggregate via the wired repository
-# 7. Emit event via the wired event bus
-# 8. Record event in the event recorder for the aggregate
-#
-# == Chaining
-#
-# Commands can be chained fluently with +#then+. If any step raises, the
-# chain short-circuits and the error is captured on the originating command.
-#
-# == Usage
-#
-#   class CreatePizza
-#     emits "CreatedPizza"
-#
-#     def call
-#       Pizza.new(name: name)
-#     end
-#   end
-#
-#   cmd = CreatePizza.call(name: "Margherita")
-#   cmd.aggregate  # => #<Pizza>
-#   cmd.event      # => #<CreatedPizza>
-#
 module Hecks
+  # Hecks::Command
+  #
+  # Mixin for generated command classes. Orchestrates the full command lifecycle:
+  # run guard policy, run handler, execute call (with optional middleware),
+  # persist aggregate, emit event, and record event.
+  # The generated call method is pure domain logic — just build and return
+  # the aggregate.
+  #
+  # == Lifecycle
+  #
+  # When +.call+ is invoked the following steps execute in order:
+  # 1. Guard policy (+guarded_by+) -- rejects unauthorized commands
+  # 2. Handler callback (+handler+) -- optional pre-processing hook
+  # 3. Precondition checks -- domain invariants that must hold before execution
+  # 4. +#call+ (user-defined) -- builds/modifies the aggregate; may be wrapped by command bus middleware
+  # 5. Postcondition checks -- domain invariants that must hold after execution
+  # 6. Persist aggregate via the wired repository
+  # 7. Emit event via the wired event bus
+  # 8. Record event in the event recorder for the aggregate
+  #
+  # == Chaining
+  #
+  # Commands can be chained fluently with +#then+. If any step raises, the
+  # chain short-circuits and the error is captured on the originating command.
+  #
+  # == Usage
+  #
+  #   class CreatePizza
+  #     emits "CreatedPizza"
+  #
+  #     def call
+  #       Pizza.new(name: name)
+  #     end
+  #   end
+  #
+  #   cmd = CreatePizza.call(name: "Margherita")
+  #   cmd.aggregate  # => #<Pizza>
+  #   cmd.event      # => #<CreatedPizza>
+  #
   module Command
     # Hook called when a class includes +Hecks::Command+. Extends the class
     # with +ClassMethods+ and defines +aggregate+ and +event+ readers on

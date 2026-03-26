@@ -1,20 +1,20 @@
-# Hecks::Session::BuildActions
-#
-# Session methods for validating, previewing, building, and saving
-# the domain being constructed. Part of the Session layer -- mixed
-# into Session to keep build-phase logic separate from play-mode.
-#
-# Provides the core workflow for going from an in-memory domain definition
-# to a validated, generated Ruby gem on disk. Also supports serializing the
-# domain back to DSL source code for persistence and reloading.
-#
-#   session.validate
-#   session.preview("Pizza")
-#   session.build(version: "1.0.0")
-#   session.save("hecks_domain.rb")
-#
 module Hecks
   class Session
+    # Hecks::Session::BuildActions
+    #
+    # Session methods for validating, previewing, building, and saving
+    # the domain being constructed. Part of the Session layer -- mixed
+    # into Session to keep build-phase logic separate from play-mode.
+    #
+    # Provides the core workflow for going from an in-memory domain definition
+    # to a validated, generated Ruby gem on disk. Also supports serializing the
+    # domain back to DSL source code for persistence and reloading.
+    #
+    #   session.validate
+    #   session.preview("Pizza")
+    #   session.build(version: "1.0.0")
+    #   session.save("hecks_domain.rb")
+    #
     module BuildActions
       # Validate the current domain definition.
       #

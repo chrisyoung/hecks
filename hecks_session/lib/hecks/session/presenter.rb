@@ -1,19 +1,19 @@
-# Hecks::Session::Presenter
-#
-# Session mixin for human-readable output: describe, status, and inspect.
-# Part of the Session layer -- formats aggregate, command, policy, query,
-# scope, and subscriber summaries for REPL display.
-#
-# The +describe+ method prints a complete domain overview including all
-# aggregates with their attributes, value objects, entities, commands,
-# validations, policies, queries, scopes, and subscribers. Domain-level
-# policies (cross-aggregate) are shown separately at the end.
-#
-#   session.describe   # prints full domain summary
-#   session.status     # alias for describe
-#
 module Hecks
   class Session
+    # Hecks::Session::Presenter
+    #
+    # Session mixin for human-readable output: describe, status, and inspect.
+    # Part of the Session layer -- formats aggregate, command, policy, query,
+    # scope, and subscriber summaries for REPL display.
+    #
+    # The +describe+ method prints a complete domain overview including all
+    # aggregates with their attributes, value objects, entities, commands,
+    # validations, policies, queries, scopes, and subscribers. Domain-level
+    # policies (cross-aggregate) are shown separately at the end.
+    #
+    #   session.describe   # prints full domain summary
+    #   session.status     # alias for describe
+    #
     module Presenter
       # Print a full description of the domain and all its aggregates.
       #

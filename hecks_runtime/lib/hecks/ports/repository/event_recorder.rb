@@ -1,27 +1,27 @@
 require "json"
 
-# Hecks::Persistence::EventRecorder
-#
-# Records domain events to a SQL +domain_events+ table. Enabled via
-# +adapter :sql, event_sourced: true+ in +Hecks.configure+.
-# Provides aggregate history and full event stream queries.
-#
-# Events are stored in streams keyed by +"AggregateType-id"+ (e.g.,
-# +"Pizza-42"+) with monotonically increasing version numbers per stream.
-# Event data is serialized as JSON.
-#
-# The table is auto-created if it does not exist when the recorder is
-# instantiated (schema migration is handled internally).
-#
-# == Usage
-#
-#   recorder = EventRecorder.new(db)
-#   recorder.record("Pizza", pizza.id, created_event)
-#   recorder.history("Pizza", pizza.id)  # => [{ stream_id: "Pizza-1", ... }, ...]
-#   recorder.all_events                  # => all events across all streams
-#
 module Hecks
   module Persistence
+    # Hecks::Persistence::EventRecorder
+    #
+    # Records domain events to a SQL +domain_events+ table. Enabled via
+    # +adapter :sql, event_sourced: true+ in +Hecks.configure+.
+    # Provides aggregate history and full event stream queries.
+    #
+    # Events are stored in streams keyed by +"AggregateType-id"+ (e.g.,
+    # +"Pizza-42"+) with monotonically increasing version numbers per stream.
+    # Event data is serialized as JSON.
+    #
+    # The table is auto-created if it does not exist when the recorder is
+    # instantiated (schema migration is handled internally).
+    #
+    # == Usage
+    #
+    #   recorder = EventRecorder.new(db)
+    #   recorder.record("Pizza", pizza.id, created_event)
+    #   recorder.history("Pizza", pizza.id)  # => [{ stream_id: "Pizza-1", ... }, ...]
+    #   recorder.all_events                  # => all events across all streams
+    #
     class EventRecorder
         # Creates a new EventRecorder backed by the given Sequel database connection.
         # Ensures the +domain_events+ table exists, creating it if necessary.

@@ -1,29 +1,29 @@
-# Hecks::Persistence::CollectionMethods
-#
-# Binds collection proxy accessors onto aggregate classes during application boot.
-# For each list attribute whose type corresponds to a value object or entity defined
-# on the aggregate, this module defines an instance method that returns a
-# CollectionProxy -- a persistence-aware wrapper that supports create, delete,
-# and clear operations on the collection.
-#
-# This module is called by +Persistence.bind+ and should not be used directly.
-#
-# == How it works
-#
-# 1. Iterates over the aggregate's attributes that are marked as lists (+list?+)
-# 2. For each, finds the matching value object or entity definition
-# 3. Resolves the corresponding Ruby class constant on the aggregate class
-# 4. Defines an instance method (e.g., +toppings+) that returns a CollectionProxy
-#
-# == Usage
-#
-#   CollectionMethods.bind(PizzaClass, pizza_aggregate, repo)
-#   pizza = Pizza.create(name: "Margherita")
-#   pizza.toppings.create(name: "Mozzarella", amount: 2)
-#   pizza.toppings.count  # => 1
-#
 module Hecks
   module Persistence
+    # Hecks::Persistence::CollectionMethods
+    #
+    # Binds collection proxy accessors onto aggregate classes during application boot.
+    # For each list attribute whose type corresponds to a value object or entity defined
+    # on the aggregate, this module defines an instance method that returns a
+    # CollectionProxy -- a persistence-aware wrapper that supports create, delete,
+    # and clear operations on the collection.
+    #
+    # This module is called by +Persistence.bind+ and should not be used directly.
+    #
+    # == How it works
+    #
+    # 1. Iterates over the aggregate's attributes that are marked as lists (+list?+)
+    # 2. For each, finds the matching value object or entity definition
+    # 3. Resolves the corresponding Ruby class constant on the aggregate class
+    # 4. Defines an instance method (e.g., +toppings+) that returns a CollectionProxy
+    #
+    # == Usage
+    #
+    #   CollectionMethods.bind(PizzaClass, pizza_aggregate, repo)
+    #   pizza = Pizza.create(name: "Margherita")
+    #   pizza.toppings.create(name: "Mozzarella", amount: 2)
+    #   pizza.toppings.count  # => 1
+    #
     module CollectionMethods
       # Defines collection accessor methods on the given aggregate class.
       #

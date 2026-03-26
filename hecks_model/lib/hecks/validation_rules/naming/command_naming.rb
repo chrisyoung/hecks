@@ -1,15 +1,3 @@
-# Hecks::ValidationRules::Naming::CommandNaming
-#
-# Validates that command names start with a verb (e.g. +CreatePizza+,
-# +UpdateOrder+). Uses WordNet for verb detection when the +rwordnet+ gem
-# is available; falls back to custom verbs only when it is not.
-#
-# Custom verbs can be registered in two ways:
-# 1. Via +domain.custom_verbs+ (an array of strings)
-# 2. Via a +verbs.txt+ file at the root of the domain folder (one word per line)
-#
-# Part of the ValidationRules::Naming group -- run by +Hecks.validate+.
-#
 begin
   require "rwordnet"
 rescue LoadError
@@ -19,6 +7,19 @@ end
 module Hecks
   module ValidationRules
     module Naming
+
+    # Hecks::ValidationRules::Naming::CommandNaming
+    #
+    # Validates that command names start with a verb (e.g. +CreatePizza+,
+    # +UpdateOrder+). Uses WordNet for verb detection when the +rwordnet+ gem
+    # is available; falls back to custom verbs only when it is not.
+    #
+    # Custom verbs can be registered in two ways:
+    # 1. Via +domain.custom_verbs+ (an array of strings)
+    # 2. Via a +verbs.txt+ file at the root of the domain folder (one word per line)
+    #
+    # Part of the ValidationRules::Naming group -- run by +Hecks.validate+.
+    #
     class CommandNaming < BaseRule
       # Checks all commands across all aggregates and returns errors for any
       # command whose name does not start with a recognized verb.

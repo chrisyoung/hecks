@@ -1,26 +1,27 @@
-# Hecks::DomainModel::Structure::Scope
-#
-# Value object representing a named query scope declared on an aggregate.
-# A scope has a name and conditions -- either a plain Hash for simple
-# equality filters, or a Proc/lambda for parameterized queries. Use
-# +callable?+ to distinguish the two forms.
-#
-# Scopes are used at runtime by the query subsystem to filter collections
-# of aggregates. Static (Hash) scopes apply fixed equality conditions, while
-# callable (Proc) scopes accept parameters and return a conditions Hash.
-#
-# Part of the DomainModel IR layer. Built by AggregateBuilder and consumed
-# by generators and the querying subsystem at runtime.
-#
-#   # Static scope -- fixed conditions
-#   Scope.new(name: :active, conditions: { status: "active" })
-#
-#   # Callable scope -- parameterized conditions
-#   Scope.new(name: :by_name, conditions: ->(name) { { name: name } })
-#
 module Hecks
   module DomainModel
     module Structure
+
+    # Hecks::DomainModel::Structure::Scope
+    #
+    # Value object representing a named query scope declared on an aggregate.
+    # A scope has a name and conditions -- either a plain Hash for simple
+    # equality filters, or a Proc/lambda for parameterized queries. Use
+    # +callable?+ to distinguish the two forms.
+    #
+    # Scopes are used at runtime by the query subsystem to filter collections
+    # of aggregates. Static (Hash) scopes apply fixed equality conditions, while
+    # callable (Proc) scopes accept parameters and return a conditions Hash.
+    #
+    # Part of the DomainModel IR layer. Built by AggregateBuilder and consumed
+    # by generators and the querying subsystem at runtime.
+    #
+    #   # Static scope -- fixed conditions
+    #   Scope.new(name: :active, conditions: { status: "active" })
+    #
+    #   # Callable scope -- parameterized conditions
+    #   Scope.new(name: :by_name, conditions: ->(name) { { name: name } })
+    #
     class Scope
       # @return [Symbol] the scope name, used as a method name on the query interface
       #   (e.g., :active, :by_name, :recent)

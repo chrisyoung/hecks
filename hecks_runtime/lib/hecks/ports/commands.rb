@@ -1,27 +1,27 @@
-# Hecks::Commands
-#
-# Groups command dispatch infrastructure: the CommandBus, CommandRunner,
-# and CommandMethods mixin that wires command class methods onto aggregates.
-#
-# This module serves as the entry point for binding command infrastructure
-# to aggregate classes during application boot. It delegates to CommandMethods
-# for the actual wiring of repositories, event buses, and shortcut methods.
-#
-# == Architecture
-#
-# - CommandBus -- dispatches commands through a middleware pipeline
-# - CommandRunner -- legacy dispatcher (no middleware), kept for backward compat
-# - CommandMethods -- wires command classes to repos/buses and creates shortcut methods
-#
-# == Usage
-#
-#   Commands.bind(agg_class, aggregate, bus, repo, defaults)
-#   # Now agg_class has shortcut methods like .create, .update, .delete
-#
-#   Commands.bind_shortcuts(agg_class, aggregate) { |cmd| executor_proc }
-#   # Creates shortcut methods using a custom executor
-#
 module Hecks
+  # Hecks::Commands
+  #
+  # Groups command dispatch infrastructure: the CommandBus, CommandRunner,
+  # and CommandMethods mixin that wires command class methods onto aggregates.
+  #
+  # This module serves as the entry point for binding command infrastructure
+  # to aggregate classes during application boot. It delegates to CommandMethods
+  # for the actual wiring of repositories, event buses, and shortcut methods.
+  #
+  # == Architecture
+  #
+  # - CommandBus -- dispatches commands through a middleware pipeline
+  # - CommandRunner -- legacy dispatcher (no middleware), kept for backward compat
+  # - CommandMethods -- wires command classes to repos/buses and creates shortcut methods
+  #
+  # == Usage
+  #
+  #   Commands.bind(agg_class, aggregate, bus, repo, defaults)
+  #   # Now agg_class has shortcut methods like .create, .update, .delete
+  #
+  #   Commands.bind_shortcuts(agg_class, aggregate) { |cmd| executor_proc }
+  #   # Creates shortcut methods using a custom executor
+  #
   module Commands
       autoload :CommandBus,     "hecks/ports/commands/command_bus"
       autoload :CommandRunner,  "hecks/ports/commands/command_runner"

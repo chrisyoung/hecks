@@ -1,22 +1,22 @@
-# Hecks::Queue
-#
-# Abstract interface for command queues. Commands are dispatched through
-# the queue instead of executing inline. The default MemoryQueue processes
-# synchronously (same thread); production adapters (Sidekiq, RabbitMQ, SQS)
-# process asynchronously. Swap via +Hecks.boot { queue :sidekiq }+.
-#
-# The queue returns a CommandHandle from +enqueue+, which provides a +wait+
-# method to block until the command completes. This unified interface works
-# for both sync (memory) and async (production) backends.
-#
-# == Usage
-#
-#   handle = Hecks.queue.enqueue("RegisterModel", name: "GPT-5")
-#   result = handle.wait        # blocks until complete (sync: immediate)
-#   handle.completed?           # => true
-#   handle.result               # => the command's return value
-#
 module Hecks
+  # Hecks::Queue
+  #
+  # Abstract interface for command queues. Commands are dispatched through
+  # the queue instead of executing inline. The default MemoryQueue processes
+  # synchronously (same thread); production adapters (Sidekiq, RabbitMQ, SQS)
+  # process asynchronously. Swap via +Hecks.boot { queue :sidekiq }+.
+  #
+  # The queue returns a CommandHandle from +enqueue+, which provides a +wait+
+  # method to block until the command completes. This unified interface works
+  # for both sync (memory) and async (production) backends.
+  #
+  # == Usage
+  #
+  #   handle = Hecks.queue.enqueue("RegisterModel", name: "GPT-5")
+  #   result = handle.wait        # blocks until complete (sync: immediate)
+  #   handle.completed?           # => true
+  #   handle.result               # => the command's return value
+  #
   module Queue
     # Handle returned from +enqueue+. Wraps a deferred command execution.
     #

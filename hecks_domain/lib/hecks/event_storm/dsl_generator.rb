@@ -1,18 +1,18 @@
-# Hecks::EventStorm::DslGenerator
-#
-# Generates a Hecks Ruby DSL file from a Parser::ParseResult. Produces
-# editable source code with TODO placeholders for attributes that need
-# to be filled in after the event storm.
-#
-# Part of the EventStorm module. Used by Hecks.from_event_storm to produce
-# the DSL string output.
-#
-#   result = EventStorm::Parser.new(source).parse
-#   dsl = EventStorm::DslGenerator.new(result, name: "Ordering").generate
-#   puts dsl  # => "Hecks.domain \"Ordering\" do ..."
-#
 module Hecks
   module EventStorm
+    # Hecks::EventStorm::DslGenerator
+    #
+    # Generates a Hecks Ruby DSL file from a Parser::ParseResult. Produces
+    # editable source code with TODO placeholders for attributes that need
+    # to be filled in after the event storm.
+    #
+    # Part of the EventStorm module. Used by Hecks.from_event_storm to produce
+    # the DSL string output.
+    #
+    #   result = EventStorm::Parser.new(source).parse
+    #   dsl = EventStorm::DslGenerator.new(result, name: "Ordering").generate
+    #   puts dsl  # => "Hecks.domain \"Ordering\" do ..."
+    #
     class DslGenerator
       # Initializes a DslGenerator from a parse result.
       #

@@ -1,45 +1,44 @@
 require "securerandom"
 
-# Hecks::Model
-#
-# Mixin for generated aggregate classes. Declares attributes via a DSL,
-# generates the constructor automatically, and provides identity,
-# validation hooks, auto-discovery, and timestamp support.
-#
-# == Identity
-#
-# Every model instance gets a UUID +id+ assigned at construction (or accepts
-# one via the +id:+ keyword). Two instances are equal (+==+) if they share
-# the same class and id (entity semantics, not value semantics).
-#
-# == Attributes
-#
-# Attributes are declared with +attribute :name, default: nil, freeze: false+.
-# Each call regenerates the constructor so all attributes are accepted as
-# keyword arguments. Pristine values are stored for +#reset!+.
-#
-# == Auto-discovery submodules
-#
-# When included, +Model+ creates submodule constants (+Commands+, +Events+,
-# +Queries+, +Policies+, +Specifications+) on the including class. These
-# submodules use +const_missing+ to autoload domain behavior files by
-# convention (e.g. +Pizza::Commands::CreatePizza+ loads from
-# +pizza/pizza/commands/create_pizza.rb+).
-#
-# == Usage
-#
-#   class Pizza
-#     include Hecks::Model
-#     attribute :name
-#     attribute :description
-#     attribute :toppings, default: []
-#   end
-#
-#   Pizza.hecks_attributes  # => [{name: :name, default: nil}, ...]
-#   Pizza.new(name: "Margherita").name  # => "Margherita"
-#
-
 module Hecks
+  # Hecks::Model
+  #
+  # Mixin for generated aggregate classes. Declares attributes via a DSL,
+  # generates the constructor automatically, and provides identity,
+  # validation hooks, auto-discovery, and timestamp support.
+  #
+  # == Identity
+  #
+  # Every model instance gets a UUID +id+ assigned at construction (or accepts
+  # one via the +id:+ keyword). Two instances are equal (+==+) if they share
+  # the same class and id (entity semantics, not value semantics).
+  #
+  # == Attributes
+  #
+  # Attributes are declared with +attribute :name, default: nil, freeze: false+.
+  # Each call regenerates the constructor so all attributes are accepted as
+  # keyword arguments. Pristine values are stored for +#reset!+.
+  #
+  # == Auto-discovery submodules
+  #
+  # When included, +Model+ creates submodule constants (+Commands+, +Events+,
+  # +Queries+, +Policies+, +Specifications+) on the including class. These
+  # submodules use +const_missing+ to autoload domain behavior files by
+  # convention (e.g. +Pizza::Commands::CreatePizza+ loads from
+  # +pizza/pizza/commands/create_pizza.rb+).
+  #
+  # == Usage
+  #
+  #   class Pizza
+  #     include Hecks::Model
+  #     attribute :name
+  #     attribute :description
+  #     attribute :toppings, default: []
+  #   end
+  #
+  #   Pizza.hecks_attributes  # => [{name: :name, default: nil}, ...]
+  #   Pizza.new(name: "Margherita").name  # => "Margherita"
+  #
   module Model
     # Hook called when a class includes +Hecks::Model+. Sets up identity readers
     # (+id+, +created_at+, +updated_at+), extends the class with the attribute

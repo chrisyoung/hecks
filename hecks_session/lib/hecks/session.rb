@@ -7,31 +7,30 @@ require_relative "session/system_browser"
 require_relative "session/console_runner"
 require_relative "session/playground"
 
-# Hecks::Session
-#
-# Interactive domain-building session for REPL-driven development. Supports
-# two modes: "sketch" (define aggregates, commands, policies) and "play"
-# (execute commands and inspect events against a live compiled domain).
-#
-# A Session holds a collection of AggregateBuilder instances keyed by name,
-# each wrapped in an AggregateHandle for interactive use. The session can
-# validate the domain, compile it into a gem, switch into play mode for
-# live execution, and serialize back to DSL source.
-#
-# Includes:
-# - BuildActions  -- validate, preview, build, save, to_dsl
-# - PlayMode      -- play!, sketch!, events, history, reset!
-# - Presenter     -- describe, status, inspect
-# - SystemBrowser -- browse (tree view of domain elements)
-#
-#   session = Hecks.session("Pizzas")
-#   session.aggregate("Pizza") { attribute :name, String }
-#   session.validate
-#   session.build
-#   session.play!
-#
-
 module Hecks
+  # Hecks::Session
+  #
+  # Interactive domain-building session for REPL-driven development. Supports
+  # two modes: "sketch" (define aggregates, commands, policies) and "play"
+  # (execute commands and inspect events against a live compiled domain).
+  #
+  # A Session holds a collection of AggregateBuilder instances keyed by name,
+  # each wrapped in an AggregateHandle for interactive use. The session can
+  # validate the domain, compile it into a gem, switch into play mode for
+  # live execution, and serialize back to DSL source.
+  #
+  # Includes:
+  # - BuildActions  -- validate, preview, build, save, to_dsl
+  # - PlayMode      -- play!, sketch!, events, history, reset!
+  # - Presenter     -- describe, status, inspect
+  # - SystemBrowser -- browse (tree view of domain elements)
+  #
+  #   session = Hecks.session("Pizzas")
+  #   session.aggregate("Pizza") { attribute :name, String }
+  #   session.validate
+  #   session.build
+  #   session.play!
+  #
   class Session
     include BuildActions
     include PlayMode

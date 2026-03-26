@@ -1,12 +1,12 @@
-# HecksWatchers::Autoloads
-#
-# Warns when a new class/module file is added but not registered in
-# +hecksties/lib/hecks/autoloads.rb+.
-#
-#   watcher = HecksWatchers::Autoloads.new(project_root: Dir.pwd)
-#   watcher.call   # prints warnings for unregistered files
-#
 module HecksWatchers
+  # HecksWatchers::Autoloads
+  #
+  # Warns when a new class/module file is added but not registered in
+  # +hecksties/lib/hecks/autoloads.rb+.
+  #
+  #   watcher = HecksWatchers::Autoloads.new(project_root: Dir.pwd)
+  #   watcher.call   # prints warnings for unregistered files
+  #
   class Autoloads
     AUTOLOADS_REL = "hecksties/lib/hecks/autoloads.rb"
 

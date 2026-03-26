@@ -8,23 +8,22 @@ require_relative "runtime/constant_hoisting"
 require_relative "runtime/connection_setup"
 require_relative "runtime/service_setup"
 
-# Hecks::Runtime
-#
-# The runtime container that wires a domain to adapters, dispatches
-# commands, publishes events, and executes policies. Defaults to memory
-# adapters for all aggregates. Created via Hecks.load(domain).
-#
-#   app = Hecks.load(domain)
-#   app["Pizza"].all
-#   Pizza.create(name: "Margherita")
-#
-# Custom adapters:
-#   app = Hecks.load(domain) do
-#     adapter "Pizza", my_sql_repo
-#   end
-#
-
 module Hecks
+  # Hecks::Runtime
+  #
+  # The runtime container that wires a domain to adapters, dispatches
+  # commands, publishes events, and executes policies. Defaults to memory
+  # adapters for all aggregates. Created via Hecks.load(domain).
+  #
+  #   app = Hecks.load(domain)
+  #   app["Pizza"].all
+  #   Pizza.create(name: "Margherita")
+  #
+  # Custom adapters:
+  #   app = Hecks.load(domain) do
+  #     adapter "Pizza", my_sql_repo
+  #   end
+  #
   # The central runtime container for a Hecks domain. Orchestrates the full
   # lifecycle of a domain application: wiring repositories to aggregates,
   # setting up the command bus with middleware, registering event-driven

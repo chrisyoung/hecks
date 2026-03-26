@@ -1,14 +1,15 @@
-# Hecks::ValidationRules::References::NoSelfReferences
-#
-# Validates that aggregates do not reference themselves. Self-references
-# indicate a modeling issue -- the referenced concept should be a value
-# object or entity within the aggregate boundary instead.
-#
-# Part of the ValidationRules::References group -- run by +Hecks.validate+.
-#
 module Hecks
   module ValidationRules
     module References
+
+    # Hecks::ValidationRules::References::NoSelfReferences
+    #
+    # Validates that aggregates do not reference themselves. Self-references
+    # indicate a modeling issue -- the referenced concept should be a value
+    # object or entity within the aggregate boundary instead.
+    #
+    # Part of the ValidationRules::References group -- run by +Hecks.validate+.
+    #
     # An aggregate should not reference itself.
     class NoSelfReferences < BaseRule
       # Checks each aggregate's reference attributes for any that target

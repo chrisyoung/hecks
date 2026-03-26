@@ -1,16 +1,16 @@
-# Hecks::Generators::SQL::SqlMigrationGenerator
-#
-# Generates CREATE TABLE SQL statements from a domain model. Produces one
-# table per aggregate plus join tables for list-type value objects. Part of
-# Generators::SQL, invoked by the CLI `hecks domain build` command to produce
-# db/schema.sql.
-#
-#   gen = SqlMigrationGenerator.new(domain)
-#   gen.generate  # => "CREATE TABLE pizzas (\n  id VARCHAR(36) PRIMARY KEY,\n  ..."
-#
 module Hecks
   module Generators
     module SQL
+    # Hecks::Generators::SQL::SqlMigrationGenerator
+    #
+    # Generates CREATE TABLE SQL statements from a domain model. Produces one
+    # table per aggregate plus join tables for list-type value objects. Part of
+    # Generators::SQL, invoked by the CLI `hecks domain build` command to produce
+    # db/schema.sql.
+    #
+    #   gen = SqlMigrationGenerator.new(domain)
+    #   gen.generate  # => "CREATE TABLE pizzas (\n  id VARCHAR(36) PRIMARY KEY,\n  ..."
+    #
     class SqlMigrationGenerator
       # Initializes a migration generator for a full domain.
       #

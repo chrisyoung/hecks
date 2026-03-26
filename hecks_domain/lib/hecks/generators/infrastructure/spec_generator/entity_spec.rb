@@ -1,12 +1,12 @@
-# Hecks::Generators::Infrastructure::SpecGenerator::EntitySpec
-#
-# Generates RSpec specs for sub-entities: identity, mutability,
-# and invariant enforcement. Mixed into SpecGenerator.
-#
 module Hecks
   module Generators
     module Infrastructure
       class SpecGenerator
+        # Hecks::Generators::Infrastructure::SpecGenerator::EntitySpec
+        #
+        # Generates RSpec specs for sub-entities: identity, mutability,
+        # and invariant enforcement. Mixed into SpecGenerator.
+        #
         module EntitySpec
           # Generates an RSpec spec file for a sub-entity class.
           #

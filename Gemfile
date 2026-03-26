@@ -10,4 +10,6 @@ group :development, :test do
   gem "rake"
   gem "rspec", "~> 3.0"
   gem "sqlite3", ">= 1.4", "< 3.0"
+  gem "rdoc", ">= 6.4", "< 6.7"
+  gem "sdoc"
 end

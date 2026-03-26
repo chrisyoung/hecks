@@ -1,25 +1,25 @@
-# Hecks::MCP::DomainServer::CommandTools
-#
-# Mixin that registers MCP tools for domain commands. Each command on each
-# aggregate becomes a callable MCP tool with a typed JSON Schema input.
-#
-# When a tool is invoked, it translates the JSON arguments into keyword
-# arguments and calls the corresponding method on the generated aggregate
-# class. The result is serialized back to a human-readable string.
-#
-# Mixed into DomainServer -- expects the following instance state:
-#   - +@server+ [MCP::Server] -- the MCP server to register tools on
-#   - +@domain+ [Hecks::DomainModel::Structure::Domain] -- the domain model
-#   - +@mod+ [Module] -- the generated domain module (e.g. PizzasDomain)
-#
-# Also expects these helper methods from DomainServer:
-#   - +derive_method_name(cmd_name, agg_name)+ -- maps command name to method symbol
-#   - +json_type(attr)+ -- converts a domain attribute to a JSON Schema type
-#   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
-#
 module Hecks
   module MCP
     class DomainServer
+      # Hecks::MCP::DomainServer::CommandTools
+      #
+      # Mixin that registers MCP tools for domain commands. Each command on each
+      # aggregate becomes a callable MCP tool with a typed JSON Schema input.
+      #
+      # When a tool is invoked, it translates the JSON arguments into keyword
+      # arguments and calls the corresponding method on the generated aggregate
+      # class. The result is serialized back to a human-readable string.
+      #
+      # Mixed into DomainServer -- expects the following instance state:
+      #   - +@server+ [MCP::Server] -- the MCP server to register tools on
+      #   - +@domain+ [Hecks::DomainModel::Structure::Domain] -- the domain model
+      #   - +@mod+ [Module] -- the generated domain module (e.g. PizzasDomain)
+      #
+      # Also expects these helper methods from DomainServer:
+      #   - +derive_method_name(cmd_name, agg_name)+ -- maps command name to method symbol
+      #   - +json_type(attr)+ -- converts a domain attribute to a JSON Schema type
+      #   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
+      #
       module CommandTools
         private
 

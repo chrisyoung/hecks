@@ -1,25 +1,25 @@
-# Hecks::Generators::Domain::LifecycleGenerator
-#
-# Generates a Lifecycle class for an aggregate's state machine. The lifecycle
-# encodes the field that holds state, the default state, valid states, and
-# transitions between states triggered by commands.
-#
-# The generated class includes:
-# - +FIELD+ -- the attribute name that holds the state (e.g., +:status+)
-# - +DEFAULT+ -- the initial state value (e.g., "draft")
-# - +STATES+ -- array of all valid state strings
-# - +TRANSITIONS+ -- hash mapping command names to target states (with optional +from+ guards)
-# - A +call(current_state, command_name)+ method that resolves the target state
-# - State predicate methods for each state (e.g., +active?+, +archived?+)
-#
-# == Usage
-#
-#   gen = LifecycleGenerator.new(lifecycle, domain_module: "ModelRegistryDomain", aggregate_name: "AiModel")
-#   gen.generate
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::LifecycleGenerator
+    #
+    # Generates a Lifecycle class for an aggregate's state machine. The lifecycle
+    # encodes the field that holds state, the default state, valid states, and
+    # transitions between states triggered by commands.
+    #
+    # The generated class includes:
+    # - +FIELD+ -- the attribute name that holds the state (e.g., +:status+)
+    # - +DEFAULT+ -- the initial state value (e.g., "draft")
+    # - +STATES+ -- array of all valid state strings
+    # - +TRANSITIONS+ -- hash mapping command names to target states (with optional +from+ guards)
+    # - A +call(current_state, command_name)+ method that resolves the target state
+    # - State predicate methods for each state (e.g., +active?+, +archived?+)
+    #
+    # == Usage
+    #
+    #   gen = LifecycleGenerator.new(lifecycle, domain_module: "ModelRegistryDomain", aggregate_name: "AiModel")
+    #   gen.generate
+    #
     class LifecycleGenerator
 
       # Initializes the lifecycle generator.

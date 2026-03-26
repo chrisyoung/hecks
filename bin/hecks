@@ -1,3 +1,15 @@
 #!/usr/bin/env ruby
+
+# When run from within the hecks project directory, re-exec under
+# `bundle exec` so Bundler resolves all gems from local source.
+hecks_gemfile = File.join(Dir.pwd, "Gemfile")
+local_gemspec = File.join(Dir.pwd, "hecks.gemspec")
+
+if File.exist?(hecks_gemfile) && File.exist?(local_gemspec) && !ENV["HECKS_BUNDLED"]
+  ENV["HECKS_BUNDLED"] = "1"
+  ENV["BUNDLE_GEMFILE"] = hecks_gemfile
+  exec("bundle", "exec", "ruby", __FILE__, *ARGV)
+end
+
 require "hecks"
 Hecks::CLI.start(ARGV)

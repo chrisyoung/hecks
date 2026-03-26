@@ -1,22 +1,22 @@
-# Hecks::Persistence::CollectionItem
-#
-# A decorator (delegator) that wraps a single value object from a persisted
-# collection attribute. All method calls are forwarded to the underlying raw
-# object via +method_missing+, but the wrapper adds +delete+/+destroy+ methods
-# that remove the item from its parent CollectionProxy and persist the change.
-#
-# CollectionItem also overrides equality, hash, class, is_a?, frozen?, and
-# inspect so that it behaves transparently like the wrapped object in most
-# contexts (comparisons, logging, type checks).
-#
-# == Usage
-#
-#   pizza.toppings.first.name     # delegates to the underlying Topping value object
-#   pizza.toppings.first.delete   # removes from collection and persists the owner
-#   pizza.toppings.first.class    # => Topping (not CollectionItem)
-#
 module Hecks
   module Persistence
+    # Hecks::Persistence::CollectionItem
+    #
+    # A decorator (delegator) that wraps a single value object from a persisted
+    # collection attribute. All method calls are forwarded to the underlying raw
+    # object via +method_missing+, but the wrapper adds +delete+/+destroy+ methods
+    # that remove the item from its parent CollectionProxy and persist the change.
+    #
+    # CollectionItem also overrides equality, hash, class, is_a?, frozen?, and
+    # inspect so that it behaves transparently like the wrapped object in most
+    # contexts (comparisons, logging, type checks).
+    #
+    # == Usage
+    #
+    #   pizza.toppings.first.name     # delegates to the underlying Topping value object
+    #   pizza.toppings.first.delete   # removes from collection and persists the owner
+    #   pizza.toppings.first.class    # => Topping (not CollectionItem)
+    #
     class CollectionItem
         # Creates a new CollectionItem wrapping a raw value object.
         #

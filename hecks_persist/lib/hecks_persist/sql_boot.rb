@@ -1,15 +1,15 @@
-# Hecks::Boot::SqlBoot
-#
-# Handles SQL adapter lifecycle: connects to a database via Sequel,
-# generates SQL repository classes for each aggregate, creates tables
-# from the domain IR, and returns adapter instances keyed by aggregate name.
-# Part of Boot, consumed by Hecks.boot when adapter: :sqlite (or similar).
-#
-#   adapters = SqlBoot.setup(domain, db)
-#   # => { "Pizza" => #<PizzasDomain::Adapters::PizzaSqlRepository>, ... }
-#
 module Hecks
   module Boot
+    # Hecks::Boot::SqlBoot
+    #
+    # Handles SQL adapter lifecycle: connects to a database via Sequel,
+    # generates SQL repository classes for each aggregate, creates tables
+    # from the domain IR, and returns adapter instances keyed by aggregate name.
+    # Part of Boot, consumed by Hecks.boot when adapter: :sqlite (or similar).
+    #
+    #   adapters = SqlBoot.setup(domain, db)
+    #   # => { "Pizza" => #<PizzasDomain::Adapters::PizzaSqlRepository>, ... }
+    #
     module SqlBoot
       # Maps domain type names to Sequel column types for table creation.
       TYPE_MAP = {

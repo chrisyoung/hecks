@@ -1,24 +1,24 @@
-# Hecks::Generators::Domain::EventGenerator
-#
-# Generates frozen domain event classes nested under Aggregate::Events.
-# Each event records an +occurred_at+ timestamp and freezes on creation,
-# making events immutable value objects that capture what happened in the domain.
-# Handles Ruby keyword-safe attribute names via **kwargs. Part of
-# Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
-#
-# The generated class includes:
-# - +attr_reader+ for all event attributes plus +:occurred_at+
-# - An +initialize+ method that sets all attributes, records +Time.now+, and freezes
-# - Keyword parameters or +**kwargs+ depending on attribute name safety
-#
-# == Usage
-#
-#   gen = EventGenerator.new(event, domain_module: "PizzasDomain", aggregate_name: "Pizza")
-#   gen.generate  # => "module PizzasDomain\n  class Pizza\n    module Events\n  ..."
-#
 module Hecks
   module Generators
     module Domain
+    # Hecks::Generators::Domain::EventGenerator
+    #
+    # Generates frozen domain event classes nested under Aggregate::Events.
+    # Each event records an +occurred_at+ timestamp and freezes on creation,
+    # making events immutable value objects that capture what happened in the domain.
+    # Handles Ruby keyword-safe attribute names via **kwargs. Part of
+    # Generators::Domain, consumed by DomainGemGenerator and InMemoryLoader.
+    #
+    # The generated class includes:
+    # - +attr_reader+ for all event attributes plus +:occurred_at+
+    # - An +initialize+ method that sets all attributes, records +Time.now+, and freezes
+    # - Keyword parameters or +**kwargs+ depending on attribute name safety
+    #
+    # == Usage
+    #
+    #   gen = EventGenerator.new(event, domain_module: "PizzasDomain", aggregate_name: "Pizza")
+    #   gen.generate  # => "module PizzasDomain\n  class Pizza\n    module Events\n  ..."
+    #
     class EventGenerator
 
       # Initializes the event generator.

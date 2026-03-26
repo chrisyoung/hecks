@@ -1,13 +1,13 @@
-# Hecks::Versioning
-#
-# Binds version history tracking to versioned aggregates. Snapshots
-# aggregate state before each save, enabling full history and rollback.
-#
-#   Versioning.bind(klass, repo)
-#   Widget.versions(id)       # => [{ version: 1, state: {...}, at: Time }, ...]
-#   Widget.at_version(id, 1)  # => snapshot hash
-#
 module Hecks
+  # Hecks::Versioning
+  #
+  # Binds version history tracking to versioned aggregates. Snapshots
+  # aggregate state before each save, enabling full history and rollback.
+  #
+  #   Versioning.bind(klass, repo)
+  #   Widget.versions(id)       # => [{ version: 1, state: {...}, at: Time }, ...]
+  #   Widget.at_version(id, 1)  # => snapshot hash
+  #
   module Versioning
     # Binds version tracking to an aggregate class and its repository.
     #

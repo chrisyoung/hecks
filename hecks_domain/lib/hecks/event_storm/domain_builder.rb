@@ -1,17 +1,17 @@
-# Hecks::EventStorm::DomainBuilder
-#
-# Builds a DomainModel::Structure::Domain from a Parser::ParseResult. Groups commands
-# under their aggregates, wires policies, attaches read models and external
-# systems, and validates that event names match command inferences.
-#
-# Part of the EventStorm module. Used by Hecks.from_event_storm to produce
-# the in-memory domain object.
-#
-#   result = EventStorm::Parser.new(source).parse
-#   domain = EventStorm::DomainBuilder.new(result, name: "Ordering").build
-#
 module Hecks
   module EventStorm
+    # Hecks::EventStorm::DomainBuilder
+    #
+    # Builds a DomainModel::Structure::Domain from a Parser::ParseResult. Groups commands
+    # under their aggregates, wires policies, attaches read models and external
+    # systems, and validates that event names match command inferences.
+    #
+    # Part of the EventStorm module. Used by Hecks.from_event_storm to produce
+    # the in-memory domain object.
+    #
+    #   result = EventStorm::Parser.new(source).parse
+    #   domain = EventStorm::DomainBuilder.new(result, name: "Ordering").build
+    #
     class DomainBuilder
       # Initializes a DomainBuilder from a parse result.
       #

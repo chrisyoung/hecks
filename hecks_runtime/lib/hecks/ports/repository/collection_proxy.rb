@@ -1,37 +1,36 @@
 require_relative "collection_item"
 
-# Hecks::Persistence::CollectionProxy
-#
-# Wraps a list attribute on an aggregate, providing create/delete/count
-# methods that rebuild the aggregate with the modified collection and
-# save it back to the repo.
-#
-# Behaves like an Array for reading (each, map, size, etc.) but adds
-# persistence-aware mutations. Items are wrapped in CollectionItem so
-# they support .delete directly.
-#
-# == Persistence model
-#
-# When a mutation occurs (create, delete, clear), the proxy:
-# 1. Builds a new items array with the change applied
-# 2. Reconstructs the owner aggregate with the updated collection
-# 3. Saves the new owner to the repository
-# 4. Updates the local items reference to reflect the change
-#
-# This follows the immutable aggregate pattern -- aggregates are rebuilt
-# rather than mutated in place.
-#
-# == Usage
-#
-#   pizza = Pizza.create(name: "Margherita")
-#   pizza.toppings.create(name: "Mozzarella", amount: 2)
-#   pizza.toppings.count          # => 1
-#   pizza.toppings.first.delete   # removes and persists
-#   pizza.toppings.empty?         # => true
-#
-
 module Hecks
   module Persistence
+    # Hecks::Persistence::CollectionProxy
+    #
+    # Wraps a list attribute on an aggregate, providing create/delete/count
+    # methods that rebuild the aggregate with the modified collection and
+    # save it back to the repo.
+    #
+    # Behaves like an Array for reading (each, map, size, etc.) but adds
+    # persistence-aware mutations. Items are wrapped in CollectionItem so
+    # they support .delete directly.
+    #
+    # == Persistence model
+    #
+    # When a mutation occurs (create, delete, clear), the proxy:
+    # 1. Builds a new items array with the change applied
+    # 2. Reconstructs the owner aggregate with the updated collection
+    # 3. Saves the new owner to the repository
+    # 4. Updates the local items reference to reflect the change
+    #
+    # This follows the immutable aggregate pattern -- aggregates are rebuilt
+    # rather than mutated in place.
+    #
+    # == Usage
+    #
+    #   pizza = Pizza.create(name: "Margherita")
+    #   pizza.toppings.create(name: "Mozzarella", amount: 2)
+    #   pizza.toppings.count          # => 1
+    #   pizza.toppings.first.delete   # removes and persists
+    #   pizza.toppings.empty?         # => true
+    #
     class CollectionProxy
         include Enumerable
 

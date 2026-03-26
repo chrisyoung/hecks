@@ -1,30 +1,30 @@
-# Hecks::Querying::QueryBuilder::InMemoryExecutor
-#
-# Fallback query engine for adapters without native query support,
-# or when conditions include OR nodes that cannot be translated to
-# adapter-specific expressions. Filters using the ConditionNode tree,
-# then sorts, offsets, and limits results entirely in Ruby.
-#
-# This module is included into QueryBuilder and invoked when:
-# - The repository does not respond to +#query+
-# - The condition tree is not simple (contains OR nodes or nested children)
-#
-# == Processing Pipeline
-#
-# 1. Fetch all records from the repository via +@repo.all+
-# 2. Filter by condition tree (+apply_conditions+)
-# 3. Sort by order key and direction (+apply_order+)
-# 4. Skip records by offset (+apply_offset+)
-# 5. Limit result count (+apply_limit+)
-#
-# == Usage
-#
-#   # Used internally by QueryBuilder#execute:
-#   #   in_memory_execute  # => filtered, sorted, paginated Array
-#
 module Hecks
   module Querying
     class QueryBuilder
+        # Hecks::Querying::QueryBuilder::InMemoryExecutor
+        #
+        # Fallback query engine for adapters without native query support,
+        # or when conditions include OR nodes that cannot be translated to
+        # adapter-specific expressions. Filters using the ConditionNode tree,
+        # then sorts, offsets, and limits results entirely in Ruby.
+        #
+        # This module is included into QueryBuilder and invoked when:
+        # - The repository does not respond to +#query+
+        # - The condition tree is not simple (contains OR nodes or nested children)
+        #
+        # == Processing Pipeline
+        #
+        # 1. Fetch all records from the repository via +@repo.all+
+        # 2. Filter by condition tree (+apply_conditions+)
+        # 3. Sort by order key and direction (+apply_order+)
+        # 4. Skip records by offset (+apply_offset+)
+        # 5. Limit result count (+apply_limit+)
+        #
+        # == Usage
+        #
+        #   # Used internally by QueryBuilder#execute:
+        #   #   in_memory_execute  # => filtered, sorted, paginated Array
+        #
         module InMemoryExecutor
           private
 

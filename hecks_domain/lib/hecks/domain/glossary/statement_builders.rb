@@ -1,14 +1,14 @@
-# Hecks::DomainGlossary::StatementBuilders
-#
-# Builds plain-English statements from domain IR objects -- attributes,
-# commands, policies, and relationships. Mixed into DomainGlossary to
-# keep sentence construction logic separate from the traversal logic.
-#
-# Each method takes domain IR objects and returns a human-readable string
-# describing that element in natural language.
-#
 module Hecks
   class DomainGlossary
+    # Hecks::DomainGlossary::StatementBuilders
+    #
+    # Builds plain-English statements from domain IR objects -- attributes,
+    # commands, policies, and relationships. Mixed into DomainGlossary to
+    # keep sentence construction logic separate from the traversal logic.
+    #
+    # Each method takes domain IR objects and returns a human-readable string
+    # describing that element in natural language.
+    #
     module StatementBuilders
       private
 

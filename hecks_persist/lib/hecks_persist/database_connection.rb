@@ -1,14 +1,14 @@
-# Hecks::Configuration::DatabaseConnection
-#
-# Connects to databases via Sequel. Supports MySQL, Postgres, SQLite,
-# connection URLs, and auto-detection from Rails database config.
-#
-#   adapter :sql, database: :mysql, host: "localhost", name: "pizzas"
-#   adapter :sql, url: "postgres://user:pass@host/db"
-#   adapter :sql  # defaults to SQLite in-memory
-#
 module Hecks
   class Configuration
+    # Hecks::Configuration::DatabaseConnection
+    #
+    # Connects to databases via Sequel. Supports MySQL, Postgres, SQLite,
+    # connection URLs, and auto-detection from Rails database config.
+    #
+    #   adapter :sql, database: :mysql, host: "localhost", name: "pizzas"
+    #   adapter :sql, url: "postgres://user:pass@host/db"
+    #   adapter :sql  # defaults to SQLite in-memory
+    #
     module DatabaseConnection
       private
 

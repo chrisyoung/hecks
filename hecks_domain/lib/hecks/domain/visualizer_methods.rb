@@ -1,12 +1,12 @@
-# Hecks::DomainVisualizerMethods
-#
-# Top-level entry point for Mermaid diagram generation. Extended onto
-# the Hecks module to provide +Hecks.visualize(domain)+ as a convenience
-# method that delegates to DomainVisualizer.
-#
-#   Hecks.visualize(domain)  # => "```mermaid\nclassDiagram\n..."
-#
 module Hecks
+  # Hecks::DomainVisualizerMethods
+  #
+  # Top-level entry point for Mermaid diagram generation. Extended onto
+  # the Hecks module to provide +Hecks.visualize(domain)+ as a convenience
+  # method that delegates to DomainVisualizer.
+  #
+  #   Hecks.visualize(domain)  # => "```mermaid\nclassDiagram\n..."
+  #
   module DomainVisualizerMethods
     # Generate Mermaid diagrams (structure and behavior) for a domain.
     #

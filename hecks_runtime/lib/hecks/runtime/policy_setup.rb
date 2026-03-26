@@ -1,19 +1,18 @@
 require "set"
 
-# Hecks::Runtime::PolicySetup
-#
-# Mixin that subscribes both aggregate-level and domain-level policies
-# to their trigger events on the event bus. Guards against re-entrant
-# policy execution, checks optional condition blocks before firing,
-# and supports async dispatch via an optional async handler.
-#
-#   class Runtime
-#     include PolicySetup
-#   end
-#
-
 module Hecks
   class Runtime
+      # Hecks::Runtime::PolicySetup
+      #
+      # Mixin that subscribes both aggregate-level and domain-level policies
+      # to their trigger events on the event bus. Guards against re-entrant
+      # policy execution, checks optional condition blocks before firing,
+      # and supports async dispatch via an optional async handler.
+      #
+      #   class Runtime
+      #     include PolicySetup
+      #   end
+      #
       module PolicySetup
         private
 

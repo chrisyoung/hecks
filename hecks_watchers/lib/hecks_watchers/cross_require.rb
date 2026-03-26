@@ -1,12 +1,12 @@
-# HecksWatchers::CrossRequire
-#
-# Fails if any staged file has a +require_relative+ that escapes its
-# component boundary. Cross-component loading must use bare +require+.
-#
-#   watcher = HecksWatchers::CrossRequire.new(project_root: Dir.pwd)
-#   watcher.call   # exits 1 if violations found
-#
 module HecksWatchers
+  # HecksWatchers::CrossRequire
+  #
+  # Fails if any staged file has a +require_relative+ that escapes its
+  # component boundary. Cross-component loading must use bare +require+.
+  #
+  #   watcher = HecksWatchers::CrossRequire.new(project_root: Dir.pwd)
+  #   watcher.call   # exits 1 if violations found
+  #
   class CrossRequire
     COMPONENTS = %w[
       hecksties hecks_model hecks_domain hecks_runtime

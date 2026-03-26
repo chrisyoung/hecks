@@ -1,15 +1,15 @@
-# Hecks::EventStorm::Result
-#
-# Return value from Hecks.from_event_storm. Contains the built Domain object,
-# the generated DSL string, and any warnings produced during parsing.
-#
-#   result = Hecks.from_event_storm("storm.md")
-#   result.domain    # => DomainModel::Structure::Domain
-#   result.dsl       # => "Hecks.domain \"Ordering\" do ..."
-#   result.warnings  # => ["Event 'Order Placed' doesn't match ..."]
-#
 module Hecks
   module EventStorm
+    # Hecks::EventStorm::Result
+    #
+    # Return value from Hecks.from_event_storm. Contains the built Domain object,
+    # the generated DSL string, and any warnings produced during parsing.
+    #
+    #   result = Hecks.from_event_storm("storm.md")
+    #   result.domain    # => DomainModel::Structure::Domain
+    #   result.dsl       # => "Hecks.domain \"Ordering\" do ..."
+    #   result.warnings  # => ["Event 'Order Placed' doesn't match ..."]
+    #
     class Result
       # @return [DomainModel::Structure::Domain] the built domain object
       attr_reader :domain

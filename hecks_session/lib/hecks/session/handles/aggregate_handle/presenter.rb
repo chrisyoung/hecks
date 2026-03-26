@@ -1,16 +1,16 @@
-# Hecks::Session::AggregateHandle::Presenter
-#
-# Presentation methods for AggregateHandle: describe (detailed summary with
-# attributes, VOs, entities, commands, validations, invariants, policies,
-# queries, scopes, subscribers, and specifications), inspect (one-line),
-# preview (generated code), valid?/errors (validation), and the type_label
-# helper for formatting types.
-#
-# Mixed into AggregateHandle to separate display logic from builder logic.
-#
 module Hecks
   class Session
     class AggregateHandle
+    # Hecks::Session::AggregateHandle::Presenter
+    #
+    # Presentation methods for AggregateHandle: describe (detailed summary with
+    # attributes, VOs, entities, commands, validations, invariants, policies,
+    # queries, scopes, subscribers, and specifications), inspect (one-line),
+    # preview (generated code), valid?/errors (validation), and the type_label
+    # helper for formatting types.
+    #
+    # Mixed into AggregateHandle to separate display logic from builder logic.
+    #
     module Presenter
       # Print a detailed summary of the aggregate's structure.
       #

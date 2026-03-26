@@ -1,14 +1,15 @@
-# Hecks::DSL::PortBuilder
-#
-# DSL builder for port definitions inside an aggregate block.
-# Collects allowed method names and builds a PortDefinition.
-#
-#   port :guest do
-#     allow :find, :all, :where
-#   end
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::PortBuilder
+    #
+    # DSL builder for port definitions inside an aggregate block.
+    # Collects allowed method names and builds a PortDefinition.
+    #
+    #   port :guest do
+    #     allow :find, :all, :where
+    #   end
+    #
     # Builds a DomainModel::Structure::PortDefinition from access declarations.
     #
     # PortBuilder defines a named access port that restricts which repository

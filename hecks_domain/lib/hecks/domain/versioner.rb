@@ -1,25 +1,24 @@
 require "date"
 
-# Hecks::Versioner
-#
-# Calendar-based versioning for domain gems. Each build stamps the current
-# date with an auto-incrementing build number: 2026.03.20.1, 2026.03.20.2, etc.
-#
-# The version tells you when the domain was defined, not what changed.
-# No manual bumping -- every build gets the next number automatically.
-# The build number resets to 1 when the date changes.
-#
-# The version is persisted to a +.hecks_version+ file in the project directory.
-#
-#   versioner = Hecks::Versioner.new(".")
-#   versioner.current   # => "2026.03.20.1"
-#   versioner.next      # => "2026.03.20.2"
-#   versioner.next      # => "2026.03.20.3"
-#   # next day:
-#   versioner.next      # => "2026.03.21.1"
-#
-
 module Hecks
+  # Hecks::Versioner
+  #
+  # Calendar-based versioning for domain gems. Each build stamps the current
+  # date with an auto-incrementing build number: 2026.03.20.1, 2026.03.20.2, etc.
+  #
+  # The version tells you when the domain was defined, not what changed.
+  # No manual bumping -- every build gets the next number automatically.
+  # The build number resets to 1 when the date changes.
+  #
+  # The version is persisted to a +.hecks_version+ file in the project directory.
+  #
+  #   versioner = Hecks::Versioner.new(".")
+  #   versioner.current   # => "2026.03.20.1"
+  #   versioner.next      # => "2026.03.20.2"
+  #   versioner.next      # => "2026.03.20.3"
+  #   # next day:
+  #   versioner.next      # => "2026.03.21.1"
+  #
   class Versioner
     # Filename used to persist the current version.
     VERSION_FILE = ".hecks_version"

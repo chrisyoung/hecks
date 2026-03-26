@@ -1,27 +1,26 @@
 require "tmpdir"
 
-# Hecks::Session::Playground::GemBootstrap
-#
-# Compiles a domain model into a temporary gem and loads it into the runtime.
-# Handles temp directory creation, gem generation via DomainGemGenerator,
-# and loading all generated Ruby files into the current process.
-#
-# Mixed into Playground to separate gem compilation from command execution.
-# The compile! method is called during Playground initialization.
-#
-# Generated files in commands/ and queries/ directories are skipped during
-# eager loading because they rely on const_missing to auto-include their
-# respective mixins when first accessed.
-#
-#   class Playground
-#     include GemBootstrap
-#     # provides: compile!
-#   end
-#
-
 module Hecks
   class Session
     class Playground
+      # Hecks::Session::Playground::GemBootstrap
+      #
+      # Compiles a domain model into a temporary gem and loads it into the runtime.
+      # Handles temp directory creation, gem generation via DomainGemGenerator,
+      # and loading all generated Ruby files into the current process.
+      #
+      # Mixed into Playground to separate gem compilation from command execution.
+      # The compile! method is called during Playground initialization.
+      #
+      # Generated files in commands/ and queries/ directories are skipped during
+      # eager loading because they rely on const_missing to auto-include their
+      # respective mixins when first accessed.
+      #
+      #   class Playground
+      #     include GemBootstrap
+      #     # provides: compile!
+      #   end
+      #
       module GemBootstrap
         private
 

@@ -1,22 +1,22 @@
-# Hecks::Session::Playground::RuntimeResolver
-#
-# Resolves generated command and event classes at runtime by walking the
-# domain model's aggregates and looking up the corresponding constants
-# in the compiled gem module.
-#
-# Mixed into Playground to separate class resolution from execution logic.
-# All methods are private since they are internal helpers used by Playground's
-# execute method and initialization.
-#
-#   class Playground
-#     include RuntimeResolver
-#     # provides: resolve_command, resolve_event_for, resolve_domain_command,
-#     #           available_commands, collect_policies, check_policies
-#   end
-#
 module Hecks
   class Session
     class Playground
+      # Hecks::Session::Playground::RuntimeResolver
+      #
+      # Resolves generated command and event classes at runtime by walking the
+      # domain model's aggregates and looking up the corresponding constants
+      # in the compiled gem module.
+      #
+      # Mixed into Playground to separate class resolution from execution logic.
+      # All methods are private since they are internal helpers used by Playground's
+      # execute method and initialization.
+      #
+      #   class Playground
+      #     include RuntimeResolver
+      #     # provides: resolve_command, resolve_event_for, resolve_domain_command,
+      #     #           available_commands, collect_policies, check_policies
+      #   end
+      #
       module RuntimeResolver
         private
 

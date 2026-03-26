@@ -1,22 +1,22 @@
-# = Hecks::Utils
-#
-# Shared utility functions used across the Hecks framework. Provides constant
-# sanitization, underscore conversion, type labeling, keyword detection,
-# block source extraction, and object serialization.
-#
-# All methods are defined as +module_function+, so they can be called as
-# either +Hecks::Utils.underscore(str)+ or included into a class.
-#
-# This is an infrastructure layer module consumed by generators, DSL builders,
-# domain services, and the CLI.
-#
-# == Usage
-#
-#   Hecks::Utils.sanitize_constant("My Pizza")  # => "MyPizza"
-#   Hecks::Utils.underscore("PizzaDomain")       # => "pizza_domain"
-#   Hecks::Utils.ruby_keyword?("class")          # => true
-#
 module Hecks
+  # = Hecks::Utils
+  #
+  # Shared utility functions used across the Hecks framework. Provides constant
+  # sanitization, underscore conversion, type labeling, keyword detection,
+  # block source extraction, and object serialization.
+  #
+  # All methods are defined as +module_function+, so they can be called as
+  # either +Hecks::Utils.underscore(str)+ or included into a class.
+  #
+  # This is an infrastructure layer module consumed by generators, DSL builders,
+  # domain services, and the CLI.
+  #
+  # == Usage
+  #
+  #   Hecks::Utils.sanitize_constant("My Pizza")  # => "MyPizza"
+  #   Hecks::Utils.underscore("PizzaDomain")       # => "pizza_domain"
+  #   Hecks::Utils.ruby_keyword?("class")          # => true
+  #
   module Utils
     # Ruby reserved keywords that cannot be used as bare keyword parameters
     # in method signatures (e.g. +def initialize(class:)+ is invalid syntax).

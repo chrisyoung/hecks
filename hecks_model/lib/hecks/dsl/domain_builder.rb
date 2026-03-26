@@ -1,23 +1,24 @@
-# Hecks::DSL::DomainBuilder
-#
-# Top-level DSL builder for domain definitions. Collects aggregate definitions
-# and domain-level policies, then builds a DomainModel::Structure::Domain.
-# Enforces unique aggregate names. Domain-level policies are cross-aggregate
-# reactive policies defined outside any aggregate block.
-#
-#   Hecks.domain "Banking" do
-#     aggregate "Loan" do ... end
-#     aggregate "Account" do ... end
-#
-#     policy "DisburseFunds" do
-#       on "IssuedLoan"
-#       trigger "Deposit"
-#       map principal: :amount
-#     end
-#   end
-#
 module Hecks
   module DSL
+
+    # Hecks::DSL::DomainBuilder
+    #
+    # Top-level DSL builder for domain definitions. Collects aggregate definitions
+    # and domain-level policies, then builds a DomainModel::Structure::Domain.
+    # Enforces unique aggregate names. Domain-level policies are cross-aggregate
+    # reactive policies defined outside any aggregate block.
+    #
+    #   Hecks.domain "Banking" do
+    #     aggregate "Loan" do ... end
+    #     aggregate "Account" do ... end
+    #
+    #     policy "DisburseFunds" do
+    #       on "IssuedLoan"
+    #       trigger "Deposit"
+    #       map principal: :amount
+    #     end
+    #   end
+    #
     # Builds a DomainModel::Structure::Domain from top-level DSL declarations.
     #
     # DomainBuilder is the entry point for defining an entire domain model. It

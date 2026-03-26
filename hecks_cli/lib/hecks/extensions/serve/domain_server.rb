@@ -4,24 +4,23 @@ require "stringio"
 require "tmpdir"
 require_relative "route_builder"
 
-# Hecks::HTTP::DomainServer
-#
-# WEBrick-based REST server that serves a Hecks domain over HTTP with CORS
-# support. On initialization, builds the domain gem into a temp directory,
-# boots it, and delegates route generation to {RouteBuilder}. Exposes CRUD
-# endpoints for each aggregate, query endpoints, and a +/events+ endpoint
-# that returns the domain's event history as JSON.
-#
-# Optionally supports WebSocket live events via the +hecks_sockets+ gem.
-# When +--live+ is enabled, a WebSocket server runs alongside HTTP on a
-# separate port.
-#
-#   hecks domain serve pizzas_domain
-#   hecks domain serve pizzas_domain --live
-#
-
 module Hecks
   module HTTP
+    # Hecks::HTTP::DomainServer
+    #
+    # WEBrick-based REST server that serves a Hecks domain over HTTP with CORS
+    # support. On initialization, builds the domain gem into a temp directory,
+    # boots it, and delegates route generation to {RouteBuilder}. Exposes CRUD
+    # endpoints for each aggregate, query endpoints, and a +/events+ endpoint
+    # that returns the domain's event history as JSON.
+    #
+    # Optionally supports WebSocket live events via the +hecks_sockets+ gem.
+    # When +--live+ is enabled, a WebSocket server runs alongside HTTP on a
+    # separate port.
+    #
+    #   hecks domain serve pizzas_domain
+    #   hecks domain serve pizzas_domain --live
+    #
     class DomainServer
       # Initialize the server, boot the domain gem, and build routes.
       #

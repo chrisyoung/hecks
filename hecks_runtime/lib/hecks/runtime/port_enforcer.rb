@@ -1,14 +1,14 @@
-# Hecks::PortEnforcer
-#
-# Applies port-based access restrictions to an aggregate class.
-# For each method not allowed by the port definition, redefines it
-# to raise Hecks::PortAccessDenied.
-#
-# Called by AggregateWiring after all methods have been wired.
-# When no port is specified, this class is not used and all methods
-# remain accessible (backward compatible).
-#
 module Hecks
+  # Hecks::PortEnforcer
+  #
+  # Applies port-based access restrictions to an aggregate class.
+  # For each method not allowed by the port definition, redefines it
+  # to raise Hecks::PortAccessDenied.
+  #
+  # Called by AggregateWiring after all methods have been wired.
+  # When no port is specified, this class is not used and all methods
+  # remain accessible (backward compatible).
+  #
   class PortEnforcer
       # Standard class-level methods that may be restricted by a port definition.
       # These are the built-in persistence and query methods wired onto aggregate classes.
