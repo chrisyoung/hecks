@@ -122,6 +122,56 @@ module Hecks
             args << "#{field}: \"#{target}\""
           end
         end
+
+          # Returns the aggregate's non-reserved attributes.
+          def agg_attrs
+            return [] unless @aggregate
+            @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
+          end
+
+          # Builds args for creating a new aggregate from scratch.
+          def create_constructor_args
+            args = agg_attrs.each_with_object([]) do |a, parts|
+              cmd_attr = @command.attributes.find { |c| c.name == a.name }
+              if cmd_attr
+                parts << "#{a.name}: #{a.name}"
+              elsif (vo_match = find_vo_append(a))
+                vo, matching_attrs = vo_match
+                vo_args = matching_attrs.map { |attr| "#{attr}: #{attr}" }.join(", ")
+                parts << "#{a.name}: [#{vo.name}.new(#{vo_args})]"
+              elsif (append = find_list_append(a))
+                vo_class = a.type
+                parts << "#{a.name}: [#{vo_class}.new(name: #{append.name})]"
+              end
+            end
+            inject_sets(args)
+            inject_lifecycle_status(args)
+            args
+          end
+
+          # Builds args for updating an existing aggregate.
+          def update_constructor_args
+            parts = ["id: existing.id"]
+            agg_attrs.each do |a|
+              cmd_attr = @command.attributes.find { |c| c.name == a.name }
+              if cmd_attr
+                parts << "#{a.name}: #{a.name}"
+              elsif (vo_match = find_vo_append(a))
+                vo, matching_attrs = vo_match
+                vo_args = matching_attrs.map { |attr| "#{attr}: #{attr}" }.join(", ")
+                parts << "#{a.name}: existing.#{a.name} + [#{vo.name}.new(#{vo_args})]"
+              elsif (append = find_list_append(a))
+                vo_class = a.type
+                cmd_name = append.name
+                parts << "#{a.name}: existing.#{a.name} + [#{vo_class}.new(name: #{cmd_name})]"
+              else
+                parts << "#{a.name}: existing.#{a.name}"
+              end
+            end
+            inject_sets(parts)
+            inject_lifecycle_status(parts)
+            parts
+          end
       end
     end
   end
