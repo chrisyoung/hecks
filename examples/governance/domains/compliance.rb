@@ -1,8 +1,7 @@
 require "date"
 
 Hecks.domain "Compliance" do
-  GovernancePolicy do
-    description "Organizational policies governing AI model usage and compliance"
+  GovernancePolicy "Organizational policies governing AI model usage and compliance" do
     name String
     description String
     category String, enum: %w[regulatory internal ethical operational]
@@ -76,8 +75,7 @@ Hecks.domain "Compliance" do
     end
   end
 
-  RegulatoryFramework do
-    description "External regulatory requirements and their articles"
+  RegulatoryFramework "External regulatory requirements and their articles" do
     name String
     jurisdiction String
     version String
@@ -127,8 +125,7 @@ Hecks.domain "Compliance" do
     end
   end
 
-  ComplianceReview do
-    description "Reviews of AI models against governance policies"
+  ComplianceReview "Reviews of AI models against governance policies" do
     attachable
     model_id String
     policy_id String
@@ -199,8 +196,7 @@ Hecks.domain "Compliance" do
     end
   end
 
-  Exemption do
-    description "Approved exceptions to policy requirements"
+  Exemption "Approved exceptions to policy requirements" do
     model_id String
     policy_id String
     requirement String
@@ -255,8 +251,7 @@ Hecks.domain "Compliance" do
     end
   end
 
-  TrainingRecord do
-    description "Staff training completion and certification tracking"
+  TrainingRecord "Staff training completion and certification tracking" do
     stakeholder_id String
     policy_id String
     completed_at DateTime
