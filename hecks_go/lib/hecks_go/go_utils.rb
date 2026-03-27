@@ -33,9 +33,13 @@ module HecksGo
       s.split("_").map(&:capitalize).join
     end
 
+    GO_KEYWORDS = %w[type func var const if else for range switch case break continue return go defer select chan map struct interface package import].freeze
+
     def camel_case(str)
-      parts = str.to_s.split("_")
-      parts.first + parts[1..].map(&:capitalize).join
+      s = str.to_s
+      parts = s.split("_")
+      result = parts.first + parts[1..].map(&:capitalize).join
+      GO_KEYWORDS.include?(result) ? result + "Val" : result
     end
 
     def snake_case(str)

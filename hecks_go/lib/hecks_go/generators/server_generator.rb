@@ -23,6 +23,9 @@ module HecksGo
       lines << "\t\"encoding/json\""
       lines << "\t\"fmt\""
       lines << "\t\"net/http\""
+      # Add time import if any aggregate has Date/DateTime attributes used in commands
+      has_dates = @domain.aggregates.any? { |a| a.commands.any? { |c| c.attributes.any? { |attr| attr.type.to_s =~ /Date/ } } }
+      lines << "\t\"time\"" if has_dates
       lines << "\t\"os\""
       lines << "\t\"path/filepath\""
       lines << "\t\"#{@module_path}/domain\""
@@ -162,6 +165,8 @@ module HecksGo
               lines << "\t\t\tif v := r.FormValue(\"#{a.name}\"); v != \"\" { fmt.Sscanf(v, \"%d\", &cmd.#{field}) }"
             when /Float/
               lines << "\t\t\tif v := r.FormValue(\"#{a.name}\"); v != \"\" { fmt.Sscanf(v, \"%f\", &cmd.#{field}) }"
+            when /Date|DateTime/
+              lines << "\t\t\tif v := r.FormValue(\"#{a.name}\"); v != \"\" { cmd.#{field}, _ = time.Parse(\"2006-01-02\", v) }"
             else
               lines << "\t\t\tcmd.#{field} = r.FormValue(\"#{a.name}\")"
             end

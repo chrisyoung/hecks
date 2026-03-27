@@ -16,6 +16,8 @@ module HecksGo
       agg_snake = GoUtils.snake_case(@agg.name)
       @self_id = @cmd.attributes.find { |a| a.name.to_s == "#{agg_snake}_id" }
       @is_create = @self_id.nil?
+      # Event type name in Go — suffixed if it collides with command name
+      @go_event_name = @event.name == @cmd.name ? "#{@event.name}Event" : @event.name
     end
 
     def generate
@@ -44,7 +46,7 @@ module HecksGo
       lines << ""
 
       # Execute method
-      lines << "func (c #{@cmd.name}) Execute(repo #{@agg.name}Repository) (*#{@agg.name}, *#{@event.name}, error) {"
+      lines << "func (c #{@cmd.name}) Execute(repo #{@agg.name}Repository) (*#{@agg.name}, *#{@go_event_name}, error) {"
       if @is_create
         lines.concat(create_body)
       else
@@ -102,7 +104,7 @@ module HecksGo
       lines << "\tif err := repo.Save(agg); err != nil {"
       lines << "\t\treturn nil, nil, err"
       lines << "\t}"
-      lines << "\tevent := #{@event.name}{"
+      lines << "\tevent := #{@go_event_name}{"
       lines << "\t\tAggregateID: agg.ID,"
       @cmd.attributes.each do |a|
         lines << "\t\t#{GoUtils.pascal_case(a.name)}: c.#{GoUtils.pascal_case(a.name)},"
@@ -137,7 +139,7 @@ module HecksGo
       lines << "\tif err := repo.Save(existing); err != nil {"
       lines << "\t\treturn nil, nil, err"
       lines << "\t}"
-      lines << "\tevent := #{@event.name}{"
+      lines << "\tevent := #{@go_event_name}{"
       lines << "\t\tAggregateID: existing.ID,"
       @cmd.attributes.each do |a|
         lines << "\t\t#{GoUtils.pascal_case(a.name)}: c.#{GoUtils.pascal_case(a.name)},"

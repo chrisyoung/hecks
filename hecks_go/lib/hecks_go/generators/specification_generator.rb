@@ -57,13 +57,17 @@ module HecksGo
       body = block_lines[1..-2]&.map(&:strip)&.reject(&:empty?)&.join(" && ")
       return nil if body.nil? || body.empty?
 
+      # Check for Ruby-specific syntax that can't be translated
+      return nil if body.include?(".to_s") || body.include?("Date.") || body.include?("Time.")
+      return nil if body.include?(".any?") || body.include?(".all?") || body.include?(".map")
+      return nil if body.include?("?") # Safe navigation or ternary
+      return nil if body =~ /\w+\.\w+ && \w+\.\w+ && / # nil-check chains (Ruby idiom)
+
       # Translate Ruby to Go:
-      # - param.field → param.Field
-      # - && stays &&
-      # - > >= < <= == stay
-      # - Remove underscores from numbers (50_000 → 50000)
-      param_name = @spec.block.parameters.first&.last&.to_s || GoUtils.camel_case(@agg)
-      go_pred = body.gsub(/#{param_name}\.(\w+)/) { "#{param_name}.#{GoUtils.pascal_case($1)}" }
+      ruby_param = @spec.block.parameters.first&.last&.to_s || GoUtils.camel_case(@agg)
+      go_param = GoUtils.camel_case(@agg)
+      # Replace ruby_param.field with go_param.Field
+      go_pred = body.gsub(/#{ruby_param}\.(\w+)/) { "#{go_param}.#{GoUtils.pascal_case($1)}" }
       go_pred = go_pred.gsub(/(\d)_(\d)/, '\1\2') # Remove number underscores
       go_pred
     end
