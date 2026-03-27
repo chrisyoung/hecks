@@ -1,8 +1,7 @@
 require "date"
 
 Hecks.domain "Identity" do
-  Stakeholder do
-    description "Users, roles, and permissions for governance participants"
+  Stakeholder "Users, roles, and permissions for governance participants" do
     name String, pii: true
     email String, pii: true
     role String, enum: %w[assessor reviewer governance_board data_steward incident_reporter admin auditor]
@@ -48,8 +47,7 @@ Hecks.domain "Identity" do
     end
   end
 
-  AuditLog do
-    description "Immutable record of all actions across the governance system"
+  AuditLog "Immutable record of all actions across the governance system" do
     entity_type String
     entity_id String
     action String
