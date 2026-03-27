@@ -29,6 +29,16 @@ module Hecks
     def self.save(domain, path: DEFAULT_PATH)
       content = DslSerializer.new(domain).serialize
       File.write(path, content)
+
+      # Validate round-trip fidelity if possible
+      restored = self.load(path: path)
+      if restored
+        result = Hecks::MigrationContract.diff(domain, restored)
+        unless result[:valid]
+          warn "MigrationContract: snapshot round-trip issues:\n  #{result[:issues].join("\n  ")}"
+        end
+      end
+
       path
     end
 

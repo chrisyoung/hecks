@@ -405,8 +405,12 @@
 - HTTP server using `net/http` (JSON API with POST per command, GET per aggregate)
 - HTML UI with template-rendered pages: home, index tables, show detail, create/update forms, config page
 - Go `html/template` views generated from ERB at build time — ERB is single source of truth
-- Shared view contracts (`hecks_templating`) define data shapes once, generate both Go structs and Go templates
-- Contract-driven ViewGenerator replaces regex-based ERB converter — uses contracts as lookup table for field names, types, loop variables
+- `hecks_templating` gem — shared data contracts for cross-target code generation:
+  - `ViewContract` — view data shapes, generates both Go structs and Go templates from ERB
+  - `TypeContract` — single type registry (Go, SQL, JSON Schema, OpenAPI) replaces 4 separate type maps
+  - `EventContract` — formalizes event interface and cross-domain source tagging
+  - `MigrationContract` — validates round-trip serialization fidelity for domain snapshots
+- Contract-driven ViewGenerator replaces regex-based ERB converter
 - Automatic smoke test after `build_go` — starts server, exercises all pages/forms, verifies no render errors
 - Form submission: accepts both JSON and form-urlencoded, redirects on success
 - Config page with roles, adapter, policies, aggregate counts, ports

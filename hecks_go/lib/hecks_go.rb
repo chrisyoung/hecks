@@ -12,7 +12,7 @@
 #   # Or via CLI:
 #   hecks build --target go
 #
-require_relative "../../hecks_templating/lib/hecks_templating"
+require "hecks_templating"
 require_relative "hecks_go/go_utils"
 require_relative "hecks_go/generators/aggregate_generator"
 require_relative "hecks_go/generators/value_object_generator"

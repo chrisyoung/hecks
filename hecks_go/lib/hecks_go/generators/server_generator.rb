@@ -100,7 +100,7 @@ module HecksGo
         "{Name: \"#{agg.name}s\", Href: \"/#{plural}\", Commands: #{agg.commands.size}, Attributes: #{attrs.size}, Policies: #{agg.policies.size}}"
       end
       lines = []
-      vc = Hecks::ViewContracts
+      vc = Hecks::ViewContract
       lines << "\t#{vc.go_struct(:home_agg, vc::HOME[:structs][:home_agg])}"
       lines << "\t#{vc.go_struct(:home_data, vc::HOME[:fields])}"
       lines << "\tmux.HandleFunc(\"GET /{$}\", func(w http.ResponseWriter, r *http.Request) {"

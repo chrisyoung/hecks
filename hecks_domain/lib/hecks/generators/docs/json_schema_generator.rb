@@ -159,11 +159,7 @@ module Hecks
         elsif attr.reference?
           { type: "string", format: "uuid", description: "Reference to #{attr.type}" }
         else
-          case attr.ruby_type
-          when "Integer" then { type: "integer" }
-          when "Float" then { type: "number" }
-          else { type: "string" }
-          end
+          { type: Hecks::TypeContract.json(attr.ruby_type) }
         end
       end
     end

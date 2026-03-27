@@ -2,12 +2,12 @@
 #
 # Generates a Go template renderer that loads html/template files
 # and renders them with layout wrapping. Struct definitions for
-# shared types (NavItem, FormField, etc.) come from ViewContracts.
+# shared types (NavItem, FormField, etc.) come from ViewContract.
 #
 module HecksGo
   class RendererGenerator
     def generate
-      vc = Hecks::ViewContracts
+      vc = Hecks::ViewContract
       structs = []
 
       # Layout structs: NavItem, PageData
