@@ -28,7 +28,9 @@ module HecksGo
     end
 
     def pascal_case(str)
-      str.to_s.split("_").map(&:capitalize).join
+      s = str.to_s
+      return s if s =~ /\A[A-Z]/ && !s.include?("_") # Already PascalCase
+      s.split("_").map(&:capitalize).join
     end
 
     def camel_case(str)

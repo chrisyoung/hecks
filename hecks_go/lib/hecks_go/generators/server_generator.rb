@@ -60,6 +60,39 @@ module HecksGo
 
     def route_lines
       lines = []
+
+      # Root — list endpoints
+      agg_endpoints = @domain.aggregates.map do |agg|
+        snake = GoUtils.snake_case(agg.name)
+        plural = snake + "s"
+        cmds = agg.commands.map { |c| GoUtils.snake_case(c.name) }
+        "\"#{agg.name}\": {\"list\": \"/#{plural}\", \"commands\": []string{#{cmds.map { |c| "\"#{c}\"" }.join(", ")}}}"
+      end
+      lines << "\tmux.HandleFunc(\"GET /{$}\", func(w http.ResponseWriter, r *http.Request) {"
+      lines << "\t\tw.Header().Set(\"Content-Type\", \"text/html\")"
+      lines << "\t\tfmt.Fprintf(w, \"<html><head><title>#{@domain.name}Domain</title>\" +"
+      lines << "\t\t\t\"<style>body{font-family:system-ui;max-width:600px;margin:2rem auto;padding:0 1rem}\" +"
+      lines << "\t\t\t\"a{color:#4361ee}h1{color:#1a1a2e}li{margin:0.5rem 0}</style></head>\" +"
+      lines << "\t\t\t\"<body><h1>#{@domain.name}Domain</h1><h2>Aggregates</h2><ul>\" +"
+      @domain.aggregates.each do |agg|
+        snake = GoUtils.snake_case(agg.name)
+        plural = snake + "s"
+        lines << "\t\t\t\"<li><a href='/#{plural}'>#{agg.name}s</a> (#{agg.commands.size} commands)</li>\" +"
+      end
+      lines << "\t\t\t\"</ul><h2>API</h2><ul>\" +"
+      @domain.aggregates.each do |agg|
+        snake = GoUtils.snake_case(agg.name)
+        plural = snake + "s"
+        lines << "\t\t\t\"<li>GET <a href='/#{plural}'>/#{plural}</a></li>\" +"
+        agg.commands.each do |cmd|
+          cmd_snake = GoUtils.snake_case(cmd.name)
+          lines << "\t\t\t\"<li>POST /#{plural}/#{cmd_snake}</li>\" +"
+        end
+      end
+      lines << "\t\t\t\"</ul></body></html>\")"
+      lines << "\t})"
+      lines << ""
+
       @domain.aggregates.each do |agg|
         safe = agg.name
         snake = GoUtils.snake_case(safe)

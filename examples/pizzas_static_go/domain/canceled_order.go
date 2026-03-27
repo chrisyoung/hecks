@@ -7,7 +7,7 @@ type CanceledOrder struct {
 	AggregateId string `json:"aggregate_id"`
 	OrderId string `json:"order_id"`
 	CustomerName string `json:"customer_name"`
-	Items []Orderitem `json:"items"`
+	Items []OrderItem `json:"items"`
 	Status string `json:"status"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

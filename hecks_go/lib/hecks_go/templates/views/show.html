@@ -1,0 +1,19 @@
+{{ define "show" }}
+<h1>{{ .AggregateName }}</h1>
+<div class="detail">
+  <dl>
+    <dt>ID</dt>
+    <dd class="mono">{{ .Item.ID }}</dd>
+    {{ range .Item.Fields }}
+    <dt>{{ .Label }}</dt>
+    <dd>{{ .Value }}</dd>
+    {{ end }}
+  </dl>
+</div>
+<div class="actions">
+  <a href="{{ .BackHref }}" class="btn btn-sm">Back</a>
+  {{ range .Buttons }}
+  <a class="btn btn-sm{{ if not .Allowed }} btn-faded{{ end }}" href="{{ .Href }}">{{ .Label }}</a>
+  {{ end }}
+</div>
+{{ end }}

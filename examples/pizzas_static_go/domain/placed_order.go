@@ -8,7 +8,7 @@ type PlacedOrder struct {
 	CustomerName string `json:"customer_name"`
 	PizzaId string `json:"pizza_id"`
 	Quantity int64 `json:"quantity"`
-	Items []Orderitem `json:"items"`
+	Items []OrderItem `json:"items"`
 	Status string `json:"status"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
