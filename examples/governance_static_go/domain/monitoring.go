@@ -33,5 +33,12 @@ func NewMonitoring(modelId string, deploymentId string, metricName string, value
 }
 
 func (a *Monitoring) Validate() error {
+	if a.ModelId == "" {
+		return &ValidationError{Field: "model_id", Message: "model_id can't be blank"}
+	}
+	if a.MetricName == "" {
+		return &ValidationError{Field: "metric_name", Message: "metric_name can't be blank"}
+	}
+	// invariant: threshold must be positive
 	return nil
 }

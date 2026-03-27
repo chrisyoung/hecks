@@ -37,5 +37,11 @@ func NewExemption(modelId string, policyId string, requirement string, reason st
 }
 
 func (a *Exemption) Validate() error {
+	if a.ModelId == "" {
+		return &ValidationError{Field: "model_id", Message: "model_id can't be blank"}
+	}
+	if a.PolicyId == "" {
+		return &ValidationError{Field: "policy_id", Message: "policy_id can't be blank"}
+	}
 	return nil
 }

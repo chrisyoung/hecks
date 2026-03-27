@@ -37,5 +37,11 @@ func NewDeployment(modelId string, environment string, endpoint string, purpose 
 }
 
 func (a *Deployment) Validate() error {
+	if a.ModelId == "" {
+		return &ValidationError{Field: "model_id", Message: "model_id can't be blank"}
+	}
+	if a.Environment == "" {
+		return &ValidationError{Field: "environment", Message: "environment can't be blank"}
+	}
 	return nil
 }

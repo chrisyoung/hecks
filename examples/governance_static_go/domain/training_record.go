@@ -33,5 +33,12 @@ func NewTrainingRecord(stakeholderId string, policyId string, completedAt time.T
 }
 
 func (a *TrainingRecord) Validate() error {
+	if a.StakeholderId == "" {
+		return &ValidationError{Field: "stakeholder_id", Message: "stakeholder_id can't be blank"}
+	}
+	if a.PolicyId == "" {
+		return &ValidationError{Field: "policy_id", Message: "policy_id can't be blank"}
+	}
+	// invariant: expires_at must be after completed_at
 	return nil
 }
