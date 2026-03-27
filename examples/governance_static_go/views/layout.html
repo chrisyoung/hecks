@@ -14,6 +14,8 @@
     .sidebar a.active { color: #fff; background: #4361ee; }
     .sidebar .section { color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.8rem 1rem 0.3rem; }
     .main { margin-left: 220px; flex: 1; min-width: 0; }
+    .topbar { background: #fff; border-bottom: 1px solid #eee; padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar .title { font-weight: 600; color: #1a1a2e; }
     .container { max-width: 960px; margin: 2rem auto; padding: 0 2rem; }
     h1 { margin-bottom: 1.5rem; color: #1a1a2e; }
     h2 { margin-top: 2rem; margin-bottom: 1rem; color: #1a1a2e; }
@@ -50,8 +52,16 @@
   <aside class="sidebar">
     <span class="brand">{{ .Brand }}</span>
     <a href="/">Home</a>
-    {{ $lastGroup := "" }}{{ range .NavItems }}{{ if ne .Href "/" }}{{ if and .Group (ne .Group $lastGroup) }}<div class="section">{{ .Group }}</div>{{ $lastGroup = .Group }}{{ end }}<a href="{{ .Href }}">{{ .Label }}</a>
-    {{ end }}{{ end }}
+    {{ $lastGroup := "" }}
+    {{ range .NavItems }}
+      
+      
+      {{ if and .Group (ne .Group $lastGroup) }}
+        <div class="section">{{ .Group }}</div>
+        {{ $lastGroup = .Group }}
+      {{ end }}
+      <a href="{{ .Href }}">{{ .Label }}</a>
+    {{ end }}
   </aside>
   <div class="main">
     <div class="container">
@@ -87,6 +97,7 @@
       });
       if (!ok) e.preventDefault();
     });
+    // Highlight active sidebar link
     document.querySelectorAll('.sidebar a').forEach(function(a) {
       if (a.getAttribute('href') === window.location.pathname ||
           (a.getAttribute('href') !== '/' && window.location.pathname.startsWith(a.getAttribute('href')))) {
@@ -95,4 +106,5 @@
     });
   </script>
 </body>
-</html>{{ end }}
+</html>
+{{ end }}

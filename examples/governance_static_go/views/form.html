@@ -1,21 +1,29 @@
 {{ define "form" }}
 <h1>{{ .CommandName }}</h1>
-{{ if .ErrorMessage }}<div class="flash-error">{{ .ErrorMessage }}</div>{{ end }}
+{{/* ERB: if error_message */}}
+  <div class="flash-error">{{ .ErrorMessage }}</div>
+{{ end }}
 <form method="post" action="{{ .Action }}">
   {{ range .Fields }}
-    {{ if eq .Type "hidden" }}
+    {{/* ERB: if field[:type] == :hidden */}}
       <input type="hidden" name="{{ .Name }}" value="{{ .Value }}">
-    {{ else if eq .Type "select" }}
+    {{/* ERB: elsif field[:type] == :select */}}
       <label>{{ .Label }}{{ if .Required }}<span class="required">required</span>{{ end }}</label>
       <select name="{{ .Name }}" required>
-        {{ range .Options }}
-        <option value="{{ .Value }}"{{ if .Selected }} selected{{ end }}>{{ .Label }}</option>
+        {{/* ERB: field[:options].each do |opt| */}}
+          <option value="{{ .Value }}"{{/* ERB: ' selected' if opt[:selected] */}}>{{ .Label }}</option>
         {{ end }}
       </select>
-    {{ else }}
+      {{ if .Error }}
+        <div class="field-error">{{ .Error }}</div>
+      {{ end }}
+    {{/* ERB: else */}}
       <label>{{ .Label }}{{ if .Required }}<span class="required">required</span>{{ end }}</label>
-      <input name="{{ .Name }}" type="{{ .InputType }}" value="{{ .Value }}" required>
-      {{ if .Error }}<div class="field-error">{{ .Error }}</div>{{ end }}
+      <input name="{{ .Name }}" type="{{/* ERB: field[:input_type] || 'text' */}}"
+             value="{{ .Value }}"{{/* ERB: ' step="any"' if field[:step] */}} required>
+      {{ if .Error }}
+        <div class="field-error">{{ .Error }}</div>
+      {{ end }}
     {{ end }}
   {{ end }}
   <button class="btn" type="submit">{{ .CommandName }}</button>
