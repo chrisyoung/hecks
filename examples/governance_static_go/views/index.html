@@ -7,8 +7,8 @@
     {{ end }}
   </div>
 </div>
-{{ if .AggregateDescription }}
-  <p style="color:#666;margin:-1rem 0 1.5rem">{{ .AggregateDescription }}</p>
+{{ if .Description }}
+  <p style="color:#666;margin:-1rem 0 1.5rem">{{ .Description }}</p>
 {{ end }}
 <table>
   <thead>
@@ -17,7 +17,7 @@
       {{ range .Columns }}
         <th>{{ .Label }}</th>
       {{ end }}
-      {{/* ERB: if row_actions.any? */}}
+      {{ if .RowActions }}
         <th>Actions</th>
       {{ end }}
     </tr>
@@ -26,10 +26,10 @@
     {{ range .Items }}
       <tr>
         <td class="mono"><a href="{{ .ShowHref }}">{{ .ShortId }}</a></td>
-        {{/* ERB: item[:cells].each do |cell| */}}
-          <td>{{ .Cell }}</td>
+        {{ range .Cells }}
+          <td>{{ . }}</td>
         {{ end }}
-        {{/* ERB: if row_actions.any? */}}
+        {{ if .RowActions }}
           <td>
             {{ range .RowActions }}
               <a class="btn btn-sm{{ if not .Allowed }} btn-faded{{ end }}"

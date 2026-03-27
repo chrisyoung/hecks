@@ -41,11 +41,5 @@ func NewIncident(modelId string, severity string, category string, description s
 }
 
 func (a *Incident) Validate() error {
-	if a.ModelId == "" {
-		return &ValidationError{Field: "model_id", Message: "model_id can't be blank"}
-	}
-	if a.Severity == "" {
-		return &ValidationError{Field: "severity", Message: "severity can't be blank"}
-	}
 	return nil
 }

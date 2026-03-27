@@ -30,9 +30,9 @@
     <dd>{{ .BootedAt }}</dd>
     <dt>Policies</dt>
     <dd>
-      {{/* ERB: if policies.empty? */}}
+      {{ if not .Policies }}
         (none)
-      {{/* ERB: else */}}
+      {{ else }}
         <ul>
           {{ range .Policies }}
             <li class="mono">{{ .P }}</li>

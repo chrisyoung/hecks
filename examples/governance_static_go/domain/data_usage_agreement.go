@@ -37,12 +37,5 @@ func NewDataUsageAgreement(modelId string, dataSource string, purpose string, co
 }
 
 func (a *DataUsageAgreement) Validate() error {
-	if a.DataSource == "" {
-		return &ValidationError{Field: "data_source", Message: "data_source can't be blank"}
-	}
-	if a.Purpose == "" {
-		return &ValidationError{Field: "purpose", Message: "purpose can't be blank"}
-	}
-	// invariant: expiration must be after effective date
 	return nil
 }

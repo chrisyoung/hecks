@@ -31,11 +31,5 @@ func NewStakeholder(name string, email string, role string, team string, status 
 }
 
 func (a *Stakeholder) Validate() error {
-	if a.Name == "" {
-		return &ValidationError{Field: "name", Message: "name can't be blank"}
-	}
-	if a.Email == "" {
-		return &ValidationError{Field: "email", Message: "email can't be blank"}
-	}
 	return nil
 }
