@@ -72,9 +72,10 @@ module HecksGo
       lines << "\tnav := []NavItem{"
       lines << "\t\t{Label: \"Home\", Href: \"/\"},"
       @domain.aggregates.each do |agg|
-        lines << "\t\t{Label: \"#{agg.name}s\", Href: \"/#{GoUtils.snake_case(agg.name)}s\"},"
+        group = agg.origin_domain || ""
+        lines << "\t\t{Label: \"#{agg.name}s\", Href: \"/#{GoUtils.snake_case(agg.name)}s\", Group: \"#{group}\"},"
       end
-      lines << "\t\t{Label: \"Config\", Href: \"/config\"},"
+      lines << "\t\t{Label: \"Config\", Href: \"/config\", Group: \"System\"},"
       lines << "\t}"
       lines << "\trenderer := NewRenderer(viewsDir, \"#{@domain.name}Domain\", nav)"
       lines << ""
@@ -95,10 +96,10 @@ module HecksGo
       agg_data = @domain.aggregates.map do |agg|
         plural = GoUtils.snake_case(agg.name) + "s"
         attrs = agg.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
-        "{Name: \"#{agg.name}s\", Href: \"/#{plural}\", Commands: #{agg.commands.size}, Attributes: #{attrs.size}}"
+        "{Name: \"#{agg.name}s\", Href: \"/#{plural}\", Commands: #{agg.commands.size}, Attributes: #{attrs.size}, Policies: #{agg.policies.size}}"
       end
       lines = []
-      lines << "\ttype HomeAgg struct { Name string; Href string; Commands int; Attributes int }"
+      lines << "\ttype HomeAgg struct { Name string; Href string; Commands int; Attributes int; Policies int }"
       lines << "\ttype HomeData struct { DomainName string; Aggregates []HomeAgg }"
       lines << "\tmux.HandleFunc(\"GET /{$}\", func(w http.ResponseWriter, r *http.Request) {"
       lines << "\t\trenderer.Render(w, \"home\", \"#{@domain.name}Domain\", HomeData{"
