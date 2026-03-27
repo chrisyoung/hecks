@@ -7,10 +7,11 @@ module HecksGo
   class EventGenerator
     include GoUtils
 
-    def initialize(event, aggregate:, package:)
+    def initialize(event, aggregate:, package:, name_suffix: "")
       @event = event
       @aggregate = aggregate
       @package = package
+      @go_name = event.name + name_suffix
     end
 
     def generate
@@ -20,7 +21,7 @@ module HecksGo
       lines << "import \"time\""
       lines << ""
 
-      lines << "type #{@event.name} struct {"
+      lines << "type #{@go_name} struct {"
       lines << "\tAggregateID string    `json:\"aggregate_id\"`"
       @event.attributes.each do |attr|
         field = GoUtils.pascal_case(attr.name)
@@ -41,9 +42,9 @@ module HecksGo
       lines << "}"
       lines << ""
 
-      lines << "func (e #{@event.name}) EventName() string { return \"#{@event.name}\" }"
+      lines << "func (e #{@go_name}) EventName() string { return \"#{@event.name}\" }"
       lines << ""
-      lines << "func (e #{@event.name}) GetOccurredAt() time.Time { return e.OccurredAt }"
+      lines << "func (e #{@go_name}) GetOccurredAt() time.Time { return e.OccurredAt }"
 
       lines.join("\n") + "\n"
     end

@@ -39,17 +39,19 @@ module HecksGo
       # Transition validation
       lines << "func (a *#{@agg}) ValidTransition(target string) bool {"
       lines << "\tswitch {"
-      @lc.transitions.each do |cmd_name, target_state|
+      @lc.transitions.each do |cmd_name, _|
+        target = @lc.target_for(cmd_name)
         from = @lc.from_for(cmd_name)
+        next unless target
         if from
           if from.is_a?(Array)
             from_check = from.map { |f| "a.#{field} == \"#{f}\"" }.join(" || ")
           else
             from_check = "a.#{field} == \"#{from}\""
           end
-          lines << "\tcase target == \"#{target_state}\" && (#{from_check}): return true"
+          lines << "\tcase target == \"#{target}\" && (#{from_check}): return true"
         else
-          lines << "\tcase target == \"#{target_state}\": return true"
+          lines << "\tcase target == \"#{target}\": return true"
         end
       end
       lines << "\tdefault: return false"
