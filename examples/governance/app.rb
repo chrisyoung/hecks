@@ -1,0 +1,3 @@
+require "hecks"
+
+Hecks.boot
