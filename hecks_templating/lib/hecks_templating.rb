@@ -1,12 +1,15 @@
 # = HecksTemplating
 #
-# Shared view contracts and template generation infrastructure for Hecks.
-# Defines the data shape each web explorer view expects, consumed by
-# both Go and Ruby generators to keep struct fields and template
-# bindings in sync.
+# Shared contracts and template generation infrastructure for Hecks.
+# Defines data shapes that multiple code paths must agree on — view
+# templates, type mappings, event shapes, migration fidelity. Consumed
+# by Go, Ruby, and SQL generators to prevent cross-target drift.
 #
 #   require "hecks_templating"
-#   Hecks::ViewContracts::CONFIG[:fields]
+#   Hecks::ViewContract::CONFIG[:fields]
 #
-require_relative "hecks_templating/view_contracts"
+require_relative "hecks_templating/view_contract"
+require_relative "hecks_templating/type_contract"
+require_relative "hecks_templating/event_contract"
+require_relative "hecks_templating/migration_contract"
 require_relative "hecks_templating/smoke_test"

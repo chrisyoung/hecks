@@ -1,7 +1,7 @@
 # HecksGo::ServerGenerator::DataRoutes
 #
 # Generates Go route handlers for JSON API endpoints (index, find, POST commands)
-# and HTML show pages. Struct types derive from ViewContracts.
+# and HTML show pages. Struct types derive from ViewContract.
 #
 module HecksGo
   class ServerGenerator
@@ -24,7 +24,7 @@ module HecksGo
       end
 
       def index_route(agg, safe, plural, attrs, agg_snake)
-        vc = Hecks::ViewContracts
+        vc = Hecks::ViewContract
         cols = attrs.map { |a| "{Label: \"#{a.name.to_s.split("_").map(&:capitalize).join(" ")}\"}" }
         create_cmds = agg.commands.reject { |c| c.attributes.any? { |a| a.name.to_s == "#{agg_snake}_id" } }
         btns = create_cmds.map { |c| "{Label: \"#{c.name}\", Href: \"/#{plural}/#{GoUtils.snake_case(c.name)}/new\", Allowed: true}" }
@@ -101,7 +101,7 @@ module HecksGo
       end
 
       def html_routes
-        vc = Hecks::ViewContracts
+        vc = Hecks::ViewContract
         lines = []
         @domain.aggregates.each do |agg|
           safe = agg.name

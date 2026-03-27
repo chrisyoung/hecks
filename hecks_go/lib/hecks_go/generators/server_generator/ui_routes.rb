@@ -82,7 +82,7 @@ module HecksGo
         policies = @domain.aggregates.flat_map { |a| a.policies.reject { |p| p.respond_to?(:guard?) && p.guard? }.map { |p| "#{p.event_name} → #{p.name}" } }
         policies += @domain.policies.map { |p| "#{p.event_name} → #{p.trigger_command}" }
 
-        vc = Hecks::ViewContracts
+        vc = Hecks::ViewContract
         lines = []
         lines << "\t// Config"
         lines << "\t#{vc.go_struct(:config_agg, vc::CONFIG[:structs][:config_agg])}"

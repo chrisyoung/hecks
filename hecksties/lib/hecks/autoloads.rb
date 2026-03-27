@@ -34,6 +34,10 @@ module Hecks
   autoload :Specification,  "hecks/mixins/specification"
 
   # Framework plumbing
+  autoload :TypeContract,   "hecks_templating/type_contract"
+  autoload :EventContract,    "hecks_templating/event_contract"
+  autoload :MigrationContract, "hecks_templating/migration_contract"
+  autoload :ViewContract,  "hecks_templating/view_contract"
   autoload :Utils,          "hecks/utils"
   autoload :VERSION,        "hecks/version"
   autoload :Configuration,  "hecks/runtime/configuration"
