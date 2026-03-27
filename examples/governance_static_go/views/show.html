@@ -3,17 +3,31 @@
 <div class="detail">
   <dl>
     <dt>ID</dt>
-    <dd class="mono">{{ .Item.ID }}</dd>
-    {{ range .Item.Fields }}
-    <dt>{{ .Label }}</dt>
-    <dd>{{ .Value }}</dd>
+    <dd class="mono">{{ .Id }}</dd>
+    {{/* ERB: item[:fields].each do |field| */}}
+      <dt>{{ .Label }}</dt>
+      <dd>
+        {{/* ERB: if field[:type] == :list */}}
+          {{/* ERB: if field[:items].empty? */}}
+            (none)
+          {{/* ERB: else */}}
+            <ul>
+              {{/* ERB: field[:items].each do |li| */}}
+                <li>{{ .Li }}</li>
+              {{ end }}
+            </ul>
+          {{ end }}
+        {{/* ERB: else */}}
+          {{ .Value }}
+        {{ end }}
+      </dd>
     {{ end }}
   </dl>
 </div>
 <div class="actions">
   <a href="{{ .BackHref }}" class="btn btn-sm">Back</a>
   {{ range .Buttons }}
-  <a class="btn btn-sm{{ if not .Allowed }} btn-faded{{ end }}" href="{{ .Href }}">{{ .Label }}</a>
+    <a class="btn btn-sm{{ if not .Allowed }} btn-faded{{ end }}" href="{{ .Href }}">{{ .Label }}</a>
   {{ end }}
 </div>
 {{ end }}
