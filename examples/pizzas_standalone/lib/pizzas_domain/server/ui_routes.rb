@@ -64,7 +64,7 @@ module PizzasDomain
             }); next
           end
           html_response(res, layout(title: "CreatePizza — PizzasDomain", nav_items: nav) {
-            "<h1>CreatePizza</h1><form method='post' action='/pizzas/create_pizza/submit'>" + "<label>Name<span style='color:#999;font-size:0.75rem;font-weight:normal;margin-left:0.25rem'>required</span></label><input name='name' type='text' required>" + "<label>Description</label><input name='description' type='text' required>" + "<button class='btn' type='submit'>CreatePizza</button></form>"
+            "<h1>CreatePizza</h1><form method='post' action='/pizzas/create_pizza/submit'>" + "<label>Name<span style='color:#999;font-size:0.75rem;font-weight:normal;margin-left:0.25rem'>required</span></label><input name='name' type='text' required>" + "<label>Description<span style='color:#999;font-size:0.75rem;font-weight:normal;margin-left:0.25rem'>required</span></label><input name='description' type='text' required>" + "<button class='btn' type='submit'>CreatePizza</button></form>"
           })
         end
 

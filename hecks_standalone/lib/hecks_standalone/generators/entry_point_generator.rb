@@ -1,12 +1,12 @@
 # HecksStandalone::EntryPointGenerator
 #
-# Generates the standalone entry point file (lib/<gem_name>.rb) that
-# requires no hecks gem. Includes autoloads for the inlined runtime,
-# aggregates, ports, and adapters, plus a self-contained boot method
-# that wires repos, event bus, command bus, command methods, and policies.
+# Generates two files for the standalone domain:
+# 1. lib/<gem>.rb — autoloads and constants (regeneratable)
+# 2. lib/<gem>/boot.rb — wiring, boot method, serve (stable)
 #
-#   gen = EntryPointGenerator.new(domain)
-#   gen.generate("PizzasDomain", "pizzas_domain")
+# The entry point requires boot.rb and auto-boots. Regenerating the
+# domain files doesn't touch boot.rb, so the running server picks up
+# changes via live reload.
 #
 module HecksStandalone
   class EntryPointGenerator
@@ -14,7 +14,8 @@ module HecksStandalone
       @domain = domain
     end
 
-    def generate(mod, gem_name)
+    # The main entry point — autoloads + constants. Regeneratable.
+    def generate_entry_point(mod, gem_name)
       @gem_name = gem_name
       lines = []
       lines << "require \"securerandom\""
@@ -26,11 +27,21 @@ module HecksStandalone
       lines.concat(port_autoloads(gem_name))
       lines.concat(adapter_autoloads(gem_name))
       lines << ""
-      lines.concat(boot_method(mod))
+      lines.concat(constants)
       lines << "end"
       lines << ""
-      lines << "# Auto-boot with memory adapters on require"
+      lines << "require_relative \"../boot\""
       lines << "#{mod}.boot unless ENV[\"HECKS_SKIP_BOOT\"]"
+      lines.join("\n") + "\n"
+    end
+
+    # The boot file — wiring, serve, roles. Written once, not regenerated.
+    def generate_boot(mod, gem_name)
+      @gem_name = gem_name
+      lines = []
+      lines << "module #{mod}"
+      lines.concat(boot_method(mod))
+      lines << "end"
       lines.join("\n") + "\n"
     end
 
@@ -77,8 +88,7 @@ module HecksStandalone
       lines
     end
 
-    def boot_method(mod)
-      lines = []
+    def constants
       all_roles = @domain.aggregates.flat_map { |a| a.ports.keys }.uniq.map(&:to_s)
       all_roles = ["admin"] if all_roles.empty?
 
@@ -91,9 +101,18 @@ module HecksStandalone
         end
       end
 
-      lines << "  ROLES = #{all_roles.inspect}.freeze"
-      lines << "  PORTS = #{port_map.inspect}.freeze"
-      lines << ""
+      [
+        "  ROLES = #{all_roles.inspect}.freeze",
+        "  PORTS = #{port_map.inspect}.freeze",
+        "  VALIDATIONS = #{build_validation_rules.inspect}.freeze"
+      ]
+    end
+
+    def boot_method(mod)
+      all_roles = @domain.aggregates.flat_map { |a| a.ports.keys }.uniq.map(&:to_s)
+      all_roles = ["admin"] if all_roles.empty?
+
+      lines = []
       lines << "  class << self"
       lines << "    attr_accessor :event_bus, :command_bus, :current_role"
       lines << "    attr_reader :config"
@@ -110,7 +129,8 @@ module HecksStandalone
       lines << "      @config = { adapter: adapter, booted_at: Time.now }"
       lines << "      @event_bus = Runtime::EventBus.new"
       lines << "      @command_bus = Runtime::CommandBus.new(event_bus: @event_bus)"
-      # Port-based auth is enforced inside the Command lifecycle (check_port_access)
+      lines << "      require_relative \"lib/#{@gem_name}/validations\""
+      lines << "      Validations.rules = VALIDATIONS"
       lines << ""
       @domain.aggregates.each do |agg|
         safe = Hecks::Utils.sanitize_constant(agg.name)
@@ -144,7 +164,7 @@ module HecksStandalone
       lines << "    end"
       lines << ""
       lines << "    def serve(port: 9292)"
-      lines << "      require_relative \"#{@gem_name}/server/domain_app\""
+      lines << "      require_relative \"lib/#{@gem_name}/server/domain_app\""
       lines << "      Server::DomainApp.new(self).start(port: port)"
       lines << "    end"
       lines << ""
@@ -217,6 +237,36 @@ module HecksStandalone
           lines << "      @event_bus.subscribe(\"#{pol.event_name}\") { |event| #{safe}::Commands::#{pol.trigger_command}.call }"
         end
       end
+    end
+
+    def build_validation_rules
+      rules = {}
+      @domain.aggregates.each do |agg|
+        safe = Hecks::Utils.sanitize_constant(agg.name)
+        agg.commands.each do |cmd|
+          cmd_snake = Hecks::Utils.underscore(cmd.name)
+          cmd_rules = {}
+          cmd.attributes.each do |attr|
+            v = agg.validations.find { |val| val.field.to_s == attr.name.to_s }
+            if v
+              cmd_rules[attr.name.to_s] = v.rules.transform_keys(&:to_s)
+              next
+            end
+            agg.value_objects.each do |vo|
+              vo_attr = vo.attributes.find { |va| va.name.to_s == attr.name.to_s }
+              if vo_attr
+                r = { "presence" => true }
+                vo.invariants.each do |inv|
+                  r["positive"] = true if inv.message.to_s =~ /#{attr.name}.*positive|#{attr.name}.*> ?0/i
+                end
+                cmd_rules[attr.name.to_s] = r
+              end
+            end
+          end
+          rules["#{safe}/#{cmd_snake}"] = cmd_rules unless cmd_rules.empty?
+        end
+      end
+      rules
     end
   end
 end
