@@ -109,14 +109,14 @@ module HecksGo
 
         # Aggregate-level policies
         agg.policies.each do |pol|
-          gen = PolicyGenerator.new(pol, package: "domain")
+          gen = PolicyGenerator.new(pol, aggregate_name: agg.name, domain: @domain, package: "domain")
           write("domain/#{GoUtils.snake_case(pol.name)}_policy.go", gen.generate)
         end
       end
 
       # Domain-level policies
       @domain.policies.each do |pol|
-        gen = PolicyGenerator.new(pol, package: "domain")
+        gen = PolicyGenerator.new(pol, domain: @domain, package: "domain")
         write("domain/#{GoUtils.snake_case(pol.name)}_policy.go", gen.generate)
       end
 
