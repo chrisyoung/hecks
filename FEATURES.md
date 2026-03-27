@@ -406,6 +406,8 @@
 - Go `html/template` views matching the Ruby ERB layout/CSS (shared design)
 - Form submission: accepts both JSON and form-urlencoded, redirects on success
 - Config page with roles, adapter, policies, aggregate counts, ports
+- Go runtime package: EventBus (goroutine-safe pub/sub with history) and CommandBus (middleware pipeline)
+- Events published on every command execution, event count live on config page
 - `go.mod` with only `google/uuid` dependency
 - Type mapping: String→string, Integer→int64, Float→float64, list_of→[]Type
 
