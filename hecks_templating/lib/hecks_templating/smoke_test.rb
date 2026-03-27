@@ -57,8 +57,11 @@ module HecksTemplating
     private
 
     def partition_commands(agg, agg_snake)
-      creates = agg.commands.reject { |c| c.attributes.any? { |a| a.name.to_s == "#{agg_snake}_id" } }
-      updates = agg.commands.select { |c| c.attributes.any? { |a| a.name.to_s == "#{agg_snake}_id" } }
+      # Match any _id suffix that could refer to this aggregate
+      # e.g., governance_policy_id, policy_id, governance_policy_id all match
+      id_pattern = /_id$/
+      creates = agg.commands.select { |c| c.attributes.none? { |a| a.name.to_s =~ id_pattern && a.name.to_s.end_with?("_id") && agg_snake.end_with?(a.name.to_s.sub(/_id$/, "")) } }
+      updates = agg.commands - creates
       [creates, updates]
     end
 

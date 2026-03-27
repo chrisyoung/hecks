@@ -43,5 +43,12 @@ func NewAssessment(modelId string, assessorId string, riskLevel string, biasScor
 }
 
 func (a *Assessment) Validate() error {
+	if a.ModelId == "" {
+		return &ValidationError{Field: "model_id", Message: "model_id can't be blank"}
+	}
+	if a.AssessorId == "" {
+		return &ValidationError{Field: "assessor_id", Message: "assessor_id can't be blank"}
+	}
+	// invariant: scores must be between 0 and 1
 	return nil
 }

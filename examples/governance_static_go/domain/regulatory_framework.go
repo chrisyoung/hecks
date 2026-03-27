@@ -35,5 +35,11 @@ func NewRegulatoryFramework(name string, jurisdiction string, version string, ef
 }
 
 func (a *RegulatoryFramework) Validate() error {
+	if a.Name == "" {
+		return &ValidationError{Field: "name", Message: "name can't be blank"}
+	}
+	if a.Jurisdiction == "" {
+		return &ValidationError{Field: "jurisdiction", Message: "jurisdiction can't be blank"}
+	}
 	return nil
 }

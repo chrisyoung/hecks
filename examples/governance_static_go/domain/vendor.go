@@ -35,5 +35,8 @@ func NewVendor(name string, contactEmail string, riskTier string, assessmentDate
 }
 
 func (a *Vendor) Validate() error {
+	if a.Name == "" {
+		return &ValidationError{Field: "name", Message: "name can't be blank"}
+	}
 	return nil
 }

@@ -29,7 +29,7 @@ module PizzasDomain
               toppings: existing.toppings + [Topping.new(name: name, amount: amount)]
             )
           else
-            raise Hecks::Error, "Pizza not found: #{pizza_id}"
+            raise PizzasDomain::Error, "Pizza not found: #{pizza_id}"
           end
         end
       end
