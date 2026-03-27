@@ -33,7 +33,11 @@ module HecksGo
       if @policy.respond_to?(:trigger_command) && @policy.trigger_command
         trigger = @policy.trigger_command
         trigger_agg = find_trigger_aggregate
-        if trigger_agg
+
+        # Check if the event type exists in this domain
+        event_exists = @domain && @domain.aggregates.any? { |a| a.events.any? { |e| e.name == @policy.event_name } }
+
+        if trigger_agg && event_exists
           lines << "func (p #{@policy.name}) Execute(event interface{}, #{GoUtils.camel_case(trigger_agg)}Repo #{trigger_agg}Repository) error {"
           lines << "\te, ok := event.(*#{@policy.event_name})"
           lines << "\tif !ok { return nil }"

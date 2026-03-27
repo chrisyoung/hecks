@@ -85,8 +85,12 @@ module HecksGo
 
         # Events
         agg.events.each do |evt|
-          gen = EventGenerator.new(evt, aggregate: agg, package: "domain")
-          write("domain/#{GoUtils.snake_case(evt.name)}.go", gen.generate)
+          collides = agg.commands.any? { |c| c.name == evt.name }
+          suffix = collides ? "Event" : ""
+          gen = EventGenerator.new(evt, aggregate: agg, package: "domain", name_suffix: suffix)
+          fname = GoUtils.snake_case(evt.name)
+          fname += "_event" if collides
+          write("domain/#{fname}.go", gen.generate)
         end
 
         # Lifecycle
