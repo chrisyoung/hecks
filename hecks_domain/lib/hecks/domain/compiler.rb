@@ -111,6 +111,22 @@ module Hecks
       generator.generate
     end
 
+    # Build a Go project from the domain IR. Same DSL, Go output.
+    #
+    # @param domain [Hecks::DomainModel::Domain] the domain to compile
+    # @param output_dir [String] parent directory for the generated project
+    # @return [String] absolute path to the generated Go project root
+    def build_go(domain, output_dir: ".")
+      valid, errors = validate(domain)
+      unless valid
+        raise Hecks::ValidationError, "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
+      end
+
+      require "hecks_go"
+      generator = HecksGo::ProjectGenerator.new(domain, output_dir: output_dir)
+      generator.generate
+    end
+
     private
 
     # Fallback file-based loading strategy. Generates the full gem to a tmpdir,
