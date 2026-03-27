@@ -125,7 +125,7 @@ module Hecks
     private
 
     # Persistence extensions are keyed by adapter type (:sqlite, :postgres, etc.)
-    PERSISTENCE_EXTENSIONS = %i[sqlite postgres mysql mysql2].freeze
+    PERSISTENCE_EXTENSIONS = %i[sqlite postgres mysql mysql2 filesystem_store filesystem].freeze
 
     # Fires all non-persistence extensions that are registered in the extension registry.
     # In explicit mode (when +auto_wire+ or +extension+ was called), only fires
