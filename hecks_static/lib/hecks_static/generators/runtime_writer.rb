@@ -1,7 +1,7 @@
 require "fileutils"
 
-module HecksStandalone
-  # HecksStandalone::RuntimeWriter
+module HecksStatic
+  # HecksStatic::RuntimeWriter
   #
   # Copies runtime template files into the generated gem's runtime/
   # directory, replacing the __DOMAIN_MODULE__ placeholder with the

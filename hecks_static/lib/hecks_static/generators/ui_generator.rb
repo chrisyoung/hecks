@@ -1,4 +1,4 @@
-module HecksStandalone
+module HecksStatic
 # Hecks::Generators::Standalone::UIGenerator
 #
 # Generates HTML routes for each aggregate: index (table), show (detail),
