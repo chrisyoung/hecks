@@ -74,19 +74,36 @@ module Hecks
             end
           end
 
-          # Detect when a command has a singular attr (e.g. "topping") that
-          # maps to a list_of aggregate attr (e.g. "toppings").
+          # Detect when a command appends to a list_of aggregate attr.
           #
-          # This enables append semantics where a singular command attribute
-          # gets appended to the aggregate's list attribute rather than replacing it.
+          # Two patterns:
+          # 1. Singular match: command has "topping" attr matching "toppings" list
+          # 2. VO match: command attrs overlap with the value object's attrs
           #
           # @param agg_attr [Hecks::DomainModel::Structure::Attribute] an aggregate attribute to check
           # @return [Hecks::DomainModel::Structure::Attribute, nil] the matching singular command
-          #   attribute, or nil if no match
+          #   attribute (pattern 1), or nil
           def find_list_append(agg_attr)
             return nil unless agg_attr.list?
             singular = agg_attr.name.to_s.chomp("s")
             @command.attributes.find { |c| c.name.to_s == singular }
+          end
+
+          # Detect when command attrs match a value object's attrs for list append.
+          # Returns the VO and matching command attr names if found.
+          #
+          # @param agg_attr [Hecks::DomainModel::Structure::Attribute] a list_of aggregate attribute
+          # @return [Array, nil] [vo, matching_cmd_attrs] or nil
+          def find_vo_append(agg_attr)
+            return nil unless agg_attr.list? && @aggregate
+            vo = @aggregate.value_objects.find { |v| v.name == agg_attr.type.to_s }
+            return nil unless vo
+            vo_attr_names = vo.attributes.map { |a| a.name.to_s }
+            # Only reject self-referencing _id, not cross-aggregate refs that are VO data
+            self_id = @self_id_attr&.name&.to_s
+            cmd_attr_names = @command.attributes.reject { |a| a.name.to_s == self_id }.map { |a| a.name.to_s }
+            matching = vo_attr_names & cmd_attr_names
+            matching.size >= vo_attr_names.size ? [vo, matching] : nil
           end
 
           # Injects the lifecycle target state into the constructor argument list.
@@ -105,6 +122,56 @@ module Hecks
             args << "#{field}: \"#{target}\""
           end
         end
+
+          # Returns the aggregate's non-reserved attributes.
+          def agg_attrs
+            return [] unless @aggregate
+            @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
+          end
+
+          # Builds args for creating a new aggregate from scratch.
+          def create_constructor_args
+            args = agg_attrs.each_with_object([]) do |a, parts|
+              cmd_attr = @command.attributes.find { |c| c.name == a.name }
+              if cmd_attr
+                parts << "#{a.name}: #{a.name}"
+              elsif (vo_match = find_vo_append(a))
+                vo, matching_attrs = vo_match
+                vo_args = matching_attrs.map { |attr| "#{attr}: #{attr}" }.join(", ")
+                parts << "#{a.name}: [#{vo.name}.new(#{vo_args})]"
+              elsif (append = find_list_append(a))
+                vo_class = a.type
+                parts << "#{a.name}: [#{vo_class}.new(name: #{append.name})]"
+              end
+            end
+            inject_sets(args)
+            inject_lifecycle_status(args)
+            args
+          end
+
+          # Builds args for updating an existing aggregate.
+          def update_constructor_args
+            parts = ["id: existing.id"]
+            agg_attrs.each do |a|
+              cmd_attr = @command.attributes.find { |c| c.name == a.name }
+              if cmd_attr
+                parts << "#{a.name}: #{a.name}"
+              elsif (vo_match = find_vo_append(a))
+                vo, matching_attrs = vo_match
+                vo_args = matching_attrs.map { |attr| "#{attr}: #{attr}" }.join(", ")
+                parts << "#{a.name}: existing.#{a.name} + [#{vo.name}.new(#{vo_args})]"
+              elsif (append = find_list_append(a))
+                vo_class = a.type
+                cmd_name = append.name
+                parts << "#{a.name}: existing.#{a.name} + [#{vo_class}.new(name: #{cmd_name})]"
+              else
+                parts << "#{a.name}: existing.#{a.name}"
+              end
+            end
+            inject_sets(parts)
+            inject_lifecycle_status(parts)
+            parts
+          end
       end
     end
   end

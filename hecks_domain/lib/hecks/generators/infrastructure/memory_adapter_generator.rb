@@ -19,9 +19,10 @@ module Hecks
       #   that needs an in-memory repository
       # @param domain_module [String] the PascalCase domain module name
       #   (e.g. +"PizzasDomain"+)
-      def initialize(aggregate, domain_module:)
+      def initialize(aggregate, domain_module:, mixin_prefix: "Hecks")
         @aggregate = aggregate
         @domain_module = domain_module
+        @mixin_prefix = mixin_prefix
         @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
       end
 
@@ -86,6 +87,10 @@ module Hecks
       #
       # @param indent [Integer] number of leading spaces for indentation
       # @return [Array<String>] the lines of the +query+ method
+      def operator_module
+        @mixin_prefix == "Hecks" ? "Hecks::Querying::Operators" : "#{@mixin_prefix}::Runtime::Operators"
+      end
+
       def query_lines(indent)
         pad = " " * indent
         [
@@ -96,7 +101,7 @@ module Hecks
           "#{pad}      conditions.all? do |k, v|",
           "#{pad}        next false unless obj.respond_to?(k)",
           "#{pad}        actual = obj.send(k)",
-          "#{pad}        v.is_a?(Hecks::Querying::Operators::Operator) ? v.match?(actual) : actual == v",
+          "#{pad}        v.is_a?(#{operator_module}::Operator) ? v.match?(actual) : actual == v",
           "#{pad}      end",
           "#{pad}    end",
           "#{pad}  end",
