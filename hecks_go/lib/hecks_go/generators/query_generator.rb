@@ -1,7 +1,7 @@
 # HecksGo::QueryGenerator
 #
-# Generates Go query functions. Queries filter repository results
-# based on conditions defined in the DSL.
+# Generates Go query functions. Extracts where conditions from the
+# DSL block source and generates field-matching filter logic.
 #
 module HecksGo
   class QueryGenerator
@@ -12,6 +12,8 @@ module HecksGo
       @agg = aggregate
       @package = package
       @module_path = module_path
+      @conditions = extract_conditions
+      @params = @query.block.parameters.map { |_, n| n.to_s }
     end
 
     def generate
@@ -20,20 +22,79 @@ module HecksGo
       lines = []
       lines << "package #{@package}"
       lines << ""
-      lines << "// #{func_name} query for #{safe}"
-      lines << "// Generated from DSL query definition"
-      lines << "func #{func_name}(repo #{safe}Repository) ([]*#{safe}, error) {"
+
+      if @params.empty?
+        # No params — static filter (e.g., Pending: where(status: "pending"))
+        lines << "func #{func_name}(repo #{safe}Repository) ([]*#{safe}, error) {"
+      else
+        # With params (e.g., ByDescription(desc string))
+        param_list = @params.map { |p| "#{p} string" }.join(", ")
+        lines << "func #{func_name}(repo #{safe}Repository, #{param_list}) ([]*#{safe}, error) {"
+      end
+
       lines << "\tall, err := repo.All()"
       lines << "\tif err != nil { return nil, err }"
-      lines << "\tvar results []*#{safe}"
-      lines << "\tfor _, item := range all {"
-      lines << "\t\t// TODO: filter logic from DSL block"
-      lines << "\t\tresults = append(results, item)"
-      lines << "\t}"
-      lines << "\treturn results, nil"
-      lines << "}"
 
+      if @conditions.empty?
+        lines << "\treturn all, nil"
+      else
+        lines << "\tvar results []*#{safe}"
+        lines << "\tfor _, item := range all {"
+        checks = @conditions.map do |field, value|
+          go_field = GoUtils.pascal_case(field)
+          if value[:param]
+            "item.#{go_field} == #{value[:param]}"
+          else
+            "item.#{go_field} == \"#{value[:literal]}\""
+          end
+        end
+        lines << "\t\tif #{checks.join(' && ')} {"
+        lines << "\t\t\tresults = append(results, item)"
+        lines << "\t\t}"
+        lines << "\t}"
+        lines << "\treturn results, nil"
+      end
+
+      lines << "}"
       lines.join("\n") + "\n"
+    end
+
+    private
+
+    # Extract where conditions from the block source.
+    # Parses `where(field: "value")` or `where(field: param)` patterns.
+    def extract_conditions
+      return {} unless @query.block.source_location
+      file, line = @query.block.source_location
+      return {} unless File.exist?(file)
+
+      # Read lines from the block
+      source_lines = File.readlines(file)
+      block_lines = []
+      depth = 0
+      (line - 1).upto(source_lines.size - 1) do |i|
+        l = source_lines[i]
+        depth += l.scan(/\bdo\b|\{/).size
+        depth -= l.scan(/\bend\b|\}/).size
+        block_lines << l.strip
+        break if depth <= 0
+      end
+
+      # Look for where(key: value) pattern
+      conditions = {}
+      block_lines.each do |l|
+        if l =~ /where\((.+)\)/
+          pairs = $1
+          pairs.scan(/(\w+):\s*(?:"([^"]+)"|(\w+))/).each do |field, str_val, ref_val|
+            if str_val
+              conditions[field] = { literal: str_val }
+            else
+              conditions[field] = { param: ref_val }
+            end
+          end
+        end
+      end
+      conditions
     end
   end
 end
