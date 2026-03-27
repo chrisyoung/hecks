@@ -78,7 +78,7 @@ class UIGenerator
 
   def root_route(mod)
     agg_data = @domain.aggregates.map do |agg|
-      "{ name: \"#{agg.name}s\", href: \"/#{plural(agg)}\", commands: #{agg.commands.size}, attributes: #{user_attrs(agg).size} }"
+      "{ name: \"#{agg.name}s\", href: \"/#{plural(agg)}\", commands: #{agg.commands.size}, attributes: #{user_attrs(agg).size}, policies: #{agg.policies.size} }"
     end
     [
       "        server.mount_proc \"/\" do |req, res|",
