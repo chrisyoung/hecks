@@ -441,3 +441,4 @@
 - Pizzas static Go: generated Go project with HTTP server, memory adapters, same domain
 - Rails pizza shop: full Turbo Streams app with admin, ordering, toppings, pricing, live events
 - Banking domain: 4 aggregates, cross-aggregate policies, specifications, entities, SQLite
+- Governance: 5 bounded contexts (compliance, model registry, operations, identity, risk assessment) — 930 lines of DSL exercising every concept
