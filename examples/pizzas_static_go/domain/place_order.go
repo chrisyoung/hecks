@@ -13,7 +13,9 @@ type PlaceOrder struct {
 func (c PlaceOrder) CommandName() string { return "PlaceOrder" }
 
 func (c PlaceOrder) Execute(repo OrderRepository) (*Order, *PlacedOrder, error) {
-	agg := NewOrder(c.CustomerName, nil, "")
+	OrderItemItem, err := NewOrderItem(c.PizzaId, c.Quantity)
+	if err != nil { return nil, nil, err }
+	agg := NewOrder(c.CustomerName, []OrderItem{OrderItemItem}, "")
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}
