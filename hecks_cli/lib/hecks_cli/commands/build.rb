@@ -11,6 +11,7 @@ module Hecks
       desc "build", "Generate the domain gem"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
+      option :standalone, type: :boolean, desc: "Generate standalone gem with no hecks dependency"
       # Validates the domain definition, assigns a CalVer version, and generates
       # the domain gem with all aggregates, commands, and documentation.
       #
@@ -32,10 +33,15 @@ module Hecks
         end
         versioner = Versioner.new(".")
         version = versioner.next
-        output = Hecks.build(domain, version: version)
-        say "Built #{domain.gem_name} v#{version}", :green
+        if options[:standalone]
+          output = Hecks.build_standalone(domain, version: version)
+          say "Built #{domain.gem_name} v#{version} (standalone)", :green
+        else
+          output = Hecks.build(domain, version: version)
+          say "Built #{domain.gem_name} v#{version}", :green
+          say "  Docs: #{output}/docs/"
+        end
         say "  Output: #{output}/"
-        say "  Docs: #{output}/docs/"
       end
     end
   end

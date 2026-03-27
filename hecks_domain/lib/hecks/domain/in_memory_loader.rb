@@ -152,7 +152,15 @@ module Hecks
     # @param mod [String] the module name (e.g., "PizzasDomain")
     # @return [String] Ruby source code for the module shell
     def self.module_shell(mod)
-      "require 'securerandom'\nmodule #{mod}\n  class ValidationError < StandardError; end\n  class InvariantError < StandardError; end\nend"
+      "require 'securerandom'\nmodule #{mod}\n" \
+      "  class ValidationError < StandardError\n" \
+      "    attr_reader :field, :rule\n" \
+      "    def initialize(message = nil, field: nil, rule: nil)\n" \
+      "      @field = field; @rule = rule; super(message)\n" \
+      "    end\n" \
+      "  end\n" \
+      "  class InvariantError < StandardError; end\n" \
+      "end"
     end
 
     # Shorthand to instantiate a generator and call #generate.

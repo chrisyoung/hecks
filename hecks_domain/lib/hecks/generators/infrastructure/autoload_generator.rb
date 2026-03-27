@@ -41,7 +41,12 @@ module Hecks
         lines << "require \"securerandom\""
         lines << ""
         lines << "module #{mod}"
-        lines << "  class ValidationError < StandardError; end"
+        lines << "  class ValidationError < StandardError"
+        lines << "    attr_reader :field, :rule"
+        lines << "    def initialize(message = nil, field: nil, rule: nil)"
+        lines << "      @field = field; @rule = rule; super(message)"
+        lines << "    end"
+        lines << "  end"
         lines << "  class InvariantError < StandardError; end"
         lines << ""
 
@@ -167,6 +172,29 @@ module Hecks
         end
 
         lines.join("\n")
+      end
+
+      # Returns autoload lines for value objects and entities as an array of
+      # strings (without indentation), for use by the standalone gem generator.
+      #
+      # @param aggregate [Hecks::DomainModel::Structure::Aggregate]
+      # @param gem_name [String]
+      # @return [Array<String>]
+      def aggregate_autoloads(aggregate, gem_name)
+        safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
+        snake = Hecks::Utils.underscore(safe_name)
+        base = "#{gem_name}/#{snake}"
+
+        lines = []
+        aggregate.value_objects.each do |vo|
+          vo_snake = Hecks::Utils.underscore(vo.name)
+          lines << "autoload :#{vo.name}, \"#{base}/#{vo_snake}\""
+        end
+        aggregate.entities.each do |ent|
+          ent_snake = Hecks::Utils.underscore(ent.name)
+          lines << "autoload :#{ent.name}, \"#{base}/#{ent_snake}\""
+        end
+        lines
       end
 
     end
