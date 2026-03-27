@@ -23,7 +23,7 @@ class GemGenerator
 
   def generate
     gem_name = @domain.gem_name
-    static_name = @domain.name.downcase + "_static"
+    static_name = @domain.name.downcase + "_static_ruby"
     mod = @domain.module_name + "Domain"
     root = File.join(@output_dir, static_name)
 

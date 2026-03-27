@@ -20,7 +20,7 @@ module HecksGo
 
     def generate
       name = GoUtils.snake_case(@domain.name)
-      @root = File.join(@output_dir, "#{name}_go")
+      @root = File.join(@output_dir, "#{name}_static_go")
       @module_path = "#{name}_domain"
       FileUtils.mkdir_p(@root)
 
