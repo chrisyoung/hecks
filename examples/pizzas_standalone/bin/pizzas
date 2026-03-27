@@ -21,6 +21,19 @@ when "console"
   require "irb"
   puts "PizzasDomain console (memory adapter)"
   IRB.start
+when "generate"
+  ENV["HECKS_SKIP_BOOT"] = "1"
+  project_root = File.expand_path("..", __dir__)
+  domain_file = File.join(project_root, "hecks_domain.rb")
+  unless File.exist?(domain_file)
+    puts "No hecks_domain.rb found in #{project_root}"
+    exit 1
+  end
+  require "hecks"
+  domain = eval(File.read(domain_file), nil, domain_file, 1)
+  require "hecks_standalone"
+  HecksStandalone::GemGenerator.new(domain, output_dir: File.dirname(project_root)).generate
+  puts "Regenerated domain from hecks_domain.rb"
 when "info"
   puts "PizzasDomain"
   puts "  Adapter: #{PizzasDomain.config[:adapter]}"
@@ -36,5 +49,6 @@ else
   puts "  pizzas serve [PORT] [--adapter=memory|sqlite]   Start HTTP server with UI"
   puts "  pizzas ui [PORT]                                 Alias for serve"
   puts "  pizzas console                                   IRB with domain loaded"
+  puts "  pizzas generate                                  Regenerate domain from hecks_domain.rb"
   puts "  pizzas info                                      Show domain config"
 end

@@ -43,11 +43,17 @@ class GemGenerator
     generate_server(root, gem_name, mod)
     generate_bin(root, gem_name, mod)
     generate_gemspec(root, gem_name, mod)
+    generate_domain_rb(root)
 
     root
   end
 
   private
+
+  def generate_domain_rb(root)
+    serializer = Hecks::DslSerializer.new(@domain)
+    File.write(File.join(root, "hecks_domain.rb"), serializer.serialize)
+  end
 
   def generate_gemspec(root, gem_name, mod)
     content = <<~RUBY
@@ -73,10 +79,15 @@ class GemGenerator
 
   def generate_entry_point(root, gem_name, mod)
     gen = EntryPointGenerator.new(@domain)
-    source = gen.generate(mod, gem_name)
     dir = File.join(root, "lib")
     FileUtils.mkdir_p(dir)
-    File.write(File.join(dir, "#{gem_name}.rb"), source)
+
+    # Entry point — always regenerated (autoloads + constants)
+    File.write(File.join(dir, "#{gem_name}.rb"), gen.generate_entry_point(mod, gem_name))
+
+    # Boot file at project root — only written if it doesn't exist (stable wiring)
+    boot_path = File.join(root, "boot.rb")
+    File.write(boot_path, gen.generate_boot(mod, gem_name)) unless File.exist?(boot_path)
   end
 
   def generate_aggregates(root, gem_name, mod)
@@ -232,6 +243,19 @@ class GemGenerator
         require "irb"
         puts "__MOD__ console (memory adapter)"
         IRB.start
+      when "generate"
+        ENV["HECKS_SKIP_BOOT"] = "1"
+        project_root = File.expand_path("..", __dir__)
+        domain_file = File.join(project_root, "hecks_domain.rb")
+        unless File.exist?(domain_file)
+          puts "No hecks_domain.rb found in #{project_root}"
+          exit 1
+        end
+        require "hecks"
+        domain = eval(File.read(domain_file), nil, domain_file, 1)
+        require "hecks_standalone"
+        HecksStandalone::GemGenerator.new(domain, output_dir: File.dirname(project_root)).generate
+        puts "Regenerated domain from hecks_domain.rb"
       when "info"
         puts "__MOD__"
         puts "  Adapter: #{__MOD__.config[:adapter]}"
@@ -247,6 +271,7 @@ class GemGenerator
         puts "  __CMD__ serve [PORT] [--adapter=memory|sqlite]   Start HTTP server with UI"
         puts "  __CMD__ ui [PORT]                                 Alias for serve"
         puts "  __CMD__ console                                   IRB with domain loaded"
+        puts "  __CMD__ generate                                  Regenerate domain from hecks_domain.rb"
         puts "  __CMD__ info                                      Show domain config"
       end
     RUBY
@@ -256,8 +281,10 @@ class GemGenerator
   end
 
   def generate_middleware(root, gem_name, mod)
-    # Port-based auth is enforced inside the Command mixin (check_port_access).
-    # Future middleware (logging, audit, etc.) would be written here.
+    # Validations extension
+    template_dir = File.expand_path("../templates", __dir__)
+    source = File.read(File.join(template_dir, "validations.rb"))
+    File.write(File.join(root, "lib", gem_name, "validations.rb"), source.gsub("__DOMAIN_MODULE__", mod))
   end
 
   def generate_server(root, gem_name, mod)

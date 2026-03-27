@@ -32,6 +32,8 @@ module PizzasDomain
         server.mount_proc "/pizzas/create_pizza" do |req, res|
           begin
             attrs = parse_body(req)
+            error = PizzasDomain::Validations.check("Pizza", "create_pizza", attrs)
+            raise error if error
             result = Pizza.create_pizza(**attrs)
             json_response(res, aggregate_to_hash(result.aggregate), status: 201)
           rescue PizzasDomain::Error => e
@@ -42,6 +44,8 @@ module PizzasDomain
         server.mount_proc "/pizzas/add_topping" do |req, res|
           begin
             attrs = parse_body(req)
+            error = PizzasDomain::Validations.check("Pizza", "add_topping", attrs)
+            raise error if error
             result = Pizza.add_topping(**attrs)
             json_response(res, aggregate_to_hash(result.aggregate), status: 201)
           rescue PizzasDomain::Error => e
@@ -71,6 +75,8 @@ module PizzasDomain
         server.mount_proc "/orders/place_order" do |req, res|
           begin
             attrs = parse_body(req)
+            error = PizzasDomain::Validations.check("Order", "place_order", attrs)
+            raise error if error
             result = Order.place_order(**attrs)
             json_response(res, aggregate_to_hash(result.aggregate), status: 201)
           rescue PizzasDomain::Error => e
@@ -81,6 +87,8 @@ module PizzasDomain
         server.mount_proc "/orders/cancel_order" do |req, res|
           begin
             attrs = parse_body(req)
+            error = PizzasDomain::Validations.check("Order", "cancel_order", attrs)
+            raise error if error
             result = Order.cancel_order(**attrs)
             json_response(res, aggregate_to_hash(result.aggregate), status: 201)
           rescue PizzasDomain::Error => e
@@ -93,7 +101,7 @@ module PizzasDomain
         end
 
         server.mount_proc "/_validations" do |req, res|
-          json_response(res, {"Pizza/create_pizza"=>{"name"=>{"presence"=>true}}, "Pizza/add_topping"=>{"name"=>{"presence"=>true}, "amount"=>{"presence"=>true, "positive"=>true}}, "Order/place_order"=>{"customer_name"=>{"presence"=>true}, "pizza_id"=>{"presence"=>true}, "quantity"=>{"presence"=>true, "positive"=>true}}})
+          json_response(res, PizzasDomain::Validations.rules || {})
         end
         mount_ui_routes(server)
       end
