@@ -49,6 +49,19 @@ module Hecks
         @invariants << DomainModel::Structure::Invariant.new(message: message, block: block)
       end
 
+      # Implicit DSL: `name Type` → attribute
+      def method_missing(name, *args, **kwargs, &block)
+        if args.first.is_a?(Class) || (args.first.is_a?(String) && args.first =~ /\A[A-Z]/)
+          attribute(name, args.first, **kwargs)
+        else
+          super
+        end
+      end
+
+      def respond_to_missing?(name, include_private = false)
+        true
+      end
+
       # Build and return the DomainModel::Structure::ValueObject IR object.
       #
       # @return [DomainModel::Structure::ValueObject] the fully built value object IR object

@@ -27,6 +27,7 @@ module HecksStatic
           write_events(agg, agg_dir, mod)
           write_policies(agg, agg_dir, mod)
           write_specifications(agg, agg_dir, mod)
+          write_lifecycle(agg, agg_dir, mod)
         end
       end
 
@@ -137,6 +138,13 @@ module HecksStatic
             domain_module: mod, aggregate_name: agg.name, mixin_prefix: mod)
           File.write(File.join(spec_dir, "#{Hecks::Utils.underscore(spec.name)}.rb"), gen.generate)
         end
+      end
+
+      def write_lifecycle(agg, dir, mod)
+        return unless agg.lifecycle
+        gen = Hecks::Generators::Domain::LifecycleGenerator.new(agg.lifecycle,
+          domain_module: mod, aggregate_name: Hecks::Utils.sanitize_constant(agg.name))
+        File.write(File.join(dir, "lifecycle.rb"), gen.generate)
       end
     end
   end
