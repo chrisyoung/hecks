@@ -60,7 +60,6 @@ func (app *App) Start(port int) error {
 	viewsDir := filepath.Join(filepath.Dir(exe), "..", "views")
 	if _, err := os.Stat(viewsDir); err != nil { viewsDir = "views" }
 	nav := []NavItem{
-		{Label: "Home", Href: "/"},
 		{Label: "GovernancePolicys", Href: "/governance_policys", Group: "Compliance"},
 		{Label: "RegulatoryFrameworks", Href: "/regulatory_frameworks", Group: "Compliance"},
 		{Label: "ComplianceReviews", Href: "/compliance_reviews", Group: "Compliance"},
@@ -88,9 +87,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type GovernancePolicyCol struct { Label string }
-	type GovernancePolicyItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type GovernancePolicyItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type GovernancePolicyBtn struct { Label string; Href string; Allowed bool }
-	type GovernancePolicyIndexData struct { AggregateName string; Description string; Items []GovernancePolicyItem; Columns []GovernancePolicyCol; Buttons []GovernancePolicyBtn }
+	type GovernancePolicyIndexData struct { AggregateName string; Description string; Items []GovernancePolicyItem; Columns []GovernancePolicyCol; Buttons []GovernancePolicyBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /governance_policys", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.GovernancePolicyRepo.All(); jsonResponse(w, items); return
@@ -211,9 +210,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type RegulatoryFrameworkCol struct { Label string }
-	type RegulatoryFrameworkItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type RegulatoryFrameworkItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type RegulatoryFrameworkBtn struct { Label string; Href string; Allowed bool }
-	type RegulatoryFrameworkIndexData struct { AggregateName string; Description string; Items []RegulatoryFrameworkItem; Columns []RegulatoryFrameworkCol; Buttons []RegulatoryFrameworkBtn }
+	type RegulatoryFrameworkIndexData struct { AggregateName string; Description string; Items []RegulatoryFrameworkItem; Columns []RegulatoryFrameworkCol; Buttons []RegulatoryFrameworkBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /regulatory_frameworks", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.RegulatoryFrameworkRepo.All(); jsonResponse(w, items); return
@@ -295,9 +294,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type ComplianceReviewCol struct { Label string }
-	type ComplianceReviewItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type ComplianceReviewItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type ComplianceReviewBtn struct { Label string; Href string; Allowed bool }
-	type ComplianceReviewIndexData struct { AggregateName string; Description string; Items []ComplianceReviewItem; Columns []ComplianceReviewCol; Buttons []ComplianceReviewBtn }
+	type ComplianceReviewIndexData struct { AggregateName string; Description string; Items []ComplianceReviewItem; Columns []ComplianceReviewCol; Buttons []ComplianceReviewBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /compliance_reviews", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.ComplianceReviewRepo.All(); jsonResponse(w, items); return
@@ -399,9 +398,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type ExemptionCol struct { Label string }
-	type ExemptionItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type ExemptionItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type ExemptionBtn struct { Label string; Href string; Allowed bool }
-	type ExemptionIndexData struct { AggregateName string; Description string; Items []ExemptionItem; Columns []ExemptionCol; Buttons []ExemptionBtn }
+	type ExemptionIndexData struct { AggregateName string; Description string; Items []ExemptionItem; Columns []ExemptionCol; Buttons []ExemptionBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /exemptions", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.ExemptionRepo.All(); jsonResponse(w, items); return
@@ -484,9 +483,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type TrainingRecordCol struct { Label string }
-	type TrainingRecordItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type TrainingRecordItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type TrainingRecordBtn struct { Label string; Href string; Allowed bool }
-	type TrainingRecordIndexData struct { AggregateName string; Description string; Items []TrainingRecordItem; Columns []TrainingRecordCol; Buttons []TrainingRecordBtn }
+	type TrainingRecordIndexData struct { AggregateName string; Description string; Items []TrainingRecordItem; Columns []TrainingRecordCol; Buttons []TrainingRecordBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /training_records", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.TrainingRecordRepo.All(); jsonResponse(w, items); return
@@ -569,9 +568,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type StakeholderCol struct { Label string }
-	type StakeholderItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type StakeholderItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type StakeholderBtn struct { Label string; Href string; Allowed bool }
-	type StakeholderIndexData struct { AggregateName string; Description string; Items []StakeholderItem; Columns []StakeholderCol; Buttons []StakeholderBtn }
+	type StakeholderIndexData struct { AggregateName string; Description string; Items []StakeholderItem; Columns []StakeholderCol; Buttons []StakeholderBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /stakeholders", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.StakeholderRepo.All(); jsonResponse(w, items); return
@@ -653,9 +652,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type AuditLogCol struct { Label string }
-	type AuditLogItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type AuditLogItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type AuditLogBtn struct { Label string; Href string; Allowed bool }
-	type AuditLogIndexData struct { AggregateName string; Description string; Items []AuditLogItem; Columns []AuditLogCol; Buttons []AuditLogBtn }
+	type AuditLogIndexData struct { AggregateName string; Description string; Items []AuditLogItem; Columns []AuditLogCol; Buttons []AuditLogBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /audit_logs", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.AuditLogRepo.All(); jsonResponse(w, items); return
@@ -699,9 +698,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type AiModelCol struct { Label string }
-	type AiModelItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type AiModelItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type AiModelBtn struct { Label string; Href string; Allowed bool }
-	type AiModelIndexData struct { AggregateName string; Description string; Items []AiModelItem; Columns []AiModelCol; Buttons []AiModelBtn }
+	type AiModelIndexData struct { AggregateName string; Description string; Items []AiModelItem; Columns []AiModelCol; Buttons []AiModelBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /ai_models", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.AiModelRepo.All(); jsonResponse(w, items); return
@@ -844,9 +843,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type VendorCol struct { Label string }
-	type VendorItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type VendorItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type VendorBtn struct { Label string; Href string; Allowed bool }
-	type VendorIndexData struct { AggregateName string; Description string; Items []VendorItem; Columns []VendorCol; Buttons []VendorBtn }
+	type VendorIndexData struct { AggregateName string; Description string; Items []VendorItem; Columns []VendorCol; Buttons []VendorBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /vendors", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.VendorRepo.All(); jsonResponse(w, items); return
@@ -928,9 +927,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type DataUsageAgreementCol struct { Label string }
-	type DataUsageAgreementItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type DataUsageAgreementItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type DataUsageAgreementBtn struct { Label string; Href string; Allowed bool }
-	type DataUsageAgreementIndexData struct { AggregateName string; Description string; Items []DataUsageAgreementItem; Columns []DataUsageAgreementCol; Buttons []DataUsageAgreementBtn }
+	type DataUsageAgreementIndexData struct { AggregateName string; Description string; Items []DataUsageAgreementItem; Columns []DataUsageAgreementCol; Buttons []DataUsageAgreementBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /data_usage_agreements", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.DataUsageAgreementRepo.All(); jsonResponse(w, items); return
@@ -1033,9 +1032,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type DeploymentCol struct { Label string }
-	type DeploymentItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type DeploymentItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type DeploymentBtn struct { Label string; Href string; Allowed bool }
-	type DeploymentIndexData struct { AggregateName string; Description string; Items []DeploymentItem; Columns []DeploymentCol; Buttons []DeploymentBtn }
+	type DeploymentIndexData struct { AggregateName string; Description string; Items []DeploymentItem; Columns []DeploymentCol; Buttons []DeploymentBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /deployments", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.DeploymentRepo.All(); jsonResponse(w, items); return
@@ -1117,9 +1116,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type IncidentCol struct { Label string }
-	type IncidentItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type IncidentItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type IncidentBtn struct { Label string; Href string; Allowed bool }
-	type IncidentIndexData struct { AggregateName string; Description string; Items []IncidentItem; Columns []IncidentCol; Buttons []IncidentBtn }
+	type IncidentIndexData struct { AggregateName string; Description string; Items []IncidentItem; Columns []IncidentCol; Buttons []IncidentBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /incidents", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.IncidentRepo.All(); jsonResponse(w, items); return
@@ -1241,9 +1240,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type MonitoringCol struct { Label string }
-	type MonitoringItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type MonitoringItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type MonitoringBtn struct { Label string; Href string; Allowed bool }
-	type MonitoringIndexData struct { AggregateName string; Description string; Items []MonitoringItem; Columns []MonitoringCol; Buttons []MonitoringBtn }
+	type MonitoringIndexData struct { AggregateName string; Description string; Items []MonitoringItem; Columns []MonitoringCol; Buttons []MonitoringBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /monitorings", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.MonitoringRepo.All(); jsonResponse(w, items); return
@@ -1307,9 +1306,9 @@ func (app *App) Start(port int) error {
 	})
 
 	type AssessmentCol struct { Label string }
-	type AssessmentItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type AssessmentItem struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }
 	type AssessmentBtn struct { Label string; Href string; Allowed bool }
-	type AssessmentIndexData struct { AggregateName string; Description string; Items []AssessmentItem; Columns []AssessmentCol; Buttons []AssessmentBtn }
+	type AssessmentIndexData struct { AggregateName string; Description string; Items []AssessmentItem; Columns []AssessmentCol; Buttons []AssessmentBtn; RowActions []RowAction }
 	mux.HandleFunc("GET /assessments", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.AssessmentRepo.All(); jsonResponse(w, items); return

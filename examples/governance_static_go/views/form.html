@@ -1,26 +1,26 @@
 {{ define "form" }}
 <h1>{{ .CommandName }}</h1>
-{{/* ERB: if error_message */}}
+{{ if .ErrorMessage }}
   <div class="flash-error">{{ .ErrorMessage }}</div>
 {{ end }}
 <form method="post" action="{{ .Action }}">
   {{ range .Fields }}
-    {{/* ERB: if field[:type] == :hidden */}}
+    {{ if eq .Type "hidden" }}
       <input type="hidden" name="{{ .Name }}" value="{{ .Value }}">
-    {{/* ERB: elsif field[:type] == :select */}}
+    {{ else if eq .Type "select" }}
       <label>{{ .Label }}{{ if .Required }}<span class="required">required</span>{{ end }}</label>
       <select name="{{ .Name }}" required>
-        {{/* ERB: field[:options].each do |opt| */}}
-          <option value="{{ .Value }}"{{/* ERB: ' selected' if opt[:selected] */}}>{{ .Label }}</option>
+        {{ range .Options }}
+          <option value="{{ .Value }}"{{ if .Selected }} selected{{ end }}>{{ .Label }}</option>
         {{ end }}
       </select>
       {{ if .Error }}
         <div class="field-error">{{ .Error }}</div>
       {{ end }}
-    {{/* ERB: else */}}
+    {{ else }}
       <label>{{ .Label }}{{ if .Required }}<span class="required">required</span>{{ end }}</label>
-      <input name="{{ .Name }}" type="{{/* ERB: field[:input_type] || 'text' */}}"
-             value="{{ .Value }}"{{/* ERB: ' step="any"' if field[:step] */}} required>
+      <input name="{{ .Name }}" type="{{ or .InputType "text" }}"
+             value="{{ .Value }}"{{ if .Step }} step="any"{{ end }} required>
       {{ if .Error }}
         <div class="field-error">{{ .Error }}</div>
       {{ end }}

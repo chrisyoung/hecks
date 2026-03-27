@@ -46,6 +46,12 @@ module HecksGo
         	Options   []FormOption
         }
 
+        type RowAction struct {
+        	Label      string
+        	HrefPrefix string
+        	Allowed    bool
+        }
+
         type FormData struct {
         	CommandName  string
         	Action       string
