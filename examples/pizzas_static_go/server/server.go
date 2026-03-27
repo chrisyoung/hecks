@@ -35,36 +35,35 @@ func (app *App) Start(port int) error {
 	viewsDir := filepath.Join(filepath.Dir(exe), "..", "views")
 	if _, err := os.Stat(viewsDir); err != nil { viewsDir = "views" }
 	nav := []NavItem{
-		{Label: "Home", Href: "/"},
-		{Label: "Pizzas", Href: "/pizzas"},
-		{Label: "Orders", Href: "/orders"},
-		{Label: "Config", Href: "/config"},
+		{Label: "Pizzas", Href: "/pizzas", Group: ""},
+		{Label: "Orders", Href: "/orders", Group: ""},
+		{Label: "Config", Href: "/config", Group: "System"},
 	}
 	renderer := NewRenderer(viewsDir, "PizzasDomain", nav)
 
-	type HomeAgg struct { Name string; Href string; Commands int; Attributes int }
+	type HomeAgg struct { Href string; Name string; Commands int; Attributes int; Policies int }
 	type HomeData struct { DomainName string; Aggregates []HomeAgg }
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		renderer.Render(w, "home", "PizzasDomain", HomeData{
-			DomainName: "PizzasDomain", Aggregates: []HomeAgg{{Name: "Pizzas", Href: "/pizzas", Commands: 2, Attributes: 3}, {Name: "Orders", Href: "/orders", Commands: 2, Attributes: 3}},
+			DomainName: "PizzasDomain", Aggregates: []HomeAgg{{Name: "Pizzas", Href: "/pizzas", Commands: 2, Attributes: 3, Policies: 0}, {Name: "Orders", Href: "/orders", Commands: 2, Attributes: 3, Policies: 0}},
 		})
 	})
 
-	type PizzaCol struct { Label string }
-	type PizzaItem struct { ID string; ShortID string; ShowHref string; Cells []string }
-	type PizzaBtn struct { Label string; Href string; Allowed bool }
-	type PizzaIndexData struct { AggregateName string; Items []PizzaItem; Columns []PizzaCol; Buttons []PizzaBtn }
+	type PizzaColumn struct { Label string }
+	type PizzaIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
+	type PizzaButton struct { Label string; Href string; Allowed bool }
+	type PizzaIndexData struct { AggregateName string; Description string; Items []PizzaIndexItem; Columns []PizzaColumn; Buttons []PizzaButton; RowActions []RowAction }
 	mux.HandleFunc("GET /pizzas", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.PizzaRepo.All(); jsonResponse(w, items); return
 		}
 		items, _ := app.PizzaRepo.All()
-		var rows []PizzaItem
+		var rows []PizzaIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, PizzaItem{ID: obj.ID, ShortID: sid, ShowHref: "/pizzas/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%d items", len(obj.Toppings))}})
+			rows = append(rows, PizzaIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/pizzas/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%d items", len(obj.Toppings))}})
 		}
-		renderer.Render(w, "index", "Pizzas", PizzaIndexData{AggregateName: "Pizza", Items: rows, Columns: []PizzaCol{{Label: "Name"}, {Label: "Description"}, {Label: "Toppings"}}, Buttons: []PizzaBtn{{Label: "CreatePizza", Href: "/pizzas/create_pizza/new", Allowed: true}}})
+		renderer.Render(w, "index", "Pizzas", PizzaIndexData{AggregateName: "Pizza", Description: "", Items: rows, Columns: []PizzaColumn{{Label: "Name"}, {Label: "Description"}, {Label: "Toppings"}}, Buttons: []PizzaButton{{Label: "CreatePizza", Href: "/pizzas/create_pizza/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /pizzas/find", func(w http.ResponseWriter, r *http.Request) {
@@ -114,21 +113,21 @@ func (app *App) Start(port int) error {
 		}
 	})
 
-	type OrderCol struct { Label string }
-	type OrderItem struct { ID string; ShortID string; ShowHref string; Cells []string }
-	type OrderBtn struct { Label string; Href string; Allowed bool }
-	type OrderIndexData struct { AggregateName string; Items []OrderItem; Columns []OrderCol; Buttons []OrderBtn }
+	type OrderColumn struct { Label string }
+	type OrderIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
+	type OrderButton struct { Label string; Href string; Allowed bool }
+	type OrderIndexData struct { AggregateName string; Description string; Items []OrderIndexItem; Columns []OrderColumn; Buttons []OrderButton; RowActions []RowAction }
 	mux.HandleFunc("GET /orders", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.OrderRepo.All(); jsonResponse(w, items); return
 		}
 		items, _ := app.OrderRepo.All()
-		var rows []OrderItem
+		var rows []OrderIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, OrderItem{ID: obj.ID, ShortID: sid, ShowHref: "/orders/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.CustomerName), fmt.Sprintf("%d items", len(obj.Items)), fmt.Sprintf("%v", obj.Status)}})
+			rows = append(rows, OrderIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/orders/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.CustomerName), fmt.Sprintf("%d items", len(obj.Items)), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "Orders", OrderIndexData{AggregateName: "Order", Items: rows, Columns: []OrderCol{{Label: "Customer Name"}, {Label: "Items"}, {Label: "Status"}}, Buttons: []OrderBtn{{Label: "PlaceOrder", Href: "/orders/place_order/new", Allowed: true}}})
+		renderer.Render(w, "index", "Orders", OrderIndexData{AggregateName: "Order", Description: "", Items: rows, Columns: []OrderColumn{{Label: "Customer Name"}, {Label: "Items"}, {Label: "Status"}}, Buttons: []OrderButton{{Label: "PlaceOrder", Href: "/orders/place_order/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /orders/find", func(w http.ResponseWriter, r *http.Request) {
@@ -177,32 +176,30 @@ func (app *App) Start(port int) error {
 		}
 	})
 
-	type PizzaField struct { Label string; Value string }
-	type PizzaShowItem struct { ID string; Fields []PizzaField }
-	type PizzaShowData struct { AggregateName string; BackHref string; Item PizzaShowItem; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type PizzaShowField struct { Label string; Value string; Type string; Items []string }
+	type PizzaShowData struct { AggregateName string; Id string; BackHref string; Fields []PizzaShowField; Buttons []PizzaButton }
 	mux.HandleFunc("GET /pizzas/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.PizzaRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []PizzaField{
+		fields := []PizzaShowField{
 			{Label: "Name", Value: fmt.Sprintf("%v", obj.Name)},
 			{Label: "Description", Value: fmt.Sprintf("%v", obj.Description)},
-			{Label: "Toppings", Value: fmt.Sprintf("%v", obj.Toppings)},
+			{Label: "Toppings", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Toppings { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 		}
-		renderer.Render(w, "show", "Pizza", PizzaShowData{AggregateName: "Pizza", BackHref: "/pizzas", Item: PizzaShowItem{ID: obj.ID, Fields: fields}})
+		renderer.Render(w, "show", "Pizza", PizzaShowData{AggregateName: "Pizza", BackHref: "/pizzas", Id: obj.ID, Fields: fields})
 	})
 
-	type OrderField struct { Label string; Value string }
-	type OrderShowItem struct { ID string; Fields []OrderField }
-	type OrderShowData struct { AggregateName string; BackHref string; Item OrderShowItem; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type OrderShowField struct { Label string; Value string; Type string; Items []string }
+	type OrderShowData struct { AggregateName string; Id string; BackHref string; Fields []OrderShowField; Buttons []OrderButton }
 	mux.HandleFunc("GET /orders/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.OrderRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []OrderField{
+		fields := []OrderShowField{
 			{Label: "Customer Name", Value: fmt.Sprintf("%v", obj.CustomerName)},
-			{Label: "Items", Value: fmt.Sprintf("%v", obj.Items)},
+			{Label: "Items", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Items { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
 		}
-		renderer.Render(w, "show", "Order", OrderShowData{AggregateName: "Order", BackHref: "/orders", Item: OrderShowItem{ID: obj.ID, Fields: fields}})
+		renderer.Render(w, "show", "Order", OrderShowData{AggregateName: "Order", BackHref: "/orders", Id: obj.ID, Fields: fields})
 	})
 
 	// Form routes (types in renderer.go)
@@ -263,12 +260,7 @@ func (app *App) Start(port int) error {
 
 	// Config
 	type ConfigAgg struct { Name string; Href string; Count int; Commands string; Ports string }
-	type ConfigData struct {
-		Roles []string; CurrentRole string
-		Adapters []string; CurrentAdapter string
-		EventCount int; BootedAt string
-		Policies []string; Aggregates []ConfigAgg
-	}
+	type ConfigData struct { Roles []string; CurrentRole string; Adapters []string; CurrentAdapter string; EventCount int; BootedAt string; Policies []string; Aggregates []ConfigAgg }
 	currentRole := "admin"
 	mux.HandleFunc("GET /config", func(w http.ResponseWriter, r *http.Request) {
 		aggs := []ConfigAgg{

@@ -177,7 +177,7 @@ class UIGenerator
       "          end",
       "          html = renderer.render(:show, title: \"#{safe} — #{mod}\", brand: brand, nav_items: nav,",
       "            aggregate_name: \"#{safe}\", back_href: \"/#{p}\",",
-      "            item: { id: obj.id, fields: [#{field_exprs.join(', ')}] },",
+      "            id: obj.id, fields: [#{field_exprs.join(', ')}],",
       "            buttons: [#{btn_parts.join(', ')}])",
       "          res[\"Content-Type\"] = \"text/html\"; res.body = html",
       "        end",

@@ -29,7 +29,7 @@ module HecksStatic
           "            adapters: %w[memory filesystem sqlite], current_adapter: cfg[:adapter].to_s,",
           "            event_count: #{mod}.events.size, booted_at: (cfg[:booted_at] || \"unknown\").to_s,",
           "            policies: #{policies.inspect},",
-          "            aggregate_rows: [#{agg_rows.join(', ')}])",
+          "            aggregates: [#{agg_rows.join(', ')}])",
           "          res[\"Content-Type\"] = \"text/html\"; res.body = html",
           "        end",
           ""

@@ -3,17 +3,22 @@
 <div class="detail">
   <dl>
     <dt>ID</dt>
-    <dd class="mono">{{ .Item.ID }}</dd>
-    {{ range .Item.Fields }}
-    <dt>{{ .Label }}</dt>
-    <dd>{{ .Value }}</dd>
+    <dd class="mono">{{ .Id }}</dd>
+    {{ range .Fields }}
+      <dt>{{ .Label }}</dt>
+      <dd>
+        {{ if eq .Type "list" }}
+        {{ else }}
+          {{ .Value }}
+        {{ end }}
+      </dd>
     {{ end }}
   </dl>
 </div>
 <div class="actions">
   <a href="{{ .BackHref }}" class="btn btn-sm">Back</a>
   {{ range .Buttons }}
-  <a class="btn btn-sm{{ if not .Allowed }} btn-faded{{ end }}" href="{{ .Href }}">{{ .Label }}</a>
+    <a class="btn btn-sm{{ if not .Allowed }} btn-faded{{ end }}" href="{{ .Href }}">{{ .Label }}</a>
   {{ end }}
 </div>
 {{ end }}

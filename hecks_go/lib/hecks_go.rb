@@ -12,6 +12,7 @@
 #   # Or via CLI:
 #   hecks build --target go
 #
+require_relative "../../hecks_templating/lib/hecks_templating"
 require_relative "hecks_go/go_utils"
 require_relative "hecks_go/generators/aggregate_generator"
 require_relative "hecks_go/generators/value_object_generator"
@@ -24,7 +25,7 @@ require_relative "hecks_go/generators/lifecycle_generator"
 require_relative "hecks_go/generators/query_generator"
 require_relative "hecks_go/generators/specification_generator"
 require_relative "hecks_go/generators/policy_generator"
-require_relative "hecks_go/erb_to_go_converter"
+require_relative "hecks_go/generators/view_generator"
 require_relative "hecks_go/generators/runtime_generator"
 require_relative "hecks_go/generators/renderer_generator"
 require_relative "hecks_go/generators/server_generator"

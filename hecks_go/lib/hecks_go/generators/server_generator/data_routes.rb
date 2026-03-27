@@ -1,7 +1,7 @@
 # HecksGo::ServerGenerator::DataRoutes
 #
 # Generates Go route handlers for JSON API endpoints (index, find, POST commands)
-# and HTML show pages. Extracted from ServerGenerator to keep it under 200 lines.
+# and HTML show pages. Struct types derive from ViewContracts.
 #
 module HecksGo
   class ServerGenerator
@@ -24,6 +24,7 @@ module HecksGo
       end
 
       def index_route(agg, safe, plural, attrs, agg_snake)
+        vc = Hecks::ViewContracts
         cols = attrs.map { |a| "{Label: \"#{a.name.to_s.split("_").map(&:capitalize).join(" ")}\"}" }
         create_cmds = agg.commands.reject { |c| c.attributes.any? { |a| a.name.to_s == "#{agg_snake}_id" } }
         btns = create_cmds.map { |c| "{Label: \"#{c.name}\", Href: \"/#{plural}/#{GoUtils.snake_case(c.name)}/new\", Allowed: true}" }
@@ -31,21 +32,21 @@ module HecksGo
         desc = agg.description || ""
 
         lines = []
-        lines << "\ttype #{safe}Col struct { Label string }"
-        lines << "\ttype #{safe}Item struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }"
-        lines << "\ttype #{safe}Btn struct { Label string; Href string; Allowed bool }"
-        lines << "\ttype #{safe}IndexData struct { AggregateName string; Description string; Items []#{safe}Item; Columns []#{safe}Col; Buttons []#{safe}Btn; RowActions []RowAction }"
+        lines << "\t#{vc.go_struct(:column, vc::INDEX[:structs][:column], prefix: safe)}"
+        lines << "\t#{vc.go_struct(:index_item, vc::INDEX[:structs][:index_item], prefix: safe)}"
+        lines << "\t#{vc.go_struct(:button, vc::INDEX[:structs][:button], prefix: safe)}"
+        lines << "\t#{vc.go_struct(:index_data, vc::INDEX[:fields], prefix: safe)}"
         lines << "\tmux.HandleFunc(\"GET /#{plural}\", func(w http.ResponseWriter, r *http.Request) {"
         lines << "\t\tif r.Header.Get(\"Accept\") == \"application/json\" || r.URL.Query().Get(\"format\") == \"json\" {"
         lines << "\t\t\titems, _ := app.#{safe}Repo.All(); jsonResponse(w, items); return"
         lines << "\t\t}"
         lines << "\t\titems, _ := app.#{safe}Repo.All()"
-        lines << "\t\tvar rows []#{safe}Item"
+        lines << "\t\tvar rows []#{safe}IndexItem"
         lines << "\t\tfor _, obj := range items {"
         lines << "\t\t\tsid := obj.ID; if len(sid)>8 { sid=sid[:8]+\"...\" }"
-        lines << "\t\t\trows = append(rows, #{safe}Item{ID: obj.ID, ShortID: sid, ShowHref: \"/#{plural}/show?id=\"+obj.ID, Cells: []string{#{cell_exprs.join(', ')}}})"
+        lines << "\t\t\trows = append(rows, #{safe}IndexItem{Id: obj.ID, ShortId: sid, ShowHref: \"/#{plural}/show?id=\"+obj.ID, Cells: []string{#{cell_exprs.join(', ')}}})"
         lines << "\t\t}"
-        lines << "\t\trenderer.Render(w, \"index\", \"#{safe}s\", #{safe}IndexData{AggregateName: \"#{safe}\", Description: \"#{desc}\", Items: rows, Columns: []#{safe}Col{#{cols.join(', ')}}, Buttons: []#{safe}Btn{#{btns.join(', ')}}})"
+        lines << "\t\trenderer.Render(w, \"index\", \"#{safe}s\", #{safe}IndexData{AggregateName: \"#{safe}\", Description: \"#{desc}\", Items: rows, Columns: []#{safe}Column{#{cols.join(', ')}}, Buttons: []#{safe}Button{#{btns.join(', ')}}})"
         lines << "\t})"
         lines << ""
         lines
@@ -100,26 +101,30 @@ module HecksGo
       end
 
       def html_routes
+        vc = Hecks::ViewContracts
         lines = []
         @domain.aggregates.each do |agg|
           safe = agg.name
           plural = GoUtils.snake_case(safe) + "s"
           attrs = agg.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
 
-          lines << "\ttype #{safe}Field struct { Label string; Value string }"
-          lines << "\ttype #{safe}ShowItem struct { ID string; Fields []#{safe}Field }"
-          lines << "\ttype #{safe}ShowData struct { AggregateName string; BackHref string; Item #{safe}ShowItem; Buttons []struct{ Label string; Href string; Allowed bool } }"
+          lines << "\t#{vc.go_struct(:show_field, vc::SHOW[:structs][:show_field], prefix: safe)}"
+          lines << "\t#{vc.go_struct(:show_data, vc::SHOW[:fields], prefix: safe)}"
           lines << "\tmux.HandleFunc(\"GET /#{plural}/show\", func(w http.ResponseWriter, r *http.Request) {"
           lines << "\t\tobj, _ := app.#{safe}Repo.Find(r.URL.Query().Get(\"id\"))"
           lines << "\t\tif obj == nil { http.Error(w, \"Not found\", 404); return }"
-          lines << "\t\tfields := []#{safe}Field{"
+          lines << "\t\tfields := []#{safe}ShowField{"
           attrs.each do |a|
             field = GoUtils.pascal_case(a.name)
             label = a.name.to_s.split("_").map(&:capitalize).join(" ")
-            lines << "\t\t\t{Label: \"#{label}\", Value: fmt.Sprintf(\"%v\", obj.#{field})},"
+            if a.list?
+              lines << "\t\t\t{Label: \"#{label}\", Type: \"list\", Items: func() []string { var s []string; for _, v := range obj.#{field} { s = append(s, fmt.Sprintf(\"%v\", v)) }; return s }()},"
+            else
+              lines << "\t\t\t{Label: \"#{label}\", Value: fmt.Sprintf(\"%v\", obj.#{field})},"
+            end
           end
           lines << "\t\t}"
-          lines << "\t\trenderer.Render(w, \"show\", \"#{safe}\", #{safe}ShowData{AggregateName: \"#{safe}\", BackHref: \"/#{plural}\", Item: #{safe}ShowItem{ID: obj.ID, Fields: fields}})"
+          lines << "\t\trenderer.Render(w, \"show\", \"#{safe}\", #{safe}ShowData{AggregateName: \"#{safe}\", BackHref: \"/#{plural}\", Id: obj.ID, Fields: fields})"
           lines << "\t})"
           lines << ""
         end

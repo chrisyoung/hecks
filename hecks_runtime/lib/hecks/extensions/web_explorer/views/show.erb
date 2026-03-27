@@ -2,8 +2,8 @@
 <div class="detail">
   <dl>
     <dt>ID</dt>
-    <dd class="mono"><%= item[:id] %></dd>
-    <% item[:fields].each do |field| %>
+    <dd class="mono"><%= id %></dd>
+    <% fields.each do |field| %>
       <dt><%= field[:label] %></dt>
       <dd>
         <% if field[:type] == :list %>

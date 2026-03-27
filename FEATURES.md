@@ -405,7 +405,9 @@
 - HTTP server using `net/http` (JSON API with POST per command, GET per aggregate)
 - HTML UI with template-rendered pages: home, index tables, show detail, create/update forms, config page
 - Go `html/template` views generated from ERB at build time — ERB is single source of truth
-- ERB-to-Go converter handles: if/elsif/else chains, inline conditionals, default values, range loops, hash access, symbol comparisons
+- Shared view contracts (`hecks_templating`) define data shapes once, generate both Go structs and Go templates
+- Contract-driven ViewGenerator replaces regex-based ERB converter — uses contracts as lookup table for field names, types, loop variables
+- Automatic smoke test after `build_go` — starts server, exercises all pages/forms, verifies no render errors
 - Form submission: accepts both JSON and form-urlencoded, redirects on success
 - Config page with roles, adapter, policies, aggregate counts, ports
 - All DSL concepts generate Go code: lifecycle (state constants, predicates, transition validation), queries, specifications, policies

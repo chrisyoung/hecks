@@ -30,14 +30,14 @@
     <dd>{{ .BootedAt }}</dd>
     <dt>Policies</dt>
     <dd>
-      {{ if .Policies }}
+      {{ if not .Policies }}
+        (none)
+      {{ else }}
         <ul>
           {{ range .Policies }}
             <li class="mono">{{ . }}</li>
           {{ end }}
         </ul>
-      {{ else }}
-        (none)
       {{ end }}
     </dd>
   </dl>
