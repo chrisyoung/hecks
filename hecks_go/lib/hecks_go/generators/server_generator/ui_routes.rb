@@ -33,13 +33,15 @@ module HecksGo
                   lines << "\t\t\t// #{ref_agg.name} dropdown built dynamically below"
                 end
               else
+                is_float = a.type.to_s =~ /Float/
                 input_type = case a.type.to_s
                              when /Integer/ then "number"
                              when /Float/ then "number"
                              else "text"
                              end
                 label = a.name.to_s.split("_").map(&:capitalize).join(" ")
-                lines << "\t\t\t{Type: \"input\", Name: \"#{a.name}\", Label: \"#{label}\", InputType: \"#{input_type}\", Required: true},"
+                step = is_float ? ", Step: true" : ""
+                lines << "\t\t\t{Type: \"input\", Name: \"#{a.name}\", Label: \"#{label}\", InputType: \"#{input_type}\", Required: true#{step}},"
               end
             end
             lines << "\t\t}"
@@ -80,15 +82,11 @@ module HecksGo
         policies = @domain.aggregates.flat_map { |a| a.policies.reject { |p| p.respond_to?(:guard?) && p.guard? }.map { |p| "#{p.event_name} → #{p.name}" } }
         policies += @domain.policies.map { |p| "#{p.event_name} → #{p.trigger_command}" }
 
+        vc = Hecks::ViewContracts
         lines = []
         lines << "\t// Config"
-        lines << "\ttype ConfigAgg struct { Name string; Href string; Count int; Commands string; Ports string }"
-        lines << "\ttype ConfigData struct {"
-        lines << "\t\tRoles []string; CurrentRole string"
-        lines << "\t\tAdapters []string; CurrentAdapter string"
-        lines << "\t\tEventCount int; BootedAt string"
-        lines << "\t\tPolicies []string; Aggregates []ConfigAgg"
-        lines << "\t}"
+        lines << "\t#{vc.go_struct(:config_agg, vc::CONFIG[:structs][:config_agg])}"
+        lines << "\t#{vc.go_struct(:config_data, vc::CONFIG[:fields])}"
         lines << "\tcurrentRole := \"#{all_roles.first}\""
         lines << "\tmux.HandleFunc(\"GET /config\", func(w http.ResponseWriter, r *http.Request) {"
         lines << "\t\taggs := []ConfigAgg{"

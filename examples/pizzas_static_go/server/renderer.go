@@ -7,41 +7,17 @@ import (
 	"path/filepath"
 )
 
-type NavItem struct {
-	Label string
-	Href  string
-}
+type NavItem struct { Label string; Href string; Group string }
 
-type PageData struct {
-	Title     string
-	Brand     string
-	NavItems  []NavItem
-	Content   template.HTML
-}
+type PageData struct { Title string; Brand string; Content template.HTML; NavItems []NavItem }
 
-type FormOption struct {
-	Value    string
-	Label    string
-	Selected bool
-}
+type FormField struct { Type string; Name string; Label string; InputType string; Value string; Required bool; Step bool; Error string; Options []FormOption }
 
-type FormField struct {
-	Type      string
-	Name      string
-	Label     string
-	InputType string
-	Value     string
-	Required  bool
-	Error     string
-	Options   []FormOption
-}
+type FormOption struct { Value string; Label string; Selected bool }
 
-type FormData struct {
-	CommandName  string
-	Action       string
-	ErrorMessage string
-	Fields       []FormField
-}
+type FormData struct { CommandName string; Action string; ErrorMessage string; Fields []FormField }
+
+type RowAction struct { Label string; HrefPrefix string; Allowed bool }
 
 type Renderer struct {
 	viewsDir string
@@ -54,7 +30,6 @@ func NewRenderer(viewsDir string, brand string, nav []NavItem) *Renderer {
 }
 
 func (r *Renderer) Render(w http.ResponseWriter, templateName string, title string, data interface{}) {
-	// Render the content template
 	contentTmpl, err := template.ParseFiles(filepath.Join(r.viewsDir, templateName+".html"))
 	if err != nil {
 		http.Error(w, "Template error: "+err.Error(), 500)
@@ -65,8 +40,6 @@ func (r *Renderer) Render(w http.ResponseWriter, templateName string, title stri
 		http.Error(w, "Render error: "+err.Error(), 500)
 		return
 	}
-
-	// Render the layout with content injected
 	layoutTmpl, err := template.ParseFiles(filepath.Join(r.viewsDir, "layout.html"))
 	if err != nil {
 		http.Error(w, "Layout error: "+err.Error(), 500)

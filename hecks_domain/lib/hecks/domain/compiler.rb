@@ -116,7 +116,7 @@ module Hecks
     # @param domain [Hecks::DomainModel::Domain] the domain to compile
     # @param output_dir [String] parent directory for the generated project
     # @return [String] absolute path to the generated Go project root
-    def build_go(domain, output_dir: ".")
+    def build_go(domain, output_dir: ".", smoke_test: true)
       valid, errors = validate(domain)
       unless valid
         raise Hecks::ValidationError, "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
@@ -124,10 +124,38 @@ module Hecks
 
       require "hecks_go"
       generator = HecksGo::ProjectGenerator.new(domain, output_dir: output_dir)
-      generator.generate
+      root = generator.generate
+      run_smoke_test(root, domain) if smoke_test
+      root
     end
 
     private
+
+    # Build, start, smoke-test, and stop a Go server.
+    def run_smoke_test(root, domain)
+      require "hecks_templating"
+      name = Hecks::Utils.underscore(domain.name)
+      cmd_dir = File.join(root, "cmd", name)
+      return unless File.directory?(cmd_dir)
+
+      # Build
+      system("cd #{root} && go mod tidy && go build ./...") or return
+
+      # Start on a random port
+      port = rand(10_000..60_000)
+      pid = spawn("cd #{root} && go run ./cmd/#{name}/ #{port}",
+                   out: "/dev/null", err: "/dev/null")
+      sleep 2
+
+      # Run smoke test
+      smoke = HecksTemplating::SmokeTest.new("http://localhost:#{port}", domain)
+      results = smoke.run
+      failed = results.count { |r| r.status == :fail }
+      raise "Smoke test: #{failed} failures" if failed > 0
+    ensure
+      Process.kill("TERM", pid) rescue nil if pid
+      Process.wait(pid) rescue nil if pid
+    end
 
     # Fallback file-based loading strategy. Generates the full gem to a tmpdir,
     # manipulates $LOAD_PATH, and uses Kernel.load to evaluate each file.

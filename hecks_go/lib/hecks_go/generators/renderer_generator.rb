@@ -1,101 +1,77 @@
 # HecksGo::RendererGenerator
 #
 # Generates a Go template renderer that loads html/template files
-# and renders them with layout wrapping. Matches the Ruby ERB renderer.
+# and renders them with layout wrapping. Struct definitions for
+# shared types (NavItem, FormField, etc.) come from ViewContracts.
 #
 module HecksGo
   class RendererGenerator
     def generate
-      <<~'GO'
+      vc = Hecks::ViewContracts
+      structs = []
+
+      # Layout structs: NavItem, PageData
+      layout = vc::LAYOUT
+      layout[:structs].each { |name, fields| structs << vc.go_struct(name, fields) }
+      structs << vc.go_struct(:page_data, layout[:fields])
+
+      # Form structs: FormOption, FormField, FormData
+      form = vc::FORM
+      form[:structs].each { |name, fields| structs << vc.go_struct(name, fields) }
+      structs << vc.go_struct(:form_data, form[:fields])
+
+      # RowAction (from index contract)
+      index = vc::INDEX
+      structs << vc.go_struct(:row_action, index[:structs][:row_action])
+
+      struct_lines = structs.map { |s| s.sub("template.HTML", "template.HTML") }
+
+      <<~GO
         package server
 
         import (
-        	"bytes"
-        	"html/template"
-        	"net/http"
-        	"path/filepath"
+        \t"bytes"
+        \t"html/template"
+        \t"net/http"
+        \t"path/filepath"
         )
 
-        type NavItem struct {
-        	Label string
-        	Href  string
-        	Group string
-        }
-
-        type PageData struct {
-        	Title     string
-        	Brand     string
-        	NavItems  []NavItem
-        	Content   template.HTML
-        }
-
-        type FormOption struct {
-        	Value    string
-        	Label    string
-        	Selected bool
-        }
-
-        type FormField struct {
-        	Type      string
-        	Name      string
-        	Label     string
-        	InputType string
-        	Value     string
-        	Required  bool
-        	Error     string
-        	Options   []FormOption
-        }
-
-        type RowAction struct {
-        	Label      string
-        	HrefPrefix string
-        	Allowed    bool
-        }
-
-        type FormData struct {
-        	CommandName  string
-        	Action       string
-        	ErrorMessage string
-        	Fields       []FormField
-        }
+        #{struct_lines.join("\n\n")}
 
         type Renderer struct {
-        	viewsDir string
-        	nav      []NavItem
-        	brand    string
+        \tviewsDir string
+        \tnav      []NavItem
+        \tbrand    string
         }
 
         func NewRenderer(viewsDir string, brand string, nav []NavItem) *Renderer {
-        	return &Renderer{viewsDir: viewsDir, nav: nav, brand: brand}
+        \treturn &Renderer{viewsDir: viewsDir, nav: nav, brand: brand}
         }
 
         func (r *Renderer) Render(w http.ResponseWriter, templateName string, title string, data interface{}) {
-        	// Render the content template
-        	contentTmpl, err := template.ParseFiles(filepath.Join(r.viewsDir, templateName+".html"))
-        	if err != nil {
-        		http.Error(w, "Template error: "+err.Error(), 500)
-        		return
-        	}
-        	var contentBuf bytes.Buffer
-        	if err := contentTmpl.ExecuteTemplate(&contentBuf, templateName, data); err != nil {
-        		http.Error(w, "Render error: "+err.Error(), 500)
-        		return
-        	}
-
-        	// Render the layout with content injected
-        	layoutTmpl, err := template.ParseFiles(filepath.Join(r.viewsDir, "layout.html"))
-        	if err != nil {
-        		http.Error(w, "Layout error: "+err.Error(), 500)
-        		return
-        	}
-        	page := PageData{
-        		Title:    title,
-        		Brand:    r.brand,
-        		NavItems: r.nav,
-        		Content:  template.HTML(contentBuf.String()),
-        	}
-        	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-        	layoutTmpl.ExecuteTemplate(w, "layout", page)
+        \tcontentTmpl, err := template.ParseFiles(filepath.Join(r.viewsDir, templateName+".html"))
+        \tif err != nil {
+        \t\thttp.Error(w, "Template error: "+err.Error(), 500)
+        \t\treturn
+        \t}
+        \tvar contentBuf bytes.Buffer
+        \tif err := contentTmpl.ExecuteTemplate(&contentBuf, templateName, data); err != nil {
+        \t\thttp.Error(w, "Render error: "+err.Error(), 500)
+        \t\treturn
+        \t}
+        \tlayoutTmpl, err := template.ParseFiles(filepath.Join(r.viewsDir, "layout.html"))
+        \tif err != nil {
+        \t\thttp.Error(w, "Layout error: "+err.Error(), 500)
+        \t\treturn
+        \t}
+        \tpage := PageData{
+        \t\tTitle:    title,
+        \t\tBrand:    r.brand,
+        \t\tNavItems: r.nav,
+        \t\tContent:  template.HTML(contentBuf.String()),
+        \t}
+        \tw.Header().Set("Content-Type", "text/html; charset=utf-8")
+        \tlayoutTmpl.ExecuteTemplate(w, "layout", page)
         }
       GO
     end
