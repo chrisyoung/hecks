@@ -60,16 +60,7 @@ module HecksGo
 
       # Validate
       lines.concat(validate_method)
-
-      # Lifecycle predicates
-      if @agg.lifecycle
-        lines << ""
-        @agg.lifecycle.states.each do |state|
-          field = GoUtils.pascal_case(@agg.lifecycle.field)
-          method = "Is#{GoUtils.pascal_case(state)}"
-          lines << "func (a *#{@agg.name}) #{method}() bool { return a.#{field} == \"#{state}\" }"
-        end
-      end
+      # Lifecycle predicates are in the lifecycle file if present
 
       lines.join("\n") + "\n"
     end

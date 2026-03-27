@@ -32,6 +32,3 @@ func (a *Order) Validate() error {
 	}
 	return nil
 }
-
-func (a *Order) IsPending() bool { return a.Status == "pending" }
-func (a *Order) IsCancelled() bool { return a.Status == "cancelled" }
