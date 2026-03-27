@@ -4,9 +4,8 @@ require_relative "ui_generator/config_routes"
 module HecksStatic
 # HecksStatic::UIGenerator
 #
-# Generates HTML routes for each aggregate: index (table), show (detail),
-# and new (form per create command). Produces a Ruby file that mounts
-# WEBrick routes alongside the JSON API.
+# Generates route handlers that prepare data and render ERB templates.
+# Each route builds a locals hash and calls renderer.render(:template, locals).
 #
 class UIGenerator
   include FormRoutes
@@ -18,15 +17,18 @@ class UIGenerator
 
   def generate(mod, gem_name)
     lines = []
-    lines << "require_relative \"ui\""
+    lines << "require \"erb\""
+    lines << "require_relative \"renderer\""
     lines << ""
     lines << "module #{mod}"
     lines << "  module Server"
     lines << "    module UIRoutes"
-    lines << "      include UI"
     lines << ""
     lines << "      def mount_ui_routes(server)"
+    lines << "        views = File.expand_path(\"views\", __dir__)"
+    lines << "        renderer = Renderer.new(views)"
     lines << "        nav = #{nav_items.inspect}"
+    lines << "        brand = \"#{mod}\""
     lines << ""
     lines.concat(root_route(mod))
     @domain.aggregates.each { |agg| lines.concat(index_route(agg, mod)) }
@@ -70,25 +72,20 @@ class UIGenerator
     agg.value_objects.any? { |vo| vo.attributes.any? { |va| va.name.to_s == attr_name.to_s } }
   end
 
-  def required_hint(agg, attr_name)
-    required_field?(agg, attr_name) ? "<span style='color:#999;font-size:0.75rem;font-weight:normal;margin-left:0.25rem'>required</span>" : ""
+  def humanize(name)
+    name.to_s.split("_").map(&:capitalize).join(" ")
   end
 
   def root_route(mod)
-    cards = @domain.aggregates.map do |agg|
-      safe = Hecks::Utils.sanitize_constant(agg.name)
-      p = plural(agg)
-      "<a href='/#{p}' style='text-decoration:none'>" \
-      "<div style='background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)'>" \
-      "<h2>#{safe}s</h2><p class='mono'>#{agg.commands.size} commands · #{user_attrs(agg).size} attributes</p>" \
-      "</div></a>"
+    agg_data = @domain.aggregates.map do |agg|
+      "{ name: \"#{agg.name}s\", href: \"/#{plural(agg)}\", commands: #{agg.commands.size}, attributes: #{user_attrs(agg).size} }"
     end
     [
       "        server.mount_proc \"/\" do |req, res|",
       "          next unless req.path == \"/\"",
-      "          html_response(res, layout(title: \"#{mod}\", nav_items: nav) {",
-      "            \"<h1>#{mod}</h1><div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem'>#{cards.join}</div>\"",
-      "          })",
+      "          html = renderer.render(:home, title: \"#{mod}\", brand: brand, nav_items: nav,",
+      "            domain_name: \"#{mod}\", aggregates: [#{agg_data.join(', ')}])",
+      "          res[\"Content-Type\"] = \"text/html\"; res.body = html",
       "        end",
       ""
     ]
@@ -98,46 +95,34 @@ class UIGenerator
     safe = Hecks::Utils.sanitize_constant(agg.name)
     p = plural(agg)
     attrs = user_attrs(agg)
-
     agg_snake = Hecks::Utils.underscore(agg.name)
     create_cmds = agg.commands.reject { |c| self_ref?(c, agg_snake) }
     update_cmds = agg.commands.select { |c| self_ref?(c, agg_snake) }
 
-    top_btn_parts = create_cmds.map do |c|
-      cmd_method = Hecks::Utils.underscore(c.name)
-      "(#{mod}.role_allows?(\"#{safe}\", \"#{cmd_method}\") ? \"<a class='btn' href='/#{p}/#{cmd_method}/new'>#{c.name}</a> \" : \"<a class='btn' href='/#{p}/#{cmd_method}/new' style='opacity:0.4'>#{c.name}</a> \")"
-    end
-    top_btns_expr = top_btn_parts.empty? ? '""' : top_btn_parts.join(" + ")
+    columns = attrs.map { |a| "{ label: \"#{humanize(a.name)}\" }" }
+    btns = create_cmds.map { |c| cm = Hecks::Utils.underscore(c.name); "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/new\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
+    row_acts = update_cmds.map { |c| cm = Hecks::Utils.underscore(c.name); "{ label: \"#{c.name}\", href_prefix: \"/#{p}/#{cm}/new?id=\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
 
-    headers = (["ID"] + attrs.map { |a| a.name.to_s.split("_").map(&:capitalize).join(" ") })
-    headers << "Actions" unless update_cmds.empty?
-    headers_html = headers.map { |h| "<th>#{h}</th>" }.join
-
-    row_cells = "\"<td class='mono'><a href='/#{p}/show?id=\" + obj.id + \"'>\" + h(obj.id[0..7]) + \"...</a></td>\""
-    attrs.each do |a|
+    cell_exprs = attrs.map do |a|
       if a.list?
-        row_cells += " + \"<td>\" + obj.#{a.name}.size.to_s + \" items</td>\""
+        "obj.#{a.name}.size.to_s + \" items\""
       else
-        row_cells += " + \"<td>\" + h(obj.#{a.name}) + \"</td>\""
+        "obj.#{a.name}.to_s"
       end
     end
-    unless update_cmds.empty?
-      action_parts = update_cmds.map do |c|
-        cmd_method = Hecks::Utils.underscore(c.name)
-        "(#{mod}.role_allows?(\"#{safe}\", \"#{cmd_method}\") ? \"<a class='btn btn-sm' href='/#{p}/#{cmd_method}/new?id=\" + obj.id + \"'>#{c.name}</a> \" : \"<a class='btn btn-sm' href='/#{p}/#{cmd_method}/new?id=\" + obj.id + \"' style='opacity:0.4'>#{c.name}</a> \")"
-      end
-      row_cells += " + \"<td>\" + #{action_parts.join(' + ')} + \"</td>\""
-    end
+    cells_code = cell_exprs.map { |e| e }.join(", ")
 
     [
       "        server.mount_proc \"/#{p}\" do |req, res|",
       "          next unless req.path == \"/#{p}\"",
-      "          items = #{safe}.all",
-      "          rows = items.map { |obj| \"<tr>\" + #{row_cells} + \"</tr>\" }.join",
-      "          html_response(res, layout(title: \"#{safe}s — #{mod}\", nav_items: nav) {",
-      "            \"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem'><h1>#{safe}s (\" + items.size.to_s + \")</h1><div>\" + #{top_btns_expr} + \"</div></div>\" \\",
-      "            \"<table><thead><tr>#{headers_html}</tr></thead><tbody>\" + rows + \"</tbody></table>\"",
-      "          })",
+      "          all_items = #{safe}.all",
+      "          items = all_items.map { |obj| { id: obj.id, short_id: obj.id[0..7] + \"...\", show_href: \"/#{p}/show?id=\" + obj.id, cells: [#{cells_code}] } }",
+      "          html = renderer.render(:index, title: \"#{safe}s — #{mod}\", brand: brand, nav_items: nav,",
+      "            aggregate_name: \"#{safe}\", items: items,",
+      "            columns: [#{columns.join(', ')}],",
+      "            buttons: [#{btns.join(', ')}],",
+      "            row_actions: [#{row_acts.join(', ')}])",
+      "          res[\"Content-Type\"] = \"text/html\"; res.body = html",
       "        end",
       ""
     ]
@@ -147,55 +132,54 @@ class UIGenerator
     safe = Hecks::Utils.sanitize_constant(agg.name)
     p = plural(agg)
     attrs = user_attrs(agg)
+    agg_snake = Hecks::Utils.underscore(agg.name)
 
-    detail_items = attrs.map do |a|
+    field_exprs = attrs.map do |a|
       if a.list?
         vo = agg.value_objects.find { |v| v.name == a.type.to_s }
         if vo
           vo_attrs = vo.attributes.map(&:name).map(&:to_s)
-          "\"<dt>#{a.name}</dt><dd>\" + (obj.#{a.name}.empty? ? \"(none)\" : \"<ul>\" + obj.#{a.name}.map { |v| \"<li>\" + #{vo_attrs.map { |va| "v.#{va}.to_s" }.join(' + " — " + ')} + \"</li>\" }.join + \"</ul>\") + \"</dd>\""
+          items_expr = "obj.#{a.name}.map { |v| #{vo_attrs.map { |va| "v.#{va}.to_s" }.join(' + " — " + ')} }"
+          "{ label: \"#{humanize(a.name)}\", type: :list, items: #{items_expr} }"
         else
-          "\"<dt>#{a.name}</dt><dd>\" + obj.#{a.name}.size.to_s + \" items</dd>\""
+          "{ label: \"#{humanize(a.name)}\", type: :list, items: obj.#{a.name}.map(&:to_s) }"
         end
       else
-        "\"<dt>#{a.name}</dt><dd>\" + h(obj.#{a.name}) + \"</dd>\""
+        "{ label: \"#{humanize(a.name)}\", value: obj.#{a.name}.to_s }"
       end
     end
-    detail_expr = detail_items.join(" + ")
-    detail_expr = '""' if detail_items.empty?
 
-    agg_snake = Hecks::Utils.underscore(agg.name)
+    # Collect buttons
+    btn_parts = []
     update_cmds = agg.commands.select { |c| self_ref?(c, agg_snake) }
-    update_btns = update_cmds.map do |c|
+    update_cmds.each do |c|
       cm = Hecks::Utils.underscore(c.name)
-      "(#{mod}.role_allows?(\"#{safe}\", \"#{cm}\") ? \"<a class='btn btn-sm' href='/#{p}/#{cm}/new?id=\" + obj.id + \"'>#{c.name}</a> \" : \"<a class='btn btn-sm' href='/#{p}/#{cm}/new?id=\" + obj.id + \"' style='opacity:0.4'>#{c.name}</a> \")"
+      btn_parts << "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
     end
-
+    # Cross-aggregate commands
     snake = Hecks::Utils.underscore(agg.name)
-    @domain.aggregates.each do |other_agg|
-      next if other_agg.name == agg.name
-      other_safe = Hecks::Utils.sanitize_constant(other_agg.name)
-      other_p = plural(other_agg)
-      other_agg.commands.each do |cmd|
-        ref_attr = cmd.attributes.find { |a| a.name.to_s == "#{snake}_id" }
-        next unless ref_attr
+    @domain.aggregates.each do |other|
+      next if other.name == agg.name
+      other_safe = Hecks::Utils.sanitize_constant(other.name)
+      other_p = plural(other)
+      other.commands.each do |cmd|
+        next unless cmd.attributes.any? { |a| a.name.to_s == "#{snake}_id" }
         cm = Hecks::Utils.underscore(cmd.name)
-        update_btns << "(#{mod}.role_allows?(\"#{other_safe}\", \"#{cm}\") ? \"<a class='btn btn-sm' href='/#{other_p}/#{cm}/new?id=\" + obj.id + \"'>#{cmd.name}</a> \" : \"<a class='btn btn-sm' href='/#{other_p}/#{cm}/new?id=\" + obj.id + \"' style='opacity:0.4'>#{cmd.name}</a> \")"
+        btn_parts << "{ label: \"#{cmd.name}\", href: \"/#{other_p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{other_safe}\", \"#{cm}\") }"
       end
     end
-
-    btns_expr = update_btns.empty? ? '""' : update_btns.join(' + ')
 
     [
       "        server.mount_proc \"/#{p}/show\" do |req, res|",
       "          obj = #{safe}.find(req.query[\"id\"])",
       "          unless obj",
-      "            res.status = 404; html_response(res, \"Not found\"); next",
+      "            res.status = 404; res.body = \"Not found\"; next",
       "          end",
-      "          html_response(res, layout(title: \"#{safe} — #{mod}\", nav_items: nav) {",
-      "            \"<h1>#{safe}</h1><div class='detail'><dl><dt>ID</dt><dd class='mono'>\" + h(obj.id) + \"</dd>\" + #{detail_expr} + \"</dl></div>\" \\",
-      "            \"<div class='actions'><a href='/#{p}' class='btn btn-sm'>Back</a> \" + #{btns_expr} + \"</div>\"",
-      "          })",
+      "          html = renderer.render(:show, title: \"#{safe} — #{mod}\", brand: brand, nav_items: nav,",
+      "            aggregate_name: \"#{safe}\", back_href: \"/#{p}\",",
+      "            item: { id: obj.id, fields: [#{field_exprs.join(', ')}] },",
+      "            buttons: [#{btn_parts.join(', ')}])",
+      "          res[\"Content-Type\"] = \"text/html\"; res.body = html",
       "        end",
       ""
     ]

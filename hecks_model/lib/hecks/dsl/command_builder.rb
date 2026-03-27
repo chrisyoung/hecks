@@ -168,6 +168,21 @@ module Hecks
       # Assembles all collected facets into an immutable Command intermediate
       # representation.
       #
+      # Implicit DSL support: `name Type` inside a command block → attribute
+      def method_missing(name, *args, **kwargs, &block)
+        if args.first.is_a?(Class) || (args.first.is_a?(String) && args.first =~ /\A[A-Z]/)
+          attribute(name, args.first, **kwargs)
+        elsif args.first.is_a?(Hash) && (args.first[:reference] || args.first[:list])
+          attribute(name, args.first, **kwargs)
+        else
+          super
+        end
+      end
+
+      def respond_to_missing?(name, include_private = false)
+        true
+      end
+
       # @return [DomainModel::Behavior::Command] the fully built command IR object
       def build
         DomainModel::Behavior::Command.new(

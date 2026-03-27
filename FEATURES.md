@@ -337,8 +337,9 @@
 
 ## Static Domain Generation (hecks_static)
 
-### Zero-Dependency Output
+### Zero-Dependency Output — Full DSL Parity
 - `hecks domain build --static` generates a complete Ruby project with no hecks runtime dependency
+- All DSL concepts generated: aggregates, value objects, entities, commands, events, ports, queries, validations, invariants, lifecycles, specifications, policies
 - Generated project includes inlined runtime (Model, Command, EventBus, QueryBuilder, Specification)
 - `bin/<domain> serve` starts an HTTP server with JSON API and HTML UI
 - `bin/<domain> console` opens IRB with the domain loaded
@@ -391,8 +392,53 @@
 - Provides `validate_params` method and `validation_rules` on domain module
 - Wires into command bus as middleware
 
+## Go Domain Generation (hecks_go)
+
+### Go Output from Same DSL
+- `Hecks.build_go(domain)` generates a complete Go project from the same domain IR
+- Aggregate structs with `Validate()` method from DSL validations
+- Value object structs with constructor invariant checks (`NewTopping()`)
+- Command structs with `Execute(repo)` returning `(*Aggregate, *Event, error)`
+- Event structs with `EventName()` and `GetOccurredAt()`
+- Repository interfaces (Go's native port enforcement — compile-time, not runtime)
+- Memory adapters with `sync.RWMutex` + `map`
+- HTTP server using `net/http` (JSON API with POST per command, GET per aggregate)
+- HTML UI with template-rendered pages: home, index tables, show detail, create/update forms, config page
+- Go `html/template` views matching the Ruby ERB layout/CSS (shared design)
+- Form submission: accepts both JSON and form-urlencoded, redirects on success
+- Config page with roles, adapter, policies, aggregate counts, ports
+- All DSL concepts generate Go code: lifecycle (state constants, predicates, transition validation), queries, specifications, policies
+- Go runtime package: EventBus (goroutine-safe pub/sub with history) and CommandBus (middleware pipeline)
+- Events published on every command execution, event count live on config page
+- `go.mod` with only `google/uuid` dependency
+- Type mapping: String→string, Integer→int64, Float→float64, list_of→[]Type
+
+## Web Explorer Extension (hecks_web_explorer)
+
+### Domain UI as an Extension
+- ERB templates for browsing aggregates, executing commands, viewing events
+- Templates shared between Ruby static and Go targets
+- Views: layout, home, index, show, form, config
+- Renderer class with layout wrapping and HTML escaping
+- Registers with runtime, auto-wires when loaded
+
+## Implicit DSL (HEC-229)
+
+### Infer Domain Concepts from Structure
+- PascalCase block at domain level → aggregate (`Pizza do ... end`)
+- PascalCase block inside aggregate → value object (`Topping do ... end`)
+- snake_case block inside aggregate → command (`create do ... end` → CreatePizza)
+- Bare `name Type` → attribute (`name String`)
+- `ref("X")` alias for `reference_to("X")`
+- `port :name, [methods]` compact inline form
+- Command name inference: single verb + aggregate name, multi-word as-is
+- Same IR output — implicit is sugar on top of explicit DSL
+- Both forms can be mixed in the same file
+
 ## Examples
 - Pizzas domain: plain Ruby app with commands, queries, collection proxies, event history
-- Pizzas static: generated standalone project with HTTP server, UI, roles, filesystem persistence
+- Pizzas static Ruby: generated standalone Ruby project with HTTP server, UI, roles, filesystem persistence
+- Pizzas static Go: generated Go project with HTTP server, memory adapters, same domain
 - Rails pizza shop: full Turbo Streams app with admin, ordering, toppings, pricing, live events
 - Banking domain: 4 aggregates, cross-aggregate policies, specifications, entities, SQLite
+- Governance: 5 bounded contexts (compliance, model registry, operations, identity, risk assessment) — 930 lines of DSL exercising every concept

@@ -4,7 +4,7 @@
 
 # What the Hecks?!
 
-**AI can generate code. It can't enforce your architecture.**
+**In the world of AI, specification is king.**
 
 Hecks is a domain framework that validates your business model against DDD rules at build time, enforces bounded context boundaries through ports, and generates a portable Ruby gem from a 30-line DSL file. The generated gem has zero framework dependencies -- it runs in Rails, Sinatra, a script, or a test, unchanged.
 
@@ -663,6 +663,18 @@ Bob status: suspended
 Alice's $25k loan high risk? false
 Hypothetical $100k/15% loan high risk? true
 ```
+
+## Governance Example
+
+The `examples/governance/` directory is a complex multi-domain project with 5 bounded contexts and 930 lines of DSL. It exercises every Hecks concept:
+
+- **Compliance** — governance policies, compliance reviews, exemptions, evidence collection
+- **Model Registry** — AI model registration, versioning, deployment lifecycle
+- **Operations** — incidents, runbooks, escalations, on-call scheduling
+- **Identity** — users, roles, permissions, authentication
+- **Risk Assessment** — risk scoring, mitigations, audit trails
+
+Cross-domain reactive policies wire the contexts together. Use it as a stress test for generators and static output.
 
 ## How Hecks Compares
 
