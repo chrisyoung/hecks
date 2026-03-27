@@ -49,7 +49,7 @@ module PizzasDomain
           end
           html = renderer.render(:show, title: "Pizza — PizzasDomain", brand: brand, nav_items: nav,
             aggregate_name: "Pizza", back_href: "/pizzas",
-            item: { id: obj.id, fields: [{ label: "Name", value: obj.name.to_s }, { label: "Description", value: obj.description.to_s }, { label: "Toppings", type: :list, items: obj.toppings.map { |v| v.name.to_s + " — " + v.amount.to_s } }] },
+            id: obj.id, fields: [{ label: "Name", value: obj.name.to_s }, { label: "Description", value: obj.description.to_s }, { label: "Toppings", type: :list, items: obj.toppings.map { |v| v.name.to_s + " — " + v.amount.to_s } }],
             buttons: [{ label: "AddTopping", href: "/pizzas/add_topping/new?id=" + obj.id, allowed: PizzasDomain.role_allows?("Pizza", "add_topping") }, { label: "PlaceOrder", href: "/orders/place_order/new?id=" + obj.id, allowed: PizzasDomain.role_allows?("Order", "place_order") }])
           res["Content-Type"] = "text/html"; res.body = html
         end
@@ -61,7 +61,7 @@ module PizzasDomain
           end
           html = renderer.render(:show, title: "Order — PizzasDomain", brand: brand, nav_items: nav,
             aggregate_name: "Order", back_href: "/orders",
-            item: { id: obj.id, fields: [{ label: "Customer Name", value: obj.customer_name.to_s }, { label: "Items", type: :list, items: obj.items.map { |v| v.pizza_id.to_s + " — " + v.quantity.to_s } }, { label: "Status", value: obj.status.to_s }] },
+            id: obj.id, fields: [{ label: "Customer Name", value: obj.customer_name.to_s }, { label: "Items", type: :list, items: obj.items.map { |v| v.pizza_id.to_s + " — " + v.quantity.to_s } }, { label: "Status", value: obj.status.to_s }],
             buttons: [{ label: "CancelOrder", href: "/orders/cancel_order/new?id=" + obj.id, allowed: PizzasDomain.role_allows?("Order", "cancel_order") }])
           res["Content-Type"] = "text/html"; res.body = html
         end
@@ -218,7 +218,7 @@ module PizzasDomain
             adapters: %w[memory filesystem sqlite], current_adapter: cfg[:adapter].to_s,
             event_count: PizzasDomain.events.size, booted_at: (cfg[:booted_at] || "unknown").to_s,
             policies: [],
-            aggregate_rows: [{ name: "Pizza", href: "/pizzas", count: Pizza.count, commands: "CreatePizza, AddTopping", ports: "admin: find, all, create_pizza, add_topping | customer: find, all" }, { name: "Order", href: "/orders", count: Order.count, commands: "PlaceOrder, CancelOrder", ports: "admin: find, all, place_order, cancel_order | customer: find, all, place_order" }])
+            aggregates: [{ name: "Pizza", href: "/pizzas", count: Pizza.count, commands: "CreatePizza, AddTopping", ports: "admin: find, all, create_pizza, add_topping | customer: find, all" }, { name: "Order", href: "/orders", count: Order.count, commands: "PlaceOrder, CancelOrder", ports: "admin: find, all, place_order, cancel_order | customer: find, all, place_order" }])
           res["Content-Type"] = "text/html"; res.body = html
         end
 

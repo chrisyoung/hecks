@@ -47,7 +47,7 @@
     <tr><th>Aggregate</th><th>Count</th><th>Commands</th><th>Ports</th></tr>
   </thead>
   <tbody>
-    <% aggregate_rows.each do |row| %>
+    <% aggregates.each do |row| %>
       <tr>
         <td><a href="<%= row[:href] %>"><%= row[:name] %></a></td>
         <td><%= row[:count] %></td>

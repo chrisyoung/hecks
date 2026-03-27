@@ -143,13 +143,13 @@ module HecksGo
       # Renderer
       write("server/renderer.go", RendererGenerator.new.generate)
 
-      # Convert ERB views from web explorer to Go templates
+      # Convert ERB views to Go templates using view contracts
       erb_dir = File.expand_path("../../../../hecks_runtime/lib/hecks/extensions/web_explorer/views", __dir__)
-      converter = ErbToGoConverter.new
+      gen = ViewGenerator.new
       Dir.glob(File.join(erb_dir, "*.erb")).each do |erb_file|
         name = File.basename(erb_file, ".erb")
         erb_source = File.read(erb_file)
-        write("views/#{name}.html", converter.convert(name, erb_source))
+        write("views/#{name}.html", gen.convert(name.to_sym, erb_source))
       end
     end
 

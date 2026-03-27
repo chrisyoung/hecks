@@ -100,8 +100,9 @@ module HecksGo
         "{Name: \"#{agg.name}s\", Href: \"/#{plural}\", Commands: #{agg.commands.size}, Attributes: #{attrs.size}, Policies: #{agg.policies.size}}"
       end
       lines = []
-      lines << "\ttype HomeAgg struct { Name string; Href string; Commands int; Attributes int; Policies int }"
-      lines << "\ttype HomeData struct { DomainName string; Aggregates []HomeAgg }"
+      vc = Hecks::ViewContracts
+      lines << "\t#{vc.go_struct(:home_agg, vc::HOME[:structs][:home_agg])}"
+      lines << "\t#{vc.go_struct(:home_data, vc::HOME[:fields])}"
       lines << "\tmux.HandleFunc(\"GET /{$}\", func(w http.ResponseWriter, r *http.Request) {"
       lines << "\t\trenderer.Render(w, \"home\", \"#{@domain.name}Domain\", HomeData{"
       lines << "\t\t\tDomainName: \"#{@domain.name}Domain\", Aggregates: []HomeAgg{#{agg_data.join(', ')}},"
