@@ -1,4 +1,4 @@
-# HecksStandalone::EntryPointGenerator
+# HecksStatic::EntryPointGenerator
 #
 # Generates two files for the standalone domain:
 # 1. lib/<gem>.rb — autoloads and constants (regeneratable)
@@ -8,7 +8,7 @@
 # domain files doesn't touch boot.rb, so the running server picks up
 # changes via live reload.
 #
-module HecksStandalone
+module HecksStatic
   class EntryPointGenerator
     def initialize(domain)
       @domain = domain

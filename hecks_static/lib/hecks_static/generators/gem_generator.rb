@@ -1,7 +1,7 @@
 require "fileutils"
 require_relative "runtime_writer"
 
-module HecksStandalone
+module HecksStatic
 # Hecks::Generators::Standalone::GemGenerator
 #
 # Generates a complete, self-contained domain gem that has zero runtime
@@ -23,7 +23,7 @@ class GemGenerator
 
   def generate
     gem_name = @domain.gem_name
-    standalone_name = @domain.name.downcase + "_standalone"
+    standalone_name = @domain.name.downcase + "_static"
     mod = @domain.module_name + "Domain"
     root = File.join(@output_dir, standalone_name)
 
@@ -258,8 +258,8 @@ class GemGenerator
         end
         require "hecks"
         domain = eval(File.read(domain_file), nil, domain_file, 1)
-        require "hecks_standalone"
-        HecksStandalone::GemGenerator.new(domain, output_dir: File.dirname(project_root)).generate
+        require "hecks_static"
+        HecksStatic::GemGenerator.new(domain, output_dir: File.dirname(project_root)).generate
         puts "Regenerated domain from hecks_domain.rb"
       when "info"
         puts "__MOD__"

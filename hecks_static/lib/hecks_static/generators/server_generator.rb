@@ -1,4 +1,4 @@
-module HecksStandalone
+module HecksStatic
 # Hecks::Generators::Standalone::ServerGenerator
 #
 # Generates a domain-specific HTTP server subclass with routes derived

@@ -1,7 +1,7 @@
 require_relative "../hecksties/lib/hecks/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "hecks_standalone"
+  spec.name          = "hecks_static"
   spec.version       = Hecks::VERSION
   spec.authors       = ["Christopher Young"]
   spec.license       = "MIT"
