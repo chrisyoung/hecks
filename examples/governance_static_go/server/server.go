@@ -90,7 +90,7 @@ func (app *App) Start(port int) error {
 	type GovernancePolicyCol struct { Label string }
 	type GovernancePolicyItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type GovernancePolicyBtn struct { Label string; Href string; Allowed bool }
-	type GovernancePolicyIndexData struct { AggregateName string; Items []GovernancePolicyItem; Columns []GovernancePolicyCol; Buttons []GovernancePolicyBtn }
+	type GovernancePolicyIndexData struct { AggregateName string; Description string; Items []GovernancePolicyItem; Columns []GovernancePolicyCol; Buttons []GovernancePolicyBtn }
 	mux.HandleFunc("GET /governance_policys", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.GovernancePolicyRepo.All(); jsonResponse(w, items); return
@@ -101,7 +101,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, GovernancePolicyItem{ID: obj.ID, ShortID: sid, ShowHref: "/governance_policys/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.Category), fmt.Sprintf("%v", obj.FrameworkId), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.ReviewDate), fmt.Sprintf("%d items", len(obj.Requirements)), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "GovernancePolicys", GovernancePolicyIndexData{AggregateName: "GovernancePolicy", Items: rows, Columns: []GovernancePolicyCol{{Label: "Name"}, {Label: "Description"}, {Label: "Category"}, {Label: "Framework Id"}, {Label: "Effective Date"}, {Label: "Review Date"}, {Label: "Requirements"}, {Label: "Status"}}, Buttons: []GovernancePolicyBtn{{Label: "CreatePolicy", Href: "/governance_policys/create_policy/new", Allowed: true}, {Label: "ActivatePolicy", Href: "/governance_policys/activate_policy/new", Allowed: true}, {Label: "SuspendPolicy", Href: "/governance_policys/suspend_policy/new", Allowed: true}, {Label: "RetirePolicy", Href: "/governance_policys/retire_policy/new", Allowed: true}, {Label: "UpdateReviewDate", Href: "/governance_policys/update_review_date/new", Allowed: true}}})
+		renderer.Render(w, "index", "GovernancePolicys", GovernancePolicyIndexData{AggregateName: "GovernancePolicy", Description: "Organizational policies governing AI model usage and compliance", Items: rows, Columns: []GovernancePolicyCol{{Label: "Name"}, {Label: "Description"}, {Label: "Category"}, {Label: "Framework Id"}, {Label: "Effective Date"}, {Label: "Review Date"}, {Label: "Requirements"}, {Label: "Status"}}, Buttons: []GovernancePolicyBtn{{Label: "CreatePolicy", Href: "/governance_policys/create_policy/new", Allowed: true}, {Label: "ActivatePolicy", Href: "/governance_policys/activate_policy/new", Allowed: true}, {Label: "SuspendPolicy", Href: "/governance_policys/suspend_policy/new", Allowed: true}, {Label: "RetirePolicy", Href: "/governance_policys/retire_policy/new", Allowed: true}, {Label: "UpdateReviewDate", Href: "/governance_policys/update_review_date/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /governance_policys/find", func(w http.ResponseWriter, r *http.Request) {
@@ -213,7 +213,7 @@ func (app *App) Start(port int) error {
 	type RegulatoryFrameworkCol struct { Label string }
 	type RegulatoryFrameworkItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type RegulatoryFrameworkBtn struct { Label string; Href string; Allowed bool }
-	type RegulatoryFrameworkIndexData struct { AggregateName string; Items []RegulatoryFrameworkItem; Columns []RegulatoryFrameworkCol; Buttons []RegulatoryFrameworkBtn }
+	type RegulatoryFrameworkIndexData struct { AggregateName string; Description string; Items []RegulatoryFrameworkItem; Columns []RegulatoryFrameworkCol; Buttons []RegulatoryFrameworkBtn }
 	mux.HandleFunc("GET /regulatory_frameworks", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.RegulatoryFrameworkRepo.All(); jsonResponse(w, items); return
@@ -224,7 +224,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, RegulatoryFrameworkItem{ID: obj.ID, ShortID: sid, ShowHref: "/regulatory_frameworks/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Jurisdiction), fmt.Sprintf("%v", obj.Version), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.Authority), fmt.Sprintf("%d items", len(obj.Requirements)), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "RegulatoryFrameworks", RegulatoryFrameworkIndexData{AggregateName: "RegulatoryFramework", Items: rows, Columns: []RegulatoryFrameworkCol{{Label: "Name"}, {Label: "Jurisdiction"}, {Label: "Version"}, {Label: "Effective Date"}, {Label: "Authority"}, {Label: "Requirements"}, {Label: "Status"}}, Buttons: []RegulatoryFrameworkBtn{{Label: "RegisterFramework", Href: "/regulatory_frameworks/register_framework/new", Allowed: true}, {Label: "ActivateFramework", Href: "/regulatory_frameworks/activate_framework/new", Allowed: true}, {Label: "RetireFramework", Href: "/regulatory_frameworks/retire_framework/new", Allowed: true}}})
+		renderer.Render(w, "index", "RegulatoryFrameworks", RegulatoryFrameworkIndexData{AggregateName: "RegulatoryFramework", Description: "External regulatory requirements and their articles", Items: rows, Columns: []RegulatoryFrameworkCol{{Label: "Name"}, {Label: "Jurisdiction"}, {Label: "Version"}, {Label: "Effective Date"}, {Label: "Authority"}, {Label: "Requirements"}, {Label: "Status"}}, Buttons: []RegulatoryFrameworkBtn{{Label: "RegisterFramework", Href: "/regulatory_frameworks/register_framework/new", Allowed: true}, {Label: "ActivateFramework", Href: "/regulatory_frameworks/activate_framework/new", Allowed: true}, {Label: "RetireFramework", Href: "/regulatory_frameworks/retire_framework/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /regulatory_frameworks/find", func(w http.ResponseWriter, r *http.Request) {
@@ -297,7 +297,7 @@ func (app *App) Start(port int) error {
 	type ComplianceReviewCol struct { Label string }
 	type ComplianceReviewItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type ComplianceReviewBtn struct { Label string; Href string; Allowed bool }
-	type ComplianceReviewIndexData struct { AggregateName string; Items []ComplianceReviewItem; Columns []ComplianceReviewCol; Buttons []ComplianceReviewBtn }
+	type ComplianceReviewIndexData struct { AggregateName string; Description string; Items []ComplianceReviewItem; Columns []ComplianceReviewCol; Buttons []ComplianceReviewBtn }
 	mux.HandleFunc("GET /compliance_reviews", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.ComplianceReviewRepo.All(); jsonResponse(w, items); return
@@ -308,7 +308,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, ComplianceReviewItem{ID: obj.ID, ShortID: sid, ShowHref: "/compliance_reviews/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.ReviewerId), fmt.Sprintf("%v", obj.Outcome), fmt.Sprintf("%v", obj.Notes), fmt.Sprintf("%v", obj.CompletedAt), fmt.Sprintf("%d items", len(obj.Conditions)), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "ComplianceReviews", ComplianceReviewIndexData{AggregateName: "ComplianceReview", Items: rows, Columns: []ComplianceReviewCol{{Label: "Model Id"}, {Label: "Policy Id"}, {Label: "Reviewer Id"}, {Label: "Outcome"}, {Label: "Notes"}, {Label: "Completed At"}, {Label: "Conditions"}, {Label: "Status"}}, Buttons: []ComplianceReviewBtn{{Label: "OpenReview", Href: "/compliance_reviews/open_review/new", Allowed: true}, {Label: "ApproveReview", Href: "/compliance_reviews/approve_review/new", Allowed: true}, {Label: "RejectReview", Href: "/compliance_reviews/reject_review/new", Allowed: true}, {Label: "RequestChanges", Href: "/compliance_reviews/request_changes/new", Allowed: true}}})
+		renderer.Render(w, "index", "ComplianceReviews", ComplianceReviewIndexData{AggregateName: "ComplianceReview", Description: "Reviews of AI models against governance policies", Items: rows, Columns: []ComplianceReviewCol{{Label: "Model Id"}, {Label: "Policy Id"}, {Label: "Reviewer Id"}, {Label: "Outcome"}, {Label: "Notes"}, {Label: "Completed At"}, {Label: "Conditions"}, {Label: "Status"}}, Buttons: []ComplianceReviewBtn{{Label: "OpenReview", Href: "/compliance_reviews/open_review/new", Allowed: true}, {Label: "ApproveReview", Href: "/compliance_reviews/approve_review/new", Allowed: true}, {Label: "RejectReview", Href: "/compliance_reviews/reject_review/new", Allowed: true}, {Label: "RequestChanges", Href: "/compliance_reviews/request_changes/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /compliance_reviews/find", func(w http.ResponseWriter, r *http.Request) {
@@ -401,7 +401,7 @@ func (app *App) Start(port int) error {
 	type ExemptionCol struct { Label string }
 	type ExemptionItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type ExemptionBtn struct { Label string; Href string; Allowed bool }
-	type ExemptionIndexData struct { AggregateName string; Items []ExemptionItem; Columns []ExemptionCol; Buttons []ExemptionBtn }
+	type ExemptionIndexData struct { AggregateName string; Description string; Items []ExemptionItem; Columns []ExemptionCol; Buttons []ExemptionBtn }
 	mux.HandleFunc("GET /exemptions", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.ExemptionRepo.All(); jsonResponse(w, items); return
@@ -412,7 +412,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, ExemptionItem{ID: obj.ID, ShortID: sid, ShowHref: "/exemptions/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.Requirement), fmt.Sprintf("%v", obj.Reason), fmt.Sprintf("%v", obj.ApprovedById), fmt.Sprintf("%v", obj.ApprovedAt), fmt.Sprintf("%v", obj.ExpiresAt), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "Exemptions", ExemptionIndexData{AggregateName: "Exemption", Items: rows, Columns: []ExemptionCol{{Label: "Model Id"}, {Label: "Policy Id"}, {Label: "Requirement"}, {Label: "Reason"}, {Label: "Approved By Id"}, {Label: "Approved At"}, {Label: "Expires At"}, {Label: "Status"}}, Buttons: []ExemptionBtn{{Label: "RequestExemption", Href: "/exemptions/request_exemption/new", Allowed: true}}})
+		renderer.Render(w, "index", "Exemptions", ExemptionIndexData{AggregateName: "Exemption", Description: "Approved exceptions to policy requirements", Items: rows, Columns: []ExemptionCol{{Label: "Model Id"}, {Label: "Policy Id"}, {Label: "Requirement"}, {Label: "Reason"}, {Label: "Approved By Id"}, {Label: "Approved At"}, {Label: "Expires At"}, {Label: "Status"}}, Buttons: []ExemptionBtn{{Label: "RequestExemption", Href: "/exemptions/request_exemption/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /exemptions/find", func(w http.ResponseWriter, r *http.Request) {
@@ -486,7 +486,7 @@ func (app *App) Start(port int) error {
 	type TrainingRecordCol struct { Label string }
 	type TrainingRecordItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type TrainingRecordBtn struct { Label string; Href string; Allowed bool }
-	type TrainingRecordIndexData struct { AggregateName string; Items []TrainingRecordItem; Columns []TrainingRecordCol; Buttons []TrainingRecordBtn }
+	type TrainingRecordIndexData struct { AggregateName string; Description string; Items []TrainingRecordItem; Columns []TrainingRecordCol; Buttons []TrainingRecordBtn }
 	mux.HandleFunc("GET /training_records", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.TrainingRecordRepo.All(); jsonResponse(w, items); return
@@ -497,7 +497,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, TrainingRecordItem{ID: obj.ID, ShortID: sid, ShowHref: "/training_records/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.StakeholderId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.CompletedAt), fmt.Sprintf("%v", obj.ExpiresAt), fmt.Sprintf("%v", obj.CertificationId), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "TrainingRecords", TrainingRecordIndexData{AggregateName: "TrainingRecord", Items: rows, Columns: []TrainingRecordCol{{Label: "Stakeholder Id"}, {Label: "Policy Id"}, {Label: "Completed At"}, {Label: "Expires At"}, {Label: "Certification Id"}, {Label: "Status"}}, Buttons: []TrainingRecordBtn{{Label: "AssignTraining", Href: "/training_records/assign_training/new", Allowed: true}}})
+		renderer.Render(w, "index", "TrainingRecords", TrainingRecordIndexData{AggregateName: "TrainingRecord", Description: "Staff training completion and certification tracking", Items: rows, Columns: []TrainingRecordCol{{Label: "Stakeholder Id"}, {Label: "Policy Id"}, {Label: "Completed At"}, {Label: "Expires At"}, {Label: "Certification Id"}, {Label: "Status"}}, Buttons: []TrainingRecordBtn{{Label: "AssignTraining", Href: "/training_records/assign_training/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /training_records/find", func(w http.ResponseWriter, r *http.Request) {
@@ -571,7 +571,7 @@ func (app *App) Start(port int) error {
 	type StakeholderCol struct { Label string }
 	type StakeholderItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type StakeholderBtn struct { Label string; Href string; Allowed bool }
-	type StakeholderIndexData struct { AggregateName string; Items []StakeholderItem; Columns []StakeholderCol; Buttons []StakeholderBtn }
+	type StakeholderIndexData struct { AggregateName string; Description string; Items []StakeholderItem; Columns []StakeholderCol; Buttons []StakeholderBtn }
 	mux.HandleFunc("GET /stakeholders", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.StakeholderRepo.All(); jsonResponse(w, items); return
@@ -582,7 +582,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, StakeholderItem{ID: obj.ID, ShortID: sid, ShowHref: "/stakeholders/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Email), fmt.Sprintf("%v", obj.Role), fmt.Sprintf("%v", obj.Team), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "Stakeholders", StakeholderIndexData{AggregateName: "Stakeholder", Items: rows, Columns: []StakeholderCol{{Label: "Name"}, {Label: "Email"}, {Label: "Role"}, {Label: "Team"}, {Label: "Status"}}, Buttons: []StakeholderBtn{{Label: "RegisterStakeholder", Href: "/stakeholders/register_stakeholder/new", Allowed: true}}})
+		renderer.Render(w, "index", "Stakeholders", StakeholderIndexData{AggregateName: "Stakeholder", Description: "Users, roles, and permissions for governance participants", Items: rows, Columns: []StakeholderCol{{Label: "Name"}, {Label: "Email"}, {Label: "Role"}, {Label: "Team"}, {Label: "Status"}}, Buttons: []StakeholderBtn{{Label: "RegisterStakeholder", Href: "/stakeholders/register_stakeholder/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /stakeholders/find", func(w http.ResponseWriter, r *http.Request) {
@@ -655,7 +655,7 @@ func (app *App) Start(port int) error {
 	type AuditLogCol struct { Label string }
 	type AuditLogItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type AuditLogBtn struct { Label string; Href string; Allowed bool }
-	type AuditLogIndexData struct { AggregateName string; Items []AuditLogItem; Columns []AuditLogCol; Buttons []AuditLogBtn }
+	type AuditLogIndexData struct { AggregateName string; Description string; Items []AuditLogItem; Columns []AuditLogCol; Buttons []AuditLogBtn }
 	mux.HandleFunc("GET /audit_logs", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.AuditLogRepo.All(); jsonResponse(w, items); return
@@ -666,7 +666,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, AuditLogItem{ID: obj.ID, ShortID: sid, ShowHref: "/audit_logs/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.EntityType), fmt.Sprintf("%v", obj.EntityId), fmt.Sprintf("%v", obj.Action), fmt.Sprintf("%v", obj.ActorId), fmt.Sprintf("%v", obj.Details), fmt.Sprintf("%v", obj.Timestamp)}})
 		}
-		renderer.Render(w, "index", "AuditLogs", AuditLogIndexData{AggregateName: "AuditLog", Items: rows, Columns: []AuditLogCol{{Label: "Entity Type"}, {Label: "Entity Id"}, {Label: "Action"}, {Label: "Actor Id"}, {Label: "Details"}, {Label: "Timestamp"}}, Buttons: []AuditLogBtn{{Label: "RecordEntry", Href: "/audit_logs/record_entry/new", Allowed: true}}})
+		renderer.Render(w, "index", "AuditLogs", AuditLogIndexData{AggregateName: "AuditLog", Description: "Immutable record of all actions across the governance system", Items: rows, Columns: []AuditLogCol{{Label: "Entity Type"}, {Label: "Entity Id"}, {Label: "Action"}, {Label: "Actor Id"}, {Label: "Details"}, {Label: "Timestamp"}}, Buttons: []AuditLogBtn{{Label: "RecordEntry", Href: "/audit_logs/record_entry/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /audit_logs/find", func(w http.ResponseWriter, r *http.Request) {
@@ -701,7 +701,7 @@ func (app *App) Start(port int) error {
 	type AiModelCol struct { Label string }
 	type AiModelItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type AiModelBtn struct { Label string; Href string; Allowed bool }
-	type AiModelIndexData struct { AggregateName string; Items []AiModelItem; Columns []AiModelCol; Buttons []AiModelBtn }
+	type AiModelIndexData struct { AggregateName string; Description string; Items []AiModelItem; Columns []AiModelCol; Buttons []AiModelBtn }
 	mux.HandleFunc("GET /ai_models", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.AiModelRepo.All(); jsonResponse(w, items); return
@@ -712,7 +712,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, AiModelItem{ID: obj.ID, ShortID: sid, ShowHref: "/ai_models/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Version), fmt.Sprintf("%v", obj.ProviderId), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.RiskLevel), fmt.Sprintf("%v", obj.RegisteredAt), fmt.Sprintf("%v", obj.ParentModelId), fmt.Sprintf("%v", obj.DerivationType), fmt.Sprintf("%d items", len(obj.Capabilities)), fmt.Sprintf("%d items", len(obj.IntendedUses)), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "AiModels", AiModelIndexData{AggregateName: "AiModel", Items: rows, Columns: []AiModelCol{{Label: "Name"}, {Label: "Version"}, {Label: "Provider Id"}, {Label: "Description"}, {Label: "Risk Level"}, {Label: "Registered At"}, {Label: "Parent Model Id"}, {Label: "Derivation Type"}, {Label: "Capabilities"}, {Label: "Intended Uses"}, {Label: "Status"}}, Buttons: []AiModelBtn{{Label: "RegisterModel", Href: "/ai_models/register_model/new", Allowed: true}, {Label: "DeriveModel", Href: "/ai_models/derive_model/new", Allowed: true}, {Label: "ClassifyRisk", Href: "/ai_models/classify_risk/new", Allowed: true}, {Label: "ApproveModel", Href: "/ai_models/approve_model/new", Allowed: true}, {Label: "SuspendModel", Href: "/ai_models/suspend_model/new", Allowed: true}, {Label: "RetireModel", Href: "/ai_models/retire_model/new", Allowed: true}}})
+		renderer.Render(w, "index", "AiModels", AiModelIndexData{AggregateName: "AiModel", Description: "AI models registered for governance oversight", Items: rows, Columns: []AiModelCol{{Label: "Name"}, {Label: "Version"}, {Label: "Provider Id"}, {Label: "Description"}, {Label: "Risk Level"}, {Label: "Registered At"}, {Label: "Parent Model Id"}, {Label: "Derivation Type"}, {Label: "Capabilities"}, {Label: "Intended Uses"}, {Label: "Status"}}, Buttons: []AiModelBtn{{Label: "RegisterModel", Href: "/ai_models/register_model/new", Allowed: true}, {Label: "DeriveModel", Href: "/ai_models/derive_model/new", Allowed: true}, {Label: "ClassifyRisk", Href: "/ai_models/classify_risk/new", Allowed: true}, {Label: "ApproveModel", Href: "/ai_models/approve_model/new", Allowed: true}, {Label: "SuspendModel", Href: "/ai_models/suspend_model/new", Allowed: true}, {Label: "RetireModel", Href: "/ai_models/retire_model/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /ai_models/find", func(w http.ResponseWriter, r *http.Request) {
@@ -846,7 +846,7 @@ func (app *App) Start(port int) error {
 	type VendorCol struct { Label string }
 	type VendorItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type VendorBtn struct { Label string; Href string; Allowed bool }
-	type VendorIndexData struct { AggregateName string; Items []VendorItem; Columns []VendorCol; Buttons []VendorBtn }
+	type VendorIndexData struct { AggregateName string; Description string; Items []VendorItem; Columns []VendorCol; Buttons []VendorBtn }
 	mux.HandleFunc("GET /vendors", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.VendorRepo.All(); jsonResponse(w, items); return
@@ -857,7 +857,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, VendorItem{ID: obj.ID, ShortID: sid, ShowHref: "/vendors/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.ContactEmail), fmt.Sprintf("%v", obj.RiskTier), fmt.Sprintf("%v", obj.AssessmentDate), fmt.Sprintf("%v", obj.NextReviewDate), fmt.Sprintf("%v", obj.SlaTerms), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "Vendors", VendorIndexData{AggregateName: "Vendor", Items: rows, Columns: []VendorCol{{Label: "Name"}, {Label: "Contact Email"}, {Label: "Risk Tier"}, {Label: "Assessment Date"}, {Label: "Next Review Date"}, {Label: "Sla Terms"}, {Label: "Status"}}, Buttons: []VendorBtn{{Label: "RegisterVendor", Href: "/vendors/register_vendor/new", Allowed: true}}})
+		renderer.Render(w, "index", "Vendors", VendorIndexData{AggregateName: "Vendor", Description: "Third-party AI model providers and their risk assessments", Items: rows, Columns: []VendorCol{{Label: "Name"}, {Label: "Contact Email"}, {Label: "Risk Tier"}, {Label: "Assessment Date"}, {Label: "Next Review Date"}, {Label: "Sla Terms"}, {Label: "Status"}}, Buttons: []VendorBtn{{Label: "RegisterVendor", Href: "/vendors/register_vendor/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /vendors/find", func(w http.ResponseWriter, r *http.Request) {
@@ -930,7 +930,7 @@ func (app *App) Start(port int) error {
 	type DataUsageAgreementCol struct { Label string }
 	type DataUsageAgreementItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type DataUsageAgreementBtn struct { Label string; Href string; Allowed bool }
-	type DataUsageAgreementIndexData struct { AggregateName string; Items []DataUsageAgreementItem; Columns []DataUsageAgreementCol; Buttons []DataUsageAgreementBtn }
+	type DataUsageAgreementIndexData struct { AggregateName string; Description string; Items []DataUsageAgreementItem; Columns []DataUsageAgreementCol; Buttons []DataUsageAgreementBtn }
 	mux.HandleFunc("GET /data_usage_agreements", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.DataUsageAgreementRepo.All(); jsonResponse(w, items); return
@@ -941,7 +941,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, DataUsageAgreementItem{ID: obj.ID, ShortID: sid, ShowHref: "/data_usage_agreements/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.DataSource), fmt.Sprintf("%v", obj.Purpose), fmt.Sprintf("%v", obj.ConsentType), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.ExpirationDate), fmt.Sprintf("%d items", len(obj.Restrictions)), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "DataUsageAgreements", DataUsageAgreementIndexData{AggregateName: "DataUsageAgreement", Items: rows, Columns: []DataUsageAgreementCol{{Label: "Model Id"}, {Label: "Data Source"}, {Label: "Purpose"}, {Label: "Consent Type"}, {Label: "Effective Date"}, {Label: "Expiration Date"}, {Label: "Restrictions"}, {Label: "Status"}}, Buttons: []DataUsageAgreementBtn{{Label: "CreateAgreement", Href: "/data_usage_agreements/create_agreement/new", Allowed: true}, {Label: "ActivateAgreement", Href: "/data_usage_agreements/activate_agreement/new", Allowed: true}, {Label: "RevokeAgreement", Href: "/data_usage_agreements/revoke_agreement/new", Allowed: true}, {Label: "RenewAgreement", Href: "/data_usage_agreements/renew_agreement/new", Allowed: true}}})
+		renderer.Render(w, "index", "DataUsageAgreements", DataUsageAgreementIndexData{AggregateName: "DataUsageAgreement", Description: "Agreements governing data usage for model training and inference", Items: rows, Columns: []DataUsageAgreementCol{{Label: "Model Id"}, {Label: "Data Source"}, {Label: "Purpose"}, {Label: "Consent Type"}, {Label: "Effective Date"}, {Label: "Expiration Date"}, {Label: "Restrictions"}, {Label: "Status"}}, Buttons: []DataUsageAgreementBtn{{Label: "CreateAgreement", Href: "/data_usage_agreements/create_agreement/new", Allowed: true}, {Label: "ActivateAgreement", Href: "/data_usage_agreements/activate_agreement/new", Allowed: true}, {Label: "RevokeAgreement", Href: "/data_usage_agreements/revoke_agreement/new", Allowed: true}, {Label: "RenewAgreement", Href: "/data_usage_agreements/renew_agreement/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /data_usage_agreements/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1035,7 +1035,7 @@ func (app *App) Start(port int) error {
 	type DeploymentCol struct { Label string }
 	type DeploymentItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type DeploymentBtn struct { Label string; Href string; Allowed bool }
-	type DeploymentIndexData struct { AggregateName string; Items []DeploymentItem; Columns []DeploymentCol; Buttons []DeploymentBtn }
+	type DeploymentIndexData struct { AggregateName string; Description string; Items []DeploymentItem; Columns []DeploymentCol; Buttons []DeploymentBtn }
 	mux.HandleFunc("GET /deployments", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.DeploymentRepo.All(); jsonResponse(w, items); return
@@ -1046,7 +1046,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, DeploymentItem{ID: obj.ID, ShortID: sid, ShowHref: "/deployments/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.Environment), fmt.Sprintf("%v", obj.Endpoint), fmt.Sprintf("%v", obj.Purpose), fmt.Sprintf("%v", obj.Audience), fmt.Sprintf("%v", obj.DeployedAt), fmt.Sprintf("%v", obj.DecommissionedAt), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "Deployments", DeploymentIndexData{AggregateName: "Deployment", Items: rows, Columns: []DeploymentCol{{Label: "Model Id"}, {Label: "Environment"}, {Label: "Endpoint"}, {Label: "Purpose"}, {Label: "Audience"}, {Label: "Deployed At"}, {Label: "Decommissioned At"}, {Label: "Status"}}, Buttons: []DeploymentBtn{{Label: "PlanDeployment", Href: "/deployments/plan_deployment/new", Allowed: true}}})
+		renderer.Render(w, "index", "Deployments", DeploymentIndexData{AggregateName: "Deployment", Description: "AI model deployments across environments", Items: rows, Columns: []DeploymentCol{{Label: "Model Id"}, {Label: "Environment"}, {Label: "Endpoint"}, {Label: "Purpose"}, {Label: "Audience"}, {Label: "Deployed At"}, {Label: "Decommissioned At"}, {Label: "Status"}}, Buttons: []DeploymentBtn{{Label: "PlanDeployment", Href: "/deployments/plan_deployment/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /deployments/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1119,7 +1119,7 @@ func (app *App) Start(port int) error {
 	type IncidentCol struct { Label string }
 	type IncidentItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type IncidentBtn struct { Label string; Href string; Allowed bool }
-	type IncidentIndexData struct { AggregateName string; Items []IncidentItem; Columns []IncidentCol; Buttons []IncidentBtn }
+	type IncidentIndexData struct { AggregateName string; Description string; Items []IncidentItem; Columns []IncidentCol; Buttons []IncidentBtn }
 	mux.HandleFunc("GET /incidents", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.IncidentRepo.All(); jsonResponse(w, items); return
@@ -1130,7 +1130,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, IncidentItem{ID: obj.ID, ShortID: sid, ShowHref: "/incidents/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.Severity), fmt.Sprintf("%v", obj.Category), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.ReportedById), fmt.Sprintf("%v", obj.ReportedAt), fmt.Sprintf("%v", obj.ResolvedAt), fmt.Sprintf("%v", obj.Resolution), fmt.Sprintf("%v", obj.RootCause), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "Incidents", IncidentIndexData{AggregateName: "Incident", Items: rows, Columns: []IncidentCol{{Label: "Model Id"}, {Label: "Severity"}, {Label: "Category"}, {Label: "Description"}, {Label: "Reported By Id"}, {Label: "Reported At"}, {Label: "Resolved At"}, {Label: "Resolution"}, {Label: "Root Cause"}, {Label: "Status"}}, Buttons: []IncidentBtn{{Label: "ReportIncident", Href: "/incidents/report_incident/new", Allowed: true}}})
+		renderer.Render(w, "index", "Incidents", IncidentIndexData{AggregateName: "Incident", Description: "AI-related incidents including bias, safety, and performance issues", Items: rows, Columns: []IncidentCol{{Label: "Model Id"}, {Label: "Severity"}, {Label: "Category"}, {Label: "Description"}, {Label: "Reported By Id"}, {Label: "Reported At"}, {Label: "Resolved At"}, {Label: "Resolution"}, {Label: "Root Cause"}, {Label: "Status"}}, Buttons: []IncidentBtn{{Label: "ReportIncident", Href: "/incidents/report_incident/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /incidents/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1243,7 +1243,7 @@ func (app *App) Start(port int) error {
 	type MonitoringCol struct { Label string }
 	type MonitoringItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type MonitoringBtn struct { Label string; Href string; Allowed bool }
-	type MonitoringIndexData struct { AggregateName string; Items []MonitoringItem; Columns []MonitoringCol; Buttons []MonitoringBtn }
+	type MonitoringIndexData struct { AggregateName string; Description string; Items []MonitoringItem; Columns []MonitoringCol; Buttons []MonitoringBtn }
 	mux.HandleFunc("GET /monitorings", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.MonitoringRepo.All(); jsonResponse(w, items); return
@@ -1254,7 +1254,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, MonitoringItem{ID: obj.ID, ShortID: sid, ShowHref: "/monitorings/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.DeploymentId), fmt.Sprintf("%v", obj.MetricName), fmt.Sprintf("%v", obj.Value), fmt.Sprintf("%v", obj.Threshold), fmt.Sprintf("%v", obj.RecordedAt)}})
 		}
-		renderer.Render(w, "index", "Monitorings", MonitoringIndexData{AggregateName: "Monitoring", Items: rows, Columns: []MonitoringCol{{Label: "Model Id"}, {Label: "Deployment Id"}, {Label: "Metric Name"}, {Label: "Value"}, {Label: "Threshold"}, {Label: "Recorded At"}}, Buttons: []MonitoringBtn{{Label: "RecordMetric", Href: "/monitorings/record_metric/new", Allowed: true}}})
+		renderer.Render(w, "index", "Monitorings", MonitoringIndexData{AggregateName: "Monitoring", Description: "Performance and safety metrics for deployed models", Items: rows, Columns: []MonitoringCol{{Label: "Model Id"}, {Label: "Deployment Id"}, {Label: "Metric Name"}, {Label: "Value"}, {Label: "Threshold"}, {Label: "Recorded At"}}, Buttons: []MonitoringBtn{{Label: "RecordMetric", Href: "/monitorings/record_metric/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /monitorings/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1309,7 +1309,7 @@ func (app *App) Start(port int) error {
 	type AssessmentCol struct { Label string }
 	type AssessmentItem struct { ID string; ShortID string; ShowHref string; Cells []string }
 	type AssessmentBtn struct { Label string; Href string; Allowed bool }
-	type AssessmentIndexData struct { AggregateName string; Items []AssessmentItem; Columns []AssessmentCol; Buttons []AssessmentBtn }
+	type AssessmentIndexData struct { AggregateName string; Description string; Items []AssessmentItem; Columns []AssessmentCol; Buttons []AssessmentBtn }
 	mux.HandleFunc("GET /assessments", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
 			items, _ := app.AssessmentRepo.All(); jsonResponse(w, items); return
@@ -1320,7 +1320,7 @@ func (app *App) Start(port int) error {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
 			rows = append(rows, AssessmentItem{ID: obj.ID, ShortID: sid, ShowHref: "/assessments/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.AssessorId), fmt.Sprintf("%v", obj.RiskLevel), fmt.Sprintf("%v", obj.BiasScore), fmt.Sprintf("%v", obj.SafetyScore), fmt.Sprintf("%v", obj.TransparencyScore), fmt.Sprintf("%v", obj.OverallScore), fmt.Sprintf("%v", obj.SubmittedAt), fmt.Sprintf("%d items", len(obj.Findings)), fmt.Sprintf("%d items", len(obj.Mitigations)), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "Assessments", AssessmentIndexData{AggregateName: "Assessment", Items: rows, Columns: []AssessmentCol{{Label: "Model Id"}, {Label: "Assessor Id"}, {Label: "Risk Level"}, {Label: "Bias Score"}, {Label: "Safety Score"}, {Label: "Transparency Score"}, {Label: "Overall Score"}, {Label: "Submitted At"}, {Label: "Findings"}, {Label: "Mitigations"}, {Label: "Status"}}, Buttons: []AssessmentBtn{{Label: "InitiateAssessment", Href: "/assessments/initiate_assessment/new", Allowed: true}}})
+		renderer.Render(w, "index", "Assessments", AssessmentIndexData{AggregateName: "Assessment", Description: "Risk assessments evaluating AI model safety, bias, and transparency", Items: rows, Columns: []AssessmentCol{{Label: "Model Id"}, {Label: "Assessor Id"}, {Label: "Risk Level"}, {Label: "Bias Score"}, {Label: "Safety Score"}, {Label: "Transparency Score"}, {Label: "Overall Score"}, {Label: "Submitted At"}, {Label: "Findings"}, {Label: "Mitigations"}, {Label: "Status"}}, Buttons: []AssessmentBtn{{Label: "InitiateAssessment", Href: "/assessments/initiate_assessment/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /assessments/find", func(w http.ResponseWriter, r *http.Request) {

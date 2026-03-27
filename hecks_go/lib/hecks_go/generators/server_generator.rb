@@ -127,7 +127,7 @@ module HecksGo
         lines << "\ttype #{safe}Col struct { Label string }"
         lines << "\ttype #{safe}Item struct { ID string; ShortID string; ShowHref string; Cells []string }"
         lines << "\ttype #{safe}Btn struct { Label string; Href string; Allowed bool }"
-        lines << "\ttype #{safe}IndexData struct { AggregateName string; Items []#{safe}Item; Columns []#{safe}Col; Buttons []#{safe}Btn }"
+        lines << "\ttype #{safe}IndexData struct { AggregateName string; Description string; Items []#{safe}Item; Columns []#{safe}Col; Buttons []#{safe}Btn }"
         lines << "\tmux.HandleFunc(\"GET /#{plural}\", func(w http.ResponseWriter, r *http.Request) {"
         lines << "\t\tif r.Header.Get(\"Accept\") == \"application/json\" || r.URL.Query().Get(\"format\") == \"json\" {"
         lines << "\t\t\titems, _ := app.#{safe}Repo.All(); jsonResponse(w, items); return"
@@ -138,7 +138,8 @@ module HecksGo
         lines << "\t\t\tsid := obj.ID; if len(sid)>8 { sid=sid[:8]+\"...\" }"
         lines << "\t\t\trows = append(rows, #{safe}Item{ID: obj.ID, ShortID: sid, ShowHref: \"/#{plural}/show?id=\"+obj.ID, Cells: []string{#{cell_exprs.join(', ')}}})"
         lines << "\t\t}"
-        lines << "\t\trenderer.Render(w, \"index\", \"#{safe}s\", #{safe}IndexData{AggregateName: \"#{safe}\", Items: rows, Columns: []#{safe}Col{#{cols.join(', ')}}, Buttons: []#{safe}Btn{#{btns.join(', ')}}})"
+        desc = agg.description || ""
+        lines << "\t\trenderer.Render(w, \"index\", \"#{safe}s\", #{safe}IndexData{AggregateName: \"#{safe}\", Description: \"#{desc}\", Items: rows, Columns: []#{safe}Col{#{cols.join(', ')}}, Buttons: []#{safe}Btn{#{btns.join(', ')}}})"
         lines << "\t})"
         lines << ""
 
