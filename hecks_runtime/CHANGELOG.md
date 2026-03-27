@@ -11,3 +11,4 @@
 - `hecks_web_explorer` extension — ERB-based domain UI (layout, index, show, form, config)
 - `Hecks::WebExplorer::Renderer` — ERB rendering with layout wrapping
 - `Hecks::FilesystemRepository` — JSON files in `data/<aggregate>s/<uuid>.json`
+- Rename `aggregate_description` to `description` in index.erb for ERB-to-Go converter compatibility
