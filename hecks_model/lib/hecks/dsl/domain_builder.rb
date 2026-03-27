@@ -180,6 +180,20 @@ module Hecks
         @workflows << builder.build
       end
 
+      # Implicit DSL support. PascalCase calls at the domain level create aggregates.
+      # Example: `Pizza do ... end` is sugar for `aggregate "Pizza" do ... end`
+      def method_missing(name, *args, &block)
+        if name.to_s =~ /\A[A-Z]/ && block_given?
+          aggregate(name.to_s, &block)
+        else
+          super
+        end
+      end
+
+      def respond_to_missing?(name, include_private = false)
+        name.to_s =~ /\A[A-Z]/ || super
+      end
+
       # Build and return the DomainModel::Structure::Domain IR object.
       #
       # Assembles all collected domain-level elements into an immutable
