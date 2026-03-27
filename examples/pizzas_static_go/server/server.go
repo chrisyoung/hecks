@@ -8,29 +8,32 @@ import (
 	"path/filepath"
 	"pizzas_domain/domain"
 	"pizzas_domain/adapters/memory"
+	"pizzas_domain/runtime"
 )
 
 type App struct {
 	PizzaRepo domain.PizzaRepository
 	OrderRepo domain.OrderRepository
+	EventBus *runtime.EventBus
+	CommandBus *runtime.CommandBus
 }
 
 func NewApp() *App {
+	eventBus := runtime.NewEventBus()
 	return &App{
 		PizzaRepo: memory.NewPizzaMemoryRepository(),
 		OrderRepo: memory.NewOrderMemoryRepository(),
+		EventBus: eventBus,
+		CommandBus: runtime.NewCommandBus(eventBus),
 	}
 }
 
 func (app *App) Start(port int) error {
 	mux := http.NewServeMux()
 
-	// Template renderer
 	exe, _ := os.Executable()
 	viewsDir := filepath.Join(filepath.Dir(exe), "..", "views")
-	if _, err := os.Stat(viewsDir); err != nil {
-		viewsDir = "views" // fallback to current directory
-	}
+	if _, err := os.Stat(viewsDir); err != nil { viewsDir = "views" }
 	nav := []NavItem{
 		{Label: "Home", Href: "/"},
 		{Label: "Pizzas", Href: "/pizzas"},
@@ -39,45 +42,33 @@ func (app *App) Start(port int) error {
 	}
 	renderer := NewRenderer(viewsDir, "PizzasDomain", nav)
 
-	// Home
 	type HomeAgg struct { Name string; Href string; Commands int; Attributes int }
 	type HomeData struct { DomainName string; Aggregates []HomeAgg }
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		renderer.Render(w, "home", "PizzasDomain", HomeData{
-			DomainName: "PizzasDomain",
-			Aggregates: []HomeAgg{{Name: "Pizzas", Href: "/pizzas", Commands: 2, Attributes: 3}, {Name: "Orders", Href: "/orders", Commands: 2, Attributes: 3}},
+			DomainName: "PizzasDomain", Aggregates: []HomeAgg{{Name: "Pizzas", Href: "/pizzas", Commands: 2, Attributes: 3}, {Name: "Orders", Href: "/orders", Commands: 2, Attributes: 3}},
 		})
 	})
 
+	type PizzaCol struct { Label string }
+	type PizzaItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type PizzaBtn struct { Label string; Href string; Allowed bool }
+	type PizzaIndexData struct { AggregateName string; Items []PizzaItem; Columns []PizzaCol; Buttons []PizzaBtn }
 	mux.HandleFunc("GET /pizzas", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
-			items, _ := app.PizzaRepo.All()
-			jsonResponse(w, items)
-			return
+			items, _ := app.PizzaRepo.All(); jsonResponse(w, items); return
 		}
-		// HTML index
-		type Col struct { Label string }
-		type Item struct { ID string; ShortID string; ShowHref string; Cells []string }
-		type Btn struct { Label string; Href string; Allowed bool }
-		type IndexData struct { AggregateName string; Items []Item; Columns []Col; Buttons []Btn }
 		items, _ := app.PizzaRepo.All()
-		var rows []Item
+		var rows []PizzaItem
 		for _, obj := range items {
-			shortID := obj.ID
-			if len(shortID) > 8 { shortID = shortID[:8] + "..." }
-			rows = append(rows, Item{ID: obj.ID, ShortID: shortID, ShowHref: "/pizzas/show?id=" + obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%d items", len(obj.Toppings))}})
+			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
+			rows = append(rows, PizzaItem{ID: obj.ID, ShortID: sid, ShowHref: "/pizzas/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%d items", len(obj.Toppings))}})
 		}
-		renderer.Render(w, "index", "Pizzas", IndexData{
-			AggregateName: "Pizza",
-			Items: rows,
-			Columns: []Col{{Label: "Name"}, {Label: "Description"}, {Label: "Toppings"}},
-			Buttons: []Btn{{Label: "CreatePizza", Href: "/pizzas/create_pizza/new", Allowed: true}},
-		})
+		renderer.Render(w, "index", "Pizzas", PizzaIndexData{AggregateName: "Pizza", Items: rows, Columns: []PizzaCol{{Label: "Name"}, {Label: "Description"}, {Label: "Toppings"}}, Buttons: []PizzaBtn{{Label: "CreatePizza", Href: "/pizzas/create_pizza/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /pizzas/find", func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		item, _ := app.PizzaRepo.Find(id)
+		item, _ := app.PizzaRepo.Find(r.URL.Query().Get("id"))
 		if item == nil { http.Error(w, `{"error":"not found"}`, 404); return }
 		jsonResponse(w, item)
 	})
@@ -85,83 +76,63 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("POST /pizzas/create_pizza", func(w http.ResponseWriter, r *http.Request) {
 		var cmd domain.CreatePizza
 		if r.Header.Get("Content-Type") == "application/json" {
-			if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-				http.Error(w, `{"error":"invalid json"}`, 400); return
-			}
+			if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil { http.Error(w, `{"error":"invalid json"}`, 400); return }
 		} else {
 			r.ParseForm()
 			cmd.Name = r.FormValue("name")
 			cmd.Description = r.FormValue("description")
 		}
-		agg, _, err := cmd.Execute(app.PizzaRepo)
+		agg, event, err := cmd.Execute(app.PizzaRepo)
+		if event != nil { app.EventBus.Publish(event) }
 		if err != nil {
-			if r.Header.Get("Content-Type") == "application/json" {
-				jsonError(w, err); return
-			}
+			if r.Header.Get("Content-Type")=="application/json" { jsonError(w, err); return }
 			http.Error(w, err.Error(), 422); return
 		}
-		if r.Header.Get("Content-Type") == "application/json" {
-			w.WriteHeader(201); jsonResponse(w, agg)
-		} else {
-			http.Redirect(w, r, "/pizzas/show?id=" + agg.ID, http.StatusSeeOther)
+		if r.Header.Get("Content-Type")=="application/json" { w.WriteHeader(201); jsonResponse(w, agg) } else {
+			http.Redirect(w, r, "/pizzas/show?id="+agg.ID, http.StatusSeeOther)
 		}
 	})
 
 	mux.HandleFunc("POST /pizzas/add_topping", func(w http.ResponseWriter, r *http.Request) {
 		var cmd domain.AddTopping
 		if r.Header.Get("Content-Type") == "application/json" {
-			if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-				http.Error(w, `{"error":"invalid json"}`, 400); return
-			}
+			if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil { http.Error(w, `{"error":"invalid json"}`, 400); return }
 		} else {
 			r.ParseForm()
 			cmd.PizzaId = r.FormValue("pizza_id")
 			cmd.Name = r.FormValue("name")
-			if v := r.FormValue("amount"); v != "" { n, _ := fmt.Sscanf(v, "%d", &cmd.Amount) ; _ = n }
+			if v := r.FormValue("amount"); v != "" { fmt.Sscanf(v, "%d", &cmd.Amount) }
 		}
-		agg, _, err := cmd.Execute(app.PizzaRepo)
+		agg, event, err := cmd.Execute(app.PizzaRepo)
+		if event != nil { app.EventBus.Publish(event) }
 		if err != nil {
-			if r.Header.Get("Content-Type") == "application/json" {
-				jsonError(w, err); return
-			}
+			if r.Header.Get("Content-Type")=="application/json" { jsonError(w, err); return }
 			http.Error(w, err.Error(), 422); return
 		}
-		if r.Header.Get("Content-Type") == "application/json" {
-			w.WriteHeader(201); jsonResponse(w, agg)
-		} else {
-			http.Redirect(w, r, "/pizzas/show?id=" + agg.ID, http.StatusSeeOther)
+		if r.Header.Get("Content-Type")=="application/json" { w.WriteHeader(201); jsonResponse(w, agg) } else {
+			http.Redirect(w, r, "/pizzas/show?id="+agg.ID, http.StatusSeeOther)
 		}
 	})
 
+	type OrderCol struct { Label string }
+	type OrderItem struct { ID string; ShortID string; ShowHref string; Cells []string }
+	type OrderBtn struct { Label string; Href string; Allowed bool }
+	type OrderIndexData struct { AggregateName string; Items []OrderItem; Columns []OrderCol; Buttons []OrderBtn }
 	mux.HandleFunc("GET /orders", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
-			items, _ := app.OrderRepo.All()
-			jsonResponse(w, items)
-			return
+			items, _ := app.OrderRepo.All(); jsonResponse(w, items); return
 		}
-		// HTML index
-		type Col struct { Label string }
-		type Item struct { ID string; ShortID string; ShowHref string; Cells []string }
-		type Btn struct { Label string; Href string; Allowed bool }
-		type IndexData struct { AggregateName string; Items []Item; Columns []Col; Buttons []Btn }
 		items, _ := app.OrderRepo.All()
-		var rows []Item
+		var rows []OrderItem
 		for _, obj := range items {
-			shortID := obj.ID
-			if len(shortID) > 8 { shortID = shortID[:8] + "..." }
-			rows = append(rows, Item{ID: obj.ID, ShortID: shortID, ShowHref: "/orders/show?id=" + obj.ID, Cells: []string{fmt.Sprintf("%v", obj.CustomerName), fmt.Sprintf("%d items", len(obj.Items)), fmt.Sprintf("%v", obj.Status)}})
+			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
+			rows = append(rows, OrderItem{ID: obj.ID, ShortID: sid, ShowHref: "/orders/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.CustomerName), fmt.Sprintf("%d items", len(obj.Items)), fmt.Sprintf("%v", obj.Status)}})
 		}
-		renderer.Render(w, "index", "Orders", IndexData{
-			AggregateName: "Order",
-			Items: rows,
-			Columns: []Col{{Label: "Customer Name"}, {Label: "Items"}, {Label: "Status"}},
-			Buttons: []Btn{{Label: "PlaceOrder", Href: "/orders/place_order/new", Allowed: true}},
-		})
+		renderer.Render(w, "index", "Orders", OrderIndexData{AggregateName: "Order", Items: rows, Columns: []OrderCol{{Label: "Customer Name"}, {Label: "Items"}, {Label: "Status"}}, Buttons: []OrderBtn{{Label: "PlaceOrder", Href: "/orders/place_order/new", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /orders/find", func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		item, _ := app.OrderRepo.Find(id)
+		item, _ := app.OrderRepo.Find(r.URL.Query().Get("id"))
 		if item == nil { http.Error(w, `{"error":"not found"}`, 404); return }
 		jsonResponse(w, item)
 	})
@@ -169,50 +140,40 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("POST /orders/place_order", func(w http.ResponseWriter, r *http.Request) {
 		var cmd domain.PlaceOrder
 		if r.Header.Get("Content-Type") == "application/json" {
-			if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-				http.Error(w, `{"error":"invalid json"}`, 400); return
-			}
+			if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil { http.Error(w, `{"error":"invalid json"}`, 400); return }
 		} else {
 			r.ParseForm()
 			cmd.CustomerName = r.FormValue("customer_name")
 			cmd.PizzaId = r.FormValue("pizza_id")
-			if v := r.FormValue("quantity"); v != "" { n, _ := fmt.Sscanf(v, "%d", &cmd.Quantity) ; _ = n }
+			if v := r.FormValue("quantity"); v != "" { fmt.Sscanf(v, "%d", &cmd.Quantity) }
 		}
-		agg, _, err := cmd.Execute(app.OrderRepo)
+		agg, event, err := cmd.Execute(app.OrderRepo)
+		if event != nil { app.EventBus.Publish(event) }
 		if err != nil {
-			if r.Header.Get("Content-Type") == "application/json" {
-				jsonError(w, err); return
-			}
+			if r.Header.Get("Content-Type")=="application/json" { jsonError(w, err); return }
 			http.Error(w, err.Error(), 422); return
 		}
-		if r.Header.Get("Content-Type") == "application/json" {
-			w.WriteHeader(201); jsonResponse(w, agg)
-		} else {
-			http.Redirect(w, r, "/orders/show?id=" + agg.ID, http.StatusSeeOther)
+		if r.Header.Get("Content-Type")=="application/json" { w.WriteHeader(201); jsonResponse(w, agg) } else {
+			http.Redirect(w, r, "/orders/show?id="+agg.ID, http.StatusSeeOther)
 		}
 	})
 
 	mux.HandleFunc("POST /orders/cancel_order", func(w http.ResponseWriter, r *http.Request) {
 		var cmd domain.CancelOrder
 		if r.Header.Get("Content-Type") == "application/json" {
-			if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-				http.Error(w, `{"error":"invalid json"}`, 400); return
-			}
+			if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil { http.Error(w, `{"error":"invalid json"}`, 400); return }
 		} else {
 			r.ParseForm()
 			cmd.OrderId = r.FormValue("order_id")
 		}
-		agg, _, err := cmd.Execute(app.OrderRepo)
+		agg, event, err := cmd.Execute(app.OrderRepo)
+		if event != nil { app.EventBus.Publish(event) }
 		if err != nil {
-			if r.Header.Get("Content-Type") == "application/json" {
-				jsonError(w, err); return
-			}
+			if r.Header.Get("Content-Type")=="application/json" { jsonError(w, err); return }
 			http.Error(w, err.Error(), 422); return
 		}
-		if r.Header.Get("Content-Type") == "application/json" {
-			w.WriteHeader(201); jsonResponse(w, agg)
-		} else {
-			http.Redirect(w, r, "/orders/show?id=" + agg.ID, http.StatusSeeOther)
+		if r.Header.Get("Content-Type")=="application/json" { w.WriteHeader(201); jsonResponse(w, agg) } else {
+			http.Redirect(w, r, "/orders/show?id="+agg.ID, http.StatusSeeOther)
 		}
 	})
 
@@ -220,36 +181,28 @@ func (app *App) Start(port int) error {
 	type PizzaShowItem struct { ID string; Fields []PizzaField }
 	type PizzaShowData struct { AggregateName string; BackHref string; Item PizzaShowItem; Buttons []struct{ Label string; Href string; Allowed bool } }
 	mux.HandleFunc("GET /pizzas/show", func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		obj, _ := app.PizzaRepo.Find(id)
+		obj, _ := app.PizzaRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
 		fields := []PizzaField{
 			{Label: "Name", Value: fmt.Sprintf("%v", obj.Name)},
 			{Label: "Description", Value: fmt.Sprintf("%v", obj.Description)},
-			{Label: "Toppings", Value: fmt.Sprintf("%d items", len(obj.Toppings))},
+			{Label: "Toppings", Value: fmt.Sprintf("%v", obj.Toppings)},
 		}
-		renderer.Render(w, "show", "Pizza", PizzaShowData{
-			AggregateName: "Pizza", BackHref: "/pizzas",
-			Item: PizzaShowItem{ID: obj.ID, Fields: fields},
-		})
+		renderer.Render(w, "show", "Pizza", PizzaShowData{AggregateName: "Pizza", BackHref: "/pizzas", Item: PizzaShowItem{ID: obj.ID, Fields: fields}})
 	})
 
 	type OrderField struct { Label string; Value string }
 	type OrderShowItem struct { ID string; Fields []OrderField }
 	type OrderShowData struct { AggregateName string; BackHref string; Item OrderShowItem; Buttons []struct{ Label string; Href string; Allowed bool } }
 	mux.HandleFunc("GET /orders/show", func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		obj, _ := app.OrderRepo.Find(id)
+		obj, _ := app.OrderRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
 		fields := []OrderField{
 			{Label: "Customer Name", Value: fmt.Sprintf("%v", obj.CustomerName)},
-			{Label: "Items", Value: fmt.Sprintf("%d items", len(obj.Items))},
+			{Label: "Items", Value: fmt.Sprintf("%v", obj.Items)},
 			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
 		}
-		renderer.Render(w, "show", "Order", OrderShowData{
-			AggregateName: "Order", BackHref: "/orders",
-			Item: OrderShowItem{ID: obj.ID, Fields: fields},
-		})
+		renderer.Render(w, "show", "Order", OrderShowData{AggregateName: "Order", BackHref: "/orders", Item: OrderShowItem{ID: obj.ID, Fields: fields}})
 	})
 
 	// Form routes (types in renderer.go)
@@ -331,8 +284,8 @@ func (app *App) Start(port int) error {
 			CurrentRole: currentRole,
 			Adapters: []string{"memory", "filesystem"},
 			CurrentAdapter: "memory",
-			EventCount: 0,
-			BootedAt: "now",
+			EventCount: len(app.EventBus.Events()),
+			BootedAt: "running",
 			Policies: []string{},
 			Aggregates: aggs,
 		})
