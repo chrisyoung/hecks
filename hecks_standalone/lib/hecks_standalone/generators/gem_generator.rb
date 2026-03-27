@@ -200,6 +200,11 @@ class GemGenerator
         domain_module: mod, mixin_prefix: mod)
       File.write(File.join(adapter_dir, "#{Hecks::Utils.underscore(agg.name)}_memory_repository.rb"), gen.generate)
     end
+
+    # Filesystem adapter template
+    template_dir = File.expand_path("../templates", __dir__)
+    source = File.read(File.join(template_dir, "filesystem_adapter.rb"))
+    File.write(File.join(adapter_dir, "filesystem_repository.rb"), source.gsub("__DOMAIN_MODULE__", mod))
   end
 
   def generate_services(root, gem_name, mod)
