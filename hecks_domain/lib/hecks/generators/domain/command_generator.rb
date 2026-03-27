@@ -200,60 +200,8 @@ module Hecks
         lines
       end
 
-      # Builds the argument list for creating a new aggregate from scratch.
-      #
-      # Maps command attributes to aggregate constructor keyword args, then
-      # injects +sets+ overrides and lifecycle status transitions.
-      #
-      # @return [Array<String>] keyword argument strings (e.g., ["name: name", "status: \"active\""])
-      def create_constructor_args
-        args = agg_attrs.each_with_object([]) do |a, parts|
-          cmd_attr = @command.attributes.find { |c| c.name == a.name }
-          if cmd_attr
-            parts << "#{a.name}: #{a.name}"
-          elsif (vo_match = find_vo_append(a))
-            vo, matching_attrs = vo_match
-            vo_args = matching_attrs.map { |attr| "#{attr}: #{attr}" }.join(", ")
-            parts << "#{a.name}: [#{vo.name}.new(#{vo_args})]"
-          elsif (append = find_list_append(a))
-            vo_class = a.type
-            parts << "#{a.name}: [#{vo_class}.new(name: #{append.name})]"
-          end
-        end
-        inject_sets(args)
-        inject_lifecycle_status(args)
-        args
-      end
-
-      # Builds the argument list for updating an existing aggregate.
-      #
-      # Preserves the existing ID and carries forward unchanged attributes from
-      # the existing aggregate. Changed attributes come from the command. List
-      # attributes with singular command counterparts get append semantics.
-      #
-      # @return [Array<String>] keyword argument strings for the Aggregate.new call
-      def update_constructor_args
-        parts = ["id: existing.id"]
-        agg_attrs.each do |a|
-          cmd_attr = @command.attributes.find { |c| c.name == a.name }
-          if cmd_attr
-            parts << "#{a.name}: #{a.name}"
-          elsif (vo_match = find_vo_append(a))
-            vo, matching_attrs = vo_match
-            vo_args = matching_attrs.map { |attr| "#{attr}: #{attr}" }.join(", ")
-            parts << "#{a.name}: existing.#{a.name} + [#{vo.name}.new(#{vo_args})]"
-          elsif (append = find_list_append(a))
-            vo_class = a.type
-            cmd_name = append.name
-            parts << "#{a.name}: existing.#{a.name} + [#{vo_class}.new(name: #{cmd_name})]"
-          else
-            parts << "#{a.name}: existing.#{a.name}"
-          end
-        end
-        inject_sets(parts)
-        inject_lifecycle_status(parts)
-        parts
-      end
+      # create_constructor_args, update_constructor_args, agg_attrs
+      # are in InjectionHelpers
 
       # Format Aggregate.new(...) -- inline if <=2 args, stacked otherwise.
       #
@@ -274,17 +222,6 @@ module Hecks
         end
       end
 
-      # Returns the aggregate's non-reserved attributes.
-      #
-      # Filters out reserved attributes (id, created_at, updated_at) that are
-      # managed by Hecks::Model automatically.
-      #
-      # @return [Array<Hecks::DomainModel::Structure::Attribute>] the user-defined attributes,
-      #   or an empty array if no aggregate is set
-      def agg_attrs
-        return [] unless @aggregate
-        @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
-      end
 
       # Builds keyword parameter strings for the command's constructor.
       #
