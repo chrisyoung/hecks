@@ -402,6 +402,8 @@
 - Repository interfaces (Go's native port enforcement — compile-time, not runtime)
 - Memory adapters with `sync.RWMutex` + `map`
 - HTTP server using `net/http` (JSON API with POST per command, GET per aggregate)
+- HTML home page with aggregate links and API endpoint listing
+- Go `html/template` views matching the Ruby ERB layout/CSS (shared design)
 - `go.mod` with only `google/uuid` dependency
 - Type mapping: String→string, Integer→int64, Float→float64, list_of→[]Type
 
