@@ -8,6 +8,9 @@
 
 - `Hecks.build_go(domain)` — generates Go projects from the domain IR
 - `Hecks.build_static(domain)` — generates self-contained Ruby projects
+- Automatic smoke test after `build_go` and `build_static` — starts server, exercises all pages/forms, verifies no render errors
+- Command generator uses `#{domain_module}::Error` instead of `Hecks::Error` — static output has no hecks dependency
+- `Utils.underscore` handles Symbol input
 - Structured `ValidationError` with `field:` and `rule:` kwargs in generated code
 - `mixin_prefix:` parameter on generators for static output namespacing
 - VO-aware list append in command constructors (create and update)
