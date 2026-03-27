@@ -34,9 +34,10 @@ module Hecks
       #   provides +name+, +attributes+, +validations+, +invariants+, and +lifecycle+
       # @param domain_module [String] the Ruby module name to wrap the generated class in
       #   (e.g., "PizzasDomain")
-      def initialize(aggregate, domain_module:)
+      def initialize(aggregate, domain_module:, mixin_prefix: "Hecks")
         @aggregate = aggregate
         @domain_module = domain_module
+        @mixin_prefix = mixin_prefix
         @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
         @user_attrs = @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
       end
@@ -54,11 +55,19 @@ module Hecks
       # @return [String] the generated Ruby source code, newline-terminated
       def generate
         lines = []
-        lines << "require 'hecks/mixins/model'"
-        lines << ""
+        if @mixin_prefix == "Hecks"
+          lines << "require 'hecks/mixins/model'"
+          lines << ""
+        end
         lines << "module #{@domain_module}"
         lines << "  class #{@safe_name}"
-        lines << "    include Hecks::Model"
+        lines << "    include #{@mixin_prefix}::#{@mixin_prefix == "Hecks" ? "Model" : "Runtime::Model"}"
+        if @mixin_prefix != "Hecks"
+          lines << ""
+          lines << "    class << self"
+          lines << "      attr_accessor :repository, :event_bus, :command_bus"
+          lines << "    end"
+        end
         lines << ""
         @user_attrs.each do |attr|
           lines << "    attribute #{attribute_declaration(attr)}"
@@ -105,10 +114,10 @@ module Hecks
         @aggregate.validations.each do |v|
           field = v.field
           if v.rules[:presence]
-            lines << "      raise ValidationError, \"#{field} can't be blank\" if #{field}.nil? || (#{field}.respond_to?(:empty?) && #{field}.empty?)"
+            lines << "      raise ValidationError.new(\"#{field} can't be blank\", field: :#{field}, rule: :presence) if #{field}.nil? || (#{field}.respond_to?(:empty?) && #{field}.empty?)"
           end
           if v.rules[:type]
-            lines << "      raise ValidationError, \"#{field} must be a #{v.rules[:type]}\" unless #{field}.is_a?(#{v.rules[:type]})"
+            lines << "      raise ValidationError.new(\"#{field} must be a #{v.rules[:type]}\", field: :#{field}, rule: :type) unless #{field}.is_a?(#{v.rules[:type]})"
           end
         end
         enum_attrs.each do |attr|

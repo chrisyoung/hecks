@@ -74,19 +74,36 @@ module Hecks
             end
           end
 
-          # Detect when a command has a singular attr (e.g. "topping") that
-          # maps to a list_of aggregate attr (e.g. "toppings").
+          # Detect when a command appends to a list_of aggregate attr.
           #
-          # This enables append semantics where a singular command attribute
-          # gets appended to the aggregate's list attribute rather than replacing it.
+          # Two patterns:
+          # 1. Singular match: command has "topping" attr matching "toppings" list
+          # 2. VO match: command attrs overlap with the value object's attrs
           #
           # @param agg_attr [Hecks::DomainModel::Structure::Attribute] an aggregate attribute to check
           # @return [Hecks::DomainModel::Structure::Attribute, nil] the matching singular command
-          #   attribute, or nil if no match
+          #   attribute (pattern 1), or nil
           def find_list_append(agg_attr)
             return nil unless agg_attr.list?
             singular = agg_attr.name.to_s.chomp("s")
             @command.attributes.find { |c| c.name.to_s == singular }
+          end
+
+          # Detect when command attrs match a value object's attrs for list append.
+          # Returns the VO and matching command attr names if found.
+          #
+          # @param agg_attr [Hecks::DomainModel::Structure::Attribute] a list_of aggregate attribute
+          # @return [Array, nil] [vo, matching_cmd_attrs] or nil
+          def find_vo_append(agg_attr)
+            return nil unless agg_attr.list? && @aggregate
+            vo = @aggregate.value_objects.find { |v| v.name == agg_attr.type.to_s }
+            return nil unless vo
+            vo_attr_names = vo.attributes.map { |a| a.name.to_s }
+            # Only reject self-referencing _id, not cross-aggregate refs that are VO data
+            self_id = @self_id_attr&.name&.to_s
+            cmd_attr_names = @command.attributes.reject { |a| a.name.to_s == self_id }.map { |a| a.name.to_s }
+            matching = vo_attr_names & cmd_attr_names
+            matching.size >= vo_attr_names.size ? [vo, matching] : nil
           end
 
           # Injects the lifecycle target state into the constructor argument list.

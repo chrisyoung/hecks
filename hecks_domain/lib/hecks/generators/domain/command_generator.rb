@@ -48,12 +48,13 @@ module Hecks
       #   used to map command attributes to aggregate constructor args; nil if not available
       # @param event [Object, nil] the associated domain event; if present, an +emits+ declaration
       #   is added and the +call+ method constructs the aggregate
-      def initialize(command, domain_module:, aggregate_name:, aggregate: nil, event: nil)
+      def initialize(command, domain_module:, aggregate_name:, aggregate: nil, event: nil, mixin_prefix: "Hecks")
         @command = command
         @domain_module = domain_module
         @aggregate_name = aggregate_name
         @aggregate = aggregate
         @event = event
+        @mixin_prefix = mixin_prefix
         @has_keyword_attrs = @command.attributes.any? { |a| Hecks::Utils.ruby_keyword?(a.name) }
         agg_snake = Hecks::Utils.underscore(aggregate_name)
         @self_id_attr = find_self_id_attr(agg_snake)
@@ -69,7 +70,7 @@ module Hecks
         lines << "  class #{@aggregate_name}"
         lines << "    module Commands"
         lines << "      class #{@command.name}"
-        lines << "        include Hecks::Command"
+        lines << "        include #{@mixin_prefix}::#{@mixin_prefix == "Hecks" ? "Command" : "Runtime::Command"}"
         lines << "        emits \"#{@event.name}\"" if @event
         lines.concat(condition_declarations)
         lines << ""
@@ -208,7 +209,16 @@ module Hecks
       def create_constructor_args
         args = agg_attrs.each_with_object([]) do |a, parts|
           cmd_attr = @command.attributes.find { |c| c.name == a.name }
-          parts << "#{a.name}: #{a.name}" if cmd_attr
+          if cmd_attr
+            parts << "#{a.name}: #{a.name}"
+          elsif (vo_match = find_vo_append(a))
+            vo, matching_attrs = vo_match
+            vo_args = matching_attrs.map { |attr| "#{attr}: #{attr}" }.join(", ")
+            parts << "#{a.name}: [#{vo.name}.new(#{vo_args})]"
+          elsif (append = find_list_append(a))
+            vo_class = a.type
+            parts << "#{a.name}: [#{vo_class}.new(name: #{append.name})]"
+          end
         end
         inject_sets(args)
         inject_lifecycle_status(args)
@@ -228,6 +238,10 @@ module Hecks
           cmd_attr = @command.attributes.find { |c| c.name == a.name }
           if cmd_attr
             parts << "#{a.name}: #{a.name}"
+          elsif (vo_match = find_vo_append(a))
+            vo, matching_attrs = vo_match
+            vo_args = matching_attrs.map { |attr| "#{attr}: #{attr}" }.join(", ")
+            parts << "#{a.name}: existing.#{a.name} + [#{vo.name}.new(#{vo_args})]"
           elsif (append = find_list_append(a))
             vo_class = a.type
             cmd_name = append.name
