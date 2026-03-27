@@ -62,13 +62,13 @@ module Hecks
               allowed = from_state.map(&:inspect).join(", ")
               [
                 "#{indent}unless [#{allowed}].include?(existing.#{field})",
-                "#{indent}  raise Hecks::Error, \"Cannot #{@command.name}: #{field} must be one of #{from_state.join(', ')}, got '\#{existing.#{field}}'\"",
+                "#{indent}  raise #{@domain_module}::Error, \"Cannot #{@command.name}: #{field} must be one of #{from_state.join(', ')}, got '\#{existing.#{field}}'\"",
                 "#{indent}end",
               ]
             else
               [
                 "#{indent}unless existing.#{field} == \"#{from_state}\"",
-                "#{indent}  raise Hecks::Error, \"Cannot #{@command.name}: #{field} must be '#{from_state}', got '\#{existing.#{field}}'\"",
+                "#{indent}  raise #{@domain_module}::Error, \"Cannot #{@command.name}: #{field} must be '#{from_state}', got '\#{existing.#{field}}'\"",
                 "#{indent}end",
               ]
             end

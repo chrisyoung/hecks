@@ -33,5 +33,11 @@ func NewAuditLog(entityType string, entityId string, action string, actorId stri
 }
 
 func (a *AuditLog) Validate() error {
+	if a.EntityType == "" {
+		return &ValidationError{Field: "entity_type", Message: "entity_type can't be blank"}
+	}
+	if a.Action == "" {
+		return &ValidationError{Field: "action", Message: "action can't be blank"}
+	}
 	return nil
 }

@@ -37,5 +37,11 @@ func NewGovernancePolicy(name string, description string, category string, frame
 }
 
 func (a *GovernancePolicy) Validate() error {
+	if a.Name == "" {
+		return &ValidationError{Field: "name", Message: "name can't be blank"}
+	}
+	if a.Category == "" {
+		return &ValidationError{Field: "category", Message: "category can't be blank"}
+	}
 	return nil
 }

@@ -21,7 +21,7 @@ module PizzasDomain
               status: "cancelled"
             )
           else
-            raise Hecks::Error, "Order not found: #{order_id}"
+            raise PizzasDomain::Error, "Order not found: #{order_id}"
           end
         end
       end

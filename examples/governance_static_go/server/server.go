@@ -78,7 +78,7 @@ func (app *App) Start(port int) error {
 	}
 	renderer := NewRenderer(viewsDir, "GovernanceDomain", nav)
 
-	type HomeAgg struct { Name string; Href string; Commands int; Attributes int; Policies int }
+	type HomeAgg struct { Href string; Name string; Commands int; Attributes int; Policies int }
 	type HomeData struct { DomainName string; Aggregates []HomeAgg }
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		renderer.Render(w, "home", "GovernanceDomain", HomeData{
@@ -1413,65 +1413,65 @@ func (app *App) Start(port int) error {
 		}
 	})
 
-	type GovernancePolicyField struct { Label string; Value string; Type string; Items []string }
-	type GovernancePolicyShowData struct { AggregateName string; BackHref string; Id string; Fields []GovernancePolicyField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type GovernancePolicyShowField struct { Label string; Value string; Type string; Items []string }
+	type GovernancePolicyShowData struct { AggregateName string; Id string; BackHref string; Fields []GovernancePolicyShowField; Buttons []GovernancePolicyButton }
 	mux.HandleFunc("GET /governance_policys/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.GovernancePolicyRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []GovernancePolicyField{
+		fields := []GovernancePolicyShowField{
 			{Label: "Name", Value: fmt.Sprintf("%v", obj.Name)},
 			{Label: "Description", Value: fmt.Sprintf("%v", obj.Description)},
 			{Label: "Category", Value: fmt.Sprintf("%v", obj.Category)},
 			{Label: "Framework Id", Value: fmt.Sprintf("%v", obj.FrameworkId)},
 			{Label: "Effective Date", Value: fmt.Sprintf("%v", obj.EffectiveDate)},
 			{Label: "Review Date", Value: fmt.Sprintf("%v", obj.ReviewDate)},
-			{Label: "Requirements", Value: fmt.Sprintf("%v", obj.Requirements)},
+			{Label: "Requirements", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Requirements { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
 		}
 		renderer.Render(w, "show", "GovernancePolicy", GovernancePolicyShowData{AggregateName: "GovernancePolicy", BackHref: "/governance_policys", Id: obj.ID, Fields: fields})
 	})
 
-	type RegulatoryFrameworkField struct { Label string; Value string; Type string; Items []string }
-	type RegulatoryFrameworkShowData struct { AggregateName string; BackHref string; Id string; Fields []RegulatoryFrameworkField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type RegulatoryFrameworkShowField struct { Label string; Value string; Type string; Items []string }
+	type RegulatoryFrameworkShowData struct { AggregateName string; Id string; BackHref string; Fields []RegulatoryFrameworkShowField; Buttons []RegulatoryFrameworkButton }
 	mux.HandleFunc("GET /regulatory_frameworks/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.RegulatoryFrameworkRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []RegulatoryFrameworkField{
+		fields := []RegulatoryFrameworkShowField{
 			{Label: "Name", Value: fmt.Sprintf("%v", obj.Name)},
 			{Label: "Jurisdiction", Value: fmt.Sprintf("%v", obj.Jurisdiction)},
 			{Label: "Version", Value: fmt.Sprintf("%v", obj.Version)},
 			{Label: "Effective Date", Value: fmt.Sprintf("%v", obj.EffectiveDate)},
 			{Label: "Authority", Value: fmt.Sprintf("%v", obj.Authority)},
-			{Label: "Requirements", Value: fmt.Sprintf("%v", obj.Requirements)},
+			{Label: "Requirements", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Requirements { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
 		}
 		renderer.Render(w, "show", "RegulatoryFramework", RegulatoryFrameworkShowData{AggregateName: "RegulatoryFramework", BackHref: "/regulatory_frameworks", Id: obj.ID, Fields: fields})
 	})
 
-	type ComplianceReviewField struct { Label string; Value string; Type string; Items []string }
-	type ComplianceReviewShowData struct { AggregateName string; BackHref string; Id string; Fields []ComplianceReviewField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type ComplianceReviewShowField struct { Label string; Value string; Type string; Items []string }
+	type ComplianceReviewShowData struct { AggregateName string; Id string; BackHref string; Fields []ComplianceReviewShowField; Buttons []ComplianceReviewButton }
 	mux.HandleFunc("GET /compliance_reviews/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.ComplianceReviewRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []ComplianceReviewField{
+		fields := []ComplianceReviewShowField{
 			{Label: "Model Id", Value: fmt.Sprintf("%v", obj.ModelId)},
 			{Label: "Policy Id", Value: fmt.Sprintf("%v", obj.PolicyId)},
 			{Label: "Reviewer Id", Value: fmt.Sprintf("%v", obj.ReviewerId)},
 			{Label: "Outcome", Value: fmt.Sprintf("%v", obj.Outcome)},
 			{Label: "Notes", Value: fmt.Sprintf("%v", obj.Notes)},
 			{Label: "Completed At", Value: fmt.Sprintf("%v", obj.CompletedAt)},
-			{Label: "Conditions", Value: fmt.Sprintf("%v", obj.Conditions)},
+			{Label: "Conditions", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Conditions { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
 		}
 		renderer.Render(w, "show", "ComplianceReview", ComplianceReviewShowData{AggregateName: "ComplianceReview", BackHref: "/compliance_reviews", Id: obj.ID, Fields: fields})
 	})
 
-	type ExemptionField struct { Label string; Value string; Type string; Items []string }
-	type ExemptionShowData struct { AggregateName string; BackHref string; Id string; Fields []ExemptionField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type ExemptionShowField struct { Label string; Value string; Type string; Items []string }
+	type ExemptionShowData struct { AggregateName string; Id string; BackHref string; Fields []ExemptionShowField; Buttons []ExemptionButton }
 	mux.HandleFunc("GET /exemptions/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.ExemptionRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []ExemptionField{
+		fields := []ExemptionShowField{
 			{Label: "Model Id", Value: fmt.Sprintf("%v", obj.ModelId)},
 			{Label: "Policy Id", Value: fmt.Sprintf("%v", obj.PolicyId)},
 			{Label: "Requirement", Value: fmt.Sprintf("%v", obj.Requirement)},
@@ -1484,12 +1484,12 @@ func (app *App) Start(port int) error {
 		renderer.Render(w, "show", "Exemption", ExemptionShowData{AggregateName: "Exemption", BackHref: "/exemptions", Id: obj.ID, Fields: fields})
 	})
 
-	type TrainingRecordField struct { Label string; Value string; Type string; Items []string }
-	type TrainingRecordShowData struct { AggregateName string; BackHref string; Id string; Fields []TrainingRecordField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type TrainingRecordShowField struct { Label string; Value string; Type string; Items []string }
+	type TrainingRecordShowData struct { AggregateName string; Id string; BackHref string; Fields []TrainingRecordShowField; Buttons []TrainingRecordButton }
 	mux.HandleFunc("GET /training_records/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.TrainingRecordRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []TrainingRecordField{
+		fields := []TrainingRecordShowField{
 			{Label: "Stakeholder Id", Value: fmt.Sprintf("%v", obj.StakeholderId)},
 			{Label: "Policy Id", Value: fmt.Sprintf("%v", obj.PolicyId)},
 			{Label: "Completed At", Value: fmt.Sprintf("%v", obj.CompletedAt)},
@@ -1500,12 +1500,12 @@ func (app *App) Start(port int) error {
 		renderer.Render(w, "show", "TrainingRecord", TrainingRecordShowData{AggregateName: "TrainingRecord", BackHref: "/training_records", Id: obj.ID, Fields: fields})
 	})
 
-	type StakeholderField struct { Label string; Value string; Type string; Items []string }
-	type StakeholderShowData struct { AggregateName string; BackHref string; Id string; Fields []StakeholderField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type StakeholderShowField struct { Label string; Value string; Type string; Items []string }
+	type StakeholderShowData struct { AggregateName string; Id string; BackHref string; Fields []StakeholderShowField; Buttons []StakeholderButton }
 	mux.HandleFunc("GET /stakeholders/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.StakeholderRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []StakeholderField{
+		fields := []StakeholderShowField{
 			{Label: "Name", Value: fmt.Sprintf("%v", obj.Name)},
 			{Label: "Email", Value: fmt.Sprintf("%v", obj.Email)},
 			{Label: "Role", Value: fmt.Sprintf("%v", obj.Role)},
@@ -1515,12 +1515,12 @@ func (app *App) Start(port int) error {
 		renderer.Render(w, "show", "Stakeholder", StakeholderShowData{AggregateName: "Stakeholder", BackHref: "/stakeholders", Id: obj.ID, Fields: fields})
 	})
 
-	type AuditLogField struct { Label string; Value string; Type string; Items []string }
-	type AuditLogShowData struct { AggregateName string; BackHref string; Id string; Fields []AuditLogField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type AuditLogShowField struct { Label string; Value string; Type string; Items []string }
+	type AuditLogShowData struct { AggregateName string; Id string; BackHref string; Fields []AuditLogShowField; Buttons []AuditLogButton }
 	mux.HandleFunc("GET /audit_logs/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.AuditLogRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []AuditLogField{
+		fields := []AuditLogShowField{
 			{Label: "Entity Type", Value: fmt.Sprintf("%v", obj.EntityType)},
 			{Label: "Entity Id", Value: fmt.Sprintf("%v", obj.EntityId)},
 			{Label: "Action", Value: fmt.Sprintf("%v", obj.Action)},
@@ -1531,12 +1531,12 @@ func (app *App) Start(port int) error {
 		renderer.Render(w, "show", "AuditLog", AuditLogShowData{AggregateName: "AuditLog", BackHref: "/audit_logs", Id: obj.ID, Fields: fields})
 	})
 
-	type AiModelField struct { Label string; Value string; Type string; Items []string }
-	type AiModelShowData struct { AggregateName string; BackHref string; Id string; Fields []AiModelField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type AiModelShowField struct { Label string; Value string; Type string; Items []string }
+	type AiModelShowData struct { AggregateName string; Id string; BackHref string; Fields []AiModelShowField; Buttons []AiModelButton }
 	mux.HandleFunc("GET /ai_models/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.AiModelRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []AiModelField{
+		fields := []AiModelShowField{
 			{Label: "Name", Value: fmt.Sprintf("%v", obj.Name)},
 			{Label: "Version", Value: fmt.Sprintf("%v", obj.Version)},
 			{Label: "Provider Id", Value: fmt.Sprintf("%v", obj.ProviderId)},
@@ -1545,19 +1545,19 @@ func (app *App) Start(port int) error {
 			{Label: "Registered At", Value: fmt.Sprintf("%v", obj.RegisteredAt)},
 			{Label: "Parent Model Id", Value: fmt.Sprintf("%v", obj.ParentModelId)},
 			{Label: "Derivation Type", Value: fmt.Sprintf("%v", obj.DerivationType)},
-			{Label: "Capabilities", Value: fmt.Sprintf("%v", obj.Capabilities)},
-			{Label: "Intended Uses", Value: fmt.Sprintf("%v", obj.IntendedUses)},
+			{Label: "Capabilities", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Capabilities { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
+			{Label: "Intended Uses", Type: "list", Items: func() []string { var s []string; for _, v := range obj.IntendedUses { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
 		}
 		renderer.Render(w, "show", "AiModel", AiModelShowData{AggregateName: "AiModel", BackHref: "/ai_models", Id: obj.ID, Fields: fields})
 	})
 
-	type VendorField struct { Label string; Value string; Type string; Items []string }
-	type VendorShowData struct { AggregateName string; BackHref string; Id string; Fields []VendorField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type VendorShowField struct { Label string; Value string; Type string; Items []string }
+	type VendorShowData struct { AggregateName string; Id string; BackHref string; Fields []VendorShowField; Buttons []VendorButton }
 	mux.HandleFunc("GET /vendors/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.VendorRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []VendorField{
+		fields := []VendorShowField{
 			{Label: "Name", Value: fmt.Sprintf("%v", obj.Name)},
 			{Label: "Contact Email", Value: fmt.Sprintf("%v", obj.ContactEmail)},
 			{Label: "Risk Tier", Value: fmt.Sprintf("%v", obj.RiskTier)},
@@ -1569,30 +1569,30 @@ func (app *App) Start(port int) error {
 		renderer.Render(w, "show", "Vendor", VendorShowData{AggregateName: "Vendor", BackHref: "/vendors", Id: obj.ID, Fields: fields})
 	})
 
-	type DataUsageAgreementField struct { Label string; Value string; Type string; Items []string }
-	type DataUsageAgreementShowData struct { AggregateName string; BackHref string; Id string; Fields []DataUsageAgreementField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type DataUsageAgreementShowField struct { Label string; Value string; Type string; Items []string }
+	type DataUsageAgreementShowData struct { AggregateName string; Id string; BackHref string; Fields []DataUsageAgreementShowField; Buttons []DataUsageAgreementButton }
 	mux.HandleFunc("GET /data_usage_agreements/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.DataUsageAgreementRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []DataUsageAgreementField{
+		fields := []DataUsageAgreementShowField{
 			{Label: "Model Id", Value: fmt.Sprintf("%v", obj.ModelId)},
 			{Label: "Data Source", Value: fmt.Sprintf("%v", obj.DataSource)},
 			{Label: "Purpose", Value: fmt.Sprintf("%v", obj.Purpose)},
 			{Label: "Consent Type", Value: fmt.Sprintf("%v", obj.ConsentType)},
 			{Label: "Effective Date", Value: fmt.Sprintf("%v", obj.EffectiveDate)},
 			{Label: "Expiration Date", Value: fmt.Sprintf("%v", obj.ExpirationDate)},
-			{Label: "Restrictions", Value: fmt.Sprintf("%v", obj.Restrictions)},
+			{Label: "Restrictions", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Restrictions { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
 		}
 		renderer.Render(w, "show", "DataUsageAgreement", DataUsageAgreementShowData{AggregateName: "DataUsageAgreement", BackHref: "/data_usage_agreements", Id: obj.ID, Fields: fields})
 	})
 
-	type DeploymentField struct { Label string; Value string; Type string; Items []string }
-	type DeploymentShowData struct { AggregateName string; BackHref string; Id string; Fields []DeploymentField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type DeploymentShowField struct { Label string; Value string; Type string; Items []string }
+	type DeploymentShowData struct { AggregateName string; Id string; BackHref string; Fields []DeploymentShowField; Buttons []DeploymentButton }
 	mux.HandleFunc("GET /deployments/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.DeploymentRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []DeploymentField{
+		fields := []DeploymentShowField{
 			{Label: "Model Id", Value: fmt.Sprintf("%v", obj.ModelId)},
 			{Label: "Environment", Value: fmt.Sprintf("%v", obj.Environment)},
 			{Label: "Endpoint", Value: fmt.Sprintf("%v", obj.Endpoint)},
@@ -1605,12 +1605,12 @@ func (app *App) Start(port int) error {
 		renderer.Render(w, "show", "Deployment", DeploymentShowData{AggregateName: "Deployment", BackHref: "/deployments", Id: obj.ID, Fields: fields})
 	})
 
-	type IncidentField struct { Label string; Value string; Type string; Items []string }
-	type IncidentShowData struct { AggregateName string; BackHref string; Id string; Fields []IncidentField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type IncidentShowField struct { Label string; Value string; Type string; Items []string }
+	type IncidentShowData struct { AggregateName string; Id string; BackHref string; Fields []IncidentShowField; Buttons []IncidentButton }
 	mux.HandleFunc("GET /incidents/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.IncidentRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []IncidentField{
+		fields := []IncidentShowField{
 			{Label: "Model Id", Value: fmt.Sprintf("%v", obj.ModelId)},
 			{Label: "Severity", Value: fmt.Sprintf("%v", obj.Severity)},
 			{Label: "Category", Value: fmt.Sprintf("%v", obj.Category)},
@@ -1625,12 +1625,12 @@ func (app *App) Start(port int) error {
 		renderer.Render(w, "show", "Incident", IncidentShowData{AggregateName: "Incident", BackHref: "/incidents", Id: obj.ID, Fields: fields})
 	})
 
-	type MonitoringField struct { Label string; Value string; Type string; Items []string }
-	type MonitoringShowData struct { AggregateName string; BackHref string; Id string; Fields []MonitoringField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type MonitoringShowField struct { Label string; Value string; Type string; Items []string }
+	type MonitoringShowData struct { AggregateName string; Id string; BackHref string; Fields []MonitoringShowField; Buttons []MonitoringButton }
 	mux.HandleFunc("GET /monitorings/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.MonitoringRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []MonitoringField{
+		fields := []MonitoringShowField{
 			{Label: "Model Id", Value: fmt.Sprintf("%v", obj.ModelId)},
 			{Label: "Deployment Id", Value: fmt.Sprintf("%v", obj.DeploymentId)},
 			{Label: "Metric Name", Value: fmt.Sprintf("%v", obj.MetricName)},
@@ -1641,12 +1641,12 @@ func (app *App) Start(port int) error {
 		renderer.Render(w, "show", "Monitoring", MonitoringShowData{AggregateName: "Monitoring", BackHref: "/monitorings", Id: obj.ID, Fields: fields})
 	})
 
-	type AssessmentField struct { Label string; Value string; Type string; Items []string }
-	type AssessmentShowData struct { AggregateName string; BackHref string; Id string; Fields []AssessmentField; Buttons []struct{ Label string; Href string; Allowed bool } }
+	type AssessmentShowField struct { Label string; Value string; Type string; Items []string }
+	type AssessmentShowData struct { AggregateName string; Id string; BackHref string; Fields []AssessmentShowField; Buttons []AssessmentButton }
 	mux.HandleFunc("GET /assessments/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.AssessmentRepo.Find(r.URL.Query().Get("id"))
 		if obj == nil { http.Error(w, "Not found", 404); return }
-		fields := []AssessmentField{
+		fields := []AssessmentShowField{
 			{Label: "Model Id", Value: fmt.Sprintf("%v", obj.ModelId)},
 			{Label: "Assessor Id", Value: fmt.Sprintf("%v", obj.AssessorId)},
 			{Label: "Risk Level", Value: fmt.Sprintf("%v", obj.RiskLevel)},
@@ -1655,8 +1655,8 @@ func (app *App) Start(port int) error {
 			{Label: "Transparency Score", Value: fmt.Sprintf("%v", obj.TransparencyScore)},
 			{Label: "Overall Score", Value: fmt.Sprintf("%v", obj.OverallScore)},
 			{Label: "Submitted At", Value: fmt.Sprintf("%v", obj.SubmittedAt)},
-			{Label: "Findings", Value: fmt.Sprintf("%v", obj.Findings)},
-			{Label: "Mitigations", Value: fmt.Sprintf("%v", obj.Mitigations)},
+			{Label: "Findings", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Findings { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
+			{Label: "Mitigations", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Mitigations { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
 		}
 		renderer.Render(w, "show", "Assessment", AssessmentShowData{AggregateName: "Assessment", BackHref: "/assessments", Id: obj.ID, Fields: fields})
@@ -2172,8 +2172,8 @@ func (app *App) Start(port int) error {
 		fields := []FormField{
 			// Deployment dropdown built dynamically below
 			{Type: "input", Name: "metric_name", Label: "Metric Name", InputType: "text", Required: true},
-			{Type: "input", Name: "value", Label: "Value", InputType: "number", Required: true},
-			{Type: "input", Name: "threshold", Label: "Threshold", InputType: "number", Required: true},
+			{Type: "input", Name: "value", Label: "Value", InputType: "number", Required: true, Step: true},
+			{Type: "input", Name: "threshold", Label: "Threshold", InputType: "number", Required: true, Step: true},
 		}
 		deployments, _ := app.DeploymentRepo.All()
 		var deploymentOpts []FormOption
@@ -2191,7 +2191,7 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /monitorings/set_threshold/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			{Type: "hidden", Name: "monitoring_id", Value: r.URL.Query().Get("id")},
-			{Type: "input", Name: "threshold", Label: "Threshold", InputType: "number", Required: true},
+			{Type: "input", Name: "threshold", Label: "Threshold", InputType: "number", Required: true, Step: true},
 		}
 		renderer.Render(w, "form", "SetThreshold", FormData{
 			CommandName: "SetThreshold",
@@ -2228,10 +2228,10 @@ func (app *App) Start(port int) error {
 		fields := []FormField{
 			{Type: "hidden", Name: "assessment_id", Value: r.URL.Query().Get("id")},
 			{Type: "input", Name: "risk_level", Label: "Risk Level", InputType: "text", Required: true},
-			{Type: "input", Name: "bias_score", Label: "Bias Score", InputType: "number", Required: true},
-			{Type: "input", Name: "safety_score", Label: "Safety Score", InputType: "number", Required: true},
-			{Type: "input", Name: "transparency_score", Label: "Transparency Score", InputType: "number", Required: true},
-			{Type: "input", Name: "overall_score", Label: "Overall Score", InputType: "number", Required: true},
+			{Type: "input", Name: "bias_score", Label: "Bias Score", InputType: "number", Required: true, Step: true},
+			{Type: "input", Name: "safety_score", Label: "Safety Score", InputType: "number", Required: true, Step: true},
+			{Type: "input", Name: "transparency_score", Label: "Transparency Score", InputType: "number", Required: true, Step: true},
+			{Type: "input", Name: "overall_score", Label: "Overall Score", InputType: "number", Required: true, Step: true},
 		}
 		renderer.Render(w, "form", "SubmitAssessment", FormData{
 			CommandName: "SubmitAssessment",
@@ -2253,12 +2253,7 @@ func (app *App) Start(port int) error {
 
 	// Config
 	type ConfigAgg struct { Name string; Href string; Count int; Commands string; Ports string }
-	type ConfigData struct {
-		Roles []string; CurrentRole string
-		Adapters []string; CurrentAdapter string
-		EventCount int; BootedAt string
-		Policies []string; Aggregates []ConfigAgg
-	}
+	type ConfigData struct { Roles []string; CurrentRole string; Adapters []string; CurrentAdapter string; EventCount int; BootedAt string; Policies []string; Aggregates []ConfigAgg }
 	currentRole := "admin"
 	mux.HandleFunc("GET /config", func(w http.ResponseWriter, r *http.Request) {
 		aggs := []ConfigAgg{
