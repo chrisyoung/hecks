@@ -664,6 +664,18 @@ Alice's $25k loan high risk? false
 Hypothetical $100k/15% loan high risk? true
 ```
 
+## Governance Example
+
+The `examples/governance/` directory is a complex multi-domain project with 5 bounded contexts and 930 lines of DSL. It exercises every Hecks concept:
+
+- **Compliance** — governance policies, compliance reviews, exemptions, evidence collection
+- **Model Registry** — AI model registration, versioning, deployment lifecycle
+- **Operations** — incidents, runbooks, escalations, on-call scheduling
+- **Identity** — users, roles, permissions, authentication
+- **Risk Assessment** — risk scoring, mitigations, audit trails
+
+Cross-domain reactive policies wire the contexts together. Use it as a stress test for generators and static output.
+
 ## How Hecks Compares
 
 ### Hecks vs. ActiveRecord
