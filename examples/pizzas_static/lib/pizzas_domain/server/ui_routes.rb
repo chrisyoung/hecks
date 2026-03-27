@@ -189,7 +189,7 @@ module PizzasDomain
           next unless req.request_method == "GET"
           cfg = PizzasDomain.config || {}
           rows = "<tr><td><a href='/pizzas'>Pizza</a></td>" + "<td>" + Pizza.count.to_s + "</td>" + "<td class='mono'>CreatePizza, AddTopping</td>" + "<td class='mono'>admin: find, all, create_pizza, add_topping | customer: find, all</td></tr>" + "<tr><td><a href='/orders'>Order</a></td>" + "<td>" + Order.count.to_s + "</td>" + "<td class='mono'>PlaceOrder, CancelOrder</td>" + "<td class='mono'>admin: find, all, place_order, cancel_order | customer: find, all, place_order</td></tr>"
-          adapters = %w[memory sqlite].map { |a|
+          adapters = %w[memory filesystem sqlite].map { |a|
             selected = cfg[:adapter].to_s == a ? " selected" : ""
             "<option value='" + a + "'" + selected + ">" + a + "</option>"
           }.join

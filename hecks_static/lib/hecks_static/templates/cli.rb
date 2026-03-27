@@ -6,7 +6,7 @@ if ENV["BUNDLE_GEMFILE"] && !ENV["HECKS_STATIC"]
   exec(clean_env, RbConfig.ruby, $0, *ARGV)
 end
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
-require "pizzas_domain"
+require "__GEM__"
 
 command = ARGV.shift
 
@@ -14,12 +14,12 @@ case command
 when "serve", "ui"
   port = ARGV.find { |a| a =~ /^\d+$/ }&.to_i || 9292
   adapter = ARGV.find { |a| a =~ /^--adapter=/ }&.then { |a| a.split("=").last&.to_sym } || :memory
-  PizzasDomain.reboot(adapter: adapter) if adapter != :memory
-  puts "PizzasDomain on http://localhost:#{port} (adapter: #{adapter})"
-  PizzasDomain.serve(port: port)
+  __MOD__.reboot(adapter: adapter) if adapter != :memory
+  puts "__MOD__ on http://localhost:#{port} (adapter: #{adapter})"
+  __MOD__.serve(port: port)
 when "console"
   require "irb"
-  puts "PizzasDomain console (memory adapter)"
+  puts "__MOD__ console (memory adapter)"
   IRB.start
 when "generate"
   ENV["HECKS_SKIP_BOOT"] = "1"
@@ -35,20 +35,20 @@ when "generate"
   HecksStatic::GemGenerator.new(domain, output_dir: File.dirname(project_root)).generate
   puts "Regenerated domain from hecks_domain.rb"
 when "info"
-  puts "PizzasDomain"
-  puts "  Adapter: #{PizzasDomain.config[:adapter]}"
-  puts "  Events:  #{PizzasDomain.events.size}"
-  PizzasDomain.domain_info.each do |name, info|
+  puts "__MOD__"
+  puts "  Adapter: #{__MOD__.config[:adapter]}"
+  puts "  Events:  #{__MOD__.events.size}"
+  __MOD__.domain_info.each do |name, info|
     puts "  #{name}: #{info[:count]} records, #{info[:commands].size} commands"
     info[:ports].each { |role, methods| puts "    #{role}: #{methods.join(', ')}" }
   end
 else
-  puts "pizzas — PizzasDomain static domain"
+  puts "__CMD__ — __MOD__ static domain"
   puts ""
   puts "Commands:"
-  puts "  pizzas serve [PORT] [--adapter=memory|filesystem]   Start HTTP server with UI"
-  puts "  pizzas ui [PORT]                                     Alias for serve"
-  puts "  pizzas console                                       IRB with domain loaded"
-  puts "  pizzas generate                                      Regenerate domain from hecks_domain.rb"
-  puts "  pizzas info                                          Show domain config"
+  puts "  __CMD__ serve [PORT] [--adapter=memory|filesystem]   Start HTTP server with UI"
+  puts "  __CMD__ ui [PORT]                                     Alias for serve"
+  puts "  __CMD__ console                                       IRB with domain loaded"
+  puts "  __CMD__ generate                                      Regenerate domain from hecks_domain.rb"
+  puts "  __CMD__ info                                          Show domain config"
 end
