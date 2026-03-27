@@ -18,10 +18,20 @@ module PizzasDomain
       require_relative "lib/pizzas_domain/validations"
       Validations.rules = VALIDATIONS
 
-      Pizza.repository = Adapters::PizzaMemoryRepository.new
+      Pizza.repository = case adapter
+        when :filesystem
+          require_relative "lib/pizzas_domain/adapters/filesystem_repository"
+          Adapters::FilesystemRepository.new("Pizza", Pizza)
+        else Adapters::PizzaMemoryRepository.new
+        end
       Pizza.event_bus = @event_bus
       Pizza.command_bus = @command_bus
-      Order.repository = Adapters::OrderMemoryRepository.new
+      Order.repository = case adapter
+        when :filesystem
+          require_relative "lib/pizzas_domain/adapters/filesystem_repository"
+          Adapters::FilesystemRepository.new("Order", Order)
+        else Adapters::OrderMemoryRepository.new
+        end
       Order.event_bus = @event_bus
       Order.command_bus = @command_bus
 

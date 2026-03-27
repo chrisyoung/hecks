@@ -134,7 +134,12 @@ module HecksStandalone
       lines << ""
       @domain.aggregates.each do |agg|
         safe = Hecks::Utils.sanitize_constant(agg.name)
-        lines << "      #{safe}.repository = Adapters::#{safe}MemoryRepository.new"
+        lines << "      #{safe}.repository = case adapter"
+        lines << "        when :filesystem"
+        lines << "          require_relative \"lib/#{@gem_name}/adapters/filesystem_repository\""
+        lines << "          Adapters::FilesystemRepository.new(\"#{safe}\", #{safe})"
+        lines << "        else Adapters::#{safe}MemoryRepository.new"
+        lines << "        end"
         lines << "      #{safe}.event_bus = @event_bus"
         lines << "      #{safe}.command_bus = @command_bus"
       end
