@@ -61,29 +61,29 @@ func (app *App) Start(port int) error {
 	if _, err := os.Stat(viewsDir); err != nil { viewsDir = "views" }
 	nav := []NavItem{
 		{Label: "Home", Href: "/"},
-		{Label: "GovernancePolicys", Href: "/governance_policys"},
-		{Label: "RegulatoryFrameworks", Href: "/regulatory_frameworks"},
-		{Label: "ComplianceReviews", Href: "/compliance_reviews"},
-		{Label: "Exemptions", Href: "/exemptions"},
-		{Label: "TrainingRecords", Href: "/training_records"},
-		{Label: "Stakeholders", Href: "/stakeholders"},
-		{Label: "AuditLogs", Href: "/audit_logs"},
-		{Label: "AiModels", Href: "/ai_models"},
-		{Label: "Vendors", Href: "/vendors"},
-		{Label: "DataUsageAgreements", Href: "/data_usage_agreements"},
-		{Label: "Deployments", Href: "/deployments"},
-		{Label: "Incidents", Href: "/incidents"},
-		{Label: "Monitorings", Href: "/monitorings"},
-		{Label: "Assessments", Href: "/assessments"},
-		{Label: "Config", Href: "/config"},
+		{Label: "GovernancePolicys", Href: "/governance_policys", Group: "Compliance"},
+		{Label: "RegulatoryFrameworks", Href: "/regulatory_frameworks", Group: "Compliance"},
+		{Label: "ComplianceReviews", Href: "/compliance_reviews", Group: "Compliance"},
+		{Label: "Exemptions", Href: "/exemptions", Group: "Compliance"},
+		{Label: "TrainingRecords", Href: "/training_records", Group: "Compliance"},
+		{Label: "Stakeholders", Href: "/stakeholders", Group: "Identity"},
+		{Label: "AuditLogs", Href: "/audit_logs", Group: "Identity"},
+		{Label: "AiModels", Href: "/ai_models", Group: "ModelRegistry"},
+		{Label: "Vendors", Href: "/vendors", Group: "ModelRegistry"},
+		{Label: "DataUsageAgreements", Href: "/data_usage_agreements", Group: "ModelRegistry"},
+		{Label: "Deployments", Href: "/deployments", Group: "Operations"},
+		{Label: "Incidents", Href: "/incidents", Group: "Operations"},
+		{Label: "Monitorings", Href: "/monitorings", Group: "Operations"},
+		{Label: "Assessments", Href: "/assessments", Group: "RiskAssessment"},
+		{Label: "Config", Href: "/config", Group: "System"},
 	}
 	renderer := NewRenderer(viewsDir, "GovernanceDomain", nav)
 
-	type HomeAgg struct { Name string; Href string; Commands int; Attributes int }
+	type HomeAgg struct { Name string; Href string; Commands int; Attributes int; Policies int }
 	type HomeData struct { DomainName string; Aggregates []HomeAgg }
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		renderer.Render(w, "home", "GovernanceDomain", HomeData{
-			DomainName: "GovernanceDomain", Aggregates: []HomeAgg{{Name: "GovernancePolicys", Href: "/governance_policys", Commands: 5, Attributes: 8}, {Name: "RegulatoryFrameworks", Href: "/regulatory_frameworks", Commands: 3, Attributes: 7}, {Name: "ComplianceReviews", Href: "/compliance_reviews", Commands: 4, Attributes: 8}, {Name: "Exemptions", Href: "/exemptions", Commands: 3, Attributes: 8}, {Name: "TrainingRecords", Href: "/training_records", Commands: 3, Attributes: 6}, {Name: "Stakeholders", Href: "/stakeholders", Commands: 3, Attributes: 5}, {Name: "AuditLogs", Href: "/audit_logs", Commands: 1, Attributes: 6}, {Name: "AiModels", Href: "/ai_models", Commands: 6, Attributes: 11}, {Name: "Vendors", Href: "/vendors", Commands: 3, Attributes: 7}, {Name: "DataUsageAgreements", Href: "/data_usage_agreements", Commands: 4, Attributes: 8}, {Name: "Deployments", Href: "/deployments", Commands: 3, Attributes: 8}, {Name: "Incidents", Href: "/incidents", Commands: 5, Attributes: 10}, {Name: "Monitorings", Href: "/monitorings", Commands: 2, Attributes: 6}, {Name: "Assessments", Href: "/assessments", Commands: 4, Attributes: 11}},
+			DomainName: "GovernanceDomain", Aggregates: []HomeAgg{{Name: "GovernancePolicys", Href: "/governance_policys", Commands: 5, Attributes: 8, Policies: 0}, {Name: "RegulatoryFrameworks", Href: "/regulatory_frameworks", Commands: 3, Attributes: 7, Policies: 0}, {Name: "ComplianceReviews", Href: "/compliance_reviews", Commands: 4, Attributes: 8, Policies: 0}, {Name: "Exemptions", Href: "/exemptions", Commands: 3, Attributes: 8, Policies: 0}, {Name: "TrainingRecords", Href: "/training_records", Commands: 3, Attributes: 6, Policies: 0}, {Name: "Stakeholders", Href: "/stakeholders", Commands: 3, Attributes: 5, Policies: 0}, {Name: "AuditLogs", Href: "/audit_logs", Commands: 1, Attributes: 6, Policies: 3}, {Name: "AiModels", Href: "/ai_models", Commands: 6, Attributes: 11, Policies: 3}, {Name: "Vendors", Href: "/vendors", Commands: 3, Attributes: 7, Policies: 0}, {Name: "DataUsageAgreements", Href: "/data_usage_agreements", Commands: 4, Attributes: 8, Policies: 0}, {Name: "Deployments", Href: "/deployments", Commands: 3, Attributes: 8, Policies: 0}, {Name: "Incidents", Href: "/incidents", Commands: 5, Attributes: 10, Policies: 0}, {Name: "Monitorings", Href: "/monitorings", Commands: 2, Attributes: 6, Policies: 0}, {Name: "Assessments", Href: "/assessments", Commands: 4, Attributes: 11, Policies: 0}},
 		})
 	})
 

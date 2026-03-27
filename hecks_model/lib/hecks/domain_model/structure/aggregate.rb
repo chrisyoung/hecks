@@ -94,7 +94,8 @@ module Hecks
       def initialize(name:, attributes: [], value_objects: [], entities: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
                      scopes: [], ports: {}, queries: [], subscribers: [], indexes: [],
-                     specifications: [], lifecycle: nil, versioned: false, attachable: false)
+                     specifications: [], lifecycle: nil, versioned: false, attachable: false,
+                     description: nil, origin_domain: nil)
         @name = name
         @attributes = attributes
         @value_objects = value_objects
@@ -113,7 +114,11 @@ module Hecks
         @lifecycle = lifecycle
         @versioned = versioned
         @attachable = attachable
+        @description = description
+        @origin_domain = origin_domain
       end
+
+      attr_reader :description, :origin_domain
 
       # Returns true if this aggregate tracks version history.
       # Versioned aggregates maintain a history of changes and can be

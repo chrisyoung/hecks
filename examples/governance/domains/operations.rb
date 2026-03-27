@@ -2,6 +2,7 @@ require "date"
 
 Hecks.domain "Operations" do
   Deployment do
+    description "AI model deployments across environments"
     model_id String
     environment String, enum: %w[development staging production]
     endpoint String
@@ -56,6 +57,7 @@ Hecks.domain "Operations" do
   end
 
   Incident do
+    description "AI-related incidents including bias, safety, and performance issues"
     model_id String
     severity String, enum: %w[low medium high critical]
     category String, enum: %w[bias safety privacy performance other]
@@ -124,6 +126,7 @@ Hecks.domain "Operations" do
   end
 
   Monitoring do
+    description "Performance and safety metrics for deployed models"
     model_id String
     deployment_id String
     metric_name String
