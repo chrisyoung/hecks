@@ -37,15 +37,23 @@ module HecksGo
         # Check if the event type exists in this domain
         event_exists = @domain && @domain.aggregates.any? { |a| a.events.any? { |e| e.name == @policy.event_name } }
 
+        # Look up trigger command to validate attribute mappings
+        trigger_cmd = @domain&.aggregates&.flat_map(&:commands)&.find { |c| c.name == trigger }
+        trigger_attrs = trigger_cmd ? trigger_cmd.attributes.map { |a| a.name.to_s } : []
+        has_valid_map = @policy.respond_to?(:attribute_map) && @policy.attribute_map && !@policy.attribute_map.empty? &&
+          @policy.attribute_map.any? { |to, _| trigger_attrs.include?(to.to_s) }
+
         if trigger_agg && event_exists
           lines << "func (p #{@policy.name}) Execute(event interface{}, #{GoUtils.camel_case(trigger_agg)}Repo #{trigger_agg}Repository) error {"
-          lines << "\te, ok := event.(*#{@policy.event_name})"
-          lines << "\tif !ok { return nil }"
+          if has_valid_map
+            lines << "\te, ok := event.(*#{@policy.event_name})"
+            lines << "\tif !ok { return nil }"
+          end
 
-          # Build command with attribute mapping
-          if @policy.respond_to?(:attribute_map) && @policy.attribute_map && !@policy.attribute_map.empty?
+          if has_valid_map
+            valid_mappings = @policy.attribute_map.select { |to, _| trigger_attrs.include?(to.to_s) }
             lines << "\tcmd := #{trigger}{"
-            @policy.attribute_map.each do |to_attr, from_attr|
+            valid_mappings.each do |to_attr, from_attr|
               lines << "\t\t#{GoUtils.pascal_case(to_attr)}: e.#{GoUtils.pascal_case(from_attr)},"
             end
             lines << "\t}"
