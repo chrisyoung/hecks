@@ -10,6 +10,7 @@ import (
 type NavItem struct {
 	Label string
 	Href  string
+	Group string
 }
 
 type PageData struct {

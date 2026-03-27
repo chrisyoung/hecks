@@ -14,7 +14,7 @@ module PizzasDomain
         server.mount_proc "/" do |req, res|
           next unless req.path == "/"
           html = renderer.render(:home, title: "PizzasDomain", brand: brand, nav_items: nav,
-            domain_name: "PizzasDomain", aggregates: [{ name: "Pizzas", href: "/pizzas", commands: 2, attributes: 3 }, { name: "Orders", href: "/orders", commands: 2, attributes: 3 }])
+            domain_name: "PizzasDomain", aggregates: [{ name: "Pizzas", href: "/pizzas", commands: 2, attributes: 3, policies: 0 }, { name: "Orders", href: "/orders", commands: 2, attributes: 3, policies: 0 }])
           res["Content-Type"] = "text/html"; res.body = html
         end
 

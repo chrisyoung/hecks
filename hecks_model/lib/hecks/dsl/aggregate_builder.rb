@@ -78,6 +78,22 @@ module Hecks
         @lifecycle = nil
         @versioned = false
         @attachable = false
+        @description = nil
+      end
+
+      def description(text_or_type = nil, **kwargs)
+        if text_or_type.is_a?(Class)
+          # It's an attribute: description String
+          attribute(:description, text_or_type, **kwargs)
+        elsif text_or_type.is_a?(String) && text_or_type.length > 1 && text_or_type.include?(" ")
+          # It's a description sentence: description "AI models..."
+          @description = text_or_type
+        elsif text_or_type.is_a?(String)
+          # Single word starting with uppercase = type, otherwise description
+          text_or_type =~ /\A[A-Z][a-z]*\z/ ? attribute(:description, text_or_type, **kwargs) : @description = text_or_type
+        else
+          @description
+        end
       end
 
       # Mark this aggregate as versioned for optimistic concurrency control.
@@ -350,7 +366,8 @@ module Hecks
           specifications: @specifications,
           lifecycle: @lifecycle,
           versioned: @versioned,
-          attachable: @attachable
+          attachable: @attachable,
+          description: @description
         )
       end
 
