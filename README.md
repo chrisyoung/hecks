@@ -521,6 +521,37 @@ end
 | `hecks llms` | Generate AI-readable domain summary (llms.txt) |
 | `hecks version` | Framework or domain gem version |
 | `hecks claude` | Start file watchers and launch Claude Code (see below) |
+| `hecks build --static` | Generate a self-contained project with zero hecks dependency |
+| `hecks serve --static` | Build and serve with the built-in UI |
+
+## Static Generation
+
+Generate a complete, self-contained Ruby project from your domain definition. The output has **zero runtime dependency on hecks** — it includes its own runtime, HTTP server, UI, and CLI.
+
+```bash
+$ hecks build --static
+Built pizzas_domain v2026.03.26.1 (static)
+  Output: examples/pizzas_static/
+
+$ cd examples/pizzas_static
+$ bin/pizzas serve
+PizzasDomain on http://localhost:9292 (adapter: memory)
+```
+
+The generated project includes:
+- **HTTP server** with JSON API and HTML UI (WEBrick, no external framework)
+- **Port-based access control** — roles enforced at the domain level
+- **Client-side validation** from domain rules (fetched as JSON, checked before submit)
+- **Filesystem persistence** — JSON files on disk, survives restarts
+- **Live reload** — edit domain files, server picks up changes
+- **Config page** — switch roles and adapters at runtime
+- **CLI** — `serve`, `console`, `generate`, `info`
+
+Two files at the project root:
+- `hecks_domain.rb` — the domain DSL (regeneratable)
+- `boot.rb` — wiring and config (stable, not overwritten on regenerate)
+
+Edit the DSL, run `bin/pizzas generate`, and the running server picks up changes via live reload.
 
 ## AI-Native
 

@@ -14,6 +14,7 @@ Hecks.domain "Pizzas" do
     end
 
     validation :name, presence: true
+    validation :description, presence: true
 
     command "CreatePizza" do
       attribute :name, String
@@ -26,38 +27,59 @@ Hecks.domain "Pizzas" do
 
     command "AddTopping" do
       attribute :pizza_id, reference_to("Pizza")
-      attribute :topping, String
+      attribute :name, String
+      attribute :amount, Integer
+    end
+
+    port :admin do
+      allow :find, :all, :create_pizza, :add_topping
+    end
+
+    port :customer do
+      allow :find, :all
     end
   end
 
   aggregate "Order" do
-    attribute :pizza_id, reference_to("Pizza")
-    attribute :quantity, Integer
-    attribute :status, String
+    attribute :customer_name, String
+    attribute :items, list_of("OrderItem")
+    attribute :status, String, default: "pending"
 
-    validation :quantity, presence: true
+    value_object "OrderItem" do
+      attribute :pizza_id, String
+      attribute :quantity, Integer
+
+      invariant "quantity must be positive" do
+        quantity > 0
+      end
+    end
+
+    validation :customer_name, presence: true
 
     command "PlaceOrder" do
-      attribute :pizza_id, reference_to("Pizza")
+      attribute :customer_name, String
+      attribute :pizza_id, String
       attribute :quantity, Integer
     end
 
     command "CancelOrder" do
-      attribute :pizza_id, reference_to("Pizza")
+      attribute :order_id, reference_to("Order")
     end
 
-    command "ReserveStock" do
-      attribute :pizza_id, reference_to("Pizza")
-      attribute :quantity, Integer
+    lifecycle :status, default: "pending" do
+      transition "CancelOrder" => "cancelled"
     end
 
     query "Pending" do
       where(status: "pending")
     end
 
-    policy "ReserveIngredients" do
-      on "PlacedOrder"
-      trigger "ReserveStock"
+    port :admin do
+      allow :find, :all, :place_order, :cancel_order
+    end
+
+    port :customer do
+      allow :find, :all, :place_order
     end
   end
 end

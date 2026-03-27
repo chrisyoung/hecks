@@ -29,10 +29,11 @@ module Hecks
       # @param specification [Object] the specification model object; provides +name+ and +block+
       # @param domain_module [String] the Ruby module name to wrap the generated class in
       # @param aggregate_name [String] the name of the parent aggregate class
-      def initialize(specification, domain_module:, aggregate_name:)
+      def initialize(specification, domain_module:, aggregate_name:, mixin_prefix: "Hecks")
         @specification = specification
         @domain_module = domain_module
         @aggregate_name = aggregate_name
+        @mixin_prefix = mixin_prefix
       end
 
       # Generates the full Ruby source code for the specification class.
