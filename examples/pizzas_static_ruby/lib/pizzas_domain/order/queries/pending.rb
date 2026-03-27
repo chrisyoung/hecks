@@ -3,7 +3,7 @@ module PizzasDomain
     module Queries
       class Pending
         def call
-          true
+          where(status: "pending")
         end
       end
     end

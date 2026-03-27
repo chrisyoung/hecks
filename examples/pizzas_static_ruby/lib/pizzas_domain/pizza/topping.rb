@@ -24,7 +24,7 @@ module PizzasDomain
       private
 
       def check_invariants!
-        raise InvariantError, "amount must be positive" unless instance_eval(&proc { true })
+        raise InvariantError, "amount must be positive" unless instance_eval(&proc { amount > 0 })
       end
     end
   end
