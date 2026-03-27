@@ -91,6 +91,9 @@ module Hecks
         { reference: type }
       end
 
+      # Alias for reference_to, used in the implicit DSL.
+      def ref(type) = reference_to(type)
+
       private
 
       # Resolve a type argument to its canonical form.
