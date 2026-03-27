@@ -98,6 +98,15 @@ module HecksGo
     def generate_server
       gen = ServerGenerator.new(@domain, module_path: @module_path)
       write("server/server.go", gen.generate)
+
+      # Renderer
+      write("server/renderer.go", RendererGenerator.new.generate)
+
+      # Copy Go template views
+      views_dir = File.expand_path("../templates/views", __dir__)
+      Dir.glob(File.join(views_dir, "*.html")).each do |html|
+        write("views/#{File.basename(html)}", File.read(html))
+      end
     end
 
     def generate_main
