@@ -27,6 +27,7 @@ module HecksGo
       lines << "\t\"path/filepath\""
       lines << "\t\"#{@module_path}/domain\""
       lines << "\t\"#{@module_path}/adapters/memory\""
+      lines << "\t\"#{@module_path}/runtime\""
       lines << ")"
       lines << ""
       lines.concat(app_struct)
@@ -41,11 +42,16 @@ module HecksGo
       lines = []
       lines << "type App struct {"
       @domain.aggregates.each { |agg| lines << "\t#{agg.name}Repo domain.#{agg.name}Repository" }
+      lines << "\tEventBus *runtime.EventBus"
+      lines << "\tCommandBus *runtime.CommandBus"
       lines << "}"
       lines << ""
       lines << "func NewApp() *App {"
+      lines << "\teventBus := runtime.NewEventBus()"
       lines << "\treturn &App{"
       @domain.aggregates.each { |agg| lines << "\t\t#{agg.name}Repo: memory.New#{agg.name}MemoryRepository()," }
+      lines << "\t\tEventBus: eventBus,"
+      lines << "\t\tCommandBus: runtime.NewCommandBus(eventBus),"
       lines << "\t}"
       lines << "}"
       lines << ""
@@ -161,7 +167,8 @@ module HecksGo
             end
           end
           lines << "\t\t}"
-          lines << "\t\tagg, _, err := cmd.Execute(app.#{safe}Repo)"
+          lines << "\t\tagg, event, err := cmd.Execute(app.#{safe}Repo)"
+          lines << "\t\tif event != nil { app.EventBus.Publish(event) }"
           lines << "\t\tif err != nil {"
           lines << "\t\t\tif r.Header.Get(\"Content-Type\")==\"application/json\" { jsonError(w, err); return }"
           lines << "\t\t\thttp.Error(w, err.Error(), 422); return"

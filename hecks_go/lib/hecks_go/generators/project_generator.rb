@@ -25,6 +25,7 @@ module HecksGo
       FileUtils.mkdir_p(@root)
 
       generate_go_mod
+      generate_runtime
       generate_domain
       generate_adapters
       generate_server
@@ -39,6 +40,12 @@ module HecksGo
       full = File.join(@root, path)
       FileUtils.mkdir_p(File.dirname(full))
       File.write(full, content)
+    end
+
+    def generate_runtime
+      gen = RuntimeGenerator.new
+      write("runtime/eventbus.go", gen.generate_event_bus)
+      write("runtime/commandbus.go", gen.generate_command_bus)
     end
 
     def generate_go_mod
