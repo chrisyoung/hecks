@@ -21,21 +21,21 @@ module __DOMAIN_MODULE__
 
       module ClassMethods
         def attribute(name, default: nil, freeze: false)
-          @hecks_attributes ||= []
-          @hecks_attributes << { name: name.to_sym, default: default, freeze: freeze }
+          @domain_attributes ||= []
+          @domain_attributes << { name: name.to_sym, default: default, freeze: freeze }
           attr_reader name
           attr_writer name
           rebuild_initializer
         end
 
-        def hecks_attributes
-          @hecks_attributes || []
+        def domain_attributes
+          @domain_attributes || []
         end
 
         private
 
         def rebuild_initializer
-          attrs = @hecks_attributes.dup
+          attrs = @domain_attributes.dup
           define_method(:initialize) do |id: nil, **kwargs|
             @id = id || SecureRandom.uuid
             @_pristine = {}

@@ -30,7 +30,7 @@ module HecksStatic
       lines << "end"
       lines << ""
       lines << "require_relative \"../boot\""
-      lines << "#{mod}.boot unless ENV[\"HECKS_SKIP_BOOT\"]"
+      lines << "#{mod}.boot unless ENV[\"DOMAIN_SKIP_BOOT\"]"
       lines.join("\n") + "\n"
     end
 

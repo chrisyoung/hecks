@@ -86,8 +86,8 @@ module PizzasDomain
 
       def serialize(obj)
         h = { "id" => obj.id }
-        if obj.class.respond_to?(:hecks_attributes)
-          obj.class.hecks_attributes.each do |attr|
+        if obj.class.respond_to?(:domain_attributes)
+          obj.class.domain_attributes.each do |attr|
             val = obj.send(attr[:name])
             h[attr[:name].to_s] = serialize_value(val)
           end
@@ -100,9 +100,9 @@ module PizzasDomain
       def serialize_value(val)
         case val
         when Array then val.map { |v| serialize_value(v) }
-        when ->(v) { v.class.respond_to?(:hecks_attributes) }
+        when ->(v) { v.class.respond_to?(:domain_attributes) }
           h = {}
-          val.class.hecks_attributes.each { |a| h[a[:name].to_s] = serialize_value(val.send(a[:name])) }
+          val.class.domain_attributes.each { |a| h[a[:name].to_s] = serialize_value(val.send(a[:name])) }
           h
         else val
         end
@@ -110,8 +110,8 @@ module PizzasDomain
 
       def deserialize(data)
         attrs = {}
-        if @aggregate_class.respond_to?(:hecks_attributes)
-          @aggregate_class.hecks_attributes.each do |attr|
+        if @aggregate_class.respond_to?(:domain_attributes)
+          @aggregate_class.domain_attributes.each do |attr|
             raw = data[attr[:name].to_s]
             attrs[attr[:name]] = raw
           end
