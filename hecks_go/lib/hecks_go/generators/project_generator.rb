@@ -88,6 +88,36 @@ module HecksGo
           gen = EventGenerator.new(evt, aggregate: agg, package: "domain")
           write("domain/#{GoUtils.snake_case(evt.name)}.go", gen.generate)
         end
+
+        # Lifecycle
+        if agg.lifecycle
+          gen = LifecycleGenerator.new(agg.lifecycle, aggregate_name: agg.name, package: "domain")
+          write("domain/#{GoUtils.snake_case(agg.name)}_lifecycle.go", gen.generate)
+        end
+
+        # Queries
+        agg.queries.each do |q|
+          gen = QueryGenerator.new(q, aggregate: agg, package: "domain", module_path: @module_path)
+          write("domain/#{GoUtils.snake_case(q.name)}_query.go", gen.generate)
+        end
+
+        # Specifications
+        agg.specifications.each do |spec|
+          gen = SpecificationGenerator.new(spec, aggregate_name: agg.name, package: "domain")
+          write("domain/#{GoUtils.snake_case(spec.name)}_spec.go", gen.generate)
+        end
+
+        # Aggregate-level policies
+        agg.policies.each do |pol|
+          gen = PolicyGenerator.new(pol, package: "domain")
+          write("domain/#{GoUtils.snake_case(pol.name)}_policy.go", gen.generate)
+        end
+      end
+
+      # Domain-level policies
+      @domain.policies.each do |pol|
+        gen = PolicyGenerator.new(pol, package: "domain")
+        write("domain/#{GoUtils.snake_case(pol.name)}_policy.go", gen.generate)
       end
 
       # Errors
