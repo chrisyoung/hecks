@@ -1,16 +1,16 @@
 require "date"
 
 Hecks.domain "Compliance" do
-  aggregate "GovernancePolicy" do
-    attribute :name, String
-    attribute :description, String
-    attribute :category, String, enum: %w[regulatory internal ethical operational]
-    attribute :framework_id, String
-    attribute :effective_date, Date
-    attribute :review_date, Date
-    attribute :requirements, list_of("Requirement")
+  GovernancePolicy do
+    name String
+    description String
+    category String, enum: %w[regulatory internal ethical operational]
+    framework_id String
+    effective_date Date
+    review_date Date
+    requirements list_of("Requirement")
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "draft" do
       transition "CreatePolicy"   => "draft"
       transition "ActivatePolicy" => "active",    from: "draft"
@@ -18,124 +18,124 @@ Hecks.domain "Compliance" do
       transition "RetirePolicy"   => "retired",   from: ["active", "suspended"]
     end
 
-    value_object "Requirement" do
-      attribute :description, String
-      attribute :priority, String, enum: %w[low medium high critical]
-      attribute :category, String
+    Requirement do
+      description String
+      priority String, enum: %w[low medium high critical]
+      category String
     end
 
     validation :name, presence: true
     validation :category, presence: true
 
-    command "CreatePolicy" do
-      attribute :name, String
-      attribute :description, String
-      attribute :category, String
-      attribute :framework_id, String
+    create_policy do
+      name String
+      description String
+      category String
+      framework_id String
       actor "governance_board"
       actor "admin"
     end
 
-    command "ActivatePolicy" do
-      attribute :policy_id, String
-      attribute :effective_date, Date
+    activate_policy do
+      policy_id String
+      effective_date Date
       actor "governance_board"
       actor "admin"
     end
 
-    command "SuspendPolicy" do
-      attribute :policy_id, String
+    suspend_policy do
+      policy_id String
       actor "governance_board"
       actor "admin"
     end
 
-    command "RetirePolicy" do
-      attribute :policy_id, String
+    retire_policy do
+      policy_id String
       actor "governance_board"
       actor "admin"
     end
 
-    command "UpdateReviewDate" do
-      attribute :policy_id, String
-      attribute :review_date, Date
+    update_review_date do
+      policy_id String
+      review_date Date
       actor "governance_board"
       actor "admin"
     end
 
-    query "ByCategory" do |category|
+    query :by_category do |category|
       where(category: category)
     end
 
-    query "ByFramework" do |framework_id|
+    query :by_framework do |framework_id|
       where(framework_id: framework_id)
     end
 
-    query "Active" do
+    query :active do
       where(status: "active")
     end
   end
 
-  aggregate "RegulatoryFramework" do
-    attribute :name, String
-    attribute :jurisdiction, String
-    attribute :version, String
-    attribute :effective_date, Date
-    attribute :authority, String
-    attribute :requirements, list_of("FrameworkRequirement")
+  RegulatoryFramework do
+    name String
+    jurisdiction String
+    version String
+    effective_date Date
+    authority String
+    requirements list_of("FrameworkRequirement")
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "draft" do
       transition "RegisterFramework" => "draft"
       transition "ActivateFramework" => "active",  from: "draft"
       transition "RetireFramework"   => "retired", from: "active"
     end
 
-    value_object "FrameworkRequirement" do
-      attribute :article, String
-      attribute :section, String
-      attribute :description, String
-      attribute :risk_category, String
+    FrameworkRequirement do
+      article String
+      section String
+      description String
+      risk_category String
     end
 
     validation :name, presence: true
     validation :jurisdiction, presence: true
 
-    command "RegisterFramework" do
-      attribute :name, String
-      attribute :jurisdiction, String
-      attribute :version, String
-      attribute :authority, String
+    register_framework do
+      name String
+      jurisdiction String
+      version String
+      authority String
     end
 
-    command "ActivateFramework" do
-      attribute :framework_id, String
-      attribute :effective_date, Date
+    activate_framework do
+      framework_id String
+      effective_date Date
     end
 
-    command "RetireFramework" do
-      attribute :framework_id, String
+    retire_framework do
+      framework_id String
     end
 
-    query "ByJurisdiction" do |jurisdiction|
+    query :by_jurisdiction do |jurisdiction|
       where(jurisdiction: jurisdiction)
     end
 
-    query "Active" do
+    query :active do
       where(status: "active")
     end
   end
 
-  aggregate "ComplianceReview" do
+  ComplianceReview do
     attachable
-    attribute :model_id, String
-    attribute :policy_id, String
-    attribute :reviewer_id, String
-    attribute :outcome, String, enum: %w[approved rejected]
-    attribute :notes, String
-    attribute :completed_at, DateTime
-    attribute :conditions, list_of("ReviewCondition")
+    model_id String
+    policy_id String
+    reviewer_id String
+    outcome String, enum: %w[approved rejected]
+    notes String
+    completed_at DateTime
+    conditions list_of("ReviewCondition")
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "open" do
       transition "OpenReview"      => "open"
       transition "ApproveReview"   => "approved",          from: ["open", "changes_requested"]
@@ -143,70 +143,70 @@ Hecks.domain "Compliance" do
       transition "RequestChanges"  => "changes_requested", from: "open"
     end
 
-    value_object "ReviewCondition" do
-      attribute :requirement, String
-      attribute :met, String, enum: %w[yes no partial]
-      attribute :evidence, String
+    ReviewCondition do
+      requirement String
+      met String, enum: %w[yes no partial]
+      evidence String
     end
 
     validation :model_id, presence: true
     validation :reviewer_id, presence: true
 
-    command "OpenReview" do
-      attribute :model_id, String
-      attribute :policy_id, String
-      attribute :reviewer_id, String
+    open_review do
+      model_id String
+      policy_id String
+      reviewer_id String
       actor "reviewer"
       actor "admin"
     end
 
-    command "ApproveReview" do
-      attribute :review_id, String
-      attribute :notes, String
+    approve_review do
+      review_id String
+      notes String
       sets outcome: "approved", completed_at: :now
       actor "reviewer"
       actor "admin"
     end
 
-    command "RejectReview" do
-      attribute :review_id, String
-      attribute :notes, String
+    reject_review do
+      review_id String
+      notes String
       sets outcome: "rejected", completed_at: :now
       actor "reviewer"
       actor "admin"
     end
 
-    command "RequestChanges" do
-      attribute :review_id, String
-      attribute :notes, String
+    request_changes do
+      review_id String
+      notes String
       actor "reviewer"
       actor "admin"
     end
 
-    query "ByModel" do |model_id|
+    query :by_model do |model_id|
       where(model_id: model_id)
     end
 
-    query "Pending" do
+    query :pending do
       where(status: "open")
     end
 
-    query "ByReviewer" do |reviewer_id|
+    query :by_reviewer do |reviewer_id|
       where(reviewer_id: reviewer_id)
     end
   end
 
-  aggregate "Exemption" do
-    attribute :model_id, String
-    attribute :policy_id, String
-    attribute :requirement, String
-    attribute :reason, String
-    attribute :approved_by_id, String
-    attribute :approved_at, DateTime
-    attribute :expires_at, Date
-    attribute :scope, String
+  Exemption do
+    model_id String
+    policy_id String
+    requirement String
+    reason String
+    approved_by_id String
+    approved_at DateTime
+    expires_at Date
+    scope String
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "requested" do
       transition "RequestExemption" => "requested"
       transition "ApproveExemption" => "active",  from: "requested"
@@ -216,24 +216,24 @@ Hecks.domain "Compliance" do
     validation :model_id, presence: true
     validation :policy_id, presence: true
 
-    command "RequestExemption" do
-      attribute :model_id, String
-      attribute :policy_id, String
-      attribute :requirement, String
-      attribute :reason, String
+    request_exemption do
+      model_id String
+      policy_id String
+      requirement String
+      reason String
     end
 
-    command "ApproveExemption" do
-      attribute :exemption_id, String
-      attribute :approved_by_id, String
-      attribute :expires_at, Date
+    approve_exemption do
+      exemption_id String
+      approved_by_id String
+      expires_at Date
       sets approved_at: :now
       actor "governance_board"
       actor "admin"
     end
 
-    command "RevokeExemption" do
-      attribute :exemption_id, String
+    revoke_exemption do
+      exemption_id String
       actor "governance_board"
       actor "admin"
     end
@@ -242,23 +242,23 @@ Hecks.domain "Compliance" do
       e.expires_at && e.expires_at.to_s < Date.today.to_s
     end
 
-    query "ByModel" do |model_id|
+    query :by_model do |model_id|
       where(model_id: model_id)
     end
 
-    query "Active" do
+    query :active do
       where(status: "active")
     end
   end
 
-  aggregate "TrainingRecord" do
-    attribute :stakeholder_id, String
-    attribute :policy_id, String
-    attribute :completed_at, DateTime
-    attribute :expires_at, Date
-    attribute :certification_id, String
+  TrainingRecord do
+    stakeholder_id String
+    policy_id String
+    completed_at DateTime
+    expires_at Date
+    certification_id String
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "assigned" do
       transition "AssignTraining"   => "assigned"
       transition "CompleteTraining" => "completed", from: "assigned"
@@ -272,22 +272,22 @@ Hecks.domain "Compliance" do
       !expires_at || !completed_at || expires_at.to_s >= completed_at.to_s[0, 10]
     end
 
-    command "AssignTraining" do
-      attribute :stakeholder_id, String
-      attribute :policy_id, String
+    assign_training do
+      stakeholder_id String
+      policy_id String
     end
 
-    command "CompleteTraining" do
-      attribute :training_record_id, String
-      attribute :certification_id, String
-      attribute :expires_at, Date
+    complete_training do
+      training_record_id String
+      certification_id String
+      expires_at Date
       sets completed_at: :now
     end
 
-    command "RenewTraining" do
-      attribute :training_record_id, String
-      attribute :certification_id, String
-      attribute :expires_at, Date
+    renew_training do
+      training_record_id String
+      certification_id String
+      expires_at Date
       sets completed_at: :now
     end
 
@@ -295,15 +295,15 @@ Hecks.domain "Compliance" do
       t.expires_at && t.expires_at.to_s < Date.today.to_s
     end
 
-    query "ByStakeholder" do |stakeholder_id|
+    query :by_stakeholder do |stakeholder_id|
       where(stakeholder_id: stakeholder_id)
     end
 
-    query "ByPolicy" do |policy_id|
+    query :by_policy do |policy_id|
       where(policy_id: policy_id)
     end
 
-    query "Incomplete" do
+    query :incomplete do
       where(status: "assigned")
     end
   end

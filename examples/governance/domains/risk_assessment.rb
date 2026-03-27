@@ -1,35 +1,35 @@
 require "date"
 
 Hecks.domain "RiskAssessment" do
-  aggregate "Assessment" do
-    attribute :model_id, String
-    attribute :assessor_id, String
-    attribute :risk_level, String, enum: %w[low medium high critical]
-    attribute :bias_score, Float
-    attribute :safety_score, Float
-    attribute :transparency_score, Float
-    attribute :overall_score, Float
-    attribute :submitted_at, DateTime
-    attribute :findings, list_of("Finding")
-    attribute :mitigations, list_of("Mitigation")
+  Assessment do
+    model_id String
+    assessor_id String
+    risk_level String, enum: %w[low medium high critical]
+    bias_score Float
+    safety_score Float
+    transparency_score Float
+    overall_score Float
+    submitted_at DateTime
+    findings list_of("Finding")
+    mitigations list_of("Mitigation")
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "pending" do
       transition "InitiateAssessment" => "pending"
       transition "SubmitAssessment"   => "submitted", from: "pending"
       transition "RejectAssessment"   => "rejected",  from: ["pending", "submitted"]
     end
 
-    value_object "Finding" do
-      attribute :category, String
-      attribute :severity, String, enum: %w[low medium high critical]
-      attribute :description, String
+    Finding do
+      category String
+      severity String, enum: %w[low medium high critical]
+      description String
     end
 
-    value_object "Mitigation" do
-      attribute :finding_category, String
-      attribute :action, String
-      attribute :status, String
+    Mitigation do
+      finding_category String
+      action String
+      status String
     end
 
     validation :model_id, presence: true
@@ -41,36 +41,36 @@ Hecks.domain "RiskAssessment" do
       }
     end
 
-    command "InitiateAssessment" do
-      attribute :model_id, String
-      attribute :assessor_id, String
+    initiate_assessment do
+      model_id String
+      assessor_id String
       actor "assessor"
       actor "admin"
     end
 
-    command "RecordFinding" do
-      attribute :assessment_id, String
-      attribute :category, String
-      attribute :severity, String
-      attribute :description, String
+    record_finding do
+      assessment_id String
+      category String
+      severity String
+      description String
       actor "assessor"
       actor "admin"
     end
 
-    command "SubmitAssessment" do
-      attribute :assessment_id, String
-      attribute :risk_level, String
-      attribute :bias_score, Float
-      attribute :safety_score, Float
-      attribute :transparency_score, Float
-      attribute :overall_score, Float
+    submit_assessment do
+      assessment_id String
+      risk_level String
+      bias_score Float
+      safety_score Float
+      transparency_score Float
+      overall_score Float
       sets submitted_at: :now
       actor "assessor"
       actor "admin"
     end
 
-    command "RejectAssessment" do
-      attribute :assessment_id, String
+    reject_assessment do
+      assessment_id String
       actor "governance_board"
       actor "admin"
     end
@@ -79,11 +79,11 @@ Hecks.domain "RiskAssessment" do
       assessment.findings.any? { |f| f.severity == "critical" }
     end
 
-    query "ByModel" do |model_id|
+    query :by_model do |model_id|
       where(model_id: model_id)
     end
 
-    query "Pending" do
+    query :pending do
       where(status: "pending")
     end
   end

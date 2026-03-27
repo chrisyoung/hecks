@@ -1,20 +1,20 @@
 require "date"
 
 Hecks.domain "ModelRegistry" do
-  aggregate "AiModel" do
+  AiModel do
     versioned
-    attribute :name, String
-    attribute :version, String
-    attribute :provider_id, String
-    attribute :description, String
-    attribute :risk_level, String, enum: %w[low medium high critical]
-    attribute :registered_at, DateTime
-    attribute :parent_model_id, String
-    attribute :derivation_type, String, enum: %w[fine-tuned distilled retrained quantized]
-    attribute :capabilities, list_of("Capability")
-    attribute :intended_uses, list_of("IntendedUse")
+    name String
+    version String
+    provider_id String
+    description String
+    risk_level String, enum: %w[low medium high critical]
+    registered_at DateTime
+    parent_model_id String
+    derivation_type String, enum: %w[fine-tuned distilled retrained quantized]
+    capabilities list_of("Capability")
+    intended_uses list_of("IntendedUse")
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "draft" do
       transition "RegisterModel"  => "draft"
       transition "DeriveModel"    => "draft"
@@ -24,56 +24,56 @@ Hecks.domain "ModelRegistry" do
       transition "RetireModel"    => "retired",    from: ["approved", "suspended"]
     end
 
-    value_object "Capability" do
-      attribute :name, String
-      attribute :category, String
+    Capability do
+      name String
+      category String
     end
 
-    value_object "IntendedUse" do
-      attribute :description, String
-      attribute :domain, String
+    IntendedUse do
+      description String
+      domain String
     end
 
     validation :name, presence: true
     validation :version, presence: true
 
-    command "RegisterModel" do
-      attribute :name, String
-      attribute :version, String
-      attribute :provider_id, String
-      attribute :description, String
+    register_model do
+      name String
+      version String
+      provider_id String
+      description String
       sets registered_at: :now
     end
 
-    command "DeriveModel" do
-      attribute :name, String
-      attribute :version, String
-      attribute :parent_model_id, String
-      attribute :derivation_type, String
-      attribute :description, String
+    derive_model do
+      name String
+      version String
+      parent_model_id String
+      derivation_type String
+      description String
       sets registered_at: :now
     end
 
-    command "ClassifyRisk" do
-      attribute :model_id, String
-      attribute :risk_level, String
+    classify_risk do
+      model_id String
+      risk_level String
       sets risk_level: :risk_level
     end
 
-    command "ApproveModel" do
-      attribute :model_id, String
+    approve_model do
+      model_id String
       actor "governance_board"
       actor "admin"
     end
 
-    command "SuspendModel" do
-      attribute :model_id, String
+    suspend_model do
+      model_id String
       actor "governance_board"
       actor "admin"
     end
 
-    command "RetireModel" do
-      attribute :model_id, String
+    retire_model do
+      model_id String
       actor "governance_board"
       actor "admin"
     end
@@ -82,23 +82,22 @@ Hecks.domain "ModelRegistry" do
       model.risk_level == "high" || model.risk_level == "critical"
     end
 
-    query "ByProvider" do |provider_id|
+    query :by_provider do |provider_id|
       where(provider_id: provider_id)
     end
 
-    query "ByRiskLevel" do |level|
+    query :by_risk_level do |level|
       where(risk_level: level)
     end
 
-    query "ByStatus" do |status|
+    query :by_status do |status|
       where(status: status)
     end
 
-    query "ByParent" do |parent_id|
+    query :by_parent do |parent_id|
       where(parent_model_id: parent_id)
     end
 
-    # React to events from other domains
     policy "ClassifyAfterAssessment" do
       on "SubmittedAssessment"
       trigger "ClassifyRisk"
@@ -119,15 +118,15 @@ Hecks.domain "ModelRegistry" do
     end
   end
 
-  aggregate "Vendor" do
-    attribute :name, String
-    attribute :contact_email, String, pii: true
-    attribute :risk_tier, String, enum: %w[low medium high]
-    attribute :assessment_date, Date
-    attribute :next_review_date, Date
-    attribute :sla_terms, String
+  Vendor do
+    name String
+    contact_email String, pii: true
+    risk_tier String, enum: %w[low medium high]
+    assessment_date Date
+    next_review_date Date
+    sla_terms String
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "pending_review" do
       transition "RegisterVendor" => "pending_review"
       transition "ApproveVendor"  => "approved",  from: "pending_review"
@@ -136,45 +135,45 @@ Hecks.domain "ModelRegistry" do
 
     validation :name, presence: true
 
-    command "RegisterVendor" do
-      attribute :name, String
-      attribute :contact_email, String
-      attribute :risk_tier, String
+    register_vendor do
+      name String
+      contact_email String
+      risk_tier String
     end
 
-    command "ApproveVendor" do
-      attribute :vendor_id, String
-      attribute :assessment_date, Date
-      attribute :next_review_date, Date
+    approve_vendor do
+      vendor_id String
+      assessment_date Date
+      next_review_date Date
       actor "governance_board"
       actor "admin"
     end
 
-    command "SuspendVendor" do
-      attribute :vendor_id, String
+    suspend_vendor do
+      vendor_id String
       actor "governance_board"
       actor "admin"
     end
 
-    query "ByRiskTier" do |tier|
+    query :by_risk_tier do |tier|
       where(risk_tier: tier)
     end
 
-    query "Active" do
+    query :active do
       where(status: "approved")
     end
   end
 
-  aggregate "DataUsageAgreement" do
-    attribute :model_id, String
-    attribute :data_source, String
-    attribute :purpose, String
-    attribute :consent_type, String, enum: %w[public_domain CC-BY-SA licensed consent opt-out]
-    attribute :effective_date, Date
-    attribute :expiration_date, Date
-    attribute :restrictions, list_of("Restriction")
+  DataUsageAgreement do
+    model_id String
+    data_source String
+    purpose String
+    consent_type String, enum: %w[public_domain CC-BY-SA licensed consent opt-out]
+    effective_date Date
+    expiration_date Date
+    restrictions list_of("Restriction")
 
-    attribute :status, String
+    status String
     lifecycle :status, default: "draft" do
       transition "CreateAgreement"   => "draft"
       transition "ActivateAgreement" => "active",  from: "draft"
@@ -182,9 +181,9 @@ Hecks.domain "ModelRegistry" do
       transition "RenewAgreement"    => "active",  from: ["active", "revoked"]
     end
 
-    value_object "Restriction" do
-      attribute :type, String
-      attribute :description, String
+    Restriction do
+      type String
+      description String
     end
 
     validation :data_source, presence: true
@@ -194,32 +193,32 @@ Hecks.domain "ModelRegistry" do
       !expiration_date || !effective_date || expiration_date.to_s >= effective_date.to_s
     end
 
-    command "CreateAgreement" do
-      attribute :model_id, String
-      attribute :data_source, String
-      attribute :purpose, String
-      attribute :consent_type, String
+    create_agreement do
+      model_id String
+      data_source String
+      purpose String
+      consent_type String
       actor "data_steward"
       actor "admin"
     end
 
-    command "ActivateAgreement" do
-      attribute :agreement_id, String
-      attribute :effective_date, Date
-      attribute :expiration_date, Date
+    activate_agreement do
+      agreement_id String
+      effective_date Date
+      expiration_date Date
       actor "data_steward"
       actor "admin"
     end
 
-    command "RevokeAgreement" do
-      attribute :agreement_id, String
+    revoke_agreement do
+      agreement_id String
       actor "data_steward"
       actor "admin"
     end
 
-    command "RenewAgreement" do
-      attribute :agreement_id, String
-      attribute :expiration_date, Date
+    renew_agreement do
+      agreement_id String
+      expiration_date Date
       actor "data_steward"
       actor "admin"
     end
@@ -228,11 +227,11 @@ Hecks.domain "ModelRegistry" do
       agreement.expiration_date && agreement.expiration_date.to_s < Date.today.to_s
     end
 
-    query "ByModel" do |model_id|
+    query :by_model do |model_id|
       where(model_id: model_id)
     end
 
-    query "Active" do
+    query :active do
       where(status: "active")
     end
   end
