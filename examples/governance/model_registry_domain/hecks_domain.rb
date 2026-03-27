@@ -1,0 +1,209 @@
+Hecks.domain "ModelRegistry" do
+  aggregate "AiModel" do
+    attribute :name, String
+    attribute :version, String
+    attribute :provider_id, String
+    attribute :description, String
+    attribute :risk_level, String
+    attribute :registered_at, DateTime
+    attribute :parent_model_id, String
+    attribute :derivation_type, String
+    attribute :capabilities, list_of("Capability")
+    attribute :intended_uses, list_of("IntendedUse")
+    attribute :status, String
+
+    value_object "Capability" do
+      attribute :name, String
+      attribute :category, String
+    end
+
+    value_object "IntendedUse" do
+      attribute :description, String
+      attribute :domain, String
+    end
+
+    validation :name, {:presence=>true}
+
+    validation :version, {:presence=>true}
+
+    query "ByProvider" do
+      where(provider_id: provider_id)
+    end
+
+    query "ByRiskLevel" do
+      where(risk_level: level)
+    end
+
+    query "ByStatus" do
+      where(status: status)
+    end
+
+    query "ByParent" do
+      where(parent_model_id: parent_id)
+    end
+
+    specification "HighRisk" do |model|
+      model.risk_level == "high" || model.risk_level == "critical"
+    end
+
+    command "RegisterModel" do
+      attribute :name, String
+      attribute :version, String
+      attribute :provider_id, String
+      attribute :description, String
+    end
+
+    command "DeriveModel" do
+      attribute :name, String
+      attribute :version, String
+      attribute :parent_model_id, String
+      attribute :derivation_type, String
+      attribute :description, String
+    end
+
+    command "ClassifyRisk" do
+      attribute :model_id, String
+      attribute :risk_level, String
+    end
+
+    command "ApproveModel" do
+      attribute :model_id, String
+      actor "governance_board"
+      actor "admin"
+    end
+
+    command "SuspendModel" do
+      attribute :model_id, String
+      actor "governance_board"
+      actor "admin"
+    end
+
+    command "RetireModel" do
+      attribute :model_id, String
+      actor "governance_board"
+      actor "admin"
+    end
+
+    policy "ClassifyAfterAssessment" do
+      on "SubmittedAssessment"
+      trigger "ClassifyRisk"
+    end
+
+    policy "SuspendOnReject" do
+      on "RejectedReview"
+      trigger "SuspendModel"
+    end
+
+    policy "SuspendOnCriticalIncident" do
+      on "ReportedIncident"
+      trigger "SuspendModel"
+      condition { |event|  }
+    end
+  end
+
+  aggregate "Vendor" do
+    attribute :name, String
+    attribute :contact_email, String
+    attribute :risk_tier, String
+    attribute :assessment_date, Date
+    attribute :next_review_date, Date
+    attribute :sla_terms, String
+    attribute :status, String
+
+    validation :name, {:presence=>true}
+
+    query "ByRiskTier" do
+      where(risk_tier: tier)
+    end
+
+    query "Active" do
+      where(status: "approved")
+    end
+
+    command "RegisterVendor" do
+      attribute :name, String
+      attribute :contact_email, String
+      attribute :risk_tier, String
+    end
+
+    command "ApproveVendor" do
+      attribute :vendor_id, String
+      attribute :assessment_date, Date
+      attribute :next_review_date, Date
+      actor "governance_board"
+      actor "admin"
+    end
+
+    command "SuspendVendor" do
+      attribute :vendor_id, String
+      actor "governance_board"
+      actor "admin"
+    end
+  end
+
+  aggregate "DataUsageAgreement" do
+    attribute :model_id, String
+    attribute :data_source, String
+    attribute :purpose, String
+    attribute :consent_type, String
+    attribute :effective_date, Date
+    attribute :expiration_date, Date
+    attribute :restrictions, list_of("Restriction")
+    attribute :status, String
+
+    value_object "Restriction" do
+      attribute :type, String
+      attribute :description, String
+    end
+
+    validation :data_source, {:presence=>true}
+
+    validation :purpose, {:presence=>true}
+
+    invariant "expiration must be after effective date" do
+      !expiration_date || !effective_date || expiration_date.to_s >= effective_date.to_s
+    end
+
+    query "ByModel" do
+      where(model_id: model_id)
+    end
+
+    query "Active" do
+      where(status: "active")
+    end
+
+    specification "Expired" do |agreement|
+      agreement.expiration_date && agreement.expiration_date.to_s < Date.today.to_s
+    end
+
+    command "CreateAgreement" do
+      attribute :model_id, String
+      attribute :data_source, String
+      attribute :purpose, String
+      attribute :consent_type, String
+      actor "data_steward"
+      actor "admin"
+    end
+
+    command "ActivateAgreement" do
+      attribute :agreement_id, String
+      attribute :effective_date, Date
+      attribute :expiration_date, Date
+      actor "data_steward"
+      actor "admin"
+    end
+
+    command "RevokeAgreement" do
+      attribute :agreement_id, String
+      actor "data_steward"
+      actor "admin"
+    end
+
+    command "RenewAgreement" do
+      attribute :agreement_id, String
+      attribute :expiration_date, Date
+      actor "data_steward"
+      actor "admin"
+    end
+  end
+end
