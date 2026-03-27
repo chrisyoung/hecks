@@ -1,0 +1,79 @@
+# HecksGo::PolicyGenerator
+#
+# Generates Go reactive policy structs. Policies subscribe to events
+# and trigger commands. The event bus wires them at boot.
+#
+module HecksGo
+  class PolicyGenerator
+    include GoUtils
+
+    def initialize(policy, aggregate_name: nil, domain: nil, package:)
+      @policy = policy
+      @agg_name = aggregate_name
+      @domain = domain
+      @package = package
+    end
+
+    def generate
+      lines = []
+      lines << "package #{@package}"
+      lines << ""
+
+      lines << "// #{@policy.name} reacts to #{@policy.event_name}"
+      if @policy.respond_to?(:trigger_command) && @policy.trigger_command
+        lines << "// and triggers #{@policy.trigger_command}"
+      end
+      lines << ""
+
+      lines << "type #{@policy.name} struct {}"
+      lines << ""
+      lines << "func (p #{@policy.name}) EventName() string { return \"#{@policy.event_name}\" }"
+      lines << ""
+
+      if @policy.respond_to?(:trigger_command) && @policy.trigger_command
+        trigger = @policy.trigger_command
+        trigger_agg = find_trigger_aggregate
+        if trigger_agg
+          lines << "func (p #{@policy.name}) Execute(event interface{}, #{GoUtils.camel_case(trigger_agg)}Repo #{trigger_agg}Repository) error {"
+          lines << "\te, ok := event.(*#{@policy.event_name})"
+          lines << "\tif !ok { return nil }"
+
+          # Build command with attribute mapping
+          if @policy.respond_to?(:attribute_map) && @policy.attribute_map && !@policy.attribute_map.empty?
+            lines << "\tcmd := #{trigger}{"
+            @policy.attribute_map.each do |to_attr, from_attr|
+              lines << "\t\t#{GoUtils.pascal_case(to_attr)}: e.#{GoUtils.pascal_case(from_attr)},"
+            end
+            lines << "\t}"
+          else
+            lines << "\tcmd := #{trigger}{}"
+          end
+
+          lines << "\t_, _, err := cmd.Execute(#{GoUtils.camel_case(trigger_agg)}Repo)"
+          lines << "\treturn err"
+          lines << "}"
+        else
+          lines << "func (p #{@policy.name}) Execute(event interface{}) {"
+          lines << "\t// trigger aggregate not found for #{trigger}"
+          lines << "}"
+        end
+      else
+        lines << "func (p #{@policy.name}) Execute(event interface{}) {"
+        lines << "\t// guard policy"
+        lines << "}"
+      end
+
+      lines.join("\n") + "\n"
+    end
+
+    private
+
+    def find_trigger_aggregate
+      return nil unless @domain && @policy.respond_to?(:trigger_command)
+      @domain.aggregates.each do |agg|
+        return agg.name if agg.commands.any? { |c| c.name == @policy.trigger_command }
+      end
+      nil
+    end
+  end
+end
