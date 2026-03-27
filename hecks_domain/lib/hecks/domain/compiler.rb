@@ -100,7 +100,7 @@ module Hecks
     # @param output_dir [String] parent directory for the generated gem (default ".")
     # @return [String] absolute path to the generated standalone gem root
     # @raise [Hecks::ValidationError] if domain validation fails
-    def build_static(domain, version: "0.1.0", output_dir: ".")
+    def build_static(domain, version: "0.1.0", output_dir: ".", smoke_test: true)
       valid, errors = validate(domain)
       unless valid
         raise Hecks::ValidationError, "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
@@ -108,7 +108,9 @@ module Hecks
 
       require "hecks_static"
       generator = HecksStatic::GemGenerator.new(domain, version: version, output_dir: output_dir)
-      generator.generate
+      root = generator.generate
+      run_ruby_smoke_test(root, domain) if smoke_test
+      root
     end
 
     # Build a Go project from the domain IR. Same DSL, Go output.
@@ -130,6 +132,27 @@ module Hecks
     end
 
     private
+
+    # Start, smoke-test, and stop a static Ruby server.
+    def run_ruby_smoke_test(root, domain)
+      require "hecks_templating"
+      name = Hecks::Utils.underscore(domain.name)
+      bin = File.join(root, "bin", name)
+      return unless File.exist?(bin)
+
+      port = rand(10_000..60_000)
+      pid = spawn(RbConfig.ruby, bin, "serve", port.to_s,
+                  out: "/dev/null", err: "/dev/null")
+      sleep 2
+
+      smoke = HecksTemplating::SmokeTest.new("http://localhost:#{port}", domain)
+      results = smoke.run
+      failed = results.count { |r| r.status == :fail }
+      raise "Smoke test: #{failed} failures" if failed > 0
+    ensure
+      Process.kill("TERM", pid) rescue nil if pid
+      Process.wait(pid) rescue nil if pid
+    end
 
     # Build, start, smoke-test, and stop a Go server.
     def run_smoke_test(root, domain)

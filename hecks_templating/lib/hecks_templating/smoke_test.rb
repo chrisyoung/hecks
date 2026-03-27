@@ -37,7 +37,13 @@ module HecksTemplating
         create_cmds.each do |cmd|
           cmd_snake = underscore(cmd.name)
           results << check_get("/#{plural}/#{cmd_snake}/new", "#{cmd.name} form")
-          results << check_post("/#{plural}/#{cmd_snake}", build_form_data(cmd), "#{cmd.name} submit")
+          # Go uses /aggregate/command, Ruby static uses /aggregate/command/submit
+          post_path = "/#{plural}/#{cmd_snake}"
+          result = check_post(post_path, build_form_data(cmd), "#{cmd.name} submit")
+          if result.http_code == 404
+            result = check_post("#{post_path}/submit", build_form_data(cmd), "#{cmd.name} submit")
+          end
+          results << result
         end
 
         id = fetch_first_id(plural)
@@ -108,9 +114,19 @@ module HecksTemplating
 
     def check_post(path, data, label)
       uri = URI("#{@base}#{path}")
-      res = Net::HTTP.post_form(uri, data)
+      # Try JSON (Ruby static server), fall back to form-urlencoded (Go server)
+      req = Net::HTTP::Post.new(uri)
+      req["Content-Type"] = "application/json"
+      req.body = JSON.generate(data)
+      res = Net::HTTP.start(uri.host, uri.port) { |http| http.request(req) }
       code = res.code.to_i
-      if code == 303 || code == 302 || (200..299).include?(code)
+      # If JSON rejected, try form-urlencoded
+      if code >= 400
+        res = Net::HTTP.post_form(uri, data)
+        code = res.code.to_i
+      end
+      # 2xx = success, 3xx = redirect, 422 = validation error (expected for sample data)
+      if (200..399).include?(code) || code == 422
         Result.new(status: :pass, method: "POST", path: path, http_code: code)
       else
         Result.new(status: :fail, method: "POST", path: path, http_code: code, error: res.body&.slice(0, 200))
