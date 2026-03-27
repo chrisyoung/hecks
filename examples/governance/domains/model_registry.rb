@@ -1,8 +1,7 @@
 require "date"
 
 Hecks.domain "ModelRegistry" do
-  AiModel do
-    description "AI models registered for governance oversight"
+  AiModel "AI models registered for governance oversight" do
     versioned
     name String
     version String
@@ -119,8 +118,7 @@ Hecks.domain "ModelRegistry" do
     end
   end
 
-  Vendor do
-    description "Third-party AI model providers and their risk assessments"
+  Vendor "Third-party AI model providers and their risk assessments" do
     name String
     contact_email String, pii: true
     risk_tier String, enum: %w[low medium high]
@@ -166,8 +164,7 @@ Hecks.domain "ModelRegistry" do
     end
   end
 
-  DataUsageAgreement do
-    description "Agreements governing data usage for model training and inference"
+  DataUsageAgreement "Agreements governing data usage for model training and inference" do
     model_id String
     data_source String
     purpose String

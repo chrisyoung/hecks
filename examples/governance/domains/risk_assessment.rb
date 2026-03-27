@@ -1,8 +1,7 @@
 require "date"
 
 Hecks.domain "RiskAssessment" do
-  Assessment do
-    description "Risk assessments evaluating AI model safety, bias, and transparency"
+  Assessment "Risk assessments evaluating AI model safety, bias, and transparency" do
     model_id String
     assessor_id String
     risk_level String, enum: %w[low medium high critical]
