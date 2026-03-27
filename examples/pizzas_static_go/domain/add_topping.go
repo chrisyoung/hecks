@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"time"
+	"fmt"
+)
 
 type AddTopping struct {
 	PizzaId string `json:"pizza_id"`
@@ -19,7 +22,6 @@ func (c AddTopping) Execute(repo PizzaRepository) (*Pizza, *AddedTopping, error)
 		return nil, nil, fmt.Errorf("Pizza not found: %s", c.PizzaId)
 	}
 	existing.Name = c.Name
-	existing.Amount = c.Amount
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

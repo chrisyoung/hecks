@@ -45,9 +45,11 @@ module HecksGo
       write("go.mod", <<~MOD)
         module #{@module_path}
 
-        go 1.21
+        go 1.22
 
-        require github.com/google/uuid v1.6.0
+        require (
+        \tgithub.com/google/uuid v1.6.0
+        )
       MOD
     end
 

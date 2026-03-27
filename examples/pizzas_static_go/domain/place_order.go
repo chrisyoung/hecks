@@ -1,6 +1,8 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 type PlaceOrder struct {
 	CustomerName string `json:"customer_name"`
