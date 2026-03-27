@@ -59,14 +59,42 @@ module HecksGo
 
     def create_body
       agg_attrs = @agg.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
-      args = @cmd.attributes.map { |a| "c.#{GoUtils.pascal_case(a.name)}" }
+      lines = []
+
+      # Check for VO append: command attrs match a value object's attrs
+      vo_appends = {}
+      agg_attrs.each do |a|
+        next unless a.list?
+        vo = @agg.value_objects.find { |v| v.name == a.type.to_s }
+        next unless vo
+        vo_attr_names = vo.attributes.map { |va| va.name.to_s }
+        cmd_attr_names = @cmd.attributes.map { |ca| ca.name.to_s }
+        matching = vo_attr_names & cmd_attr_names
+        if matching.size >= vo_attr_names.size
+          vo_appends[a.name.to_s] = { vo: vo, attrs: matching }
+        end
+      end
+
+      # Build VO items before constructing aggregate
+      vo_appends.each do |attr_name, info|
+        vo = info[:vo]
+        vo_args = info[:attrs].map { |n| "c.#{GoUtils.pascal_case(n)}" }.join(", ")
+        var_name = GoUtils.camel_case(vo.name) + "Item"
+        lines << "\t#{var_name}, err := New#{vo.name}(#{vo_args})"
+        lines << "\tif err != nil { return nil, nil, err }"
+      end
+
       # Map command attrs to constructor params
       constructor_args = agg_attrs.map do |a|
-        cmd_attr = @cmd.attributes.find { |c| c.name == a.name }
-        cmd_attr ? "c.#{GoUtils.pascal_case(a.name)}" : GoUtils.go_zero_value(GoUtils.go_type(a))
+        if vo_appends[a.name.to_s]
+          vo = vo_appends[a.name.to_s][:vo]
+          "[]#{vo.name}{#{GoUtils.camel_case(vo.name)}Item}"
+        else
+          cmd_attr = @cmd.attributes.find { |c| c.name == a.name }
+          cmd_attr ? "c.#{GoUtils.pascal_case(a.name)}" : GoUtils.go_zero_value(GoUtils.go_type(a))
+        end
       end.join(", ")
 
-      lines = []
       lines << "\tagg := New#{@agg.name}(#{constructor_args})"
       lines << "\tif err := agg.Validate(); err != nil {"
       lines << "\t\treturn nil, nil, err"
