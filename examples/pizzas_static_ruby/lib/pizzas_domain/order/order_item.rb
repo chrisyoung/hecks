@@ -24,7 +24,7 @@ module PizzasDomain
       private
 
       def check_invariants!
-        raise InvariantError, "quantity must be positive" unless instance_eval(&proc { true })
+        raise InvariantError, "quantity must be positive" unless instance_eval(&proc { quantity > 0 })
       end
     end
   end

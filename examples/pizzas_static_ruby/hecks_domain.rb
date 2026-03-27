@@ -9,7 +9,7 @@ Hecks.domain "Pizzas" do
       attribute :amount, Integer
 
       invariant "amount must be positive" do
-        true
+        amount > 0
       end
     end
 
@@ -18,7 +18,7 @@ Hecks.domain "Pizzas" do
     validation :description, {:presence=>true}
 
     query "ByDescription" do
-      true
+      where(description: desc)
     end
 
     command "CreatePizza" do
@@ -43,14 +43,14 @@ Hecks.domain "Pizzas" do
       attribute :quantity, Integer
 
       invariant "quantity must be positive" do
-        true
+        quantity > 0
       end
     end
 
     validation :customer_name, {:presence=>true}
 
     query "Pending" do
-      true
+      where(status: "pending")
     end
 
     command "PlaceOrder" do

@@ -3,7 +3,7 @@ module PizzasDomain
     module Queries
       class ByDescription
         def call(desc)
-          true
+          where(description: desc)
         end
       end
     end
