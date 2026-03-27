@@ -93,10 +93,26 @@ class GemGenerator
     server_dir = File.join(root, "lib", gem_name, "server")
     FileUtils.mkdir_p(server_dir)
     template_dir = File.expand_path("../templates", __dir__)
-    %w[server ui].each do |name|
-      source = File.read(File.join(template_dir, "#{name}.rb"))
-      File.write(File.join(server_dir, "#{name}.rb"), source.gsub("__DOMAIN_MODULE__", mod))
+    # Copy server base template
+    source = File.read(File.join(template_dir, "server.rb"))
+    File.write(File.join(server_dir, "server.rb"), source.gsub("__DOMAIN_MODULE__", mod))
+
+    # Copy renderer from runtime web_explorer extension
+    explorer_dir = File.expand_path("../../../../hecks_runtime/lib/hecks/extensions/web_explorer", __dir__)
+    renderer_src = File.read(File.join(explorer_dir, "renderer.rb"))
+    renderer_out = renderer_src
+      .gsub("module Hecks\n  module WebExplorer", "module #{mod}\n  module Server")
+      .gsub("Hecks::WebExplorer", "#{mod}::Server")
+    File.write(File.join(server_dir, "renderer.rb"), renderer_out)
+
+    # Copy ERB views
+    views_dir = File.join(server_dir, "views")
+    FileUtils.mkdir_p(views_dir)
+    Dir.glob(File.join(explorer_dir, "views", "*.erb")).each do |erb|
+      FileUtils.cp(erb, views_dir)
     end
+
+    # Generate route handlers (JSON API + UI routes)
     File.write(File.join(server_dir, "domain_app.rb"), ServerGenerator.new(@domain).generate(mod, gem_name))
     File.write(File.join(server_dir, "ui_routes.rb"), UIGenerator.new(@domain).generate(mod, gem_name))
   end
