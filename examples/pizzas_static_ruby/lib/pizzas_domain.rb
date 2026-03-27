@@ -32,4 +32,4 @@ module PizzasDomain
 end
 
 require_relative "../boot"
-PizzasDomain.boot unless ENV["HECKS_SKIP_BOOT"]
+PizzasDomain.boot unless ENV["DOMAIN_SKIP_BOOT"]

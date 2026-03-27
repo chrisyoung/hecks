@@ -30,7 +30,7 @@ module PizzasDomain
         )
 
         mount_routes(server)
-        start_watcher(server) if ENV["HECKS_LIVE"] != "0"
+        start_watcher(server) if ENV["DOMAIN_LIVE"] != "0"
 
         trap("INT") { server.shutdown }
         trap("TERM") { server.shutdown }
@@ -100,8 +100,8 @@ module PizzasDomain
 
       def aggregate_to_hash(obj)
         h = { id: obj.id }
-        if obj.class.respond_to?(:hecks_attributes)
-          obj.class.hecks_attributes.each do |attr|
+        if obj.class.respond_to?(:domain_attributes)
+          obj.class.domain_attributes.each do |attr|
             val = obj.send(attr[:name])
             h[attr[:name]] = val.is_a?(Array) ? val.map { |v| v.respond_to?(:id) ? aggregate_to_hash(v) : v } : val
           end

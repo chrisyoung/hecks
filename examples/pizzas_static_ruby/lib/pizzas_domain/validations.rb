@@ -2,7 +2,7 @@
 #
 # Server-side parameter validation. Checks command parameters against
 # domain validation rules without touching the domain layer. Rules are
-# extracted from the domain IR at generation time. Based on hecks_validations.
+# extracted from the domain IR at generation time.
 #
 #   error = PizzasDomain::Validations.check("Pizza", "create_pizza", name: "")
 #   # => #<ValidationError "name can't be blank" field=:name rule=:presence>
