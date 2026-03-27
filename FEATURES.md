@@ -335,7 +335,64 @@
 - Aggregates with attributes (name, type, flags), commands, queries, specifications, policies, validations, invariants, value objects, entities
 - Domain-level policies and services included
 
+## Static Domain Generation (hecks_static)
+
+### Zero-Dependency Output
+- `hecks domain build --static` generates a complete Ruby project with no hecks runtime dependency
+- Generated project includes inlined runtime (Model, Command, EventBus, QueryBuilder, Specification)
+- `bin/<domain> serve` starts an HTTP server with JSON API and HTML UI
+- `bin/<domain> console` opens IRB with the domain loaded
+- `bin/<domain> generate` regenerates domain code from `hecks_domain.rb`
+- `bin/<domain> info` shows config, aggregates, ports, policies
+
+### HTTP Server & UI
+- WEBrick-based server with JSON API (one POST per command, GET per aggregate)
+- HTML UI with index tables, show pages, create/update forms
+- OpenAPI endpoint at `/_openapi`, validation rules at `/_validations`
+- Live reload — watches `lib/` for file changes, reloads automatically
+- Config page to switch roles and persistence adapters at runtime
+
+### Port-Based Access Control
+- Ports defined in DSL (`port :admin`, `port :customer`) enforced at domain level
+- `check_port_access` runs in Command lifecycle before guards/preconditions
+- UI buttons faded for unauthorized actions, forms blocked with error message
+- JSON API returns 403 for unauthorized commands
+
+### Validation (hecks_validations extension)
+- Extracts validation rules from domain IR at build time
+- `/_validations` JSON endpoint serves rules to clients
+- Client-side JS validates before submit (presence, positive)
+- Server-side validation check before dispatching to domain
+- Domain-level `ValidationError` with `field:` and `rule:` for inline error display
+- Three layers, one source: client → server → domain
+
+### Persistence Adapters
+- Memory adapter (default) — Hash-backed, zero config, always included
+- Filesystem adapter — JSON files in `data/<aggregate>s/<uuid>.json`, survives restarts
+- Switchable at runtime via Config page or `--adapter=` CLI flag
+
+### Project Structure
+- `hecks_domain.rb` — domain DSL (source of truth, regeneratable)
+- `boot.rb` — wiring (stable, written once, not regenerated)
+- `lib/` — domain code, runtime, server, adapters (regeneratable)
+- `bin/<domain>` — CLI entry point
+
+## Extensions
+
+### hecks_filesystem_store
+- JSON file persistence extension for dynamic mode
+- `gem "hecks_filesystem_store"` auto-wires at boot
+- `Hecks.boot(__dir__, adapter: :filesystem)` explicit wiring
+- Same interface as memory: find, save, delete, all, count, query, clear
+
+### hecks_validations
+- Server-side parameter validation from domain rules
+- Reads validation rules and VO invariants from domain IR at boot
+- Provides `validate_params` method and `validation_rules` on domain module
+- Wires into command bus as middleware
+
 ## Examples
 - Pizzas domain: plain Ruby app with commands, queries, collection proxies, event history
+- Pizzas static: generated standalone project with HTTP server, UI, roles, filesystem persistence
 - Rails pizza shop: full Turbo Streams app with admin, ordering, toppings, pricing, live events
 - Banking domain: 4 aggregates, cross-aggregate policies, specifications, entities, SQLite
