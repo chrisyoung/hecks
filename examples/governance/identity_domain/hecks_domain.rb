@@ -1,0 +1,86 @@
+Hecks.domain "Identity" do
+  aggregate "Stakeholder" do
+    attribute :name, String
+    attribute :email, String
+    attribute :role, String
+    attribute :team, String
+    attribute :status, String
+
+    validation :name, {:presence=>true}
+
+    validation :email, {:presence=>true}
+
+    query "ByRole" do
+      where(role: role)
+    end
+
+    query "ByTeam" do
+      where(team: team)
+    end
+
+    query "Active" do
+      where(status: "active")
+    end
+
+    command "RegisterStakeholder" do
+      attribute :name, String
+      attribute :email, String
+      attribute :role, String
+      attribute :team, String
+    end
+
+    command "AssignRole" do
+      attribute :stakeholder_id, String
+      attribute :role, String
+    end
+
+    command "DeactivateStakeholder" do
+      attribute :stakeholder_id, String
+      actor "admin"
+    end
+  end
+
+  aggregate "AuditLog" do
+    attribute :entity_type, String
+    attribute :entity_id, String
+    attribute :action, String
+    attribute :actor_id, String
+    attribute :details, String
+    attribute :timestamp, DateTime
+
+    validation :entity_type, {:presence=>true}
+
+    validation :action, {:presence=>true}
+
+    query "ByEntity" do
+      where(entity_type: entity_type, entity_id: entity_id)
+    end
+
+    query "ByActor" do
+      where(actor_id: actor_id)
+    end
+
+    command "RecordEntry" do
+      attribute :entity_type, String
+      attribute :entity_id, String
+      attribute :action, String
+      attribute :actor_id, String
+      attribute :details, String
+    end
+
+    policy "AuditModelRegistration" do
+      on "RegisteredModel"
+      trigger "RecordEntry"
+    end
+
+    policy "AuditModelSuspension" do
+      on "SuspendedModel"
+      trigger "RecordEntry"
+    end
+
+    policy "AuditIncidentReport" do
+      on "ReportedIncident"
+      trigger "RecordEntry"
+    end
+  end
+end
