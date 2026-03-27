@@ -1,6 +1,8 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 type CreatePizza struct {
 	Name string `json:"name"`

@@ -22,7 +22,11 @@ module HecksGo
       lines = []
       lines << "package #{@package}"
       lines << ""
-      lines << "import \"time\""
+      imports = ["\"time\""]
+      imports << "\"fmt\"" unless @is_create
+      lines << "import ("
+      imports.each { |i| lines << "\t#{i}" }
+      lines << ")"
       lines << ""
 
       # Command struct
@@ -90,10 +94,13 @@ module HecksGo
       lines << "\tif existing == nil {"
       lines << "\t\treturn nil, nil, fmt.Errorf(\"#{@agg.name} not found: %s\", c.#{GoUtils.pascal_case(@self_id.name)})"
       lines << "\t}"
-      # Apply changes
+      # Apply changes — only set fields that exist on the aggregate
+      agg_attr_names = @agg.attributes.map { |a| a.name.to_s }
       @cmd.attributes.each do |a|
         next if a == @self_id
-        lines << "\texisting.#{GoUtils.pascal_case(a.name)} = c.#{GoUtils.pascal_case(a.name)}"
+        if agg_attr_names.include?(a.name.to_s)
+          lines << "\texisting.#{GoUtils.pascal_case(a.name)} = c.#{GoUtils.pascal_case(a.name)}"
+        end
       end
       lines << "\texisting.UpdatedAt = time.Now()"
       lines << "\tif err := existing.Validate(); err != nil {"

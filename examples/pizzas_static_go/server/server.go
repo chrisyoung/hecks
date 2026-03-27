@@ -23,6 +23,24 @@ func NewApp() *App {
 func (app *App) Start(port int) error {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprintf(w, "<html><head><title>PizzasDomain</title>" +
+			"<style>body{font-family:system-ui;max-width:600px;margin:2rem auto;padding:0 1rem}" +
+			"a{color:#4361ee}h1{color:#1a1a2e}li{margin:0.5rem 0}</style></head>" +
+			"<body><h1>PizzasDomain</h1><h2>Aggregates</h2><ul>" +
+			"<li><a href='/pizzas'>Pizzas</a> (2 commands)</li>" +
+			"<li><a href='/orders'>Orders</a> (2 commands)</li>" +
+			"</ul><h2>API</h2><ul>" +
+			"<li>GET <a href='/pizzas'>/pizzas</a></li>" +
+			"<li>POST /pizzas/create_pizza</li>" +
+			"<li>POST /pizzas/add_topping</li>" +
+			"<li>GET <a href='/orders'>/orders</a></li>" +
+			"<li>POST /orders/place_order</li>" +
+			"<li>POST /orders/cancel_order</li>" +
+			"</ul></body></html>")
+	})
+
 	mux.HandleFunc("GET /pizzas", func(w http.ResponseWriter, r *http.Request) {
 		items, _ := app.PizzaRepo.All()
 		jsonResponse(w, items)
