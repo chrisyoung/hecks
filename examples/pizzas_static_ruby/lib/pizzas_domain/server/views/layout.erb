@@ -52,10 +52,13 @@
   <aside class="sidebar">
     <span class="brand"><%= brand %></span>
     <a href="/">Home</a>
+    <% last_group = nil %>
     <% nav_items.each do |item| %>
       <% next if item[:href] == "/" %>
-      <% if item[:href] == "/config" %>
-        <div class="section">System</div>
+      <% group = item[:group] || (item[:href] == "/config" ? "System" : nil) %>
+      <% if group && group != last_group %>
+        <div class="section"><%= group %></div>
+        <% last_group = group %>
       <% end %>
       <a href="<%= item[:href] %>"><%= item[:label] %></a>
     <% end %>
