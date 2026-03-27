@@ -3,11 +3,5 @@ package domain
 func ByDeployment(repo MonitoringRepository, deployment_id string) ([]*Monitoring, error) {
 	all, err := repo.All()
 	if err != nil { return nil, err }
-	var results []*Monitoring
-	for _, item := range all {
-		if item.DeploymentId == deployment_id {
-			results = append(results, item)
-		}
-	}
-	return results, nil
+	return all, nil
 }

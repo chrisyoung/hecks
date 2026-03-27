@@ -37,11 +37,5 @@ func NewComplianceReview(modelId string, policyId string, reviewerId string, out
 }
 
 func (a *ComplianceReview) Validate() error {
-	if a.ModelId == "" {
-		return &ValidationError{Field: "model_id", Message: "model_id can't be blank"}
-	}
-	if a.ReviewerId == "" {
-		return &ValidationError{Field: "reviewer_id", Message: "reviewer_id can't be blank"}
-	}
 	return nil
 }

@@ -43,11 +43,5 @@ func NewAiModel(name string, version string, providerId string, description stri
 }
 
 func (a *AiModel) Validate() error {
-	if a.Name == "" {
-		return &ValidationError{Field: "name", Message: "name can't be blank"}
-	}
-	if a.Version == "" {
-		return &ValidationError{Field: "version", Message: "version can't be blank"}
-	}
 	return nil
 }

@@ -4,20 +4,11 @@
   <dl>
     <dt>ID</dt>
     <dd class="mono">{{ .Id }}</dd>
-    {{/* ERB: item[:fields].each do |field| */}}
+    {{ range .Fields }}
       <dt>{{ .Label }}</dt>
       <dd>
-        {{/* ERB: if field[:type] == :list */}}
-          {{/* ERB: if field[:items].empty? */}}
-            (none)
-          {{/* ERB: else */}}
-            <ul>
-              {{/* ERB: field[:items].each do |li| */}}
-                <li>{{ .Li }}</li>
-              {{ end }}
-            </ul>
-          {{ end }}
-        {{/* ERB: else */}}
+        {{ if eq .Type "list" }}
+        {{ else }}
           {{ .Value }}
         {{ end }}
       </dd>

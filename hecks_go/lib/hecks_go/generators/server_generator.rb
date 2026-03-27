@@ -70,7 +70,6 @@ module HecksGo
       lines << "\tviewsDir := filepath.Join(filepath.Dir(exe), \"..\", \"views\")"
       lines << "\tif _, err := os.Stat(viewsDir); err != nil { viewsDir = \"views\" }"
       lines << "\tnav := []NavItem{"
-      lines << "\t\t{Label: \"Home\", Href: \"/\"},"
       @domain.aggregates.each do |agg|
         group = agg.origin_domain || ""
         lines << "\t\t{Label: \"#{agg.name}s\", Href: \"/#{GoUtils.snake_case(agg.name)}s\", Group: \"#{group}\"},"
@@ -125,9 +124,9 @@ module HecksGo
         cell_exprs = attrs.map { |a| a.list? ? "fmt.Sprintf(\"%d items\", len(obj.#{GoUtils.pascal_case(a.name)}))" : "fmt.Sprintf(\"%v\", obj.#{GoUtils.pascal_case(a.name)})" }
 
         lines << "\ttype #{safe}Col struct { Label string }"
-        lines << "\ttype #{safe}Item struct { ID string; ShortID string; ShowHref string; Cells []string }"
+        lines << "\ttype #{safe}Item struct { ID string; ShortID string; ShowHref string; Cells []string; RowActions []RowAction }"
         lines << "\ttype #{safe}Btn struct { Label string; Href string; Allowed bool }"
-        lines << "\ttype #{safe}IndexData struct { AggregateName string; Description string; Items []#{safe}Item; Columns []#{safe}Col; Buttons []#{safe}Btn }"
+        lines << "\ttype #{safe}IndexData struct { AggregateName string; Description string; Items []#{safe}Item; Columns []#{safe}Col; Buttons []#{safe}Btn; RowActions []RowAction }"
         lines << "\tmux.HandleFunc(\"GET /#{plural}\", func(w http.ResponseWriter, r *http.Request) {"
         lines << "\t\tif r.Header.Get(\"Accept\") == \"application/json\" || r.URL.Query().Get(\"format\") == \"json\" {"
         lines << "\t\t\titems, _ := app.#{safe}Repo.All(); jsonResponse(w, items); return"
