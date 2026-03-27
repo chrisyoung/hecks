@@ -1,6 +1,6 @@
 # HecksGo::ViewGenerator
 #
-# Converts ERB templates to Go html/template syntax using ViewContracts
+# Converts ERB templates to Go html/template syntax using ViewContract
 # as a lookup table. The contract drives all field name resolution so
 # Go struct fields and Go template bindings can never drift apart.
 #
@@ -10,7 +10,7 @@
 module HecksGo
   class ViewGenerator
     def initialize
-      @contracts = Hecks::ViewContracts
+      @contracts = Hecks::ViewContract
     end
 
     # Convert an ERB template to Go html/template syntax.

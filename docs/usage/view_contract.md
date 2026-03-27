@@ -11,14 +11,14 @@ preventing field name drift.
 require "hecks_templating"
 
 # See all contracts
-Hecks::ViewContracts.all.keys  # => [:layout, :home, :index, :show, :form, :config]
+Hecks::ViewContract.all.keys  # => [:layout, :home, :index, :show, :form, :config]
 
 # Inspect a contract
-Hecks::ViewContracts::INDEX[:fields]
+Hecks::ViewContract::INDEX[:fields]
 # => [{name: :aggregate_name, type: :string}, {name: :items, type: :list, item_type: :index_item}, ...]
 
 # Generate a Go struct from a contract
-Hecks::ViewContracts.go_struct(:index_item, Hecks::ViewContracts::INDEX[:structs][:index_item], prefix: "Pizza")
+Hecks::ViewContract.go_struct(:index_item, Hecks::ViewContract::INDEX[:structs][:index_item], prefix: "Pizza")
 # => "type PizzaIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }"
 ```
 

@@ -40,12 +40,7 @@ module Hecks
         # @param attr [Hecks::DomainModel::Structure::Attribute] the attribute
         # @return [String] the OpenAPI type string
         def openapi_type(attr)
-          case attr.ruby_type
-          when "Integer" then "integer"
-          when "Float" then "number"
-          when "JSON" then "object"
-          else "string"
-          end
+          Hecks::TypeContract.openapi(attr.ruby_type)
         end
       end
     end

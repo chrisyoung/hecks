@@ -7,23 +7,13 @@ module HecksGo
   module GoUtils
     module_function
 
-    TYPE_MAP = {
-      "String"   => "string",
-      "Integer"  => "int64",
-      "Float"    => "float64",
-      "Boolean"  => "bool",
-      "Date"     => "time.Time",
-      "DateTime" => "time.Time",
-      "JSON"     => "json.RawMessage",
-    }.freeze
-
     def go_type(attr)
       if attr.list?
         "[]#{pascal_case(attr.type.to_s)}"
       elsif attr.reference?
         "string" # UUID reference
       else
-        TYPE_MAP[attr.type.to_s] || "string"
+        Hecks::TypeContract.go(attr.type)
       end
     end
 
@@ -55,22 +45,15 @@ module HecksGo
     end
 
     def go_zero_value(type_str)
-      case type_str
-      when "string" then '""'
-      when "int64" then "0"
-      when "float64" then "0.0"
-      when "bool" then "false"
-      when "time.Time" then "time.Time{}"
-      else "nil"
-      end
+      Hecks::TypeContract.go_zero_value(type_str)
     end
 
     def needs_time_import?(attrs)
-      attrs.any? { |a| %w[Date DateTime].include?(a.type.to_s) }
+      Hecks::TypeContract.go_needs_time?(attrs)
     end
 
     def needs_json_import?(attrs)
-      attrs.any? { |a| a.type.to_s == "JSON" }
+      Hecks::TypeContract.go_needs_json?(attrs)
     end
   end
 end

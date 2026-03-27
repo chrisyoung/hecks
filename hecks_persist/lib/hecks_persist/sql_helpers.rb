@@ -51,15 +51,10 @@ module Hecks
         # @param type [String, Class] the type name or class
         # @return [String] the SQL type string
         def sql_type_for(type)
-          case type.to_s
-          when "String"  then "VARCHAR(255)"
-          when "Integer" then "INTEGER"
-          when "Float"   then "REAL"
-          when "Boolean", "TrueClass", "FalseClass" then "BOOLEAN"
-          when "Date"     then "DATE"
-          when "DateTime" then "VARCHAR(255)"
-          else "TEXT"
-          end
+          t = type.to_s
+          # Handle Ruby's boolean class names
+          t = "Boolean" if %w[TrueClass FalseClass].include?(t)
+          Hecks::TypeContract.sql(t)
         end
 
         # Converts a Ruby value to a SQL literal string.
