@@ -404,7 +404,8 @@
 - Memory adapters with `sync.RWMutex` + `map`
 - HTTP server using `net/http` (JSON API with POST per command, GET per aggregate)
 - HTML UI with template-rendered pages: home, index tables, show detail, create/update forms, config page
-- Go `html/template` views matching the Ruby ERB layout/CSS (shared design)
+- Go `html/template` views generated from ERB at build time — ERB is single source of truth
+- ERB-to-Go converter handles: if/elsif/else chains, inline conditionals, default values, range loops, hash access, symbol comparisons
 - Form submission: accepts both JSON and form-urlencoded, redirects on success
 - Config page with roles, adapter, policies, aggregate counts, ports
 - All DSL concepts generate Go code: lifecycle (state constants, predicates, transition validation), queries, specifications, policies
