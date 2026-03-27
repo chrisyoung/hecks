@@ -337,8 +337,9 @@
 
 ## Static Domain Generation (hecks_static)
 
-### Zero-Dependency Output
+### Zero-Dependency Output — Full DSL Parity
 - `hecks domain build --static` generates a complete Ruby project with no hecks runtime dependency
+- All DSL concepts generated: aggregates, value objects, entities, commands, events, ports, queries, validations, invariants, lifecycles, specifications, policies
 - Generated project includes inlined runtime (Model, Command, EventBus, QueryBuilder, Specification)
 - `bin/<domain> serve` starts an HTTP server with JSON API and HTML UI
 - `bin/<domain> console` opens IRB with the domain loaded
