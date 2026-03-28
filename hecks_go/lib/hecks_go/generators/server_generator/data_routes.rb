@@ -1,7 +1,8 @@
 # HecksGo::ServerGenerator::DataRoutes
 #
-# Generates Go route handlers for JSON API endpoints (index, find, POST commands)
-# and HTML show pages. Struct types derive from ViewContract.
+# Generates Go route handlers for JSON API endpoints (index, find,
+# POST commands) and HTML show pages. All display conventions
+# come from contracts — no inline rendering logic.
 #
 module HecksGo
   class ServerGenerator
@@ -25,10 +26,27 @@ module HecksGo
 
       def index_route(agg, safe, plural, attrs, agg_snake)
         vc = Hecks::ViewContract
-        cols = attrs.map { |a| "{Label: \"#{a.name.to_s.split("_").map(&:capitalize).join(" ")}\"}" }
-        create_cmds = agg.commands.reject { |c| c.attributes.any? { |a| a.name.to_s == "#{agg_snake}_id" } }
-        btns = create_cmds.map { |c| "{Label: \"#{c.name}\", Href: \"/#{plural}/#{GoUtils.snake_case(c.name)}/new\", Allowed: true}" }
-        cell_exprs = attrs.map { |a| a.list? ? "fmt.Sprintf(\"%d items\", len(obj.#{GoUtils.pascal_case(a.name)}))" : "fmt.Sprintf(\"%v\", obj.#{GoUtils.pascal_case(a.name)})" }
+        ac = Hecks::AggregateContract
+        dc = Hecks::DisplayContract
+
+        cols = attrs.map { |a| "{Label: \"#{Hecks::UILabelContract.label(a.name)}\"}" }
+        create_cmds, update_cmds = ac.partition_commands(agg)
+
+        btns = create_cmds.map { |c|
+          "{Label: \"#{c.name}\", Href: \"/#{plural}/#{GoUtils.snake_case(c.name)}/new\", Allowed: true}"
+        }
+
+        row_acts = update_cmds.map { |c|
+          cm = GoUtils.snake_case(c.name)
+          if ac.direct_action?(c, agg_snake)
+            self_ref = ac.self_ref_attr(c, agg_snake)
+            "{Label: \"#{c.name}\", HrefPrefix: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref&.name}\"}"
+          else
+            "{Label: \"#{c.name}\", HrefPrefix: \"/#{plural}/#{cm}/new?id=\", Allowed: true}"
+          end
+        }
+
+        cell_exprs = attrs.map { |a| dc.cell_expression(a, "obj", lang: :go) }
         desc = agg.description || ""
 
         lines = []
@@ -43,10 +61,13 @@ module HecksGo
         lines << "\t\titems, _ := app.#{safe}Repo.All()"
         lines << "\t\tvar rows []#{safe}IndexItem"
         lines << "\t\tfor _, obj := range items {"
-        lines << "\t\t\tsid := obj.ID; if len(sid)>8 { sid=sid[:8]+\"...\" }"
-        lines << "\t\t\trows = append(rows, #{safe}IndexItem{Id: obj.ID, ShortId: sid, ShowHref: \"/#{plural}/show?id=\"+obj.ID, Cells: []string{#{cell_exprs.join(', ')}}})"
+        lines << "\t\t\t#{vc.go_short_id('obj.ID')}"
+        lines << "\t\t\tbaseActions := []RowAction{#{row_acts.join(', ')}}"
+        lines << "\t\t\tactions := make([]RowAction, len(baseActions))"
+        lines << "\t\t\tfor i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }"
+        lines << "\t\t\trows = append(rows, #{safe}IndexItem{Id: obj.ID, ShortId: sid, ShowHref: \"/#{plural}/show?id=\"+obj.ID, Cells: []string{#{cell_exprs.join(', ')}}, RowActions: actions})"
         lines << "\t\t}"
-        lines << "\t\trenderer.Render(w, \"index\", \"#{safe}s\", #{safe}IndexData{AggregateName: \"#{safe}\", Description: \"#{desc}\", Items: rows, Columns: []#{safe}Column{#{cols.join(', ')}}, Buttons: []#{safe}Button{#{btns.join(', ')}}})"
+        lines << "\t\trenderer.Render(w, \"index\", \"#{safe}s\", #{safe}IndexData{AggregateName: \"#{safe}\", Description: \"#{desc}\", Items: rows, Columns: []#{safe}Column{#{cols.join(', ')}}, Buttons: []#{safe}Button{#{btns.join(', ')}}, RowActions: []RowAction{#{row_acts.join(', ')}}})"
         lines << "\t})"
         lines << ""
         lines
@@ -74,16 +95,8 @@ module HecksGo
         lines << "\t\t\tr.ParseForm()"
         cmd.attributes.each do |a|
           field = GoUtils.pascal_case(a.name)
-          case a.type.to_s
-          when /Integer/
-            lines << "\t\t\tif v := r.FormValue(\"#{a.name}\"); v != \"\" { fmt.Sscanf(v, \"%d\", &cmd.#{field}) }"
-          when /Float/
-            lines << "\t\t\tif v := r.FormValue(\"#{a.name}\"); v != \"\" { fmt.Sscanf(v, \"%f\", &cmd.#{field}) }"
-          when /Date|DateTime/
-            lines << "\t\t\tif v := r.FormValue(\"#{a.name}\"); v != \"\" { cmd.#{field}, _ = time.Parse(\"2006-01-02\", v) }"
-          else
-            lines << "\t\t\tcmd.#{field} = r.FormValue(\"#{a.name}\")"
-          end
+          go_type = GoUtils.go_type(a)
+          lines << "\t\t\t#{Hecks::FormParsingContract.go_parse_line(a.name, field, go_type)}"
         end
         lines << "\t\t}"
         lines << "\t\tagg, event, err := cmd.Execute(app.#{safe}Repo)"
@@ -102,10 +115,14 @@ module HecksGo
 
       def html_routes
         vc = Hecks::ViewContract
+        ac = Hecks::AggregateContract
+        dc = Hecks::DisplayContract
         lines = []
+
         @domain.aggregates.each do |agg|
           safe = agg.name
           plural = GoUtils.snake_case(safe) + "s"
+          agg_snake = GoUtils.snake_case(safe)
           attrs = agg.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
 
           lines << "\t#{vc.go_struct(:show_field, vc::SHOW[:structs][:show_field], prefix: safe)}"
@@ -114,17 +131,42 @@ module HecksGo
           lines << "\t\tobj, _ := app.#{safe}Repo.Find(r.URL.Query().Get(\"id\"))"
           lines << "\t\tif obj == nil { http.Error(w, \"Not found\", 404); return }"
           lines << "\t\tfields := []#{safe}ShowField{"
+
+          lc = agg.lifecycle
+          lc_field = lc&.field&.to_s
           attrs.each do |a|
             field = GoUtils.pascal_case(a.name)
-            label = a.name.to_s.split("_").map(&:capitalize).join(" ")
+            label = Hecks::UILabelContract.label(a.name)
             if a.list?
               lines << "\t\t\t{Label: \"#{label}\", Type: \"list\", Items: func() []string { var s []string; for _, v := range obj.#{field} { s = append(s, fmt.Sprintf(\"%v\", v)) }; return s }()},"
+            elsif lc_field && a.name.to_s == lc_field
+              transitions = dc.lifecycle_transitions(lc)
+              trans_go = transitions.map { |t| "\"#{t}\"" }.join(", ")
+              lines << "\t\t\t{Label: \"#{label}\", Type: \"lifecycle\", Value: fmt.Sprintf(\"%v\", obj.#{field}), Transitions: []string{#{trans_go}}},"
             else
               lines << "\t\t\t{Label: \"#{label}\", Value: fmt.Sprintf(\"%v\", obj.#{field})},"
             end
           end
           lines << "\t\t}"
-          lines << "\t\trenderer.Render(w, \"show\", \"#{safe}\", #{safe}ShowData{AggregateName: \"#{safe}\", BackHref: \"/#{plural}\", Id: obj.ID, Fields: fields})"
+
+          # Update command buttons — from contract
+          _, update_cmds = ac.partition_commands(agg)
+          if update_cmds.any?
+            btn_exprs = update_cmds.map { |c|
+              cm = GoUtils.snake_case(c.name)
+              if ac.direct_action?(c, agg_snake)
+                self_ref = ac.self_ref_attr(c, agg_snake)
+                "#{safe}Button{Label: \"#{c.name}\", Href: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref.name}\"}"
+              else
+                "#{safe}Button{Label: \"#{c.name}\", Href: \"/#{plural}/#{cm}/new?id=\" + obj.ID, Allowed: true}"
+              end
+            }
+            lines << "\t\tbuttons := []#{safe}Button{#{btn_exprs.join(', ')}}"
+          else
+            lines << "\t\tvar buttons []#{safe}Button"
+          end
+
+          lines << "\t\trenderer.Render(w, \"show\", \"#{safe}\", #{safe}ShowData{AggregateName: \"#{safe}\", BackHref: \"/#{plural}\", Id: obj.ID, Fields: fields, Buttons: buttons})"
           lines << "\t})"
           lines << ""
         end

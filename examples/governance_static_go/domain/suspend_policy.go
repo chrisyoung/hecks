@@ -2,6 +2,7 @@ package domain
 
 import (
 	"time"
+	"fmt"
 )
 
 type SuspendPolicy struct {
@@ -11,17 +12,28 @@ type SuspendPolicy struct {
 func (c SuspendPolicy) CommandName() string { return "SuspendPolicy" }
 
 func (c SuspendPolicy) Execute(repo GovernancePolicyRepository) (*GovernancePolicy, *SuspendedPolicy, error) {
-	agg := NewGovernancePolicy("", "", "", "", time.Time{}, time.Time{}, nil, "")
-	if err := agg.Validate(); err != nil {
+	existing, err := repo.Find(c.PolicyId)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := repo.Save(agg); err != nil {
+	if existing == nil {
+		return nil, nil, fmt.Errorf("GovernancePolicy not found: %s", c.PolicyId)
+	}
+	if existing.Status != "active" {
+		return nil, nil, fmt.Errorf("cannot SuspendPolicy: GovernancePolicy is in %s state", existing.Status)
+	}
+	existing.Status = "suspended"
+	existing.UpdatedAt = time.Now()
+	if err := existing.Validate(); err != nil {
+		return nil, nil, err
+	}
+	if err := repo.Save(existing); err != nil {
 		return nil, nil, err
 	}
 	event := SuspendedPolicy{
-		AggregateID: agg.ID,
+		AggregateID: existing.ID,
 		PolicyId: c.PolicyId,
 		OccurredAt: time.Now(),
 	}
-	return agg, &event, nil
+	return existing, &event, nil
 }

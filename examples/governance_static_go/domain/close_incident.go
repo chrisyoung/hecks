@@ -19,6 +19,10 @@ func (c CloseIncident) Execute(repo IncidentRepository) (*Incident, *ClosedIncid
 	if existing == nil {
 		return nil, nil, fmt.Errorf("Incident not found: %s", c.IncidentId)
 	}
+	if existing.Status != "resolved" {
+		return nil, nil, fmt.Errorf("cannot CloseIncident: Incident is in %s state", existing.Status)
+	}
+	existing.Status = "closed"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

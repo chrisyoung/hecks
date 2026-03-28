@@ -27,6 +27,12 @@
     <dd><%= event_count %> total</dd>
     <dt>Booted</dt>
     <dd><%= booted_at %></dd>
+    <dt>Reset</dt>
+    <dd>
+      <form class="inline" method="post" action="/_reset">
+        <button class="btn btn-sm" type="submit">Clear All Data</button>
+      </form>
+    </dd>
     <dt>Policies</dt>
     <dd>
       <% if policies.empty? %>

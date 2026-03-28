@@ -16,6 +16,15 @@
               <% end %>
             </ul>
           <% end %>
+        <% elsif field[:type].to_s == "lifecycle" %>
+          <span class="badge"><%= field[:value] %></span>
+          <% if field[:transitions] %>
+            <span class="hint">
+              <% field[:transitions].each_with_index do |t, i| %>
+                <%= "| " if i > 0 %><%= t %>
+              <% end %>
+            </span>
+          <% end %>
         <% else %>
           <%= field[:value] %>
         <% end %>
@@ -26,6 +35,13 @@
 <div class="actions">
   <a href="<%= back_href %>" class="btn btn-sm">Back</a>
   <% buttons.each do |btn| %>
-    <a class="btn btn-sm<%= ' btn-faded' unless btn[:allowed] %>" href="<%= btn[:href] %>"><%= btn[:label] %></a>
+    <% if btn[:direct] %>
+      <form class="inline" method="post" action="<%= btn[:href] %>">
+        <input type="hidden" name="<%= btn[:id_field] %>" value="<%= id %>">
+        <button class="btn btn-sm<%= ' btn-faded' unless btn[:allowed] %>" type="submit"><%= btn[:label] %></button>
+      </form>
+    <% else %>
+      <a class="btn btn-sm<%= ' btn-faded' unless btn[:allowed] %>" href="<%= btn[:href] %>"><%= btn[:label] %></a>
+    <% end %>
   <% end %>
 </div>

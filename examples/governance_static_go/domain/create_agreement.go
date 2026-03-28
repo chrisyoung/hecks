@@ -15,6 +15,7 @@ func (c CreateAgreement) CommandName() string { return "CreateAgreement" }
 
 func (c CreateAgreement) Execute(repo DataUsageAgreementRepository) (*DataUsageAgreement, *CreatedAgreement, error) {
 	agg := NewDataUsageAgreement(c.ModelId, c.DataSource, c.Purpose, c.ConsentType, time.Time{}, time.Time{}, nil, "")
+	agg.Status = "draft"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

@@ -3,10 +3,13 @@ package domain
 import (
 	"time"
 	"github.com/google/uuid"
+	"fmt"
 )
 
 type GovernancePolicy struct {
-	ID        string    `json:"id"`
+	ID string `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	Name string `json:"name"`
 	Description string `json:"description"`
 	Category string `json:"category"`
@@ -15,8 +18,6 @@ type GovernancePolicy struct {
 	ReviewDate time.Time `json:"review_date"`
 	Requirements []Requirement `json:"requirements"`
 	Status string `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func NewGovernancePolicy(name string, description string, category string, frameworkId string, effectiveDate time.Time, reviewDate time.Time, requirements []Requirement, status string) *GovernancePolicy {
@@ -42,6 +43,12 @@ func (a *GovernancePolicy) Validate() error {
 	}
 	if a.Category == "" {
 		return &ValidationError{Field: "category", Message: "category can't be blank"}
+	}
+	if a.Category != "" {
+		validCategory := map[string]bool{"regulatory": true, "internal": true, "ethical": true, "operational": true}
+		if !validCategory[a.Category] {
+			return &ValidationError{Field: "category", Message: fmt.Sprintf("category must be one of: regulatory, internal, ethical, operational, got: %s", a.Category)}
+		}
 	}
 	return nil
 }

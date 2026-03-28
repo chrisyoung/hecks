@@ -2,6 +2,7 @@ package domain
 
 import (
 	"time"
+	"fmt"
 )
 
 type UpdateReviewDate struct {
@@ -12,18 +13,26 @@ type UpdateReviewDate struct {
 func (c UpdateReviewDate) CommandName() string { return "UpdateReviewDate" }
 
 func (c UpdateReviewDate) Execute(repo GovernancePolicyRepository) (*GovernancePolicy, *UpdatedReviewDate, error) {
-	agg := NewGovernancePolicy("", "", "", "", time.Time{}, c.ReviewDate, nil, "")
-	if err := agg.Validate(); err != nil {
+	existing, err := repo.Find(c.PolicyId)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := repo.Save(agg); err != nil {
+	if existing == nil {
+		return nil, nil, fmt.Errorf("GovernancePolicy not found: %s", c.PolicyId)
+	}
+	existing.ReviewDate = c.ReviewDate
+	existing.UpdatedAt = time.Now()
+	if err := existing.Validate(); err != nil {
+		return nil, nil, err
+	}
+	if err := repo.Save(existing); err != nil {
 		return nil, nil, err
 	}
 	event := UpdatedReviewDate{
-		AggregateID: agg.ID,
+		AggregateID: existing.ID,
 		PolicyId: c.PolicyId,
 		ReviewDate: c.ReviewDate,
 		OccurredAt: time.Now(),
 	}
-	return agg, &event, nil
+	return existing, &event, nil
 }

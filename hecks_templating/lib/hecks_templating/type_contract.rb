@@ -47,5 +47,25 @@ module Hecks
     def self.go_needs_json?(attrs)
       attrs.any? { |a| a.type.to_s == "JSON" }
     end
+
+    # Format a Ruby literal value as a Go literal for the given Go type.
+    # Used by query and specification generators to produce correct
+    # typed comparisons in generated Go code.
+    #
+    # @param value [String, Numeric] the Ruby value
+    # @param go_type [String] the Go type string (e.g., "int64", "string")
+    # @return [String] a Go literal (e.g., '"hello"', '42', 'true')
+    def self.format_go_literal(value, go_type)
+      case go_type
+      when "int64", "float64"
+        value.to_s.gsub(/_/, "")
+      when "bool"
+        value.to_s.downcase == "true" ? "true" : "false"
+      when "time.Time"
+        "parseDate(\"#{value}\")"
+      else
+        "\"#{value}\""
+      end
+    end
   end
 end

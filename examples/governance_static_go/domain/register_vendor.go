@@ -14,6 +14,7 @@ func (c RegisterVendor) CommandName() string { return "RegisterVendor" }
 
 func (c RegisterVendor) Execute(repo VendorRepository) (*Vendor, *RegisteredVendor, error) {
 	agg := NewVendor(c.Name, c.ContactEmail, c.RiskTier, time.Time{}, time.Time{}, "", "")
+	agg.Status = "pending_review"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

@@ -19,6 +19,10 @@ func (c DeployModel) Execute(repo DeploymentRepository) (*Deployment, *DeployedM
 	if existing == nil {
 		return nil, nil, fmt.Errorf("Deployment not found: %s", c.DeploymentId)
 	}
+	if existing.Status != "planned" {
+		return nil, nil, fmt.Errorf("cannot DeployModel: Deployment is in %s state", existing.Status)
+	}
+	existing.Status = "deployed"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

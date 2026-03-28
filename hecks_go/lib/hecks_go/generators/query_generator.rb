@@ -18,16 +18,15 @@ module HecksGo
 
     def generate
       safe = @agg.name
-      func_name = GoUtils.pascal_case(@query.name)
+      query_pascal = GoUtils.pascal_case(@query.name)
+      func_name = "#{safe}#{query_pascal}"
       lines = []
       lines << "package #{@package}"
       lines << ""
 
       if @params.empty?
-        # No params — static filter (e.g., Pending: where(status: "pending"))
         lines << "func #{func_name}(repo #{safe}Repository) ([]*#{safe}, error) {"
       else
-        # With params (e.g., ByDescription(desc string))
         param_list = @params.map { |p| "#{p} string" }.join(", ")
         lines << "func #{func_name}(repo #{safe}Repository, #{param_list}) ([]*#{safe}, error) {"
       end

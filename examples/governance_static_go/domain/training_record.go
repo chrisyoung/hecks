@@ -6,15 +6,15 @@ import (
 )
 
 type TrainingRecord struct {
-	ID        string    `json:"id"`
+	ID string `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	StakeholderId string `json:"stakeholder_id"`
 	PolicyId string `json:"policy_id"`
 	CompletedAt time.Time `json:"completed_at"`
 	ExpiresAt time.Time `json:"expires_at"`
 	CertificationId string `json:"certification_id"`
 	Status string `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func NewTrainingRecord(stakeholderId string, policyId string, completedAt time.Time, expiresAt time.Time, certificationId string, status string) *TrainingRecord {

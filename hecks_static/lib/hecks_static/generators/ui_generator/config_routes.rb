@@ -1,7 +1,7 @@
 # HecksStatic::UIGenerator::ConfigRoutes
 #
-# Generates the /config page route that prepares data and renders
-# the config.erb template. Also generates /config/reboot and /config/role.
+# Generates the /config page route. Uses DisplayContract for
+# aggregate summaries, policy labels, and role extraction.
 #
 module HecksStatic
   class UIGenerator
@@ -9,16 +9,15 @@ module HecksStatic
       private
 
       def config_route(mod)
+        dc = Hecks::DisplayContract
+
         agg_rows = @domain.aggregates.map do |agg|
           safe = Hecks::Utils.sanitize_constant(agg.name)
-          cmds = agg.commands.map(&:name).join(", ")
-          ports = agg.ports.values.map { |p| "#{p.name}: #{p.allowed_methods.join(", ")}" }.join(" | ")
-          ports = "(none)" if ports.empty?
-          "{ name: \"#{safe}\", href: \"/#{plural(agg)}\", count: #{safe}.count, commands: \"#{cmds}\", ports: \"#{ports}\" }"
+          summary = dc.aggregate_summary(agg)
+          "{ name: \"#{safe}\", href: \"/#{plural(agg)}\", count: #{safe}.count, commands: \"#{summary[:commands]}\", ports: \"#{summary[:ports]}\" }"
         end
 
-        policies = (@domain.aggregates.flat_map { |a| a.policies.reject(&:guard?).map { |p| "#{p.event_name} → #{p.name}" } } +
-                    @domain.policies.map { |p| "#{p.event_name} → #{p.trigger_command}" })
+        policies = dc.policy_labels(@domain)
 
         [
           "        server.mount_proc \"/config\" do |req, res|",

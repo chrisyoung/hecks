@@ -2,6 +2,7 @@ package domain
 
 import (
 	"time"
+	"fmt"
 )
 
 type ClassifyRisk struct {
@@ -12,18 +13,30 @@ type ClassifyRisk struct {
 func (c ClassifyRisk) CommandName() string { return "ClassifyRisk" }
 
 func (c ClassifyRisk) Execute(repo AiModelRepository) (*AiModel, *ClassifiedRisk, error) {
-	agg := NewAiModel("", "", "", "", c.RiskLevel, time.Time{}, "", "", nil, nil, "")
-	if err := agg.Validate(); err != nil {
+	existing, err := repo.Find(c.ModelId)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := repo.Save(agg); err != nil {
+	if existing == nil {
+		return nil, nil, fmt.Errorf("AiModel not found: %s", c.ModelId)
+	}
+	existing.RiskLevel = c.RiskLevel
+	if existing.Status != "draft" {
+		return nil, nil, fmt.Errorf("cannot ClassifyRisk: AiModel is in %s state", existing.Status)
+	}
+	existing.Status = "classified"
+	existing.UpdatedAt = time.Now()
+	if err := existing.Validate(); err != nil {
+		return nil, nil, err
+	}
+	if err := repo.Save(existing); err != nil {
 		return nil, nil, err
 	}
 	event := ClassifiedRisk{
-		AggregateID: agg.ID,
+		AggregateID: existing.ID,
 		ModelId: c.ModelId,
 		RiskLevel: c.RiskLevel,
 		OccurredAt: time.Now(),
 	}
-	return agg, &event, nil
+	return existing, &event, nil
 }

@@ -13,6 +13,7 @@ type RevokedExemption struct {
 	ApprovedById string `json:"approved_by_id"`
 	ApprovedAt time.Time `json:"approved_at"`
 	ExpiresAt time.Time `json:"expires_at"`
+	Scope string `json:"scope"`
 	Status string `json:"status"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

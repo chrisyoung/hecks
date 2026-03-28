@@ -19,6 +19,10 @@ func (c MitigateIncident) Execute(repo IncidentRepository) (*Incident, *Mitigate
 	if existing == nil {
 		return nil, nil, fmt.Errorf("Incident not found: %s", c.IncidentId)
 	}
+	if existing.Status != "investigating" {
+		return nil, nil, fmt.Errorf("cannot MitigateIncident: Incident is in %s state", existing.Status)
+	}
+	existing.Status = "mitigating"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err
