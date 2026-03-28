@@ -18,6 +18,7 @@ module Hecks
       autoload :NoBidirectionalReferences, "hecks/validation_rules/references/no_bidirectional_references"
       autoload :NoSelfReferences,          "hecks/validation_rules/references/no_self_references"
       autoload :NoValueObjectReferences,   "hecks/validation_rules/references/no_value_object_references"
+      autoload :NoImplicitForeignKeys,    "hecks/validation_rules/references/no_implicit_foreign_keys"
     end
   end
 end

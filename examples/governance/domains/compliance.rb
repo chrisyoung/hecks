@@ -5,7 +5,7 @@ Hecks.domain "Compliance" do
     name String
     description String
     category String, enum: %w[regulatory internal ethical operational]
-    framework_id String
+    attribute :framework_id, reference_to("RegulatoryFramework")
     effective_date Date
     review_date Date
     requirements list_of("Requirement")
@@ -31,7 +31,7 @@ Hecks.domain "Compliance" do
       name String
       description String
       category String
-      framework_id String
+      attribute :framework_id, reference_to("RegulatoryFramework")
       actor "governance_board"
       actor "admin"
     end
@@ -197,11 +197,11 @@ Hecks.domain "Compliance" do
   end
 
   Exemption "Approved exceptions to policy requirements" do
-    model_id String
-    policy_id String
+    attribute :model_id, reference_to("AiModel")
+    attribute :policy_id, reference_to("GovernancePolicy")
     requirement String
     reason String
-    approved_by_id String
+    attribute :approved_by_id, reference_to("Stakeholder")
     approved_at DateTime
     expires_at Date
     attribute :scope, String
@@ -217,15 +217,15 @@ Hecks.domain "Compliance" do
     validation :policy_id, presence: true
 
     request_exemption do
-      model_id String
-      policy_id String
+      attribute :model_id, reference_to("AiModel")
+      attribute :policy_id, reference_to("GovernancePolicy")
       requirement String
       reason String
     end
 
     approve_exemption do
       exemption_id String
-      approved_by_id String
+      attribute :approved_by_id, reference_to("Stakeholder")
       expires_at Date
       sets approved_at: :now
       actor "governance_board"
@@ -252,11 +252,11 @@ Hecks.domain "Compliance" do
   end
 
   TrainingRecord "Staff training completion and certification tracking" do
-    stakeholder_id String
-    policy_id String
+    attribute :stakeholder_id, reference_to("Stakeholder")
+    attribute :policy_id, reference_to("GovernancePolicy")
     completed_at DateTime
     expires_at Date
-    certification_id String
+    certification String
 
     status String
     lifecycle :status, default: "assigned" do
@@ -273,20 +273,20 @@ Hecks.domain "Compliance" do
     end
 
     assign_training do
-      stakeholder_id String
-      policy_id String
+      attribute :stakeholder_id, reference_to("Stakeholder")
+      attribute :policy_id, reference_to("GovernancePolicy")
     end
 
     complete_training do
       training_record_id String
-      certification_id String
+      certification String
       expires_at Date
       sets completed_at: :now
     end
 
     renew_training do
       training_record_id String
-      certification_id String
+      certification String
       expires_at Date
       sets completed_at: :now
     end
