@@ -102,13 +102,15 @@ module HecksGo
         # Queries
         agg.queries.each do |q|
           gen = QueryGenerator.new(q, aggregate: agg, package: "domain", module_path: @module_path)
-          write("domain/#{GoUtils.snake_case(q.name)}_query.go", gen.generate)
+          agg_prefix = GoUtils.snake_case(agg.name)
+          write("domain/#{agg_prefix}_#{GoUtils.snake_case(q.name)}_query.go", gen.generate)
         end
 
         # Specifications
         agg.specifications.each do |spec|
           gen = SpecificationGenerator.new(spec, aggregate_name: agg.name, package: "domain")
-          write("domain/#{GoUtils.snake_case(spec.name)}_spec.go", gen.generate)
+          agg_prefix = GoUtils.snake_case(agg.name)
+          write("domain/#{agg_prefix}_#{GoUtils.snake_case(spec.name)}_spec.go", gen.generate)
         end
 
         # Aggregate-level policies
@@ -148,9 +150,14 @@ module HecksGo
       gen = ViewGenerator.new
       Dir.glob(File.join(erb_dir, "*.erb")).each do |erb_file|
         name = File.basename(erb_file, ".erb")
+        next if %w[show form index].include?(name) # Generated directly
         erb_source = File.read(erb_file)
         write("views/#{name}.html", gen.convert(name.to_sym, erb_source))
       end
+      # Show and form templates generated directly — no ERB conversion
+      write("views/show.html", ShowTemplate.new.generate)
+      write("views/form.html", FormTemplate.new.generate)
+      write("views/index.html", IndexTemplate.new.generate)
     end
 
     def generate_main

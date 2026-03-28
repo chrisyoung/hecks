@@ -3,10 +3,13 @@ package domain
 import (
 	"time"
 	"github.com/google/uuid"
+	"fmt"
 )
 
 type ComplianceReview struct {
-	ID        string    `json:"id"`
+	ID string `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	ModelId string `json:"model_id"`
 	PolicyId string `json:"policy_id"`
 	ReviewerId string `json:"reviewer_id"`
@@ -15,8 +18,6 @@ type ComplianceReview struct {
 	CompletedAt time.Time `json:"completed_at"`
 	Conditions []ReviewCondition `json:"conditions"`
 	Status string `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func NewComplianceReview(modelId string, policyId string, reviewerId string, outcome string, notes string, completedAt time.Time, conditions []ReviewCondition, status string) *ComplianceReview {
@@ -42,6 +43,12 @@ func (a *ComplianceReview) Validate() error {
 	}
 	if a.ReviewerId == "" {
 		return &ValidationError{Field: "reviewer_id", Message: "reviewer_id can't be blank"}
+	}
+	if a.Outcome != "" {
+		validOutcome := map[string]bool{"approved": true, "rejected": true}
+		if !validOutcome[a.Outcome] {
+			return &ValidationError{Field: "outcome", Message: fmt.Sprintf("outcome must be one of: approved, rejected, got: %s", a.Outcome)}
+		}
 	}
 	return nil
 }

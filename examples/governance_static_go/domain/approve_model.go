@@ -2,6 +2,7 @@ package domain
 
 import (
 	"time"
+	"fmt"
 )
 
 type ApproveModel struct {
@@ -11,17 +12,28 @@ type ApproveModel struct {
 func (c ApproveModel) CommandName() string { return "ApproveModel" }
 
 func (c ApproveModel) Execute(repo AiModelRepository) (*AiModel, *ApprovedModel, error) {
-	agg := NewAiModel("", "", "", "", "", time.Time{}, "", "", nil, nil, "")
-	if err := agg.Validate(); err != nil {
+	existing, err := repo.Find(c.ModelId)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := repo.Save(agg); err != nil {
+	if existing == nil {
+		return nil, nil, fmt.Errorf("AiModel not found: %s", c.ModelId)
+	}
+	if existing.Status != "classified" {
+		return nil, nil, fmt.Errorf("cannot ApproveModel: AiModel is in %s state", existing.Status)
+	}
+	existing.Status = "approved"
+	existing.UpdatedAt = time.Now()
+	if err := existing.Validate(); err != nil {
+		return nil, nil, err
+	}
+	if err := repo.Save(existing); err != nil {
 		return nil, nil, err
 	}
 	event := ApprovedModel{
-		AggregateID: agg.ID,
+		AggregateID: existing.ID,
 		ModelId: c.ModelId,
 		OccurredAt: time.Now(),
 	}
-	return agg, &event, nil
+	return existing, &event, nil
 }

@@ -16,6 +16,16 @@
       <% if field[:error] %>
         <div class="field-error"><%= field[:error] %></div>
       <% end %>
+    <% elsif field[:type].to_s == "enum" %>
+      <label><%= field[:label] %><% if field[:required] %><span class="required">required</span><% end %></label>
+      <select name="<%= field[:name] %>" required>
+        <% (field[:options] || []).each do |opt| %>
+          <option value="<%= opt %>"<%= ' selected' if opt == field[:value] %>><%= opt %></option>
+        <% end %>
+      </select>
+      <% if field[:error] %>
+        <div class="field-error"><%= field[:error] %></div>
+      <% end %>
     <% else %>
       <label><%= field[:label] %><% if field[:required] %><span class="required">required</span><% end %></label>
       <input name="<%= field[:name] %>" type="<%= field[:input_type] || 'text' %>"

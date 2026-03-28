@@ -4,6 +4,15 @@ require_relative "spec_generator/value_object_spec"
 require_relative "spec_generator/command_spec"
 require_relative "spec_generator/event_spec"
 require_relative "spec_generator/entity_spec"
+require_relative "spec_generator/query_spec"
+require_relative "spec_generator/policy_spec"
+require_relative "spec_generator/lifecycle_spec"
+require_relative "spec_generator/specification_spec"
+require_relative "spec_generator/scope_spec"
+require_relative "spec_generator/view_spec"
+require_relative "spec_generator/workflow_spec"
+require_relative "spec_generator/service_spec"
+require_relative "spec_generator/port_spec"
 
 module Hecks
   module Generators
@@ -11,15 +20,25 @@ module Hecks
     # Hecks::Generators::Infrastructure::SpecGenerator
     #
     # Generates behavioral RSpec specs from domain IR. Produces specs that
-    # describe what aggregates, commands, events, and value objects *do*,
-    # not just that they exist. Each concept has its own mixin. Part of
-    # Generators::Infrastructure, consumed by DomainGemGenerator::SpecWriter.
+    # describe what aggregates, commands, events, value objects, queries,
+    # policies, lifecycles, specifications, and scopes *do*. Each concept
+    # has its own mixin. Part of Generators::Infrastructure, consumed by
+    # DomainGemGenerator::SpecWriter.
     #
     #   gen = SpecGenerator.new(domain)
     #   gen.generate_aggregate_spec(agg)
     #   gen.generate_command_spec(cmd, agg)
     #   gen.generate_event_spec(evt, agg)
     #   gen.generate_value_object_spec(vo, agg)
+    #   gen.generate_query_spec(query, agg)
+    #   gen.generate_policy_spec(policy, agg)
+    #   gen.generate_lifecycle_spec(agg)
+    #   gen.generate_specification_spec(spec, agg)
+    #   gen.generate_scope_spec(scope, agg)
+    #   gen.generate_view_spec(view)
+    #   gen.generate_workflow_spec(workflow)
+    #   gen.generate_service_spec(service)
+    #   gen.generate_port_spec(port_name, port_def, agg)
     #
     class SpecGenerator
       include SpecHelpers
@@ -28,6 +47,15 @@ module Hecks
       include CommandSpec
       include EventSpec
       include EntitySpec
+      include QuerySpec
+      include PolicySpec
+      include LifecycleSpec
+      include SpecificationSpec
+      include ScopeSpec
+      include ViewSpec
+      include WorkflowSpec
+      include ServiceSpec
+      include PortSpec
 
       # Creates a new SpecGenerator for a domain.
       #

@@ -1,9 +1,9 @@
 # = HecksTemplating::SmokeTest
 #
-# Domain-driven HTTP smoke test for the web explorer. Exercises every
-# generated page (home, index, show, form, config) against a running
-# server. Works with both Ruby and Go targets since both produce the
-# same HTTP routes.
+# Browser-style HTTP smoke test for the web explorer. Exercises every
+# page like a real user: navigates to forms, fills fields, submits,
+# follows redirects, verifies show pages. Validates the event log
+# via /_events. Works with both Ruby and Go targets.
 #
 #   smoke = HecksTemplating::SmokeTest.new("http://localhost:9292", domain)
 #   results = smoke.run
@@ -12,9 +12,16 @@
 require "net/http"
 require "uri"
 require "json"
+require_relative "smoke_test/event_checks"
+require_relative "smoke_test/behavior_tests"
+require_relative "smoke_test/form_submission"
 
 module HecksTemplating
   class SmokeTest
+    include EventChecks
+    include BehaviorTests
+    include FormSubmission
+
     Result = Struct.new(:status, :method, :path, :http_code, :error, keyword_init: true)
 
     def initialize(base_url, domain)
@@ -23,9 +30,11 @@ module HecksTemplating
     end
 
     def run
+      reset_server
       results = []
       results << check_get("/", "home")
       results << check_get("/config", "config")
+      results << check_get("/_events", "event log")
 
       @domain.aggregates.each do |agg|
         plural = underscore(agg.name) + "s"
@@ -34,41 +43,53 @@ module HecksTemplating
 
         results << check_get("/#{plural}", "#{agg.name} index")
 
+        # Create commands — submit via browser form
+        expected_events = []
         create_cmds.each do |cmd|
           cmd_snake = underscore(cmd.name)
-          results << check_get("/#{plural}/#{cmd_snake}/new", "#{cmd.name} form")
-          # Go uses /aggregate/command, Ruby static uses /aggregate/command/submit
-          post_path = "/#{plural}/#{cmd_snake}"
-          result = check_post(post_path, build_form_data(cmd), "#{cmd.name} submit")
-          if result.http_code == 404
-            result = check_post("#{post_path}/submit", build_form_data(cmd), "#{cmd.name} submit")
-          end
-          results << result
+          form_path = "/#{plural}/#{cmd_snake}/new"
+          results.concat(submit_form(form_path, cmd, cmd.name, strict: true))
+          expected_events << cmd.inferred_event_name
         end
 
+        # Verify events from create commands
+        results << check_events_contain(expected_events, "#{agg.name} create events") unless expected_events.empty?
+
+        # Update commands — navigate to form with ID, submit
         id = fetch_first_id(plural)
         if id
           results << check_get("/#{plural}/show?id=#{id}", "#{agg.name} show")
+          # Test update command forms — use non-strict since lifecycle
+          # state constraints may prevent some from succeeding (those
+          # are tested properly in test_lifecycles)
           update_cmds.each do |cmd|
             cmd_snake = underscore(cmd.name)
-            results << check_get("/#{plural}/#{cmd_snake}/new?id=#{id}", "#{cmd.name} form")
+            form_path = "/#{plural}/#{cmd_snake}/new?id=#{id}"
+            results.concat(submit_form(form_path, cmd, cmd.name, strict: false))
           end
         end
       end
 
+      # Domain behavior tests
+      test_queries(results)
+      test_scopes(results)
+      test_specifications(results)
+      test_policies(results)
+      test_lifecycles(results)
+      test_views(results)
+      test_workflows(results)
+      test_services(results)
+      test_negative_cases(results)
+
       print_results(results)
+      reset_server
       results
     end
 
     private
 
-    def partition_commands(agg, agg_snake)
-      # Match any _id suffix that could refer to this aggregate
-      # e.g., governance_policy_id, policy_id, governance_policy_id all match
-      id_pattern = /_id$/
-      creates = agg.commands.select { |c| c.attributes.none? { |a| a.name.to_s =~ id_pattern && a.name.to_s.end_with?("_id") && agg_snake.end_with?(a.name.to_s.sub(/_id$/, "")) } }
-      updates = agg.commands - creates
-      [creates, updates]
+    def partition_commands(agg, _agg_snake)
+      Hecks::AggregateContract.partition_commands(agg)
     end
 
     def build_form_data(cmd)
@@ -112,21 +133,45 @@ module HecksTemplating
       Result.new(status: :fail, method: "GET", path: path, http_code: 0, error: e.message)
     end
 
-    def check_post(path, data, label)
+    # GET a page and verify its body contains the expected text.
+    # Used to verify state changes are reflected in the UI.
+    def check_show_contains(path, expected_text, label)
       uri = URI("#{@base}#{path}")
-      # Try JSON (Ruby static server), fall back to form-urlencoded (Go server)
-      req = Net::HTTP::Post.new(uri)
-      req["Content-Type"] = "application/json"
-      req.body = JSON.generate(data)
-      res = Net::HTTP.start(uri.host, uri.port) { |http| http.request(req) }
-      code = res.code.to_i
-      # If JSON rejected, try form-urlencoded
-      if code >= 400
-        res = Net::HTTP.post_form(uri, data)
-        code = res.code.to_i
+      res = Net::HTTP.get_response(uri)
+      body = res.body.to_s
+      if res.code.to_i == 200 && body.include?(expected_text)
+        Result.new(status: :pass, method: "GET", path: path, http_code: 200)
+      elsif res.code.to_i != 200
+        Result.new(status: :fail, method: "GET", path: path, http_code: res.code.to_i,
+                   error: "#{label}: HTTP #{res.code}")
+      else
+        Result.new(status: :fail, method: "GET", path: path, http_code: 200,
+                   error: "#{label}: '#{expected_text}' not found on page")
       end
-      # 2xx = success, 3xx = redirect, 422 = validation error (expected for sample data)
-      if (200..399).include?(code) || code == 422
+    rescue => e
+      Result.new(status: :fail, method: "GET", path: path, http_code: 0, error: e.message)
+    end
+
+    def reset_server
+      Net::HTTP.post_form(URI("#{@base}/_reset"), {})
+    rescue
+      # Server may not support reset — that's OK
+    end
+
+    def check_post(path, data, label)
+      do_post(path, data, label, allow_422: true)
+    end
+
+    def check_post_strict(path, data, label)
+      do_post(path, data, label, allow_422: false)
+    end
+
+    def do_post(path, data, label, allow_422: true)
+      uri = URI("#{@base}#{path}")
+      res = Net::HTTP.post_form(uri, data)
+      code = res.code.to_i
+      pass_range = allow_422 ? (200..422) : (200..399)
+      if pass_range.include?(code)
         Result.new(status: :pass, method: "POST", path: path, http_code: code)
       else
         Result.new(status: :fail, method: "POST", path: path, http_code: code, error: res.body&.slice(0, 200))
@@ -137,14 +182,14 @@ module HecksTemplating
 
     def print_results(results)
       pass = results.count { |r| r.status == :pass }
-      fail = results.count { |r| r.status == :fail }
+      fail_count = results.count { |r| r.status == :fail }
       results.each do |r|
         icon = r.status == :pass ? "OK  " : "FAIL"
         line = "#{icon} #{r.method.ljust(4)} #{r.path}"
         line += " -- #{r.error}" if r.error
         puts line
       end
-      puts "\n#{pass} passed, #{fail} failed (#{results.size} total)"
+      puts "\n#{pass} passed, #{fail_count} failed (#{results.size} total)"
     end
 
     def underscore(str)

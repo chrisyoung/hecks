@@ -16,6 +16,7 @@ func (c ReportIncident) CommandName() string { return "ReportIncident" }
 
 func (c ReportIncident) Execute(repo IncidentRepository) (*Incident, *ReportedIncident, error) {
 	agg := NewIncident(c.ModelId, c.Severity, c.Category, c.Description, c.ReportedById, time.Time{}, time.Time{}, "", "", "")
+	agg.Status = "reported"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

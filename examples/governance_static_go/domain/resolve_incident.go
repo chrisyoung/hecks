@@ -23,6 +23,10 @@ func (c ResolveIncident) Execute(repo IncidentRepository) (*Incident, *ResolvedI
 	}
 	existing.Resolution = c.Resolution
 	existing.RootCause = c.RootCause
+	if existing.Status != "investigating" && existing.Status != "mitigating" {
+		return nil, nil, fmt.Errorf("cannot ResolveIncident: Incident is in %s state", existing.Status)
+	}
+	existing.Status = "resolved"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

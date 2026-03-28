@@ -1,0 +1,100 @@
+# Hecks::Generators::Infrastructure::SpecGenerator::PortSpec
+#
+# Generates RSpec specs for aggregate port definitions. Tests that
+# allowed methods work and denied methods raise PortAccessDenied.
+# Mixed into SpecGenerator.
+#
+#   gen.generate_port_spec(port_name, port_def, aggregate)
+#
+module Hecks
+  module Generators
+    module Infrastructure
+      class SpecGenerator
+        module PortSpec
+          # Generates an RSpec spec for a port on an aggregate.
+          #
+          # @param port_name [Symbol] the port name (e.g., :admin, :guest)
+          # @param port_def [Hecks::DomainModel::Structure::PortDefinition]
+          # @param aggregate [Hecks::DomainModel::Structure::Aggregate]
+          # @return [String] the complete RSpec file content
+          def generate_port_spec(port_name, port_def, aggregate)
+            safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
+            create_cmd = find_port_create_cmd(aggregate)
+
+            lines = []
+            lines << "require \"spec_helper\""
+            lines << ""
+            lines << "RSpec.describe \"#{safe_agg} :#{port_name} port\" do"
+            lines << "  before { @app = Hecks.load(domain, port: :#{port_name}, force: true) }"
+            lines << ""
+
+            # Test allowed methods
+            allowed = port_def.allowed_methods
+            denied = [:find, :all, :count] - allowed
+
+            allowed.each do |method|
+              if method == :find || method == :all || method == :count
+                lines << "  it \"allows .#{method}\" do"
+                lines << "    expect { #{safe_agg}.#{method}#{method == :find ? '("nonexistent")' : ''} }.not_to raise_error"
+                lines << "  end"
+                lines << ""
+              end
+            end
+
+            # Test denied methods
+            denied.each do |method|
+              lines << "  it \"denies .#{method}\" do"
+              lines << "    expect { #{safe_agg}.#{method}#{method == :find ? '("test")' : ''} }.to raise_error(Hecks::PortAccessDenied)"
+              lines << "  end"
+              lines << ""
+            end
+
+            # Test denied commands
+            agg_snake = Hecks::Utils.underscore(aggregate.name)
+            aggregate.commands.each do |cmd|
+              cmd_method = derive_port_method(cmd, aggregate)
+              unless allowed.include?(cmd_method.to_sym)
+                lines << "  it \"denies .#{cmd_method}\" do"
+                lines << "    expect { #{safe_agg}.#{cmd_method}(#{example_args(cmd)}) }.to raise_error(Hecks::PortAccessDenied)"
+                lines << "  end"
+                lines << ""
+              end
+            end
+
+            lines << "end"
+            lines.join("\n") + "\n"
+          end
+
+          private
+
+          def find_port_create_cmd(aggregate)
+            agg_snake = Hecks::Utils.underscore(aggregate.name)
+            suffixes = agg_snake.split("_").each_index.map { |i|
+              agg_snake.split("_").drop(i).join("_")
+            }.uniq
+
+            aggregate.commands.find do |cmd|
+              cmd.attributes.none? { |a|
+                a.name.to_s.end_with?("_id") &&
+                  suffixes.any? { |s| a.name.to_s == "#{s}_id" }
+              }
+            end
+          end
+
+          def derive_port_method(cmd, agg)
+            agg_snake = Hecks::Utils.underscore(agg.name)
+            suffixes = agg_snake.split("_").each_index.map { |i|
+              agg_snake.split("_").drop(i).join("_")
+            }.uniq
+            full = Hecks::Utils.underscore(cmd.name)
+            suffixes.each do |s|
+              stripped = full.sub(/_#{s}$/, "")
+              return stripped if stripped != full
+            end
+            full
+          end
+        end
+      end
+    end
+  end
+end

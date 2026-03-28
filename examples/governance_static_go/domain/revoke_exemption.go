@@ -19,6 +19,10 @@ func (c RevokeExemption) Execute(repo ExemptionRepository) (*Exemption, *Revoked
 	if existing == nil {
 		return nil, nil, fmt.Errorf("Exemption not found: %s", c.ExemptionId)
 	}
+	if existing.Status != "active" {
+		return nil, nil, fmt.Errorf("cannot RevokeExemption: Exemption is in %s state", existing.Status)
+	}
+	existing.Status = "revoked"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

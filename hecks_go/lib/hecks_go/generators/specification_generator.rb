@@ -17,12 +17,13 @@ module HecksGo
 
     def generate
       param = GoUtils.camel_case(@agg)
+      type_name = "#{@agg}#{@spec.name}"
       lines = []
       lines << "package #{@package}"
       lines << ""
-      lines << "type #{@spec.name} struct{}"
+      lines << "type #{type_name} struct{}"
       lines << ""
-      lines << "func (s #{@spec.name}) SatisfiedBy(#{param} *#{@agg}) bool {"
+      lines << "func (s #{type_name}) SatisfiedBy(#{param} *#{@agg}) bool {"
       if @predicate
         lines << "\treturn #{@predicate}"
       else

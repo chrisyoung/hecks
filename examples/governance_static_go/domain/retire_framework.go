@@ -2,6 +2,7 @@ package domain
 
 import (
 	"time"
+	"fmt"
 )
 
 type RetireFramework struct {
@@ -11,17 +12,28 @@ type RetireFramework struct {
 func (c RetireFramework) CommandName() string { return "RetireFramework" }
 
 func (c RetireFramework) Execute(repo RegulatoryFrameworkRepository) (*RegulatoryFramework, *RetiredFramework, error) {
-	agg := NewRegulatoryFramework("", "", "", time.Time{}, "", nil, "")
-	if err := agg.Validate(); err != nil {
+	existing, err := repo.Find(c.FrameworkId)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := repo.Save(agg); err != nil {
+	if existing == nil {
+		return nil, nil, fmt.Errorf("RegulatoryFramework not found: %s", c.FrameworkId)
+	}
+	if existing.Status != "active" {
+		return nil, nil, fmt.Errorf("cannot RetireFramework: RegulatoryFramework is in %s state", existing.Status)
+	}
+	existing.Status = "retired"
+	existing.UpdatedAt = time.Now()
+	if err := existing.Validate(); err != nil {
+		return nil, nil, err
+	}
+	if err := repo.Save(existing); err != nil {
 		return nil, nil, err
 	}
 	event := RetiredFramework{
-		AggregateID: agg.ID,
+		AggregateID: existing.ID,
 		FrameworkId: c.FrameworkId,
 		OccurredAt: time.Now(),
 	}
-	return agg, &event, nil
+	return existing, &event, nil
 }

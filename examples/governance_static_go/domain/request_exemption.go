@@ -14,7 +14,8 @@ type RequestExemption struct {
 func (c RequestExemption) CommandName() string { return "RequestExemption" }
 
 func (c RequestExemption) Execute(repo ExemptionRepository) (*Exemption, *RequestedExemption, error) {
-	agg := NewExemption(c.ModelId, c.PolicyId, c.Requirement, c.Reason, "", time.Time{}, time.Time{}, "")
+	agg := NewExemption(c.ModelId, c.PolicyId, c.Requirement, c.Reason, "", time.Time{}, time.Time{}, "", "")
+	agg.Status = "requested"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

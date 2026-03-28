@@ -2,6 +2,7 @@ package domain
 
 import (
 	"time"
+	"fmt"
 )
 
 type SuspendModel struct {
@@ -11,17 +12,28 @@ type SuspendModel struct {
 func (c SuspendModel) CommandName() string { return "SuspendModel" }
 
 func (c SuspendModel) Execute(repo AiModelRepository) (*AiModel, *SuspendedModel, error) {
-	agg := NewAiModel("", "", "", "", "", time.Time{}, "", "", nil, nil, "")
-	if err := agg.Validate(); err != nil {
+	existing, err := repo.Find(c.ModelId)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := repo.Save(agg); err != nil {
+	if existing == nil {
+		return nil, nil, fmt.Errorf("AiModel not found: %s", c.ModelId)
+	}
+	if existing.Status != "approved" && existing.Status != "classified" && existing.Status != "draft" {
+		return nil, nil, fmt.Errorf("cannot SuspendModel: AiModel is in %s state", existing.Status)
+	}
+	existing.Status = "suspended"
+	existing.UpdatedAt = time.Now()
+	if err := existing.Validate(); err != nil {
+		return nil, nil, err
+	}
+	if err := repo.Save(existing); err != nil {
 		return nil, nil, err
 	}
 	event := SuspendedModel{
-		AggregateID: agg.ID,
+		AggregateID: existing.ID,
 		ModelId: c.ModelId,
 		OccurredAt: time.Now(),
 	}
-	return agg, &event, nil
+	return existing, &event, nil
 }

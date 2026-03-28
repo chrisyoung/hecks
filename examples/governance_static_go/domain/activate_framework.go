@@ -2,6 +2,7 @@ package domain
 
 import (
 	"time"
+	"fmt"
 )
 
 type ActivateFramework struct {
@@ -12,18 +13,30 @@ type ActivateFramework struct {
 func (c ActivateFramework) CommandName() string { return "ActivateFramework" }
 
 func (c ActivateFramework) Execute(repo RegulatoryFrameworkRepository) (*RegulatoryFramework, *ActivatedFramework, error) {
-	agg := NewRegulatoryFramework("", "", "", c.EffectiveDate, "", nil, "")
-	if err := agg.Validate(); err != nil {
+	existing, err := repo.Find(c.FrameworkId)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := repo.Save(agg); err != nil {
+	if existing == nil {
+		return nil, nil, fmt.Errorf("RegulatoryFramework not found: %s", c.FrameworkId)
+	}
+	existing.EffectiveDate = c.EffectiveDate
+	if existing.Status != "draft" {
+		return nil, nil, fmt.Errorf("cannot ActivateFramework: RegulatoryFramework is in %s state", existing.Status)
+	}
+	existing.Status = "active"
+	existing.UpdatedAt = time.Now()
+	if err := existing.Validate(); err != nil {
+		return nil, nil, err
+	}
+	if err := repo.Save(existing); err != nil {
 		return nil, nil, err
 	}
 	event := ActivatedFramework{
-		AggregateID: agg.ID,
+		AggregateID: existing.ID,
 		FrameworkId: c.FrameworkId,
 		EffectiveDate: c.EffectiveDate,
 		OccurredAt: time.Now(),
 	}
-	return agg, &event, nil
+	return existing, &event, nil
 }

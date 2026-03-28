@@ -19,6 +19,10 @@ func (c DecommissionDeployment) Execute(repo DeploymentRepository) (*Deployment,
 	if existing == nil {
 		return nil, nil, fmt.Errorf("Deployment not found: %s", c.DeploymentId)
 	}
+	if existing.Status != "deployed" {
+		return nil, nil, fmt.Errorf("cannot DecommissionDeployment: Deployment is in %s state", existing.Status)
+	}
+	existing.Status = "decommissioned"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

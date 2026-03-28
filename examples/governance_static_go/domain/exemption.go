@@ -6,7 +6,9 @@ import (
 )
 
 type Exemption struct {
-	ID        string    `json:"id"`
+	ID string `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	ModelId string `json:"model_id"`
 	PolicyId string `json:"policy_id"`
 	Requirement string `json:"requirement"`
@@ -14,12 +16,11 @@ type Exemption struct {
 	ApprovedById string `json:"approved_by_id"`
 	ApprovedAt time.Time `json:"approved_at"`
 	ExpiresAt time.Time `json:"expires_at"`
+	Scope string `json:"scope"`
 	Status string `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func NewExemption(modelId string, policyId string, requirement string, reason string, approvedById string, approvedAt time.Time, expiresAt time.Time, status string) *Exemption {
+func NewExemption(modelId string, policyId string, requirement string, reason string, approvedById string, approvedAt time.Time, expiresAt time.Time, scope string, status string) *Exemption {
 	a := &Exemption{
 		ID:        uuid.New().String(),
 		ModelId: modelId,
@@ -29,6 +30,7 @@ func NewExemption(modelId string, policyId string, requirement string, reason st
 		ApprovedById: approvedById,
 		ApprovedAt: approvedAt,
 		ExpiresAt: expiresAt,
+		Scope: scope,
 		Status: status,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

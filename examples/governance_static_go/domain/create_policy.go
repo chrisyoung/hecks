@@ -15,6 +15,7 @@ func (c CreatePolicy) CommandName() string { return "CreatePolicy" }
 
 func (c CreatePolicy) Execute(repo GovernancePolicyRepository) (*GovernancePolicy, *CreatedPolicy, error) {
 	agg := NewGovernancePolicy(c.Name, c.Description, c.Category, c.FrameworkId, time.Time{}, time.Time{}, nil, "")
+	agg.Status = "draft"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

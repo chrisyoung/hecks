@@ -13,6 +13,7 @@ type ApprovedExemption struct {
 	Requirement string `json:"requirement"`
 	Reason string `json:"reason"`
 	ApprovedAt time.Time `json:"approved_at"`
+	Scope string `json:"scope"`
 	Status string `json:"status"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

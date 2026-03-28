@@ -19,6 +19,10 @@ func (c DeactivateStakeholder) Execute(repo StakeholderRepository) (*Stakeholder
 	if existing == nil {
 		return nil, nil, fmt.Errorf("Stakeholder not found: %s", c.StakeholderId)
 	}
+	if existing.Status != "active" {
+		return nil, nil, fmt.Errorf("cannot DeactivateStakeholder: Stakeholder is in %s state", existing.Status)
+	}
+	existing.Status = "deactivated"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

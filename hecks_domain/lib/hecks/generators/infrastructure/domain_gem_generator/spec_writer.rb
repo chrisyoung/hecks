@@ -4,9 +4,9 @@ module Hecks
       class DomainGemGenerator
         # Hecks::Generators::Infrastructure::DomainGemGenerator::SpecWriter
         #
-        # Mixin that writes RSpec specs for all aggregates, value objects, commands,
-        # and events in the domain gem. Delegates to SpecGenerator for spec content.
-        # Part of DomainGemGenerator, invoked during DomainGemGenerator#generate.
+        # Mixin that writes RSpec specs for all domain concepts in the gem.
+        # Delegates to SpecGenerator for spec content. Part of
+        # DomainGemGenerator, invoked during DomainGemGenerator#generate.
         #
         #   # Mixed into DomainGemGenerator:
         #   generate_specs(root, gem_name, mod)
@@ -16,14 +16,8 @@ module Hecks
 
           # Writes all RSpec spec files for the domain gem.
           #
-          # Creates:
-          # - +spec/spec_helper.rb+ with require lines and RSpec configuration
-          # - +.rspec+ with default formatter and color options
-          # - Per-aggregate specs (+spec/<agg>/<agg>_spec.rb+)
-          # - Value object specs (+spec/<agg>/<vo>_spec.rb+)
-          # - Entity specs (+spec/<agg>/<entity>_spec.rb+)
-          # - Command specs (+spec/<agg>/commands/<cmd>_spec.rb+)
-          # - Event specs (+spec/<agg>/events/<evt>_spec.rb+)
+          # Creates specs for: aggregates, value objects, entities, commands,
+          # events, queries, policies, lifecycles, specifications, and scopes.
           #
           # @param root [String] absolute path to the gem root directory
           # @param gem_name [String] snake_case gem name
@@ -36,18 +30,76 @@ module Hecks
             @domain.aggregates.each do |agg|
               snake = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name))
               write_file(root, "spec/#{snake}/#{snake}_spec.rb", sg.generate_aggregate_spec(agg))
+
               agg.value_objects.each do |vo|
                 write_file(root, "spec/#{snake}/#{Hecks::Utils.underscore(vo.name)}_spec.rb", sg.generate_value_object_spec(vo, agg))
               end
+
               agg.entities.each do |ent|
                 write_file(root, "spec/#{snake}/#{Hecks::Utils.underscore(ent.name)}_spec.rb", sg.generate_entity_spec(ent, agg))
               end
+
               agg.commands.each do |cmd|
                 write_file(root, "spec/#{snake}/commands/#{Hecks::Utils.underscore(cmd.name)}_spec.rb", sg.generate_command_spec(cmd, agg))
               end
+
               agg.events.each do |evt|
                 write_file(root, "spec/#{snake}/events/#{Hecks::Utils.underscore(evt.name)}_spec.rb", sg.generate_event_spec(evt, agg))
               end
+
+              agg.queries.each do |query|
+                content = sg.generate_query_spec(query, agg)
+                next unless content
+                write_file(root, "spec/#{snake}/queries/#{Hecks::Utils.underscore(query.name)}_spec.rb", content)
+              end
+
+              agg.policies.each do |policy|
+                content = sg.generate_policy_spec(policy, agg)
+                next unless content
+                write_file(root, "spec/#{snake}/policies/#{Hecks::Utils.underscore(policy.name)}_spec.rb", content)
+              end
+
+              if agg.lifecycle
+                content = sg.generate_lifecycle_spec(agg)
+                write_file(root, "spec/#{snake}/lifecycle_spec.rb", content) if content
+              end
+
+              agg.specifications.each do |spec|
+                content = sg.generate_specification_spec(spec, agg)
+                next unless content
+                write_file(root, "spec/#{snake}/specifications/#{Hecks::Utils.underscore(spec.name)}_spec.rb", content)
+              end
+
+              agg.scopes.each do |scope|
+                content = sg.generate_scope_spec(scope, agg)
+                next unless content
+                write_file(root, "spec/#{snake}/scopes/#{scope.name}_spec.rb", content)
+              end
+
+              agg.ports.each do |port_name, port_def|
+                content = sg.generate_port_spec(port_name, port_def, agg)
+                next unless content
+                write_file(root, "spec/#{snake}/ports/#{port_name}_spec.rb", content)
+              end
+            end
+
+            # Domain-level specs
+            @domain.views.each do |view|
+              content = sg.generate_view_spec(view)
+              next unless content
+              write_file(root, "spec/views/#{Hecks::Utils.underscore(view.name)}_spec.rb", content)
+            end
+
+            @domain.workflows.each do |wf|
+              content = sg.generate_workflow_spec(wf)
+              next unless content
+              write_file(root, "spec/workflows/#{Hecks::Utils.underscore(wf.name)}_spec.rb", content)
+            end
+
+            @domain.services.each do |svc|
+              content = sg.generate_service_spec(svc)
+              next unless content
+              write_file(root, "spec/services/#{Hecks::Utils.underscore(svc.name)}_spec.rb", content)
             end
           end
         end

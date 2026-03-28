@@ -13,6 +13,7 @@ func (c InitiateAssessment) CommandName() string { return "InitiateAssessment" }
 
 func (c InitiateAssessment) Execute(repo AssessmentRepository) (*Assessment, *InitiatedAssessment, error) {
 	agg := NewAssessment(c.ModelId, c.AssessorId, "", 0.0, 0.0, 0.0, 0.0, time.Time{}, nil, nil, "")
+	agg.Status = "pending"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}
