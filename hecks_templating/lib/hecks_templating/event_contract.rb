@@ -17,6 +17,14 @@ module Hecks
     # Instance variable used by FilteredEventBus to tag event source domain.
     SOURCE_ATTR = :@_source_domain
 
+    # Standard fields present on every generated event, beyond the
+    # domain-specific attributes. Generators for all targets must
+    # include these fields.
+    REQUIRED_FIELDS = {
+      aggregate_id: { ruby: "String", go: "string", json: "aggregate_id" },
+      occurred_at:  { ruby: "Time",   go: "time.Time", json: "occurred_at" },
+    }.freeze
+
     # Validate that generated event fields match the domain IR definition.
     #
     # @param event_ir [DomainModel::Behavior::Event] the event from the IR

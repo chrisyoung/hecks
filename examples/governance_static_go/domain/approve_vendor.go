@@ -23,6 +23,10 @@ func (c ApproveVendor) Execute(repo VendorRepository) (*Vendor, *ApprovedVendor,
 	}
 	existing.AssessmentDate = c.AssessmentDate
 	existing.NextReviewDate = c.NextReviewDate
+	if existing.Status != "pending_review" {
+		return nil, nil, fmt.Errorf("cannot ApproveVendor: Vendor is in %s state", existing.Status)
+	}
+	existing.Status = "approved"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

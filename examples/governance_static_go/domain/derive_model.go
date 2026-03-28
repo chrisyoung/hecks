@@ -16,6 +16,7 @@ func (c DeriveModel) CommandName() string { return "DeriveModel" }
 
 func (c DeriveModel) Execute(repo AiModelRepository) (*AiModel, *DerivedModel, error) {
 	agg := NewAiModel(c.Name, c.Version, "", c.Description, "", time.Time{}, c.ParentModelId, c.DerivationType, nil, nil, "")
+	agg.Status = "draft"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

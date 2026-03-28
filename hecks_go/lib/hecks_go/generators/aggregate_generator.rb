@@ -1,7 +1,8 @@
 # HecksGo::AggregateGenerator
 #
-# Generates a Go struct for an aggregate root with typed fields,
-# a Validate() method from DSL validations, and lifecycle predicates.
+# Generates a Go struct for an aggregate root. Uses AggregateContract
+# to determine standard fields, validations, enum constraints, and
+# invariants — guaranteeing identical runtime behavior to Ruby.
 #
 #   gen = AggregateGenerator.new(agg, package: "domain")
 #   gen.generate  # => Go source string
@@ -14,42 +15,56 @@ module HecksGo
       @agg = aggregate
       @package = package
       @user_attrs = @agg.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
+      @rules = Hecks::AggregateContract.rules(@agg)
     end
 
     def generate
       lines = []
       lines << "package #{@package}"
       lines << ""
+      lines.concat(imports)
+      lines.concat(struct_definition)
+      lines.concat(constructor)
+      lines.concat(validate_method)
+      lines.join("\n") + "\n"
+    end
 
-      imports = ["\"time\"", "\"github.com/google/uuid\""]
-      imports << "\"encoding/json\"" if GoUtils.needs_json_import?(@user_attrs)
+    private
+
+    def imports
+      lines = []
+      pkgs = ["\"time\"", "\"github.com/google/uuid\""]
+      pkgs << "\"fmt\"" if @rules[:enums].any?
+      pkgs << "\"encoding/json\"" if GoUtils.needs_json_import?(@user_attrs)
       lines << "import ("
-      imports.each { |i| lines << "\t#{i}" }
+      pkgs.each { |i| lines << "\t#{i}" }
       lines << ")"
       lines << ""
+      lines
+    end
 
-      # Struct
+    def struct_definition
+      lines = []
       lines << "type #{@agg.name} struct {"
-      lines << "\tID        string    `json:\"id\"`"
-      @user_attrs.each do |attr|
-        go_t = GoUtils.go_type(attr)
-        field = GoUtils.pascal_case(attr.name)
-        tag = GoUtils.json_tag(attr.name)
-        lines << "\t#{field} #{go_t} `json:\"#{tag}\"`"
+      @rules[:standard_fields].each do |sf|
+        lines << "\t#{sf[:go_field]} #{sf[:go]} `json:\"#{sf[:json]}\"`"
       end
-      lines << "\tCreatedAt time.Time `json:\"created_at\"`"
-      lines << "\tUpdatedAt time.Time `json:\"updated_at\"`"
+      @user_attrs.each do |attr|
+        lines << "\t#{GoUtils.pascal_case(attr.name)} #{GoUtils.go_type(attr)} `json:\"#{GoUtils.json_tag(attr.name)}\"`"
+      end
       lines << "}"
       lines << ""
+      lines
+    end
 
-      # Constructor
-      lines << "func New#{@agg.name}(#{constructor_params}) *#{@agg.name} {"
+    def constructor
+      params = @user_attrs.map { |a| "#{GoUtils.camel_case(a.name)} #{GoUtils.go_type(a)}" }.join(", ")
+      lines = []
+      lines << "func New#{@agg.name}(#{params}) *#{@agg.name} {"
       lines << "\ta := &#{@agg.name}{"
       lines << "\t\tID:        uuid.New().String(),"
       @user_attrs.each do |attr|
-        field = GoUtils.pascal_case(attr.name)
-        param = GoUtils.camel_case(attr.name)
-        lines << "\t\t#{field}: #{param},"
+        lines << "\t\t#{GoUtils.pascal_case(attr.name)}: #{GoUtils.camel_case(attr.name)},"
       end
       lines << "\t\tCreatedAt: time.Now(),"
       lines << "\t\tUpdatedAt: time.Now(),"
@@ -57,36 +72,39 @@ module HecksGo
       lines << "\treturn a"
       lines << "}"
       lines << ""
-
-      # Validate
-      lines.concat(validate_method)
-      # Lifecycle predicates are in the lifecycle file if present
-
-      lines.join("\n") + "\n"
-    end
-
-    private
-
-    def constructor_params
-      @user_attrs.map do |attr|
-        "#{GoUtils.camel_case(attr.name)} #{GoUtils.go_type(attr)}"
-      end.join(", ")
+      lines
     end
 
     def validate_method
       lines = []
       lines << "func (a *#{@agg.name}) Validate() error {"
-      @agg.validations.each do |v|
-        field = GoUtils.pascal_case(v.field)
-        if v.rules[:presence]
-          lines << "\tif a.#{field} == \"\" {"
-          lines << "\t\treturn &ValidationError{Field: \"#{v.field}\", Message: \"#{v.field} can't be blank\"}"
-          lines << "\t}"
-        end
+
+      # Presence checks — from contract
+      @rules[:validations].each do |v|
+        next unless v[:check] == :presence
+        field = GoUtils.pascal_case(v[:field])
+        lines << "\tif a.#{field} == \"\" {"
+        lines << "\t\treturn &ValidationError{Field: \"#{v[:field]}\", Message: \"#{v[:field]} can't be blank\"}"
+        lines << "\t}"
       end
-      @agg.invariants.each do |inv|
-        lines << "\t// invariant: #{inv.message}"
+
+      # Enum checks — from contract
+      @rules[:enums].each do |e|
+        field = GoUtils.pascal_case(e[:field])
+        valid_map = e[:values].map { |v| "\"#{v}\": true" }.join(", ")
+        lines << "\tif a.#{field} != \"\" {"
+        lines << "\t\tvalid#{field} := map[string]bool{#{valid_map}}"
+        lines << "\t\tif !valid#{field}[a.#{field}] {"
+        lines << "\t\t\treturn &ValidationError{Field: \"#{e[:field]}\", Message: fmt.Sprintf(\"#{e[:field]} must be one of: #{e[:values].join(", ")}, got: %s\", a.#{field})}"
+        lines << "\t\t}"
+        lines << "\t}"
       end
+
+      # Invariants — from contract (documented as comments)
+      @rules[:invariants].each do |inv|
+        lines << "\t// invariant: #{inv[:message]}"
+      end
+
       lines << "\treturn nil"
       lines << "}"
       lines

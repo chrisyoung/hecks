@@ -29,6 +29,10 @@ func (c SubmitAssessment) Execute(repo AssessmentRepository) (*Assessment, *Subm
 	existing.SafetyScore = c.SafetyScore
 	existing.TransparencyScore = c.TransparencyScore
 	existing.OverallScore = c.OverallScore
+	if existing.Status != "pending" {
+		return nil, nil, fmt.Errorf("cannot SubmitAssessment: Assessment is in %s state", existing.Status)
+	}
+	existing.Status = "submitted"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

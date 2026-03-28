@@ -6,7 +6,9 @@ import (
 )
 
 type RegulatoryFramework struct {
-	ID        string    `json:"id"`
+	ID string `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	Name string `json:"name"`
 	Jurisdiction string `json:"jurisdiction"`
 	Version string `json:"version"`
@@ -14,8 +16,6 @@ type RegulatoryFramework struct {
 	Authority string `json:"authority"`
 	Requirements []FrameworkRequirement `json:"requirements"`
 	Status string `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func NewRegulatoryFramework(name string, jurisdiction string, version string, effectiveDate time.Time, authority string, requirements []FrameworkRequirement, status string) *RegulatoryFramework {

@@ -6,15 +6,15 @@ import (
 )
 
 type Monitoring struct {
-	ID        string    `json:"id"`
+	ID string `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	ModelId string `json:"model_id"`
 	DeploymentId string `json:"deployment_id"`
 	MetricName string `json:"metric_name"`
 	Value float64 `json:"value"`
 	Threshold float64 `json:"threshold"`
 	RecordedAt time.Time `json:"recorded_at"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func NewMonitoring(modelId string, deploymentId string, metricName string, value float64, threshold float64, recordedAt time.Time) *Monitoring {

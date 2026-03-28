@@ -15,6 +15,7 @@ func (c RegisterFramework) CommandName() string { return "RegisterFramework" }
 
 func (c RegisterFramework) Execute(repo RegulatoryFrameworkRepository) (*RegulatoryFramework, *RegisteredFramework, error) {
 	agg := NewRegulatoryFramework(c.Name, c.Jurisdiction, c.Version, time.Time{}, c.Authority, nil, "")
+	agg.Status = "draft"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

@@ -14,7 +14,13 @@ module HecksGo
       @event = event
       @package = package
       agg_snake = GoUtils.snake_case(@agg.name)
-      @self_id = @cmd.attributes.find { |a| a.name.to_s == "#{agg_snake}_id" }
+      suffixes = agg_snake.split("_").each_index.map { |i|
+        agg_snake.split("_").drop(i).join("_")
+      }.uniq
+      @self_id = @cmd.attributes.find { |a|
+        a.name.to_s.end_with?("_id") &&
+          suffixes.any? { |s| a.name.to_s == "#{s}_id" }
+      }
       @is_create = @self_id.nil?
       # Event type name in Go — suffixed if it collides with command name
       @go_event_name = @event.name == @cmd.name ? "#{@event.name}Event" : @event.name
@@ -98,6 +104,11 @@ module HecksGo
       end.join(", ")
 
       lines << "\tagg := New#{@agg.name}(#{constructor_args})"
+      # Set lifecycle default status on create — from AggregateContract
+      rules = Hecks::AggregateContract.rules(@agg)
+      if rules[:lifecycle]
+        lines << "\tagg.#{GoUtils.pascal_case(rules[:lifecycle][:field])} = \"#{rules[:lifecycle][:default]}\""
+      end
       lines << "\tif err := agg.Validate(); err != nil {"
       lines << "\t\treturn nil, nil, err"
       lines << "\t}"
@@ -130,6 +141,23 @@ module HecksGo
         next if a == @self_id
         if agg_attr_names.include?(a.name.to_s)
           lines << "\texisting.#{GoUtils.pascal_case(a.name)} = c.#{GoUtils.pascal_case(a.name)}"
+        end
+      end
+      # Apply lifecycle transition — from AggregateContract
+      rules = Hecks::AggregateContract.rules(@agg)
+      if rules[:lifecycle]
+        transition = rules[:lifecycle][:transitions].find { |t| t[:command] == @cmd.name }
+        if transition
+          field = GoUtils.pascal_case(rules[:lifecycle][:field])
+          from = transition[:from]
+          if from
+            from_list = from.is_a?(Array) ? from : [from]
+            from_check = from_list.map { |f| "existing.#{field} != \"#{f}\"" }.join(" && ")
+            lines << "\tif #{from_check} {"
+            lines << "\t\treturn nil, nil, fmt.Errorf(\"cannot #{@cmd.name}: #{@agg.name} is in %s state\", existing.#{field})"
+            lines << "\t}"
+          end
+          lines << "\texisting.#{field} = \"#{transition[:target]}\""
         end
       end
       lines << "\texisting.UpdatedAt = time.Now()"

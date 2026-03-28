@@ -1,7 +1,7 @@
 # HecksGo::ServerGenerator::UIRoutes
 #
 # Generates Go route handlers for form pages and the config page.
-# Extracted from ServerGenerator to keep it under 200 lines.
+# All display conventions come from contracts.
 #
 module HecksGo
   class ServerGenerator
@@ -9,6 +9,7 @@ module HecksGo
       private
 
       def form_routes
+        ac = Hecks::AggregateContract
         lines = []
         lines << "\t// Form routes (types in renderer.go)"
 
@@ -19,7 +20,7 @@ module HecksGo
 
           agg.commands.each do |cmd|
             cmd_snake = GoUtils.snake_case(cmd.name)
-            self_id = cmd.attributes.find { |a| a.name.to_s == "#{agg_snake}_id" }
+            self_id = ac.self_ref_attr(cmd, agg_snake)
 
             lines << "\tmux.HandleFunc(\"GET /#{plural}/#{cmd_snake}/new\", func(w http.ResponseWriter, r *http.Request) {"
             lines << "\t\tfields := []FormField{"
@@ -27,21 +28,32 @@ module HecksGo
               if a == self_id
                 lines << "\t\t\t{Type: \"hidden\", Name: \"#{a.name}\", Value: r.URL.Query().Get(\"id\")},"
               elsif a.name.to_s.end_with?("_id")
-                ref_name = a.name.to_s.sub(/_id$/, "")
-                ref_agg = @domain.aggregates.find { |ra| GoUtils.snake_case(ra.name) == ref_name }
+                # Find referenced aggregate: explicit reference_to or name convention
+                ref_agg = if a.reference?
+                  @domain.aggregates.find { |ra| ra.name == a.type.to_s }
+                else
+                  ref_name = a.name.to_s.sub(/_id$/, "")
+                  @domain.aggregates.find { |ra| GoUtils.snake_case(ra.name) == ref_name }
+                end
                 if ref_agg
                   lines << "\t\t\t// #{ref_agg.name} dropdown built dynamically below"
+                else
+                  label = Hecks::UILabelContract.label(a.name)
+                  lines << "\t\t\t{Type: \"input\", Name: \"#{a.name}\", Label: \"#{label}\", InputType: \"text\", Required: true},"
                 end
               else
-                is_float = a.type.to_s =~ /Float/
-                input_type = case a.type.to_s
-                             when /Integer/ then "number"
-                             when /Float/ then "number"
-                             else "text"
-                             end
-                label = a.name.to_s.split("_").map(&:capitalize).join(" ")
-                step = is_float ? ", Step: true" : ""
-                lines << "\t\t\t{Type: \"input\", Name: \"#{a.name}\", Label: \"#{label}\", InputType: \"#{input_type}\", Required: true#{step}},"
+                agg_attr = agg.attributes.find { |aa| aa.name == a.name }
+                enum_values = agg_attr&.enum
+                label = Hecks::UILabelContract.label(a.name)
+                if enum_values && !enum_values.empty?
+                  opts = enum_values.map { |v| "FormOption{Value: \"#{v}\", Label: \"#{v}\"}" }.join(", ")
+                  lines << "\t\t\t{Type: \"select\", Name: \"#{a.name}\", Label: \"#{label}\", Required: true, Options: []FormOption{#{opts}}},"
+                else
+                  go_type = GoUtils.go_type(a)
+                  input_type = Hecks::FormParsingContract.input_type(go_type)
+                  step = Hecks::FormParsingContract.step?(go_type) ? ", Step: true" : ""
+                  lines << "\t\t\t{Type: \"input\", Name: \"#{a.name}\", Label: \"#{label}\", InputType: \"#{input_type}\", Required: true#{step}},"
+                end
               end
             end
             lines << "\t\t}"
@@ -50,12 +62,16 @@ module HecksGo
             cmd.attributes.each do |a|
               next if a == self_id
               next unless a.name.to_s.end_with?("_id")
-              ref_name = a.name.to_s.sub(/_id$/, "")
-              ref_agg = @domain.aggregates.find { |ra| GoUtils.snake_case(ra.name) == ref_name }
+              ref_agg = if a.reference?
+                @domain.aggregates.find { |ra| ra.name == a.type.to_s }
+              else
+                ref_name = a.name.to_s.sub(/_id$/, "")
+                @domain.aggregates.find { |ra| GoUtils.snake_case(ra.name) == ref_name }
+              end
               next unless ref_agg
               ref_safe = ref_agg.name
-              display = ref_agg.attributes.find { |da| da.name.to_s == "name" } ? GoUtils.pascal_case("name") : "ID"
-              label = ref_name.split("_").map(&:capitalize).join(" ")
+              display = Hecks::DisplayContract.go_reference_display_field(ref_agg)
+              label = Hecks::UILabelContract.label(a.name.to_s.sub(/_id$/, ""))
               lines << "\t\t#{ref_safe.downcase}s, _ := app.#{ref_safe}Repo.All()"
               lines << "\t\tvar #{ref_safe.downcase}Opts []FormOption"
               lines << "\t\tfor _, item := range #{ref_safe.downcase}s {"
@@ -77,10 +93,9 @@ module HecksGo
       end
 
       def config_route
-        all_roles = @domain.aggregates.flat_map { |a| a.ports.keys }.uniq.map(&:to_s)
-        all_roles = ["admin"] if all_roles.empty?
-        policies = @domain.aggregates.flat_map { |a| a.policies.reject { |p| p.respond_to?(:guard?) && p.guard? }.map { |p| "#{p.event_name} → #{p.name}" } }
-        policies += @domain.policies.map { |p| "#{p.event_name} → #{p.trigger_command}" }
+        dc = Hecks::DisplayContract
+        all_roles = dc.available_roles(@domain)
+        policies = dc.policy_labels(@domain)
 
         vc = Hecks::ViewContract
         lines = []
@@ -92,10 +107,8 @@ module HecksGo
         lines << "\t\taggs := []ConfigAgg{"
         @domain.aggregates.each do |agg|
           plural = GoUtils.snake_case(agg.name) + "s"
-          cmds = agg.commands.map(&:name).join(", ")
-          ports = agg.ports.values.map { |p| "#{p.name}: #{p.allowed_methods.join(", ")}" }.join(" | ")
-          ports = "(none)" if ports.empty?
-          lines << "\t\t\t{Name: \"#{agg.name}\", Href: \"/#{plural}\", Commands: \"#{cmds}\", Ports: \"#{ports}\"},"
+          summary = dc.aggregate_summary(agg)
+          lines << "\t\t\t{Name: \"#{agg.name}\", Href: \"/#{plural}\", Commands: \"#{summary[:commands]}\", Ports: \"#{summary[:ports]}\"},"
         end
         lines << "\t\t}"
         @domain.aggregates.each_with_index do |agg, idx|

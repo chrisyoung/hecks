@@ -127,9 +127,9 @@ Hecks.domain "Compliance" do
 
   ComplianceReview "Reviews of AI models against governance policies" do
     attachable
-    model_id String
-    policy_id String
-    reviewer_id String
+    attribute :model_id, reference_to("AiModel")
+    attribute :policy_id, reference_to("GovernancePolicy")
+    attribute :reviewer_id, reference_to("Stakeholder")
     outcome String, enum: %w[approved rejected]
     notes String
     completed_at DateTime
@@ -153,9 +153,9 @@ Hecks.domain "Compliance" do
     validation :reviewer_id, presence: true
 
     open_review do
-      model_id String
-      policy_id String
-      reviewer_id String
+      attribute :model_id, reference_to("AiModel")
+      attribute :policy_id, reference_to("GovernancePolicy")
+      attribute :reviewer_id, reference_to("Stakeholder")
       actor "reviewer"
       actor "admin"
     end
@@ -204,7 +204,7 @@ Hecks.domain "Compliance" do
     approved_by_id String
     approved_at DateTime
     expires_at Date
-    scope String
+    attribute :scope, String
 
     status String
     lifecycle :status, default: "requested" do

@@ -17,6 +17,19 @@ module Hecks
       field.to_s.split("_").map(&:capitalize).join
     end
 
+    # Display conventions shared by all targets.
+    SHORT_ID_LENGTH = 8
+
+    # Ruby expression to truncate an ID for display.
+    def self.ruby_short_id(id_expr)
+      "#{id_expr}[0..#{SHORT_ID_LENGTH - 1}] + \"...\""
+    end
+
+    # Go expression to truncate an ID for display.
+    def self.go_short_id(id_var)
+      "sid := #{id_var}; if len(sid)>#{SHORT_ID_LENGTH} { sid=sid[:#{SHORT_ID_LENGTH}]+\"...\" }"
+    end
+
     # All contract constants, keyed by template name.
     def self.all
       { layout: LAYOUT, home: HOME, index: INDEX,
@@ -116,11 +129,16 @@ module Hecks
           { name: :label, type: :string },
           { name: :href, type: :string },
           { name: :allowed, type: :bool },
+          { name: :direct, type: :bool },
+          { name: :id_field, type: :string },
         ],
         row_action: [
           { name: :label, type: :string },
           { name: :href_prefix, type: :string },
+          { name: :id, type: :string },
           { name: :allowed, type: :bool },
+          { name: :direct, type: :bool },
+          { name: :id_field, type: :string },
         ],
       },
     }.freeze
@@ -141,11 +159,14 @@ module Hecks
           { name: :value, type: :string },
           { name: :type, type: :string },
           { name: :items, type: :string_list },
+          { name: :transitions, type: :string_list },
         ],
         button: [
           { name: :label, type: :string },
           { name: :href, type: :string },
           { name: :allowed, type: :bool },
+          { name: :direct, type: :bool },
+          { name: :id_field, type: :string },
         ],
       },
     }.freeze

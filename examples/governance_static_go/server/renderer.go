@@ -17,7 +17,7 @@ type FormOption struct { Value string; Label string; Selected bool }
 
 type FormData struct { CommandName string; Action string; ErrorMessage string; Fields []FormField }
 
-type RowAction struct { Label string; HrefPrefix string; Allowed bool }
+type RowAction struct { Label string; HrefPrefix string; Id string; Allowed bool; Direct bool; IdField string }
 
 type Renderer struct {
 	viewsDir string

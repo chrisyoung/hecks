@@ -15,6 +15,7 @@ func (c RegisterStakeholder) CommandName() string { return "RegisterStakeholder"
 
 func (c RegisterStakeholder) Execute(repo StakeholderRepository) (*Stakeholder, *RegisteredStakeholder, error) {
 	agg := NewStakeholder(c.Name, c.Email, c.Role, c.Team, "")
+	agg.Status = "active"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

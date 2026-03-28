@@ -29,6 +29,7 @@ type App struct {
 	AssessmentRepo domain.AssessmentRepository
 	EventBus *runtime.EventBus
 	CommandBus *runtime.CommandBus
+	ViewStates map[string]map[string]interface{}
 }
 
 func NewApp() *App {
@@ -50,30 +51,37 @@ func NewApp() *App {
 		AssessmentRepo: memory.NewAssessmentMemoryRepository(),
 		EventBus: eventBus,
 		CommandBus: runtime.NewCommandBus(eventBus),
+		ViewStates: map[string]map[string]interface{}{"ModelDashboard": {}},
 	}
 }
 
 func (app *App) Start(port int) error {
 	mux := http.NewServeMux()
 
-	exe, _ := os.Executable()
-	viewsDir := filepath.Join(filepath.Dir(exe), "..", "views")
-	if _, err := os.Stat(viewsDir); err != nil { viewsDir = "views" }
+	viewsDir := os.Getenv("VIEWS_DIR")
+	if viewsDir == "" {
+		exe, _ := os.Executable()
+		viewsDir = filepath.Join(filepath.Dir(exe), "..", "views")
+		if _, err := os.Stat(viewsDir); err != nil {
+			viewsDir = filepath.Join(filepath.Dir(exe), "views")
+		}
+		if _, err := os.Stat(viewsDir); err != nil { viewsDir = "views" }
+	}
 	nav := []NavItem{
-		{Label: "GovernancePolicys", Href: "/governance_policys", Group: "Compliance"},
-		{Label: "RegulatoryFrameworks", Href: "/regulatory_frameworks", Group: "Compliance"},
-		{Label: "ComplianceReviews", Href: "/compliance_reviews", Group: "Compliance"},
-		{Label: "Exemptions", Href: "/exemptions", Group: "Compliance"},
-		{Label: "TrainingRecords", Href: "/training_records", Group: "Compliance"},
-		{Label: "Stakeholders", Href: "/stakeholders", Group: "Identity"},
-		{Label: "AuditLogs", Href: "/audit_logs", Group: "Identity"},
-		{Label: "AiModels", Href: "/ai_models", Group: "ModelRegistry"},
-		{Label: "Vendors", Href: "/vendors", Group: "ModelRegistry"},
-		{Label: "DataUsageAgreements", Href: "/data_usage_agreements", Group: "ModelRegistry"},
-		{Label: "Deployments", Href: "/deployments", Group: "Operations"},
-		{Label: "Incidents", Href: "/incidents", Group: "Operations"},
-		{Label: "Monitorings", Href: "/monitorings", Group: "Operations"},
-		{Label: "Assessments", Href: "/assessments", Group: "RiskAssessment"},
+		{Label: "GovernancePolicys", Href: "/governance_policys", Group: ""},
+		{Label: "RegulatoryFrameworks", Href: "/regulatory_frameworks", Group: ""},
+		{Label: "ComplianceReviews", Href: "/compliance_reviews", Group: ""},
+		{Label: "Exemptions", Href: "/exemptions", Group: ""},
+		{Label: "TrainingRecords", Href: "/training_records", Group: ""},
+		{Label: "Stakeholders", Href: "/stakeholders", Group: ""},
+		{Label: "AuditLogs", Href: "/audit_logs", Group: ""},
+		{Label: "AiModels", Href: "/ai_models", Group: ""},
+		{Label: "Vendors", Href: "/vendors", Group: ""},
+		{Label: "DataUsageAgreements", Href: "/data_usage_agreements", Group: ""},
+		{Label: "Deployments", Href: "/deployments", Group: ""},
+		{Label: "Incidents", Href: "/incidents", Group: ""},
+		{Label: "Monitorings", Href: "/monitorings", Group: ""},
+		{Label: "Assessments", Href: "/assessments", Group: ""},
 		{Label: "Config", Href: "/config", Group: "System"},
 	}
 	renderer := NewRenderer(viewsDir, "GovernanceDomain", nav)
@@ -82,13 +90,13 @@ func (app *App) Start(port int) error {
 	type HomeData struct { DomainName string; Aggregates []HomeAgg }
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		renderer.Render(w, "home", "GovernanceDomain", HomeData{
-			DomainName: "GovernanceDomain", Aggregates: []HomeAgg{{Name: "GovernancePolicys", Href: "/governance_policys", Commands: 5, Attributes: 8, Policies: 0}, {Name: "RegulatoryFrameworks", Href: "/regulatory_frameworks", Commands: 3, Attributes: 7, Policies: 0}, {Name: "ComplianceReviews", Href: "/compliance_reviews", Commands: 4, Attributes: 8, Policies: 0}, {Name: "Exemptions", Href: "/exemptions", Commands: 3, Attributes: 8, Policies: 0}, {Name: "TrainingRecords", Href: "/training_records", Commands: 3, Attributes: 6, Policies: 0}, {Name: "Stakeholders", Href: "/stakeholders", Commands: 3, Attributes: 5, Policies: 0}, {Name: "AuditLogs", Href: "/audit_logs", Commands: 1, Attributes: 6, Policies: 3}, {Name: "AiModels", Href: "/ai_models", Commands: 6, Attributes: 11, Policies: 3}, {Name: "Vendors", Href: "/vendors", Commands: 3, Attributes: 7, Policies: 0}, {Name: "DataUsageAgreements", Href: "/data_usage_agreements", Commands: 4, Attributes: 8, Policies: 0}, {Name: "Deployments", Href: "/deployments", Commands: 3, Attributes: 8, Policies: 0}, {Name: "Incidents", Href: "/incidents", Commands: 5, Attributes: 10, Policies: 0}, {Name: "Monitorings", Href: "/monitorings", Commands: 2, Attributes: 6, Policies: 0}, {Name: "Assessments", Href: "/assessments", Commands: 4, Attributes: 11, Policies: 0}},
+			DomainName: "GovernanceDomain", Aggregates: []HomeAgg{{Name: "GovernancePolicys", Href: "/governance_policys", Commands: 5, Attributes: 8, Policies: 0}, {Name: "RegulatoryFrameworks", Href: "/regulatory_frameworks", Commands: 3, Attributes: 7, Policies: 0}, {Name: "ComplianceReviews", Href: "/compliance_reviews", Commands: 4, Attributes: 8, Policies: 0}, {Name: "Exemptions", Href: "/exemptions", Commands: 3, Attributes: 9, Policies: 0}, {Name: "TrainingRecords", Href: "/training_records", Commands: 3, Attributes: 6, Policies: 0}, {Name: "Stakeholders", Href: "/stakeholders", Commands: 3, Attributes: 5, Policies: 0}, {Name: "AuditLogs", Href: "/audit_logs", Commands: 1, Attributes: 6, Policies: 3}, {Name: "AiModels", Href: "/ai_models", Commands: 6, Attributes: 11, Policies: 3}, {Name: "Vendors", Href: "/vendors", Commands: 3, Attributes: 7, Policies: 0}, {Name: "DataUsageAgreements", Href: "/data_usage_agreements", Commands: 4, Attributes: 8, Policies: 0}, {Name: "Deployments", Href: "/deployments", Commands: 3, Attributes: 8, Policies: 0}, {Name: "Incidents", Href: "/incidents", Commands: 5, Attributes: 10, Policies: 0}, {Name: "Monitorings", Href: "/monitorings", Commands: 2, Attributes: 6, Policies: 0}, {Name: "Assessments", Href: "/assessments", Commands: 4, Attributes: 11, Policies: 0}},
 		})
 	})
 
 	type GovernancePolicyColumn struct { Label string }
 	type GovernancePolicyIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type GovernancePolicyButton struct { Label string; Href string; Allowed bool }
+	type GovernancePolicyButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type GovernancePolicyIndexData struct { AggregateName string; Description string; Items []GovernancePolicyIndexItem; Columns []GovernancePolicyColumn; Buttons []GovernancePolicyButton; RowActions []RowAction }
 	mux.HandleFunc("GET /governance_policys", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -98,9 +106,12 @@ func (app *App) Start(port int) error {
 		var rows []GovernancePolicyIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, GovernancePolicyIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/governance_policys/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.Category), fmt.Sprintf("%v", obj.FrameworkId), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.ReviewDate), fmt.Sprintf("%d items", len(obj.Requirements)), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "ActivatePolicy", HrefPrefix: "/governance_policys/activate_policy/new?id=", Allowed: true}, {Label: "SuspendPolicy", HrefPrefix: "/governance_policys/suspend_policy", Allowed: true, Direct: true, IdField: "policy_id"}, {Label: "RetirePolicy", HrefPrefix: "/governance_policys/retire_policy", Allowed: true, Direct: true, IdField: "policy_id"}, {Label: "UpdateReviewDate", HrefPrefix: "/governance_policys/update_review_date/new?id=", Allowed: true}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, GovernancePolicyIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/governance_policys/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.Category), fmt.Sprintf("%v", obj.FrameworkId), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.ReviewDate), fmt.Sprintf("%d items", len(obj.Requirements)), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "GovernancePolicys", GovernancePolicyIndexData{AggregateName: "GovernancePolicy", Description: "Organizational policies governing AI model usage and compliance", Items: rows, Columns: []GovernancePolicyColumn{{Label: "Name"}, {Label: "Description"}, {Label: "Category"}, {Label: "Framework Id"}, {Label: "Effective Date"}, {Label: "Review Date"}, {Label: "Requirements"}, {Label: "Status"}}, Buttons: []GovernancePolicyButton{{Label: "CreatePolicy", Href: "/governance_policys/create_policy/new", Allowed: true}, {Label: "ActivatePolicy", Href: "/governance_policys/activate_policy/new", Allowed: true}, {Label: "SuspendPolicy", Href: "/governance_policys/suspend_policy/new", Allowed: true}, {Label: "RetirePolicy", Href: "/governance_policys/retire_policy/new", Allowed: true}, {Label: "UpdateReviewDate", Href: "/governance_policys/update_review_date/new", Allowed: true}}})
+		renderer.Render(w, "index", "GovernancePolicys", GovernancePolicyIndexData{AggregateName: "GovernancePolicy", Description: "Organizational policies governing AI model usage and compliance", Items: rows, Columns: []GovernancePolicyColumn{{Label: "Name"}, {Label: "Description"}, {Label: "Category"}, {Label: "Framework Id"}, {Label: "Effective Date"}, {Label: "Review Date"}, {Label: "Requirements"}, {Label: "Status"}}, Buttons: []GovernancePolicyButton{{Label: "CreatePolicy", Href: "/governance_policys/create_policy/new", Allowed: true}}, RowActions: []RowAction{{Label: "ActivatePolicy", HrefPrefix: "/governance_policys/activate_policy/new?id=", Allowed: true}, {Label: "SuspendPolicy", HrefPrefix: "/governance_policys/suspend_policy", Allowed: true, Direct: true, IdField: "policy_id"}, {Label: "RetirePolicy", HrefPrefix: "/governance_policys/retire_policy", Allowed: true, Direct: true, IdField: "policy_id"}, {Label: "UpdateReviewDate", HrefPrefix: "/governance_policys/update_review_date/new?id=", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /governance_policys/find", func(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +222,7 @@ func (app *App) Start(port int) error {
 
 	type RegulatoryFrameworkColumn struct { Label string }
 	type RegulatoryFrameworkIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type RegulatoryFrameworkButton struct { Label string; Href string; Allowed bool }
+	type RegulatoryFrameworkButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type RegulatoryFrameworkIndexData struct { AggregateName string; Description string; Items []RegulatoryFrameworkIndexItem; Columns []RegulatoryFrameworkColumn; Buttons []RegulatoryFrameworkButton; RowActions []RowAction }
 	mux.HandleFunc("GET /regulatory_frameworks", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -221,9 +232,12 @@ func (app *App) Start(port int) error {
 		var rows []RegulatoryFrameworkIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, RegulatoryFrameworkIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/regulatory_frameworks/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Jurisdiction), fmt.Sprintf("%v", obj.Version), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.Authority), fmt.Sprintf("%d items", len(obj.Requirements)), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "ActivateFramework", HrefPrefix: "/regulatory_frameworks/activate_framework/new?id=", Allowed: true}, {Label: "RetireFramework", HrefPrefix: "/regulatory_frameworks/retire_framework", Allowed: true, Direct: true, IdField: "framework_id"}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, RegulatoryFrameworkIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/regulatory_frameworks/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Jurisdiction), fmt.Sprintf("%v", obj.Version), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.Authority), fmt.Sprintf("%d items", len(obj.Requirements)), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "RegulatoryFrameworks", RegulatoryFrameworkIndexData{AggregateName: "RegulatoryFramework", Description: "External regulatory requirements and their articles", Items: rows, Columns: []RegulatoryFrameworkColumn{{Label: "Name"}, {Label: "Jurisdiction"}, {Label: "Version"}, {Label: "Effective Date"}, {Label: "Authority"}, {Label: "Requirements"}, {Label: "Status"}}, Buttons: []RegulatoryFrameworkButton{{Label: "RegisterFramework", Href: "/regulatory_frameworks/register_framework/new", Allowed: true}, {Label: "ActivateFramework", Href: "/regulatory_frameworks/activate_framework/new", Allowed: true}, {Label: "RetireFramework", Href: "/regulatory_frameworks/retire_framework/new", Allowed: true}}})
+		renderer.Render(w, "index", "RegulatoryFrameworks", RegulatoryFrameworkIndexData{AggregateName: "RegulatoryFramework", Description: "External regulatory requirements and their articles", Items: rows, Columns: []RegulatoryFrameworkColumn{{Label: "Name"}, {Label: "Jurisdiction"}, {Label: "Version"}, {Label: "Effective Date"}, {Label: "Authority"}, {Label: "Requirements"}, {Label: "Status"}}, Buttons: []RegulatoryFrameworkButton{{Label: "RegisterFramework", Href: "/regulatory_frameworks/register_framework/new", Allowed: true}}, RowActions: []RowAction{{Label: "ActivateFramework", HrefPrefix: "/regulatory_frameworks/activate_framework/new?id=", Allowed: true}, {Label: "RetireFramework", HrefPrefix: "/regulatory_frameworks/retire_framework", Allowed: true, Direct: true, IdField: "framework_id"}}})
 	})
 
 	mux.HandleFunc("GET /regulatory_frameworks/find", func(w http.ResponseWriter, r *http.Request) {
@@ -295,7 +309,7 @@ func (app *App) Start(port int) error {
 
 	type ComplianceReviewColumn struct { Label string }
 	type ComplianceReviewIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type ComplianceReviewButton struct { Label string; Href string; Allowed bool }
+	type ComplianceReviewButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type ComplianceReviewIndexData struct { AggregateName string; Description string; Items []ComplianceReviewIndexItem; Columns []ComplianceReviewColumn; Buttons []ComplianceReviewButton; RowActions []RowAction }
 	mux.HandleFunc("GET /compliance_reviews", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -305,9 +319,12 @@ func (app *App) Start(port int) error {
 		var rows []ComplianceReviewIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, ComplianceReviewIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/compliance_reviews/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.ReviewerId), fmt.Sprintf("%v", obj.Outcome), fmt.Sprintf("%v", obj.Notes), fmt.Sprintf("%v", obj.CompletedAt), fmt.Sprintf("%d items", len(obj.Conditions)), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "ApproveReview", HrefPrefix: "/compliance_reviews/approve_review/new?id=", Allowed: true}, {Label: "RejectReview", HrefPrefix: "/compliance_reviews/reject_review/new?id=", Allowed: true}, {Label: "RequestChanges", HrefPrefix: "/compliance_reviews/request_changes/new?id=", Allowed: true}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, ComplianceReviewIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/compliance_reviews/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.ReviewerId), fmt.Sprintf("%v", obj.Outcome), fmt.Sprintf("%v", obj.Notes), fmt.Sprintf("%v", obj.CompletedAt), fmt.Sprintf("%d items", len(obj.Conditions)), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "ComplianceReviews", ComplianceReviewIndexData{AggregateName: "ComplianceReview", Description: "Reviews of AI models against governance policies", Items: rows, Columns: []ComplianceReviewColumn{{Label: "Model Id"}, {Label: "Policy Id"}, {Label: "Reviewer Id"}, {Label: "Outcome"}, {Label: "Notes"}, {Label: "Completed At"}, {Label: "Conditions"}, {Label: "Status"}}, Buttons: []ComplianceReviewButton{{Label: "OpenReview", Href: "/compliance_reviews/open_review/new", Allowed: true}, {Label: "ApproveReview", Href: "/compliance_reviews/approve_review/new", Allowed: true}, {Label: "RejectReview", Href: "/compliance_reviews/reject_review/new", Allowed: true}, {Label: "RequestChanges", Href: "/compliance_reviews/request_changes/new", Allowed: true}}})
+		renderer.Render(w, "index", "ComplianceReviews", ComplianceReviewIndexData{AggregateName: "ComplianceReview", Description: "Reviews of AI models against governance policies", Items: rows, Columns: []ComplianceReviewColumn{{Label: "Model Id"}, {Label: "Policy Id"}, {Label: "Reviewer Id"}, {Label: "Outcome"}, {Label: "Notes"}, {Label: "Completed At"}, {Label: "Conditions"}, {Label: "Status"}}, Buttons: []ComplianceReviewButton{{Label: "OpenReview", Href: "/compliance_reviews/open_review/new", Allowed: true}}, RowActions: []RowAction{{Label: "ApproveReview", HrefPrefix: "/compliance_reviews/approve_review/new?id=", Allowed: true}, {Label: "RejectReview", HrefPrefix: "/compliance_reviews/reject_review/new?id=", Allowed: true}, {Label: "RequestChanges", HrefPrefix: "/compliance_reviews/request_changes/new?id=", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /compliance_reviews/find", func(w http.ResponseWriter, r *http.Request) {
@@ -399,7 +416,7 @@ func (app *App) Start(port int) error {
 
 	type ExemptionColumn struct { Label string }
 	type ExemptionIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type ExemptionButton struct { Label string; Href string; Allowed bool }
+	type ExemptionButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type ExemptionIndexData struct { AggregateName string; Description string; Items []ExemptionIndexItem; Columns []ExemptionColumn; Buttons []ExemptionButton; RowActions []RowAction }
 	mux.HandleFunc("GET /exemptions", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -409,9 +426,12 @@ func (app *App) Start(port int) error {
 		var rows []ExemptionIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, ExemptionIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/exemptions/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.Requirement), fmt.Sprintf("%v", obj.Reason), fmt.Sprintf("%v", obj.ApprovedById), fmt.Sprintf("%v", obj.ApprovedAt), fmt.Sprintf("%v", obj.ExpiresAt), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "ApproveExemption", HrefPrefix: "/exemptions/approve_exemption/new?id=", Allowed: true}, {Label: "RevokeExemption", HrefPrefix: "/exemptions/revoke_exemption", Allowed: true, Direct: true, IdField: "exemption_id"}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, ExemptionIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/exemptions/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.Requirement), fmt.Sprintf("%v", obj.Reason), fmt.Sprintf("%v", obj.ApprovedById), fmt.Sprintf("%v", obj.ApprovedAt), fmt.Sprintf("%v", obj.ExpiresAt), fmt.Sprintf("%v", obj.Scope), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "Exemptions", ExemptionIndexData{AggregateName: "Exemption", Description: "Approved exceptions to policy requirements", Items: rows, Columns: []ExemptionColumn{{Label: "Model Id"}, {Label: "Policy Id"}, {Label: "Requirement"}, {Label: "Reason"}, {Label: "Approved By Id"}, {Label: "Approved At"}, {Label: "Expires At"}, {Label: "Status"}}, Buttons: []ExemptionButton{{Label: "RequestExemption", Href: "/exemptions/request_exemption/new", Allowed: true}}})
+		renderer.Render(w, "index", "Exemptions", ExemptionIndexData{AggregateName: "Exemption", Description: "Approved exceptions to policy requirements", Items: rows, Columns: []ExemptionColumn{{Label: "Model Id"}, {Label: "Policy Id"}, {Label: "Requirement"}, {Label: "Reason"}, {Label: "Approved By Id"}, {Label: "Approved At"}, {Label: "Expires At"}, {Label: "Scope"}, {Label: "Status"}}, Buttons: []ExemptionButton{{Label: "RequestExemption", Href: "/exemptions/request_exemption/new", Allowed: true}}, RowActions: []RowAction{{Label: "ApproveExemption", HrefPrefix: "/exemptions/approve_exemption/new?id=", Allowed: true}, {Label: "RevokeExemption", HrefPrefix: "/exemptions/revoke_exemption", Allowed: true, Direct: true, IdField: "exemption_id"}}})
 	})
 
 	mux.HandleFunc("GET /exemptions/find", func(w http.ResponseWriter, r *http.Request) {
@@ -484,7 +504,7 @@ func (app *App) Start(port int) error {
 
 	type TrainingRecordColumn struct { Label string }
 	type TrainingRecordIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type TrainingRecordButton struct { Label string; Href string; Allowed bool }
+	type TrainingRecordButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type TrainingRecordIndexData struct { AggregateName string; Description string; Items []TrainingRecordIndexItem; Columns []TrainingRecordColumn; Buttons []TrainingRecordButton; RowActions []RowAction }
 	mux.HandleFunc("GET /training_records", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -494,9 +514,12 @@ func (app *App) Start(port int) error {
 		var rows []TrainingRecordIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, TrainingRecordIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/training_records/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.StakeholderId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.CompletedAt), fmt.Sprintf("%v", obj.ExpiresAt), fmt.Sprintf("%v", obj.CertificationId), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "CompleteTraining", HrefPrefix: "/training_records/complete_training/new?id=", Allowed: true}, {Label: "RenewTraining", HrefPrefix: "/training_records/renew_training/new?id=", Allowed: true}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, TrainingRecordIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/training_records/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.StakeholderId), fmt.Sprintf("%v", obj.PolicyId), fmt.Sprintf("%v", obj.CompletedAt), fmt.Sprintf("%v", obj.ExpiresAt), fmt.Sprintf("%v", obj.CertificationId), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "TrainingRecords", TrainingRecordIndexData{AggregateName: "TrainingRecord", Description: "Staff training completion and certification tracking", Items: rows, Columns: []TrainingRecordColumn{{Label: "Stakeholder Id"}, {Label: "Policy Id"}, {Label: "Completed At"}, {Label: "Expires At"}, {Label: "Certification Id"}, {Label: "Status"}}, Buttons: []TrainingRecordButton{{Label: "AssignTraining", Href: "/training_records/assign_training/new", Allowed: true}}})
+		renderer.Render(w, "index", "TrainingRecords", TrainingRecordIndexData{AggregateName: "TrainingRecord", Description: "Staff training completion and certification tracking", Items: rows, Columns: []TrainingRecordColumn{{Label: "Stakeholder Id"}, {Label: "Policy Id"}, {Label: "Completed At"}, {Label: "Expires At"}, {Label: "Certification Id"}, {Label: "Status"}}, Buttons: []TrainingRecordButton{{Label: "AssignTraining", Href: "/training_records/assign_training/new", Allowed: true}}, RowActions: []RowAction{{Label: "CompleteTraining", HrefPrefix: "/training_records/complete_training/new?id=", Allowed: true}, {Label: "RenewTraining", HrefPrefix: "/training_records/renew_training/new?id=", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /training_records/find", func(w http.ResponseWriter, r *http.Request) {
@@ -569,7 +592,7 @@ func (app *App) Start(port int) error {
 
 	type StakeholderColumn struct { Label string }
 	type StakeholderIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type StakeholderButton struct { Label string; Href string; Allowed bool }
+	type StakeholderButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type StakeholderIndexData struct { AggregateName string; Description string; Items []StakeholderIndexItem; Columns []StakeholderColumn; Buttons []StakeholderButton; RowActions []RowAction }
 	mux.HandleFunc("GET /stakeholders", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -579,9 +602,12 @@ func (app *App) Start(port int) error {
 		var rows []StakeholderIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, StakeholderIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/stakeholders/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Email), fmt.Sprintf("%v", obj.Role), fmt.Sprintf("%v", obj.Team), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "AssignRole", HrefPrefix: "/stakeholders/assign_role/new?id=", Allowed: true}, {Label: "DeactivateStakeholder", HrefPrefix: "/stakeholders/deactivate_stakeholder", Allowed: true, Direct: true, IdField: "stakeholder_id"}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, StakeholderIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/stakeholders/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Email), fmt.Sprintf("%v", obj.Role), fmt.Sprintf("%v", obj.Team), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "Stakeholders", StakeholderIndexData{AggregateName: "Stakeholder", Description: "Users, roles, and permissions for governance participants", Items: rows, Columns: []StakeholderColumn{{Label: "Name"}, {Label: "Email"}, {Label: "Role"}, {Label: "Team"}, {Label: "Status"}}, Buttons: []StakeholderButton{{Label: "RegisterStakeholder", Href: "/stakeholders/register_stakeholder/new", Allowed: true}}})
+		renderer.Render(w, "index", "Stakeholders", StakeholderIndexData{AggregateName: "Stakeholder", Description: "Users, roles, and permissions for governance participants", Items: rows, Columns: []StakeholderColumn{{Label: "Name"}, {Label: "Email"}, {Label: "Role"}, {Label: "Team"}, {Label: "Status"}}, Buttons: []StakeholderButton{{Label: "RegisterStakeholder", Href: "/stakeholders/register_stakeholder/new", Allowed: true}}, RowActions: []RowAction{{Label: "AssignRole", HrefPrefix: "/stakeholders/assign_role/new?id=", Allowed: true}, {Label: "DeactivateStakeholder", HrefPrefix: "/stakeholders/deactivate_stakeholder", Allowed: true, Direct: true, IdField: "stakeholder_id"}}})
 	})
 
 	mux.HandleFunc("GET /stakeholders/find", func(w http.ResponseWriter, r *http.Request) {
@@ -653,7 +679,7 @@ func (app *App) Start(port int) error {
 
 	type AuditLogColumn struct { Label string }
 	type AuditLogIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type AuditLogButton struct { Label string; Href string; Allowed bool }
+	type AuditLogButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type AuditLogIndexData struct { AggregateName string; Description string; Items []AuditLogIndexItem; Columns []AuditLogColumn; Buttons []AuditLogButton; RowActions []RowAction }
 	mux.HandleFunc("GET /audit_logs", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -663,9 +689,12 @@ func (app *App) Start(port int) error {
 		var rows []AuditLogIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, AuditLogIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/audit_logs/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.EntityType), fmt.Sprintf("%v", obj.EntityId), fmt.Sprintf("%v", obj.Action), fmt.Sprintf("%v", obj.ActorId), fmt.Sprintf("%v", obj.Details), fmt.Sprintf("%v", obj.Timestamp)}})
+			baseActions := []RowAction{}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, AuditLogIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/audit_logs/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.EntityType), fmt.Sprintf("%v", obj.EntityId), fmt.Sprintf("%v", obj.Action), fmt.Sprintf("%v", obj.ActorId), fmt.Sprintf("%v", obj.Details), fmt.Sprintf("%v", obj.Timestamp)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "AuditLogs", AuditLogIndexData{AggregateName: "AuditLog", Description: "Immutable record of all actions across the governance system", Items: rows, Columns: []AuditLogColumn{{Label: "Entity Type"}, {Label: "Entity Id"}, {Label: "Action"}, {Label: "Actor Id"}, {Label: "Details"}, {Label: "Timestamp"}}, Buttons: []AuditLogButton{{Label: "RecordEntry", Href: "/audit_logs/record_entry/new", Allowed: true}}})
+		renderer.Render(w, "index", "AuditLogs", AuditLogIndexData{AggregateName: "AuditLog", Description: "Immutable record of all actions across the governance system", Items: rows, Columns: []AuditLogColumn{{Label: "Entity Type"}, {Label: "Entity Id"}, {Label: "Action"}, {Label: "Actor Id"}, {Label: "Details"}, {Label: "Timestamp"}}, Buttons: []AuditLogButton{{Label: "RecordEntry", Href: "/audit_logs/record_entry/new", Allowed: true}}, RowActions: []RowAction{}})
 	})
 
 	mux.HandleFunc("GET /audit_logs/find", func(w http.ResponseWriter, r *http.Request) {
@@ -699,7 +728,7 @@ func (app *App) Start(port int) error {
 
 	type AiModelColumn struct { Label string }
 	type AiModelIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type AiModelButton struct { Label string; Href string; Allowed bool }
+	type AiModelButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type AiModelIndexData struct { AggregateName string; Description string; Items []AiModelIndexItem; Columns []AiModelColumn; Buttons []AiModelButton; RowActions []RowAction }
 	mux.HandleFunc("GET /ai_models", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -709,9 +738,12 @@ func (app *App) Start(port int) error {
 		var rows []AiModelIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, AiModelIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/ai_models/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Version), fmt.Sprintf("%v", obj.ProviderId), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.RiskLevel), fmt.Sprintf("%v", obj.RegisteredAt), fmt.Sprintf("%v", obj.ParentModelId), fmt.Sprintf("%v", obj.DerivationType), fmt.Sprintf("%d items", len(obj.Capabilities)), fmt.Sprintf("%d items", len(obj.IntendedUses)), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "ClassifyRisk", HrefPrefix: "/ai_models/classify_risk/new?id=", Allowed: true}, {Label: "ApproveModel", HrefPrefix: "/ai_models/approve_model", Allowed: true, Direct: true, IdField: "model_id"}, {Label: "SuspendModel", HrefPrefix: "/ai_models/suspend_model", Allowed: true, Direct: true, IdField: "model_id"}, {Label: "RetireModel", HrefPrefix: "/ai_models/retire_model", Allowed: true, Direct: true, IdField: "model_id"}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, AiModelIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/ai_models/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.Version), fmt.Sprintf("%v", obj.ProviderId), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.RiskLevel), fmt.Sprintf("%v", obj.RegisteredAt), fmt.Sprintf("%v", obj.ParentModelId), fmt.Sprintf("%v", obj.DerivationType), fmt.Sprintf("%d items", len(obj.Capabilities)), fmt.Sprintf("%d items", len(obj.IntendedUses)), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "AiModels", AiModelIndexData{AggregateName: "AiModel", Description: "AI models registered for governance oversight", Items: rows, Columns: []AiModelColumn{{Label: "Name"}, {Label: "Version"}, {Label: "Provider Id"}, {Label: "Description"}, {Label: "Risk Level"}, {Label: "Registered At"}, {Label: "Parent Model Id"}, {Label: "Derivation Type"}, {Label: "Capabilities"}, {Label: "Intended Uses"}, {Label: "Status"}}, Buttons: []AiModelButton{{Label: "RegisterModel", Href: "/ai_models/register_model/new", Allowed: true}, {Label: "DeriveModel", Href: "/ai_models/derive_model/new", Allowed: true}, {Label: "ClassifyRisk", Href: "/ai_models/classify_risk/new", Allowed: true}, {Label: "ApproveModel", Href: "/ai_models/approve_model/new", Allowed: true}, {Label: "SuspendModel", Href: "/ai_models/suspend_model/new", Allowed: true}, {Label: "RetireModel", Href: "/ai_models/retire_model/new", Allowed: true}}})
+		renderer.Render(w, "index", "AiModels", AiModelIndexData{AggregateName: "AiModel", Description: "AI models registered for governance oversight", Items: rows, Columns: []AiModelColumn{{Label: "Name"}, {Label: "Version"}, {Label: "Provider Id"}, {Label: "Description"}, {Label: "Risk Level"}, {Label: "Registered At"}, {Label: "Parent Model Id"}, {Label: "Derivation Type"}, {Label: "Capabilities"}, {Label: "Intended Uses"}, {Label: "Status"}}, Buttons: []AiModelButton{{Label: "RegisterModel", Href: "/ai_models/register_model/new", Allowed: true}, {Label: "DeriveModel", Href: "/ai_models/derive_model/new", Allowed: true}}, RowActions: []RowAction{{Label: "ClassifyRisk", HrefPrefix: "/ai_models/classify_risk/new?id=", Allowed: true}, {Label: "ApproveModel", HrefPrefix: "/ai_models/approve_model", Allowed: true, Direct: true, IdField: "model_id"}, {Label: "SuspendModel", HrefPrefix: "/ai_models/suspend_model", Allowed: true, Direct: true, IdField: "model_id"}, {Label: "RetireModel", HrefPrefix: "/ai_models/retire_model", Allowed: true, Direct: true, IdField: "model_id"}}})
 	})
 
 	mux.HandleFunc("GET /ai_models/find", func(w http.ResponseWriter, r *http.Request) {
@@ -844,7 +876,7 @@ func (app *App) Start(port int) error {
 
 	type VendorColumn struct { Label string }
 	type VendorIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type VendorButton struct { Label string; Href string; Allowed bool }
+	type VendorButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type VendorIndexData struct { AggregateName string; Description string; Items []VendorIndexItem; Columns []VendorColumn; Buttons []VendorButton; RowActions []RowAction }
 	mux.HandleFunc("GET /vendors", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -854,9 +886,12 @@ func (app *App) Start(port int) error {
 		var rows []VendorIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, VendorIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/vendors/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.ContactEmail), fmt.Sprintf("%v", obj.RiskTier), fmt.Sprintf("%v", obj.AssessmentDate), fmt.Sprintf("%v", obj.NextReviewDate), fmt.Sprintf("%v", obj.SlaTerms), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "ApproveVendor", HrefPrefix: "/vendors/approve_vendor/new?id=", Allowed: true}, {Label: "SuspendVendor", HrefPrefix: "/vendors/suspend_vendor", Allowed: true, Direct: true, IdField: "vendor_id"}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, VendorIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/vendors/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.Name), fmt.Sprintf("%v", obj.ContactEmail), fmt.Sprintf("%v", obj.RiskTier), fmt.Sprintf("%v", obj.AssessmentDate), fmt.Sprintf("%v", obj.NextReviewDate), fmt.Sprintf("%v", obj.SlaTerms), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "Vendors", VendorIndexData{AggregateName: "Vendor", Description: "Third-party AI model providers and their risk assessments", Items: rows, Columns: []VendorColumn{{Label: "Name"}, {Label: "Contact Email"}, {Label: "Risk Tier"}, {Label: "Assessment Date"}, {Label: "Next Review Date"}, {Label: "Sla Terms"}, {Label: "Status"}}, Buttons: []VendorButton{{Label: "RegisterVendor", Href: "/vendors/register_vendor/new", Allowed: true}}})
+		renderer.Render(w, "index", "Vendors", VendorIndexData{AggregateName: "Vendor", Description: "Third-party AI model providers and their risk assessments", Items: rows, Columns: []VendorColumn{{Label: "Name"}, {Label: "Contact Email"}, {Label: "Risk Tier"}, {Label: "Assessment Date"}, {Label: "Next Review Date"}, {Label: "Sla Terms"}, {Label: "Status"}}, Buttons: []VendorButton{{Label: "RegisterVendor", Href: "/vendors/register_vendor/new", Allowed: true}}, RowActions: []RowAction{{Label: "ApproveVendor", HrefPrefix: "/vendors/approve_vendor/new?id=", Allowed: true}, {Label: "SuspendVendor", HrefPrefix: "/vendors/suspend_vendor", Allowed: true, Direct: true, IdField: "vendor_id"}}})
 	})
 
 	mux.HandleFunc("GET /vendors/find", func(w http.ResponseWriter, r *http.Request) {
@@ -928,7 +963,7 @@ func (app *App) Start(port int) error {
 
 	type DataUsageAgreementColumn struct { Label string }
 	type DataUsageAgreementIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type DataUsageAgreementButton struct { Label string; Href string; Allowed bool }
+	type DataUsageAgreementButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type DataUsageAgreementIndexData struct { AggregateName string; Description string; Items []DataUsageAgreementIndexItem; Columns []DataUsageAgreementColumn; Buttons []DataUsageAgreementButton; RowActions []RowAction }
 	mux.HandleFunc("GET /data_usage_agreements", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -938,9 +973,12 @@ func (app *App) Start(port int) error {
 		var rows []DataUsageAgreementIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, DataUsageAgreementIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/data_usage_agreements/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.DataSource), fmt.Sprintf("%v", obj.Purpose), fmt.Sprintf("%v", obj.ConsentType), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.ExpirationDate), fmt.Sprintf("%d items", len(obj.Restrictions)), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "ActivateAgreement", HrefPrefix: "/data_usage_agreements/activate_agreement/new?id=", Allowed: true}, {Label: "RevokeAgreement", HrefPrefix: "/data_usage_agreements/revoke_agreement", Allowed: true, Direct: true, IdField: "agreement_id"}, {Label: "RenewAgreement", HrefPrefix: "/data_usage_agreements/renew_agreement/new?id=", Allowed: true}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, DataUsageAgreementIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/data_usage_agreements/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.DataSource), fmt.Sprintf("%v", obj.Purpose), fmt.Sprintf("%v", obj.ConsentType), fmt.Sprintf("%v", obj.EffectiveDate), fmt.Sprintf("%v", obj.ExpirationDate), fmt.Sprintf("%d items", len(obj.Restrictions)), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "DataUsageAgreements", DataUsageAgreementIndexData{AggregateName: "DataUsageAgreement", Description: "Agreements governing data usage for model training and inference", Items: rows, Columns: []DataUsageAgreementColumn{{Label: "Model Id"}, {Label: "Data Source"}, {Label: "Purpose"}, {Label: "Consent Type"}, {Label: "Effective Date"}, {Label: "Expiration Date"}, {Label: "Restrictions"}, {Label: "Status"}}, Buttons: []DataUsageAgreementButton{{Label: "CreateAgreement", Href: "/data_usage_agreements/create_agreement/new", Allowed: true}, {Label: "ActivateAgreement", Href: "/data_usage_agreements/activate_agreement/new", Allowed: true}, {Label: "RevokeAgreement", Href: "/data_usage_agreements/revoke_agreement/new", Allowed: true}, {Label: "RenewAgreement", Href: "/data_usage_agreements/renew_agreement/new", Allowed: true}}})
+		renderer.Render(w, "index", "DataUsageAgreements", DataUsageAgreementIndexData{AggregateName: "DataUsageAgreement", Description: "Agreements governing data usage for model training and inference", Items: rows, Columns: []DataUsageAgreementColumn{{Label: "Model Id"}, {Label: "Data Source"}, {Label: "Purpose"}, {Label: "Consent Type"}, {Label: "Effective Date"}, {Label: "Expiration Date"}, {Label: "Restrictions"}, {Label: "Status"}}, Buttons: []DataUsageAgreementButton{{Label: "CreateAgreement", Href: "/data_usage_agreements/create_agreement/new", Allowed: true}}, RowActions: []RowAction{{Label: "ActivateAgreement", HrefPrefix: "/data_usage_agreements/activate_agreement/new?id=", Allowed: true}, {Label: "RevokeAgreement", HrefPrefix: "/data_usage_agreements/revoke_agreement", Allowed: true, Direct: true, IdField: "agreement_id"}, {Label: "RenewAgreement", HrefPrefix: "/data_usage_agreements/renew_agreement/new?id=", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /data_usage_agreements/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1033,7 +1071,7 @@ func (app *App) Start(port int) error {
 
 	type DeploymentColumn struct { Label string }
 	type DeploymentIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type DeploymentButton struct { Label string; Href string; Allowed bool }
+	type DeploymentButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type DeploymentIndexData struct { AggregateName string; Description string; Items []DeploymentIndexItem; Columns []DeploymentColumn; Buttons []DeploymentButton; RowActions []RowAction }
 	mux.HandleFunc("GET /deployments", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -1043,9 +1081,12 @@ func (app *App) Start(port int) error {
 		var rows []DeploymentIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, DeploymentIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/deployments/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.Environment), fmt.Sprintf("%v", obj.Endpoint), fmt.Sprintf("%v", obj.Purpose), fmt.Sprintf("%v", obj.Audience), fmt.Sprintf("%v", obj.DeployedAt), fmt.Sprintf("%v", obj.DecommissionedAt), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "DeployModel", HrefPrefix: "/deployments/deploy_model", Allowed: true, Direct: true, IdField: "deployment_id"}, {Label: "DecommissionDeployment", HrefPrefix: "/deployments/decommission_deployment", Allowed: true, Direct: true, IdField: "deployment_id"}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, DeploymentIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/deployments/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.Environment), fmt.Sprintf("%v", obj.Endpoint), fmt.Sprintf("%v", obj.Purpose), fmt.Sprintf("%v", obj.Audience), fmt.Sprintf("%v", obj.DeployedAt), fmt.Sprintf("%v", obj.DecommissionedAt), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "Deployments", DeploymentIndexData{AggregateName: "Deployment", Description: "AI model deployments across environments", Items: rows, Columns: []DeploymentColumn{{Label: "Model Id"}, {Label: "Environment"}, {Label: "Endpoint"}, {Label: "Purpose"}, {Label: "Audience"}, {Label: "Deployed At"}, {Label: "Decommissioned At"}, {Label: "Status"}}, Buttons: []DeploymentButton{{Label: "PlanDeployment", Href: "/deployments/plan_deployment/new", Allowed: true}}})
+		renderer.Render(w, "index", "Deployments", DeploymentIndexData{AggregateName: "Deployment", Description: "AI model deployments across environments", Items: rows, Columns: []DeploymentColumn{{Label: "Model Id"}, {Label: "Environment"}, {Label: "Endpoint"}, {Label: "Purpose"}, {Label: "Audience"}, {Label: "Deployed At"}, {Label: "Decommissioned At"}, {Label: "Status"}}, Buttons: []DeploymentButton{{Label: "PlanDeployment", Href: "/deployments/plan_deployment/new", Allowed: true}}, RowActions: []RowAction{{Label: "DeployModel", HrefPrefix: "/deployments/deploy_model", Allowed: true, Direct: true, IdField: "deployment_id"}, {Label: "DecommissionDeployment", HrefPrefix: "/deployments/decommission_deployment", Allowed: true, Direct: true, IdField: "deployment_id"}}})
 	})
 
 	mux.HandleFunc("GET /deployments/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1117,7 +1158,7 @@ func (app *App) Start(port int) error {
 
 	type IncidentColumn struct { Label string }
 	type IncidentIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type IncidentButton struct { Label string; Href string; Allowed bool }
+	type IncidentButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type IncidentIndexData struct { AggregateName string; Description string; Items []IncidentIndexItem; Columns []IncidentColumn; Buttons []IncidentButton; RowActions []RowAction }
 	mux.HandleFunc("GET /incidents", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -1127,9 +1168,12 @@ func (app *App) Start(port int) error {
 		var rows []IncidentIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, IncidentIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/incidents/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.Severity), fmt.Sprintf("%v", obj.Category), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.ReportedById), fmt.Sprintf("%v", obj.ReportedAt), fmt.Sprintf("%v", obj.ResolvedAt), fmt.Sprintf("%v", obj.Resolution), fmt.Sprintf("%v", obj.RootCause), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "InvestigateIncident", HrefPrefix: "/incidents/investigate_incident", Allowed: true, Direct: true, IdField: "incident_id"}, {Label: "MitigateIncident", HrefPrefix: "/incidents/mitigate_incident", Allowed: true, Direct: true, IdField: "incident_id"}, {Label: "ResolveIncident", HrefPrefix: "/incidents/resolve_incident/new?id=", Allowed: true}, {Label: "CloseIncident", HrefPrefix: "/incidents/close_incident", Allowed: true, Direct: true, IdField: "incident_id"}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, IncidentIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/incidents/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.Severity), fmt.Sprintf("%v", obj.Category), fmt.Sprintf("%v", obj.Description), fmt.Sprintf("%v", obj.ReportedById), fmt.Sprintf("%v", obj.ReportedAt), fmt.Sprintf("%v", obj.ResolvedAt), fmt.Sprintf("%v", obj.Resolution), fmt.Sprintf("%v", obj.RootCause), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "Incidents", IncidentIndexData{AggregateName: "Incident", Description: "AI-related incidents including bias, safety, and performance issues", Items: rows, Columns: []IncidentColumn{{Label: "Model Id"}, {Label: "Severity"}, {Label: "Category"}, {Label: "Description"}, {Label: "Reported By Id"}, {Label: "Reported At"}, {Label: "Resolved At"}, {Label: "Resolution"}, {Label: "Root Cause"}, {Label: "Status"}}, Buttons: []IncidentButton{{Label: "ReportIncident", Href: "/incidents/report_incident/new", Allowed: true}}})
+		renderer.Render(w, "index", "Incidents", IncidentIndexData{AggregateName: "Incident", Description: "AI-related incidents including bias, safety, and performance issues", Items: rows, Columns: []IncidentColumn{{Label: "Model Id"}, {Label: "Severity"}, {Label: "Category"}, {Label: "Description"}, {Label: "Reported By Id"}, {Label: "Reported At"}, {Label: "Resolved At"}, {Label: "Resolution"}, {Label: "Root Cause"}, {Label: "Status"}}, Buttons: []IncidentButton{{Label: "ReportIncident", Href: "/incidents/report_incident/new", Allowed: true}}, RowActions: []RowAction{{Label: "InvestigateIncident", HrefPrefix: "/incidents/investigate_incident", Allowed: true, Direct: true, IdField: "incident_id"}, {Label: "MitigateIncident", HrefPrefix: "/incidents/mitigate_incident", Allowed: true, Direct: true, IdField: "incident_id"}, {Label: "ResolveIncident", HrefPrefix: "/incidents/resolve_incident/new?id=", Allowed: true}, {Label: "CloseIncident", HrefPrefix: "/incidents/close_incident", Allowed: true, Direct: true, IdField: "incident_id"}}})
 	})
 
 	mux.HandleFunc("GET /incidents/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1241,7 +1285,7 @@ func (app *App) Start(port int) error {
 
 	type MonitoringColumn struct { Label string }
 	type MonitoringIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type MonitoringButton struct { Label string; Href string; Allowed bool }
+	type MonitoringButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type MonitoringIndexData struct { AggregateName string; Description string; Items []MonitoringIndexItem; Columns []MonitoringColumn; Buttons []MonitoringButton; RowActions []RowAction }
 	mux.HandleFunc("GET /monitorings", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -1251,9 +1295,12 @@ func (app *App) Start(port int) error {
 		var rows []MonitoringIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, MonitoringIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/monitorings/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.DeploymentId), fmt.Sprintf("%v", obj.MetricName), fmt.Sprintf("%v", obj.Value), fmt.Sprintf("%v", obj.Threshold), fmt.Sprintf("%v", obj.RecordedAt)}})
+			baseActions := []RowAction{{Label: "SetThreshold", HrefPrefix: "/monitorings/set_threshold/new?id=", Allowed: true}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, MonitoringIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/monitorings/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.DeploymentId), fmt.Sprintf("%v", obj.MetricName), fmt.Sprintf("%v", obj.Value), fmt.Sprintf("%v", obj.Threshold), fmt.Sprintf("%v", obj.RecordedAt)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "Monitorings", MonitoringIndexData{AggregateName: "Monitoring", Description: "Performance and safety metrics for deployed models", Items: rows, Columns: []MonitoringColumn{{Label: "Model Id"}, {Label: "Deployment Id"}, {Label: "Metric Name"}, {Label: "Value"}, {Label: "Threshold"}, {Label: "Recorded At"}}, Buttons: []MonitoringButton{{Label: "RecordMetric", Href: "/monitorings/record_metric/new", Allowed: true}}})
+		renderer.Render(w, "index", "Monitorings", MonitoringIndexData{AggregateName: "Monitoring", Description: "Performance and safety metrics for deployed models", Items: rows, Columns: []MonitoringColumn{{Label: "Model Id"}, {Label: "Deployment Id"}, {Label: "Metric Name"}, {Label: "Value"}, {Label: "Threshold"}, {Label: "Recorded At"}}, Buttons: []MonitoringButton{{Label: "RecordMetric", Href: "/monitorings/record_metric/new", Allowed: true}}, RowActions: []RowAction{{Label: "SetThreshold", HrefPrefix: "/monitorings/set_threshold/new?id=", Allowed: true}}})
 	})
 
 	mux.HandleFunc("GET /monitorings/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1307,7 +1354,7 @@ func (app *App) Start(port int) error {
 
 	type AssessmentColumn struct { Label string }
 	type AssessmentIndexItem struct { Id string; ShortId string; ShowHref string; Cells []string; RowActions []RowAction }
-	type AssessmentButton struct { Label string; Href string; Allowed bool }
+	type AssessmentButton struct { Label string; Href string; Allowed bool; Direct bool; IdField string }
 	type AssessmentIndexData struct { AggregateName string; Description string; Items []AssessmentIndexItem; Columns []AssessmentColumn; Buttons []AssessmentButton; RowActions []RowAction }
 	mux.HandleFunc("GET /assessments", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Accept") == "application/json" || r.URL.Query().Get("format") == "json" {
@@ -1317,9 +1364,12 @@ func (app *App) Start(port int) error {
 		var rows []AssessmentIndexItem
 		for _, obj := range items {
 			sid := obj.ID; if len(sid)>8 { sid=sid[:8]+"..." }
-			rows = append(rows, AssessmentIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/assessments/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.AssessorId), fmt.Sprintf("%v", obj.RiskLevel), fmt.Sprintf("%v", obj.BiasScore), fmt.Sprintf("%v", obj.SafetyScore), fmt.Sprintf("%v", obj.TransparencyScore), fmt.Sprintf("%v", obj.OverallScore), fmt.Sprintf("%v", obj.SubmittedAt), fmt.Sprintf("%d items", len(obj.Findings)), fmt.Sprintf("%d items", len(obj.Mitigations)), fmt.Sprintf("%v", obj.Status)}})
+			baseActions := []RowAction{{Label: "RecordFinding", HrefPrefix: "/assessments/record_finding/new?id=", Allowed: true}, {Label: "SubmitAssessment", HrefPrefix: "/assessments/submit_assessment/new?id=", Allowed: true}, {Label: "RejectAssessment", HrefPrefix: "/assessments/reject_assessment", Allowed: true, Direct: true, IdField: "assessment_id"}}
+			actions := make([]RowAction, len(baseActions))
+			for i, a := range baseActions { actions[i] = RowAction{Label: a.Label, HrefPrefix: a.HrefPrefix, Id: obj.ID, Allowed: a.Allowed, Direct: a.Direct, IdField: a.IdField} }
+			rows = append(rows, AssessmentIndexItem{Id: obj.ID, ShortId: sid, ShowHref: "/assessments/show?id="+obj.ID, Cells: []string{fmt.Sprintf("%v", obj.ModelId), fmt.Sprintf("%v", obj.AssessorId), fmt.Sprintf("%v", obj.RiskLevel), fmt.Sprintf("%v", obj.BiasScore), fmt.Sprintf("%v", obj.SafetyScore), fmt.Sprintf("%v", obj.TransparencyScore), fmt.Sprintf("%v", obj.OverallScore), fmt.Sprintf("%v", obj.SubmittedAt), fmt.Sprintf("%d items", len(obj.Findings)), fmt.Sprintf("%d items", len(obj.Mitigations)), fmt.Sprintf("%v", obj.Status)}, RowActions: actions})
 		}
-		renderer.Render(w, "index", "Assessments", AssessmentIndexData{AggregateName: "Assessment", Description: "Risk assessments evaluating AI model safety, bias, and transparency", Items: rows, Columns: []AssessmentColumn{{Label: "Model Id"}, {Label: "Assessor Id"}, {Label: "Risk Level"}, {Label: "Bias Score"}, {Label: "Safety Score"}, {Label: "Transparency Score"}, {Label: "Overall Score"}, {Label: "Submitted At"}, {Label: "Findings"}, {Label: "Mitigations"}, {Label: "Status"}}, Buttons: []AssessmentButton{{Label: "InitiateAssessment", Href: "/assessments/initiate_assessment/new", Allowed: true}}})
+		renderer.Render(w, "index", "Assessments", AssessmentIndexData{AggregateName: "Assessment", Description: "Risk assessments evaluating AI model safety, bias, and transparency", Items: rows, Columns: []AssessmentColumn{{Label: "Model Id"}, {Label: "Assessor Id"}, {Label: "Risk Level"}, {Label: "Bias Score"}, {Label: "Safety Score"}, {Label: "Transparency Score"}, {Label: "Overall Score"}, {Label: "Submitted At"}, {Label: "Findings"}, {Label: "Mitigations"}, {Label: "Status"}}, Buttons: []AssessmentButton{{Label: "InitiateAssessment", Href: "/assessments/initiate_assessment/new", Allowed: true}}, RowActions: []RowAction{{Label: "RecordFinding", HrefPrefix: "/assessments/record_finding/new?id=", Allowed: true}, {Label: "SubmitAssessment", HrefPrefix: "/assessments/submit_assessment/new?id=", Allowed: true}, {Label: "RejectAssessment", HrefPrefix: "/assessments/reject_assessment", Allowed: true, Direct: true, IdField: "assessment_id"}}})
 	})
 
 	mux.HandleFunc("GET /assessments/find", func(w http.ResponseWriter, r *http.Request) {
@@ -1413,7 +1463,7 @@ func (app *App) Start(port int) error {
 		}
 	})
 
-	type GovernancePolicyShowField struct { Label string; Value string; Type string; Items []string }
+	type GovernancePolicyShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type GovernancePolicyShowData struct { AggregateName string; Id string; BackHref string; Fields []GovernancePolicyShowField; Buttons []GovernancePolicyButton }
 	mux.HandleFunc("GET /governance_policys/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.GovernancePolicyRepo.Find(r.URL.Query().Get("id"))
@@ -1426,12 +1476,13 @@ func (app *App) Start(port int) error {
 			{Label: "Effective Date", Value: fmt.Sprintf("%v", obj.EffectiveDate)},
 			{Label: "Review Date", Value: fmt.Sprintf("%v", obj.ReviewDate)},
 			{Label: "Requirements", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Requirements { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Create Policy → draft", "Activate Policy → active", "Suspend Policy → suspended", "Retire Policy → retired"}},
 		}
-		renderer.Render(w, "show", "GovernancePolicy", GovernancePolicyShowData{AggregateName: "GovernancePolicy", BackHref: "/governance_policys", Id: obj.ID, Fields: fields})
+		buttons := []GovernancePolicyButton{GovernancePolicyButton{Label: "ActivatePolicy", Href: "/governance_policys/activate_policy/new?id=" + obj.ID, Allowed: true}, GovernancePolicyButton{Label: "SuspendPolicy", Href: "/governance_policys/suspend_policy", Allowed: true, Direct: true, IdField: "policy_id"}, GovernancePolicyButton{Label: "RetirePolicy", Href: "/governance_policys/retire_policy", Allowed: true, Direct: true, IdField: "policy_id"}, GovernancePolicyButton{Label: "UpdateReviewDate", Href: "/governance_policys/update_review_date/new?id=" + obj.ID, Allowed: true}}
+		renderer.Render(w, "show", "GovernancePolicy", GovernancePolicyShowData{AggregateName: "GovernancePolicy", BackHref: "/governance_policys", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type RegulatoryFrameworkShowField struct { Label string; Value string; Type string; Items []string }
+	type RegulatoryFrameworkShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type RegulatoryFrameworkShowData struct { AggregateName string; Id string; BackHref string; Fields []RegulatoryFrameworkShowField; Buttons []RegulatoryFrameworkButton }
 	mux.HandleFunc("GET /regulatory_frameworks/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.RegulatoryFrameworkRepo.Find(r.URL.Query().Get("id"))
@@ -1443,12 +1494,13 @@ func (app *App) Start(port int) error {
 			{Label: "Effective Date", Value: fmt.Sprintf("%v", obj.EffectiveDate)},
 			{Label: "Authority", Value: fmt.Sprintf("%v", obj.Authority)},
 			{Label: "Requirements", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Requirements { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Register Framework → draft", "Activate Framework → active", "Retire Framework → retired"}},
 		}
-		renderer.Render(w, "show", "RegulatoryFramework", RegulatoryFrameworkShowData{AggregateName: "RegulatoryFramework", BackHref: "/regulatory_frameworks", Id: obj.ID, Fields: fields})
+		buttons := []RegulatoryFrameworkButton{RegulatoryFrameworkButton{Label: "ActivateFramework", Href: "/regulatory_frameworks/activate_framework/new?id=" + obj.ID, Allowed: true}, RegulatoryFrameworkButton{Label: "RetireFramework", Href: "/regulatory_frameworks/retire_framework", Allowed: true, Direct: true, IdField: "framework_id"}}
+		renderer.Render(w, "show", "RegulatoryFramework", RegulatoryFrameworkShowData{AggregateName: "RegulatoryFramework", BackHref: "/regulatory_frameworks", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type ComplianceReviewShowField struct { Label string; Value string; Type string; Items []string }
+	type ComplianceReviewShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type ComplianceReviewShowData struct { AggregateName string; Id string; BackHref string; Fields []ComplianceReviewShowField; Buttons []ComplianceReviewButton }
 	mux.HandleFunc("GET /compliance_reviews/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.ComplianceReviewRepo.Find(r.URL.Query().Get("id"))
@@ -1461,12 +1513,13 @@ func (app *App) Start(port int) error {
 			{Label: "Notes", Value: fmt.Sprintf("%v", obj.Notes)},
 			{Label: "Completed At", Value: fmt.Sprintf("%v", obj.CompletedAt)},
 			{Label: "Conditions", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Conditions { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Open Review → open", "Approve Review → approved", "Reject Review → rejected", "Request Changes → changes_requested"}},
 		}
-		renderer.Render(w, "show", "ComplianceReview", ComplianceReviewShowData{AggregateName: "ComplianceReview", BackHref: "/compliance_reviews", Id: obj.ID, Fields: fields})
+		buttons := []ComplianceReviewButton{ComplianceReviewButton{Label: "ApproveReview", Href: "/compliance_reviews/approve_review/new?id=" + obj.ID, Allowed: true}, ComplianceReviewButton{Label: "RejectReview", Href: "/compliance_reviews/reject_review/new?id=" + obj.ID, Allowed: true}, ComplianceReviewButton{Label: "RequestChanges", Href: "/compliance_reviews/request_changes/new?id=" + obj.ID, Allowed: true}}
+		renderer.Render(w, "show", "ComplianceReview", ComplianceReviewShowData{AggregateName: "ComplianceReview", BackHref: "/compliance_reviews", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type ExemptionShowField struct { Label string; Value string; Type string; Items []string }
+	type ExemptionShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type ExemptionShowData struct { AggregateName string; Id string; BackHref string; Fields []ExemptionShowField; Buttons []ExemptionButton }
 	mux.HandleFunc("GET /exemptions/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.ExemptionRepo.Find(r.URL.Query().Get("id"))
@@ -1479,12 +1532,14 @@ func (app *App) Start(port int) error {
 			{Label: "Approved By Id", Value: fmt.Sprintf("%v", obj.ApprovedById)},
 			{Label: "Approved At", Value: fmt.Sprintf("%v", obj.ApprovedAt)},
 			{Label: "Expires At", Value: fmt.Sprintf("%v", obj.ExpiresAt)},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Scope", Value: fmt.Sprintf("%v", obj.Scope)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Request Exemption → requested", "Approve Exemption → active", "Revoke Exemption → revoked"}},
 		}
-		renderer.Render(w, "show", "Exemption", ExemptionShowData{AggregateName: "Exemption", BackHref: "/exemptions", Id: obj.ID, Fields: fields})
+		buttons := []ExemptionButton{ExemptionButton{Label: "ApproveExemption", Href: "/exemptions/approve_exemption/new?id=" + obj.ID, Allowed: true}, ExemptionButton{Label: "RevokeExemption", Href: "/exemptions/revoke_exemption", Allowed: true, Direct: true, IdField: "exemption_id"}}
+		renderer.Render(w, "show", "Exemption", ExemptionShowData{AggregateName: "Exemption", BackHref: "/exemptions", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type TrainingRecordShowField struct { Label string; Value string; Type string; Items []string }
+	type TrainingRecordShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type TrainingRecordShowData struct { AggregateName string; Id string; BackHref string; Fields []TrainingRecordShowField; Buttons []TrainingRecordButton }
 	mux.HandleFunc("GET /training_records/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.TrainingRecordRepo.Find(r.URL.Query().Get("id"))
@@ -1495,12 +1550,13 @@ func (app *App) Start(port int) error {
 			{Label: "Completed At", Value: fmt.Sprintf("%v", obj.CompletedAt)},
 			{Label: "Expires At", Value: fmt.Sprintf("%v", obj.ExpiresAt)},
 			{Label: "Certification Id", Value: fmt.Sprintf("%v", obj.CertificationId)},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Assign Training → assigned", "Complete Training → completed", "Renew Training → completed"}},
 		}
-		renderer.Render(w, "show", "TrainingRecord", TrainingRecordShowData{AggregateName: "TrainingRecord", BackHref: "/training_records", Id: obj.ID, Fields: fields})
+		buttons := []TrainingRecordButton{TrainingRecordButton{Label: "CompleteTraining", Href: "/training_records/complete_training/new?id=" + obj.ID, Allowed: true}, TrainingRecordButton{Label: "RenewTraining", Href: "/training_records/renew_training/new?id=" + obj.ID, Allowed: true}}
+		renderer.Render(w, "show", "TrainingRecord", TrainingRecordShowData{AggregateName: "TrainingRecord", BackHref: "/training_records", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type StakeholderShowField struct { Label string; Value string; Type string; Items []string }
+	type StakeholderShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type StakeholderShowData struct { AggregateName string; Id string; BackHref string; Fields []StakeholderShowField; Buttons []StakeholderButton }
 	mux.HandleFunc("GET /stakeholders/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.StakeholderRepo.Find(r.URL.Query().Get("id"))
@@ -1510,12 +1566,13 @@ func (app *App) Start(port int) error {
 			{Label: "Email", Value: fmt.Sprintf("%v", obj.Email)},
 			{Label: "Role", Value: fmt.Sprintf("%v", obj.Role)},
 			{Label: "Team", Value: fmt.Sprintf("%v", obj.Team)},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Register Stakeholder → active", "Deactivate Stakeholder → deactivated"}},
 		}
-		renderer.Render(w, "show", "Stakeholder", StakeholderShowData{AggregateName: "Stakeholder", BackHref: "/stakeholders", Id: obj.ID, Fields: fields})
+		buttons := []StakeholderButton{StakeholderButton{Label: "AssignRole", Href: "/stakeholders/assign_role/new?id=" + obj.ID, Allowed: true}, StakeholderButton{Label: "DeactivateStakeholder", Href: "/stakeholders/deactivate_stakeholder", Allowed: true, Direct: true, IdField: "stakeholder_id"}}
+		renderer.Render(w, "show", "Stakeholder", StakeholderShowData{AggregateName: "Stakeholder", BackHref: "/stakeholders", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type AuditLogShowField struct { Label string; Value string; Type string; Items []string }
+	type AuditLogShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type AuditLogShowData struct { AggregateName string; Id string; BackHref string; Fields []AuditLogShowField; Buttons []AuditLogButton }
 	mux.HandleFunc("GET /audit_logs/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.AuditLogRepo.Find(r.URL.Query().Get("id"))
@@ -1528,10 +1585,11 @@ func (app *App) Start(port int) error {
 			{Label: "Details", Value: fmt.Sprintf("%v", obj.Details)},
 			{Label: "Timestamp", Value: fmt.Sprintf("%v", obj.Timestamp)},
 		}
-		renderer.Render(w, "show", "AuditLog", AuditLogShowData{AggregateName: "AuditLog", BackHref: "/audit_logs", Id: obj.ID, Fields: fields})
+		var buttons []AuditLogButton
+		renderer.Render(w, "show", "AuditLog", AuditLogShowData{AggregateName: "AuditLog", BackHref: "/audit_logs", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type AiModelShowField struct { Label string; Value string; Type string; Items []string }
+	type AiModelShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type AiModelShowData struct { AggregateName string; Id string; BackHref string; Fields []AiModelShowField; Buttons []AiModelButton }
 	mux.HandleFunc("GET /ai_models/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.AiModelRepo.Find(r.URL.Query().Get("id"))
@@ -1547,12 +1605,13 @@ func (app *App) Start(port int) error {
 			{Label: "Derivation Type", Value: fmt.Sprintf("%v", obj.DerivationType)},
 			{Label: "Capabilities", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Capabilities { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Intended Uses", Type: "list", Items: func() []string { var s []string; for _, v := range obj.IntendedUses { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Register Model → draft", "Derive Model → draft", "Classify Risk → classified", "Approve Model → approved", "Suspend Model → suspended", "Retire Model → retired"}},
 		}
-		renderer.Render(w, "show", "AiModel", AiModelShowData{AggregateName: "AiModel", BackHref: "/ai_models", Id: obj.ID, Fields: fields})
+		buttons := []AiModelButton{AiModelButton{Label: "ClassifyRisk", Href: "/ai_models/classify_risk/new?id=" + obj.ID, Allowed: true}, AiModelButton{Label: "ApproveModel", Href: "/ai_models/approve_model", Allowed: true, Direct: true, IdField: "model_id"}, AiModelButton{Label: "SuspendModel", Href: "/ai_models/suspend_model", Allowed: true, Direct: true, IdField: "model_id"}, AiModelButton{Label: "RetireModel", Href: "/ai_models/retire_model", Allowed: true, Direct: true, IdField: "model_id"}}
+		renderer.Render(w, "show", "AiModel", AiModelShowData{AggregateName: "AiModel", BackHref: "/ai_models", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type VendorShowField struct { Label string; Value string; Type string; Items []string }
+	type VendorShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type VendorShowData struct { AggregateName string; Id string; BackHref string; Fields []VendorShowField; Buttons []VendorButton }
 	mux.HandleFunc("GET /vendors/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.VendorRepo.Find(r.URL.Query().Get("id"))
@@ -1564,12 +1623,13 @@ func (app *App) Start(port int) error {
 			{Label: "Assessment Date", Value: fmt.Sprintf("%v", obj.AssessmentDate)},
 			{Label: "Next Review Date", Value: fmt.Sprintf("%v", obj.NextReviewDate)},
 			{Label: "Sla Terms", Value: fmt.Sprintf("%v", obj.SlaTerms)},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Register Vendor → pending_review", "Approve Vendor → approved", "Suspend Vendor → suspended"}},
 		}
-		renderer.Render(w, "show", "Vendor", VendorShowData{AggregateName: "Vendor", BackHref: "/vendors", Id: obj.ID, Fields: fields})
+		buttons := []VendorButton{VendorButton{Label: "ApproveVendor", Href: "/vendors/approve_vendor/new?id=" + obj.ID, Allowed: true}, VendorButton{Label: "SuspendVendor", Href: "/vendors/suspend_vendor", Allowed: true, Direct: true, IdField: "vendor_id"}}
+		renderer.Render(w, "show", "Vendor", VendorShowData{AggregateName: "Vendor", BackHref: "/vendors", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type DataUsageAgreementShowField struct { Label string; Value string; Type string; Items []string }
+	type DataUsageAgreementShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type DataUsageAgreementShowData struct { AggregateName string; Id string; BackHref string; Fields []DataUsageAgreementShowField; Buttons []DataUsageAgreementButton }
 	mux.HandleFunc("GET /data_usage_agreements/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.DataUsageAgreementRepo.Find(r.URL.Query().Get("id"))
@@ -1582,12 +1642,13 @@ func (app *App) Start(port int) error {
 			{Label: "Effective Date", Value: fmt.Sprintf("%v", obj.EffectiveDate)},
 			{Label: "Expiration Date", Value: fmt.Sprintf("%v", obj.ExpirationDate)},
 			{Label: "Restrictions", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Restrictions { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Create Agreement → draft", "Activate Agreement → active", "Revoke Agreement → revoked", "Renew Agreement → active"}},
 		}
-		renderer.Render(w, "show", "DataUsageAgreement", DataUsageAgreementShowData{AggregateName: "DataUsageAgreement", BackHref: "/data_usage_agreements", Id: obj.ID, Fields: fields})
+		buttons := []DataUsageAgreementButton{DataUsageAgreementButton{Label: "ActivateAgreement", Href: "/data_usage_agreements/activate_agreement/new?id=" + obj.ID, Allowed: true}, DataUsageAgreementButton{Label: "RevokeAgreement", Href: "/data_usage_agreements/revoke_agreement", Allowed: true, Direct: true, IdField: "agreement_id"}, DataUsageAgreementButton{Label: "RenewAgreement", Href: "/data_usage_agreements/renew_agreement/new?id=" + obj.ID, Allowed: true}}
+		renderer.Render(w, "show", "DataUsageAgreement", DataUsageAgreementShowData{AggregateName: "DataUsageAgreement", BackHref: "/data_usage_agreements", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type DeploymentShowField struct { Label string; Value string; Type string; Items []string }
+	type DeploymentShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type DeploymentShowData struct { AggregateName string; Id string; BackHref string; Fields []DeploymentShowField; Buttons []DeploymentButton }
 	mux.HandleFunc("GET /deployments/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.DeploymentRepo.Find(r.URL.Query().Get("id"))
@@ -1600,12 +1661,13 @@ func (app *App) Start(port int) error {
 			{Label: "Audience", Value: fmt.Sprintf("%v", obj.Audience)},
 			{Label: "Deployed At", Value: fmt.Sprintf("%v", obj.DeployedAt)},
 			{Label: "Decommissioned At", Value: fmt.Sprintf("%v", obj.DecommissionedAt)},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Plan Deployment → planned", "Deploy Model → deployed", "Decommission Deployment → decommissioned"}},
 		}
-		renderer.Render(w, "show", "Deployment", DeploymentShowData{AggregateName: "Deployment", BackHref: "/deployments", Id: obj.ID, Fields: fields})
+		buttons := []DeploymentButton{DeploymentButton{Label: "DeployModel", Href: "/deployments/deploy_model", Allowed: true, Direct: true, IdField: "deployment_id"}, DeploymentButton{Label: "DecommissionDeployment", Href: "/deployments/decommission_deployment", Allowed: true, Direct: true, IdField: "deployment_id"}}
+		renderer.Render(w, "show", "Deployment", DeploymentShowData{AggregateName: "Deployment", BackHref: "/deployments", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type IncidentShowField struct { Label string; Value string; Type string; Items []string }
+	type IncidentShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type IncidentShowData struct { AggregateName string; Id string; BackHref string; Fields []IncidentShowField; Buttons []IncidentButton }
 	mux.HandleFunc("GET /incidents/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.IncidentRepo.Find(r.URL.Query().Get("id"))
@@ -1620,12 +1682,13 @@ func (app *App) Start(port int) error {
 			{Label: "Resolved At", Value: fmt.Sprintf("%v", obj.ResolvedAt)},
 			{Label: "Resolution", Value: fmt.Sprintf("%v", obj.Resolution)},
 			{Label: "Root Cause", Value: fmt.Sprintf("%v", obj.RootCause)},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Report Incident → reported", "Investigate Incident → investigating", "Mitigate Incident → mitigating", "Resolve Incident → resolved", "Close Incident → closed"}},
 		}
-		renderer.Render(w, "show", "Incident", IncidentShowData{AggregateName: "Incident", BackHref: "/incidents", Id: obj.ID, Fields: fields})
+		buttons := []IncidentButton{IncidentButton{Label: "InvestigateIncident", Href: "/incidents/investigate_incident", Allowed: true, Direct: true, IdField: "incident_id"}, IncidentButton{Label: "MitigateIncident", Href: "/incidents/mitigate_incident", Allowed: true, Direct: true, IdField: "incident_id"}, IncidentButton{Label: "ResolveIncident", Href: "/incidents/resolve_incident/new?id=" + obj.ID, Allowed: true}, IncidentButton{Label: "CloseIncident", Href: "/incidents/close_incident", Allowed: true, Direct: true, IdField: "incident_id"}}
+		renderer.Render(w, "show", "Incident", IncidentShowData{AggregateName: "Incident", BackHref: "/incidents", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type MonitoringShowField struct { Label string; Value string; Type string; Items []string }
+	type MonitoringShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type MonitoringShowData struct { AggregateName string; Id string; BackHref string; Fields []MonitoringShowField; Buttons []MonitoringButton }
 	mux.HandleFunc("GET /monitorings/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.MonitoringRepo.Find(r.URL.Query().Get("id"))
@@ -1638,10 +1701,11 @@ func (app *App) Start(port int) error {
 			{Label: "Threshold", Value: fmt.Sprintf("%v", obj.Threshold)},
 			{Label: "Recorded At", Value: fmt.Sprintf("%v", obj.RecordedAt)},
 		}
-		renderer.Render(w, "show", "Monitoring", MonitoringShowData{AggregateName: "Monitoring", BackHref: "/monitorings", Id: obj.ID, Fields: fields})
+		buttons := []MonitoringButton{MonitoringButton{Label: "SetThreshold", Href: "/monitorings/set_threshold/new?id=" + obj.ID, Allowed: true}}
+		renderer.Render(w, "show", "Monitoring", MonitoringShowData{AggregateName: "Monitoring", BackHref: "/monitorings", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
-	type AssessmentShowField struct { Label string; Value string; Type string; Items []string }
+	type AssessmentShowField struct { Label string; Value string; Type string; Items []string; Transitions []string }
 	type AssessmentShowData struct { AggregateName string; Id string; BackHref string; Fields []AssessmentShowField; Buttons []AssessmentButton }
 	mux.HandleFunc("GET /assessments/show", func(w http.ResponseWriter, r *http.Request) {
 		obj, _ := app.AssessmentRepo.Find(r.URL.Query().Get("id"))
@@ -1657,9 +1721,10 @@ func (app *App) Start(port int) error {
 			{Label: "Submitted At", Value: fmt.Sprintf("%v", obj.SubmittedAt)},
 			{Label: "Findings", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Findings { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
 			{Label: "Mitigations", Type: "list", Items: func() []string { var s []string; for _, v := range obj.Mitigations { s = append(s, fmt.Sprintf("%v", v)) }; return s }()},
-			{Label: "Status", Value: fmt.Sprintf("%v", obj.Status)},
+			{Label: "Status", Type: "lifecycle", Value: fmt.Sprintf("%v", obj.Status), Transitions: []string{"Initiate Assessment → pending", "Submit Assessment → submitted", "Reject Assessment → rejected"}},
 		}
-		renderer.Render(w, "show", "Assessment", AssessmentShowData{AggregateName: "Assessment", BackHref: "/assessments", Id: obj.ID, Fields: fields})
+		buttons := []AssessmentButton{AssessmentButton{Label: "RecordFinding", Href: "/assessments/record_finding/new?id=" + obj.ID, Allowed: true}, AssessmentButton{Label: "SubmitAssessment", Href: "/assessments/submit_assessment/new?id=" + obj.ID, Allowed: true}, AssessmentButton{Label: "RejectAssessment", Href: "/assessments/reject_assessment", Allowed: true, Direct: true, IdField: "assessment_id"}}
+		renderer.Render(w, "show", "Assessment", AssessmentShowData{AggregateName: "Assessment", BackHref: "/assessments", Id: obj.ID, Fields: fields, Buttons: buttons})
 	})
 
 	// Form routes (types in renderer.go)
@@ -1667,7 +1732,8 @@ func (app *App) Start(port int) error {
 		fields := []FormField{
 			{Type: "input", Name: "name", Label: "Name", InputType: "text", Required: true},
 			{Type: "input", Name: "description", Label: "Description", InputType: "text", Required: true},
-			{Type: "input", Name: "category", Label: "Category", InputType: "text", Required: true},
+			{Type: "select", Name: "category", Label: "Category", Required: true, Options: []FormOption{FormOption{Value: "regulatory", Label: "regulatory"}, FormOption{Value: "internal", Label: "internal"}, FormOption{Value: "ethical", Label: "ethical"}, FormOption{Value: "operational", Label: "operational"}}},
+			{Type: "input", Name: "framework_id", Label: "Framework Id", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "CreatePolicy", FormData{
 			CommandName: "CreatePolicy",
@@ -1678,7 +1744,8 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /governance_policys/activate_policy/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
-			{Type: "input", Name: "effective_date", Label: "Effective Date", InputType: "text", Required: true},
+			{Type: "hidden", Name: "policy_id", Value: r.URL.Query().Get("id")},
+			{Type: "input", Name: "effective_date", Label: "Effective Date", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "ActivatePolicy", FormData{
 			CommandName: "ActivatePolicy",
@@ -1689,6 +1756,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /governance_policys/suspend_policy/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "policy_id", Value: r.URL.Query().Get("id")},
 		}
 		renderer.Render(w, "form", "SuspendPolicy", FormData{
 			CommandName: "SuspendPolicy",
@@ -1699,6 +1767,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /governance_policys/retire_policy/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "policy_id", Value: r.URL.Query().Get("id")},
 		}
 		renderer.Render(w, "form", "RetirePolicy", FormData{
 			CommandName: "RetirePolicy",
@@ -1709,7 +1778,8 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /governance_policys/update_review_date/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
-			{Type: "input", Name: "review_date", Label: "Review Date", InputType: "text", Required: true},
+			{Type: "hidden", Name: "policy_id", Value: r.URL.Query().Get("id")},
+			{Type: "input", Name: "review_date", Label: "Review Date", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "UpdateReviewDate", FormData{
 			CommandName: "UpdateReviewDate",
@@ -1734,7 +1804,8 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /regulatory_frameworks/activate_framework/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
-			{Type: "input", Name: "effective_date", Label: "Effective Date", InputType: "text", Required: true},
+			{Type: "hidden", Name: "framework_id", Value: r.URL.Query().Get("id")},
+			{Type: "input", Name: "effective_date", Label: "Effective Date", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "ActivateFramework", FormData{
 			CommandName: "ActivateFramework",
@@ -1745,6 +1816,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /regulatory_frameworks/retire_framework/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "framework_id", Value: r.URL.Query().Get("id")},
 		}
 		renderer.Render(w, "form", "RetireFramework", FormData{
 			CommandName: "RetireFramework",
@@ -1755,7 +1827,28 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /compliance_reviews/open_review/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			// AiModel dropdown built dynamically below
+			// GovernancePolicy dropdown built dynamically below
+			// Stakeholder dropdown built dynamically below
 		}
+		aimodels, _ := app.AiModelRepo.All()
+		var aimodelOpts []FormOption
+		for _, item := range aimodels {
+			aimodelOpts = append(aimodelOpts, FormOption{Value: item.ID, Label: fmt.Sprintf("%v", item.Name), Selected: item.ID == r.URL.Query().Get("id")})
+		}
+		fields = append(fields, FormField{Type: "select", Name: "model_id", Label: "Model", Required: true, Options: aimodelOpts})
+		governancepolicys, _ := app.GovernancePolicyRepo.All()
+		var governancepolicyOpts []FormOption
+		for _, item := range governancepolicys {
+			governancepolicyOpts = append(governancepolicyOpts, FormOption{Value: item.ID, Label: fmt.Sprintf("%v", item.Name), Selected: item.ID == r.URL.Query().Get("id")})
+		}
+		fields = append(fields, FormField{Type: "select", Name: "policy_id", Label: "Policy", Required: true, Options: governancepolicyOpts})
+		stakeholders, _ := app.StakeholderRepo.All()
+		var stakeholderOpts []FormOption
+		for _, item := range stakeholders {
+			stakeholderOpts = append(stakeholderOpts, FormOption{Value: item.ID, Label: fmt.Sprintf("%v", item.Name), Selected: item.ID == r.URL.Query().Get("id")})
+		}
+		fields = append(fields, FormField{Type: "select", Name: "reviewer_id", Label: "Reviewer", Required: true, Options: stakeholderOpts})
 		renderer.Render(w, "form", "OpenReview", FormData{
 			CommandName: "OpenReview",
 			Action: "/compliance_reviews/open_review",
@@ -1765,6 +1858,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /compliance_reviews/approve_review/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "review_id", Value: r.URL.Query().Get("id")},
 			{Type: "input", Name: "notes", Label: "Notes", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "ApproveReview", FormData{
@@ -1776,6 +1870,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /compliance_reviews/reject_review/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "review_id", Value: r.URL.Query().Get("id")},
 			{Type: "input", Name: "notes", Label: "Notes", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "RejectReview", FormData{
@@ -1787,6 +1882,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /compliance_reviews/request_changes/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "review_id", Value: r.URL.Query().Get("id")},
 			{Type: "input", Name: "notes", Label: "Notes", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "RequestChanges", FormData{
@@ -1798,6 +1894,8 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /exemptions/request_exemption/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "input", Name: "model_id", Label: "Model Id", InputType: "text", Required: true},
+			{Type: "input", Name: "policy_id", Label: "Policy Id", InputType: "text", Required: true},
 			{Type: "input", Name: "requirement", Label: "Requirement", InputType: "text", Required: true},
 			{Type: "input", Name: "reason", Label: "Reason", InputType: "text", Required: true},
 		}
@@ -1811,7 +1909,8 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /exemptions/approve_exemption/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			{Type: "hidden", Name: "exemption_id", Value: r.URL.Query().Get("id")},
-			{Type: "input", Name: "expires_at", Label: "Expires At", InputType: "text", Required: true},
+			{Type: "input", Name: "approved_by_id", Label: "Approved By Id", InputType: "text", Required: true},
+			{Type: "input", Name: "expires_at", Label: "Expires At", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "ApproveExemption", FormData{
 			CommandName: "ApproveExemption",
@@ -1834,6 +1933,7 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /training_records/assign_training/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			// Stakeholder dropdown built dynamically below
+			{Type: "input", Name: "policy_id", Label: "Policy Id", InputType: "text", Required: true},
 		}
 		stakeholders, _ := app.StakeholderRepo.All()
 		var stakeholderOpts []FormOption
@@ -1851,7 +1951,8 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /training_records/complete_training/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			{Type: "hidden", Name: "training_record_id", Value: r.URL.Query().Get("id")},
-			{Type: "input", Name: "expires_at", Label: "Expires At", InputType: "text", Required: true},
+			{Type: "input", Name: "certification_id", Label: "Certification Id", InputType: "text", Required: true},
+			{Type: "input", Name: "expires_at", Label: "Expires At", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "CompleteTraining", FormData{
 			CommandName: "CompleteTraining",
@@ -1863,7 +1964,8 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /training_records/renew_training/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			{Type: "hidden", Name: "training_record_id", Value: r.URL.Query().Get("id")},
-			{Type: "input", Name: "expires_at", Label: "Expires At", InputType: "text", Required: true},
+			{Type: "input", Name: "certification_id", Label: "Certification Id", InputType: "text", Required: true},
+			{Type: "input", Name: "expires_at", Label: "Expires At", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "RenewTraining", FormData{
 			CommandName: "RenewTraining",
@@ -1876,7 +1978,7 @@ func (app *App) Start(port int) error {
 		fields := []FormField{
 			{Type: "input", Name: "name", Label: "Name", InputType: "text", Required: true},
 			{Type: "input", Name: "email", Label: "Email", InputType: "text", Required: true},
-			{Type: "input", Name: "role", Label: "Role", InputType: "text", Required: true},
+			{Type: "select", Name: "role", Label: "Role", Required: true, Options: []FormOption{FormOption{Value: "assessor", Label: "assessor"}, FormOption{Value: "reviewer", Label: "reviewer"}, FormOption{Value: "governance_board", Label: "governance_board"}, FormOption{Value: "data_steward", Label: "data_steward"}, FormOption{Value: "incident_reporter", Label: "incident_reporter"}, FormOption{Value: "admin", Label: "admin"}, FormOption{Value: "auditor", Label: "auditor"}}},
 			{Type: "input", Name: "team", Label: "Team", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "RegisterStakeholder", FormData{
@@ -1889,7 +1991,7 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /stakeholders/assign_role/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			{Type: "hidden", Name: "stakeholder_id", Value: r.URL.Query().Get("id")},
-			{Type: "input", Name: "role", Label: "Role", InputType: "text", Required: true},
+			{Type: "select", Name: "role", Label: "Role", Required: true, Options: []FormOption{FormOption{Value: "assessor", Label: "assessor"}, FormOption{Value: "reviewer", Label: "reviewer"}, FormOption{Value: "governance_board", Label: "governance_board"}, FormOption{Value: "data_steward", Label: "data_steward"}, FormOption{Value: "incident_reporter", Label: "incident_reporter"}, FormOption{Value: "admin", Label: "admin"}, FormOption{Value: "auditor", Label: "auditor"}}},
 		}
 		renderer.Render(w, "form", "AssignRole", FormData{
 			CommandName: "AssignRole",
@@ -1912,7 +2014,9 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /audit_logs/record_entry/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			{Type: "input", Name: "entity_type", Label: "Entity Type", InputType: "text", Required: true},
+			{Type: "input", Name: "entity_id", Label: "Entity Id", InputType: "text", Required: true},
 			{Type: "input", Name: "action", Label: "Action", InputType: "text", Required: true},
+			{Type: "input", Name: "actor_id", Label: "Actor Id", InputType: "text", Required: true},
 			{Type: "input", Name: "details", Label: "Details", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "RecordEntry", FormData{
@@ -1926,6 +2030,7 @@ func (app *App) Start(port int) error {
 		fields := []FormField{
 			{Type: "input", Name: "name", Label: "Name", InputType: "text", Required: true},
 			{Type: "input", Name: "version", Label: "Version", InputType: "text", Required: true},
+			{Type: "input", Name: "provider_id", Label: "Provider Id", InputType: "text", Required: true},
 			{Type: "input", Name: "description", Label: "Description", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "RegisterModel", FormData{
@@ -1939,7 +2044,8 @@ func (app *App) Start(port int) error {
 		fields := []FormField{
 			{Type: "input", Name: "name", Label: "Name", InputType: "text", Required: true},
 			{Type: "input", Name: "version", Label: "Version", InputType: "text", Required: true},
-			{Type: "input", Name: "derivation_type", Label: "Derivation Type", InputType: "text", Required: true},
+			{Type: "input", Name: "parent_model_id", Label: "Parent Model Id", InputType: "text", Required: true},
+			{Type: "select", Name: "derivation_type", Label: "Derivation Type", Required: true, Options: []FormOption{FormOption{Value: "fine-tuned", Label: "fine-tuned"}, FormOption{Value: "distilled", Label: "distilled"}, FormOption{Value: "retrained", Label: "retrained"}, FormOption{Value: "quantized", Label: "quantized"}}},
 			{Type: "input", Name: "description", Label: "Description", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "DeriveModel", FormData{
@@ -1951,7 +2057,8 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /ai_models/classify_risk/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
-			{Type: "input", Name: "risk_level", Label: "Risk Level", InputType: "text", Required: true},
+			{Type: "hidden", Name: "model_id", Value: r.URL.Query().Get("id")},
+			{Type: "select", Name: "risk_level", Label: "Risk Level", Required: true, Options: []FormOption{FormOption{Value: "low", Label: "low"}, FormOption{Value: "medium", Label: "medium"}, FormOption{Value: "high", Label: "high"}, FormOption{Value: "critical", Label: "critical"}}},
 		}
 		renderer.Render(w, "form", "ClassifyRisk", FormData{
 			CommandName: "ClassifyRisk",
@@ -1962,6 +2069,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /ai_models/approve_model/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "model_id", Value: r.URL.Query().Get("id")},
 		}
 		renderer.Render(w, "form", "ApproveModel", FormData{
 			CommandName: "ApproveModel",
@@ -1972,6 +2080,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /ai_models/suspend_model/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "model_id", Value: r.URL.Query().Get("id")},
 		}
 		renderer.Render(w, "form", "SuspendModel", FormData{
 			CommandName: "SuspendModel",
@@ -1982,6 +2091,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /ai_models/retire_model/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "model_id", Value: r.URL.Query().Get("id")},
 		}
 		renderer.Render(w, "form", "RetireModel", FormData{
 			CommandName: "RetireModel",
@@ -1994,7 +2104,7 @@ func (app *App) Start(port int) error {
 		fields := []FormField{
 			{Type: "input", Name: "name", Label: "Name", InputType: "text", Required: true},
 			{Type: "input", Name: "contact_email", Label: "Contact Email", InputType: "text", Required: true},
-			{Type: "input", Name: "risk_tier", Label: "Risk Tier", InputType: "text", Required: true},
+			{Type: "select", Name: "risk_tier", Label: "Risk Tier", Required: true, Options: []FormOption{FormOption{Value: "low", Label: "low"}, FormOption{Value: "medium", Label: "medium"}, FormOption{Value: "high", Label: "high"}}},
 		}
 		renderer.Render(w, "form", "RegisterVendor", FormData{
 			CommandName: "RegisterVendor",
@@ -2006,8 +2116,8 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /vendors/approve_vendor/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			{Type: "hidden", Name: "vendor_id", Value: r.URL.Query().Get("id")},
-			{Type: "input", Name: "assessment_date", Label: "Assessment Date", InputType: "text", Required: true},
-			{Type: "input", Name: "next_review_date", Label: "Next Review Date", InputType: "text", Required: true},
+			{Type: "input", Name: "assessment_date", Label: "Assessment Date", InputType: "date", Required: true},
+			{Type: "input", Name: "next_review_date", Label: "Next Review Date", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "ApproveVendor", FormData{
 			CommandName: "ApproveVendor",
@@ -2029,9 +2139,10 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /data_usage_agreements/create_agreement/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "input", Name: "model_id", Label: "Model Id", InputType: "text", Required: true},
 			{Type: "input", Name: "data_source", Label: "Data Source", InputType: "text", Required: true},
 			{Type: "input", Name: "purpose", Label: "Purpose", InputType: "text", Required: true},
-			{Type: "input", Name: "consent_type", Label: "Consent Type", InputType: "text", Required: true},
+			{Type: "select", Name: "consent_type", Label: "Consent Type", Required: true, Options: []FormOption{FormOption{Value: "public_domain", Label: "public_domain"}, FormOption{Value: "CC-BY-SA", Label: "CC-BY-SA"}, FormOption{Value: "licensed", Label: "licensed"}, FormOption{Value: "consent", Label: "consent"}, FormOption{Value: "opt-out", Label: "opt-out"}}},
 		}
 		renderer.Render(w, "form", "CreateAgreement", FormData{
 			CommandName: "CreateAgreement",
@@ -2042,8 +2153,9 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /data_usage_agreements/activate_agreement/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
-			{Type: "input", Name: "effective_date", Label: "Effective Date", InputType: "text", Required: true},
-			{Type: "input", Name: "expiration_date", Label: "Expiration Date", InputType: "text", Required: true},
+			{Type: "hidden", Name: "agreement_id", Value: r.URL.Query().Get("id")},
+			{Type: "input", Name: "effective_date", Label: "Effective Date", InputType: "date", Required: true},
+			{Type: "input", Name: "expiration_date", Label: "Expiration Date", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "ActivateAgreement", FormData{
 			CommandName: "ActivateAgreement",
@@ -2054,6 +2166,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /data_usage_agreements/revoke_agreement/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "hidden", Name: "agreement_id", Value: r.URL.Query().Get("id")},
 		}
 		renderer.Render(w, "form", "RevokeAgreement", FormData{
 			CommandName: "RevokeAgreement",
@@ -2064,7 +2177,8 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /data_usage_agreements/renew_agreement/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
-			{Type: "input", Name: "expiration_date", Label: "Expiration Date", InputType: "text", Required: true},
+			{Type: "hidden", Name: "agreement_id", Value: r.URL.Query().Get("id")},
+			{Type: "input", Name: "expiration_date", Label: "Expiration Date", InputType: "date", Required: true},
 		}
 		renderer.Render(w, "form", "RenewAgreement", FormData{
 			CommandName: "RenewAgreement",
@@ -2075,10 +2189,11 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /deployments/plan_deployment/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
-			{Type: "input", Name: "environment", Label: "Environment", InputType: "text", Required: true},
+			{Type: "input", Name: "model_id", Label: "Model Id", InputType: "text", Required: true},
+			{Type: "select", Name: "environment", Label: "Environment", Required: true, Options: []FormOption{FormOption{Value: "development", Label: "development"}, FormOption{Value: "staging", Label: "staging"}, FormOption{Value: "production", Label: "production"}}},
 			{Type: "input", Name: "endpoint", Label: "Endpoint", InputType: "text", Required: true},
 			{Type: "input", Name: "purpose", Label: "Purpose", InputType: "text", Required: true},
-			{Type: "input", Name: "audience", Label: "Audience", InputType: "text", Required: true},
+			{Type: "select", Name: "audience", Label: "Audience", Required: true, Options: []FormOption{FormOption{Value: "internal", Label: "internal"}, FormOption{Value: "customer-facing", Label: "customer-facing"}, FormOption{Value: "public", Label: "public"}}},
 		}
 		renderer.Render(w, "form", "PlanDeployment", FormData{
 			CommandName: "PlanDeployment",
@@ -2111,9 +2226,11 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /incidents/report_incident/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
-			{Type: "input", Name: "severity", Label: "Severity", InputType: "text", Required: true},
-			{Type: "input", Name: "category", Label: "Category", InputType: "text", Required: true},
+			{Type: "input", Name: "model_id", Label: "Model Id", InputType: "text", Required: true},
+			{Type: "select", Name: "severity", Label: "Severity", Required: true, Options: []FormOption{FormOption{Value: "low", Label: "low"}, FormOption{Value: "medium", Label: "medium"}, FormOption{Value: "high", Label: "high"}, FormOption{Value: "critical", Label: "critical"}}},
+			{Type: "select", Name: "category", Label: "Category", Required: true, Options: []FormOption{FormOption{Value: "bias", Label: "bias"}, FormOption{Value: "safety", Label: "safety"}, FormOption{Value: "privacy", Label: "privacy"}, FormOption{Value: "performance", Label: "performance"}, FormOption{Value: "other", Label: "other"}}},
 			{Type: "input", Name: "description", Label: "Description", InputType: "text", Required: true},
+			{Type: "input", Name: "reported_by_id", Label: "Reported By Id", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "ReportIncident", FormData{
 			CommandName: "ReportIncident",
@@ -2170,6 +2287,7 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /monitorings/record_metric/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "input", Name: "model_id", Label: "Model Id", InputType: "text", Required: true},
 			// Deployment dropdown built dynamically below
 			{Type: "input", Name: "metric_name", Label: "Metric Name", InputType: "text", Required: true},
 			{Type: "input", Name: "value", Label: "Value", InputType: "number", Required: true, Step: true},
@@ -2202,6 +2320,8 @@ func (app *App) Start(port int) error {
 
 	mux.HandleFunc("GET /assessments/initiate_assessment/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
+			{Type: "input", Name: "model_id", Label: "Model Id", InputType: "text", Required: true},
+			{Type: "input", Name: "assessor_id", Label: "Assessor Id", InputType: "text", Required: true},
 		}
 		renderer.Render(w, "form", "InitiateAssessment", FormData{
 			CommandName: "InitiateAssessment",
@@ -2227,7 +2347,7 @@ func (app *App) Start(port int) error {
 	mux.HandleFunc("GET /assessments/submit_assessment/new", func(w http.ResponseWriter, r *http.Request) {
 		fields := []FormField{
 			{Type: "hidden", Name: "assessment_id", Value: r.URL.Query().Get("id")},
-			{Type: "input", Name: "risk_level", Label: "Risk Level", InputType: "text", Required: true},
+			{Type: "select", Name: "risk_level", Label: "Risk Level", Required: true, Options: []FormOption{FormOption{Value: "low", Label: "low"}, FormOption{Value: "medium", Label: "medium"}, FormOption{Value: "high", Label: "high"}, FormOption{Value: "critical", Label: "critical"}}},
 			{Type: "input", Name: "bias_score", Label: "Bias Score", InputType: "number", Required: true, Step: true},
 			{Type: "input", Name: "safety_score", Label: "Safety Score", InputType: "number", Required: true, Step: true},
 			{Type: "input", Name: "transparency_score", Label: "Transparency Score", InputType: "number", Required: true, Step: true},
@@ -2249,6 +2369,297 @@ func (app *App) Start(port int) error {
 			Action: "/assessments/reject_assessment",
 			Fields: fields,
 		})
+	})
+
+	mux.HandleFunc("POST /_reset", func(w http.ResponseWriter, r *http.Request) {
+		app.GovernancePolicyRepo = memory.NewGovernancePolicyMemoryRepository()
+		app.RegulatoryFrameworkRepo = memory.NewRegulatoryFrameworkMemoryRepository()
+		app.ComplianceReviewRepo = memory.NewComplianceReviewMemoryRepository()
+		app.ExemptionRepo = memory.NewExemptionMemoryRepository()
+		app.TrainingRecordRepo = memory.NewTrainingRecordMemoryRepository()
+		app.StakeholderRepo = memory.NewStakeholderMemoryRepository()
+		app.AuditLogRepo = memory.NewAuditLogMemoryRepository()
+		app.AiModelRepo = memory.NewAiModelMemoryRepository()
+		app.VendorRepo = memory.NewVendorMemoryRepository()
+		app.DataUsageAgreementRepo = memory.NewDataUsageAgreementMemoryRepository()
+		app.DeploymentRepo = memory.NewDeploymentMemoryRepository()
+		app.IncidentRepo = memory.NewIncidentMemoryRepository()
+		app.MonitoringRepo = memory.NewMonitoringMemoryRepository()
+		app.AssessmentRepo = memory.NewAssessmentMemoryRepository()
+		app.EventBus.Clear()
+		http.Redirect(w, r, "/config", http.StatusSeeOther)
+	})
+
+	mux.HandleFunc("GET /_events", func(w http.ResponseWriter, r *http.Request) {
+		events := app.EventBus.Events()
+		type eventEntry struct {
+			Name string `json:"name"`
+			OccurredAt string `json:"occurred_at"`
+		}
+		var result []eventEntry
+		for _, e := range events {
+			result = append(result, eventEntry{
+				Name: e.EventName(),
+				OccurredAt: e.GetOccurredAt().Format(time.RFC3339),
+			})
+		}
+		jsonResponse(w, result)
+	})
+
+	mux.HandleFunc("GET /governance_policys/queries/by_category", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.GovernancePolicyByCategory(app.GovernancePolicyRepo, r.URL.Query().Get("category"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /governance_policys/queries/by_framework", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.GovernancePolicyByFramework(app.GovernancePolicyRepo, r.URL.Query().Get("framework_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /governance_policys/queries/active", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.GovernancePolicyActive(app.GovernancePolicyRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /regulatory_frameworks/queries/by_jurisdiction", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.RegulatoryFrameworkByJurisdiction(app.RegulatoryFrameworkRepo, r.URL.Query().Get("jurisdiction"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /regulatory_frameworks/queries/active", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.RegulatoryFrameworkActive(app.RegulatoryFrameworkRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /compliance_reviews/queries/by_model", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.ComplianceReviewByModel(app.ComplianceReviewRepo, r.URL.Query().Get("model_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /compliance_reviews/queries/pending", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.ComplianceReviewPending(app.ComplianceReviewRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /compliance_reviews/queries/by_reviewer", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.ComplianceReviewByReviewer(app.ComplianceReviewRepo, r.URL.Query().Get("reviewer_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /exemptions/queries/by_model", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.ExemptionByModel(app.ExemptionRepo, r.URL.Query().Get("model_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /exemptions/queries/active", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.ExemptionActive(app.ExemptionRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /exemptions/specifications/expired", func(w http.ResponseWriter, r *http.Request) {
+		obj, _ := app.ExemptionRepo.Find(r.URL.Query().Get("id"))
+		if obj == nil { http.Error(w, `{"error":"not found"}`, 404); return }
+		spec := domain.ExemptionExpired{}
+		result := spec.SatisfiedBy(obj)
+		jsonResponse(w, map[string]interface{}{"specification": "Expired", "satisfied": result})
+	})
+
+	mux.HandleFunc("GET /training_records/queries/by_stakeholder", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.TrainingRecordByStakeholder(app.TrainingRecordRepo, r.URL.Query().Get("stakeholder_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /training_records/queries/by_policy", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.TrainingRecordByPolicy(app.TrainingRecordRepo, r.URL.Query().Get("policy_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /training_records/queries/incomplete", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.TrainingRecordIncomplete(app.TrainingRecordRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /training_records/specifications/expired", func(w http.ResponseWriter, r *http.Request) {
+		obj, _ := app.TrainingRecordRepo.Find(r.URL.Query().Get("id"))
+		if obj == nil { http.Error(w, `{"error":"not found"}`, 404); return }
+		spec := domain.TrainingRecordExpired{}
+		result := spec.SatisfiedBy(obj)
+		jsonResponse(w, map[string]interface{}{"specification": "Expired", "satisfied": result})
+	})
+
+	mux.HandleFunc("GET /stakeholders/queries/by_role", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.StakeholderByRole(app.StakeholderRepo, r.URL.Query().Get("role"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /stakeholders/queries/by_team", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.StakeholderByTeam(app.StakeholderRepo, r.URL.Query().Get("team"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /stakeholders/queries/active", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.StakeholderActive(app.StakeholderRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /audit_logs/queries/by_entity", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.AuditLogByEntity(app.AuditLogRepo, r.URL.Query().Get("entity_type"), r.URL.Query().Get("entity_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /audit_logs/queries/by_actor", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.AuditLogByActor(app.AuditLogRepo, r.URL.Query().Get("actor_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /ai_models/queries/by_provider", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.AiModelByProvider(app.AiModelRepo, r.URL.Query().Get("provider_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /ai_models/queries/by_risk_level", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.AiModelByRiskLevel(app.AiModelRepo, r.URL.Query().Get("level"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /ai_models/queries/by_status", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.AiModelByStatus(app.AiModelRepo, r.URL.Query().Get("status"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /ai_models/queries/by_parent", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.AiModelByParent(app.AiModelRepo, r.URL.Query().Get("parent_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /ai_models/specifications/high_risk", func(w http.ResponseWriter, r *http.Request) {
+		obj, _ := app.AiModelRepo.Find(r.URL.Query().Get("id"))
+		if obj == nil { http.Error(w, `{"error":"not found"}`, 404); return }
+		spec := domain.AiModelHighRisk{}
+		result := spec.SatisfiedBy(obj)
+		jsonResponse(w, map[string]interface{}{"specification": "HighRisk", "satisfied": result})
+	})
+
+	mux.HandleFunc("GET /vendors/queries/by_risk_tier", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.VendorByRiskTier(app.VendorRepo, r.URL.Query().Get("tier"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /vendors/queries/active", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.VendorActive(app.VendorRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /data_usage_agreements/queries/by_model", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.DataUsageAgreementByModel(app.DataUsageAgreementRepo, r.URL.Query().Get("model_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /data_usage_agreements/queries/active", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.DataUsageAgreementActive(app.DataUsageAgreementRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /data_usage_agreements/specifications/expired", func(w http.ResponseWriter, r *http.Request) {
+		obj, _ := app.DataUsageAgreementRepo.Find(r.URL.Query().Get("id"))
+		if obj == nil { http.Error(w, `{"error":"not found"}`, 404); return }
+		spec := domain.DataUsageAgreementExpired{}
+		result := spec.SatisfiedBy(obj)
+		jsonResponse(w, map[string]interface{}{"specification": "Expired", "satisfied": result})
+	})
+
+	mux.HandleFunc("GET /deployments/queries/by_model", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.DeploymentByModel(app.DeploymentRepo, r.URL.Query().Get("model_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /deployments/queries/by_environment", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.DeploymentByEnvironment(app.DeploymentRepo, r.URL.Query().Get("env"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /deployments/queries/active", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.DeploymentActive(app.DeploymentRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /deployments/specifications/customer_facing", func(w http.ResponseWriter, r *http.Request) {
+		obj, _ := app.DeploymentRepo.Find(r.URL.Query().Get("id"))
+		if obj == nil { http.Error(w, `{"error":"not found"}`, 404); return }
+		spec := domain.DeploymentCustomerFacing{}
+		result := spec.SatisfiedBy(obj)
+		jsonResponse(w, map[string]interface{}{"specification": "CustomerFacing", "satisfied": result})
+	})
+
+	mux.HandleFunc("GET /incidents/queries/by_model", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.IncidentByModel(app.IncidentRepo, r.URL.Query().Get("model_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /incidents/queries/by_severity", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.IncidentBySeverity(app.IncidentRepo, r.URL.Query().Get("severity"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /incidents/queries/open", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.IncidentOpen(app.IncidentRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /incidents/specifications/critical", func(w http.ResponseWriter, r *http.Request) {
+		obj, _ := app.IncidentRepo.Find(r.URL.Query().Get("id"))
+		if obj == nil { http.Error(w, `{"error":"not found"}`, 404); return }
+		spec := domain.IncidentCritical{}
+		result := spec.SatisfiedBy(obj)
+		jsonResponse(w, map[string]interface{}{"specification": "Critical", "satisfied": result})
+	})
+
+	mux.HandleFunc("GET /monitorings/queries/by_model", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.MonitoringByModel(app.MonitoringRepo, r.URL.Query().Get("model_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /monitorings/queries/by_deployment", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.MonitoringByDeployment(app.MonitoringRepo, r.URL.Query().Get("deployment_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /monitorings/specifications/threshold_breached", func(w http.ResponseWriter, r *http.Request) {
+		obj, _ := app.MonitoringRepo.Find(r.URL.Query().Get("id"))
+		if obj == nil { http.Error(w, `{"error":"not found"}`, 404); return }
+		spec := domain.MonitoringThresholdBreached{}
+		result := spec.SatisfiedBy(obj)
+		jsonResponse(w, map[string]interface{}{"specification": "ThresholdBreached", "satisfied": result})
+	})
+
+	mux.HandleFunc("GET /assessments/queries/by_model", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.AssessmentByModel(app.AssessmentRepo, r.URL.Query().Get("model_id"))
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /assessments/queries/pending", func(w http.ResponseWriter, r *http.Request) {
+		results, _ := domain.AssessmentPending(app.AssessmentRepo)
+		jsonResponse(w, results)
+	})
+
+	mux.HandleFunc("GET /assessments/specifications/critical_findings", func(w http.ResponseWriter, r *http.Request) {
+		obj, _ := app.AssessmentRepo.Find(r.URL.Query().Get("id"))
+		if obj == nil { http.Error(w, `{"error":"not found"}`, 404); return }
+		spec := domain.AssessmentCriticalFindings{}
+		result := spec.SatisfiedBy(obj)
+		jsonResponse(w, map[string]interface{}{"specification": "CriticalFindings", "satisfied": result})
+	})
+
+	mux.HandleFunc("GET /_views/model_dashboard", func(w http.ResponseWriter, r *http.Request) {
+		state, ok := app.ViewStates["ModelDashboard"]
+		if !ok { state = map[string]interface{}{} }
+		jsonResponse(w, state)
+	})
+
+	mux.HandleFunc("POST /_workflows/model_approval", func(w http.ResponseWriter, r *http.Request) {
+		var attrs map[string]interface{}
+		json.NewDecoder(r.Body).Decode(&attrs)
+		jsonResponse(w, map[string]interface{}{"workflow": "ModelApproval", "status": "accepted", "attrs": attrs})
 	})
 
 	// Config

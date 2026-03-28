@@ -13,6 +13,7 @@ func (c AssignTraining) CommandName() string { return "AssignTraining" }
 
 func (c AssignTraining) Execute(repo TrainingRecordRepository) (*TrainingRecord, *AssignedTraining, error) {
 	agg := NewTrainingRecord(c.StakeholderId, c.PolicyId, time.Time{}, time.Time{}, "", "")
+	agg.Status = "assigned"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

@@ -15,6 +15,7 @@ func (c RegisterModel) CommandName() string { return "RegisterModel" }
 
 func (c RegisterModel) Execute(repo AiModelRepository) (*AiModel, *RegisteredModel, error) {
 	agg := NewAiModel(c.Name, c.Version, c.ProviderId, c.Description, "", time.Time{}, "", "", nil, nil, "")
+	agg.Status = "draft"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}

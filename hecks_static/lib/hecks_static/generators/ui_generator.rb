@@ -64,7 +64,24 @@ class UIGenerator
   end
 
   def self_ref?(cmd, agg_snake)
-    cmd.attributes.any? { |a| a.name.to_s == "#{agg_snake}_id" }
+    suffixes = agg_snake.split("_").each_index.map { |i|
+      agg_snake.split("_").drop(i).join("_")
+    }.uniq
+    cmd.attributes.any? { |a|
+      a.name.to_s.end_with?("_id") &&
+        suffixes.any? { |s| a.name.to_s == "#{s}_id" }
+    }
+  end
+
+  def find_self_ref_attr(cmd, agg)
+    agg_snake = Hecks::Utils.underscore(agg.name)
+    suffixes = agg_snake.split("_").each_index.map { |i|
+      agg_snake.split("_").drop(i).join("_")
+    }.uniq
+    cmd.attributes.find { |a|
+      a.name.to_s.end_with?("_id") &&
+        suffixes.any? { |s| a.name.to_s == "#{s}_id" }
+    }
   end
 
   def required_field?(agg, attr_name)
@@ -78,7 +95,8 @@ class UIGenerator
 
   def root_route(mod)
     agg_data = @domain.aggregates.map do |agg|
-      "{ name: \"#{agg.name}s\", href: \"/#{plural(agg)}\", commands: #{agg.commands.size}, attributes: #{user_attrs(agg).size}, policies: #{agg.policies.size} }"
+      d = Hecks::DisplayContract.home_aggregate_data(agg, plural(agg))
+      "{ name: \"#{d[:name]}\", href: \"#{d[:href]}\", commands: #{d[:commands]}, attributes: #{d[:attributes]}, policies: #{d[:policies]} }"
     end
     [
       "        server.mount_proc \"/\" do |req, res|",
@@ -96,27 +114,30 @@ class UIGenerator
     p = plural(agg)
     attrs = user_attrs(agg)
     agg_snake = Hecks::Utils.underscore(agg.name)
-    create_cmds = agg.commands.reject { |c| self_ref?(c, agg_snake) }
-    update_cmds = agg.commands.select { |c| self_ref?(c, agg_snake) }
+    ac = Hecks::AggregateContract
+    dc = Hecks::DisplayContract
+    create_cmds, update_cmds = ac.partition_commands(agg)
 
     columns = attrs.map { |a| "{ label: \"#{humanize(a.name)}\" }" }
     btns = create_cmds.map { |c| cm = Hecks::Utils.underscore(c.name); "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/new\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
-    row_acts = update_cmds.map { |c| cm = Hecks::Utils.underscore(c.name); "{ label: \"#{c.name}\", href_prefix: \"/#{p}/#{cm}/new?id=\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
-
-    cell_exprs = attrs.map do |a|
-      if a.list?
-        "obj.#{a.name}.size.to_s + \" items\""
+    row_acts = update_cmds.map do |c|
+      cm = Hecks::Utils.underscore(c.name)
+      if ac.direct_action?(c, agg_snake)
+        self_id = ac.self_ref_attr(c, agg_snake)
+        "{ label: \"#{c.name}\", href_prefix: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id&.name}\" }"
       else
-        "obj.#{a.name}.to_s"
+        "{ label: \"#{c.name}\", href_prefix: \"/#{p}/#{cm}/new?id=\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
       end
     end
+
+    cell_exprs = attrs.map { |a| dc.cell_expression(a, "obj", lang: :ruby) }
     cells_code = cell_exprs.map { |e| e }.join(", ")
 
     [
       "        server.mount_proc \"/#{p}\" do |req, res|",
       "          next unless req.path == \"/#{p}\"",
       "          all_items = #{safe}.all",
-      "          items = all_items.map { |obj| { id: obj.id, short_id: obj.id[0..7] + \"...\", show_href: \"/#{p}/show?id=\" + obj.id, cells: [#{cells_code}] } }",
+      "          items = all_items.map { |obj| { id: obj.id, short_id: #{Hecks::ViewContract.ruby_short_id('obj.id')}, show_href: \"/#{p}/show?id=\" + obj.id, cells: [#{cells_code}] } }",
       "          html = renderer.render(:index, title: \"#{safe}s — #{mod}\", brand: brand, nav_items: nav,",
       "            aggregate_name: \"#{safe}\", items: items,",
       "            columns: [#{columns.join(', ')}],",
@@ -134,6 +155,9 @@ class UIGenerator
     attrs = user_attrs(agg)
     agg_snake = Hecks::Utils.underscore(agg.name)
 
+    lc = agg.lifecycle
+    lc_field = lc&.field&.to_s
+
     field_exprs = attrs.map do |a|
       if a.list?
         vo = agg.value_objects.find { |v| v.name == a.type.to_s }
@@ -144,17 +168,26 @@ class UIGenerator
         else
           "{ label: \"#{humanize(a.name)}\", type: :list, items: obj.#{a.name}.map(&:to_s) }"
         end
+      elsif lc_field && a.name.to_s == lc_field
+        transitions = Hecks::DisplayContract.lifecycle_transitions(lc)
+        "{ label: \"#{humanize(a.name)}\", type: :lifecycle, value: obj.#{a.name}.to_s, transitions: #{transitions.inspect} }"
       else
         "{ label: \"#{humanize(a.name)}\", value: obj.#{a.name}.to_s }"
       end
     end
 
-    # Collect buttons
+    # Collect buttons — from contract
+    ac = Hecks::AggregateContract
     btn_parts = []
-    update_cmds = agg.commands.select { |c| self_ref?(c, agg_snake) }
+    _, update_cmds = ac.partition_commands(agg)
     update_cmds.each do |c|
       cm = Hecks::Utils.underscore(c.name)
-      btn_parts << "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
+      if ac.direct_action?(c, agg_snake)
+        self_id = ac.self_ref_attr(c, agg_snake)
+        btn_parts << "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id.name}\" }"
+      else
+        btn_parts << "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
+      end
     end
     # Cross-aggregate commands
     snake = Hecks::Utils.underscore(agg.name)

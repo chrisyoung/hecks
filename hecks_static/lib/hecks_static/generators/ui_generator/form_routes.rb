@@ -17,7 +17,7 @@ module HecksStatic
 
         agg.commands.each do |cmd|
           cmd_snake = Hecks::Utils.underscore(cmd.name)
-          self_id_attr = cmd.attributes.find { |a| a.name.to_s == "#{agg_snake}_id" }
+          self_id_attr = Hecks::AggregateContract.self_ref_attr(cmd, agg_snake)
 
           # Build field descriptors
           field_descriptors = cmd.attributes.map { |a| field_descriptor(a, agg, self_id_attr) }
@@ -47,24 +47,36 @@ module HecksStatic
         if attr == self_id_attr
           { type: :hidden, name: attr.name.to_s }
         elsif attr.name.to_s.end_with?("_id")
-          ref_name = attr.name.to_s.sub(/_id$/, "")
-          ref_agg = @domain.aggregates.find { |ra| Hecks::Utils.underscore(ra.name) == ref_name }
+          # Find referenced aggregate: explicit reference_to or name convention
+          ref_agg = if attr.reference?
+            @domain.aggregates.find { |ra| ra.name == attr.type.to_s }
+          else
+            ref_name = attr.name.to_s.sub(/_id$/, "")
+            @domain.aggregates.find { |ra| Hecks::Utils.underscore(ra.name) == ref_name }
+          end
           if ref_agg
+            display = Hecks::DisplayContract.reference_display_field(ref_agg)
             { type: :select, name: attr.name.to_s, ref: Hecks::Utils.sanitize_constant(ref_agg.name),
-              label: humanize(ref_name), required: required_field?(agg, attr.name),
-              display: ref_agg.attributes.find { |da| da.name.to_s == "name" } ? "name" : "id" }
+              label: humanize(attr.name.to_s.sub(/_id$/, "")), required: required_field?(agg, attr.name),
+              display: display }
           else
             { type: :text, name: attr.name.to_s, label: humanize(attr.name), required: required_field?(agg, attr.name) }
           end
         else
-          input_type = case attr.type.to_s
-                       when /Integer/ then "number"
-                       when /Float/ then "number"
-                       else "text"
-                       end
-          { type: :input, name: attr.name.to_s, label: humanize(attr.name),
-            input_type: input_type, step: attr.type.to_s =~ /Float/,
-            required: required_field?(agg, attr.name) }
+          # Check if the aggregate attribute has an enum
+          agg_attr = agg.attributes.find { |aa| aa.name == attr.name }
+          enum_values = agg_attr&.enum
+          if enum_values && !enum_values.empty?
+            { type: :enum, name: attr.name.to_s, label: humanize(attr.name),
+              options: enum_values, required: required_field?(agg, attr.name) }
+          else
+            go_type = Hecks::TypeContract.go(attr.type)
+            input_type = Hecks::FormParsingContract.input_type(go_type)
+            step = Hecks::FormParsingContract.step?(go_type)
+            { type: :input, name: attr.name.to_s, label: humanize(attr.name),
+              input_type: input_type, step: step,
+              required: required_field?(agg, attr.name) }
+          end
         end
       end
 
@@ -94,11 +106,7 @@ module HecksStatic
         lines << "          begin"
         lines << "            params = req.query"
         coerce_lines = cmd.attributes.map do |a|
-          val = case a.type.to_s
-                when /Integer/ then "params[\"#{a.name}\"].to_i"
-                when /Float/ then "params[\"#{a.name}\"].to_f"
-                else "params[\"#{a.name}\"]"
-                end
+          val = Hecks::FormParsingContract.ruby_coerce(a.name, a.type.to_s)
           "#{a.name}: #{val}"
         end
         lines << "            result = #{safe}.#{cmd_snake}(#{coerce_lines.join(", ")})"

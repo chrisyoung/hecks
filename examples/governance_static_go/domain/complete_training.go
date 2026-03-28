@@ -23,6 +23,10 @@ func (c CompleteTraining) Execute(repo TrainingRecordRepository) (*TrainingRecor
 	}
 	existing.CertificationId = c.CertificationId
 	existing.ExpiresAt = c.ExpiresAt
+	if existing.Status != "assigned" {
+		return nil, nil, fmt.Errorf("cannot CompleteTraining: TrainingRecord is in %s state", existing.Status)
+	}
+	existing.Status = "completed"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

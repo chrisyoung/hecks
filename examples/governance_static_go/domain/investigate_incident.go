@@ -19,6 +19,10 @@ func (c InvestigateIncident) Execute(repo IncidentRepository) (*Incident, *Inves
 	if existing == nil {
 		return nil, nil, fmt.Errorf("Incident not found: %s", c.IncidentId)
 	}
+	if existing.Status != "reported" {
+		return nil, nil, fmt.Errorf("cannot InvestigateIncident: Incident is in %s state", existing.Status)
+	}
+	existing.Status = "investigating"
 	existing.UpdatedAt = time.Now()
 	if err := existing.Validate(); err != nil {
 		return nil, nil, err

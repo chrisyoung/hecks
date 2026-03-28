@@ -16,6 +16,7 @@ func (c PlanDeployment) CommandName() string { return "PlanDeployment" }
 
 func (c PlanDeployment) Execute(repo DeploymentRepository) (*Deployment, *PlannedDeployment, error) {
 	agg := NewDeployment(c.ModelId, c.Environment, c.Endpoint, c.Purpose, c.Audience, time.Time{}, time.Time{}, "")
+	agg.Status = "planned"
 	if err := agg.Validate(); err != nil {
 		return nil, nil, err
 	}
