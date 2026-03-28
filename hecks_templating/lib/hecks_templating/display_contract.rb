@@ -111,12 +111,18 @@ module Hecks
         Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s)
       }
       {
-        name: agg.name + "s",
+        name: UILabelContract.plural_label(agg.name),
         href: "/#{plural}",
         commands: agg.commands.size,
         attributes: user_attrs.size,
         policies: agg.policies.size,
       }
+    end
+
+    # Humanized domain name for display.
+    # "GovernanceDomain" → "Governance"
+    def self.domain_label(domain_name)
+      UILabelContract.label(domain_name.sub(/Domain$/, ""))
     end
 
     # Go field name helper — PascalCase.

@@ -1,16 +1,31 @@
 # = Hecks::UILabelContract
 #
-# Single source of truth for converting field names to display labels.
-# Consumed by Ruby and Go UI generators, server generators, and the
-# smoke test. Prevents label formatting drift across targets.
+# Single source of truth for converting names to display labels.
+# Handles both snake_case (field names) and PascalCase (command
+# names, aggregate names). Uses ActiveSupport for pluralization.
 #
-#   Hecks::UILabelContract.label(:effective_date)  # => "Effective Date"
-#   Hecks::UILabelContract.label("model_id")       # => "Model Id"
+#   Hecks::UILabelContract.label(:effective_date)    # => "Effective Date"
+#   Hecks::UILabelContract.label("ReportIncident")   # => "Report Incident"
+#   Hecks::UILabelContract.plural_label("GovernancePolicy")  # => "Governance Policies"
 #
+require "active_support/core_ext/string/inflections"
+
 module Hecks
   module UILabelContract
-    def self.label(field_name)
-      field_name.to_s.split("_").map(&:capitalize).join(" ")
+    # Convert any name (snake_case or PascalCase) to a display label.
+    def self.label(name)
+      s = name.to_s
+      s = s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1 \2')
+           .gsub(/([a-z\d])([A-Z])/, '\1 \2')
+      s.split(/[_ ]+/).map(&:capitalize).join(" ")
+    end
+
+    # Humanized plural label for an aggregate or entity name.
+    # "GovernancePolicy" → "Governance Policies"
+    def self.plural_label(name)
+      words = label(name).split(" ")
+      words[-1] = words[-1].pluralize
+      words.join(" ")
     end
   end
 end

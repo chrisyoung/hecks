@@ -33,16 +33,16 @@ module HecksGo
         create_cmds, update_cmds = ac.partition_commands(agg)
 
         btns = create_cmds.map { |c|
-          "{Label: \"#{c.name}\", Href: \"/#{plural}/#{GoUtils.snake_case(c.name)}/new\", Allowed: true}"
+          "{Label: \"#{Hecks::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{GoUtils.snake_case(c.name)}/new\", Allowed: true}"
         }
 
         row_acts = update_cmds.map { |c|
           cm = GoUtils.snake_case(c.name)
           if ac.direct_action?(c, agg_snake)
             self_ref = ac.self_ref_attr(c, agg_snake)
-            "{Label: \"#{c.name}\", HrefPrefix: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref&.name}\"}"
+            "{Label: \"#{Hecks::UILabelContract.label(c.name)}\", HrefPrefix: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref&.name}\"}"
           else
-            "{Label: \"#{c.name}\", HrefPrefix: \"/#{plural}/#{cm}/new?id=\", Allowed: true}"
+            "{Label: \"#{Hecks::UILabelContract.label(c.name)}\", HrefPrefix: \"/#{plural}/#{cm}/new?id=\", Allowed: true}"
           end
         }
 
@@ -156,9 +156,9 @@ module HecksGo
               cm = GoUtils.snake_case(c.name)
               if ac.direct_action?(c, agg_snake)
                 self_ref = ac.self_ref_attr(c, agg_snake)
-                "#{safe}Button{Label: \"#{c.name}\", Href: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref.name}\"}"
+                "#{safe}Button{Label: \"#{Hecks::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref.name}\"}"
               else
-                "#{safe}Button{Label: \"#{c.name}\", Href: \"/#{plural}/#{cm}/new?id=\" + obj.ID, Allowed: true}"
+                "#{safe}Button{Label: \"#{Hecks::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{cm}/new?id=\" + obj.ID, Allowed: true}"
               end
             }
             lines << "\t\tbuttons := []#{safe}Button{#{btn_exprs.join(', ')}}"

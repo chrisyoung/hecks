@@ -81,7 +81,7 @@ module HecksGo
             end
 
             lines << "\t\trenderer.Render(w, \"form\", \"#{cmd.name}\", FormData{"
-            lines << "\t\t\tCommandName: \"#{cmd.name}\","
+            lines << "\t\t\tCommandName: \"#{Hecks::UILabelContract.label(cmd.name)}\","
             lines << "\t\t\tAction: \"/#{plural}/#{cmd_snake}\","
             lines << "\t\t\tFields: fields,"
             lines << "\t\t})"
