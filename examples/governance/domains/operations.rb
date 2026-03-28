@@ -2,7 +2,7 @@ require "date"
 
 Hecks.domain "Operations" do
   Deployment "AI model deployments across environments" do
-    model_id String
+    attribute :model_id, reference_to("AiModel")
     environment String, enum: %w[development staging production]
     endpoint String
     purpose String
@@ -21,7 +21,7 @@ Hecks.domain "Operations" do
     validation :environment, presence: true
 
     plan_deployment do
-      model_id String
+      attribute :model_id, reference_to("AiModel")
       environment String
       endpoint String
       purpose String
@@ -56,11 +56,11 @@ Hecks.domain "Operations" do
   end
 
   Incident "AI-related incidents including bias, safety, and performance issues" do
-    model_id String
+    attribute :model_id, reference_to("AiModel")
     severity String, enum: %w[low medium high critical]
     category String, enum: %w[bias safety privacy performance other]
     description String
-    reported_by_id String
+    attribute :reported_by_id, reference_to("Stakeholder")
     reported_at DateTime
     resolved_at DateTime
     resolution String
@@ -79,11 +79,11 @@ Hecks.domain "Operations" do
     validation :severity, presence: true
 
     report_incident do
-      model_id String
+      attribute :model_id, reference_to("AiModel")
       severity String
       category String
       description String
-      reported_by_id String
+      attribute :reported_by_id, reference_to("Stakeholder")
       sets reported_at: :now
     end
 
@@ -124,8 +124,8 @@ Hecks.domain "Operations" do
   end
 
   Monitoring "Performance and safety metrics for deployed models" do
-    model_id String
-    deployment_id String
+    attribute :model_id, reference_to("AiModel")
+    attribute :deployment_id, reference_to("Deployment")
     metric_name String
     value Float
     threshold Float
@@ -139,8 +139,8 @@ Hecks.domain "Operations" do
     end
 
     record_metric do
-      model_id String
-      deployment_id String
+      attribute :model_id, reference_to("AiModel")
+      attribute :deployment_id, reference_to("Deployment")
       metric_name String
       value Float
       threshold Float

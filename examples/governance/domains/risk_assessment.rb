@@ -2,8 +2,8 @@ require "date"
 
 Hecks.domain "RiskAssessment" do
   Assessment "Risk assessments evaluating AI model safety, bias, and transparency" do
-    model_id String
-    assessor_id String
+    attribute :model_id, reference_to("AiModel")
+    attribute :assessor_id, reference_to("Stakeholder")
     risk_level String, enum: %w[low medium high critical]
     bias_score Float
     safety_score Float
@@ -42,8 +42,8 @@ Hecks.domain "RiskAssessment" do
     end
 
     initiate_assessment do
-      model_id String
-      assessor_id String
+      attribute :model_id, reference_to("AiModel")
+      attribute :assessor_id, reference_to("Stakeholder")
       actor "assessor"
       actor "admin"
     end
