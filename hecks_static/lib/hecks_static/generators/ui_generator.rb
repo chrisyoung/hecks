@@ -48,7 +48,7 @@ class UIGenerator
   def nav_items
     items = [{ label: "Home", href: "/" }]
     @domain.aggregates.each do |agg|
-      items << { label: agg.name + "s", href: "/#{plural(agg)}" }
+      items << { label: Hecks::UILabelContract.plural_label(agg.name), href: "/#{plural(agg)}" }
     end
     items << { label: "Config", href: "/config" }
     items
@@ -119,14 +119,14 @@ class UIGenerator
     create_cmds, update_cmds = ac.partition_commands(agg)
 
     columns = attrs.map { |a| "{ label: \"#{humanize(a.name)}\" }" }
-    btns = create_cmds.map { |c| cm = Hecks::Utils.underscore(c.name); "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/new\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
+    btns = create_cmds.map { |c| cm = Hecks::Utils.underscore(c.name); "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/new\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
     row_acts = update_cmds.map do |c|
       cm = Hecks::Utils.underscore(c.name)
       if ac.direct_action?(c, agg_snake)
         self_id = ac.self_ref_attr(c, agg_snake)
-        "{ label: \"#{c.name}\", href_prefix: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id&.name}\" }"
+        "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href_prefix: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id&.name}\" }"
       else
-        "{ label: \"#{c.name}\", href_prefix: \"/#{p}/#{cm}/new?id=\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
+        "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href_prefix: \"/#{p}/#{cm}/new?id=\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
       end
     end
 
@@ -184,9 +184,9 @@ class UIGenerator
       cm = Hecks::Utils.underscore(c.name)
       if ac.direct_action?(c, agg_snake)
         self_id = ac.self_ref_attr(c, agg_snake)
-        btn_parts << "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id.name}\" }"
+        btn_parts << "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id.name}\" }"
       else
-        btn_parts << "{ label: \"#{c.name}\", href: \"/#{p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
+        btn_parts << "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
       end
     end
     # Cross-aggregate commands
@@ -198,7 +198,7 @@ class UIGenerator
       other.commands.each do |cmd|
         next unless cmd.attributes.any? { |a| a.name.to_s == "#{snake}_id" }
         cm = Hecks::Utils.underscore(cmd.name)
-        btn_parts << "{ label: \"#{cmd.name}\", href: \"/#{other_p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{other_safe}\", \"#{cm}\") }"
+        btn_parts << "{ label: \"#{Hecks::UILabelContract.label(cmd.name)}\", href: \"/#{other_p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{other_safe}\", \"#{cm}\") }"
       end
     end
 
