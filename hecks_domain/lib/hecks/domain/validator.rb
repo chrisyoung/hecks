@@ -40,23 +40,32 @@ module Hecks
       ValidationRules::Structure::CommandsHaveAttributes,
       ValidationRules::Structure::ValidPolicyEvents,
       ValidationRules::Structure::ValidPolicyTriggers,
+      ValidationRules::References::NoImplicitForeignKeys,
     ].freeze
 
     # @return [Array<String>] validation error messages (populated after #valid? is called)
     attr_reader :errors
 
+    # @return [Array<String>] non-blocking warnings (populated after #valid? is called)
+    attr_reader :warnings
+
     # @param domain [Hecks::DomainModel::Domain] the domain to validate
     def initialize(domain)
       @domain = domain
       @errors = []
+      @warnings = []
     end
 
     # Run all validation rules and return whether the domain is valid.
-    # Populates #errors with any messages from failing rules.
+    # Populates #errors and #warnings with messages from rules.
     #
     # @return [Boolean] true if no validation errors were found
     def valid?
       @errors = RULES.flat_map { |rule| rule.new(@domain).errors }
+      @warnings = RULES.flat_map { |rule|
+        r = rule.new(@domain)
+        r.respond_to?(:warnings) ? r.warnings : []
+      }
       @errors.empty?
     end
   end
