@@ -5,11 +5,11 @@ Hecks.domain "ModelRegistry" do
     versioned
     name String
     version String
-    provider_id String
+    attribute :provider_id, reference_to("Vendor")
     description String
     risk_level String, enum: %w[low medium high critical]
     registered_at DateTime
-    parent_model_id String
+    attribute :parent_model_id, reference_to("AiModel")
     derivation_type String, enum: %w[fine-tuned distilled retrained quantized]
     capabilities list_of("Capability")
     intended_uses list_of("IntendedUse")
@@ -40,7 +40,7 @@ Hecks.domain "ModelRegistry" do
     register_model do
       name String
       version String
-      provider_id String
+      attribute :provider_id, reference_to("Vendor")
       description String
       sets registered_at: :now
     end
@@ -48,7 +48,7 @@ Hecks.domain "ModelRegistry" do
     derive_model do
       name String
       version String
-      parent_model_id String
+      attribute :parent_model_id, reference_to("AiModel")
       derivation_type String
       description String
       sets registered_at: :now
@@ -165,7 +165,7 @@ Hecks.domain "ModelRegistry" do
   end
 
   DataUsageAgreement "Agreements governing data usage for model training and inference" do
-    model_id String
+    attribute :model_id, reference_to("AiModel")
     data_source String
     purpose String
     consent_type String, enum: %w[public_domain CC-BY-SA licensed consent opt-out]
@@ -194,7 +194,7 @@ Hecks.domain "ModelRegistry" do
     end
 
     create_agreement do
-      model_id String
+      attribute :model_id, reference_to("AiModel")
       data_source String
       purpose String
       consent_type String
