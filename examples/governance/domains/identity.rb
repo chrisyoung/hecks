@@ -51,7 +51,7 @@ Hecks.domain "Identity" do
     entity_type String
     entity_id String
     action String
-    actor_id String
+    attribute :actor_id, reference_to("Stakeholder")
     details String
     timestamp DateTime
 
@@ -62,7 +62,7 @@ Hecks.domain "Identity" do
       entity_type String
       entity_id String
       action String
-      actor_id String
+      attribute :actor_id, reference_to("Stakeholder")
       details String
       sets timestamp: :now
     end
