@@ -85,12 +85,12 @@ module HecksGo
       lines << "\t}"
       lines << "\tnav := []NavItem{"
       @domain.aggregates.each do |agg|
-        group = agg.origin_domain || ""
-        lines << "\t\t{Label: \"#{agg.name}s\", Href: \"/#{GoUtils.snake_case(agg.name)}s\", Group: \"#{group}\"},"
+        group = agg.origin_domain ? Hecks::UILabelContract.label(agg.origin_domain) : ""
+        lines << "\t\t{Label: \"#{Hecks::UILabelContract.plural_label(agg.name)}\", Href: \"/#{GoUtils.snake_case(agg.name)}s\", Group: \"#{group}\"},"
       end
       lines << "\t\t{Label: \"Config\", Href: \"/config\", Group: \"System\"},"
       lines << "\t}"
-      lines << "\trenderer := NewRenderer(viewsDir, \"#{@domain.name}Domain\", nav)"
+      lines << "\trenderer := NewRenderer(viewsDir, \"#{Hecks::DisplayContract.domain_label(@domain.name + "Domain")}\", nav)"
       lines << ""
       lines.concat(home_route)
       lines.concat(json_routes)
@@ -117,8 +117,9 @@ module HecksGo
       lines << "\t#{vc.go_struct(:home_agg, vc::HOME[:structs][:home_agg])}"
       lines << "\t#{vc.go_struct(:home_data, vc::HOME[:fields])}"
       lines << "\tmux.HandleFunc(\"GET /{$}\", func(w http.ResponseWriter, r *http.Request) {"
-      lines << "\t\trenderer.Render(w, \"home\", \"#{@domain.name}Domain\", HomeData{"
-      lines << "\t\t\tDomainName: \"#{@domain.name}Domain\", Aggregates: []HomeAgg{#{agg_data.join(', ')}},"
+      domain_label = Hecks::DisplayContract.domain_label(@domain.name + "Domain")
+      lines << "\t\trenderer.Render(w, \"home\", \"#{domain_label}\", HomeData{"
+      lines << "\t\t\tDomainName: \"#{domain_label}\", Aggregates: []HomeAgg{#{agg_data.join(', ')}},"
       lines << "\t\t})"
       lines << "\t})"
       lines << ""
