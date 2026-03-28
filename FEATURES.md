@@ -15,7 +15,8 @@
 - Symbol type shorthand: `:string`, `:integer`, `:float`, `:boolean`, `:date`, `:datetime`
 - Default attribute type is String when omitted
 - Define collection attributes with `list_of("Type")` syntax
-- Define cross-aggregate references with `reference_to("Aggregate")`
+- Define cross-aggregate references with `reference_to("Aggregate")` — renders as dropdown in forms
+- Enum constraints: `attribute :category, String, enum: %w[low medium high]` — validated at runtime, dropdown in UI
 
 ### Commands
 - Define commands with attributes, handlers, guards, read models, actors, and external system docs
@@ -128,8 +129,20 @@
 - Generate SQL (Sequel-based) repository adapters with schema definitions
 - Generate SQL migration files from domain diffs
 
-### Generation Features
+### Generated Specs
 - Behavioral RSpec specs — validations, identity, events, attributes, invariants
+- Command specs: runtime execution with persistence + event log validation
+- Query specs: concrete filter assertions with matching/non-matching data
+- Policy specs: full reactive event chain verification
+- Lifecycle specs: state walk through every transition with event log
+- Specification specs: satisfied_by? pass/fail with sample objects
+- Scope specs: static and callable scopes with filtered results
+- View specs: event projection state updates
+- Workflow specs: execution and event production
+- Service specs: dispatch verification and result checking
+- Port specs: allowed methods pass, denied methods raise PortAccessDenied
+
+### Generation Features
 - Stacked codegen: constructors stack one-per-line when >2 args
 - Port enforcement stubs, autoload registries, gem scaffolds
 - Preview generated source for any aggregate without writing files
@@ -208,6 +221,8 @@
 - Name collision detection across aggregates/VOs/entities
 - Ruby keyword and reserved attribute name detection
 - Every validation error includes an actionable fix suggestion
+- Implicit foreign key detection: warns when `_id String` should be `reference_to("Aggregate")`
+- Validator collects non-blocking warnings alongside blocking errors
 
 ## Migrations & Schema Evolution
 - `DomainDiff` detects added/removed aggregates, attributes, VOs, entities, indexes, commands, policies, validations, invariants, queries, scopes, subscribers, specifications
@@ -350,8 +365,22 @@
 - WEBrick-based server with JSON API (one POST per command, GET per aggregate)
 - HTML UI with index tables, show pages, create/update forms
 - OpenAPI endpoint at `/_openapi`, validation rules at `/_validations`
+- `GET /_events` — JSON event log (EventLogContract shape, same for Ruby and Go)
+- `POST /_reset` — clear all data (button on config page, used by smoke tests)
+- Query routes: `GET /aggregates/queries/name` for each DSL-defined query
+- Scope routes: `GET /aggregates/scopes/name` for each DSL-defined scope
+- Specification routes: `GET /aggregates/specifications/name?id=` for predicate checks
+- View routes: `GET /_views/name` for read model state
+- Workflow routes: `POST /_workflows/name` for workflow execution
+- Service routes: `POST /_services/name` for service execution
 - Live reload — watches `lib/` for file changes, reloads automatically
 - Config page to switch roles and persistence adapters at runtime
+- Lifecycle badge on show pages — purple status badge with transition hint map
+- Direct-action buttons — commands with no user fields POST immediately (no empty form)
+- `reference_to` fields render as dropdowns populated from the referenced aggregate
+- Enum fields render as `<select>` dropdowns with valid values
+- Humanized labels everywhere — PascalCase split + ActiveSupport pluralization via UILabelContract
+- Nav sidebar grouped by origin domain in multi-domain servers
 
 ### Port-Based Access Control
 - Ports defined in DSL (`port :admin`, `port :customer`) enforced at domain level
@@ -406,15 +435,27 @@
 - HTML UI with template-rendered pages: home, index tables, show detail, create/update forms, config page
 - Go `html/template` views generated from ERB at build time — ERB is single source of truth
 - `hecks_templating` gem — shared data contracts for cross-target code generation:
-  - `ViewContract` — view data shapes, generates both Go structs and Go templates from ERB
-  - `TypeContract` — single type registry (Go, SQL, JSON Schema, OpenAPI) replaces 4 separate type maps
-  - `EventContract` — formalizes event interface and cross-domain source tagging
-  - `MigrationContract` — validates round-trip serialization fidelity for domain snapshots
-- Contract-driven ViewGenerator replaces regex-based ERB converter
-- Automatic smoke test after `build_go` — starts server, exercises all pages/forms, verifies no render errors
+  - `ViewContract` — view data shapes, short ID display, Go struct generation
+  - `TypeContract` — single type registry (Go, SQL, JSON, OpenAPI) + `format_go_literal` for typed comparisons
+  - `EventContract` — event interface, required fields (aggregate_id, occurred_at)
+  - `EventLogContract` — JSON shape for `/_events` endpoint (same format Ruby and Go)
+  - `MigrationContract` — validates round-trip serialization fidelity
+  - `AggregateContract` — standard fields, validations, enums, lifecycle, self-ref detection
+  - `DisplayContract` — cell rendering, lifecycle transitions, aggregate summaries, policy labels, home data
+  - `FormParsingContract` — type coercion for form submissions (Go parse lines, Ruby coerce expressions)
+  - `UILabelContract` — PascalCase splitting, ActiveSupport pluralization, plural_label
+- Contract-driven Go templates (ShowTemplate, FormTemplate, IndexTemplate) — no ERB conversion or regex patching
+- Self-ref detection for multi-word aggregates via `AggregateContract.agg_suffixes` (policy_id matches GovernancePolicy)
+- Browser-style HTTP smoke test: GET form → parse HTML → POST form-urlencoded → follow redirect → verify show page
+  - Tests every command, query, specification, lifecycle transition, view, workflow, service
+  - Validates event log after commands and lifecycle walks
+  - Verifies show page contains expected state after transitions
+  - Resets server data before and after each run via `POST /_reset`
 - Form submission: accepts both JSON and form-urlencoded, redirects on success
 - Config page with roles, adapter, policies, aggregate counts, ports
-- All DSL concepts generate Go code: lifecycle (state constants, predicates, transition validation), queries, specifications, policies
+- All DSL concepts generate Go code: lifecycle (state constants, predicates, transition validation, default on create, from-constraints on update), queries (prefixed to avoid collisions), specifications (with predicate translation), policies
+- Go aggregate `Validate()` enforces enum constraints from AggregateContract
+- Go commands set lifecycle default status on create, enforce from-constraints and set target on update
 - Go runtime package: EventBus (goroutine-safe pub/sub with history) and CommandBus (middleware pipeline)
 - Events published on every command execution, event count live on config page
 - `go.mod` with only `google/uuid` dependency
