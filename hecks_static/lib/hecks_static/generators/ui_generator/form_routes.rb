@@ -7,7 +7,7 @@
 module HecksStatic
   class UIGenerator
     module FormRoutes
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       def new_routes(agg, mod)
@@ -18,7 +18,7 @@ module HecksStatic
 
         agg.commands.each do |cmd|
           cmd_snake = domain_snake_name(cmd.name)
-          self_id_attr = Hecks::AggregateContract.self_ref_attr(cmd, agg_snake)
+          self_id_attr = HecksTemplating::AggregateContract.self_ref_attr(cmd, agg_snake)
 
           # Build field descriptors
           field_descriptors = cmd.attributes.map { |a| field_descriptor(a, agg, self_id_attr) }
@@ -27,12 +27,12 @@ module HecksStatic
           lines << "        server.mount_proc \"/#{p}/#{cmd_snake}/new\" do |req, res|"
           lines << "          unless #{mod}.role_allows?(\"#{safe}\", \"#{cmd_snake}\")"
           lines << "            html = renderer.render(:form, title: \"Denied — #{mod}\", brand: brand, nav_items: nav,"
-          lines << "              command_name: \"#{Hecks::UILabelContract.label(cmd.name)}\", action: \"\", error_message: \"Role '\" + #{mod}.current_role.to_s + \"' cannot #{cmd_snake}\", fields: [])"
+          lines << "              command_name: \"#{HecksTemplating::UILabelContract.label(cmd.name)}\", action: \"\", error_message: \"Role '\" + #{mod}.current_role.to_s + \"' cannot #{cmd_snake}\", fields: [])"
           lines << "            res[\"Content-Type\"] = \"text/html\"; res.body = html; next"
           lines << "          end"
           lines << "          fields = #{build_fields_code(cmd, agg, self_id_attr)}"
           lines << "          html = renderer.render(:form, title: \"#{cmd.name} — #{mod}\", brand: brand, nav_items: nav,"
-          lines << "            command_name: \"#{Hecks::UILabelContract.label(cmd.name)}\", action: \"/#{p}/#{cmd_snake}/submit\", error_message: nil, fields: fields)"
+          lines << "            command_name: \"#{HecksTemplating::UILabelContract.label(cmd.name)}\", action: \"/#{p}/#{cmd_snake}/submit\", error_message: nil, fields: fields)"
           lines << "          res[\"Content-Type\"] = \"text/html\"; res.body = html"
           lines << "        end"
           lines << ""
@@ -56,7 +56,7 @@ module HecksStatic
             @domain.aggregates.find { |ra| domain_snake_name(ra.name) == ref_name }
           end
           if ref_agg
-            display = Hecks::DisplayContract.reference_display_field(ref_agg)
+            display = HecksTemplating::DisplayContract.reference_display_field(ref_agg)
             { type: :select, name: attr.name.to_s, ref: domain_constant_name(ref_agg.name),
               label: humanize(attr.name.to_s.sub(/_id$/, "")), required: required_field?(agg, attr.name),
               display: display }
@@ -71,9 +71,9 @@ module HecksStatic
             { type: :enum, name: attr.name.to_s, label: humanize(attr.name),
               options: enum_values, required: required_field?(agg, attr.name) }
           else
-            go_type = Hecks::TypeContract.go(attr.type)
-            input_type = Hecks::FormParsingContract.input_type(go_type)
-            step = Hecks::FormParsingContract.step?(go_type)
+            go_type = HecksTemplating::TypeContract.go(attr.type)
+            input_type = HecksTemplating::FormParsingContract.input_type(go_type)
+            step = HecksTemplating::FormParsingContract.step?(go_type)
             { type: :input, name: attr.name.to_s, label: humanize(attr.name),
               input_type: input_type, step: step,
               required: required_field?(agg, attr.name) }
@@ -107,7 +107,7 @@ module HecksStatic
         lines << "          begin"
         lines << "            params = req.query"
         coerce_lines = cmd.attributes.map do |a|
-          val = Hecks::FormParsingContract.ruby_coerce(a.name, a.type.to_s)
+          val = HecksTemplating::FormParsingContract.ruby_coerce(a.name, a.type.to_s)
           "#{a.name}: #{val}"
         end
         lines << "            result = #{safe}.#{cmd_snake}(#{coerce_lines.join(", ")})"
@@ -117,12 +117,12 @@ module HecksStatic
         lines << "            fields.each { |f| f[:value] = params[f[:name]] || f[:value] if f[:type] != :hidden }"
         lines << "            fields.each { |f| f[:error] = e.message if e.respond_to?(:field) && e.field.to_s == f[:name] }"
         lines << "            html = renderer.render(:form, title: \"#{cmd.name} — #{mod}\", brand: brand, nav_items: nav,"
-        lines << "              command_name: \"#{Hecks::UILabelContract.label(cmd.name)}\", action: \"/#{p}/#{cmd_snake}/submit\","
+        lines << "              command_name: \"#{HecksTemplating::UILabelContract.label(cmd.name)}\", action: \"/#{p}/#{cmd_snake}/submit\","
         lines << "              error_message: (e.respond_to?(:field) && e.field ? nil : e.message), fields: fields)"
         lines << "            res[\"Content-Type\"] = \"text/html\"; res.body = html"
         lines << "          rescue #{@domain.module_name}Domain::Error => e"
         lines << "            html = renderer.render(:form, title: \"Error — #{mod}\", brand: brand, nav_items: nav,"
-        lines << "              command_name: \"#{Hecks::UILabelContract.label(cmd.name)}\", action: \"/#{p}/#{cmd_snake}/new\","
+        lines << "              command_name: \"#{HecksTemplating::UILabelContract.label(cmd.name)}\", action: \"/#{p}/#{cmd_snake}/new\","
         lines << "              error_message: e.message, fields: [])"
         lines << "            res[\"Content-Type\"] = \"text/html\"; res.body = html"
         lines << "          end"

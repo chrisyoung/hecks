@@ -14,7 +14,7 @@ module Hecks
       #   end
       #
       module PolicySetup
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         private
 
         # Dispatches a command triggered by a policy, routing it to the correct

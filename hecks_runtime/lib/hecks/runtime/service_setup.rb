@@ -10,7 +10,7 @@ module Hecks
   #   Banking.transfer_money(source_id: "abc", target_id: "xyz", amount: 500)
   #
   module ServiceSetup
-    extend Hecks::NamingHelpers
+    extend HecksTemplating::NamingHelpers
     # Binds all domain services as singleton methods on the domain module.
     #
     # Iterates through +domain.services+ and wires each one as a callable

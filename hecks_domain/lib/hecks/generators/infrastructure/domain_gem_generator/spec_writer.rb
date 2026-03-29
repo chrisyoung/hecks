@@ -12,7 +12,7 @@ module Hecks
         #   generate_specs(root, gem_name, mod)
         #
         module SpecWriter
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           private
 
           # Writes all RSpec spec files for the domain gem.

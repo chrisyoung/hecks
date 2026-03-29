@@ -5,7 +5,7 @@
 #
 module HecksGo
   module GoUtils
-    include Hecks::NamingHelpers
+    include HecksTemplating::NamingHelpers
     module_function
 
     def go_type(attr)
@@ -14,7 +14,7 @@ module HecksGo
       elsif attr.reference?
         "string" # UUID reference
       else
-        Hecks::TypeContract.go(attr.type)
+        HecksTemplating::TypeContract.go(attr.type)
       end
     end
 
@@ -46,15 +46,15 @@ module HecksGo
     end
 
     def go_zero_value(type_str)
-      Hecks::TypeContract.go_zero_value(type_str)
+      HecksTemplating::TypeContract.go_zero_value(type_str)
     end
 
     def needs_time_import?(attrs)
-      Hecks::TypeContract.go_needs_time?(attrs)
+      HecksTemplating::TypeContract.go_needs_time?(attrs)
     end
 
     def needs_json_import?(attrs)
-      Hecks::TypeContract.go_needs_json?(attrs)
+      HecksTemplating::TypeContract.go_needs_json?(attrs)
     end
   end
 end

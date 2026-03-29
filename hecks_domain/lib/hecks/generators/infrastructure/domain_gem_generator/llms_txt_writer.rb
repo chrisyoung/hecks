@@ -13,7 +13,7 @@ module Hecks
         #   generate_llms_txt(root, gem_name, mod)
         #
         module LlmsTxtWriter
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           private
 
           # Writes an llms.txt file into the generated gem root directory.

@@ -10,7 +10,7 @@
 module HecksGo
   class ViewGenerator
     def initialize
-      @contracts = Hecks::ViewContract
+      @contracts = HecksTemplating::ViewContract
     end
 
     # Convert an ERB template to Go html/template syntax.

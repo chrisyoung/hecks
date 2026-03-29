@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module QuerySpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec file for a query defined on an aggregate.
           #
           # The generated spec:

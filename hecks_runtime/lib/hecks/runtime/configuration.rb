@@ -46,7 +46,7 @@ module Hecks
   # - Async event handler registration
   # - Rails integration via +active_hecks+ gem
   class Configuration
-    include Hecks::NamingHelpers
+    include HecksTemplating::NamingHelpers
     include DatabaseConnection
     include DomainLoader
     include SqlSetup

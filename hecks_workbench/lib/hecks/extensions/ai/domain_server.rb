@@ -26,7 +26,7 @@ module Hecks
     #   hecks domain mcp --domain NAME
     #
     class DomainServer
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       include CommandTools
       include QueryTools
       include RepositoryTools

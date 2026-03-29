@@ -6,11 +6,11 @@
 module HecksStatic
   class UIGenerator
     module ConfigRoutes
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       def config_route(mod)
-        dc = Hecks::DisplayContract
+        dc = HecksTemplating::DisplayContract
 
         agg_rows = @domain.aggregates.map do |agg|
           safe = domain_constant_name(agg.name)

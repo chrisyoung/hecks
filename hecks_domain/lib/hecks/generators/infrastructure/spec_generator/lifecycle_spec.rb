@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module LifecycleSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for an aggregate's lifecycle.
           #
           # @param aggregate [Hecks::DomainModel::Structure::Aggregate]

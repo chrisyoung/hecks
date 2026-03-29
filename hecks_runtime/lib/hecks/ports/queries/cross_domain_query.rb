@@ -56,7 +56,7 @@ module Hecks
     # aggregate classes across domain boundaries. Each call to +call+
     # creates a fresh context to avoid state leakage between invocations.
     class QueryContext
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Resolves an aggregate class from a named domain.
       #
       # Converts the domain and aggregate names to constants and looks them

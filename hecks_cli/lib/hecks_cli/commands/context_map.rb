@@ -9,7 +9,7 @@
 module Hecks
   class CLI < Thor
     class Domain < Thor
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       desc "context_map", "Show DDD context map of bounded contexts"
       # Displays a context map of all bounded contexts and their relationships.
       #

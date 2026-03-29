@@ -7,7 +7,7 @@
 module HecksStatic
   class EntryPointGenerator
     module BootWiring
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       def wire_commands(lines, agg)

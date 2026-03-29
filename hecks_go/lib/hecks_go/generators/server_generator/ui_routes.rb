@@ -9,7 +9,7 @@ module HecksGo
       private
 
       def form_routes
-        ac = Hecks::AggregateContract
+        ac = HecksTemplating::AggregateContract
         lines = []
         lines << "\t// Form routes (types in renderer.go)"
 
@@ -38,20 +38,20 @@ module HecksGo
                 if ref_agg
                   lines << "\t\t\t// #{ref_agg.name} dropdown built dynamically below"
                 else
-                  label = Hecks::UILabelContract.label(a.name)
+                  label = HecksTemplating::UILabelContract.label(a.name)
                   lines << "\t\t\t{Type: \"input\", Name: \"#{a.name}\", Label: \"#{label}\", InputType: \"text\", Required: true},"
                 end
               else
                 agg_attr = agg.attributes.find { |aa| aa.name == a.name }
                 enum_values = agg_attr&.enum
-                label = Hecks::UILabelContract.label(a.name)
+                label = HecksTemplating::UILabelContract.label(a.name)
                 if enum_values && !enum_values.empty?
                   opts = enum_values.map { |v| "FormOption{Value: \"#{v}\", Label: \"#{v}\"}" }.join(", ")
                   lines << "\t\t\t{Type: \"select\", Name: \"#{a.name}\", Label: \"#{label}\", Required: true, Options: []FormOption{#{opts}}},"
                 else
                   go_type = GoUtils.go_type(a)
-                  input_type = Hecks::FormParsingContract.input_type(go_type)
-                  step = Hecks::FormParsingContract.step?(go_type) ? ", Step: true" : ""
+                  input_type = HecksTemplating::FormParsingContract.input_type(go_type)
+                  step = HecksTemplating::FormParsingContract.step?(go_type) ? ", Step: true" : ""
                   lines << "\t\t\t{Type: \"input\", Name: \"#{a.name}\", Label: \"#{label}\", InputType: \"#{input_type}\", Required: true#{step}},"
                 end
               end
@@ -70,8 +70,8 @@ module HecksGo
               end
               next unless ref_agg
               ref_safe = ref_agg.name
-              display = Hecks::DisplayContract.go_reference_display_field(ref_agg)
-              label = Hecks::UILabelContract.label(a.name.to_s.sub(/_id$/, ""))
+              display = HecksTemplating::DisplayContract.go_reference_display_field(ref_agg)
+              label = HecksTemplating::UILabelContract.label(a.name.to_s.sub(/_id$/, ""))
               lines << "\t\t#{ref_safe.downcase}s, _ := app.#{ref_safe}Repo.All()"
               lines << "\t\tvar #{ref_safe.downcase}Opts []FormOption"
               lines << "\t\tfor _, item := range #{ref_safe.downcase}s {"
@@ -81,7 +81,7 @@ module HecksGo
             end
 
             lines << "\t\trenderer.Render(w, \"form\", \"#{cmd.name}\", FormData{"
-            lines << "\t\t\tCommandName: \"#{Hecks::UILabelContract.label(cmd.name)}\","
+            lines << "\t\t\tCommandName: \"#{HecksTemplating::UILabelContract.label(cmd.name)}\","
             lines << "\t\t\tAction: \"/#{plural}/#{cmd_snake}\","
             lines << "\t\t\tFields: fields,"
             lines << "\t\t})"
@@ -93,11 +93,11 @@ module HecksGo
       end
 
       def config_route
-        dc = Hecks::DisplayContract
+        dc = HecksTemplating::DisplayContract
         all_roles = dc.available_roles(@domain)
         policies = dc.policy_labels(@domain)
 
-        vc = Hecks::ViewContract
+        vc = HecksTemplating::ViewContract
         lines = []
         lines << "\t// Config"
         lines << "\t#{vc.go_struct(:config_agg, vc::CONFIG[:structs][:config_agg])}"

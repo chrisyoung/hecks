@@ -19,7 +19,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  module Queries\n    module PizzaQueries\n  ..."
     #
     class QueryObjectGenerator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
 
       # Initializes the query object generator.
       #

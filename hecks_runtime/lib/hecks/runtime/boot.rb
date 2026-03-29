@@ -35,7 +35,7 @@ module Hecks
   # For multi-domain setups, also handles cross-domain validation,
   # event directionality filtering, and queue wiring.
   module Boot
-    include Hecks::NamingHelpers
+    include HecksTemplating::NamingHelpers
     include CrossDomainValidator
     include QueueWiring
 

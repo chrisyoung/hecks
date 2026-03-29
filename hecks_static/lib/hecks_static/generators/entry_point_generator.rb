@@ -8,7 +8,7 @@ require_relative "entry_point_generator/boot_wiring"
 #
 module HecksStatic
   class EntryPointGenerator
-    include Hecks::NamingHelpers
+    include HecksTemplating::NamingHelpers
     include BootWiring
 
     def initialize(domain)

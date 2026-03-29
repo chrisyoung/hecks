@@ -29,7 +29,7 @@ module Hecks
     #   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
     #
     class CommandBus
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # @return [Array<Hash>] registered middleware entries, each with :name and :handler keys
       attr_reader :middleware
 

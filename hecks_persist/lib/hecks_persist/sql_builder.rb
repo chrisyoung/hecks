@@ -12,7 +12,7 @@ module Hecks
       #   insert_lines  # => ["      def insert(pizza)", ...]
       #
       module SqlBuilder
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
       private
 
       # Generates the insert method body for saving a new aggregate to the database.

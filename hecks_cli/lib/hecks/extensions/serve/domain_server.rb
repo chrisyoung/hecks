@@ -22,7 +22,7 @@ module Hecks
     #   hecks domain serve pizzas_domain --live
     #
     class DomainServer
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Initialize the server, boot the domain gem, and build routes.
       #
       # Builds the domain gem into a temporary directory, requires it,

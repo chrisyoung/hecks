@@ -11,7 +11,7 @@
 module Hecks
   class CLI < Thor
     class Domain < Thor
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       desc "promote AGGREGATE", "Extract an aggregate into its own domain"
       # Promotes an aggregate from the current domain into a standalone domain.
       #

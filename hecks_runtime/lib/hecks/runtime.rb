@@ -45,7 +45,7 @@ module Hecks
   # - ConstantHoisting -- promotes aggregate classes to top-level constants
   # - ConnectionSetup -- wires cross-domain event connections (listens_to/sends_to)
   class Runtime
-    include Hecks::NamingHelpers
+    include HecksTemplating::NamingHelpers
       include PortSetup
       include RepositorySetup
       include PolicySetup

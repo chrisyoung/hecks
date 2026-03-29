@@ -41,7 +41,7 @@ module Hecks
     #   gen.generate_port_spec(port_name, port_def, agg)
     #
     class SpecGenerator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       include SpecHelpers
       include AggregateSpec
       include ValueObjectSpec

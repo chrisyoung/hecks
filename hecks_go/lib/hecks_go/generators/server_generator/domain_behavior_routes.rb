@@ -40,8 +40,8 @@ module HecksGo
       end
 
       def go_events_route
-        struct_def = Hecks::EventLogContract.go_struct.gsub("\n", "\n\t\t")
-        mapper = Hecks::EventLogContract.go_mapper(event_var: "e").gsub("\n", "\n\t\t\t")
+        struct_def = HecksTemplating::EventLogContract.go_struct.gsub("\n", "\n\t\t")
+        mapper = HecksTemplating::EventLogContract.go_mapper(event_var: "e").gsub("\n", "\n\t\t\t")
         [
           "\tmux.HandleFunc(\"GET /_events\", func(w http.ResponseWriter, r *http.Request) {",
           "\t\tevents := app.EventBus.Events()",

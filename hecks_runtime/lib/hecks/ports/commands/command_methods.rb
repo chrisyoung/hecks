@@ -23,7 +23,7 @@ module Hecks
     #   # creates shortcut methods using a custom executor proc
     #
     module CommandMethods
-      extend Hecks::NamingHelpers
+      extend HecksTemplating::NamingHelpers
       # Wires command classes to their repository and event bus, then creates shortcut methods.
       #
       # For each command defined on the aggregate, this method:

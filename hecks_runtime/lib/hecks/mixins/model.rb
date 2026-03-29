@@ -40,7 +40,7 @@ module Hecks
   #   Pizza.new(name: "Margherita").name  # => "Margherita"
   #
   module Model
-    extend Hecks::NamingHelpers
+    extend HecksTemplating::NamingHelpers
 
     # Hook called when a class includes +Hecks::Model+. Sets up identity readers
     # (+id+, +created_at+, +updated_at+), extends the class with the attribute
@@ -61,7 +61,7 @@ module Hecks
 
     # Class-level DSL for declaring model attributes.
     module ClassMethods
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Declares a named attribute with optional default and freeze behavior.
       # Each call to +attribute+ regenerates the constructor to accept the
       # new attribute as a keyword argument. Also defines +attr_reader+ and

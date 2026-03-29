@@ -11,7 +11,7 @@ module Hecks
     #   wire_queue(domains, runtimes)
     #
     module QueueWiring
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Creates a global +Hecks.queue+ backed by a +MemoryQueue+ whose resolver
       # can find and dispatch any command across all booted domain runtimes.
       #

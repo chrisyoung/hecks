@@ -11,7 +11,7 @@ module Hecks
   #   PizzasDomain::OrderSummary.current  # => { total_orders: 5 }
   #
   class ViewBinding
-    extend Hecks::NamingHelpers
+    extend HecksTemplating::NamingHelpers
     # Binds a view (read model) definition to the event bus and domain module.
     #
     # Creates a new anonymous module under the domain namespace (e.g.,

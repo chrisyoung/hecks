@@ -22,7 +22,7 @@ module Hecks
     #   workbench.sketch!   # back to sketch mode
     #
     module PlayMode
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Switch to play mode by compiling the domain and booting a live runtime.
       #
       # Validates the domain first; if invalid, prints errors and stays in

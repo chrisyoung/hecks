@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module SpecificationSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for a specification on an aggregate.
           #
           # @param specification [Hecks::DomainModel::Behavior::Specification]

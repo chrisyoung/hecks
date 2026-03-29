@@ -15,7 +15,7 @@ module HecksGo
       @agg = aggregate
       @package = package
       @user_attrs = @agg.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
-      @rules = Hecks::AggregateContract.rules(@agg)
+      @rules = HecksTemplating::AggregateContract.rules(@agg)
     end
 
     def generate

@@ -21,7 +21,7 @@ module Hecks
       #   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
       #
       module RepositoryTools
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         private
 
         # Registers Find, All, and Count tools for each aggregate in the domain.

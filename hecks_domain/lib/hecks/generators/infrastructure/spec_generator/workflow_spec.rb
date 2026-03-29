@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module WorkflowSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for a domain workflow.
           #
           # @param workflow [Hecks::DomainModel::Behavior::Workflow]

@@ -8,7 +8,7 @@ module Hecks
         # validations, invariants, and identity. Mixed into SpecGenerator.
         #
         module AggregateSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates a complete RSpec spec file for an aggregate class.
           #
           # The generated spec covers:

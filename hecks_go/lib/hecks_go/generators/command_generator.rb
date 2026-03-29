@@ -105,7 +105,7 @@ module HecksGo
 
       lines << "\tagg := New#{@agg.name}(#{constructor_args})"
       # Set lifecycle default status on create — from AggregateContract
-      rules = Hecks::AggregateContract.rules(@agg)
+      rules = HecksTemplating::AggregateContract.rules(@agg)
       if rules[:lifecycle]
         lines << "\tagg.#{GoUtils.pascal_case(rules[:lifecycle][:field])} = \"#{rules[:lifecycle][:default]}\""
       end
@@ -144,7 +144,7 @@ module HecksGo
         end
       end
       # Apply lifecycle transition — from AggregateContract
-      rules = Hecks::AggregateContract.rules(@agg)
+      rules = HecksTemplating::AggregateContract.rules(@agg)
       if rules[:lifecycle]
         transition = rules[:lifecycle][:transitions].find { |t| t[:command] == @cmd.name }
         if transition
