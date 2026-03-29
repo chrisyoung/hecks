@@ -14,11 +14,11 @@ ruby -Ilib examples/pizzas/repl_session.rb
 ruby -Ilib examples/pizzas/sql_app.rb
 ```
 
-## rails_app/
+## pizzas_rails/
 
 Shows how to use a Hecks domain gem inside Rails. Uses `Hecks.configure` with database config and `include_ad_hoc_queries` for the full ActiveRecord-style API. Controllers use DSL query objects (`Pizza.by_description`, `Order.pending`). Domain objects come from the gem — no model files in the Rails app.
 
-See `rails_app/README.md` for setup instructions.
+See `pizzas_rails/README.md` for setup instructions.
 
 ## multi_domain/
 

@@ -35,7 +35,7 @@ module Hecks
         return false unless build_component(name)
       end
       @output.call("Building hecks meta-gem...", :green)
-      Dir.chdir(root) { system("gem build hecks.gemspec") }
+      Dir.chdir(root) { unbundled_system("gem build hecks.gemspec") }
     end
 
     # Builds and installs all component gems, then the meta-gem.
@@ -50,9 +50,9 @@ module Hecks
       end
       @output.call("Building hecks meta-gem...", :green)
       Dir.chdir(root) do
-        return build_failed("hecks") unless system("gem build hecks.gemspec")
+        return build_failed("hecks") unless unbundled_system("gem build hecks.gemspec")
         gem_file = newest_gem("hecks")
-        return install_failed("hecks") unless gem_file && system("gem install #{gem_file}")
+        return install_failed("hecks") unless gem_file && unbundled_system("gem install #{gem_file}")
         File.delete(gem_file)
         @output.call("Installed #{gem_file}", :green)
       end
@@ -89,7 +89,7 @@ module Hecks
     def build_component(name)
       @output.call("Building #{name}...", :green)
       Dir.chdir(component_dir(name)) do
-        return build_failed(name) unless system("gem build #{name}.gemspec")
+        return build_failed(name) unless unbundled_system("gem build #{name}.gemspec")
         Dir["#{name}-*.gem"].each { |f| File.delete(f) }
       end
       true
@@ -98,9 +98,9 @@ module Hecks
     def install_component(name)
       @output.call("Building #{name}...", :green)
       Dir.chdir(component_dir(name)) do
-        return build_failed(name) unless system("gem build #{name}.gemspec")
+        return build_failed(name) unless unbundled_system("gem build #{name}.gemspec")
         gem_file = newest_gem(name)
-        return install_failed(name) unless gem_file && system("gem install #{gem_file}")
+        return install_failed(name) unless gem_file && unbundled_system("gem install #{gem_file}")
         File.delete(gem_file)
         @output.call("Installed #{gem_file}", :green)
       end
@@ -119,6 +119,10 @@ module Hecks
     def install_failed(name)
       @output.call("Install failed for #{name}", :red)
       false
+    end
+
+    def unbundled_system(*cmd)
+      Bundler.with_unbundled_env { system(*cmd) }
     end
 
     def default_output(message, _color = nil)

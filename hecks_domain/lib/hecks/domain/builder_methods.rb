@@ -29,6 +29,7 @@ module Hecks
       builder = DSL::DomainBuilder.new(name)
       builder.instance_eval(&block)
       result = builder.build
+      result.source_path = caller_locations(1, 1).first.absolute_path
       Hecks.last_domain = result
       result
     end
