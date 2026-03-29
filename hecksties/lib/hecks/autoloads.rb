@@ -7,7 +7,7 @@
 # Autoloads are organized into logical groups:
 # - *Mixins* -- Modules included into generated domain classes (+Command+,
 #   +Model+, +Query+, +Specification+)
-# - *Framework plumbing* -- Core utilities, configuration, CLI, session,
+# - *Framework plumbing* -- Core utilities, configuration, CLI, workbench,
 #   versioning, and migrations
 # - *Domain tools* -- Validator, connections, glossary, visualizer, serializer
 # - *ValidationRules* -- Individual validation rule classes for domain linting
@@ -42,7 +42,7 @@ module Hecks
   autoload :VERSION,        "hecks/version"
   autoload :Configuration,  "hecks/runtime/configuration"
   autoload :CLI,            "hecks_cli/cli"
-  autoload :Session,        "hecks/session"
+  autoload :Workbench,      "hecks/workbench"
   autoload :Versioner,      "hecks/domain/versioner"
   autoload :Migrations,     "hecks/domain/migrations"
 

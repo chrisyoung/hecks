@@ -12,7 +12,7 @@ module Hecks
   class GemBuilder
     COMPONENTS = %w[
       hecksties hecks_model hecks_domain hecks_runtime
-      hecks_session hecks_cli hecks_persist hecks_watchers
+      hecks_workbench hecks_cli hecks_persist hecks_watchers
     ].freeze
 
     attr_reader :root

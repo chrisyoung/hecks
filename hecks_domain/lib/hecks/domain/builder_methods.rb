@@ -12,7 +12,7 @@ module Hecks
   #   Hecks.domain("Pizzas") { ... }
   #   Hecks.validate(domain)
   #   Hecks.preview(domain, "Pizza")
-  #   Hecks.session("Pizzas")
+  #   Hecks.workbench("Pizzas")
   #
   module DomainBuilderMethods
     # Define a new domain using the Hecks DSL. Evaluates the given block
@@ -36,9 +36,9 @@ module Hecks
     # querying domain state.
     #
     # @param name [String] the domain name to load into the session
-    # @return [Hecks::Session] a new session instance bound to the domain
-    def session(name)
-      Session.new(name)
+    # @return [Hecks::Workbench] a new session instance bound to the domain
+    def workbench(name)
+      Workbench.new(name)
     end
 
     # Validate a domain model against all registered validation rules.
