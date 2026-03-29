@@ -10,7 +10,7 @@
 #   lines.concat(domain_behavior_routes)
 #
 module HecksStatic
-  class ServerGenerator
+  class ServerGenerator < Hecks::Generator
     module DomainRoutes
       include HecksTemplating::NamingHelpers
       private

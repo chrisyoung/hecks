@@ -7,8 +7,7 @@ module HecksStatic
 # Generates route handlers that prepare data and render ERB templates.
 # Each route builds a locals hash and calls renderer.render(:template, locals).
 #
-class UIGenerator
-  include HecksTemplating::NamingHelpers
+class UIGenerator < Hecks::Generator
   include FormRoutes
   include ConfigRoutes
 

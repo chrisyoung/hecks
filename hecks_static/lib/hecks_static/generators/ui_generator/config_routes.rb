@@ -4,7 +4,7 @@
 # aggregate summaries, policy labels, and role extraction.
 #
 module HecksStatic
-  class UIGenerator
+  class UIGenerator < Hecks::Generator
     module ConfigRoutes
       include HecksTemplating::NamingHelpers
       private

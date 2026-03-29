@@ -5,7 +5,7 @@
 # come from contracts — no inline rendering logic.
 #
 module HecksOnTheGo
-  class ServerGenerator
+  class ServerGenerator < Hecks::Generator
     module DataRoutes
       private
 

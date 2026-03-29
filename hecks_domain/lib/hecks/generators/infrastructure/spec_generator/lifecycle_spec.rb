@@ -9,7 +9,7 @@
 module Hecks
   module Generators
     module Infrastructure
-      class SpecGenerator
+      class SpecGenerator < Hecks::Generator
         module LifecycleSpec
           include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for an aggregate's lifecycle.

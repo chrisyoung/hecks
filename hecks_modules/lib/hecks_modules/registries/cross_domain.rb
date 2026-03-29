@@ -5,10 +5,13 @@
 #
 module Hecks
   module CrossDomainMethods
-    extend ModuleDSL
+    def cross_domain_queries
+      @cross_domain_queries ||= Registry.new
+    end
 
-    lazy_registry :cross_domain_queries
-    lazy_registry :cross_domain_views
+    def cross_domain_views
+      @cross_domain_views ||= Registry.new
+    end
 
     def event_bus
       @shared_event_bus
@@ -23,7 +26,7 @@ module Hecks
     end
 
     def cross_domain_query(name, &block)
-      cross_domain_queries[name] = CrossDomainQuery.new(name, &block)
+      cross_domain_queries.register(name, CrossDomainQuery.new(name, &block))
     end
 
     def query(name, **params)
@@ -34,7 +37,7 @@ module Hecks
 
     def cross_domain_view(name, &block)
       view = CrossDomainView.new(name, &block)
-      cross_domain_views[name] = view
+      cross_domain_views.register(name, view)
       view.subscribe(@shared_event_bus) if @shared_event_bus
       view
     end

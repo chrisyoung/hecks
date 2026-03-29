@@ -11,8 +11,7 @@ module Hecks
     #   gen = MemoryAdapterGenerator.new(agg, domain_module: "PizzasDomain")
     #   gen.generate  # => "module PizzasDomain\n  module Adapters\n    class PizzaMemoryRepository\n  ..."
     #
-    class MemoryAdapterGenerator
-      include HecksTemplating::NamingHelpers
+    class MemoryAdapterGenerator < Hecks::Generator
 
       # Creates a new MemoryAdapterGenerator for a single aggregate.
       #

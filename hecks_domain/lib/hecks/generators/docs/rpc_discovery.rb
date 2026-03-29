@@ -6,8 +6,7 @@ module Hecks
     # for a domain: commands, queries, and CRUD operations (find, all, count, delete)
     # per aggregate. Used by RpcServer to advertise its capabilities.
     #
-    class RpcDiscovery
-      include HecksTemplating::NamingHelpers
+    class RpcDiscovery < Hecks::Generator
       # Creates a new RpcDiscovery generator for a domain.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR

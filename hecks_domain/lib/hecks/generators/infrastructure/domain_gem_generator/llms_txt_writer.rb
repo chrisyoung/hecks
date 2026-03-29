@@ -1,7 +1,7 @@
 module Hecks
   module Generators
     module Infrastructure
-      class DomainGemGenerator
+      class DomainGemGenerator < Hecks::Generator
         # Hecks::Generators::Infrastructure::DomainGemGenerator::LlmsTxtWriter
         #
         # Mixin that generates an llms.txt file for domain gems produced by

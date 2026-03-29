@@ -9,7 +9,7 @@
 module Hecks
   module Generators
     module Infrastructure
-      class SpecGenerator
+      class SpecGenerator < Hecks::Generator
         module ScopeSpec
           include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for a scope defined on an aggregate.

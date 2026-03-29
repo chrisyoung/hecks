@@ -5,7 +5,7 @@
 # Reuses hecks_domain generators with mixin_prefix for static output.
 #
 module HecksStatic
-  class GemGenerator
+  class GemGenerator < Hecks::Generator
     module DomainWriter
       include HecksTemplating::NamingHelpers
       private

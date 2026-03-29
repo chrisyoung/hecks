@@ -1,18 +1,16 @@
 # HecksModules
 #
-# Module infrastructure for Hecks. Provides the ModuleDSL for declaring
-# lazy registries, all registry mixins for the Hecks module, and
-# module discovery for CLI command grouping.
+# Module infrastructure for Hecks. Provides Registry and SetRegistry
+# base classes, ModuleDSL for custom extensions, and all registry
+# mixins for the Hecks module.
 #
-#   require "hecks_modules"
-#
-#   module MyRegistryMethods
-#     extend Hecks::ModuleDSL
-#     lazy_registry :widgets
-#   end
+#   targets = Hecks::Registry.new
+#   targets.register(:ruby) { |domain| build(domain) }
 #
 module Hecks; end
 
+require_relative "hecks_modules/registry"
+require_relative "hecks_modules/set_registry"
 require_relative "hecks_modules/module_dsl"
 require_relative "hecks_modules/core_extensions"
 require_relative "hecks_modules/registries/extension_registry"
