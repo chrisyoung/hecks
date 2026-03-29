@@ -1,182 +1,152 @@
 module Hecks
   # Hecks::DslSerializer
   #
-  # Serializes a built Domain back into DSL source code. Handles all DSL
-  # constructs: attributes, value objects, validations, invariants, scopes,
-  # queries, commands (with guarded_by, read models, external systems, actors),
-  # and reactive policies. Extracted from Session#to_dsl for standalone reuse.
+  # Serializes a Domain IR back into DSL source code. The output is valid
+  # Ruby that can be eval'd to reconstruct the domain.
   #
-  # Part of the DSL layer. Used by the console session to dump editable domain
-  # definitions, by DomainSnapshot for migration diffing, and by round-trip
-  # tooling that loads then re-saves domains.
-  #
-  # The output is valid Ruby that can be eval'd to reconstruct the domain.
-  #
-  #   domain = Hecks.domain("Pizzas") { ... }
   #   DslSerializer.new(domain).serialize
   #   # => 'Hecks.domain "Pizzas" do ...'
   #
   class DslSerializer
-    # Create a new serializer for the given domain.
-    #
-    # @param domain [Hecks::DomainModel::Domain] the domain IR to serialize
     def initialize(domain)
       @domain = domain
     end
 
-    # Serialize the domain into a DSL source string. The output is a complete
-    # +Hecks.domain+ block that, when evaluated, reconstructs an equivalent
-    # domain object. Includes all aggregates, their attributes, value objects,
-    # entities, validations, invariants, scopes, queries, specifications,
-    # commands, policies, and subscribers.
-    #
-    # @return [String] valid Ruby DSL source code ending with a newline
+    # @return [String] valid Ruby DSL source code
     def serialize
-      lines = []
-      lines << "Hecks.domain \"#{@domain.name}\" do"
-
+      lines = ["Hecks.domain \"#{@domain.name}\" do"]
       @domain.aggregates.each_with_index do |agg, i|
         lines << "" if i > 0
-        lines << "  aggregate \"#{agg.name}\" do"
-
-        agg.attributes.each do |attr|
-          lines << "    attribute :#{attr.name}, #{dsl_type(attr)}"
-        end
-
-        agg.value_objects.each do |vo|
-          lines << ""
-          lines << "    value_object \"#{vo.name}\" do"
-          vo.attributes.each do |attr|
-            lines << "      attribute :#{attr.name}, #{dsl_type(attr)}"
-          end
-          vo.invariants.each do |inv|
-            lines << ""
-            lines << "      invariant \"#{inv.message}\" do"
-            lines << "        #{Hecks::Utils.block_source(inv.block)}"
-            lines << "      end"
-          end
-          lines << "    end"
-        end
-
-        agg.entities.each do |ent|
-          lines << ""
-          lines << "    entity \"#{ent.name}\" do"
-          ent.attributes.each do |attr|
-            lines << "      attribute :#{attr.name}, #{dsl_type(attr)}"
-          end
-          ent.invariants.each do |inv|
-            lines << ""
-            lines << "      invariant \"#{inv.message}\" do"
-            lines << "        #{Hecks::Utils.block_source(inv.block)}"
-            lines << "      end"
-          end
-          lines << "    end"
-        end
-
-        agg.validations.each do |v|
-          lines << ""
-          lines << "    validation :#{v.field}, #{v.rules.inspect}"
-        end
-
-        agg.invariants.each do |inv|
-          lines << ""
-          lines << "    invariant \"#{inv.message}\" do"
-          lines << "      #{Hecks::Utils.block_source(inv.block)}"
-          lines << "    end"
-        end
-
-        agg.scopes.each do |s|
-          next if s.callable?
-          lines << ""
-          formatted = s.conditions.map { |k, v| "#{k}: #{v.inspect}" }.join(", ")
-          lines << "    scope :#{s.name}, #{formatted}"
-        end
-
-        agg.queries.each do |q|
-          lines << ""
-          lines << "    query \"#{q.name}\" do"
-          lines << "      #{Hecks::Utils.block_source(q.block)}"
-          lines << "    end"
-        end
-
-        agg.specifications.each do |spec|
-          lines << ""
-          params = spec.block&.parameters&.map { |_, n| n.to_s } || []
-          param_str = params.empty? ? "|object|" : "|#{params.join(", ")}|"
-          lines << "    specification \"#{spec.name}\" do #{param_str}"
-          lines << "      #{Hecks::Utils.block_source(spec.block)}"
-          lines << "    end"
-        end
-
-        agg.commands.each do |cmd|
-          lines << ""
-          lines << "    command \"#{cmd.name}\" do"
-          cmd.attributes.each do |attr|
-            lines << "      attribute :#{attr.name}, #{dsl_type(attr)}"
-          end
-          cmd.read_models.each do |rm|
-            lines << "      read_model \"#{rm.name}\""
-          end
-          cmd.external_systems.each do |ext|
-            lines << "      external \"#{ext.name}\""
-          end
-          cmd.actors.each do |act|
-            lines << "      actor \"#{act.name}\""
-          end
-          lines << "    end"
-        end
-
-        agg.policies.each do |pol|
-          lines << ""
-          lines << "    policy \"#{pol.name}\" do"
-          lines << "      on \"#{pol.event_name}\""
-          lines << "      trigger \"#{pol.trigger_command}\""
-          lines << "      async true" if pol.async
-          if pol.condition
-            lines << "      condition { |event| #{Hecks::Utils.block_source(pol.condition)} }"
-          end
-          lines << "    end"
-        end
-
-        agg.subscribers.each do |sub|
-          lines << ""
-          async_opt = sub.async ? ", async: true" : ""
-          lines << "    on_event \"#{sub.event_name}\"#{async_opt} do |event|"
-          lines << "      #{Hecks::Utils.block_source(sub.block)}" if sub.block
-          lines << "    end"
-        end
-
-        lines << "  end"
+        lines.concat(serialize_aggregate(agg))
       end
-
-      @domain.policies.each do |pol|
-        lines << ""
-        lines << "  policy \"#{pol.name}\" do"
-        lines << "    on \"#{pol.event_name}\""
-        lines << "    trigger \"#{pol.trigger_command}\""
-        lines << "    async true" if pol.async
-        if pol.attribute_map.any?
-          mapping = pol.attribute_map.map { |from, to| "#{from}: :#{to}" }.join(", ")
-          lines << "    map #{mapping}"
-        end
-        if pol.condition
-          lines << "    condition { |event| #{Hecks::Utils.block_source(pol.condition)} }"
-        end
-        lines << "  end"
-      end
-
+      @domain.policies.each { |pol| lines.concat(serialize_domain_policy(pol)) }
       lines << "end"
       lines.join("\n") + "\n"
     end
 
     private
 
-    # Convert an attribute's type into its DSL representation. List attributes
-    # use +list_of("Type")+, references use +reference_to("Type")+, and
-    # scalar types are rendered as bare strings.
-    #
-    # @param attr [Hecks::DomainModel::Attribute] the attribute to format
-    # @return [String] DSL type expression (e.g., 'String', 'list_of("Topping")')
+    def serialize_aggregate(agg)
+      lines = ["  aggregate \"#{agg.name}\" do"]
+      lines.concat(serialize_attributes(agg.attributes, "    "))
+      lines.concat(serialize_value_objects(agg.value_objects))
+      lines.concat(serialize_entities(agg.entities))
+      lines.concat(serialize_validations(agg.validations))
+      lines.concat(serialize_invariants(agg.invariants, "    "))
+      lines.concat(serialize_scopes(agg.scopes))
+      lines.concat(serialize_queries(agg.queries))
+      lines.concat(serialize_specifications(agg.specifications))
+      lines.concat(serialize_commands(agg.commands))
+      lines.concat(serialize_policies(agg.policies))
+      lines.concat(serialize_subscribers(agg.subscribers))
+      lines << "  end"
+      lines
+    end
+
+    def serialize_attributes(attrs, indent)
+      attrs.map { |a| "#{indent}attribute :#{a.name}, #{dsl_type(a)}" }
+    end
+
+    def serialize_value_objects(vos)
+      vos.flat_map do |vo|
+        lines = ["", "    value_object \"#{vo.name}\" do"]
+        lines.concat(serialize_attributes(vo.attributes, "      "))
+        lines.concat(serialize_invariants(vo.invariants, "      "))
+        lines << "    end"
+      end
+    end
+
+    def serialize_entities(entities)
+      entities.flat_map do |ent|
+        lines = ["", "    entity \"#{ent.name}\" do"]
+        lines.concat(serialize_attributes(ent.attributes, "      "))
+        lines.concat(serialize_invariants(ent.invariants, "      "))
+        lines << "    end"
+      end
+    end
+
+    def serialize_validations(validations)
+      validations.map { |v| ["", "    validation :#{v.field}, #{v.rules.inspect}"] }.flatten
+    end
+
+    def serialize_invariants(invariants, indent)
+      invariants.flat_map do |inv|
+        ["", "#{indent}invariant \"#{inv.message}\" do",
+         "#{indent}  #{Hecks::Utils.block_source(inv.block)}",
+         "#{indent}end"]
+      end
+    end
+
+    def serialize_scopes(scopes)
+      scopes.reject(&:callable?).flat_map do |s|
+        formatted = s.conditions.map { |k, v| "#{k}: #{v.inspect}" }.join(", ")
+        ["", "    scope :#{s.name}, #{formatted}"]
+      end
+    end
+
+    def serialize_queries(queries)
+      queries.flat_map do |q|
+        ["", "    query \"#{q.name}\" do",
+         "      #{Hecks::Utils.block_source(q.block)}",
+         "    end"]
+      end
+    end
+
+    def serialize_specifications(specs)
+      specs.flat_map do |spec|
+        params = spec.block&.parameters&.map { |_, n| n.to_s } || []
+        param_str = params.empty? ? "|object|" : "|#{params.join(", ")}|"
+        ["", "    specification \"#{spec.name}\" do #{param_str}",
+         "      #{Hecks::Utils.block_source(spec.block)}",
+         "    end"]
+      end
+    end
+
+    def serialize_commands(commands)
+      commands.flat_map do |cmd|
+        lines = ["", "    command \"#{cmd.name}\" do"]
+        lines.concat(serialize_attributes(cmd.attributes, "      "))
+        cmd.read_models.each { |rm| lines << "      read_model \"#{rm.name}\"" }
+        cmd.external_systems.each { |ext| lines << "      external \"#{ext.name}\"" }
+        cmd.actors.each { |act| lines << "      actor \"#{act.name}\"" }
+        lines << "    end"
+      end
+    end
+
+    def serialize_policies(policies)
+      policies.flat_map do |pol|
+        lines = ["", "    policy \"#{pol.name}\" do"]
+        lines << "      on \"#{pol.event_name}\""
+        lines << "      trigger \"#{pol.trigger_command}\""
+        lines << "      async true" if pol.async
+        lines << "      condition { |event| #{Hecks::Utils.block_source(pol.condition)} }" if pol.condition
+        lines << "    end"
+      end
+    end
+
+    def serialize_subscribers(subscribers)
+      subscribers.flat_map do |sub|
+        async_opt = sub.async ? ", async: true" : ""
+        lines = ["", "    on_event \"#{sub.event_name}\"#{async_opt} do |event|"]
+        lines << "      #{Hecks::Utils.block_source(sub.block)}" if sub.block
+        lines << "    end"
+      end
+    end
+
+    def serialize_domain_policy(pol)
+      lines = ["", "  policy \"#{pol.name}\" do"]
+      lines << "    on \"#{pol.event_name}\""
+      lines << "    trigger \"#{pol.trigger_command}\""
+      lines << "    async true" if pol.async
+      if pol.attribute_map.any?
+        mapping = pol.attribute_map.map { |from, to| "#{from}: :#{to}" }.join(", ")
+        lines << "    map #{mapping}"
+      end
+      lines << "    condition { |event| #{Hecks::Utils.block_source(pol.condition)} }" if pol.condition
+      lines << "  end"
+      lines
+    end
+
     def dsl_type(attr)
       if attr.list?
         "list_of(\"#{attr.type}\")"
