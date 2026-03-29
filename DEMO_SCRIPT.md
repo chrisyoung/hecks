@@ -28,44 +28,63 @@ $ hecks console
 
 ```ruby
 hecks(sketch)> Post
-=> #<Post (0 attributes, 0 commands)>
+created Post
 
 hecks(sketch)> Post.title String
-hecks(sketch)> Post.body String
+added attribute title to Post
+
 hecks(sketch)> Post.status String
+added attribute status to Post
+
 hecks(sketch)> Post.lifecycle :status, default: "draft"
+added lifecycle on status, default: draft
+
 hecks(sketch)> Post.transition "PublishPost" => "published"
+added transition PublishPost → published
+
 hecks(sketch)> Post.transition "ArchivePost" => "archived"
-=> lifecycle: draft → published → archived
+added transition ArchivePost → archived
 
 hecks(sketch)> Post.create
-=> + command CreatePost (0 attributes)
+created CreatePost
+
 hecks(sketch)> Post.create.title String
-hecks(sketch)> Post.create.body String
-=> + command CreatePost → CreatedPost (2 attributes)
+added attribute title to CreatePost → CreatedPost
 ```
 
 ### [1:30] Comments
 
 ```ruby
 hecks(sketch)> Comment
-=> #<Comment (0 attributes, 0 commands)>
+created Comment
 
 hecks(sketch)> Comment.post_id reference_to("Post")
+added reference post_id → Post
+
 hecks(sketch)> Comment.author String
+added attribute author to Comment
+
 hecks(sketch)> Comment.body String
+added attribute body to Comment
+
 hecks(sketch)> Comment.create
+created CreateComment
+
 hecks(sketch)> Comment.create.post_id reference_to("Post")
+added reference post_id → Post
+
 hecks(sketch)> Comment.create.author String
+added attribute author to CreateComment
+
 hecks(sketch)> Comment.create.body String
-=> + command CreateComment → CreatedComment (3 attributes)
+added attribute body to CreateComment → CreatedComment
 ```
 
 ### [2:00] Play
 
 ```ruby
 hecks(sketch)> play!
-hecks(play)> Post.create(title: "Hello World", body: "My first post")
+hecks(play)> Post.create(title: "Hello World")
 ```
 
 > Output: `CreatedPost { title: "Hello World", status: "draft" }`

@@ -7,7 +7,7 @@ import (
 
 type CompleteTraining struct {
 	TrainingRecordId string `json:"training_record_id"`
-	CertificationId string `json:"certification_id"`
+	Certification string `json:"certification"`
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
@@ -21,7 +21,7 @@ func (c CompleteTraining) Execute(repo TrainingRecordRepository) (*TrainingRecor
 	if existing == nil {
 		return nil, nil, fmt.Errorf("TrainingRecord not found: %s", c.TrainingRecordId)
 	}
-	existing.CertificationId = c.CertificationId
+	existing.Certification = c.Certification
 	existing.ExpiresAt = c.ExpiresAt
 	if existing.Status != "assigned" {
 		return nil, nil, fmt.Errorf("cannot CompleteTraining: TrainingRecord is in %s state", existing.Status)
@@ -37,7 +37,7 @@ func (c CompleteTraining) Execute(repo TrainingRecordRepository) (*TrainingRecor
 	event := CompletedTraining{
 		AggregateID: existing.ID,
 		TrainingRecordId: c.TrainingRecordId,
-		CertificationId: c.CertificationId,
+		Certification: c.Certification,
 		ExpiresAt: c.ExpiresAt,
 		OccurredAt: time.Now(),
 	}

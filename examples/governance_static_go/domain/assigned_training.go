@@ -9,7 +9,7 @@ type AssignedTraining struct {
 	PolicyId string `json:"policy_id"`
 	CompletedAt time.Time `json:"completed_at"`
 	ExpiresAt time.Time `json:"expires_at"`
-	CertificationId string `json:"certification_id"`
+	Certification string `json:"certification"`
 	Status string `json:"status"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
