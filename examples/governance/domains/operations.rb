@@ -2,7 +2,7 @@ require "date"
 
 Hecks.domain "Operations" do
   Deployment "AI model deployments across environments" do
-    attribute :model_id, reference_to("AiModel")
+    attribute :model_id, String
     environment String, enum: %w[development staging production]
     endpoint String
     purpose String
@@ -21,7 +21,7 @@ Hecks.domain "Operations" do
     validation :environment, presence: true
 
     plan_deployment do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       environment String
       endpoint String
       purpose String
@@ -56,11 +56,11 @@ Hecks.domain "Operations" do
   end
 
   Incident "AI-related incidents including bias, safety, and performance issues" do
-    attribute :model_id, reference_to("AiModel")
+    attribute :model_id, String
     severity String, enum: %w[low medium high critical]
     category String, enum: %w[bias safety privacy performance other]
     description String
-    attribute :reported_by_id, reference_to("Stakeholder")
+    attribute :reported_by_id, String
     reported_at DateTime
     resolved_at DateTime
     resolution String
@@ -79,11 +79,11 @@ Hecks.domain "Operations" do
     validation :severity, presence: true
 
     report_incident do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       severity String
       category String
       description String
-      attribute :reported_by_id, reference_to("Stakeholder")
+      attribute :reported_by_id, String
       sets reported_at: :now
     end
 
@@ -124,7 +124,7 @@ Hecks.domain "Operations" do
   end
 
   Monitoring "Performance and safety metrics for deployed models" do
-    attribute :model_id, reference_to("AiModel")
+    attribute :model_id, String
     attribute :deployment_id, reference_to("Deployment")
     metric_name String
     value Float
@@ -139,7 +139,7 @@ Hecks.domain "Operations" do
     end
 
     record_metric do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :deployment_id, reference_to("Deployment")
       metric_name String
       value Float
