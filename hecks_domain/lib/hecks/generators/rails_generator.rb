@@ -45,11 +45,16 @@ module Hecks
       def patch_gemfile
         gemfile = File.join(@root, "Gemfile")
         content = File.read(gemfile)
-        # Relative path to hecks if source_path is known, otherwise bare gem
+        # Add hecks and all sub-gems as path references for local dev
         if @domain.source_path
           hecks_root = File.expand_path("../..", File.dirname(@domain.source_path))
           rel = Pathname.new(hecks_root).relative_path_from(Pathname.new(File.expand_path(@root)))
           content += "\ngem \"hecks\", path: \"#{rel}\"\n"
+          # Sub-gems that hecks depends on
+          %w[hecksties hecks_model hecks_domain hecks_runtime hecks_workbench hecks_cli hecks_persist hecks_templating].each do |sub|
+            sub_path = File.join(rel, sub)
+            content += "gem \"#{sub}\", path: \"#{sub_path}\"\n" if File.directory?(File.join(hecks_root, sub))
+          end
         else
           content += "\ngem \"hecks\"\n"
         end
