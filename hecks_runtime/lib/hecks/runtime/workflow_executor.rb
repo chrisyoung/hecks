@@ -10,6 +10,9 @@ module Hecks
   #   result = executor.call(principal: 75_000)
   #
   class WorkflowExecutor
+    CommandStep = DomainModel::Behavior::CommandStep
+    BranchStep  = DomainModel::Behavior::BranchStep
+
     # Creates a new workflow executor.
     #
     # @param workflow [Hecks::DomainModel::Workflow] the workflow definition containing
@@ -51,9 +54,9 @@ module Hecks
 
       steps.each do |step|
         case step
-        when DomainModel::Behavior::CommandStep
+        when CommandStep
           result = dispatch_step(step, attrs, result)
-        when DomainModel::Behavior::BranchStep
+        when BranchStep
           result = execute_branch(step, attrs, result)
         end
       end

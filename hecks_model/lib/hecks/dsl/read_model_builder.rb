@@ -21,6 +21,8 @@ module Hecks
     # Read models are defined at the domain level via +DomainBuilder#view+ and
     # provide optimized query paths separate from the write-side aggregates.
     class ReadModelBuilder
+      Behavior = DomainModel::Behavior
+
       # Initialize a new read model builder with the given view name.
       #
       # @param name [String] the read model name (e.g. "OrderSummary", "AccountBalance")
@@ -52,7 +54,7 @@ module Hecks
       #
       # @return [DomainModel::Behavior::ReadModel] the fully built read model IR object
       def build
-        DomainModel::Behavior::ReadModel.new(
+        Behavior::ReadModel.new(
           name: @name,
           projections: @projections
         )

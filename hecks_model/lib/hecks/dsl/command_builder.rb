@@ -29,6 +29,9 @@ module Hecks
     # Includes AttributeCollector for the +attribute+, +list_of+, and
     # +reference_to+ DSL methods.
     class CommandBuilder
+      Structure = DomainModel::Structure
+      Behavior  = DomainModel::Behavior
+
       include AttributeCollector
 
       # @return [Array<DomainModel::Structure::Attribute>] the command's input attributes
@@ -98,7 +101,7 @@ module Hecks
       # @param name [String] the read model name (e.g. "Menu & Availability")
       # @return [void]
       def read_model(name)
-        @read_models << DomainModel::Structure::ReadModel.new(name: name)
+        @read_models << Structure::ReadModel.new(name: name)
       end
 
       # Declare an external system dependency for this command.
@@ -109,7 +112,7 @@ module Hecks
       # @param name [String] the external system name (e.g. "PaymentGateway")
       # @return [void]
       def external(name)
-        @external_systems << DomainModel::Structure::ExternalSystem.new(name: name)
+        @external_systems << Structure::ExternalSystem.new(name: name)
       end
 
       # Declare an actor (role) that may issue this command.
@@ -121,7 +124,7 @@ module Hecks
       # @param name [String] the actor/role name (e.g. "Customer", "Admin")
       # @return [void]
       def actor(name)
-        @actors << DomainModel::Structure::Actor.new(name: name)
+        @actors << Structure::Actor.new(name: name)
       end
 
       # Declare static field assignments injected into the aggregate on execution.
@@ -148,7 +151,7 @@ module Hecks
       # @yield block that returns true when the precondition is satisfied
       # @return [void]
       def precondition(message, &block)
-        @preconditions << DomainModel::Behavior::Condition.new(message: message, block: block)
+        @preconditions << Behavior::Condition.new(message: message, block: block)
       end
 
       # Add a postcondition that must hold after command execution.
@@ -160,7 +163,7 @@ module Hecks
       # @yield block that returns true when the postcondition is satisfied
       # @return [void]
       def postcondition(message, &block)
-        @postconditions << DomainModel::Behavior::Condition.new(message: message, block: block)
+        @postconditions << Behavior::Condition.new(message: message, block: block)
       end
 
       # Build and return the DomainModel::Behavior::Command IR object.
@@ -185,7 +188,7 @@ module Hecks
 
       # @return [DomainModel::Behavior::Command] the fully built command IR object
       def build
-        DomainModel::Behavior::Command.new(
+        Behavior::Command.new(
           name: @name, attributes: @attributes, handler: @handler, guard_name: @guard_name,
           read_models: @read_models, external_systems: @external_systems, actors: @actors,
           call_body: @call_body, sets: @sets,

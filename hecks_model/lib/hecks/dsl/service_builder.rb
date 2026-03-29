@@ -27,6 +27,8 @@ module Hecks
     # Includes AttributeCollector for the +attribute+, +list_of+, and
     # +reference_to+ DSL methods.
     class ServiceBuilder
+      Behavior = DomainModel::Behavior
+
       include AttributeCollector
 
       # Initialize a new service builder with the given service name.
@@ -54,7 +56,7 @@ module Hecks
       #
       # @return [DomainModel::Behavior::Service] the fully built service IR object
       def build
-        DomainModel::Behavior::Service.new(
+        Behavior::Service.new(
           name: @name,
           attributes: @attributes,
           call_body: @call_body
