@@ -2,16 +2,14 @@ require "json"
 require "date"
 require "ostruct"
 
-# Suppress json-schema MultiJSON deprecation from mcp gem
 JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
 
 require_relative "hecks/errors"
 require_relative "hecks/autoloads"
-require "hecks_templating"
+
+# Core — always loaded
 require "hecks_contracts"
-require "hecks_multidomain"
-require "hecks_explorer"
-require "hecks_ai"
+require "hecks_templating"
 require "hecks/domain/inspector"
 require "hecks/domain/builder_methods"
 require "hecks/domain/compiler"
@@ -20,6 +18,7 @@ require "hecks/domain/event_storm_importer"
 require "hecks/domain/visualizer_methods"
 require "hecks/runtime/boot"
 
+# Registries (lightweight, no dependencies)
 require_relative "hecks/registries/extension_registry"
 require_relative "hecks/registries/domain_registry"
 require_relative "hecks/registries/cross_domain"
@@ -31,8 +30,13 @@ require_relative "hecks/registries/dump_format_registry"
 
 # = Hecks
 #
-# Top-level entry point for the Hecks domain modeling framework.
-# Extends focused registry modules instead of holding all state directly.
+# Top-level entry point. Modules load lazily — require only what you use.
+#
+#   require "hecks"                  # core DSL + registries
+#   require "hecks_contracts"        # data contracts
+#   require "hecks_multidomain"      # multi-domain boot + filtered bus
+#   require "hecks_explorer"         # web explorer + HTTP server
+#   require "hecks_ai"               # MCP server + AI tools
 #
 module Hecks
   extend DomainInspector
@@ -80,48 +84,30 @@ module Hecks
     Runtime.new(domain, **opts, &config)
   end
 
-  # Register built-in dump formats
-  register_dump_format(:schema, desc: "JSON Schema (all types and commands)") do |domain, say:|
-    require "hecks_serve"
-    File.write("schema.json", JSON.pretty_generate(Hecks::HTTP::JsonSchemaGenerator.new(domain).generate))
-    say.call("Dumped schema.json", :green)
-  end
-
-  register_dump_format(:swagger, desc: "OpenAPI 3.0 spec") do |domain, say:|
-    require "hecks_serve"
-    File.write("openapi.json", JSON.pretty_generate(Hecks::HTTP::OpenapiGenerator.new(domain).generate))
-    say.call("Dumped openapi.json", :green)
-  end
-
-  register_dump_format(:rpc, desc: "JSON-RPC discovery") do |domain, say:|
-    require "hecks_serve"
-    File.write("rpc_methods.json", JSON.pretty_generate(Hecks::HTTP::RpcDiscovery.new(domain).generate))
-    say.call("Dumped rpc_methods.json", :green)
-  end
-
-  register_dump_format(:domain, desc: "domain gem to domain/ folder") do |domain, say:|
-    FileUtils.mkdir_p("domain")
-    gem_path = Hecks.build(domain, output_dir: "domain")
-    say.call("Dumped domain gem to domain/#{File.basename(gem_path)}/", :green)
-  end
-
-  register_dump_format(:glossary, desc: "plain-English domain glossary") do |domain, say:|
-    glossary = Hecks::DomainGlossary.new(domain)
-    File.write("glossary.md", glossary.generate.join("\n") + "\n")
-    say.call("Dumped glossary.md", :green)
-  end
-
-  # Register built-in build targets
+  # Built-in build targets
   register_target(:ruby) { |domain, **opts| Hecks.build(domain, **opts) }
   register_target(:static) { |domain, **opts| Hecks.build_static(domain, **opts) }
   register_target(:go) { |domain, **opts| Hecks.build_go(domain, **opts) }
   register_target(:rails) { |domain, **opts| Hecks.build_rails(domain, **opts) }
 
+  # Built-in dump formats
+  register_dump_format(:schema, desc: "JSON Schema") { |domain, say:| require "hecks_serve"; File.write("schema.json", JSON.pretty_generate(Hecks::HTTP::JsonSchemaGenerator.new(domain).generate)); say.call("Dumped schema.json", :green) }
+  register_dump_format(:swagger, desc: "OpenAPI 3.0") { |domain, say:| require "hecks_serve"; File.write("openapi.json", JSON.pretty_generate(Hecks::HTTP::OpenapiGenerator.new(domain).generate)); say.call("Dumped openapi.json", :green) }
+  register_dump_format(:rpc, desc: "JSON-RPC discovery") { |domain, say:| require "hecks_serve"; File.write("rpc_methods.json", JSON.pretty_generate(Hecks::HTTP::RpcDiscovery.new(domain).generate)); say.call("Dumped rpc_methods.json", :green) }
+  register_dump_format(:domain, desc: "domain gem") { |domain, say:| FileUtils.mkdir_p("domain"); say.call("Dumped domain gem to domain/#{File.basename(Hecks.build(domain, output_dir: "domain"))}/", :green) }
+  register_dump_format(:glossary, desc: "plain-English glossary") { |domain, say:| File.write("glossary.md", Hecks::DomainGlossary.new(domain).generate.join("\n") + "\n"); say.call("Dumped glossary.md", :green) }
+
   if defined?(::Rails::Railtie)
     begin
       require "active_hecks/railtie"
     rescue LoadError
-      # active_hecks gem not installed
     end
   end
 end
+
+# Sub-gems load lazily — only when required
+# require "hecks_contracts"    # loads contracts + registers them
+# require "hecks_templating"   # loads naming helpers
+# require "hecks_multidomain"  # loads multi-domain support
+# require "hecks_explorer"     # loads web explorer
+# require "hecks_ai"           # loads MCP server
