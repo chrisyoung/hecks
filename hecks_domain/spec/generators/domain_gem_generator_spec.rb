@@ -2,8 +2,8 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Hecks::Generators::Infrastructure::DomainGemGenerator do
-  let(:domain) do
-    Hecks.domain "Pizzas" do
+  before(:all) do
+    @domain = Hecks.domain "Pizzas" do
       aggregate "Pizza" do
         attribute :name, String
         attribute :description, String
@@ -42,16 +42,18 @@ RSpec.describe Hecks::Generators::Infrastructure::DomainGemGenerator do
         end
       end
     end
+
+    @tmpdir = Dir.mktmpdir
+    generator = described_class.new(@domain, version: "1.0.0", output_dir: @tmpdir)
+    generator.generate
+    @gem_root = File.join(@tmpdir, "pizzas_domain")
   end
 
-  let(:tmpdir) { Dir.mktmpdir }
-  let(:generator) { described_class.new(domain, version: "1.0.0", output_dir: tmpdir) }
+  let(:domain) { @domain }
 
-  after { FileUtils.rm_rf(tmpdir) }
+  after(:all) { FileUtils.rm_rf(@tmpdir) }
 
-  before { generator.generate }
-
-  let(:gem_root) { File.join(tmpdir, "pizzas_domain") }
+  let(:gem_root) { @gem_root }
 
   it "creates the gem directory" do
     expect(Dir.exist?(gem_root)).to be true
