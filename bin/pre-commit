@@ -35,6 +35,18 @@ fi
 
 echo "Tests passed: ${duration}s"
 
+# Run example smoke tests
+smoke_output=$(bundle exec rspec hecks_examples/spec/smoke_test_spec.rb 2>&1)
+smoke_exit=$?
+if [ $smoke_exit -ne 0 ]; then
+  echo ""
+  echo "COMMIT BLOCKED: Example smoke tests failed."
+  echo "$smoke_output" | grep "FAILED\|failed\|Error" | head -5
+  exit 1
+fi
+smoke_count=$(echo "$smoke_output" | grep "examples" | head -1)
+echo "Smoke tests passed: $smoke_count"
+
 # Run all watchers (cross-require blocks; others are advisory)
 ruby -I hecks_watchers/lib -r hecks_watchers -e \
   'exit(HecksWatchers::PreCommit.new(project_root: Dir.pwd).call ? 0 : 1)'
