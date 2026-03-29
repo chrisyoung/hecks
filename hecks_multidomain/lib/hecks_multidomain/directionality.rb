@@ -9,7 +9,7 @@
 #   # => { "identity_domain" => ["model_registry_domain", "operations_domain"] }
 #
 module Hecks
-  module Boot
+  module MultiDomain
     # Builds a directionality map by introspecting reactive policies across
     # multiple domains. A reactive policy is one that reacts to an event from
     # another domain (e.g., +on PizzaOrdered, trigger: ReserveIngredients+).
@@ -21,7 +21,7 @@ module Hecks
     # Also provides a +.validate+ method that compares introspected directionality
     # against explicit +listens_to+ declarations, returning warnings for any
     # mismatches where a policy needs events that are not declared.
-    module EventDirectionality
+    module Directionality
       # Build a map of gem_name -> array of source gem_names this domain
       # needs events from, based on reactive policy introspection.
       #

@@ -1,7 +1,5 @@
 require "hecks"
 require "tmpdir"
-
-Hecks.load_strategy = :memory
 require_relative "support/shared_boot"
 
 RSpec.configure do |config|
