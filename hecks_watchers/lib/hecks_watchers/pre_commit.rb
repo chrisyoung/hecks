@@ -27,14 +27,15 @@ module HecksWatchers
     private
 
     def run_blocking
-      CrossRequire.new(project_root: @project_root, logger: @logger).call
+      HecksWatchers.blocking_watchers.flat_map do |klass|
+        klass.new(project_root: @project_root, logger: @logger).call
+      end
     end
 
     def run_advisory
-      FileSize.new(project_root: @project_root, logger: @logger).call
-      DocReminder.new(project_root: @project_root, logger: @logger).call
-      SpecCoverage.new(project_root: @project_root, logger: @logger).call
-      Autoloads.new(project_root: @project_root, logger: @logger).call
+      HecksWatchers.advisory_watchers.each do |klass|
+        klass.new(project_root: @project_root, logger: @logger).call
+      end
     end
   end
 end
