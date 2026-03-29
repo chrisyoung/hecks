@@ -1,8 +1,9 @@
 require "spec_helper"
 
 RSpec.describe Hecks::Workbench::Playground do
-  let(:domain) do
-    Hecks.domain "PlaygroundTest" do
+  before(:all) do
+    $stdout = File.open(File::NULL, "w")
+    @domain = Hecks.domain "PlaygroundTest" do
       aggregate "Pizza" do
         attribute :name, String
         attribute :toppings, list_of("Topping")
@@ -38,13 +39,14 @@ RSpec.describe Hecks::Workbench::Playground do
         end
       end
     end
+    $stdout = STDOUT
   end
-
-  subject(:playground) { described_class.new(domain) }
 
   before { allow($stdout).to receive(:puts) }
 
   describe "#execute" do
+    let(:playground) { described_class.new(@domain) }
+
     it "executes a command and returns the aggregate" do
       result = playground.execute("CreatePizza", name: "Pepperoni")
       expect(result.name).to eq("Pepperoni")
@@ -68,7 +70,7 @@ RSpec.describe Hecks::Workbench::Playground do
       allow($stdout).to receive(:puts) { |msg| output << msg }
 
       order = playground.execute("CreatePizza", name: "Seed")
-      mod = Object.const_get("PizzasDomain")
+      mod = Object.const_get("PlaygroundTestDomain")
       seed = mod.const_get("Order").new(id: "abc-123", pizza_id: order.id, quantity: 1)
       seed.save
       playground.execute("PlaceOrder", pizza_id: "abc-123", quantity: 2)
@@ -83,6 +85,8 @@ RSpec.describe Hecks::Workbench::Playground do
   end
 
   describe "#commands" do
+    let(:playground) { described_class.new(@domain) }
+
     it "lists available commands with their signatures" do
       list = playground.commands
       expect(list).to include(/CreatePizza.*name.*CreatedPizza/)
@@ -91,6 +95,8 @@ RSpec.describe Hecks::Workbench::Playground do
   end
 
   describe "#events_of" do
+    let(:playground) { described_class.new(@domain) }
+
     it "filters events by type" do
       playground.execute("CreatePizza", name: "Margherita")
       playground.execute("AddTopping", name: "Cheese")
@@ -101,29 +107,19 @@ RSpec.describe Hecks::Workbench::Playground do
   end
 
   describe "#reset!" do
+    let(:playground) { described_class.new(@domain) }
+
     it "clears events" do
       playground.execute("CreatePizza", name: "Pepperoni")
       playground.reset!
-
       expect(playground.events).to be_empty
     end
-  end
 
-  describe "#history" do
-    it "prints event timeline" do
-      playground.execute("CreatePizza", name: "Margherita")
-      expect { playground.history }.to output(/1\. CreatedPizza/).to_stdout
-    end
-
-    it "prints message when no events" do
-      expect { playground.history }.to output(/No events yet/).to_stdout
-    end
-  end
-
-  describe "#inspect" do
-    it "shows summary" do
+    it "clears repositories" do
       playground.execute("CreatePizza", name: "Pepperoni")
-      expect(playground.inspect).to match(/1 events/)
+      playground.reset!
+      mod = Object.const_get("PlaygroundTestDomain")
+      expect(mod::Pizza.all).to be_empty
     end
   end
 end

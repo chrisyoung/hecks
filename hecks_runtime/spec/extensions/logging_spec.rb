@@ -2,8 +2,8 @@ require "spec_helper"
 require "hecks/extensions/logging"
 
 RSpec.describe "HecksLogging connection" do
-  let(:domain) do
-    Hecks.domain "LogTest" do
+  before(:all) do
+    domain = Hecks.domain "LogTest" do
       aggregate "Widget" do
         attribute :name, String
         command "CreateWidget" do
@@ -11,9 +11,6 @@ RSpec.describe "HecksLogging connection" do
         end
       end
     end
-  end
-
-  before do
     @app = Hecks.load(domain)
     Hecks.extension_registry[:logging]&.call(
       Object.const_get("LogTestDomain"), domain, @app
