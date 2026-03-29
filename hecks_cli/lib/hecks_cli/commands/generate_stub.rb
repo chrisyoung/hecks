@@ -1,6 +1,6 @@
 require_relative "../stub_generator"
 
-Hecks::CLI.register_command(:generate_stub, "Scaffold a domain file for hand-editing",
+Hecks::CLI.register_command(:generate_stub, "Scaffold a domain file for hand-editing", group: "Generate",
   options: {
     domain: { type: :string,  desc: "Domain gem name or path" },
     force:  { type: :boolean, desc: "Overwrite without prompting" }

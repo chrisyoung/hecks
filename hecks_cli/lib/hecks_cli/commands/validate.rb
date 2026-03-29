@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:validate, "Validate the domain definition",
+Hecks::CLI.register_command(:validate, "Validate the domain definition", group: "Core",
   options: { domain: { type: :string, desc: "Domain gem name or path" } }
 ) do
   domain = resolve_domain_option

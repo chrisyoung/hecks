@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:list, "List installed Hecks domain gems") do
+Hecks::CLI.register_command(:list, "List installed Hecks domain gems", group: "Project") do
   domains = find_installed_domains
   if domains.empty?
     say "No Hecks domains installed.", :yellow
