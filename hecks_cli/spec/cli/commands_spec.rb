@@ -64,7 +64,7 @@ RSpec.describe "CLI commands" do
 
   describe "validate" do
     it "reports a valid domain" do
-      out = run_cli("domain", "validate", "--domain", tmpdir)
+      out = run_cli("validate", "--domain", tmpdir)
       expect(out).to include("Domain is valid")
       expect(out).to include("Widget")
     end
@@ -73,7 +73,7 @@ RSpec.describe "CLI commands" do
   describe "build" do
     it "generates the domain gem" do
       Dir.chdir(tmpdir) do
-        out = run_cli("domain", "build", "--domain", tmpdir)
+        out = run_cli("build", "--domain", tmpdir)
         expect(out).to include("Built widget_domain")
       end
     end
@@ -81,13 +81,13 @@ RSpec.describe "CLI commands" do
 
   describe "version" do
     it "shows hecks version without --domain" do
-      out = run_cli("domain", "version")
+      out = run_cli("version")
       expect(out).to include("hecks")
       expect(out).to include(Hecks::VERSION)
     end
 
     it "shows domain version with --domain" do
-      out = run_cli("domain", "version", "--domain", tmpdir)
+      out = run_cli("version", "--domain", tmpdir)
       expect(out).to include("Widget")
     end
   end
@@ -95,7 +95,7 @@ RSpec.describe "CLI commands" do
   describe "dump" do
     it "dumps glossary" do
       Dir.chdir(tmpdir) do
-        out = run_cli("domain", "dump", "glossary", "--domain", tmpdir)
+        out = run_cli("dump", "glossary", "--domain", tmpdir)
         expect(out).to include("glossary.md")
       end
     end
@@ -103,7 +103,7 @@ RSpec.describe "CLI commands" do
 
   describe "llms" do
     it "generates AI-readable summary" do
-      out = run_cli("domain", "llms", "--domain", tmpdir)
+      out = run_cli("llms", "--domain", tmpdir)
       expect(out).to include("Widget")
       expect(out).to include("CreateWidget")
     end
@@ -112,7 +112,7 @@ RSpec.describe "CLI commands" do
   describe "info" do
     it "shows domain info" do
       Dir.chdir(tmpdir) do
-        out = run_cli("domain", "info")
+        out = run_cli("info")
         expect(out).to include("Widget")
       end
     end
@@ -121,7 +121,7 @@ RSpec.describe "CLI commands" do
   describe "context_map" do
     it "shows bounded contexts" do
       Dir.chdir(tmpdir) do
-        out = run_cli("domain", "context_map")
+        out = run_cli("context_map")
         expect(out).to include("Context Map")
       end
     end
@@ -130,7 +130,7 @@ RSpec.describe "CLI commands" do
   describe "promote" do
     it "extracts an aggregate into its own domain" do
       Dir.chdir(tmpdir) do
-        out = run_cli("domain", "promote", "Part")
+        out = run_cli("promote", "Part")
         expect(out).to include("Wrote part_domain.rb")
         expect(out).to include("Part removed from Widget")
         expect(File.exist?(File.join(tmpdir, "part_domain.rb"))).to be true
@@ -150,7 +150,7 @@ RSpec.describe "CLI commands" do
       new_dir = File.join(tmpdir, "fresh")
       FileUtils.mkdir_p(new_dir)
       Dir.chdir(new_dir) do
-        out = run_cli("domain", "init", "Blog")
+        out = run_cli("init", "Blog")
         expect(out).to include("Created hecks_domain.rb")
         expect(File.exist?(File.join(new_dir, "hecks_domain.rb"))).to be true
       end
@@ -160,7 +160,7 @@ RSpec.describe "CLI commands" do
   describe "generate:config" do
     it "generates config output" do
       Dir.chdir(tmpdir) do
-        out = run_cli("domain", "generate:config")
+        out = run_cli("generate:config")
         expect(out).to include("Widget")
       end
     end
@@ -169,7 +169,7 @@ RSpec.describe "CLI commands" do
   describe "generate:sinatra" do
     it "scaffolds a sinatra app" do
       Dir.chdir(tmpdir) do
-        out = run_cli("domain", "generate:sinatra", "--domain", tmpdir)
+        out = run_cli("generate:sinatra", "--domain", tmpdir)
         expect(out).to include("Generated Sinatra app")
       end
     end
@@ -181,7 +181,7 @@ RSpec.describe "CLI commands" do
       FileUtils.mkdir_p(mig_dir)
       FileUtils.cp(File.join(tmpdir, "hecks_domain.rb"), File.join(mig_dir, "hecks_domain.rb"))
       Dir.chdir(mig_dir) do
-        out = run_cli("domain", "generate:migrations", "--domain", mig_dir)
+        out = run_cli("generate:migrations", "--domain", mig_dir)
         expect(out).to include("Generated")
         expect(out).to include("CREATE TABLE")
       end
@@ -190,7 +190,7 @@ RSpec.describe "CLI commands" do
 
   describe "tree" do
     it "prints command tree" do
-      out = run_cli("domain", "tree")
+      out = run_cli("tree")
       expect(out).to include("build")
       expect(out).to include("validate")
     end
@@ -198,7 +198,7 @@ RSpec.describe "CLI commands" do
 
   describe "list" do
     it "runs without error" do
-      out = run_cli("domain", "list")
+      out = run_cli("list")
       expect(out).to include("domain")
     end
   end
@@ -206,7 +206,7 @@ RSpec.describe "CLI commands" do
   describe "diff" do
     it "reports no snapshot when none exists" do
       Dir.chdir(tmpdir) do
-        out = run_cli("domain", "diff", "--domain", tmpdir)
+        out = run_cli("diff", "--domain", tmpdir)
         expect(out).to include("No snapshot found")
       end
     end
@@ -222,7 +222,7 @@ RSpec.describe "CLI commands" do
         )
         Hecks::Migrations::DomainSnapshot.save(old_domain)
 
-        out = run_cli("domain", "diff", "--domain", tmpdir)
+        out = run_cli("diff", "--domain", tmpdir)
         expect(out).to include("Added aggregate: Part")
       end
     end
