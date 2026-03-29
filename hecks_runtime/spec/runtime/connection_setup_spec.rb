@@ -10,27 +10,26 @@ RSpec.describe Hecks::Runtime::ConnectionSetup do
     mod.instance_variable_set(:@connections, nil) if mod&.respond_to?(:connections)
   end
 
-  describe "sends_to wiring" do
+  describe "outbound event wiring" do
     it "forwards events to a callable handler" do
       received = []
       handler = ->(event) { received << event }
 
-      # Boot first so the module exists, then configure sends_to, then reload
       BootedDomains.boot(domain)
       mod = Object.const_get(mod_name)
       mod.instance_variable_set(:@connections, nil)
-      mod.sends_to(:audit, handler)
+      mod.extend(:audit, handler)
 
       Hecks.load(domain)
 
-      Pizza.create(name: "Test", description: "sends_to test")
+      Pizza.create(name: "Test", description: "extend :audit test")
       expect(received.size).to be >= 1
       event_names = received.map { |e| e.class.name.split("::").last }
       expect(event_names).to include("CreatedPizza")
     end
   end
 
-  describe "listens_to wiring" do
+  describe "cross-domain event wiring" do
     it "forwards events from a source domain's event bus" do
       BootedDomains.boot(domain)
       mod = Object.const_get(mod_name)
@@ -42,7 +41,7 @@ RSpec.describe Hecks::Runtime::ConnectionSetup do
       source_mod.extend(Hecks::DomainConnections)
       source_mod.instance_variable_set(:@event_bus, source_bus)
 
-      mod.listens_to(source_mod)
+      mod.extend(source_mod)
 
       app = Hecks.load(domain)
 

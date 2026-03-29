@@ -14,13 +14,13 @@ RSpec.describe HecksCqrs do
     end
 
     it "returns false with a single unnamed connection" do
-      mod.persist_to(:sqlite)
+      mod.extend(:sqlite)
       expect(HecksCqrs.active?(mod)).to be false
     end
 
     it "returns true with multiple named connections" do
-      mod.persist_to(:write, :sqlite)
-      mod.persist_to(:read, :sqlite, database: "read.db")
+      mod.extend(:sqlite, as: :write)
+      mod.extend(:sqlite, as: :read, database: "read.db")
       expect(HecksCqrs.active?(mod)).to be true
     end
   end
@@ -31,17 +31,17 @@ RSpec.describe HecksCqrs do
     end
 
     it "returns config for a named connection" do
-      mod.persist_to(:write, :sqlite)
+      mod.extend(:sqlite, as: :write)
       expect(HecksCqrs.connection_for(mod, :write)).to eq({ type: :sqlite })
     end
 
     it "returns config for :default unnamed connection" do
-      mod.persist_to(:sqlite)
+      mod.extend(:sqlite)
       expect(HecksCqrs.connection_for(mod, :default)).to eq({ type: :sqlite })
     end
 
     it "returns nil for unknown connection name" do
-      mod.persist_to(:write, :sqlite)
+      mod.extend(:sqlite, as: :write)
       expect(HecksCqrs.connection_for(mod, :read)).to be_nil
     end
   end
