@@ -11,5 +11,5 @@
 #   Hecks::VERSION  # => "0.1.0"
 #
 module Hecks
-  VERSION = "0.1.0"
+  VERSION = "2026.03.28.1"
 end

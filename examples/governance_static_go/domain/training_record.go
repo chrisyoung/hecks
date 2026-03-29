@@ -13,18 +13,18 @@ type TrainingRecord struct {
 	PolicyId string `json:"policy_id"`
 	CompletedAt time.Time `json:"completed_at"`
 	ExpiresAt time.Time `json:"expires_at"`
-	CertificationId string `json:"certification_id"`
+	Certification string `json:"certification"`
 	Status string `json:"status"`
 }
 
-func NewTrainingRecord(stakeholderId string, policyId string, completedAt time.Time, expiresAt time.Time, certificationId string, status string) *TrainingRecord {
+func NewTrainingRecord(stakeholderId string, policyId string, completedAt time.Time, expiresAt time.Time, certification string, status string) *TrainingRecord {
 	a := &TrainingRecord{
 		ID:        uuid.New().String(),
 		StakeholderId: stakeholderId,
 		PolicyId: policyId,
 		CompletedAt: completedAt,
 		ExpiresAt: expiresAt,
-		CertificationId: certificationId,
+		Certification: certification,
 		Status: status,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

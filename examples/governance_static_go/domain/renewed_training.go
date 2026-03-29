@@ -6,7 +6,7 @@ type RenewedTraining struct {
 	AggregateID string    `json:"aggregate_id"`
 	AggregateId string `json:"aggregate_id"`
 	TrainingRecordId string `json:"training_record_id"`
-	CertificationId string `json:"certification_id"`
+	Certification string `json:"certification"`
 	ExpiresAt time.Time `json:"expires_at"`
 	StakeholderId string `json:"stakeholder_id"`
 	PolicyId string `json:"policy_id"`
