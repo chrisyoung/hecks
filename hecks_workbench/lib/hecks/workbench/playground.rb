@@ -72,9 +72,9 @@ module Hecks
       end
 
       mod = Object.const_get(@mod_name)
-      agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg_def.name))
-      agg_snake = Hecks::Utils.underscore(agg_def.name)
-      method_name = Hecks::Utils.underscore(command_name).sub(/_#{agg_snake}$/, "").to_sym
+      agg_class = mod.const_get(domain_constant_name(agg_def.name))
+      agg_snake = domain_snake_name(agg_def.name)
+      method_name = domain_snake_name(command_name).sub(/_#{agg_snake}$/, "").to_sym
 
       result = agg_class.send(method_name, **attrs)
 

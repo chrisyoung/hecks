@@ -84,8 +84,8 @@ module Hecks
       # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the aggregate
       # @return [String] joined spec lines
       def attribute_specs(aggregate)
-        safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
-        snake = Hecks::Utils.underscore(safe_name)
+        safe_name = domain_constant_name(aggregate.name)
+        snake = domain_snake_name(safe_name)
         aggregate.attributes.map do |attr|
           "    it \"has #{attr.name}\" do\n      expect(#{snake}.#{attr.name}).not_to be_nil\n    end"
         end.join("\n\n")

@@ -51,9 +51,9 @@ module Hecks
     # @yield optional block passed through to Session#aggregate
     # @return [AggregateHandle] the handle for the aggregate
     def aggregate(name, &block)
-      is_new = !@workbench.aggregate_builders.key?(Hecks::Utils.sanitize_constant(name))
+      is_new = !@workbench.aggregate_builders.key?(domain_constant_name(name))
       handle = @workbench.aggregate(name, &block)
-      const_name = Hecks::Utils.sanitize_constant(name).to_sym
+      const_name = domain_constant_name(name).to_sym
       @hoisted_handle_constants ||= []
       unless self.class.const_defined?(const_name, false)
         self.class.const_set(const_name, handle)

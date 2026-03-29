@@ -96,7 +96,7 @@ module Hecks
       def boot_application
         @app = Runtime.new(@domain)
         @domain.aggregates.each do |agg|
-          agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+          agg_class = @mod.const_get(domain_constant_name(agg.name))
           Persistence::RepositoryMethods.bind(agg_class, @app[agg.name])
         end
       end
@@ -111,8 +111,8 @@ module Hecks
       # @param agg_name [String] the PascalCase aggregate name (e.g. "Pizza")
       # @return [Symbol] the derived method name (e.g. +:create+)
       def derive_method_name(cmd_name, agg_name)
-        full = Hecks::Utils.underscore(cmd_name)
-        snake_agg = Hecks::Utils.underscore(agg_name)
+        full = domain_snake_name(cmd_name)
+        snake_agg = domain_snake_name(agg_name)
         # Try full name first, then each word suffix (ai_model -> model)
         snake_agg.split("_").each_index do |i|
           suffix = snake_agg.split("_").drop(i).join("_")

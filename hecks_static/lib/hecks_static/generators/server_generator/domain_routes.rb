@@ -20,9 +20,9 @@ module HecksStatic
         lines.concat(reset_route)
         lines.concat(events_route)
         @domain.aggregates.each do |agg|
-          safe = Hecks::Utils.sanitize_constant(agg.name)
-          snake = Hecks::Utils.underscore(safe)
-          plural = snake.end_with?("s") ? snake : snake + "s"
+          safe = domain_constant_name(agg.name)
+          snake = domain_snake_name(safe)
+          plural = domain_aggregate_slug(agg.name)
           lines.concat(query_routes(agg, safe, plural))
           lines.concat(scope_routes(agg, safe, plural))
           lines.concat(specification_routes(agg, safe, plural))
@@ -62,7 +62,7 @@ module HecksStatic
       def query_routes(agg, safe, plural)
         lines = []
         agg.queries.each do |query|
-          query_snake = Hecks::Utils.underscore(query.name)
+          query_snake = domain_snake_name(query.name)
           lines << "        server.mount_proc \"/#{plural}/queries/#{query_snake}\" do |req, res|"
           lines << "          begin"
           if query.block.arity > 0
@@ -106,7 +106,7 @@ module HecksStatic
         mod = domain_module_name(@domain.name)
         lines = []
         @domain.views.each do |view|
-          view_snake = Hecks::Utils.underscore(view.name)
+          view_snake = domain_snake_name(view.name)
           lines << "        server.mount_proc \"/_views/#{view_snake}\" do |req, res|"
           lines << "          state = #{mod}::#{view.name}.current"
           lines << "          json_response(res, state)"
@@ -120,7 +120,7 @@ module HecksStatic
         mod = domain_module_name(@domain.name)
         lines = []
         @domain.workflows.each do |wf|
-          wf_snake = Hecks::Utils.underscore(wf.name)
+          wf_snake = domain_snake_name(wf.name)
           lines << "        server.mount_proc \"/_workflows/#{wf_snake}\" do |req, res|"
           lines << "          begin"
           lines << "            attrs = parse_body(req)"
@@ -139,7 +139,7 @@ module HecksStatic
         mod = domain_module_name(@domain.name)
         lines = []
         @domain.services.each do |svc|
-          svc_snake = Hecks::Utils.underscore(svc.name)
+          svc_snake = domain_snake_name(svc.name)
           lines << "        server.mount_proc \"/_services/#{svc_snake}\" do |req, res|"
           lines << "          begin"
           lines << "            attrs = parse_body(req)"
@@ -157,7 +157,7 @@ module HecksStatic
       def specification_routes(agg, safe, plural)
         lines = []
         agg.specifications.each do |spec|
-          spec_snake = Hecks::Utils.underscore(spec.name)
+          spec_snake = domain_snake_name(spec.name)
           mod = domain_module_name(@domain.name)
           lines << "        server.mount_proc \"/#{plural}/specifications/#{spec_snake}\" do |req, res|"
           lines << "          begin"

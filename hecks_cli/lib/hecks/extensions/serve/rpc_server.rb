@@ -131,7 +131,7 @@ module Hecks
       # @return [void]
       def register_methods
         @domain.aggregates.each do |agg|
-          klass = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+          klass = @mod.const_get(domain_constant_name(agg.name))
           register_commands(agg, klass)
           register_queries(agg, klass)
           register_crud(agg, klass)
@@ -167,7 +167,7 @@ module Hecks
       # @return [void]
       def register_queries(agg, klass)
         agg.queries.each do |query|
-          qn = Hecks::Utils.underscore(query.name)
+          qn = domain_snake_name(query.name)
           params = query.block.parameters
           @methods["#{agg.name}.#{qn}"] = ->(p) {
             args = params.map { |_, name| p[name.to_s] }

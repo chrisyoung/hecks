@@ -22,7 +22,7 @@ module Hecks
             res.status = 404; res.body = "Not found"; return
           end
 
-          safe = Hecks::Utils.sanitize_constant(agg.name)
+          safe = domain_constant_name(agg.name)
           klass = mod.const_get(safe)
           p = plural(agg)
           prefix = "/#{slug}"
@@ -50,7 +50,7 @@ module Hecks
           columns = user_attrs.map { |a| { label: humanize(a.name) } }
           create_cmds = agg.commands.select { |c| c.name.start_with?("Create") }
           buttons = create_cmds.map do |c|
-            cm = Hecks::Utils.underscore(c.name)
+            cm = domain_snake_name(c.name)
             { label: Hecks::UILabelContract.label(c.name), href: "#{prefix}/#{p}/#{cm}/new", allowed: true }
           end
           html = @renderer.render(:index,
@@ -77,7 +77,7 @@ module Hecks
         end
 
         def serve_form(req, res, agg, klass, safe, p, prefix, cmd_snake)
-          cmd = agg.commands.find { |c| Hecks::Utils.underscore(c.name) == cmd_snake }
+          cmd = agg.commands.find { |c| domain_snake_name(c.name) == cmd_snake }
           unless cmd
             res.status = 404; res.body = "Command not found"; return
           end
@@ -95,7 +95,7 @@ module Hecks
         end
 
         def serve_submit(req, res, agg, klass, safe, p, prefix, cmd_snake)
-          cmd = agg.commands.find { |c| Hecks::Utils.underscore(c.name) == cmd_snake }
+          cmd = agg.commands.find { |c| domain_snake_name(c.name) == cmd_snake }
           unless cmd
             res.status = 404; res.body = "Command not found"; return
           end
