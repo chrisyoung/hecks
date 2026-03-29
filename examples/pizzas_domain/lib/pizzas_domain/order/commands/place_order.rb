@@ -20,7 +20,11 @@ module PizzasDomain
         end
 
         def call
-          Order.new(customer_name: customer_name, items: [OrderItem.new(pizza_id: pizza_id, quantity: quantity)])
+          Order.new(
+            customer_name: customer_name,
+            items: [OrderItem.new(pizza_id: pizza_id, quantity: quantity)],
+            status: "pending"
+          )
         end
       end
     end
