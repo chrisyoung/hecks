@@ -27,16 +27,41 @@ module Hecks
       true
     end
 
-    # Top-level shortcuts -- delegate to subcommands so users can type
-    # `hecks init` instead of `hecks domain init`.
-    desc "init [NAME]", "Initialize a Hecks domain (shortcut for `domain init`)"
-    # Shortcut for `hecks domain init`. Delegates to Domain.init.
-    #
-    # @param name [String, nil] optional domain name; defaults to directory name
-    # @return [void]
+    # Top-level shortcuts for the most common commands.
+    desc "init [NAME]", "Initialize a Hecks domain"
     def init(name = nil)
-      args = name ? [name] : []
-      Domain.start(["init"] + args)
+      Domain.start(["init"] + (name ? [name] : []))
+    end
+
+    desc "build", "Build the domain gem (shortcut for domain build)"
+    option :target, type: :string, desc: "Build target: ruby, static, go, rails"
+    def build
+      Domain.start(["build"] + ARGV.drop(1))
+    end
+
+    desc "console [NAME]", "Start the interactive workbench"
+    def console(name = nil)
+      Domain.start(["console"] + (name ? [name] : []))
+    end
+
+    desc "serve", "Serve a domain over HTTP"
+    def serve
+      Domain.start(["serve"] + ARGV.drop(1))
+    end
+
+    desc "validate", "Validate the domain definition"
+    def validate
+      Domain.start(["validate"] + ARGV.drop(1))
+    end
+
+    desc "mcp", "Start MCP server for AI agents"
+    def mcp
+      Domain.start(["mcp"] + ARGV.drop(1))
+    end
+
+    desc "diff", "Show changes since last build"
+    def diff
+      Domain.start(["diff"] + ARGV.drop(1))
     end
 
     # Domain subcommand -- holds all domain lifecycle commands.
