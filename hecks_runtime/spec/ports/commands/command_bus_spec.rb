@@ -2,8 +2,8 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Hecks::Commands::CommandBus do
-  let(:domain) do
-    Hecks.domain "Pizzas" do
+  before(:all) do
+    @domain = Hecks.domain "Pizzas" do
       aggregate "Pizza" do
         attribute :name, String
 
@@ -12,9 +12,10 @@ RSpec.describe Hecks::Commands::CommandBus do
         end
       end
     end
+    Hecks.load(@domain)
   end
 
-  before { Hecks.load(domain) }
+  let(:domain) { @domain }
 
   let(:event_bus) { Hecks::EventBus.new }
   subject(:bus) { described_class.new(domain: domain, event_bus: event_bus) }
