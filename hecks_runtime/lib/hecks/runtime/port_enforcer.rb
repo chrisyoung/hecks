@@ -103,7 +103,7 @@ module Hecks
       # @return [Array<Symbol>] the command method names
       def command_method_names(agg)
         agg.commands.map do |cmd|
-          Names.derive_method_name(cmd.name, agg.name)
+          Names.command_method_name(cmd.name, agg.name)
         end
       end
   end

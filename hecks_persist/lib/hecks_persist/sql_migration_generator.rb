@@ -155,7 +155,7 @@ module Hecks
       # @param name [String] the element name (e.g., "Pizza")
       # @return [String] the table name (e.g., "pizzas")
       def table_name(name)
-        Names.table_name(name)
+        Names.aggregate_slug(name)
       end
     end
     end

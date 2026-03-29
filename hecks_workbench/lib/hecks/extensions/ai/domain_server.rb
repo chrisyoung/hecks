@@ -76,7 +76,7 @@ module Hecks
       #
       # @return [void]
       def build_and_load
-        mod_name = Names.domain_module(@domain.name)
+        mod_name = Names.domain_module_name(@domain.name)
         if Object.const_defined?(mod_name)
           @mod = Object.const_get(mod_name)
         else
