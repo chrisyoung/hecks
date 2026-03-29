@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:dump, "Extract docs from a domain (schema, swagger, rpc, domain, glossary)", group: "Domain Tools",
+Hecks::CLI.register_command(:dump, "Extract docs from a domain (schema, swagger, rpc, domain, glossary)",
   options: {
     domain:  { type: :string, desc: "Domain gem name or path" },
     version: { type: :string, desc: "Domain version" }

@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:init, "Initialize a Hecks domain in the current directory", group: "Project",
+Hecks::CLI.register_command(:init, "Initialize a Hecks domain in the current directory",
   options: {
     force: { type: :boolean, desc: "Overwrite without prompting" }
   },

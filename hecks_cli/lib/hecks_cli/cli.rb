@@ -23,9 +23,22 @@ module Hecks
     @pending_commands = []
     @command_groups = {}
 
-    def self.register_command(name, description, group: "Commands", options: {}, args: [], &block)
+    def self.register_command(name, description, group: nil, options: {}, args: [], &block)
+      group ||= infer_group(caller_locations(1, 1).first.path)
       @pending_commands << { name: name, description: description, group: group, options: options, args: args, block: block }
     end
+
+    # Infer group from the file path. Uses CLI_GROUP constant on the
+    # registering module if available, otherwise derives from gem name.
+    # hecks_workshop → "Workshop", hecks_cli/commands/build.rb → "Cli"
+    def self.infer_group(path)
+      if path =~ /hecks_(\w+)/
+        $1.split("_").map(&:capitalize).join(" ")
+      else
+        "Commands"
+      end
+    end
+
 
     def self.pending_commands = @pending_commands
     def self.command_groups = @command_groups
