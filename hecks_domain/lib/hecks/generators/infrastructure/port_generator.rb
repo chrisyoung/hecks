@@ -21,7 +21,7 @@ module Hecks
       def initialize(aggregate, domain_module:)
         @aggregate = aggregate
         @domain_module = domain_module
-        @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
+        @safe_name = Hecks::Templating::Names.domain_constant_name(@aggregate.name)
       end
 
       # Generates Ruby source for a repository port module.
@@ -37,7 +37,7 @@ module Hecks
       #
       # @return [String] the complete Ruby source code for the port module
       def generate
-        snake = Hecks::Utils.underscore(@safe_name)
+        snake = Hecks::Templating::Names.domain_snake_name(@safe_name)
         lines = []
         lines << "module #{@domain_module}"
         lines << "  module Ports"

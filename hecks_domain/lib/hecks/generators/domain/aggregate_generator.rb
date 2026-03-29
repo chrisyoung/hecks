@@ -38,7 +38,7 @@ module Hecks
         @aggregate = aggregate
         @domain_module = domain_module
         @mixin_prefix = mixin_prefix
-        @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
+        @safe_name = Hecks::Templating::Names.domain_constant_name(@aggregate.name)
         @user_attrs = @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
       end
 

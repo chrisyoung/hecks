@@ -10,9 +10,9 @@ module HecksStatic
       private
 
       def wire_commands(lines, agg)
-        safe = Hecks::Utils.sanitize_constant(agg.name)
+        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
         agg.commands.each do |cmd|
-          method_name = Hecks::Utils.underscore(cmd.name)
+          method_name = Hecks::Templating::Names.domain_snake_name(cmd.name)
           lines << "      #{safe}::Commands::#{cmd.name}.repository = #{safe}.repository"
           lines << "      #{safe}::Commands::#{cmd.name}.event_bus = @event_bus"
           lines << "      #{safe}::Commands::#{cmd.name}.command_bus = @command_bus"
@@ -22,16 +22,16 @@ module HecksStatic
       end
 
       def wire_queries(lines, agg)
-        safe = Hecks::Utils.sanitize_constant(agg.name)
+        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
         agg.queries.each do |q|
-          method_name = Hecks::Utils.underscore(q.name)
+          method_name = Hecks::Templating::Names.domain_snake_name(q.name)
           lines << "      #{safe}::Queries::#{q.name}.repository = #{safe}.repository"
           lines << "      #{safe}.define_singleton_method(:#{method_name}) { |*args| #{safe}::Queries::#{q.name}.call(*args) }"
         end
       end
 
       def wire_persistence(lines, agg)
-        safe = Hecks::Utils.sanitize_constant(agg.name)
+        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
         lines << "      #{safe}.define_singleton_method(:find) { |id| repository.find(id) }"
         lines << "      #{safe}.define_singleton_method(:all) { repository.all }"
         lines << "      #{safe}.define_singleton_method(:count) { repository.count }"
@@ -40,7 +40,7 @@ module HecksStatic
 
       def wire_policies(lines)
         @domain.aggregates.each do |agg|
-          safe = Hecks::Utils.sanitize_constant(agg.name)
+          safe = Hecks::Templating::Names.domain_constant_name(agg.name)
           agg.policies.each do |pol|
             next if pol.guard?
             lines << "      @event_bus.subscribe(\"#{pol.event_name}\") { |event| #{safe}::Policies::#{pol.name}.new.call(event) }"
@@ -49,7 +49,7 @@ module HecksStatic
         @domain.policies.each do |pol|
           trigger_agg = @domain.aggregates.find { |a| a.commands.any? { |c| c.name == pol.trigger_command } }
           next unless trigger_agg
-          safe = Hecks::Utils.sanitize_constant(trigger_agg.name)
+          safe = Hecks::Templating::Names.domain_constant_name(trigger_agg.name)
           if pol.attribute_map && !pol.attribute_map.empty?
             args = pol.attribute_map.map { |to, from| "#{to}: event.#{from}" }.join(", ")
             lines << "      @event_bus.subscribe(\"#{pol.event_name}\") { |event| #{safe}::Commands::#{pol.trigger_command}.call(#{args}) }"
@@ -62,9 +62,9 @@ module HecksStatic
       def build_validation_rules
         rules = {}
         @domain.aggregates.each do |agg|
-          safe = Hecks::Utils.sanitize_constant(agg.name)
+          safe = Hecks::Templating::Names.domain_constant_name(agg.name)
           agg.commands.each do |cmd|
-            cmd_snake = Hecks::Utils.underscore(cmd.name)
+            cmd_snake = Hecks::Templating::Names.domain_snake_name(cmd.name)
             cmd_rules = {}
             cmd.attributes.each do |attr|
               v = agg.validations.find { |val| val.field.to_s == attr.name.to_s }

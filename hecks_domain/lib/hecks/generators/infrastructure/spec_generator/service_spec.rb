@@ -17,7 +17,7 @@ module Hecks
           # @return [String] the complete RSpec file content
           def generate_service_spec(service)
             mod = mod_name
-            method_name = Hecks::Utils.underscore(service.name)
+            method_name = Hecks::Templating::Names.domain_snake_name(service.name)
             lines = []
             lines << "require \"spec_helper\""
             lines << ""

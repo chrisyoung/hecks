@@ -17,7 +17,7 @@ module Hecks
           # @param aggregate [Hecks::DomainModel::Structure::Aggregate]
           # @return [String] the complete RSpec file content
           def generate_specification_spec(specification, aggregate)
-            safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
+            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
             spec_fqn = full_class_name("#{safe_agg}::Specifications::#{specification.name}")
 
             lines = []

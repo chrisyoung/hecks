@@ -37,7 +37,7 @@ module Hecks
           # polluting other aggregates' namespaces via const_missing.
           @domain.aggregates.each do |agg|
             next unless agg.commands.any? { |c| c.name == command_name.to_s }
-            agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+            agg_class = mod.const_get(Hecks::Templating::Names.domain_constant_name(agg.name))
             return agg_class::Commands.const_get(command_name)
           end
 
@@ -60,7 +60,7 @@ module Hecks
             agg.commands.each_with_index do |cmd, i|
               if cmd.name == command_name.to_s
                 event = agg.events[i]
-                agg_class = mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+                agg_class = mod.const_get(Hecks::Templating::Names.domain_constant_name(agg.name))
                 return agg_class::Events.const_get(event.name)
               end
             end

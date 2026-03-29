@@ -54,7 +54,7 @@ module Hecks
             }
           end
           agg.queries.each do |query|
-            qn = Hecks::Utils.underscore(query.name)
+            qn = Hecks::Templating::Names.domain_snake_name(query.name)
             params = query.block.parameters.map { |_, n| { name: n.to_s, type: "string" } }
             methods << { name: "#{agg.name}.#{qn}", description: "#{agg.name} lookup", params: params }
           end

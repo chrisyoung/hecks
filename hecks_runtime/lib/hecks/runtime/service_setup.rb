@@ -37,7 +37,7 @@ module Hecks
     # @param command_bus [Hecks::CommandBus] the command bus for the service context
     # @return [void]
     def self.wire_service(svc, mod, command_bus)
-      method_name = Hecks::Utils.underscore(svc.name).to_sym
+      method_name = Hecks::Templating::Names.domain_snake_name(svc.name).to_sym
       call_body = svc.call_body
       attr_names = svc.attributes.map(&:name)
 

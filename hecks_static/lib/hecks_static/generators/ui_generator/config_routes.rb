@@ -12,7 +12,7 @@ module HecksStatic
         dc = Hecks::DisplayContract
 
         agg_rows = @domain.aggregates.map do |agg|
-          safe = Hecks::Utils.sanitize_constant(agg.name)
+          safe = Hecks::Templating::Names.domain_constant_name(agg.name)
           summary = dc.aggregate_summary(agg)
           "{ name: \"#{safe}\", href: \"/#{plural(agg)}\", count: #{safe}.count, commands: \"#{summary[:commands]}\", ports: \"#{summary[:ports]}\" }"
         end

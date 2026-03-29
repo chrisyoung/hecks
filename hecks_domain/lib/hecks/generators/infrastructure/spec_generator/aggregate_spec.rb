@@ -20,9 +20,9 @@ module Hecks
           #   to generate specs for
           # @return [String] the complete RSpec file content
           def generate_aggregate_spec(aggregate)
-            safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
+            safe_name = Hecks::Templating::Names.domain_constant_name(aggregate.name)
             fqn = full_class_name(safe_name)
-            snake = Hecks::Utils.underscore(safe_name)
+            snake = Hecks::Templating::Names.domain_snake_name(safe_name)
             lines = []
 
             lines << "require \"spec_helper\""

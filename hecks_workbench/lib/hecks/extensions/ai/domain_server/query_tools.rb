@@ -27,7 +27,7 @@ module Hecks
         # @return [void]
         def register_query_tools
           @domain.aggregates.each do |agg|
-            agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+            agg_class = @mod.const_get(Hecks::Templating::Names.domain_constant_name(agg.name))
             agg.queries.each do |query|
               register_query(agg, agg_class, query)
             end
@@ -47,7 +47,7 @@ module Hecks
         # @param query [Object] the query object with +name+, +block+ (a Proc with parameters)
         # @return [void]
         def register_query(agg, agg_class, query)
-          method_name = Hecks::Utils.underscore(query.name).to_sym
+          method_name = Hecks::Templating::Names.domain_snake_name(query.name).to_sym
           params = query.block.parameters
           klass = agg_class
           attr_list = agg.attributes.map { |a| "#{a.name}: #{a.ruby_type}" }.join(", ")
