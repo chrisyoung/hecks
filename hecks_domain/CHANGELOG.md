@@ -8,6 +8,7 @@
 
 - Unified `extend` API replaces `persist_to`, `listens_to`, `sends_to`, `extend_with`
 - CQRS named connections via `extend :sqlite, as: :write`
+- ReadmeGenerator falls back to `hecks_docs/` when `docs/` doesn't exist
 
 ### 2026-03-27
 
