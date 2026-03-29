@@ -4,25 +4,20 @@ module Hecks
     #
     # MCP tools for play mode -- an interactive playground where AI agents can
     # execute domain commands against an in-memory runtime and observe the results.
-    # Play mode boots the domain with memory adapters so commands produce real
-    # side effects (events, state changes) without needing a database.
     #
     # Registered tools:
     #   - +enter_play_mode+   -- switch the session to play mode
     #   - +exit_play_mode+    -- switch back to build mode
     #   - +execute_command+   -- run a named command with attributes
-    #   - +list_commands+     -- show all available commands in the domain
-    #   - +show_history+      -- display the event timeline from executed commands
-    #   - +reset_playground+  -- clear all events and state, start fresh
-    #
-    # All tools require an active session (enforced via +ctx.ensure_session!+).
+    #   - +list_commands+     -- show all available commands
+    #   - +show_history+      -- display the event timeline
+    #   - +reset_playground+  -- clear all events and state
     #
     module PlayTools
       # Registers all play mode tools on the given MCP server.
       #
-      # @param server [MCP::Server] the MCP server instance to register tools on
-      # @param ctx [Hecks::McpServer] the shared context providing session access,
-      #   +ensure_session!+, and +capture_output+ helpers
+      # @param server [MCP::Server] the MCP server instance
+      # @param ctx [Hecks::McpServer] shared context with session, capture_output
       # @return [void]
       def self.register(server, ctx)
         server.define_tool(
@@ -31,8 +26,7 @@ module Hecks
           input_schema: { type: "object", properties: {} }
         ) do |_|
           ctx.ensure_session!
-          ctx.session.play!
-          "Play mode active. Use execute_command to try actions."
+          ctx.capture_output { ctx.session.play! }
         end
 
         server.define_tool(
@@ -41,8 +35,7 @@ module Hecks
           input_schema: { type: "object", properties: {} }
         ) do |_|
           ctx.ensure_session!
-          ctx.session.build!
-          "Back to build mode."
+          ctx.capture_output { ctx.session.sketch! }
         end
 
         server.define_tool(
@@ -87,7 +80,7 @@ module Hecks
         ) do |_|
           ctx.ensure_session!
           ctx.session.reset!
-          "Playground reset."
+          "playground reset"
         end
       end
     end

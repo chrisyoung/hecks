@@ -97,6 +97,7 @@ module Hecks
     #
     # @yield the block whose stdout output should be captured
     # @return [String] the captured stdout output, or "Error: <message>" on failure
+    def capture_output
       output = StringIO.new
       $stdout = output
       yield
