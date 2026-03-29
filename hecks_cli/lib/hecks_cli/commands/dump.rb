@@ -8,52 +8,25 @@ Hecks::CLI.register_command(:dump, "Extract docs from a domain (schema, swagger,
   domain = resolve_domain_option
   next unless domain
 
+  formats = Hecks.dump_formats
+
   ask_dump_type = lambda do
     say "What would you like to dump?"
-    say "  1. schema    — JSON Schema (all types and commands)"
-    say "  2. swagger   — OpenAPI 3.0 spec"
-    say "  3. rpc       — JSON-RPC discovery"
-    say "  4. domain    — domain gem to domain/ folder"
-    say "  5. glossary  — plain-English domain glossary"
-    { "1" => "schema", "2" => "swagger", "3" => "rpc", "4" => "domain", "5" => "glossary" }[ask("Choice [1-5]:")]
-  end
-
-  dump_file = lambda do |d, t|
-    require "hecks_serve"
-    case t
-    when "schema"
-      File.write("schema.json", JSON.pretty_generate(Hecks::HTTP::JsonSchemaGenerator.new(d).generate))
-      say "Dumped schema.json", :green
-    when "swagger"
-      File.write("openapi.json", JSON.pretty_generate(Hecks::HTTP::OpenapiGenerator.new(d).generate))
-      say "Dumped openapi.json", :green
-    when "rpc"
-      File.write("rpc_methods.json", JSON.pretty_generate(Hecks::HTTP::RpcDiscovery.new(d).generate))
-      say "Dumped rpc_methods.json", :green
+    formats.each_with_index do |(name, meta), i|
+      say "  #{i + 1}. #{name.to_s.ljust(10)} — #{meta[:desc]}"
     end
-  end
-
-  dump_domain = lambda do |d|
-    FileUtils.mkdir_p("domain")
-    gem_path = Hecks.build(d, output_dir: "domain")
-    say "Dumped domain gem to domain/#{File.basename(gem_path)}/", :green
-  end
-
-  dump_glossary = lambda do |d|
-    glossary = Hecks::DomainGlossary.new(d)
-    File.write("glossary.md", glossary.generate.join("\n") + "\n")
-    say "Dumped glossary.md", :green
+    choice_map = formats.keys.each_with_index.to_h { |name, i| [(i + 1).to_s, name.to_s] }
+    choice_map[ask("Choice [1-#{formats.size}]:")]
   end
 
   type ||= ask_dump_type.call
   next unless type
 
-  case type
-  when "schema"   then dump_file.call(domain, "schema")
-  when "swagger"  then dump_file.call(domain, "swagger")
-  when "rpc"      then dump_file.call(domain, "rpc")
-  when "domain"   then dump_domain.call(domain)
-  when "glossary" then dump_glossary.call(domain)
-  else say "Unknown type: #{type}. Use: schema, swagger, rpc, domain, glossary", :red
+  entry = formats[type.to_sym]
+  if entry
+    say_proc = method(:say)
+    entry[:handler].call(domain, say: say_proc)
+  else
+    say "Unknown type: #{type}. Use: #{formats.keys.join(', ')}", :red
   end
 end
