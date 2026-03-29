@@ -30,7 +30,7 @@ module Hecks
             runtimes.each do |rt|
               rt.domain.aggregates.each do |agg|
                 next unless agg.commands.any? { |c| c.name == cmd_name }
-                mod = Object.const_get(rt.domain.module_name + "Domain")
+                mod = Object.const_get(rt.Hecks::Templating::Names.domain_module(domain.name))
                 klass = mod.const_get(agg.name).const_get(:Commands).const_get(cmd_name)
                 return klass.call(**attrs)
               end

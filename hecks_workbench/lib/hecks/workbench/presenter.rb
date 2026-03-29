@@ -31,7 +31,7 @@ module Hecks
         lines << ""
 
         domain.aggregates.each do |agg|
-          handle = @handles[agg.name] || AggregateHandle.new(agg.name, @aggregate_builders[agg.name], domain_module: @name.gsub(/\s+/, "") + "Domain")
+          handle = @handles[agg.name] || AggregateHandle.new(agg.name, @aggregate_builders[agg.name], domain_module: @nameHecks::Templating::NamesHecks::Templating::Names.domain_module())
           lines << "  #{agg.name}"
 
           unless agg.attributes.empty?

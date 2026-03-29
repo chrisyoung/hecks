@@ -42,7 +42,7 @@ module Hecks
       def initialize(domain:, event_bus:)
         @domain = domain
         @event_bus = event_bus
-        @mod = Object.const_get(domain.module_name + "Domain")
+        @mod = Object.const_get(Hecks::Templating::Names.domain_module(domain.name))
         @middleware = []
       end
 

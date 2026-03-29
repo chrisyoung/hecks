@@ -38,6 +38,9 @@ module Hecks
   autoload :EventContract,    "hecks_templating/event_contract"
   autoload :MigrationContract, "hecks_templating/migration_contract"
   autoload :ViewContract,  "hecks_templating/view_contract"
+  module Templating
+    autoload :Names, "hecks_templating/naming_contract"
+  end
   autoload :Utils,          "hecks/utils"
   autoload :VERSION,        "hecks/version"
   autoload :Configuration,  "hecks/runtime/configuration"
