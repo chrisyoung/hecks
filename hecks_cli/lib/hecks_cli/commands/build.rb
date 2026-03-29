@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:build, "Generate the domain gem",
+Hecks::CLI.register_command(:build, "Generate the domain gem", group: "Core",
   options: {
     domain:  { type: :string,  desc: "Domain gem name or path" },
     version: { type: :string,  desc: "Domain version" },

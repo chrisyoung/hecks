@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:new_project, "Create a new Hecks project",
+Hecks::CLI.register_command(:new_project, "Create a new Hecks project", group: "Project",
   args: ["NAME"]
 ) do |name|
   pascal = name.split(/[_\-\s]/).map(&:capitalize).join

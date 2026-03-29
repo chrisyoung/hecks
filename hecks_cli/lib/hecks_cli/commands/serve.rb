@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:serve, "Serve a domain as HTTP (default) or JSON-RPC (--rpc)",
+Hecks::CLI.register_command(:serve, "Serve a domain as HTTP (default) or JSON-RPC (--rpc)", group: "Core",
   options: {
     domain:    { type: :string,  desc: "Domain gem name or path" },
     version:   { type: :string,  desc: "Domain version" },

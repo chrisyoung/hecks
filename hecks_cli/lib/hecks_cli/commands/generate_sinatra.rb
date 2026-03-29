@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:generate_sinatra, "Scaffold a Sinatra app from a domain",
+Hecks::CLI.register_command(:generate_sinatra, "Scaffold a Sinatra app from a domain", group: "Generate",
   options: {
     domain:  { type: :string,  desc: "Domain gem name or path" },
     version: { type: :string,  desc: "Domain version" },
