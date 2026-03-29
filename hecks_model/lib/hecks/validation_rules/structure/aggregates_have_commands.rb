@@ -26,6 +26,7 @@ module Hecks
         result
       end
     end
+    Hecks.register_validation_rule(AggregatesHaveCommands)
     end
   end
 end

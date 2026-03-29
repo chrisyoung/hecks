@@ -75,6 +75,7 @@ module Hecks
         errs
       end
     end
+    Hecks.register_validation_rule(ReservedNames)
     end
   end
 end

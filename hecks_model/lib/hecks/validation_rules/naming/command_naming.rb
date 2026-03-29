@@ -79,6 +79,7 @@ module Hecks
         verbs
       end
     end
+    Hecks.register_validation_rule(CommandNaming)
     end
   end
 end
