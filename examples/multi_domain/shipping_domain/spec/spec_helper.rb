@@ -1,3 +1,4 @@
+require "hecks"
 require "shipping_domain"
 
 RSpec.configure do |config|

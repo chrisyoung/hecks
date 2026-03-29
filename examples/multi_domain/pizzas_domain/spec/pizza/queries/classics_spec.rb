@@ -1,0 +1,10 @@
+require "spec_helper"
+
+RSpec.describe "Pizza.classics" do
+  before { @app = Hecks.load(domain, force: true) }
+
+  it "returns an Array" do
+    results = Pizza.classics
+    expect(results).to be_an(Array)
+  end
+end

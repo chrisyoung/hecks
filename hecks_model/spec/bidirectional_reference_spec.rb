@@ -75,7 +75,7 @@ RSpec.describe "Bidirectional reference detection" do
     before { allow($stdout).to receive(:puts) }
 
     it "warns immediately when adding a reference that creates a cycle" do
-      session = Hecks::Workbench.new("Test")
+      session = Hecks::Workshop.new("Test")
 
       pizza = session.aggregate("Pizza")
       pizza.attr :name, String
@@ -94,7 +94,7 @@ RSpec.describe "Bidirectional reference detection" do
     end
 
     it "does not warn for one-directional references" do
-      session = Hecks::Workbench.new("Test")
+      session = Hecks::Workshop.new("Test")
 
       session.aggregate("Pizza").attr :name, String
 

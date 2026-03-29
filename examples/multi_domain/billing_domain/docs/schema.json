@@ -54,11 +54,17 @@
           "type": "string",
           "format": "date-time"
         },
+        "aggregate_id": {
+          "type": "string"
+        },
         "pizza_id": {
           "type": "string"
         },
         "quantity": {
           "type": "integer"
+        },
+        "status": {
+          "type": "string"
         }
       }
     },

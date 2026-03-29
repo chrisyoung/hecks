@@ -1,17 +1,29 @@
 require "spec_helper"
 
 RSpec.describe PizzasDomain::Order::Events::PlacedOrder do
-  subject(:event) do
-    described_class.new(pizza_id: "ref-id-123", quantity: 1)
+  subject(:event) { described_class.new(
+          aggregate_id: "example",
+          pizza_id: "ref-id-123",
+          quantity: 1
+        ) }
+
+  it "is frozen" do
+    expect(event).to be_frozen
   end
 
-  describe "#initialize" do
-    it "creates a frozen event" do
-      expect(event).to be_frozen
-    end
+  it "records when it occurred" do
+    expect(event.occurred_at).to be_a(Time)
+  end
 
-    it "records occurred_at" do
-      expect(event.occurred_at).to be_a(Time)
-    end
+  it "carries aggregate_id" do
+    expect(event.aggregate_id).to eq("example")
+  end
+
+  it "carries pizza_id" do
+    expect(event.pizza_id).to eq("ref-id-123")
+  end
+
+  it "carries quantity" do
+    expect(event.quantity).to eq(1)
   end
 end

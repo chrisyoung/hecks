@@ -6,10 +6,10 @@ RSpec.describe "Demo Script Verification" do
 
   describe "Act 1: Sketch & Play" do
     describe "sketch mode" do
-      let(:workbench) { Hecks::Workbench.new("BlogSketch") }
+      let(:workshop) { Hecks::Workshop.new("BlogSketch") }
 
       it "builds Post with attributes, lifecycle, transitions, and commands" do
-        post = workbench.aggregate("Post")
+        post = workshop.aggregate("Post")
         post.attr :title, String
         post.attr :status, String
         post.lifecycle :status, default: "draft"
@@ -17,7 +17,7 @@ RSpec.describe "Demo Script Verification" do
         post.transition "ArchivePost" => "archived"
         post.command("CreatePost") { attribute :title, String }
 
-        domain = workbench.to_domain
+        domain = workshop.to_domain
         agg = domain.aggregates.find { |a| a.name == "Post" }
         expect(agg.attributes.map(&:name)).to include(:title, :status)
         expect(agg.commands.map(&:name)).to include("CreatePost")
@@ -26,8 +26,8 @@ RSpec.describe "Demo Script Verification" do
       end
 
       it "builds Comment with reference and commands" do
-        workbench.aggregate("Post").attr :title, String
-        comment = workbench.aggregate("Comment")
+        workshop.aggregate("Post").attr :title, String
+        comment = workshop.aggregate("Comment")
         comment.attr :post_id, comment.reference_to("Post")
         comment.attr :author, String
         comment.attr :body, String
@@ -37,7 +37,7 @@ RSpec.describe "Demo Script Verification" do
           attribute :body, String
         end
 
-        domain = workbench.to_domain
+        domain = workshop.to_domain
         agg = domain.aggregates.find { |a| a.name == "Comment" }
         expect(agg.attributes.find { |a| a.name == :post_id }).to be_reference
         expect(agg.commands.map(&:name)).to include("CreateComment")
@@ -45,12 +45,12 @@ RSpec.describe "Demo Script Verification" do
 
       it "exports domain to file" do
         Dir.mktmpdir do |dir|
-          post = workbench.aggregate("Post")
+          post = workshop.aggregate("Post")
           post.attr :title, String
           post.command("CreatePost") { attribute :title, String }
 
           path = File.join(dir, "hecks_domain.rb")
-          workbench.save(path)
+          workshop.save(path)
           expect(File.exist?(path)).to be true
           content = File.read(path)
           expect(content).to include('Hecks.domain "BlogSketch"')
@@ -61,7 +61,7 @@ RSpec.describe "Demo Script Verification" do
 
     describe "play mode" do
       it "enters play mode and executes commands" do
-        wb = Hecks::Workbench.new("PlayBasic")
+        wb = Hecks::Workshop.new("PlayBasic")
         post = wb.aggregate("Post")
         post.attr :title, String
         post.command("CreatePost") { attribute :title, String }
@@ -73,7 +73,7 @@ RSpec.describe "Demo Script Verification" do
       end
 
       it "lifecycle sets default status on create" do
-        wb = Hecks::Workbench.new("PlayDefault")
+        wb = Hecks::Workshop.new("PlayDefault")
         post = wb.aggregate("Post")
         post.attr :title, String
         post.attr :status, String
@@ -88,7 +88,7 @@ RSpec.describe "Demo Script Verification" do
       end
 
       it "publishes a post via lifecycle transition" do
-        wb = Hecks::Workbench.new("PlayTransition")
+        wb = Hecks::Workshop.new("PlayTransition")
         post = wb.aggregate("Post")
         post.attr :title, String
         post.attr :status, String
@@ -104,7 +104,7 @@ RSpec.describe "Demo Script Verification" do
       end
 
       it "captures events" do
-        wb = Hecks::Workbench.new("PlayEvents")
+        wb = Hecks::Workshop.new("PlayEvents")
         post = wb.aggregate("Post")
         post.attr :title, String
         post.command("CreatePost") { attribute :title, String }
@@ -156,7 +156,7 @@ RSpec.describe "Demo Script Verification" do
 
   describe "Act 4: Extend" do
     it "registers extensions without error" do
-      wb = Hecks::Workbench.new("ExtendDemo")
+      wb = Hecks::Workshop.new("ExtendDemo")
       post = wb.aggregate("Post")
       post.attr :title, String
       post.command("CreatePost") { attribute :title, String }
