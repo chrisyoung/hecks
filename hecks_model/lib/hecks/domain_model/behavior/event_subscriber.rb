@@ -42,7 +42,7 @@ module Hecks
       # @return [EventSubscriber]
       def initialize(name:, event_name:, block:, async: false)
         @name = name
-        @event_name = event_name
+        @event_name = Names.event_name(event_name)
         @block = block
         @async = async
       end

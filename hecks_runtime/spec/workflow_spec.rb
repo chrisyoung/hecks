@@ -48,7 +48,7 @@ RSpec.describe "Workflow Engine (HEC-163)" do
     expect(wf.name).to eq("LoanApproval")
     expect(wf.steps.size).to eq(2)
     expect(wf.steps.first[:command]).to eq("ScoreLoan")
-    expect(wf.steps.last[:branch]).to be_a(Hash)
+    expect(wf.steps.last).to be_a(Hecks::DomainModel::Behavior::BranchStep)
   end
 
   it "exposes workflow as a callable method on the domain module" do

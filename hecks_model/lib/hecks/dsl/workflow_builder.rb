@@ -70,7 +70,7 @@ module Hecks
           step_builder.instance_eval(&block)
           @steps << step_builder.build
         else
-          @steps << { command: command_name.to_s, mapping: mapping }
+          @steps << DomainModel::Behavior::CommandStep.new(command: command_name.to_s, mapping: mapping)
         end
       end
 
@@ -91,7 +91,8 @@ module Hecks
       def branch(&block)
         branch_builder = BranchBuilder.new
         branch_builder.instance_eval(&block)
-        @steps << { branch: branch_builder.build }
+        branch_data = branch_builder.build
+        @steps << DomainModel::Behavior::BranchStep.new(**branch_data)
       end
 
       # Build and return the DomainModel::Behavior::Workflow IR object.
@@ -144,8 +145,10 @@ module Hecks
       # @return [Hash] a hash with :name, :find_aggregate, :find_spec,
       #   :find_query, and :trigger keys
       def build
-        { name: @name, find_aggregate: @find_aggregate, find_spec: @find_spec,
-          find_query: @find_query, trigger: @trigger_command }
+        DomainModel::Behavior::ScheduledStep.new(
+          name: @name, find_aggregate: @find_aggregate, find_spec: @find_spec,
+          find_query: @find_query, trigger: @trigger_command
+        )
       end
     end
 
@@ -213,7 +216,7 @@ module Hecks
       # @param mapping [Hash{Symbol => Symbol}] maps source fields to command attributes
       # @return [void]
       def step(command_name, **mapping)
-        @steps << { command: command_name.to_s, mapping: mapping }
+        @steps << DomainModel::Behavior::CommandStep.new(command: command_name.to_s, mapping: mapping)
       end
     end
   end
