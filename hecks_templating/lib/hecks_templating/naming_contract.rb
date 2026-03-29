@@ -64,6 +64,11 @@ module Hecks
       end
       def self.command_name(verb, agg) = infer_command_name(verb, agg)
 
+      # "post_id" → "post", "governance_policy_id" → "governance_policy"
+      def referenced_name(foreign_key)
+        foreign_key.to_s.sub(/_id$/, "")
+      end
+
       # "CreatePizza" on "Pizza" → :create
       def derive_method_name(cmd_name, agg_name)
         Hecks::Utils.underscore(cmd_name)
