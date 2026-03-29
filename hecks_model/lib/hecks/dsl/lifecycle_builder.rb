@@ -20,6 +20,8 @@ module Hecks
     #
     # Used inside +AggregateBuilder#lifecycle+ blocks.
     class LifecycleBuilder
+      Structure = DomainModel::Structure
+
       # Initialize a lifecycle builder for the given state field with a default value.
       #
       # @param field [Symbol] the attribute that holds the state value (e.g. :status)
@@ -53,7 +55,7 @@ module Hecks
       def transition(mapping)
         from = mapping.delete(:from)
         mapping.each do |command_name, target_state|
-          @transitions[command_name.to_s] = DomainModel::Structure::StateTransition.new(
+          @transitions[command_name.to_s] = Structure::StateTransition.new(
             target: target_state.to_s, from: from
           )
         end
@@ -63,7 +65,7 @@ module Hecks
       #
       # @return [DomainModel::Structure::Lifecycle] the fully built lifecycle IR object
       def build
-        DomainModel::Structure::Lifecycle.new(
+        Structure::Lifecycle.new(
           field: @field, default: @default, transitions: @transitions
         )
       end

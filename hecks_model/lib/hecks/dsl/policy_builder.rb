@@ -30,6 +30,8 @@ module Hecks
     # The +#build+ method validates that both +on+ and +trigger+ have been
     # called, raising descriptive errors if either is missing.
     class PolicyBuilder
+      Behavior = DomainModel::Behavior
+
       # Initialize a new policy builder with the given policy name.
       #
       # @param name [String] the policy name (e.g. "FraudAlert", "DisburseFunds")
@@ -125,7 +127,7 @@ module Hecks
       def build
         raise "Policy '#{@name}': missing 'on' (event name)" unless @event_name
         raise "Policy '#{@name}': missing 'trigger' (command name)" unless @trigger_command
-        DomainModel::Behavior::Policy.new(
+        Behavior::Policy.new(
           name: @name,
           event_name: @event_name,
           trigger_command: @trigger_command,

@@ -20,6 +20,8 @@ module Hecks
     #
     # Used inside +AggregateBuilder#port+ blocks.
     class PortBuilder
+      Structure = DomainModel::Structure
+
       # Initialize a new port builder with the given port/role name.
       #
       # @param name [Symbol] the port or role name (e.g. :guest, :admin, :api)
@@ -47,7 +49,7 @@ module Hecks
       # @return [DomainModel::Structure::PortDefinition] the port definition with
       #   the accumulated allowed methods
       def build
-        DomainModel::Structure::PortDefinition.new(name: @name, allowed_methods: @allowed)
+        Structure::PortDefinition.new(name: @name, allowed_methods: @allowed)
       end
     end
   end

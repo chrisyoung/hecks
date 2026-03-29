@@ -27,6 +27,8 @@ module Hecks
     # Includes AttributeCollector for the +attribute+, +list_of+, and
     # +reference_to+ DSL methods.
     class EntityBuilder
+      Structure = DomainModel::Structure
+
       include AttributeCollector
 
       # Initialize a new entity builder with the given entity name.
@@ -47,14 +49,14 @@ module Hecks
       # @yield block that returns true when the invariant holds, false when violated
       # @return [void]
       def invariant(message, &block)
-        @invariants << DomainModel::Structure::Invariant.new(message: message, block: block)
+        @invariants << Structure::Invariant.new(message: message, block: block)
       end
 
       # Build and return the DomainModel::Structure::Entity IR object.
       #
       # @return [DomainModel::Structure::Entity] the fully built entity IR object
       def build
-        DomainModel::Structure::Entity.new(
+        Structure::Entity.new(
           name: @name,
           attributes: @attributes,
           invariants: @invariants

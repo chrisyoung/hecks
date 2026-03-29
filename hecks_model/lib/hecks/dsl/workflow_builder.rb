@@ -24,6 +24,8 @@ module Hecks
     #
     # Used inside +DomainBuilder#workflow+ blocks.
     class WorkflowBuilder
+      Behavior = DomainModel::Behavior
+
       # Initialize a new workflow builder with the given workflow name.
       #
       # @param name [String] the workflow name (e.g. "LoanApproval")
@@ -70,7 +72,7 @@ module Hecks
           step_builder.instance_eval(&block)
           @steps << step_builder.build
         else
-          @steps << DomainModel::Behavior::CommandStep.new(command: command_name.to_s, mapping: mapping)
+          @steps << Behavior::CommandStep.new(command: command_name.to_s, mapping: mapping)
         end
       end
 
@@ -92,14 +94,14 @@ module Hecks
         branch_builder = BranchBuilder.new
         branch_builder.instance_eval(&block)
         branch_data = branch_builder.build
-        @steps << DomainModel::Behavior::BranchStep.new(**branch_data)
+        @steps << Behavior::BranchStep.new(**branch_data)
       end
 
       # Build and return the DomainModel::Behavior::Workflow IR object.
       #
       # @return [DomainModel::Behavior::Workflow] the fully built workflow IR object
       def build
-        DomainModel::Behavior::Workflow.new(name: @name, steps: @steps, schedule: @schedule)
+        Behavior::Workflow.new(name: @name, steps: @steps, schedule: @schedule)
       end
     end
 
@@ -109,6 +111,8 @@ module Hecks
     # certain criteria (via specification or query) and then triggers a command
     # on each matched aggregate. Used inside +WorkflowBuilder#step+ blocks.
     class ScheduledStepBuilder
+      Behavior = DomainModel::Behavior
+
       # Initialize with an optional step name.
       #
       # @param name [String, nil] an optional descriptive name for the step
@@ -145,7 +149,7 @@ module Hecks
       # @return [Hash] a hash with :name, :find_aggregate, :find_spec,
       #   :find_query, and :trigger keys
       def build
-        DomainModel::Behavior::ScheduledStep.new(
+        Behavior::ScheduledStep.new(
           name: @name, find_aggregate: @find_aggregate, find_spec: @find_spec,
           find_query: @find_query, trigger: @trigger_command
         )
@@ -202,6 +206,8 @@ module Hecks
     # and +BranchBuilder#otherwise+ blocks. It provides a single +step+ method
     # to accumulate command dispatch instructions.
     class StepCollector
+      Behavior = DomainModel::Behavior
+
       # @return [Array<Hash>] collected step definitions, each with :command and :mapping keys
       attr_reader :steps
 
@@ -216,7 +222,7 @@ module Hecks
       # @param mapping [Hash{Symbol => Symbol}] maps source fields to command attributes
       # @return [void]
       def step(command_name, **mapping)
-        @steps << DomainModel::Behavior::CommandStep.new(command: command_name.to_s, mapping: mapping)
+        @steps << Behavior::CommandStep.new(command: command_name.to_s, mapping: mapping)
       end
     end
   end

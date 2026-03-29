@@ -8,6 +8,10 @@ module HecksStatic
   class GemGenerator < Hecks::Generator
     module DomainWriter
       include HecksTemplating::NamingHelpers
+
+      DomainGen = Hecks::Generators::Domain
+      InfraGen  = Hecks::Generators::Infrastructure
+
       private
 
       def generate_aggregates(root, gem_name, mod)
@@ -15,9 +19,9 @@ module HecksStatic
           agg_dir = File.join(root, "lib", gem_name, domain_snake_name(agg.name))
           FileUtils.mkdir_p(agg_dir)
 
-          gen = Hecks::Generators::Domain::AggregateGenerator.new(agg, domain_module: mod, mixin_prefix: mod)
+          gen = DomainGen::AggregateGenerator.new(agg, domain_module: mod, mixin_prefix: mod)
           agg_source = gen.generate
-          autoloads = Hecks::Generators::Infrastructure::AutoloadGenerator.new(@domain)
+          autoloads = InfraGen::AutoloadGenerator.new(@domain)
             .aggregate_autoloads(agg, gem_name)
           agg_source = inject_autoloads(agg_source, agg.name, autoloads)
           File.write(File.join(agg_dir, "#{domain_snake_name(agg.name)}.rb"), agg_source)
@@ -38,7 +42,7 @@ module HecksStatic
           q_dir = File.join(root, "lib", gem_name, domain_snake_name(agg.name), "queries")
           FileUtils.mkdir_p(q_dir)
           agg.queries.each do |query|
-            gen = Hecks::Generators::Domain::QueryGenerator.new(query,
+            gen = DomainGen::QueryGenerator.new(query,
               domain_module: mod, aggregate_name: agg.name, mixin_prefix: mod)
             File.write(File.join(q_dir, "#{domain_snake_name(query.name)}.rb"), gen.generate)
           end
@@ -49,7 +53,7 @@ module HecksStatic
         port_dir = File.join(root, "lib", gem_name, "ports")
         FileUtils.mkdir_p(port_dir)
         @domain.aggregates.each do |agg|
-          gen = Hecks::Generators::Infrastructure::PortGenerator.new(agg, domain_module: mod)
+          gen = InfraGen::PortGenerator.new(agg, domain_module: mod)
           File.write(File.join(port_dir, "#{domain_snake_name(agg.name)}_repository.rb"), gen.generate)
         end
       end
@@ -58,7 +62,7 @@ module HecksStatic
         adapter_dir = File.join(root, "lib", gem_name, "adapters")
         FileUtils.mkdir_p(adapter_dir)
         @domain.aggregates.each do |agg|
-          gen = Hecks::Generators::Infrastructure::MemoryAdapterGenerator.new(agg,
+          gen = InfraGen::MemoryAdapterGenerator.new(agg,
             domain_module: mod, mixin_prefix: mod)
           File.write(File.join(adapter_dir, "#{domain_snake_name(agg.name)}_memory_repository.rb"), gen.generate)
         end
@@ -72,7 +76,7 @@ module HecksStatic
         svc_dir = File.join(root, "lib", gem_name, "services")
         FileUtils.mkdir_p(svc_dir)
         @domain.services.each do |svc|
-          gen = Hecks::Generators::Domain::ServiceGenerator.new(svc, domain_module: mod)
+          gen = DomainGen::ServiceGenerator.new(svc, domain_module: mod)
           File.write(File.join(svc_dir, "#{domain_snake_name(svc.name)}.rb"), gen.generate)
         end
       end
@@ -88,14 +92,14 @@ module HecksStatic
 
       def write_value_objects(agg, dir, mod)
         agg.value_objects.each do |vo|
-          gen = Hecks::Generators::Domain::ValueObjectGenerator.new(vo, domain_module: mod, aggregate_name: agg.name)
+          gen = DomainGen::ValueObjectGenerator.new(vo, domain_module: mod, aggregate_name: agg.name)
           File.write(File.join(dir, "#{domain_snake_name(vo.name)}.rb"), gen.generate)
         end
       end
 
       def write_entities(agg, dir, mod)
         agg.entities.each do |ent|
-          gen = Hecks::Generators::Domain::EntityGenerator.new(ent, domain_module: mod, aggregate_name: agg.name)
+          gen = DomainGen::EntityGenerator.new(ent, domain_module: mod, aggregate_name: agg.name)
           File.write(File.join(dir, "#{domain_snake_name(ent.name)}.rb"), gen.generate)
         end
       end
@@ -104,7 +108,7 @@ module HecksStatic
         cmd_dir = File.join(dir, "commands")
         FileUtils.mkdir_p(cmd_dir)
         agg.commands.each_with_index do |cmd, i|
-          gen = Hecks::Generators::Domain::CommandGenerator.new(cmd,
+          gen = DomainGen::CommandGenerator.new(cmd,
             domain_module: mod, aggregate_name: agg.name,
             aggregate: agg, event: agg.events[i], mixin_prefix: mod)
           File.write(File.join(cmd_dir, "#{domain_snake_name(cmd.name)}.rb"), gen.generate)
@@ -115,7 +119,7 @@ module HecksStatic
         evt_dir = File.join(dir, "events")
         FileUtils.mkdir_p(evt_dir)
         agg.events.each do |evt|
-          gen = Hecks::Generators::Domain::EventGenerator.new(evt, domain_module: mod, aggregate_name: agg.name)
+          gen = DomainGen::EventGenerator.new(evt, domain_module: mod, aggregate_name: agg.name)
           File.write(File.join(evt_dir, "#{domain_snake_name(evt.name)}.rb"), gen.generate)
         end
       end
@@ -125,7 +129,7 @@ module HecksStatic
         pol_dir = File.join(dir, "policies")
         FileUtils.mkdir_p(pol_dir)
         agg.policies.each do |pol|
-          gen = Hecks::Generators::Domain::PolicyGenerator.new(pol, domain_module: mod, aggregate_name: agg.name)
+          gen = DomainGen::PolicyGenerator.new(pol, domain_module: mod, aggregate_name: agg.name)
           File.write(File.join(pol_dir, "#{domain_snake_name(pol.name)}.rb"), gen.generate)
         end
       end
@@ -135,7 +139,7 @@ module HecksStatic
         spec_dir = File.join(dir, "specifications")
         FileUtils.mkdir_p(spec_dir)
         agg.specifications.each do |spec|
-          gen = Hecks::Generators::Domain::SpecificationGenerator.new(spec,
+          gen = DomainGen::SpecificationGenerator.new(spec,
             domain_module: mod, aggregate_name: agg.name, mixin_prefix: mod)
           File.write(File.join(spec_dir, "#{domain_snake_name(spec.name)}.rb"), gen.generate)
         end
@@ -143,7 +147,7 @@ module HecksStatic
 
       def write_lifecycle(agg, dir, mod)
         return unless agg.lifecycle
-        gen = Hecks::Generators::Domain::LifecycleGenerator.new(agg.lifecycle,
+        gen = DomainGen::LifecycleGenerator.new(agg.lifecycle,
           domain_module: mod, aggregate_name: domain_constant_name(agg.name))
         File.write(File.join(dir, "lifecycle.rb"), gen.generate)
       end

@@ -20,6 +20,9 @@ module Hecks
     #   agg = builder.build
     #
     class AggregateBuilder
+      Structure = DomainModel::Structure
+      Behavior  = DomainModel::Behavior
+
       include AttributeCollector
       include BehaviorMethods
       include ConstraintMethods
@@ -120,7 +123,7 @@ module Hecks
       def build
         events = infer_events
 
-        DomainModel::Structure::Aggregate.new(
+        Structure::Aggregate.new(
           name: @name, attributes: @attributes,
           value_objects: @value_objects, entities: @entities,
           commands: @commands, events: events, policies: @policies,
@@ -136,14 +139,14 @@ module Hecks
       private
 
       def infer_events
-        aggregate_id_attr = DomainModel::Structure::Attribute.new(name: :aggregate_id, type: String)
+        aggregate_id_attr = Structure::Attribute.new(name: :aggregate_id, type: String)
         @commands.map do |command|
           event_attrs = [aggregate_id_attr] + command.attributes.dup
           @attributes.each do |agg_attr|
             next if event_attrs.any? { |a| a.name == agg_attr.name }
             event_attrs << agg_attr
           end
-          DomainModel::Behavior::DomainEvent.new(
+          Behavior::DomainEvent.new(
             name: command.inferred_event_name,
             attributes: event_attrs
           )
