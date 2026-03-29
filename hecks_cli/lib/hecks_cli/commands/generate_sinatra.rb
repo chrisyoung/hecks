@@ -97,7 +97,7 @@ module Hecks
       # @param domain [DomainModel::Structure::Domain] the domain
       # @return [String] the app.rb source code
       def sinatra_app_rb(domain)
-        mod = domain.module_name + "Domain"
+        mod = Hecks::Templating::Names.domain_module(domain.name)
         routes = []
 
         domain.aggregates.each do |agg|

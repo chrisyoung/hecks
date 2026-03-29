@@ -25,6 +25,7 @@ module Hecks
       # the transport is closed.
       #
       # @return [void]
+      def run
         @server.run
       end
     end

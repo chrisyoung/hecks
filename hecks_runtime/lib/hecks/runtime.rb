@@ -75,7 +75,7 @@ module Hecks
       def initialize(domain, port: nil, event_bus: nil, &config)
         @domain = domain
         @port_name = port
-        @mod_name = domain.module_name + "Domain"
+        @mod_name = Hecks::Templating::Names.domain_module(domain.name)
         @mod = Object.const_get(@mod_name)
         @mod.extend(Hecks::DomainConnections) unless @mod.respond_to?(:connections)
         @event_bus = event_bus || EventBus.new

@@ -47,6 +47,7 @@ module Hecks
       # is closed by the client.
       #
       # @return [void]
+      def run
         require "mcp/server/transports/stdio_transport"
         ::MCP::Server::Transports::StdioTransport.new(@server).open
       end
@@ -73,7 +74,7 @@ module Hecks
       #
       # @return [void]
       def build_and_load
-        mod_name = @domain.module_name + "Domain"
+        mod_name = Hecks::Templating::Names.domain_module(@domain.name)
         if Object.const_defined?(mod_name)
           @mod = Object.const_get(mod_name)
         else

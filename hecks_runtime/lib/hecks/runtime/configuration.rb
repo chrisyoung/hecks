@@ -312,7 +312,7 @@ module Hecks
     # @return [void]
     def boot_domain(d)
       domain_obj, domain_module = load_domain(d)
-      mod = domain_obj.module_name + "Domain"
+      mod = Hecks::Templating::Names.domain_module(domain_obj.name)
       Hecks.instance_variable_get(:@domain_objects)[mod] = domain_obj
       generate_adapters(domain_obj) if @adapter_type == :sql
 
@@ -360,7 +360,7 @@ module Hecks
         return
       end
       @apps.each_value do |app|
-        mod = Object.const_get(app.domain.module_name + "Domain")
+        mod = Object.const_get(Hecks::Templating::Names.domain_module(app.domain.name))
         ActiveHecks.activate(mod)
       end
     end

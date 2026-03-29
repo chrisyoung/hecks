@@ -40,8 +40,8 @@ module Hecks
       def build
         routes = []
         @domain.aggregates.each do |agg|
-          klass = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
-          slug = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(agg.name)) + "s"
+          klass = @mod.const_get(Hecks::Templating::Names.constant_name(agg.name))
+          slug = Hecks::Templating::Names.aggregate_slug(agg.name)
           routes.concat(query_routes(agg, klass, slug))
           routes.concat(crud_routes(agg, klass, slug))
         end
@@ -160,7 +160,7 @@ module Hecks
       # @param agg_name [Symbol, String] the aggregate name (e.g. :Pizza)
       # @return [Symbol] the method name to call on the aggregate class
       def derive_method(cmd_name, agg_name)
-        Hecks::Utils.underscore(cmd_name).sub(/_#{Hecks::Utils.underscore(agg_name)}$/, "").to_sym
+        Hecks::Templating::Names.method_name(cmd_name, agg_name)
       end
     end
   end

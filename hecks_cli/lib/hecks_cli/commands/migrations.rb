@@ -68,7 +68,7 @@ module Hecks
       def generate_sql
         domain = resolve_domain_option
         return unless domain
-        mod = domain.module_name + "Domain"
+        mod = Hecks::Templating::Names.domain_module(domain.name)
         gem_name = domain.gem_name
 
         migration_gen = Generators::SQL::SqlMigrationGenerator.new(domain)

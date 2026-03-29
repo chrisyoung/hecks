@@ -52,8 +52,8 @@ module Hecks
       def setup_domains
         @domains.each_with_index do |domain, i|
           runtime = @runtimes[i]
-          slug = Hecks::Utils.underscore(domain.name)
-          mod_name = domain.module_name + "Domain"
+          slug = Hecks::Templating::Names.domain_slug(domain.name)
+          mod_name = Hecks::Templating::Names.domain_module(domain.name)
           mod = Object.const_get(mod_name)
           routes = RouteBuilder.new(domain, mod).build
           @entries << { domain: domain, runtime: runtime, mod: mod, slug: slug, routes: routes }
@@ -155,8 +155,7 @@ module Hecks
       end
 
       def plural(agg)
-        s = Hecks::Utils.underscore(agg.name)
-        s.end_with?("s") ? s : s + "s"
+        Hecks::Templating::Names.aggregate_slug(agg.name)
       end
 
       def humanize(name)

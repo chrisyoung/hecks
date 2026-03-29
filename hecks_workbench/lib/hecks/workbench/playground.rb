@@ -43,7 +43,7 @@ module Hecks
     # @param domain [DomainModel::Structure::Domain] the domain to compile and run
     def initialize(domain)
       @domain = domain
-      @mod_name = domain.module_name + "Domain"
+      @mod_name = Hecks::Templating::Names.domain_module(domain.name)
       @events = []
       @policies = collect_policies
       compile!
