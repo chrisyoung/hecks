@@ -365,6 +365,15 @@
 - Watcher processes are cleaned up automatically when Claude exits
 - Bin scripts are thin wrappers that delegate to `HecksWatchers::*` classes
 
+### Watcher Agent (hecks_watcher_agent)
+- `hecks fix-watchers` reads watcher log and creates PRs to fix issues
+- Post-commit hook auto-launches agent when watchers report issues
+- Hybrid fix engine: pure Ruby for simple fixes, Claude Code for complex ones
+- Pure Ruby fixes: autoload entries, skeleton spec files
+- Claude Code fixes: file size extraction, doc updates (FEATURES.md, CHANGELOG)
+- Cross-require violations skipped (needs architectural decision)
+- Creates branch, commits fixes, opens PR via `gh`
+
 ### Gem Packaging
 - `hecks gem build` builds all component gems and the meta-gem via GemBuilder
 - `hecks gem install` builds, installs, and cleans up all component gems in dependency order
