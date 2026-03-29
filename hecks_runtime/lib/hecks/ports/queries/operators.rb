@@ -39,13 +39,10 @@ module Hecks
         #   Gt.new(10).match?(nil) # => false
         class Gt
           include Operator
-          # @return [Object] the threshold value to compare against
           attr_reader :value
-          # @param value [Comparable] the threshold value
           def initialize(value) = @value = value
-          # @param actual [Comparable, nil] the value to test
-          # @return [Boolean] true if actual > value
           def match?(actual) = !actual.nil? && actual > @value
+          def sequel_op = :>
         end
 
         # Greater-than-or-equal comparison operator.
@@ -56,13 +53,10 @@ module Hecks
         #   Gte.new(10).match?(9)  # => false
         class Gte
           include Operator
-          # @return [Object] the threshold value to compare against
           attr_reader :value
-          # @param value [Comparable] the threshold value
           def initialize(value) = @value = value
-          # @param actual [Comparable, nil] the value to test
-          # @return [Boolean] true if actual >= value
           def match?(actual) = !actual.nil? && actual >= @value
+          def sequel_op = :>=
         end
 
         # Less-than comparison operator.
@@ -73,13 +67,10 @@ module Hecks
         #   Lt.new(10).match?(10)  # => false
         class Lt
           include Operator
-          # @return [Object] the threshold value to compare against
           attr_reader :value
-          # @param value [Comparable] the threshold value
           def initialize(value) = @value = value
-          # @param actual [Comparable, nil] the value to test
-          # @return [Boolean] true if actual < value
           def match?(actual) = !actual.nil? && actual < @value
+          def sequel_op = :<
         end
 
         # Less-than-or-equal comparison operator.
@@ -90,13 +81,10 @@ module Hecks
         #   Lte.new(10).match?(11)  # => false
         class Lte
           include Operator
-          # @return [Object] the threshold value to compare against
           attr_reader :value
-          # @param value [Comparable] the threshold value
           def initialize(value) = @value = value
-          # @param actual [Comparable, nil] the value to test
-          # @return [Boolean] true if actual <= value
           def match?(actual) = !actual.nil? && actual <= @value
+          def sequel_op = :<=
         end
 
         # Not-equal comparison operator.
@@ -109,13 +97,10 @@ module Hecks
         #   NotEq.new("cancelled").match?(nil)           # => true
         class NotEq
           include Operator
-          # @return [Object] the value to compare against
           attr_reader :value
-          # @param value [Object] the value that should NOT match
           def initialize(value) = @value = value
-          # @param actual [Object, nil] the value to test
-          # @return [Boolean] true if actual != value
           def match?(actual) = actual != @value
+          def sequel_op = :!=
         end
 
         # Inclusion operator.
@@ -126,13 +111,10 @@ module Hecks
         #   In.new(["Classic", "Tropical"]).match?("Hawaiian") # => false
         class In
           include Operator
-          # @return [Array, #include?] the collection of allowed values
           attr_reader :value
-          # @param value [Array, #include?] the collection of allowed values
           def initialize(value) = @value = value
-          # @param actual [Object] the value to test for inclusion
-          # @return [Boolean] true if the collection includes actual
           def match?(actual) = @value.include?(actual)
+          def sequel_op = :in
         end
       end
   end

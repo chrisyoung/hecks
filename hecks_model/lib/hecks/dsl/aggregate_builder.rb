@@ -47,6 +47,14 @@ module Hecks
       attr_reader :attributes, :commands, :value_objects, :entities,
                   :policies, :validations, :invariants, :scopes, :ports,
                   :queries, :subscribers, :indexes, :specifications
+      # Writer for lifecycle — used by AggregateHandle to update lifecycle
+      # without reaching into instance variables. Reader is the DSL method
+      # in BehaviorMethods; use current_lifecycle to read.
+      attr_writer :lifecycle
+
+      def current_lifecycle
+        @lifecycle
+      end
 
       def initialize(name)
         @name = name
