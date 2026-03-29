@@ -61,8 +61,8 @@ module Hecks
         # Try to compile the Go binary
         if system("which go > /dev/null 2>&1")
           say "  Compiling Go binary..."
-          binary = Hecks::Templating::Names.binary_name(domain.name)
           slug = Hecks::Templating::Names.domain_slug(domain.name)
+          binary = "#{slug}_server"
           if system("cd #{output} && go mod tidy 2>&1 && go build -o #{binary} ./cmd/#{slug}/ 2>&1")
             say "  Binary: #{output}/#{binary}", :green
           else
