@@ -34,10 +34,8 @@ RSpec.configure do |config|
   config.order = :random
 
   config.after(:each) do
-    HECKS_HOISTED.each do |name|
-      Object.send(:remove_const, name) if Object.const_defined?(name)
-    end
+    HECKS_HOISTED.each { |name| Hecks::Utils.remove_constant(name) }
     HECKS_HOISTED.clear
-    Object.send(:remove_const, :APP) if Object.const_defined?(:APP)
+    Hecks::Utils.remove_constant(:APP)
   end
 end

@@ -27,8 +27,8 @@ RSpec.describe Hecks::Workbench::ConsoleRunner do
     end
 
     after do
-      described_class.send(:remove_const, :Cat) if described_class.const_defined?(:Cat, false)
-      described_class.send(:remove_const, :Dog) if described_class.const_defined?(:Dog, false)
+      Hecks::Utils.remove_constant(:Cat, from: described_class)
+      Hecks::Utils.remove_constant(:Dog, from: described_class)
     end
   end
 

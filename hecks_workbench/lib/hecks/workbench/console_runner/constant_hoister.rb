@@ -28,9 +28,7 @@ module Hecks
 
         def unhoist_all
           [@hoisted_constants, @hoisted_handle_constants].compact.each do |list|
-            list.each do |const_name|
-              self.class.send(:remove_const, const_name) if self.class.const_defined?(const_name, false)
-            end
+            list.each { |name| Hecks::Utils.remove_constant(name, from: self.class) }
           end
           @hoisted_constants = nil
           @hoisted_handle_constants = nil
