@@ -103,7 +103,7 @@ module Hecks
       # @return [Array<Hash>] the generated query route hashes
       def query_routes(agg, klass, slug)
         agg.queries.map do |query|
-          qn = Hecks::Utils.underscore(query.name)
+          qn = domain_snake_name(query.name)
           params = query.block.parameters
           { method: "GET", path: "/#{slug}/#{qn}", handler: ->(req) {
             results = params.empty? ? klass.send(qn.to_sym) : klass.send(qn.to_sym, *params.map { |_, n| req.params[n.to_s] })

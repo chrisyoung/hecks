@@ -14,6 +14,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  module Adapters\n  ..."
     #
     class SqlAdapterGenerator
+      include Hecks::NamingHelpers
       include SqlBuilder
 
       # Initializes a generator for a single aggregate's SQL repository.
@@ -43,7 +44,7 @@ module Hecks
         lines << ""
         lines << "module #{@domain_module}"
         lines << "  module Adapters"
-        safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
+        safe_name = domain_constant_name(@aggregate.name)
         lines << "    class #{safe_name}SqlRepository"
         lines << "      include Ports::#{safe_name}Repository"
         lines << ""
@@ -125,14 +126,14 @@ module Hecks
       #
       # @return [String] the table name (e.g., "pizzas")
       def table_name
-        Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(@aggregate.name)) + "s"
+        domain_aggregate_slug(@aggregate.name)
       end
 
       # Returns the snake_case name for the aggregate (used in variable names).
       #
       # @return [String] the snake_case name (e.g., "pizza")
       def snake_name
-        Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(@aggregate.name))
+        domain_snake_name(domain_constant_name(@aggregate.name))
       end
 
       # Returns attributes that are stored as direct columns (not list types).

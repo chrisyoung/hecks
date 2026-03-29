@@ -95,7 +95,7 @@ module Hecks
         def query_paths(agg, slug)
           paths = {}
           agg.queries.each do |query|
-            qn = Hecks::Utils.underscore(query.name)
+            qn = domain_snake_name(query.name)
             params = query.block.parameters.map do |_, name|
               { name: name.to_s, in: "query", schema: { type: "string" }, required: true }
             end

@@ -13,6 +13,7 @@ module HecksStatic
 #   gen.generate("PizzasDomain", "pizzas_domain")
 #
 class ServerGenerator
+  include Hecks::NamingHelpers
   include DomainRoutes
 
   def initialize(domain)
@@ -49,10 +50,9 @@ class ServerGenerator
   def route_lines
     lines = []
     @domain.aggregates.each do |agg|
-      safe = Hecks::Utils.sanitize_constant(agg.name)
-      snake = Hecks::Utils.underscore(safe)
-      plural = snake + "s"
-      plural = snake if snake.end_with?("s")
+      safe = domain_constant_name(agg.name)
+      snake = domain_snake_name(safe)
+      plural = domain_aggregate_slug(agg.name)
 
       # GET /pizzas — list all
       lines << "        server.mount_proc \"/#{plural}\" do |req, res|"
@@ -79,15 +79,15 @@ class ServerGenerator
 
       # POST /pizzas/:command — one route per command
       agg.commands.each do |cmd|
-        cmd_snake = Hecks::Utils.underscore(cmd.name)
+        cmd_snake = domain_snake_name(cmd.name)
         lines << "        server.mount_proc \"/#{plural}/#{cmd_snake}\" do |req, res|"
         lines << "          begin"
         lines << "            attrs = parse_body(req)"
-        lines << "            error = #{@domain.module_name}Domain::Validations.check(\"#{safe}\", \"#{cmd_snake}\", attrs)"
+        lines << "            error = #{domain_module_name(@domain.name)}::Validations.check(\"#{safe}\", \"#{cmd_snake}\", attrs)"
         lines << "            raise error if error"
         lines << "            result = #{safe}.#{cmd_snake}(**attrs)"
         lines << "            json_response(res, aggregate_to_hash(result.aggregate), status: 201)"
-        lines << "          rescue #{@domain.module_name}Domain::Error => e"
+        lines << "          rescue #{domain_module_name(@domain.name)}::Error => e"
         lines << "            json_error(res, e)"
         lines << "          end"
         lines << "        end"
@@ -100,16 +100,15 @@ class ServerGenerator
   def openapi_route(mod)
     paths = {}
     @domain.aggregates.each do |agg|
-      safe = Hecks::Utils.sanitize_constant(agg.name)
-      snake = Hecks::Utils.underscore(safe)
-      plural = snake + "s"
-      plural = snake if snake.end_with?("s")
+      safe = domain_constant_name(agg.name)
+      snake = domain_snake_name(safe)
+      plural = domain_aggregate_slug(agg.name)
 
       paths["/#{plural}"] = { "get" => { "summary" => "List all #{plural}" } }
       paths["/#{plural}/find"] = { "get" => { "summary" => "Find #{safe} by ID" } }
 
       agg.commands.each do |cmd|
-        cmd_snake = Hecks::Utils.underscore(cmd.name)
+        cmd_snake = domain_snake_name(cmd.name)
         params = cmd.attributes.map { |a| { "name" => a.name.to_s, "type" => (a.type || "string").to_s } }
         paths["/#{plural}/#{cmd_snake}"] = {
           "post" => { "summary" => cmd.name, "parameters" => params }
@@ -125,7 +124,7 @@ class ServerGenerator
       "        end",
       "",
       "        server.mount_proc \"/_validations\" do |req, res|",
-      "          json_response(res, #{@domain.module_name}Domain::Validations.rules || {})",
+      "          json_response(res, #{domain_module_name(@domain.name)}::Validations.rules || {})",
       "        end"
     ]
   end
