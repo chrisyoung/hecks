@@ -53,4 +53,6 @@ module HecksWatchers
       end
     end
   end
+
+  register_watcher(:advisory, Autoloads)
 end

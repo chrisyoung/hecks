@@ -17,6 +17,7 @@
 #   runner.start
 #
 require_relative "hecks_watchers/logger"
+require_relative "hecks_watchers/watcher_registry"
 require_relative "hecks_watchers/file_size"
 require_relative "hecks_watchers/cross_require"
 require_relative "hecks_watchers/autoloads"
