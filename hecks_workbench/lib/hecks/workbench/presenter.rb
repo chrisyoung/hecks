@@ -16,7 +16,7 @@ module Hecks
     #   workbench.status     # alias for describe
     #
     module Presenter
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       # Print a full description of the domain and all its aggregates.
       #
       # Builds the domain, then iterates each aggregate printing its

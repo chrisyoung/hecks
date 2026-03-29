@@ -41,6 +41,7 @@ module Hecks
   module Templating
     autoload :Names, "hecks_templating/naming_contract"
   end
+  autoload :NamingHelpers,  "hecks_templating/naming_helpers"
   autoload :Utils,          "hecks/utils"
   autoload :VERSION,        "hecks/version"
   autoload :Configuration,  "hecks/runtime/configuration"

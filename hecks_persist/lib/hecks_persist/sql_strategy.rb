@@ -16,7 +16,7 @@ module Hecks
       #   strategy.generate(changes)
       #
       class SqlStrategy < MigrationStrategy
-        include Hecks::Templating::Names
+        include Hecks::NamingHelpers
       include SqlHelpers
 
       # Generates SQL migration content from a list of domain changes.

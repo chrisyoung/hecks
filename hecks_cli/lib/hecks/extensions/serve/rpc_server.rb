@@ -22,7 +22,7 @@ module Hecks
     #   # POST / {"jsonrpc":"2.0","method":"CreatePizza","params":{"name":"Margherita"},"id":1}
     #
     class RpcServer
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       # Initialize the RPC server, boot the domain, and register all methods.
       #
       # Builds the domain gem into a temp directory, boots it, then

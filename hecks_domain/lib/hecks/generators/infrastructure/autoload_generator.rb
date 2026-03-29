@@ -14,7 +14,7 @@ module Hecks
     #   gen.generate_entry_point  # => "module PizzasDomain\n  autoload :Pizza, ..."
     #
     class AutoloadGenerator
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       # Creates a new AutoloadGenerator for a domain.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR

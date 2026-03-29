@@ -22,7 +22,7 @@ module Hecks
     #   MultiDomainServer.new(domains, runtimes, port: 9292).run
     #
     class MultiDomainServer
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       include UIRoutes
 
       def initialize(domains, runtimes, port: 9292)
