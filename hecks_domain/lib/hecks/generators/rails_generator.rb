@@ -44,10 +44,14 @@ module Hecks
       def patch_gemfile
         gemfile = File.join(@root, "Gemfile")
         content = File.read(gemfile)
-        # Add hecks and all sub-gems as path references for local dev
         if @domain.source_path
+          # The Rails app is a sibling of the domain gem under the same
+          # parent (e.g. examples/pizzas_rails alongside examples/pizzas_domain).
+          # Hecks root is the same relative distance as from the domain gem.
           hecks_root = File.expand_path("../..", File.dirname(@domain.source_path))
-          rel = Pathname.new(hecks_root).relative_path_from(Pathname.new(File.expand_path(@root)))
+          domain_parent = File.dirname(File.dirname(@domain.source_path))
+          app_dir = File.join(File.expand_path(domain_parent), File.basename(@root))
+          rel = Pathname.new(hecks_root).relative_path_from(Pathname.new(app_dir))
           content += "\ngem \"hecks\", path: \"#{rel}\"\n"
         else
           content += "\ngem \"hecks\"\n"
@@ -88,7 +92,7 @@ module Hecks
         # Add Hecks version after Rack version
         html = html.sub(
           %r{(<li><strong>Rack version:</strong>.*?</li>)},
-          "\\1\n    <li class=\"hecks-version\"><strong>Hecks version:</strong> #{Hecks::VERSION}</li>"
+          "\\1\n    <li class=\"hecks-version\"><a href=\"https://github.com/chrisyoung/hecks\" target=\"_blank\" style=\"text-decoration: none; color: inherit; -webkit-text-fill-color: inherit;\"><strong>Hecks version:</strong> #{Hecks::VERSION}</a></li>"
         )
 
         # Animated gradient border + Hecks version shimmer
@@ -102,6 +106,26 @@ module Hecks
             syntax: "<angle>";
             initial-value: 0deg;
             inherits: false;
+          }
+
+          nav a {
+            position: relative;
+          }
+
+          nav a:hover {
+            background: #D30001 !important;
+          }
+
+          nav a::before {
+            content: "";
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            background: conic-gradient(from var(--angle), #1a1a4e, #3333cc, #00bfff, #7b2fff, #1a1a4e);
+            animation: border-rotate 3s linear infinite;
+            z-index: -1;
+            mask: radial-gradient(circle, transparent 68%, black 69%);
+            -webkit-mask: radial-gradient(circle, transparent 68%, black 69%);
           }
 
           .hecks-version {
