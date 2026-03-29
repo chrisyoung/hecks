@@ -54,6 +54,12 @@ module Hecks
     end
 
     def sketch!
+      # Unload the domain module (removes hoisted constants + module itself)
+      mod_name = domain_module_name(@workbench.name)
+      if Object.const_defined?(mod_name)
+        mod = Object.const_get(mod_name)
+        mod.unload! if mod.respond_to?(:unload!)
+      end
       unhoist_all
       @workbench.sketch!
     end
