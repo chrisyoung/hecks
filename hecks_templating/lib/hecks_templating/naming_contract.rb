@@ -6,7 +6,7 @@
 #   include Hecks::Templating::Names
 #   domain_module_name("Pizzas")   # => "PizzasDomain"
 #   aggregate_slug("Pizza")        # => "pizzas"
-#   go_binary_name("Pizzas")       # => "pizzas_server"
+#   domain_slug("Blog")            # => "blog"
 #
 module Hecks
   module Templating
@@ -53,12 +53,6 @@ module Hecks
         Hecks::Utils.underscore(name)
       end
 
-      # "Pizzas" → "pizzas_server"
-      def go_binary_name(name)
-        domain_slug(name) + "_server"
-      end
-      def self.binary_name(name) = go_binary_name(name)
-
       # ("create", "Pizza") → "CreatePizza"
       def infer_command_name(verb, aggregate_name)
         parts = verb.to_s.split("_")
@@ -82,16 +76,11 @@ module Hecks
         "/#{domain_slug(domain_name)}/#{aggregate_slug(aggregate_name)}"
       end
 
-      # ("Pizzas", :go) → "pizzas_static_go"
-      def output_dir_name(domain_name, target: :ruby)
-        base = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(domain_name))
-        case target
-        when :go then "#{base}_static_go"
-        when :static then "#{base}_domain"
-        else "#{base}_domain"
-        end
+      # "Pizzas" → "pizzas_domain"
+      def output_dir_name(domain_name)
+        Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(domain_name)) + "_domain"
       end
-      def self.output_dir(name, target: :ruby) = output_dir_name(name, target: target)
+      def self.output_dir(name) = output_dir_name(name)
     end
   end
 end
