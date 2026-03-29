@@ -216,7 +216,6 @@ RSpec.describe "Specifications" do
       ensure
         $LOAD_PATH.delete("/tmp/hecks_spec_test/spec_test_domain/lib")
         FileUtils.rm_rf("/tmp/hecks_spec_test")
-        Object.send(:remove_const, :SpecTestDomain) if defined?(SpecTestDomain)
       end
     end
   end
