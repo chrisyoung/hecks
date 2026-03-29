@@ -39,7 +39,7 @@ module Hecks
         # @return [ReadModel]
         def initialize(name:, projections: {})
           @name = name
-          @projections = projections
+          @projections = projections.transform_keys { |k| Names.event_name(k) }
         end
       end
     end
