@@ -53,12 +53,9 @@ module Hecks
       def transition(mapping)
         from = mapping.delete(:from)
         mapping.each do |command_name, target_state|
-          if from
-            from_val = from.is_a?(Array) ? from.map(&:to_s) : from.to_s
-            @transitions[command_name.to_s] = { target: target_state.to_s, from: from_val }
-          else
-            @transitions[command_name.to_s] = target_state.to_s
-          end
+          @transitions[command_name.to_s] = DomainModel::Structure::StateTransition.new(
+            target: target_state.to_s, from: from
+          )
         end
       end
 

@@ -51,13 +51,12 @@ module Hecks
         lines << "      STATES = [#{@lifecycle.states.map(&:inspect).join(', ')}].freeze unless defined?(STATES)"
         lines << ""
         lines << "      TRANSITIONS = {"
-        @lifecycle.transitions.each do |cmd_name, target_or_hash|
-          if target_or_hash.is_a?(Hash)
-            from = target_or_hash[:from]
-            target = target_or_hash[:target]
-            lines << "        #{cmd_name.inspect} => { target: #{target.inspect}, from: #{from.inspect} },"
+        @lifecycle.transitions.each do |cmd_name, transition|
+          if transition.respond_to?(:constrained?) && transition.constrained?
+            lines << "        #{cmd_name.inspect} => { target: #{transition.target.inspect}, from: #{transition.from.inspect} },"
           else
-            lines << "        #{cmd_name.inspect} => #{target_or_hash.inspect},"
+            target = transition.respond_to?(:target) ? transition.target : transition.to_s
+            lines << "        #{cmd_name.inspect} => #{target.inspect},"
           end
         end
         lines << "      }.freeze unless defined?(TRANSITIONS)"

@@ -57,7 +57,7 @@ module Hecks
         #
         # @return [Array<String>] unique state values (e.g., ["draft", "approved", "archived"])
         def states
-          ([default] + transitions.values.map { |v| v.is_a?(Hash) ? v[:target] : v }).uniq
+          ([default] + transitions.values.map { |v| v.respond_to?(:target) ? v.target : v.to_s }).uniq
         end
 
         # Returns the target state for a given command name.
@@ -68,7 +68,8 @@ module Hecks
         # @return [String, nil] the target state, or nil if no transition is defined for this command
         def target_for(command_name)
           entry = transitions[command_name]
-          entry.is_a?(Hash) ? entry[:target] : entry
+          return nil unless entry
+          entry.respond_to?(:target) ? entry.target : entry.to_s
         end
 
         # Returns the required source state for a given command name, if constrained.
@@ -80,7 +81,8 @@ module Hecks
         #   transition exists for this command
         def from_for(command_name)
           entry = transitions[command_name]
-          entry.is_a?(Hash) ? entry[:from] : nil
+          return nil unless entry
+          entry.respond_to?(:from) ? entry.from : nil
         end
       end
     end

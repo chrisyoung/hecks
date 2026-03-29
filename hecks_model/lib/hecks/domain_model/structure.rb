@@ -53,7 +53,8 @@ module Hecks
       autoload :ReadModel,      "hecks/domain_model/structure/read_model"
       autoload :ExternalSystem, "hecks/domain_model/structure/external_system"
       autoload :Actor,          "hecks/domain_model/structure/actor"
-      autoload :Lifecycle,      "hecks/domain_model/structure/lifecycle"
+      autoload :Lifecycle,        "hecks/domain_model/structure/lifecycle"
+      autoload :StateTransition, "hecks/domain_model/structure/state_transition"
     end
   end
 end
