@@ -7,7 +7,7 @@
 # Works in all three modes:
 # - Dynamic: gem "hecks_web_explorer" auto-wires at boot
 # - Static: hecks_static bakes the views into the generated project
-# - Go: hecks_go translates ERB to Go html/template
+# - Go: hecks_on_the_go translates ERB to Go html/template
 #
 # Future gem: hecks_web_explorer
 #
