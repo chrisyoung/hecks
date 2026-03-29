@@ -2,24 +2,21 @@ module Hecks
   module MCP
     # Hecks::MCP::BuildTools
     #
-    # MCP tools for domain lifecycle operations: validate the domain model,
-    # generate the domain gem, save the DSL source to a file, and serve the
-    # domain as an HTTP REST API with SSE events.
-    #
-    # All tools require an active session (enforced via +ctx.ensure_session!+).
+    # MCP tools for domain lifecycle operations: validate, build gem, save DSL,
+    # and serve the domain as HTTP. All output is captured from the Session
+    # methods so Claude sees the same feedback the REPL user would.
     #
     # Registered tools:
     #   - +validate+      -- check the domain for structural errors
     #   - +build_gem+     -- generate a Ruby gem from the domain model
     #   - +save_dsl+      -- persist the domain DSL to a .rb file
-    #   - +serve_domain+  -- start an HTTP server exposing the domain as REST endpoints
+    #   - +serve_domain+  -- start an HTTP server exposing the domain
     #
     module BuildTools
       # Registers all build/lifecycle tools on the given MCP server.
       #
-      # @param server [MCP::Server] the MCP server instance to register tools on
-      # @param ctx [Hecks::McpServer] the shared context providing session access,
-      #   +ensure_session!+, and +capture_output+ helpers
+      # @param server [MCP::Server] the MCP server instance
+      # @param ctx [Hecks::McpServer] shared context with session, capture_output
       # @return [void]
       def self.register(server, ctx)
         server.define_tool(
@@ -37,8 +34,7 @@ module Hecks
           input_schema: { type: "object", properties: { output_dir: { type: "string" } } }
         ) do |args|
           ctx.ensure_session!
-          path = ctx.session.build(output_dir: args["output_dir"] || ".")
-          "Built: #{path}"
+          ctx.capture_output { ctx.session.build(output_dir: args["output_dir"] || ".") }
         end
 
         server.define_tool(
@@ -47,8 +43,7 @@ module Hecks
           input_schema: { type: "object", properties: { path: { type: "string" } } }
         ) do |args|
           ctx.ensure_session!
-          ctx.session.save(args["path"] || "hecks_domain.rb")
-          "Saved to #{args["path"] || "hecks_domain.rb"}"
+          ctx.capture_output { ctx.session.save(args["path"] || "hecks_domain.rb") }
         end
 
         server.define_tool(

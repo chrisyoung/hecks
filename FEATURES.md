@@ -323,6 +323,10 @@
 - `describe_domain` tool returns the entire domain model as structured JSON in one call
 - Tool descriptions include parameter constraints, example values, return shapes, and guard conditions
 - Rich descriptions for command tools: required attributes, emitted event, guards that might reject
+- Every MCP tool produces visible human-readable feedback in Claude Code conversations
+- `add_lifecycle` and `add_transition` tools for state machine building via MCP
+- `add_attribute` tool for adding individual attributes to existing aggregates
+- All tool output uses `capture_output` to show the same terse feedback as the REPL
 
 ### Self-Discoverable HTTP API
 - `GET /_openapi` returns the OpenAPI 3.0 spec as JSON
