@@ -21,6 +21,7 @@ module Hecks
       #   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
       #
       module RepositoryTools
+        include Hecks::NamingHelpers
         private
 
         # Registers Find, All, and Count tools for each aggregate in the domain.
@@ -28,7 +29,7 @@ module Hecks
         # @return [void]
         def register_repository_tools
           @domain.aggregates.each do |agg|
-            agg_class = @mod.const_get(Hecks::Templating::Names.domain_constant_name(agg.name))
+            agg_class = @mod.const_get(domain_constant_name(agg.name))
             name = agg.name
             klass = agg_class
             attr_list = agg.attributes.map { |a| "#{a.name}: #{a.ruby_type}" }.join(", ")

@@ -12,6 +12,7 @@ module Hecks
     #   end
     #
     module PortSetup
+      include Hecks::NamingHelpers
       private
 
       # Wires all ports for every aggregate in the domain.
@@ -52,7 +53,7 @@ module Hecks
       # @param agg [Hecks::DomainModel::Aggregate] the aggregate definition from the domain model
       # @return [void]
       def wire_aggregate(agg)
-        agg_class = @mod.const_get(Hecks::Templating::Names.domain_constant_name(agg.name))
+        agg_class = @mod.const_get(domain_constant_name(agg.name))
         repo = @repositories[agg.name]
         defaults = build_defaults(agg)
 
@@ -95,7 +96,7 @@ module Hecks
         queries_mod = begin; agg_class.const_get(:Queries); rescue NameError; nil; end
 
         agg.queries.each do |query|
-          method_name = Hecks::Templating::Names.domain_snake_name(query.name).to_sym
+          method_name = domain_snake_name(query.name).to_sym
           query_class = begin
             queries_mod&.const_defined?(query.name, false) && queries_mod.const_get(query.name)
           rescue StandardError

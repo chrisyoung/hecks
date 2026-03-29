@@ -11,6 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module PortSpec
+          include Hecks::NamingHelpers
           # Generates an RSpec spec for a port on an aggregate.
           #
           # @param port_name [Symbol] the port name (e.g., :admin, :guest)
@@ -18,7 +19,7 @@ module Hecks
           # @param aggregate [Hecks::DomainModel::Structure::Aggregate]
           # @return [String] the complete RSpec file content
           def generate_port_spec(port_name, port_def, aggregate)
-            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
+            safe_agg = domain_constant_name(aggregate.name)
             create_cmd = find_port_create_cmd(aggregate)
 
             lines = []
@@ -50,7 +51,7 @@ module Hecks
             end
 
             # Test denied commands
-            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
+            agg_snake = domain_snake_name(aggregate.name)
             aggregate.commands.each do |cmd|
               cmd_method = derive_port_method(cmd, aggregate)
               unless allowed.include?(cmd_method.to_sym)
@@ -68,7 +69,7 @@ module Hecks
           private
 
           def find_port_create_cmd(aggregate)
-            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
+            agg_snake = domain_snake_name(aggregate.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
@@ -82,11 +83,11 @@ module Hecks
           end
 
           def derive_port_method(cmd, agg)
-            agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+            agg_snake = domain_snake_name(agg.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
-            full = Hecks::Templating::Names.domain_snake_name(cmd.name)
+            full = domain_snake_name(cmd.name)
             suffixes.each do |s|
               stripped = full.sub(/_#{s}$/, "")
               return stripped if stripped != full

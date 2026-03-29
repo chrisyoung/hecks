@@ -11,6 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module ViewSpec
+          include Hecks::NamingHelpers
           # Generates an RSpec spec for a domain-level view.
           #
           # @param view [Hecks::DomainModel::Behavior::ReadModel] the view IR
@@ -36,7 +37,7 @@ module Hecks
               agg = find_aggregate_for_command_obj(cmd)
               next unless agg
 
-              safe_agg = Hecks::Templating::Names.domain_constant_name(agg.name)
+              safe_agg = domain_constant_name(agg.name)
               cmd_method = derive_view_method(cmd, agg)
 
               lines << "  it \"projects #{event_name} events\" do"
@@ -67,11 +68,11 @@ module Hecks
           end
 
           def derive_view_method(cmd, agg)
-            agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+            agg_snake = domain_snake_name(agg.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
-            full = Hecks::Templating::Names.domain_snake_name(cmd.name)
+            full = domain_snake_name(cmd.name)
             suffixes.each do |s|
               stripped = full.sub(/_#{s}$/, "")
               return stripped if stripped != full

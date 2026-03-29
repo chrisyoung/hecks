@@ -8,6 +8,7 @@ module Hecks
         # and attribute carriage. Mixed into SpecGenerator.
         #
         module EventSpec
+          include Hecks::NamingHelpers
           # Generates an RSpec spec file for an event class.
           #
           # The generated spec covers:
@@ -21,7 +22,7 @@ module Hecks
           #   aggregate, used to build the fully qualified class name
           # @return [String] the complete RSpec file content
           def generate_event_spec(event, aggregate)
-            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
+            safe_agg = domain_constant_name(aggregate.name)
             fqn = full_class_name("#{safe_agg}::Events::#{event.name}")
             lines = []
 

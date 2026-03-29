@@ -19,6 +19,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  module Queries\n    module PizzaQueries\n  ..."
     #
     class QueryObjectGenerator
+      include Hecks::NamingHelpers
 
       # Initializes the query object generator.
       #
@@ -60,7 +61,7 @@ module Hecks
       def query_module_lines(indent)
         pad = " " * indent
         lines = []
-        lines << "#{pad}module #{Hecks::Templating::Names.domain_constant_name(@aggregate.name)}Queries"
+        lines << "#{pad}module #{domain_constant_name(@aggregate.name)}Queries"
         queryable_attributes.each do |attr|
           name = attr.name
           lines << "#{pad}  def by_#{name}(value)"

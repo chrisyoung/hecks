@@ -11,6 +11,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  module Ports\n    module PizzaRepository\n  ..."
     #
     class PortGenerator
+      include Hecks::NamingHelpers
 
       # Creates a new PortGenerator for a single aggregate.
       #
@@ -21,7 +22,7 @@ module Hecks
       def initialize(aggregate, domain_module:)
         @aggregate = aggregate
         @domain_module = domain_module
-        @safe_name = Hecks::Templating::Names.domain_constant_name(@aggregate.name)
+        @safe_name = domain_constant_name(@aggregate.name)
       end
 
       # Generates Ruby source for a repository port module.
@@ -37,7 +38,7 @@ module Hecks
       #
       # @return [String] the complete Ruby source code for the port module
       def generate
-        snake = Hecks::Templating::Names.domain_snake_name(@safe_name)
+        snake = domain_snake_name(@safe_name)
         lines = []
         lines << "module #{@domain_module}"
         lines << "  module Ports"

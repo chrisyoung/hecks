@@ -12,6 +12,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  module Adapters\n    class PizzaMemoryRepository\n  ..."
     #
     class MemoryAdapterGenerator
+      include Hecks::NamingHelpers
 
       # Creates a new MemoryAdapterGenerator for a single aggregate.
       #
@@ -23,7 +24,7 @@ module Hecks
         @aggregate = aggregate
         @domain_module = domain_module
         @mixin_prefix = mixin_prefix
-        @safe_name = Hecks::Templating::Names.domain_constant_name(@aggregate.name)
+        @safe_name = domain_constant_name(@aggregate.name)
       end
 
       # Generates Ruby source for an in-memory repository adapter class.
@@ -37,7 +38,7 @@ module Hecks
       #
       # @return [String] the complete Ruby source code for the adapter class
       def generate
-        snake = Hecks::Templating::Names.domain_snake_name(@safe_name)
+        snake = domain_snake_name(@safe_name)
         port_path = "Ports::#{@safe_name}Repository"
 
         lines = []

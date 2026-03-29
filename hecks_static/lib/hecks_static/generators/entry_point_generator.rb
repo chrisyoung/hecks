@@ -8,6 +8,7 @@ require_relative "entry_point_generator/boot_wiring"
 #
 module HecksStatic
   class EntryPointGenerator
+    include Hecks::NamingHelpers
     include BootWiring
 
     def initialize(domain)
@@ -58,8 +59,8 @@ module HecksStatic
 
     def aggregate_autoloads(gem_name)
       @domain.aggregates.map do |agg|
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
-        snake = Hecks::Templating::Names.domain_snake_name(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         "  autoload :#{safe}, \"#{gem_name}/#{snake}/#{snake}\""
       end
     end
@@ -67,8 +68,8 @@ module HecksStatic
     def port_autoloads(gem_name)
       lines = ["", "  module Ports"]
       @domain.aggregates.each do |agg|
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
-        snake = Hecks::Templating::Names.domain_snake_name(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         lines << "    autoload :#{safe}Repository, \"#{gem_name}/ports/#{snake}_repository\""
       end
       lines << "  end"
@@ -78,8 +79,8 @@ module HecksStatic
     def adapter_autoloads(gem_name)
       lines = ["", "  module Adapters"]
       @domain.aggregates.each do |agg|
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
-        snake = Hecks::Templating::Names.domain_snake_name(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         lines << "    autoload :#{safe}MemoryRepository, \"#{gem_name}/adapters/#{snake}_memory_repository\""
       end
       lines << "  end"
@@ -92,7 +93,7 @@ module HecksStatic
 
       port_map = {}
       @domain.aggregates.each do |agg|
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
+        safe = domain_constant_name(agg.name)
         agg.ports.each do |role_name, port_def|
           port_map[role_name.to_s] ||= {}
           port_map[role_name.to_s][safe] = port_def.allowed_methods.map(&:to_s)
@@ -131,7 +132,7 @@ module HecksStatic
       lines << "      Validations.rules = VALIDATIONS"
       lines << ""
       @domain.aggregates.each do |agg|
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
+        safe = domain_constant_name(agg.name)
         lines << "      #{safe}.repository = case adapter"
         lines << "        when :filesystem"
         lines << "          require_relative \"lib/#{@gem_name}/adapters/filesystem_repository\""
@@ -148,7 +149,7 @@ module HecksStatic
       wire_policies(lines)
       lines << ""
       @domain.aggregates.each do |agg|
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
+        safe = domain_constant_name(agg.name)
         lines << "      Object.const_set(:#{safe}, #{safe}) unless Object.const_defined?(:#{safe})"
       end
       lines << "      self"
@@ -174,7 +175,7 @@ module HecksStatic
       lines << "    def domain_info"
       lines << "      {"
       agg_infos = @domain.aggregates.map do |agg|
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
+        safe = domain_constant_name(agg.name)
         cmds = agg.commands.map(&:name).inspect
         ports_hash = agg.ports.values.map { |p| "#{p.name.inspect} => #{p.allowed_methods.map(&:to_s).inspect}" }.join(", ")
         "        #{safe.inspect} => { commands: #{cmds}, ports: { #{ports_hash} }, count: #{safe}.count }"

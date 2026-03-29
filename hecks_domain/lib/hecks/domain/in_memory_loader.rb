@@ -23,6 +23,7 @@ module Hecks
   #   # => defines PizzasDomain module with all aggregate classes
   #
   module InMemoryLoader
+    extend Hecks::NamingHelpers
     # Load an entire domain into memory by generating and evaluating source
     # code for all domain components. Creates the top-level module constant
     # (e.g., PizzasDomain) and all nested classes.
@@ -35,8 +36,8 @@ module Hecks
       load_src(module_shell(mod), "#{gem}.rb")
 
       domain.aggregates.each do |agg|
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
-        snake = Hecks::Templating::Names.domain_snake_name(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         opts = { domain_module: mod }
         base = "#{gem}/#{snake}"
 
@@ -45,11 +46,11 @@ module Hecks
         load_src(gen(Generators::Infrastructure::MemoryAdapterGenerator, agg, **opts), "#{gem}/adapters/#{snake}_memory_adapter.rb")
         load_src(gen(Generators::Domain::AggregateGenerator, agg, **opts), "#{base}/#{snake}.rb")
 
-        agg.value_objects.each { |vo| load_src(gen(Generators::Domain::ValueObjectGenerator, vo, aggregate_name: safe, **opts), "#{base}/#{Hecks::Templating::Names.domain_snake_name(vo.name)}.rb") }
-        agg.entities.each { |ent| load_src(gen(Generators::Domain::EntityGenerator, ent, aggregate_name: safe, **opts), "#{base}/#{Hecks::Templating::Names.domain_snake_name(ent.name)}.rb") }
-        agg.events.each { |evt| load_src(gen(Generators::Domain::EventGenerator, evt, aggregate_name: safe, **opts), "#{base}/events/#{Hecks::Templating::Names.domain_snake_name(evt.name)}.rb") }
-        agg.policies.each { |pol| load_src(gen(Generators::Domain::PolicyGenerator, pol, aggregate_name: safe, **opts), "#{base}/policies/#{Hecks::Templating::Names.domain_snake_name(pol.name)}.rb") }
-        agg.subscribers.each { |sub| load_src(gen(Generators::Domain::SubscriberGenerator, sub, aggregate_name: safe, **opts), "#{base}/subscribers/#{Hecks::Templating::Names.domain_snake_name(sub.name)}.rb") }
+        agg.value_objects.each { |vo| load_src(gen(Generators::Domain::ValueObjectGenerator, vo, aggregate_name: safe, **opts), "#{base}/#{domain_snake_name(vo.name)}.rb") }
+        agg.entities.each { |ent| load_src(gen(Generators::Domain::EntityGenerator, ent, aggregate_name: safe, **opts), "#{base}/#{domain_snake_name(ent.name)}.rb") }
+        agg.events.each { |evt| load_src(gen(Generators::Domain::EventGenerator, evt, aggregate_name: safe, **opts), "#{base}/events/#{domain_snake_name(evt.name)}.rb") }
+        agg.policies.each { |pol| load_src(gen(Generators::Domain::PolicyGenerator, pol, aggregate_name: safe, **opts), "#{base}/policies/#{domain_snake_name(pol.name)}.rb") }
+        agg.subscribers.each { |sub| load_src(gen(Generators::Domain::SubscriberGenerator, sub, aggregate_name: safe, **opts), "#{base}/subscribers/#{domain_snake_name(sub.name)}.rb") }
         load_specifications(agg, safe, opts, base)
         load_commands(agg, safe, opts, base)
         load_queries(agg, safe, opts, base)
@@ -71,7 +72,7 @@ module Hecks
     def self.load_specifications(agg, safe, opts, base)
       agg.specifications.each do |spec|
         src = gen(Generators::Domain::SpecificationGenerator, spec, aggregate_name: safe, **opts)
-        load_src(inject_mixin(src, spec.name, "Hecks::Specification"), "#{base}/specifications/#{Hecks::Templating::Names.domain_snake_name(spec.name)}.rb")
+        load_src(inject_mixin(src, spec.name, "Hecks::Specification"), "#{base}/specifications/#{domain_snake_name(spec.name)}.rb")
       end
     end
 
@@ -87,7 +88,7 @@ module Hecks
     def self.load_commands(agg, safe, opts, base)
       agg.commands.each_with_index do |cmd, i|
         src = gen(Generators::Domain::CommandGenerator, cmd, aggregate_name: safe, aggregate: agg, event: agg.events[i], **opts)
-        load_src(inject_mixin(src, cmd.name, "Hecks::Command"), "#{base}/commands/#{Hecks::Templating::Names.domain_snake_name(cmd.name)}.rb")
+        load_src(inject_mixin(src, cmd.name, "Hecks::Command"), "#{base}/commands/#{domain_snake_name(cmd.name)}.rb")
       end
     end
 
@@ -102,7 +103,7 @@ module Hecks
     def self.load_queries(agg, safe, opts, base)
       agg.queries.each do |q|
         src = gen(Generators::Domain::QueryGenerator, q, aggregate_name: safe, **opts)
-        load_src(inject_mixin(src, q.name, "Hecks::Query"), "#{base}/queries/#{Hecks::Templating::Names.domain_snake_name(q.name)}.rb")
+        load_src(inject_mixin(src, q.name, "Hecks::Query"), "#{base}/queries/#{domain_snake_name(q.name)}.rb")
       end
     end
 
@@ -115,7 +116,7 @@ module Hecks
     def self.load_workflows(domain, mod, gem)
       domain.workflows.each do |wf|
         src = Generators::Domain::WorkflowGenerator.new(wf, domain_module: mod).generate
-        load_src(src, "#{gem}/workflows/#{Hecks::Templating::Names.domain_snake_name(wf.name)}.rb")
+        load_src(src, "#{gem}/workflows/#{domain_snake_name(wf.name)}.rb")
       end
     end
 
@@ -128,7 +129,7 @@ module Hecks
     def self.load_views(domain, mod, gem)
       domain.views.each do |v|
         src = Generators::Domain::ViewGenerator.new(v, domain_module: mod).generate
-        load_src(src, "#{gem}/views/#{Hecks::Templating::Names.domain_snake_name(v.name)}.rb")
+        load_src(src, "#{gem}/views/#{domain_snake_name(v.name)}.rb")
       end
     end
 
@@ -141,7 +142,7 @@ module Hecks
     def self.load_services(domain, mod, gem)
       domain.services.each do |svc|
         src = Generators::Domain::ServiceGenerator.new(svc, domain_module: mod).generate
-        load_src(src, "#{gem}/services/#{Hecks::Templating::Names.domain_snake_name(svc.name)}.rb")
+        load_src(src, "#{gem}/services/#{domain_snake_name(svc.name)}.rb")
       end
     end
 

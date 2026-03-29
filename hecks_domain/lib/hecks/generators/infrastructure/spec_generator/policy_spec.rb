@@ -11,6 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module PolicySpec
+          include Hecks::NamingHelpers
           # Generates an RSpec spec for a reactive policy.
           #
           # The generated spec:
@@ -26,7 +27,7 @@ module Hecks
           def generate_policy_spec(policy, aggregate)
             return nil unless policy.reactive?
 
-            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
+            safe_agg = domain_constant_name(aggregate.name)
             trigger_cmd = find_command_for_event(policy.event_name)
             return nil unless trigger_cmd
 
@@ -35,7 +36,7 @@ module Hecks
 
             triggered_event = infer_event_name(policy.trigger_command)
             trigger_cmd_method = derive_method(trigger_cmd, trigger_agg)
-            trigger_safe = Hecks::Templating::Names.domain_constant_name(trigger_agg.name)
+            trigger_safe = domain_constant_name(trigger_agg.name)
             is_update = is_update_cmd?(trigger_cmd, trigger_agg)
 
             lines = []
@@ -92,12 +93,12 @@ module Hecks
           end
 
           def derive_method(cmd, agg)
-            agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+            agg_snake = domain_snake_name(agg.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
 
-            full = Hecks::Templating::Names.domain_snake_name(cmd.name)
+            full = domain_snake_name(cmd.name)
             suffixes.each do |s|
               stripped = full.sub(/_#{s}$/, "")
               return stripped if stripped != full
@@ -106,7 +107,7 @@ module Hecks
           end
 
           def is_update_cmd?(cmd, agg)
-            agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+            agg_snake = domain_snake_name(agg.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
@@ -123,7 +124,7 @@ module Hecks
 
           def update_args_for(cmd, agg)
             self_ref = cmd.attributes.find { |a|
-              agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+              agg_snake = domain_snake_name(agg.name)
               suffixes = agg_snake.split("_").each_index.map { |i|
                 agg_snake.split("_").drop(i).join("_")
               }.uniq

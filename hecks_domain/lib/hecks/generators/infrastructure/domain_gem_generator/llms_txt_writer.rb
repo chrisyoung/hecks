@@ -13,6 +13,7 @@ module Hecks
         #   generate_llms_txt(root, gem_name, mod)
         #
         module LlmsTxtWriter
+          include Hecks::NamingHelpers
           private
 
           # Writes an llms.txt file into the generated gem root directory.
@@ -164,15 +165,15 @@ module Hecks
             first_agg = @domain.aggregates.first
             if first_agg && !first_agg.commands.empty?
               cmd = first_agg.commands.first
-              snake = Hecks::Templating::Names.domain_snake_name(Hecks::Templating::Names.domain_constant_name(first_agg.name))
+              snake = domain_snake_name(domain_constant_name(first_agg.name))
               params = cmd.attributes.map { |a| "#{a.name}: ..." }.join(", ")
               lines << "# Run a command"
-              lines << "app.#{snake}.#{Hecks::Templating::Names.domain_snake_name(cmd.name)}(#{params})"
+              lines << "app.#{snake}.#{domain_snake_name(cmd.name)}(#{params})"
               lines << ""
             end
 
             if first_agg
-              snake = Hecks::Templating::Names.domain_snake_name(Hecks::Templating::Names.domain_constant_name(first_agg.name))
+              snake = domain_snake_name(domain_constant_name(first_agg.name))
               lines << "# Query the repository"
               lines << "app.#{snake}[1]  # find by id"
               lines << ""

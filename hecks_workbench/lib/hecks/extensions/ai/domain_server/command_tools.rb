@@ -21,6 +21,7 @@ module Hecks
       #   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
       #
       module CommandTools
+        include Hecks::NamingHelpers
         private
 
         # Iterates all aggregates in the domain and registers each of their
@@ -29,7 +30,7 @@ module Hecks
         # @return [void]
         def register_command_tools
           @domain.aggregates.each do |agg|
-            agg_class = @mod.const_get(Hecks::Templating::Names.domain_constant_name(agg.name))
+            agg_class = @mod.const_get(domain_constant_name(agg.name))
             agg.commands.each do |cmd|
               register_command(agg, agg_class, cmd)
             end
