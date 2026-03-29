@@ -1,8 +1,7 @@
 # Hecks::CLI::Domain#serve
 #
-# Serves a domain over HTTP. By default starts a REST + SSE server via
-# HTTP::DomainServer. With --rpc, starts a JSON-RPC server via HTTP::RpcServer.
-# With --static, builds a static gem and serves with the built-in UI.
+# Serves a domain over HTTP. Supports single-domain and multi-domain
+# (hecks_domains/ directory). With --static, builds and serves a static app.
 #
 #   hecks domain serve [--domain NAME] [--port 9292] [--rpc] [--static]
 #
@@ -21,22 +20,45 @@ module Hecks
       #
       # @return [void] runs until interrupted
       def serve
-        domain = resolve_domain_option
-        return unless domain
-        if options[:static]
-          serve_static(domain, options[:port])
-        elsif options[:rpc]
-          require "hecks_serve"
-          HTTP::RpcServer.new(domain, port: options[:port]).run
+        if multi_domain_dir?
+          serve_multi(options[:port])
         else
-          require "hecks_serve"
-          server = HTTP::DomainServer.new(domain, port: options[:port],
-            live: options[:live], live_port: options[:live_port])
-          server.run
+          domain = resolve_domain_option
+          return unless domain
+          if options[:static]
+            serve_static(domain, options[:port])
+          elsif options[:rpc]
+            require "hecks_serve"
+            HTTP::RpcServer.new(domain, port: options[:port]).run
+          else
+            require "hecks_serve"
+            server = HTTP::DomainServer.new(domain, port: options[:port],
+              live: options[:live], live_port: options[:live_port])
+            server.run
+          end
         end
       end
 
       private
+
+      def multi_domain_dir?
+        dir = options[:domain] || Dir.pwd
+        domains_dir = File.join(dir, "hecks_domains")
+        domains_dir = File.join(dir, "domains") unless File.directory?(domains_dir)
+        File.directory?(domains_dir)
+      end
+
+      def serve_multi(port)
+        dir = options[:domain] || Dir.pwd
+        require "hecks_serve"
+        result = Hecks.boot(dir)
+        if result.is_a?(Array)
+          domains = result.map(&:domain)
+          HTTP::MultiDomainServer.new(domains, result, port: port).run
+        else
+          HTTP::DomainServer.new(result.domain, port: port).run
+        end
+      end
 
       def serve_static(domain, port)
         require "tmpdir"
