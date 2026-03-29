@@ -40,7 +40,7 @@ module Hecks
               if owner
                 errors << "#{domain.name}::#{agg.name} uses reference_to(\"#{ref_name}\") " \
                           "which belongs to #{owner.name}. Cross-domain references must use " \
-                          "plain String IDs, not reference_to. Use: attribute :#{Hecks::Utils.underscore(ref_name)}_id, String"
+                          "plain String IDs, not reference_to. Use: attribute :#{Hecks::Templating::Names.domain_snake_name(ref_name)}_id, String"
               end
             end
           end

@@ -29,7 +29,7 @@ module Hecks
         # @return [void]
         def register_command_tools
           @domain.aggregates.each do |agg|
-            agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+            agg_class = @mod.const_get(Hecks::Templating::Names.domain_constant_name(agg.name))
             agg.commands.each do |cmd|
               register_command(agg, agg_class, cmd)
             end

@@ -55,7 +55,7 @@ module Hecks
           lines << "        @db[:#{table_name}].where(id: #{snake_name}.id).update(#{col_hash.join(', ')})"
         end
         list_value_objects.each do |vo|
-          vo_table = "#{table_name}_#{Hecks::Utils.underscore(vo.name)}s"
+          vo_table = "#{table_name}_#{Hecks::Templating::Names.domain_snake_name(vo.name)}s"
           lines << "        @db[:#{vo_table}].where(#{snake_name}_id: #{snake_name}.id).delete"
           lines.concat(insert_vo_lines(vo))
         end
@@ -83,20 +83,20 @@ module Hecks
         lines << "      def build(row)"
 
         list_value_objects.each do |vo|
-          vo_table = "#{table_name}_#{Hecks::Utils.underscore(vo.name)}s"
-          vo_snake = Hecks::Utils.underscore(vo.name)
+          vo_table = "#{table_name}_#{Hecks::Templating::Names.domain_snake_name(vo.name)}s"
+          vo_snake = Hecks::Templating::Names.domain_snake_name(vo.name)
           lines << "        #{vo_snake}_rows = @db[:#{vo_table}].where(#{snake_name}_id: row[:id]).all"
           vo_attrs = vo.attributes.map { |a| "#{a.name}: r[:#{a.name}]" }.join(", ")
-          lines << "        #{vo_snake}s = #{vo_snake}_rows.map { |r| #{Hecks::Utils.sanitize_constant(@aggregate.name)}::#{vo.name}.new(#{vo_attrs}) }"
+          lines << "        #{vo_snake}s = #{vo_snake}_rows.map { |r| #{Hecks::Templating::Names.domain_constant_name(@aggregate.name)}::#{vo.name}.new(#{vo_attrs}) }"
         end
 
         all_assigns = ["          id: row[:id]"] + attr_assigns
         list_value_objects.each do |vo|
           attr_name = @aggregate.attributes.find { |a| a.list? && a.type.to_s == vo.name }&.name
-          all_assigns << "          #{attr_name}: #{Hecks::Utils.underscore(vo.name)}s" if attr_name
+          all_assigns << "          #{attr_name}: #{Hecks::Templating::Names.domain_snake_name(vo.name)}s" if attr_name
         end
         lines << "        require \"time\""
-        lines << "        agg = #{Hecks::Utils.sanitize_constant(@aggregate.name)}.new("
+        lines << "        agg = #{Hecks::Templating::Names.domain_constant_name(@aggregate.name)}.new("
         lines << all_assigns.join(",\n")
         lines << "        )"
         lines << "        agg.instance_variable_set(:@created_at, row[:created_at] ? Time.parse(row[:created_at].to_s) : nil)"
@@ -114,7 +114,7 @@ module Hecks
       # @param vo [DomainModel::Structure::ValueObject] the value object
       # @return [Array<String>] lines of Ruby source code for the VO insert loop
       def insert_vo_lines(vo)
-        vo_table = "#{table_name}_#{Hecks::Utils.underscore(vo.name)}s"
+        vo_table = "#{table_name}_#{Hecks::Templating::Names.domain_snake_name(vo.name)}s"
         attr_name = @aggregate.attributes.find { |a| a.list? && a.type.to_s == vo.name }&.name
         return [] unless attr_name
 
@@ -136,7 +136,7 @@ module Hecks
       def delete_vo_lines
         lines = []
         list_value_objects.each do |vo|
-          vo_table = "#{table_name}_#{Hecks::Utils.underscore(vo.name)}s"
+          vo_table = "#{table_name}_#{Hecks::Templating::Names.domain_snake_name(vo.name)}s"
           lines << "        @db[:#{vo_table}].where(#{snake_name}_id: id).delete"
         end
         lines

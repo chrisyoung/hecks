@@ -51,7 +51,7 @@ module Hecks
           agg.entities.each { |ent| defs["#{agg.name}::#{ent.name}"] = entity_def(ent) }
           agg.commands.each { |cmd| defs[cmd.name] = command_def(cmd) }
           agg.events.each { |evt| defs[evt.name] = event_def(evt) }
-          agg.queries.each { |q| defs["#{agg.name}.#{Hecks::Utils.underscore(q.name)}"] = query_def(agg, q) }
+          agg.queries.each { |q| defs["#{agg.name}.#{Hecks::Templating::Names.domain_snake_name(q.name)}"] = query_def(agg, q) }
         end
         defs
       end

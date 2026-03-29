@@ -191,14 +191,14 @@ module Hecks
       return if base.const_defined?(type, false)
 
       mod = Module.new
-      type_dir = Hecks::Utils.underscore(type.to_s)
+      type_dir = Hecks::Templating::Names.domain_snake_name(type.to_s)
       mixin_proc = MIXINS[type]
 
       mod.define_singleton_method(:const_missing) do |name|
         parts = base.name.split("::")
-        gem_name = Hecks::Utils.underscore(parts.first)
-        agg_name = Hecks::Utils.underscore(parts.last)
-        file_name = Hecks::Utils.underscore(name.to_s)
+        gem_name = Hecks::Templating::Names.domain_snake_name(parts.first)
+        agg_name = Hecks::Templating::Names.domain_snake_name(parts.last)
+        file_name = Hecks::Templating::Names.domain_snake_name(name.to_s)
 
         if mixin_proc
           # Pre-create class with mixin so DSL methods (emits, where, etc.)

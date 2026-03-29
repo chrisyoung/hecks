@@ -36,7 +36,7 @@ module Hecks
               agg = find_aggregate_for_command_obj(cmd)
               next unless agg
 
-              safe_agg = Hecks::Utils.sanitize_constant(agg.name)
+              safe_agg = Hecks::Templating::Names.domain_constant_name(agg.name)
               cmd_method = derive_view_method(cmd, agg)
 
               lines << "  it \"projects #{event_name} events\" do"
@@ -67,11 +67,11 @@ module Hecks
           end
 
           def derive_view_method(cmd, agg)
-            agg_snake = Hecks::Utils.underscore(agg.name)
+            agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
-            full = Hecks::Utils.underscore(cmd.name)
+            full = Hecks::Templating::Names.domain_snake_name(cmd.name)
             suffixes.each do |s|
               stripped = full.sub(/_#{s}$/, "")
               return stripped if stripped != full

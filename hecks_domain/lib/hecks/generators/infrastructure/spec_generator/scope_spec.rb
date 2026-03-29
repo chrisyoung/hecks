@@ -17,7 +17,7 @@ module Hecks
           # @param aggregate [Hecks::DomainModel::Structure::Aggregate]
           # @return [String] the complete RSpec file content
           def generate_scope_spec(scope, aggregate)
-            safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
+            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
             create_cmd = find_scope_create_cmd(aggregate)
             return nil unless create_cmd
 
@@ -77,7 +77,7 @@ module Hecks
           end
 
           def find_scope_create_cmd(aggregate)
-            agg_snake = Hecks::Utils.underscore(aggregate.name)
+            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
@@ -91,12 +91,12 @@ module Hecks
           end
 
           def derive_scope_method(cmd, agg)
-            agg_snake = Hecks::Utils.underscore(agg.name)
+            agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
 
-            full = Hecks::Utils.underscore(cmd.name)
+            full = Hecks::Templating::Names.domain_snake_name(cmd.name)
             suffixes.each do |s|
               stripped = full.sub(/_#{s}$/, "")
               return stripped if stripped != full

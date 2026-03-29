@@ -28,7 +28,7 @@ module Hecks
         # @return [void]
         def register_repository_tools
           @domain.aggregates.each do |agg|
-            agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(agg.name))
+            agg_class = @mod.const_get(Hecks::Templating::Names.domain_constant_name(agg.name))
             name = agg.name
             klass = agg_class
             attr_list = agg.attributes.map { |a| "#{a.name}: #{a.ruby_type}" }.join(", ")

@@ -39,9 +39,9 @@ module Hecks
           accepted_keys = target_cmd.attributes.map { |a| a.name.to_sym } if target_cmd
           filtered_attrs = accepted_keys ? event_attrs.select { |k, _| accepted_keys.include?(k) } : event_attrs
 
-          agg_class = @mod.const_get(Hecks::Utils.sanitize_constant(target_agg.name))
-          agg_snake = Hecks::Utils.underscore(target_agg.name)
-          full_name = Hecks::Utils.underscore(command_name)
+          agg_class = @mod.const_get(Hecks::Templating::Names.domain_constant_name(target_agg.name))
+          agg_snake = Hecks::Templating::Names.domain_snake_name(target_agg.name)
+          full_name = Hecks::Templating::Names.domain_snake_name(command_name)
           method_name = full_name
           agg_snake.split("_").each_index do |i|
             suffix = agg_snake.split("_").drop(i).join("_")

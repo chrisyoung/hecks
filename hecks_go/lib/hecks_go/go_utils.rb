@@ -33,7 +33,7 @@ module HecksGo
     end
 
     def snake_case(str)
-      Hecks::Utils.underscore(str.to_s)
+      Hecks::Templating::Names.domain_snake_name(str.to_s)
     end
 
     def go_package(name)

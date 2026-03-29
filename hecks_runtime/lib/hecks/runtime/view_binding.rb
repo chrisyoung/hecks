@@ -34,7 +34,7 @@ module Hecks
         define_singleton_method(:current) { mutex.synchronize { state.dup } }
       end
 
-      mod.const_set(Hecks::Utils.sanitize_constant(view.name), view_mod)
+      mod.const_set(Hecks::Templating::Names.domain_constant_name(view.name), view_mod)
 
       view.projections.each do |event_name, projection|
         event_bus.subscribe(event_name) do |event|

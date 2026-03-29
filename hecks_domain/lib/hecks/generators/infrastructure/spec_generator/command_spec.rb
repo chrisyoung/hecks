@@ -22,7 +22,7 @@ module Hecks
           #   aggregate, used to build the fully qualified class name
           # @return [String] the complete RSpec file content
           def generate_command_spec(command, aggregate)
-            safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
+            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
             fqn = full_class_name("#{safe_agg}::Commands::#{command.name}")
             event_name = command.inferred_event_name
             cmd_method = derive_command_method(command, aggregate)
@@ -117,12 +117,12 @@ module Hecks
           end
 
           def derive_command_method(cmd, aggregate)
-            agg_snake = Hecks::Utils.underscore(aggregate.name)
+            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
 
-            full = Hecks::Utils.underscore(cmd.name)
+            full = Hecks::Templating::Names.domain_snake_name(cmd.name)
             suffixes.each do |s|
               stripped = full.sub(/_#{s}$/, "")
               return stripped if stripped != full
@@ -131,7 +131,7 @@ module Hecks
           end
 
           def update_command?(cmd, aggregate)
-            agg_snake = Hecks::Utils.underscore(aggregate.name)
+            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
@@ -147,7 +147,7 @@ module Hecks
           end
 
           def find_self_ref_attr(cmd, aggregate)
-            agg_snake = Hecks::Utils.underscore(aggregate.name)
+            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
