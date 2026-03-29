@@ -2,8 +2,8 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Hecks::Persistence::CollectionMethods do
-  let(:domain) do
-    Hecks.domain "Pizzas" do
+  before(:all) do
+    domain = Hecks.domain "Pizzas" do
       aggregate "Pizza" do
         attribute :name, String
         attribute :toppings, list_of("Topping")
@@ -18,10 +18,10 @@ RSpec.describe Hecks::Persistence::CollectionMethods do
         end
       end
     end
+    @app = Hecks.load(domain)
   end
 
   before do
-    @app = Hecks.load(domain)
     @pizza = PizzasDomain::Pizza.create(name: "Margherita")
   end
 
