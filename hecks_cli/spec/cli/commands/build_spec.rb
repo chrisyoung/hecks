@@ -19,7 +19,7 @@ RSpec.describe "hecks domain build" do
       RUBY
 
       Dir.chdir(dir) do
-        cli = Hecks::CLI::Domain.new
+        cli = Hecks::CLI.new
         allow(cli).to receive(:say)
         cli.build
 

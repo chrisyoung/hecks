@@ -37,7 +37,7 @@ RSpec.describe "hecks domain diff" do
       RUBY
 
       Dir.chdir(dir) do
-        cli = Hecks::CLI::Domain.new
+        cli = Hecks::CLI.new
         messages = []
         allow(cli).to receive(:say) { |msg, color| messages << [msg, color] }
 
@@ -78,7 +78,7 @@ RSpec.describe "hecks domain diff" do
       RUBY
 
       Dir.chdir(dir) do
-        cli = Hecks::CLI::Domain.new
+        cli = Hecks::CLI.new
         messages = []
         allow(cli).to receive(:say) { |msg, color| messages << [msg, color] }
 
