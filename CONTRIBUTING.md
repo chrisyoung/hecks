@@ -29,7 +29,8 @@ All 900+ specs should pass in under 1.5 seconds.
 5. Check file sizes: `find lib -name "*.rb" -exec wc -l {} + | sort -rn | head -5`
 6. Update FEATURES.md if you added a new feature
 7. Add `docs/usage/<feature>.md` with runnable examples for new features
-8. Open a pull request
+8. Do your changes require cli updates?
+9. Open a pull request
 
 ## Architecture
 
