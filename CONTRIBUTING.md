@@ -16,7 +16,7 @@ All 900+ specs should pass in under 1.5 seconds.
 ## Rules
 
 - **No file over 200 lines of code** -- doc comment headers don't count toward this limit. Extract modules/classes by concern when approaching it.
-- **Tests must run under 1.5 seconds** -- enforced by the pre-commit hook. Adjust with `SPEC_RUN_LENGTH_IN_SECONDS=2`.
+- **Tests must run under 1 second** -- enforced by the pre-commit hook. Adjust with `SPEC_SPEED_LIMIT=2`.
 - **Every lib file has a doc comment header** -- class name, purpose, usage example.
 - **Memory adapters for tests** -- fast and isolated. No database setup required.
 
