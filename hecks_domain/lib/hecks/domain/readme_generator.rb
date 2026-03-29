@@ -34,7 +34,9 @@ module Hecks
     #
     # @return [String] the generated README content
     def generate
-      template = File.read(File.join(@root, "docs/readme_template.md"))
+      template_path = File.join(@root, "hecks_docs/readme_template.md")
+      template_path = File.join(@root, "docs/readme_template.md") unless File.exist?(template_path)
+      template = File.read(template_path)
       output = template.gsub(/\{\{(\w+)(?::(\w+))?\}\}/) { dispatch($1, $2) }
       File.write(File.join(@root, "README.md"), output)
       output
