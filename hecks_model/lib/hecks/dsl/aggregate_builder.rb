@@ -26,6 +26,24 @@ module Hecks
       include QueryMethods
       include ImplicitSyntax
 
+      # Facet registry — add new aggregate facets without modifying this class.
+      #
+      #   Hecks::DSL::AggregateBuilder.register_facet(:sagas) do |builder|
+      #     builder.define_method(:saga) do |name, &block|
+      #       @sagas << { name: name, block: block }
+      #     end
+      #   end
+      #
+      @facet_registry = {}
+
+      class << self
+        attr_reader :facet_registry
+
+        def register_facet(name, &setup)
+          @facet_registry[name] = setup
+        end
+      end
+
       attr_reader :attributes, :commands, :value_objects, :entities,
                   :policies, :validations, :invariants, :scopes, :ports,
                   :queries, :subscribers, :indexes, :specifications
@@ -49,6 +67,11 @@ module Hecks
         @versioned = false
         @attachable = false
         @metadata = {}
+        @facet_data = {}
+        self.class.facet_registry.each do |facet_name, setup|
+          @facet_data[facet_name] = []
+          setup.call(self.class) unless self.class.method_defined?(facet_name)
+        end
       end
 
       def versioned
