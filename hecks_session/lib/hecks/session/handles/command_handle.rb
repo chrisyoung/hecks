@@ -56,10 +56,17 @@ module Hecks
         cmd = find_command
         return self unless cmd
 
-        attr = DomainModel::Structure::Attribute.new(name: name.to_sym, type: type, **kwargs)
+        list = type.is_a?(Hash) && type[:list]
+        ref = type.is_a?(Hash) && type[:reference]
+        actual_type = type.is_a?(Hash) ? type.values.first : type
+
+        attr = DomainModel::Structure::Attribute.new(
+          name: name.to_sym, type: actual_type,
+          list: !!list, reference: !!ref, **kwargs
+        )
         cmd.attributes << attr
         event_name = cmd.inferred_event_name
-        if type.is_a?(Hash) && type[:reference]
+        if ref
           puts "#{name} reference added to #{@command_name} -> #{type[:reference]}"
         else
           puts "#{name} attribute added to #{@command_name} -> #{event_name}"
