@@ -139,9 +139,7 @@ module Hecks
   # PortWiring is included directly in Runtime, no autoload needed
   autoload :AttachmentMethods, "hecks/runtime/attachment_methods"
   autoload :EventBus,          "hecks/ports/event_bus/event_bus"
-  autoload :FilteredEventBus,  "hecks/ports/event_bus/filtered_event_bus"
-  autoload :CrossDomainQuery,  "hecks/ports/queries/cross_domain_query"
-  autoload :CrossDomainView,   "hecks/ports/event_bus/cross_domain_view"
+  # FilteredEventBus, CrossDomainQuery, CrossDomainView → hecks_multidomain
   autoload :Queue,             "hecks/ports/queue"
   autoload :PortEnforcer,      "hecks/runtime/port_enforcer"
   autoload :Persistence,       "hecks/ports/repository"

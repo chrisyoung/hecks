@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Boot::EventDirectionality do
+RSpec.describe Hecks::MultiDomain::Directionality do
   def build_domains
     d1 = Hecks.domain "Producer" do
       aggregate "Widget" do

@@ -8,6 +8,7 @@ JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
 require_relative "hecks/errors"
 require_relative "hecks/autoloads"
 require "hecks_templating"
+require "hecks_multidomain"
 require "hecks/domain/inspector"
 require "hecks/domain/builder_methods"
 require "hecks/domain/compiler"
@@ -42,7 +43,7 @@ module Hecks
   @loaded_domains = {}
   @domain_objects = {}
   @last_domain = nil
-  @load_strategy = :files
+  @load_strategy = :memory
   @extension_registry = {}
   @extension_meta = {}
   @cross_domain_queries = {}
