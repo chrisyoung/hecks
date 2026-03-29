@@ -40,6 +40,7 @@ module Hecks
   # HTTP server components for serving Hecks domains over REST and JSON-RPC.
   module HTTP
     autoload :DomainServer,       "hecks/extensions/serve/domain_server"
+    autoload :MultiDomainServer,  "hecks/extensions/serve/multi_domain_server"
     autoload :RpcServer,          "hecks/extensions/serve/rpc_server"
     autoload :RouteBuilder,       "hecks/extensions/serve/route_builder"
     autoload :OpenapiGenerator,   "hecks/generators/docs/openapi_generator"
