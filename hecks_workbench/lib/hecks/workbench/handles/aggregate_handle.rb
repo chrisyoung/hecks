@@ -272,9 +272,14 @@ module Hecks
       lc.transitions.each { |cmd, target| builder.transition(cmd => target) }
       builder.transition(mapping)
       @builder.instance_variable_set(:@lifecycle, builder.build)
-      cmd = mapping.keys.first
+      cmd_name = mapping.keys.first
       target = mapping.values.first
-      puts "#{cmd} transition added -> #{target}"
+      # Auto-create the command if it doesn't exist
+      id_name = "#{Hecks::Utils.underscore(@name)}_id"
+      unless @builder.instance_variable_get(:@commands)&.any? { |c| c.name == cmd_name }
+        command(cmd_name) { attribute id_name.to_sym, reference_to(@name) }
+      end
+      puts "#{cmd_name} transition added -> #{target}"
       self
     end
 

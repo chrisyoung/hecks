@@ -116,6 +116,8 @@ module Hecks
           def inject_lifecycle_status(args)
             return unless @aggregate&.lifecycle
             target = @aggregate.lifecycle.target_for(@command.name)
+            # For create commands, use the lifecycle default when no transition is defined
+            target ||= @aggregate.lifecycle.default if @is_create
             return unless target
             field = @aggregate.lifecycle.field
             args.reject! { |argument| argument.start_with?("#{field}:") }
