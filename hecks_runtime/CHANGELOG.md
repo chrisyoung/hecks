@@ -4,6 +4,11 @@
 
 - Initial release as a standalone component
 
+### 2026-03-28
+
+- Boot and Runtime check `respond_to?(:connections)` instead of `:persist_to`
+- Configuration DomainConfigBuilder supports `extend` alongside legacy methods
+
 ### 2026-03-27
 
 - `hecks_filesystem_store` extension — JSON file persistence, auto-wires at boot

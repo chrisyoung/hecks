@@ -4,6 +4,11 @@
 
 - Initial release as a standalone component
 
+### 2026-03-28
+
+- Unified `extend` API replaces `persist_to`, `listens_to`, `sends_to`, `extend_with`
+- CQRS named connections via `extend :sqlite, as: :write`
+
 ### 2026-03-27
 
 - `Hecks.build_go(domain)` — generates Go projects from the domain IR
