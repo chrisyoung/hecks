@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:version, "Show Hecks version, or domain version (--domain)", group: "Project",
+Hecks::CLI.register_command(:version, "Show Hecks version, or domain version (--domain)",
   options: {
     domain:  { type: :string, desc: "Domain gem name or path" },
     version: { type: :string, desc: "Domain version" }

@@ -1,6 +1,6 @@
 require_relative "../domain_introspector"
 
-Hecks::CLI.register_command(:generate_config, "Generate config reflecting current wiring", group: "Generate",
+Hecks::CLI.register_command(:generate_config, "Generate config reflecting current wiring",
   options: {
     domain: { type: :string,  desc: "Domain gem name or path" },
     force:  { type: :boolean, desc: "Overwrite without prompting" }

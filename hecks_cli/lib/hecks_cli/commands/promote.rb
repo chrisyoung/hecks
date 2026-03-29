@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:promote, "Extract an aggregate into its own domain", group: "Domain Tools",
+Hecks::CLI.register_command(:promote, "Extract an aggregate into its own domain",
   args: ["AGGREGATE"]
 ) do |aggregate_name|
 

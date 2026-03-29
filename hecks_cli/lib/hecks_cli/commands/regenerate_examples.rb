@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:regenerate_examples, "Regenerate all example outputs from the pizzas domain", group: "Dev") do
+Hecks::CLI.register_command(:regenerate_examples, "Regenerate all example outputs from the pizzas domain") do
   root = File.expand_path("../..", __dir__)
   pizzas = File.join(root, "examples", "pizzas")
 
