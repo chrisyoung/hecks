@@ -1,20 +1,37 @@
 # = HecksContracts
 #
-# Data contracts that guarantee cross-target consistency.
-# Every generator (Ruby, Go, Rails, static) consumes these
-# contracts instead of maintaining its own type/display/form logic.
+# Contract registry. Each contract registers itself here.
+# Generators query by name: Hecks::Contracts.for(:types)
+#
+# Targets register on existing contracts:
+#   HecksTemplating::TypeContract.register_target(:java, { "String" => "String" })
 #
 module Hecks
   module Contracts
-    autoload :TypeContract,        "hecks_contracts/type_contract"
-    autoload :DisplayContract,     "hecks_contracts/display_contract"
-    autoload :ViewContract,        "hecks_contracts/view_contract"
-    autoload :EventContract,       "hecks_contracts/event_contract"
-    autoload :EventLogContract,    "hecks_contracts/event_log_contract"
-    autoload :FormParsingContract, "hecks_contracts/form_parsing_contract"
-    autoload :AggregateContract,   "hecks_contracts/aggregate_contract"
-    autoload :NamingContract,      "hecks_contracts/naming_contract"
-    autoload :MigrationContract,   "hecks_contracts/migration_contract"
-    autoload :UILabelContract,     "hecks_contracts/ui_label_contract"
+    @registry = {}
+
+    def self.register(name, contract)
+      @registry[name.to_sym] = contract
+    end
+
+    def self.for(name)
+      @registry[name.to_sym]
+    end
+
+    def self.registered
+      @registry.keys
+    end
   end
 end
+
+# Register all built-in contracts (hecks_templating loaded before us)
+Hecks::Contracts.register(:types,      HecksTemplating::TypeContract)
+Hecks::Contracts.register(:display,    HecksTemplating::DisplayContract)
+Hecks::Contracts.register(:views,      HecksTemplating::ViewContract)
+Hecks::Contracts.register(:events,     HecksTemplating::EventContract)
+Hecks::Contracts.register(:event_log,  HecksTemplating::EventLogContract)
+Hecks::Contracts.register(:forms,      HecksTemplating::FormParsingContract)
+Hecks::Contracts.register(:aggregates, HecksTemplating::AggregateContract)
+Hecks::Contracts.register(:naming,     HecksTemplating::Names)
+Hecks::Contracts.register(:migrations, HecksTemplating::MigrationContract)
+Hecks::Contracts.register(:ui_labels,  HecksTemplating::UILabelContract)
