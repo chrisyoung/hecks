@@ -85,9 +85,7 @@ module Hecks
         end
 
         def dispatch_policy_command(command_name, event_attrs)
-          target_agg = @domain.aggregates.find do |a|
-            a.commands.any? { |c| c.name == command_name.to_s }
-          end
+          target_agg = @domain.aggregate_for_command(command_name)
           return @command_bus.dispatch(command_name, **event_attrs) unless target_agg
 
           filtered_attrs = filter_command_attrs(target_agg, command_name, event_attrs)

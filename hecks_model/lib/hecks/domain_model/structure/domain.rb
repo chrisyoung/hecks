@@ -182,6 +182,37 @@ module Hecks
       def flows_mermaid
         Hecks::FlowGenerator.new(self).generate_mermaid
       end
+
+      # All reactive policies across all aggregates and domain level.
+      # Eliminates Law of Demeter chain: domain.aggregates.flat_map(&:policies).select(&:reactive?)
+      #
+      # @return [Array<Behavior::Policy>]
+      def reactive_policies
+        all = aggregates.flat_map { |a| a.policies.select(&:reactive?) }
+        all + policies.select(&:reactive?)
+      end
+
+      # All commands across all aggregates.
+      #
+      # @return [Array<Behavior::Command>]
+      def all_commands
+        aggregates.flat_map(&:commands)
+      end
+
+      # All events across all aggregates.
+      #
+      # @return [Array<Behavior::DomainEvent>]
+      def all_events
+        aggregates.flat_map(&:events)
+      end
+
+      # Find the aggregate that owns a command by name.
+      #
+      # @param command_name [String] the command name
+      # @return [Aggregate, nil]
+      def aggregate_for_command(command_name)
+        aggregates.find { |a| a.commands.any? { |c| c.name == command_name.to_s } }
+      end
     end
     end
   end
