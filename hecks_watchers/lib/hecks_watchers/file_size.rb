@@ -68,4 +68,6 @@ module HecksWatchers
       end.size
     end
   end
+
+  register_watcher(:advisory, FileSize)
 end

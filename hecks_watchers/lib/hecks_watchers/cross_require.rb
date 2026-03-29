@@ -64,4 +64,6 @@ module HecksWatchers
       end
     end
   end
+
+  register_watcher(:blocking, CrossRequire)
 end

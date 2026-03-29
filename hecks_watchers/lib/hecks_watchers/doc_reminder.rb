@@ -68,4 +68,6 @@ module HecksWatchers
       end
     end
   end
+
+  register_watcher(:advisory, DocReminder)
 end
