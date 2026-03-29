@@ -28,7 +28,7 @@ RSpec.describe "Hecks.boot with connections" do
     end
 
     mod = Object.const_get("ConnTestDomain")
-    expect(mod.connections[:persist][:default]).to eq({ type: :memory })
+    expect(mod.connections[:persist][:default].type).to eq(:memory)
     expect(app).to be_a(Hecks::Runtime)
   end
 

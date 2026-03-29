@@ -7,7 +7,7 @@ JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
 require_relative "hecks/errors"
 require_relative "hecks/autoloads"
 
-# Core — always loaded
+# Default modules — loaded with require "hecks"
 require "hecks_contracts"
 require "hecks_templating"
 require "hecks/domain/inspector"
@@ -17,8 +17,9 @@ require "hecks/domain/in_memory_loader"
 require "hecks/domain/event_storm_importer"
 require "hecks/domain/visualizer_methods"
 require "hecks/runtime/boot"
+require "hecks/workshop"
 
-# Registries (lightweight, no dependencies)
+# Registries
 require_relative "hecks/registries/extension_registry"
 require_relative "hecks/registries/domain_registry"
 require_relative "hecks/registries/cross_domain"
