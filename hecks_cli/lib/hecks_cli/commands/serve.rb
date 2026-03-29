@@ -9,7 +9,7 @@
 module Hecks
   class CLI < Thor
     class Domain < Thor
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       desc "serve", "Serve a domain as HTTP (default) or JSON-RPC (--rpc)"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"

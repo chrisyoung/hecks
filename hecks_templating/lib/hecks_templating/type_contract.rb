@@ -1,15 +1,15 @@
-# = Hecks::TypeContract
+# = HecksTemplating::TypeContract
 #
 # Single source of truth for mapping domain IR types to target-specific
 # representations. Every generator (Go, SQL, JSON Schema, OpenAPI)
 # consumes this contract instead of maintaining its own type map.
 #
-#   Hecks::TypeContract.go("Integer")      # => "int64"
-#   Hecks::TypeContract.sql("Integer")     # => "INTEGER"
-#   Hecks::TypeContract.json("Integer")    # => "integer"
-#   Hecks::TypeContract.openapi("Integer") # => "integer"
+#   HecksTemplating::TypeContract.go("Integer")      # => "int64"
+#   HecksTemplating::TypeContract.sql("Integer")     # => "INTEGER"
+#   HecksTemplating::TypeContract.json("Integer")    # => "integer"
+#   HecksTemplating::TypeContract.openapi("Integer") # => "integer"
 #
-module Hecks
+module HecksTemplating
   module TypeContract
     TYPES = {
       "String"   => { go: "string",          sql: "VARCHAR(255)", json: "string",  openapi: "string"  },

@@ -10,7 +10,7 @@ module Hecks
     #   Hecks::HTTP::JsonSchemaGenerator.new(domain).generate
     #
     class JsonSchemaGenerator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Creates a new JsonSchemaGenerator for a domain.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR
@@ -160,7 +160,7 @@ module Hecks
         elsif attr.reference?
           { type: "string", format: "uuid", description: "Reference to #{attr.type}" }
         else
-          { type: Hecks::TypeContract.json(attr.ruby_type) }
+          { type: HecksTemplating::TypeContract.json(attr.ruby_type) }
         end
       end
     end

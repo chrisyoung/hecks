@@ -25,24 +25,24 @@ module HecksGo
       end
 
       def index_route(agg, safe, plural, attrs, agg_snake)
-        vc = Hecks::ViewContract
-        ac = Hecks::AggregateContract
-        dc = Hecks::DisplayContract
+        vc = HecksTemplating::ViewContract
+        ac = HecksTemplating::AggregateContract
+        dc = HecksTemplating::DisplayContract
 
-        cols = attrs.map { |a| "{Label: \"#{Hecks::UILabelContract.label(a.name)}\"}" }
+        cols = attrs.map { |a| "{Label: \"#{HecksTemplating::UILabelContract.label(a.name)}\"}" }
         create_cmds, update_cmds = ac.partition_commands(agg)
 
         btns = create_cmds.map { |c|
-          "{Label: \"#{Hecks::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{GoUtils.snake_case(c.name)}/new\", Allowed: true}"
+          "{Label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{GoUtils.snake_case(c.name)}/new\", Allowed: true}"
         }
 
         row_acts = update_cmds.map { |c|
           cm = GoUtils.snake_case(c.name)
           if ac.direct_action?(c, agg_snake)
             self_ref = ac.self_ref_attr(c, agg_snake)
-            "{Label: \"#{Hecks::UILabelContract.label(c.name)}\", HrefPrefix: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref&.name}\"}"
+            "{Label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", HrefPrefix: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref&.name}\"}"
           else
-            "{Label: \"#{Hecks::UILabelContract.label(c.name)}\", HrefPrefix: \"/#{plural}/#{cm}/new?id=\", Allowed: true}"
+            "{Label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", HrefPrefix: \"/#{plural}/#{cm}/new?id=\", Allowed: true}"
           end
         }
 
@@ -96,7 +96,7 @@ module HecksGo
         cmd.attributes.each do |a|
           field = GoUtils.pascal_case(a.name)
           go_type = GoUtils.go_type(a)
-          lines << "\t\t\t#{Hecks::FormParsingContract.go_parse_line(a.name, field, go_type)}"
+          lines << "\t\t\t#{HecksTemplating::FormParsingContract.go_parse_line(a.name, field, go_type)}"
         end
         lines << "\t\t}"
         lines << "\t\tagg, event, err := cmd.Execute(app.#{safe}Repo)"
@@ -114,9 +114,9 @@ module HecksGo
       end
 
       def html_routes
-        vc = Hecks::ViewContract
-        ac = Hecks::AggregateContract
-        dc = Hecks::DisplayContract
+        vc = HecksTemplating::ViewContract
+        ac = HecksTemplating::AggregateContract
+        dc = HecksTemplating::DisplayContract
         lines = []
 
         @domain.aggregates.each do |agg|
@@ -136,7 +136,7 @@ module HecksGo
           lc_field = lc&.field&.to_s
           attrs.each do |a|
             field = GoUtils.pascal_case(a.name)
-            label = Hecks::UILabelContract.label(a.name)
+            label = HecksTemplating::UILabelContract.label(a.name)
             if a.list?
               lines << "\t\t\t{Label: \"#{label}\", Type: \"list\", Items: func() []string { var s []string; for _, v := range obj.#{field} { s = append(s, fmt.Sprintf(\"%v\", v)) }; return s }()},"
             elsif lc_field && a.name.to_s == lc_field
@@ -156,9 +156,9 @@ module HecksGo
               cm = GoUtils.snake_case(c.name)
               if ac.direct_action?(c, agg_snake)
                 self_ref = ac.self_ref_attr(c, agg_snake)
-                "#{safe}Button{Label: \"#{Hecks::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref.name}\"}"
+                "#{safe}Button{Label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{cm}\", Allowed: true, Direct: true, IdField: \"#{self_ref.name}\"}"
               else
-                "#{safe}Button{Label: \"#{Hecks::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{cm}/new?id=\" + obj.ID, Allowed: true}"
+                "#{safe}Button{Label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", Href: \"/#{plural}/#{cm}/new?id=\" + obj.ID, Allowed: true}"
               end
             }
             lines << "\t\tbuttons := []#{safe}Button{#{btn_exprs.join(', ')}}"

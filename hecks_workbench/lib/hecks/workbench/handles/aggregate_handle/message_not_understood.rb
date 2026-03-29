@@ -17,7 +17,7 @@ module Hecks
       #   #    Create it with: Cat.command("Feed") { attribute :name, String }
       #
       module MessageNotUnderstood
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         # Handle unknown method calls with a helpful suggestion message.
         #
         # Converts the method name to a command-style constant name and raises

@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module PolicySpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for a reactive policy.
           #
           # The generated spec:

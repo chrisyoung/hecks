@@ -8,7 +8,7 @@ module Hecks
         # and invariant enforcement. Mixed into SpecGenerator.
         #
         module ValueObjectSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec file for a value object class.
           #
           # The generated spec covers:

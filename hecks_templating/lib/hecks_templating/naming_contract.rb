@@ -1,15 +1,15 @@
-# = Hecks::Templating::Names
+# = HecksTemplating::Names
 #
 # Single source of truth for all naming conventions in Hecks.
 # Include in any class/module for bare method calls:
 #
-#   include Hecks::Templating::Names
+#   include HecksTemplating::Names
 #   domain_module_name("Pizzas")     # => "PizzasDomain"
 #   domain_aggregate_slug("Pizza")   # => "pizzas"
 #   domain_command_method("CreatePizza", "Pizza") # => :create
 #
-module Hecks
-  module Templating
+module HecksTemplating
+
     module Names
       module_function
 
@@ -75,5 +75,4 @@ module Hecks
         Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(domain_name)) + "_domain"
       end
     end
-  end
 end

@@ -17,7 +17,7 @@ module Hecks
     #   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
     #
     class CommandRunner
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Initializes the runner with a domain definition, repositories, and event bus.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the domain IR containing

@@ -13,7 +13,7 @@ module Hecks
     #   example_args(aggregate)  # => "name: \"example\", size: \"example\""
     #
     module SpecHelpers
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       # Returns the fully qualified class name for use in RSpec +describe+ blocks.

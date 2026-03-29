@@ -14,7 +14,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  module Adapters\n  ..."
     #
     class SqlAdapterGenerator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       include SqlBuilder
 
       # Initializes a generator for a single aggregate's SQL repository.

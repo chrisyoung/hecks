@@ -19,7 +19,7 @@ module Hecks
     #   Post.transition "PublishPost" => "published"
     #
     class AggregateHandle
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
     include Presenter
 
     attr_reader :name

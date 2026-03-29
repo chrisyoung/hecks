@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module ViewSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for a domain-level view.
           #
           # @param view [Hecks::DomainModel::Behavior::ReadModel] the view IR

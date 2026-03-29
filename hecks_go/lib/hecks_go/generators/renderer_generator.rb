@@ -7,7 +7,7 @@
 module HecksGo
   class RendererGenerator
     def generate
-      vc = Hecks::ViewContract
+      vc = HecksTemplating::ViewContract
       structs = []
 
       # Layout structs: NavItem, PageData

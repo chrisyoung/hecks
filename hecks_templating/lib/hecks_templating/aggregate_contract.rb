@@ -1,4 +1,4 @@
-# = Hecks::AggregateContract
+# = HecksTemplating::AggregateContract
 #
 # Single source of truth for what every generated aggregate must
 # enforce, regardless of target language. Both Ruby and Go generators
@@ -7,13 +7,13 @@
 # Covers: standard fields, validation rules (presence, enum),
 # lifecycle defaults + transitions, and invariants.
 #
-#   rules = Hecks::AggregateContract.rules(aggregate_ir)
+#   rules = HecksTemplating::AggregateContract.rules(aggregate_ir)
 #   rules[:validations]    # => [{ field: :name, check: :presence }, ...]
 #   rules[:enums]          # => [{ field: :category, values: [...] }, ...]
 #   rules[:lifecycle]      # => { field: :status, default: "draft", ... }
 #   rules[:standard_fields] # => [{ name: :id, type: "string" }, ...]
 #
-module Hecks
+module HecksTemplating
   module AggregateContract
     # Every aggregate must have these fields.
     STANDARD_FIELDS = [

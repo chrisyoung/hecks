@@ -9,7 +9,7 @@ module Hecks
       # SqlStrategy to keep it under the 200-line limit.
       #
       module SqlHelpers
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         # Computes the SQL table name for an aggregate (underscore + pluralized).
         #
         # @param aggregate_name [String] the aggregate name (e.g., "Pizza")
@@ -56,7 +56,7 @@ module Hecks
           t = type.to_s
           # Handle Ruby's boolean class names
           t = "Boolean" if %w[TrueClass FalseClass].include?(t)
-          Hecks::TypeContract.sql(t)
+          HecksTemplating::TypeContract.sql(t)
         end
 
         # Converts a Ruby value to a SQL literal string.

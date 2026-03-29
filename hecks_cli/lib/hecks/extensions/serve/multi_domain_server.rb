@@ -22,7 +22,7 @@ module Hecks
     #   MultiDomainServer.new(domains, runtimes, port: 9292).run
     #
     class MultiDomainServer
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       include UIRoutes
 
       def initialize(domains, runtimes, port: 9292)
@@ -71,10 +71,10 @@ module Hecks
       def build_nav
         items = [{ label: "Home", href: "/" }]
         @entries.each do |e|
-          group = Hecks::UILabelContract.label(e[:domain].name)
+          group = HecksTemplating::UILabelContract.label(e[:domain].name)
           e[:domain].aggregates.each do |agg|
             items << {
-              label: Hecks::UILabelContract.plural_label(agg.name),
+              label: HecksTemplating::UILabelContract.plural_label(agg.name),
               href: "/#{e[:slug]}/#{plural(agg)}",
               group: group
             }
@@ -114,7 +114,7 @@ module Hecks
       def serve_home(res)
         agg_data = @entries.flat_map do |e|
           e[:domain].aggregates.map do |agg|
-            d = Hecks::DisplayContract.home_aggregate_data(agg, "#{e[:slug]}/#{plural(agg)}")
+            d = HecksTemplating::DisplayContract.home_aggregate_data(agg, "#{e[:slug]}/#{plural(agg)}")
             { name: d[:name], href: d[:href], commands: d[:commands],
               attributes: d[:attributes], policies: d[:policies] }
           end
@@ -129,12 +129,12 @@ module Hecks
       def serve_config(res)
         summaries = @entries.flat_map do |e|
           e[:domain].aggregates.map do |agg|
-            s = Hecks::DisplayContract.aggregate_summary(agg)
+            s = HecksTemplating::DisplayContract.aggregate_summary(agg)
             { name: agg.name, commands: s[:commands], ports: s[:ports] }
           end
         end
-        policies = @entries.flat_map { |e| Hecks::DisplayContract.policy_labels(e[:domain]) }
-        roles = @entries.flat_map { |e| Hecks::DisplayContract.available_roles(e[:domain]) }.uniq
+        policies = @entries.flat_map { |e| HecksTemplating::DisplayContract.policy_labels(e[:domain]) }
+        roles = @entries.flat_map { |e| HecksTemplating::DisplayContract.available_roles(e[:domain]) }.uniq
         html = @renderer.render(:config,
           title: "Config — #{@brand}", brand: @brand, nav_items: @nav,
           aggregates: summaries, policies: policies, roles: roles,

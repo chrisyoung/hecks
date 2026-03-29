@@ -7,7 +7,7 @@
 module HecksStatic
   class GemGenerator
     module DomainWriter
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       def generate_aggregates(root, gem_name, mod)

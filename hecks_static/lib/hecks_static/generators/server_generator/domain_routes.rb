@@ -12,7 +12,7 @@
 module HecksStatic
   class ServerGenerator
     module DomainRoutes
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       def domain_behavior_routes
@@ -47,7 +47,7 @@ module HecksStatic
 
       def events_route
         mod = domain_module_name(@domain.name)
-        mapper = Hecks::EventLogContract.ruby_mapper(event_var: "e")
+        mapper = HecksTemplating::EventLogContract.ruby_mapper(event_var: "e")
         [
           "        server.mount_proc \"/_events\" do |req, res|",
           "          events = #{mod}.events.map do |e|",

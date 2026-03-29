@@ -1,16 +1,16 @@
-# = Hecks::DisplayContract
+# = HecksTemplating::DisplayContract
 #
 # Named display conventions shared by Ruby and Go generators. Every
 # inline rendering pattern is defined here once and referenced by
 # name, so both targets produce identical UI behavior.
 #
-#   Hecks::DisplayContract.cell_expression(attr, "obj")
-#   Hecks::DisplayContract.lifecycle_transitions(lifecycle)
-#   Hecks::DisplayContract.aggregate_summary(agg)
-#   Hecks::DisplayContract.policy_labels(domain)
-#   Hecks::DisplayContract.available_roles(domain)
+#   HecksTemplating::DisplayContract.cell_expression(attr, "obj")
+#   HecksTemplating::DisplayContract.lifecycle_transitions(lifecycle)
+#   HecksTemplating::DisplayContract.aggregate_summary(agg)
+#   HecksTemplating::DisplayContract.policy_labels(domain)
+#   HecksTemplating::DisplayContract.available_roles(domain)
 #
-module Hecks
+module HecksTemplating
   module DisplayContract
     # Format a cell value for index table display.
     # List attributes show "N items"; scalars show the value.

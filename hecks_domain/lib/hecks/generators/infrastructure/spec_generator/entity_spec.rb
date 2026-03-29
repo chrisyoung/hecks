@@ -8,7 +8,7 @@ module Hecks
         # and invariant enforcement. Mixed into SpecGenerator.
         #
         module EntitySpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec file for a sub-entity class.
           #
           # The generated spec covers:

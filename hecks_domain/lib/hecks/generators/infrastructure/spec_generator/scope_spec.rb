@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module ScopeSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for a scope defined on an aggregate.
           #
           # @param scope [Hecks::DomainModel::Structure::Scope] the scope IR

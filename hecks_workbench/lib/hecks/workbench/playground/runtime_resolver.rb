@@ -18,7 +18,7 @@ module Hecks
       #   end
       #
       module RuntimeResolver
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         private
 
         # Resolve a command class constant from the compiled domain module.
