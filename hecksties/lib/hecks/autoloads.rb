@@ -76,6 +76,7 @@ module Hecks
   module DomainModel
     autoload :Behavior,  "hecks/domain_model/behavior"
     autoload :Structure, "hecks/domain_model/structure"
+    autoload :Names,     "hecks/domain_model/names"
   end
 
   # = Hecks::DSL

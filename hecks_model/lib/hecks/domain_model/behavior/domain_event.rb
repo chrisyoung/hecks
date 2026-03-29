@@ -31,7 +31,7 @@ module Hecks
       #   attributes carried by this event. Defaults to an empty array.
       # @return [DomainEvent]
       def initialize(name:, attributes: [])
-        @name = name
+        @name = Names.event_name(name)
         @attributes = attributes
       end
     end
