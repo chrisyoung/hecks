@@ -1,8 +1,8 @@
 require "spec_helper"
 
 RSpec.describe "OR conditions" do
-  let(:domain) do
-    Hecks.domain "OrTest" do
+  before(:all) do
+    domain = Hecks.domain "OrTest" do
       aggregate "Pizza" do
         attribute :name, String
         attribute :style, String
@@ -15,9 +15,7 @@ RSpec.describe "OR conditions" do
         end
       end
     end
-  end
 
-  before do
     @app = Hecks.load(domain, force: true)
     repo = @app["Pizza"]
     Hecks::Querying::AdHocQueries.bind(OrTestDomain::Pizza, repo)

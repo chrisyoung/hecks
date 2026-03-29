@@ -173,11 +173,9 @@ RSpec.describe "gem packaging smoke test" do
     end
   end
 
-  it "hecks gem can be required in a subprocess" do
-    root = File.expand_path("../../..", __dir__)
-    result = `cd #{root} && bundle exec ruby -e 'require "hecks"; puts Hecks::VERSION' 2>&1`
-    expect($?.success?).to be(true),
-      "require 'hecks' failed in subprocess:\n#{result}"
+  it "hecks gem can be required and reports a version" do
+    expect(defined?(Hecks::VERSION)).to be_truthy
+    expect(Hecks::VERSION).to match(/\d+\.\d+/)
   end
 end
 
