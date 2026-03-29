@@ -1,4 +1,4 @@
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Migrations
@@ -15,7 +15,7 @@ module Hecks
         # @param aggregate_name [String] the aggregate name (e.g., "Pizza")
         # @return [String] the table name (e.g., "pizzas")
         def table_name(aggregate_name)
-          Names.aggregate_slug(aggregate_name)
+          DomainNaming.aggregate_slug(aggregate_name)
         end
 
         # Computes the join table name for a value object on an aggregate.

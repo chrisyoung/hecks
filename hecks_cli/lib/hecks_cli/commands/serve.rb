@@ -1,4 +1,4 @@
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 # Hecks::CLI::Domain#serve
 #
@@ -70,7 +70,7 @@ module Hecks
         $LOAD_PATH.unshift(lib_path)
         gem_name = domain.gem_name
         require gem_name
-        mod = Object.const_get(Names.domain_module_name(domain.name))
+        mod = Object.const_get(DomainNaming.domain_module_name(domain.name))
         say "Serving #{mod.name} (static) on http://localhost:#{port}", :green
         mod.serve(port: port)
       ensure

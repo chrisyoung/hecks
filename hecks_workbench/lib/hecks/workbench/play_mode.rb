@@ -1,4 +1,4 @@
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   class Workbench

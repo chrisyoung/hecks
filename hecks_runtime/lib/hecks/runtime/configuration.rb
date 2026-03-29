@@ -3,7 +3,7 @@ require "hecks_persist/database_connection"
 require_relative "configuration/domain_loader"
 require "hecks_persist/sql_setup"
 
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   # Hecks::Configuration
@@ -314,7 +314,7 @@ module Hecks
     # @return [void]
     def boot_domain(d)
       domain_obj, domain_module = load_domain(d)
-      mod = Names.domain_module_name(domain_obj.name)
+      mod = DomainNaming.domain_module_name(domain_obj.name)
       Hecks.instance_variable_get(:@domain_objects)[mod] = domain_obj
       generate_adapters(domain_obj) if @adapter_type == :sql
 
@@ -362,7 +362,7 @@ module Hecks
         return
       end
       @apps.each_value do |app|
-        mod = Object.const_get(Names.domain_module_name(app.domain.name))
+        mod = Object.const_get(DomainNaming.domain_module_name(app.domain.name))
         ActiveHecks.activate(mod)
       end
     end

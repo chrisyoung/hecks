@@ -7,7 +7,7 @@ require_relative "workbench/system_browser"
 require_relative "workbench/console_runner"
 require_relative "workbench/playground"
 
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   # Hecks::Workbench
@@ -93,7 +93,7 @@ module Hecks
       builder = @aggregate_builders[name] ||= DSL::AggregateBuilder.new(name)
       builder.instance_eval(&block) if block
 
-      handle = @handles[name] ||= AggregateHandle.new(name, builder, domain_module: Names.domain_module_name(@name), workbench: self)
+      handle = @handles[name] ||= AggregateHandle.new(name, builder, domain_module: DomainNaming.domain_module_name(@name), workbench: self)
 
       if block
         agg = builder.build
@@ -131,7 +131,7 @@ module Hecks
         return mod
       end
       ActiveHecks.activate(mod, domain: domain)
-      puts "ActiveHecks loaded for #{Names.domain_module_name(domain.name)}"
+      puts "ActiveHecks loaded for #{DomainNaming.domain_module_name(domain.name)}"
       mod
     end
 

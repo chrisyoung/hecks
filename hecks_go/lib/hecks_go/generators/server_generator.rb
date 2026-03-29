@@ -2,7 +2,7 @@ require_relative "server_generator/data_routes"
 require_relative "server_generator/ui_routes"
 require_relative "server_generator/domain_behavior_routes"
 
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 # HecksGo::ServerGenerator
 #
@@ -119,7 +119,7 @@ module HecksGo
       lines << "\t#{vc.go_struct(:home_agg, vc::HOME[:structs][:home_agg])}"
       lines << "\t#{vc.go_struct(:home_data, vc::HOME[:fields])}"
       lines << "\tmux.HandleFunc(\"GET /{$}\", func(w http.ResponseWriter, r *http.Request) {"
-      domain_label = Hecks::DisplayContract.domain_label(Names.domain_module_name(@domain.name))
+      domain_label = Hecks::DisplayContract.domain_label(DomainNaming.domain_module_name(@domain.name))
       lines << "\t\trenderer.Render(w, \"home\", \"#{domain_label}\", HomeData{"
       lines << "\t\t\tDomainName: \"#{domain_label}\", Aggregates: []HomeAgg{#{agg_data.join(', ')}},"
       lines << "\t\t})"

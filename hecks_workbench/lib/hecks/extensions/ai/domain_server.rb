@@ -5,7 +5,7 @@ require_relative "domain_server/command_tools"
 require_relative "domain_server/query_tools"
 require_relative "domain_server/repository_tools"
 
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module MCP
@@ -76,7 +76,7 @@ module Hecks
       #
       # @return [void]
       def build_and_load
-        mod_name = Names.domain_module_name(@domain.name)
+        mod_name = DomainNaming.domain_module_name(@domain.name)
         if Object.const_defined?(mod_name)
           @mod = Object.const_get(mod_name)
         else

@@ -1,4 +1,4 @@
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module HTTP
@@ -21,7 +21,7 @@ module Hecks
         def build_paths
           paths = {}
           @domain.aggregates.each do |agg|
-            slug = Names.aggregate_slug(agg.name)
+            slug = DomainNaming.aggregate_slug(agg.name)
             paths.merge!(crud_paths(agg, slug))
             paths.merge!(query_paths(agg, slug))
           end
