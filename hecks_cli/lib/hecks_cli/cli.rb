@@ -107,8 +107,9 @@ module Hecks
     desc "gem SUBCOMMAND", "Gem packaging commands", hide: true
     subcommand "gem", Gem
 
-    # Load and install all registered commands
-    Dir[File.join(__dir__, "commands/*.rb")].each { |f| require f }
+    # Load commands from all hecks modules
+    hecks_root = File.expand_path("../../../..", __FILE__)
+    Dir[File.join(hecks_root, "hecks*/lib/**/commands/*.rb")].sort.each { |f| require f }
     install_commands!
 
     map "generate:config"     => :generate_config
