@@ -102,7 +102,7 @@ RSpec.describe "Command Handlers" do
 
   describe "handler in play mode" do
     it "calls the handler before firing events" do
-      session = Hecks::Session.new("Pizzas")
+      session = Hecks::Workbench.new("Pizzas")
       calls = handler_calls
 
       session.aggregate "Pizza" do

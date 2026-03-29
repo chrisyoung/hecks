@@ -19,7 +19,7 @@ jobs:
       - run: bundle install
       - run: bundle exec rspec
       - name: Smoke test
-        run: ruby -Ihecksties/lib -Ihecks_model/lib -Ihecks_domain/lib -Ihecks_runtime/lib -Ihecks_session/lib -Ihecks_cli/lib -Ihecks_persist/lib examples/pizzas/app.rb
+        run: ruby -Ihecksties/lib -Ihecks_model/lib -Ihecks_domain/lib -Ihecks_runtime/lib -Ihecks_workbench/lib -Ihecks_cli/lib -Ihecks_persist/lib examples/pizzas/app.rb
 
   component:
     name: "${{ matrix.component }}"
@@ -32,7 +32,7 @@ jobs:
           - hecks_model
           - hecks_domain
           - hecks_runtime
-          - hecks_session
+          - hecks_workbench
           - hecks_cli
           - hecks_persist
     steps:

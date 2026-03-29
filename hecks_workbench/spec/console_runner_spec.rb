@@ -1,0 +1,74 @@
+require "spec_helper"
+
+RSpec.describe Hecks::Workbench::ConsoleRunner do
+  let(:runner) { described_class.new }
+
+  before do
+    allow($stdout).to receive(:puts)
+    runner.instance_variable_set(:@workbench, Hecks::Workbench.new("Test"))
+  end
+
+  describe "#aggregate" do
+    it "delegates to workbench" do
+      handle = runner.aggregate("Cat")
+      expect(handle).to be_a(Hecks::Workbench::AggregateHandle)
+    end
+
+    it "normalizes lowercase names" do
+      handle = runner.aggregate("cat")
+      expect(handle.name).to eq("Cat")
+    end
+  end
+
+  describe "named constants" do
+    it "hoists aggregate as a named constant" do
+      runner.aggregate("Cat")
+      expect(described_class.const_get(:Cat)).to be_a(Hecks::Workbench::AggregateHandle)
+    end
+
+    after do
+      described_class.send(:remove_const, :Cat) if described_class.const_defined?(:Cat, false)
+      described_class.send(:remove_const, :Dog) if described_class.const_defined?(:Dog, false)
+    end
+  end
+
+  describe "#help" do
+    it "prints help text" do
+      expect { runner.help }.to output(/Post.*create.*play!/m).to_stdout
+    end
+
+    it "returns nil" do
+      expect(runner.help).to be_nil
+    end
+  end
+
+  describe "delegated methods" do
+    it "delegates validate" do
+      runner.aggregate("Cat") { attribute :name, String; command("AdoptCat") { attribute :name, String } }
+      expect(runner.validate).to be true
+    end
+
+    it "delegates describe" do
+      runner.aggregate("Cat") { attribute :name, String }
+      expect { runner.describe }.to output(/Test Domain/).to_stdout
+    end
+
+    it "delegates aggregates" do
+      runner.aggregate("Cat")
+      runner.aggregate("Dog")
+      expect(runner.aggregates).to eq(["Cat", "Dog"])
+    end
+
+    it "delegates remove" do
+      runner.aggregate("Cat")
+      runner.remove("Cat")
+      expect(runner.aggregates).to be_empty
+    end
+
+    it "delegates add_verb" do
+      runner.add_verb("Poop")
+      domain = runner.send(:instance_variable_get, :@workbench).to_domain
+      expect(domain.custom_verbs).to include("Poop")
+    end
+  end
+end
