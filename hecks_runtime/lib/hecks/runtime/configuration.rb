@@ -98,7 +98,7 @@ module Hecks
       @domains << entry
     end
 
-    # DSL helper for domain block -- collects +listens_to+ and +sends_to+ declarations.
+    # DSL helper for domain block -- collects extend declarations.
     # Instances are created internally by +#domain+ when a block is given.
     class DomainConfigBuilder
       # @return [Array<String>] list of source domain names this domain listens to
@@ -126,6 +126,15 @@ module Hecks
       # @return [void]
       def sends_to(target)
         @sends << target
+      end
+
+      # Unified extend — delegates to listens_to/sends_to based on argument.
+      def extend(target, *args, **kwargs)
+        if target.is_a?(String) || target.is_a?(Module)
+          listens_to(target)
+        else
+          sends_to(target.to_s)
+        end
       end
     end
 

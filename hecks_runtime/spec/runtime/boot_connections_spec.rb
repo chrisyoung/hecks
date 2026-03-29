@@ -11,7 +11,7 @@ RSpec.describe "Hecks.boot with connections" do
     mod.instance_variable_set(:@connections, nil) if mod&.respond_to?(:connections)
   end
 
-  it "supports a boot block for persist_to" do
+  it "supports extend :memory in boot block" do
     File.write(File.join(tmpdir, "hecks_domain.rb"), <<~RUBY)
       Hecks.domain "ConnTest" do
         aggregate "Item" do
@@ -24,7 +24,7 @@ RSpec.describe "Hecks.boot with connections" do
     RUBY
 
     app = Hecks.boot(tmpdir) do
-      persist_to :memory
+      extend :memory
     end
 
     mod = Object.const_get("ConnTestDomain")
@@ -32,7 +32,7 @@ RSpec.describe "Hecks.boot with connections" do
     expect(app).to be_a(Hecks::Runtime)
   end
 
-  it "supports sends_to in boot block" do
+  it "supports extend with outbound handler in boot block" do
     File.write(File.join(tmpdir, "hecks_domain.rb"), <<~RUBY)
       Hecks.domain "ConnTest" do
         aggregate "Item" do
@@ -48,7 +48,7 @@ RSpec.describe "Hecks.boot with connections" do
     handler = ->(event) { received << event }
 
     app = Hecks.boot(tmpdir) do
-      sends_to :audit, handler
+      extend :audit, handler
     end
 
     Item.create(name: "Widget")
@@ -67,7 +67,6 @@ RSpec.describe "Hecks.boot with connections" do
       end
     RUBY
 
-    # adapter: :memory should still produce a working Runtime
     app = Hecks.boot(tmpdir, adapter: :memory)
     expect(app).to be_a(Hecks::Runtime)
   end
