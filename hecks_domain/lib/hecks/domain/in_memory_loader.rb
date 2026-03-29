@@ -23,7 +23,7 @@ module Hecks
   #   # => defines PizzasDomain module with all aggregate classes
   #
   module InMemoryLoader
-    extend Hecks::NamingHelpers
+    extend HecksTemplating::NamingHelpers
     # Load an entire domain into memory by generating and evaluating source
     # code for all domain components. Creates the top-level module constant
     # (e.g., PizzasDomain) and all nested classes.

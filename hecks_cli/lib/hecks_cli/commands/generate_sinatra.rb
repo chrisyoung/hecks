@@ -10,7 +10,7 @@
 module Hecks
   class CLI < Thor
     class Domain < Thor
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       desc "generate:sinatra", "Scaffold a Sinatra app from a domain"
       map "generate:sinatra" => :generate_sinatra
       option :domain, type: :string, desc: "Domain gem name or path"

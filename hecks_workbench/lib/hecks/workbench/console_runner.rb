@@ -19,7 +19,7 @@ module Hecks
     #   ConsoleRunner.new(name: "Pizzas").run
     #
     class ConsoleRunner
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
     # Create a new ConsoleRunner.
     #
     # @param name [String, nil] domain name to start with; if nil, attempts to

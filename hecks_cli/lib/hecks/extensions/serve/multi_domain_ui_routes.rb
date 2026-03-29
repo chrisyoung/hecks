@@ -9,7 +9,7 @@ module Hecks
       # Extracted from MultiDomainServer to stay under the 200-line limit.
       #
       module UIRoutes
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         private
 
         def serve_ui_route(req, res, entry, sub_path)
@@ -51,7 +51,7 @@ module Hecks
           create_cmds = agg.commands.select { |c| c.name.start_with?("Create") }
           buttons = create_cmds.map do |c|
             cm = domain_snake_name(c.name)
-            { label: Hecks::UILabelContract.label(c.name), href: "#{prefix}/#{p}/#{cm}/new", allowed: true }
+            { label: HecksTemplating::UILabelContract.label(c.name), href: "#{prefix}/#{p}/#{cm}/new", allowed: true }
           end
           html = @renderer.render(:index,
             title: "#{safe}s — #{@brand}", brand: @brand, nav_items: @nav,
@@ -87,7 +87,7 @@ module Hecks
           end
           html = @renderer.render(:form,
             title: "#{cmd.name} — #{@brand}", brand: @brand, nav_items: @nav,
-            command_name: Hecks::UILabelContract.label(cmd.name),
+            command_name: HecksTemplating::UILabelContract.label(cmd.name),
             action: "#{prefix}/#{p}/#{cmd_snake}/submit",
             error_message: nil, fields: fields)
           res["Content-Type"] = "text/html"
@@ -113,7 +113,7 @@ module Hecks
           end
           html = @renderer.render(:form,
             title: "#{cmd.name} — #{@brand}", brand: @brand, nav_items: @nav,
-            command_name: Hecks::UILabelContract.label(cmd.name),
+            command_name: HecksTemplating::UILabelContract.label(cmd.name),
             action: "#{prefix}/#{p}/#{cmd_snake}/submit",
             error_message: e.message, fields: fields)
           res["Content-Type"] = "text/html"

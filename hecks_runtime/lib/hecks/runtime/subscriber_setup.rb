@@ -11,7 +11,7 @@ module Hecks
       #   end
       #
       module SubscriberSetup
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         private
 
         # Wires all aggregate-level and domain-level event subscribers to the event bus.

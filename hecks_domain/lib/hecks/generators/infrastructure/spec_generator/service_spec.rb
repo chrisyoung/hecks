@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module ServiceSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for a domain service.
           #
           # @param service [Hecks::DomainModel::Behavior::Service]

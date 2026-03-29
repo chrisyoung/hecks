@@ -10,7 +10,7 @@ module Hecks
       # Mixed into OpenapiGenerator to keep path logic separate from schemas.
       #
       module PathBuilder
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         private
 
         # Builds all OpenAPI path entries for the domain. Iterates over every

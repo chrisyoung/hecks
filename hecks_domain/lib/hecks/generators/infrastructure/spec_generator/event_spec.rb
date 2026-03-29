@@ -8,7 +8,7 @@ module Hecks
         # and attribute carriage. Mixed into SpecGenerator.
         #
         module EventSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec file for an event class.
           #
           # The generated spec covers:

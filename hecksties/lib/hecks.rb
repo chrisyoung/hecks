@@ -7,6 +7,7 @@ JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
 
 require_relative "hecks/errors"
 require_relative "hecks/autoloads"
+require "hecks_templating"
 require "hecks/domain/inspector"
 require "hecks/domain/builder_methods"
 require "hecks/domain/compiler"

@@ -40,7 +40,7 @@ module Hecks
         # @param attr [Hecks::DomainModel::Structure::Attribute] the attribute
         # @return [String] the OpenAPI type string
         def openapi_type(attr)
-          Hecks::TypeContract.openapi(attr.ruby_type)
+          HecksTemplating::TypeContract.openapi(attr.ruby_type)
         end
       end
     end

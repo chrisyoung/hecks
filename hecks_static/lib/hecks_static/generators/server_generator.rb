@@ -13,7 +13,7 @@ module HecksStatic
 #   gen.generate("PizzasDomain", "pizzas_domain")
 #
 class ServerGenerator
-  include Hecks::NamingHelpers
+  include HecksTemplating::NamingHelpers
   include DomainRoutes
 
   def initialize(domain)

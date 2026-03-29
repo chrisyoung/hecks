@@ -11,7 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module PortSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec for a port on an aggregate.
           #
           # @param port_name [Symbol] the port name (e.g., :admin, :guest)

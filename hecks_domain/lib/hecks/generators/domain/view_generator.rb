@@ -25,7 +25,7 @@ module Hecks
     #   gen.generate
     #
     class ViewGenerator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
 
       # Initializes the view generator.
       #

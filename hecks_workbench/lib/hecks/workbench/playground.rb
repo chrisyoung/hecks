@@ -29,7 +29,7 @@ module Hecks
     #   playground.reset!      # clears events and repositories
     #
     class Playground
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
     include GemBootstrap
     include RuntimeResolver
 

@@ -52,7 +52,7 @@ module Hecks
     # @param event [Object] the domain event to publish
     # @return [void]
     def publish(event)
-      event.instance_variable_set(Hecks::EventContract::SOURCE_ATTR, @domain_gem_name)
+      event.instance_variable_set(HecksTemplating::EventContract::SOURCE_ATTR, @domain_gem_name)
       @inner.publish(event)
     end
 
@@ -110,7 +110,7 @@ module Hecks
 
       sources = @allowed_sources
       ->(event) {
-        source = event.instance_variable_get(Hecks::EventContract::SOURCE_ATTR)
+        source = event.instance_variable_get(HecksTemplating::EventContract::SOURCE_ATTR)
         handler.call(event) if source.nil? || sources.include?(source)
       }
     end

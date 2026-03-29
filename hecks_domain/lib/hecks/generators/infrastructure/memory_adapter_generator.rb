@@ -12,7 +12,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  module Adapters\n    class PizzaMemoryRepository\n  ..."
     #
     class MemoryAdapterGenerator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
 
       # Creates a new MemoryAdapterGenerator for a single aggregate.
       #

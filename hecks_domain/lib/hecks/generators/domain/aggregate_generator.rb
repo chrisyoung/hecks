@@ -25,7 +25,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."
     #
     class AggregateGenerator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       include ValidationGeneration
       include InvariantGeneration
 

@@ -14,7 +14,7 @@ module Hecks
         #   generate_aggregates(root, gem_name, mod)
         #
         module FileWriter
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           private
 
           # Writes the +.gemspec+ file for the domain gem.

@@ -7,7 +7,7 @@ module Hecks
     # per aggregate. Used by RpcServer to advertise its capabilities.
     #
     class RpcDiscovery
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Creates a new RpcDiscovery generator for a domain.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR

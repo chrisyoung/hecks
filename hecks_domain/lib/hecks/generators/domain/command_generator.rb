@@ -36,7 +36,7 @@ module Hecks
     #   gen.generate
     #
     class CommandGenerator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       include InjectionHelpers
 
       # Initializes the command generator.

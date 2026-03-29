@@ -11,7 +11,7 @@ module Hecks
   # remain accessible (backward compatible).
   #
   class PortEnforcer
-    include Hecks::NamingHelpers
+    include HecksTemplating::NamingHelpers
       # Standard class-level methods that may be restricted by a port definition.
       # These are the built-in persistence and query methods wired onto aggregate classes.
       CLASS_METHODS    = %i[find all count delete where first last create].freeze

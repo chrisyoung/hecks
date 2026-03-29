@@ -1,14 +1,14 @@
-# = Hecks::EventLogContract
+# = HecksTemplating::EventLogContract
 #
 # Defines the JSON shape for the /_events HTTP endpoint. Both Ruby
 # and Go servers must emit events in this exact format so the smoke
 # test can parse them identically regardless of target language.
 #
-#   Hecks::EventLogContract::FIELDS      # => [:name, :occurred_at]
-#   Hecks::EventLogContract.go_struct    # => Go struct definition
-#   Hecks::EventLogContract.ruby_mapper  # => Ruby event-to-hash code
+#   HecksTemplating::EventLogContract::FIELDS      # => [:name, :occurred_at]
+#   HecksTemplating::EventLogContract.go_struct    # => Go struct definition
+#   HecksTemplating::EventLogContract.ruby_mapper  # => Ruby event-to-hash code
 #
-module Hecks
+module HecksTemplating
   module EventLogContract
     # Every entry in GET /_events must have these fields.
     FIELDS = %i[name occurred_at].freeze

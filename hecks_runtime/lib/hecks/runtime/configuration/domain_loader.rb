@@ -20,7 +20,7 @@ module Hecks
     # 2. Set +source_path+ on the domain object for later reference
     # 3. Return a +[domain_obj, domain_module]+ tuple
     module DomainLoader
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       # Dispatches domain loading to the appropriate strategy based on whether

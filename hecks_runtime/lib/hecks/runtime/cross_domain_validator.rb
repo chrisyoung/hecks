@@ -20,7 +20,7 @@ module Hecks
     # This module is included in +Hecks::Boot+ and called during +boot_multi+
     # before any domain is loaded.
     module CrossDomainValidator
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       # Scans all domains for +reference_to+ attributes that point to aggregates
       # in other domains. Collects all violations and raises a single error with
       # all violations listed if any are found.

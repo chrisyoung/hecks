@@ -11,7 +11,7 @@ module Hecks
     #   end
     #
     module WorkflowSetup
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       # Wires all workflows defined in the domain DSL as callable singleton

@@ -8,7 +8,7 @@ module HecksStatic
 # Each route builds a locals hash and calls renderer.render(:template, locals).
 #
 class UIGenerator
-  include Hecks::NamingHelpers
+  include HecksTemplating::NamingHelpers
   include FormRoutes
   include ConfigRoutes
 
@@ -49,7 +49,7 @@ class UIGenerator
   def nav_items
     items = [{ label: "Home", href: "/" }]
     @domain.aggregates.each do |agg|
-      items << { label: Hecks::UILabelContract.plural_label(agg.name), href: "/#{plural(agg)}" }
+      items << { label: HecksTemplating::UILabelContract.plural_label(agg.name), href: "/#{plural(agg)}" }
     end
     items << { label: "Config", href: "/config" }
     items
@@ -95,7 +95,7 @@ class UIGenerator
 
   def root_route(mod)
     agg_data = @domain.aggregates.map do |agg|
-      d = Hecks::DisplayContract.home_aggregate_data(agg, plural(agg))
+      d = HecksTemplating::DisplayContract.home_aggregate_data(agg, plural(agg))
       "{ name: \"#{d[:name]}\", href: \"#{d[:href]}\", commands: #{d[:commands]}, attributes: #{d[:attributes]}, policies: #{d[:policies]} }"
     end
     [
@@ -114,19 +114,19 @@ class UIGenerator
     p = plural(agg)
     attrs = user_attrs(agg)
     agg_snake = domain_snake_name(agg.name)
-    ac = Hecks::AggregateContract
-    dc = Hecks::DisplayContract
+    ac = HecksTemplating::AggregateContract
+    dc = HecksTemplating::DisplayContract
     create_cmds, update_cmds = ac.partition_commands(agg)
 
     columns = attrs.map { |a| "{ label: \"#{humanize(a.name)}\" }" }
-    btns = create_cmds.map { |c| cm = domain_snake_name(c.name); "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/new\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
+    btns = create_cmds.map { |c| cm = domain_snake_name(c.name); "{ label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/new\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
     row_acts = update_cmds.map do |c|
       cm = domain_snake_name(c.name)
       if ac.direct_action?(c, agg_snake)
         self_id = ac.self_ref_attr(c, agg_snake)
-        "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href_prefix: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id&.name}\" }"
+        "{ label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", href_prefix: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id&.name}\" }"
       else
-        "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href_prefix: \"/#{p}/#{cm}/new?id=\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
+        "{ label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", href_prefix: \"/#{p}/#{cm}/new?id=\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
       end
     end
 
@@ -137,7 +137,7 @@ class UIGenerator
       "        server.mount_proc \"/#{p}\" do |req, res|",
       "          next unless req.path == \"/#{p}\"",
       "          all_items = #{safe}.all",
-      "          items = all_items.map { |obj| { id: obj.id, short_id: #{Hecks::ViewContract.ruby_short_id('obj.id')}, show_href: \"/#{p}/show?id=\" + obj.id, cells: [#{cells_code}] } }",
+      "          items = all_items.map { |obj| { id: obj.id, short_id: #{HecksTemplating::ViewContract.ruby_short_id('obj.id')}, show_href: \"/#{p}/show?id=\" + obj.id, cells: [#{cells_code}] } }",
       "          html = renderer.render(:index, title: \"#{safe}s — #{mod}\", brand: brand, nav_items: nav,",
       "            aggregate_name: \"#{safe}\", items: items,",
       "            columns: [#{columns.join(', ')}],",
@@ -169,7 +169,7 @@ class UIGenerator
           "{ label: \"#{humanize(a.name)}\", type: :list, items: obj.#{a.name}.map(&:to_s) }"
         end
       elsif lc_field && a.name.to_s == lc_field
-        transitions = Hecks::DisplayContract.lifecycle_transitions(lc)
+        transitions = HecksTemplating::DisplayContract.lifecycle_transitions(lc)
         "{ label: \"#{humanize(a.name)}\", type: :lifecycle, value: obj.#{a.name}.to_s, transitions: #{transitions.inspect} }"
       else
         "{ label: \"#{humanize(a.name)}\", value: obj.#{a.name}.to_s }"
@@ -177,16 +177,16 @@ class UIGenerator
     end
 
     # Collect buttons — from contract
-    ac = Hecks::AggregateContract
+    ac = HecksTemplating::AggregateContract
     btn_parts = []
     _, update_cmds = ac.partition_commands(agg)
     update_cmds.each do |c|
       cm = domain_snake_name(c.name)
       if ac.direct_action?(c, agg_snake)
         self_id = ac.self_ref_attr(c, agg_snake)
-        btn_parts << "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id.name}\" }"
+        btn_parts << "{ label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id.name}\" }"
       else
-        btn_parts << "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
+        btn_parts << "{ label: \"#{HecksTemplating::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }"
       end
     end
     # Cross-aggregate commands
@@ -198,7 +198,7 @@ class UIGenerator
       other.commands.each do |cmd|
         next unless cmd.attributes.any? { |a| a.name.to_s == "#{snake}_id" }
         cm = domain_snake_name(cmd.name)
-        btn_parts << "{ label: \"#{Hecks::UILabelContract.label(cmd.name)}\", href: \"/#{other_p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{other_safe}\", \"#{cm}\") }"
+        btn_parts << "{ label: \"#{HecksTemplating::UILabelContract.label(cmd.name)}\", href: \"/#{other_p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{other_safe}\", \"#{cm}\") }"
       end
     end
 

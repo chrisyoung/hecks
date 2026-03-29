@@ -9,7 +9,7 @@ module Hecks
         # event log validation. Mixed into SpecGenerator.
         #
         module CommandSpec
-          include Hecks::NamingHelpers
+          include HecksTemplating::NamingHelpers
           # Generates an RSpec spec file for a command class.
           #
           # The generated spec covers:

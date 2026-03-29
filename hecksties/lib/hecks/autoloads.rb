@@ -33,15 +33,6 @@ module Hecks
   autoload :Query,          "hecks/mixins/query"
   autoload :Specification,  "hecks/mixins/specification"
 
-  # Framework plumbing
-  autoload :TypeContract,   "hecks_templating/type_contract"
-  autoload :EventContract,    "hecks_templating/event_contract"
-  autoload :MigrationContract, "hecks_templating/migration_contract"
-  autoload :ViewContract,  "hecks_templating/view_contract"
-  module Templating
-    autoload :Names, "hecks_templating/naming_contract"
-  end
-  autoload :NamingHelpers,  "hecks_templating/naming_helpers"
   autoload :Utils,          "hecks/utils"
   autoload :VERSION,        "hecks/version"
   autoload :Configuration,  "hecks/runtime/configuration"

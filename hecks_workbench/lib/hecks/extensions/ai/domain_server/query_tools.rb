@@ -19,7 +19,7 @@ module Hecks
       #   - +serialize_aggregate(obj)+ -- formats a domain object as a readable string
       #
       module QueryTools
-        include Hecks::NamingHelpers
+        include HecksTemplating::NamingHelpers
         private
 
         # Iterates all aggregates in the domain and registers each of their

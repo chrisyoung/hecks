@@ -12,7 +12,7 @@ module Hecks
     #   # => { "Pizza" => #<PizzasDomain::Adapters::PizzaSqlRepository>, ... }
     #
     module SqlBoot
-      extend Hecks::NamingHelpers
+      extend HecksTemplating::NamingHelpers
       # Maps domain type names to Sequel column types for table creation.
       TYPE_MAP = {
         "String"  => String,

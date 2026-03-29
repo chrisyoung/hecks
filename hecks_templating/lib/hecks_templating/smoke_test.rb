@@ -89,7 +89,7 @@ module HecksTemplating
     private
 
     def partition_commands(agg, _agg_snake)
-      Hecks::AggregateContract.partition_commands(agg)
+      HecksTemplating::AggregateContract.partition_commands(agg)
     end
 
     def build_form_data(cmd)

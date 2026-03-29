@@ -1,15 +1,15 @@
-# = Hecks::ViewContract
+# = HecksTemplating::ViewContract
 #
 # Shared data shape contracts for the web explorer views. Each contract
 # defines the fields, types, and nested structs a template expects.
 # Generators for Go and Ruby both consume these contracts, ensuring
 # struct fields and template bindings never drift apart.
 #
-#   contract = Hecks::ViewContract::INDEX
+#   contract = HecksTemplating::ViewContract::INDEX
 #   contract[:fields]  # => [{name: :aggregate_name, type: :string}, ...]
-#   Hecks::ViewContract.go_name(:short_id)  # => "ShortId"
+#   HecksTemplating::ViewContract.go_name(:short_id)  # => "ShortId"
 #
-module Hecks
+module HecksTemplating
   module ViewContract
     # Maps a snake_case field name to a Go PascalCase name.
     # Centralizes the naming rule so templates and structs agree.

@@ -12,7 +12,7 @@ module Hecks
     #   end
     #
     module PortSetup
-      include Hecks::NamingHelpers
+      include HecksTemplating::NamingHelpers
       private
 
       # Wires all ports for every aggregate in the domain.
