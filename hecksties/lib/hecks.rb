@@ -25,6 +25,7 @@ require_relative "hecks/registries/domain_registry"
 require_relative "hecks/registries/cross_domain"
 require_relative "hecks/registries/thread_context"
 require_relative "hecks/registries/target_registry"
+require_relative "hecks/registries/adapter_registry"
 
 # = Hecks
 #
@@ -43,6 +44,7 @@ module Hecks
   extend CrossDomainMethods
   extend ThreadContextMethods
   extend TargetRegistryMethods
+  extend AdapterRegistryMethods
 
   @configuration = nil
   @loaded_domains = {}
@@ -54,6 +56,7 @@ module Hecks
   @cross_domain_queries = {}
   @cross_domain_views = {}
   @target_registry = {}
+  @adapter_registry = %i[memory sqlite postgres mysql mysql2 filesystem filesystem_store]
 
   def self.configure(&block)
     @configuration = Configuration.new
