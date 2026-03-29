@@ -25,7 +25,7 @@ module Hecks
             say "Domain not found: #{options[:domain]}", :red
             return
           end
-          spec = Gem.loaded_specs[domain.gem_name]
+          spec = ::Gem.loaded_specs[domain.gem_name]
           if spec
             say "#{domain.name}: #{spec.version}"
           else
