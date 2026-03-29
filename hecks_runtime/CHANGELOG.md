@@ -8,6 +8,7 @@
 
 - Boot and Runtime check `respond_to?(:connections)` instead of `:persist_to`
 - Configuration DomainConfigBuilder supports `extend` alongside legacy methods
+- `Runtime#extend` — apply extensions to a live runtime without rebooting
 
 ### 2026-03-27
 
