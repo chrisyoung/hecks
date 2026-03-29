@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 # Hecks::Configuration::DomainLoader
 #
 # Loads domain definitions from installed gems or local paths.
@@ -54,7 +56,7 @@ module Hecks
         $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
         require d[:gem_name]
         Dir[File.join(lib_path, "**/*.rb")].sort.each { |f| load f }
-        domain_module = Object.const_get(Hecks::Templating::Names.domain_module(domain_obj.name))
+        domain_module = Object.const_get(Names.domain_module(domain_obj.name))
         [domain_obj, domain_module]
       end
 
@@ -80,7 +82,7 @@ module Hecks
         Kernel.load(domain_file)
         domain_obj = Hecks.last_domain
         domain_obj.source_path = domain_file
-        domain_module = Object.const_get(Hecks::Templating::Names.domain_module(domain_obj.name))
+        domain_module = Object.const_get(Names.domain_module(domain_obj.name))
         [domain_obj, domain_module]
       end
     end

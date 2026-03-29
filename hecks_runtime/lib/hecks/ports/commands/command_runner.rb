@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   module Commands
     # Hecks::Commands::CommandRunner
@@ -27,7 +29,7 @@ module Hecks
         @domain = domain
         @repositories = repositories
         @event_bus = event_bus
-        @mod = Object.const_get(Hecks::Templating::Names.domain_module(domain.name))
+        @mod = Object.const_get(Names.domain_module(domain.name))
       end
 
       # Dispatches a command by name, creates the corresponding event, and publishes it.

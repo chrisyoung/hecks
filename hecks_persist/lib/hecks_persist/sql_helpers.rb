@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   module Migrations
     module Strategies
@@ -13,7 +15,7 @@ module Hecks
         # @param aggregate_name [String] the aggregate name (e.g., "Pizza")
         # @return [String] the table name (e.g., "pizzas")
         def table_name(aggregate_name)
-          Hecks::Templating::Names.table_name(aggregate_name)
+          Names.table_name(aggregate_name)
         end
 
         # Computes the join table name for a value object on an aggregate.

@@ -3,6 +3,8 @@ require_relative "event_directionality"
 require_relative "queue_wiring"
 require_relative "../ports/event_bus/filtered_event_bus"
 
+Names = Hecks::Templating::Names
+
 # Hecks::Boot
 #
 # Convenience method that loads a domain from a directory, validates it,
@@ -185,7 +187,7 @@ module Hecks
 
       # Fire registered extensions on each domain
       domains.each_with_index do |domain, i|
-        mod = Object.const_get(Hecks::Templating::Names.domain_module(domain.name))
+        mod = Object.const_get(Names.domain_module(domain.name))
         Hecks.extension_registry.each do |_name, hook|
           hook.call(mod, domain, runtimes[i])
         end
