@@ -101,7 +101,7 @@ module Hecks
               # Match attr name to known aggregates
               all_agg_to_domain.each do |agg_name, owner_domain|
                 next if owner_domain == d.name
-                snake = Hecks::Utils.underscore(agg_name)
+                snake = Hecks::Templating::Names.domain_snake_name(agg_name)
                 parts = snake.split("_")
                 matched = parts.each_index.any? { |i| attr.name.to_s == parts.drop(i).join("_") + "_id" }
                 ref_counts[owner_domain].add(d.name) if matched

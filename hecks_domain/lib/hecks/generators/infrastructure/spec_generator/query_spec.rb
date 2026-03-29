@@ -23,8 +23,8 @@ module Hecks
           # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the owning aggregate
           # @return [String] the complete RSpec file content
           def generate_query_spec(query, aggregate)
-            safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
-            query_method = Hecks::Utils.underscore(query.name)
+            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
+            query_method = Hecks::Templating::Names.domain_snake_name(query.name)
             create_cmd = find_create_command(aggregate)
             return nil unless create_cmd
 
@@ -50,7 +50,7 @@ module Hecks
 
           # Find the first create command (no self-ref id attribute).
           def find_create_command(aggregate)
-            agg_snake = Hecks::Utils.underscore(aggregate.name)
+            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
@@ -65,12 +65,12 @@ module Hecks
 
           # Derive the shortcut method name for a command.
           def command_method_name(cmd, aggregate)
-            agg_snake = Hecks::Utils.underscore(aggregate.name)
+            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
 
-            full = Hecks::Utils.underscore(cmd.name)
+            full = Hecks::Templating::Names.domain_snake_name(cmd.name)
             suffixes.each do |s|
               stripped = full.sub(/_#{s}$/, "")
               return stripped if stripped != full

@@ -17,7 +17,7 @@ module Hecks
           # @return [String] the complete RSpec file content
           def generate_workflow_spec(workflow)
             mod = mod_name
-            method_name = Hecks::Utils.underscore(workflow.name)
+            method_name = Hecks::Templating::Names.domain_snake_name(workflow.name)
             lines = []
             lines << "require \"spec_helper\""
             lines << ""

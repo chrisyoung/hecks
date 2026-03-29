@@ -94,7 +94,7 @@ module Hecks
         mod = Object.const_get(mod_name)
         adapters = {}
         domain.aggregates.each do |agg|
-          safe_name = Utils.sanitize_constant(agg.name)
+          safe_name = Hecks::Templating::Names.domain_constant_name(agg.name)
           repo_class = mod::Adapters.const_get("#{safe_name}SqlRepository")
           adapters[agg.name] = repo_class.new(db)
         end
@@ -132,10 +132,10 @@ module Hecks
       # @return [void]
       def create_vo_join_tables(agg, db)
         agg_table = table_name_for(agg)
-        agg_snake = Utils.underscore(Utils.sanitize_constant(agg.name))
+        agg_snake = Hecks::Templating::Names.domain_snake_name(Hecks::Templating::Names.domain_constant_name(agg.name))
 
         list_vos(agg).each do |vo, _list_attr|
-          vo_table = :"#{agg_table}_#{Utils.underscore(vo.name)}s"
+          vo_table = :"#{agg_table}_#{Hecks::Templating::Names.domain_snake_name(vo.name)}s"
           next if db.table_exists?(vo_table)
 
           fk_name = :"#{agg_snake}_id"

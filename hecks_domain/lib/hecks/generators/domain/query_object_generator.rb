@@ -60,7 +60,7 @@ module Hecks
       def query_module_lines(indent)
         pad = " " * indent
         lines = []
-        lines << "#{pad}module #{Hecks::Utils.sanitize_constant(@aggregate.name)}Queries"
+        lines << "#{pad}module #{Hecks::Templating::Names.domain_constant_name(@aggregate.name)}Queries"
         queryable_attributes.each do |attr|
           name = attr.name
           lines << "#{pad}  def by_#{name}(value)"

@@ -22,9 +22,9 @@ module Hecks
           #   aggregate, used to build the fully qualified class name
           # @return [String] the complete RSpec file content
           def generate_value_object_spec(value_object, aggregate)
-            safe_agg = Hecks::Utils.sanitize_constant(aggregate.name)
+            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
             fqn = full_class_name("#{safe_agg}::#{value_object.name}")
-            snake = Hecks::Utils.underscore(value_object.name)
+            snake = Hecks::Templating::Names.domain_snake_name(value_object.name)
             lines = []
 
             lines << "require \"spec_helper\""

@@ -164,15 +164,15 @@ module Hecks
             first_agg = @domain.aggregates.first
             if first_agg && !first_agg.commands.empty?
               cmd = first_agg.commands.first
-              snake = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(first_agg.name))
+              snake = Hecks::Templating::Names.domain_snake_name(Hecks::Templating::Names.domain_constant_name(first_agg.name))
               params = cmd.attributes.map { |a| "#{a.name}: ..." }.join(", ")
               lines << "# Run a command"
-              lines << "app.#{snake}.#{Hecks::Utils.underscore(cmd.name)}(#{params})"
+              lines << "app.#{snake}.#{Hecks::Templating::Names.domain_snake_name(cmd.name)}(#{params})"
               lines << ""
             end
 
             if first_agg
-              snake = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(first_agg.name))
+              snake = Hecks::Templating::Names.domain_snake_name(Hecks::Templating::Names.domain_constant_name(first_agg.name))
               lines << "# Query the repository"
               lines << "app.#{snake}[1]  # find by id"
               lines << ""

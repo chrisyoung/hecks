@@ -345,7 +345,7 @@ module Hecks
     # @param name [String] the raw name
     # @return [String] sanitized constant name
     def normalize_name(name)
-      Hecks::Utils.sanitize_constant(name)
+      Hecks::Templating::Names.domain_constant_name(name)
     end
 
     # Infer a PascalCase command name from a snake_case method name.

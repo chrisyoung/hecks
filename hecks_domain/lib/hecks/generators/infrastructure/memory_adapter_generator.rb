@@ -23,7 +23,7 @@ module Hecks
         @aggregate = aggregate
         @domain_module = domain_module
         @mixin_prefix = mixin_prefix
-        @safe_name = Hecks::Utils.sanitize_constant(@aggregate.name)
+        @safe_name = Hecks::Templating::Names.domain_constant_name(@aggregate.name)
       end
 
       # Generates Ruby source for an in-memory repository adapter class.
@@ -37,7 +37,7 @@ module Hecks
       #
       # @return [String] the complete Ruby source code for the adapter class
       def generate
-        snake = Hecks::Utils.underscore(@safe_name)
+        snake = Hecks::Templating::Names.domain_snake_name(@safe_name)
         port_path = "Ports::#{@safe_name}Repository"
 
         lines = []
