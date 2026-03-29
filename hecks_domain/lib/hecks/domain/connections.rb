@@ -59,10 +59,8 @@ module Hecks
 
     private
 
-    PERSISTENCE_TYPES = %i[memory sqlite postgres mysql mysql2 filesystem filesystem_store].freeze
-
     def persistence_type?(name)
-      PERSISTENCE_TYPES.include?(name)
+      Hecks.adapter?(name)
     end
 
     def persist(type, as: :default, **options)
