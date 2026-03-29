@@ -82,6 +82,21 @@ module Hecks
           ctx.session.reset!
           "playground reset"
         end
+
+        server.define_tool(
+          name: "extend",
+          description: "Apply an extension to the live runtime (e.g. :logging, :sqlite, :tenancy)",
+          input_schema: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Extension name (e.g. logging, sqlite, tenancy)" }
+            },
+            required: ["name"]
+          }
+        ) do |args|
+          ctx.ensure_session!
+          ctx.capture_output { ctx.session.extend(args["name"].to_sym) }
+        end
       end
     end
   end
