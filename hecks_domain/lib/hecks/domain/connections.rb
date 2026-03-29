@@ -2,99 +2,92 @@ module Hecks
   # Hecks::DomainConnections
   #
   # Mixin extended onto generated domain modules (e.g., PizzasDomain) to declare
-  # what crosses the domain boundary. Two things cross: data (persist_to) and
-  # events (listens_to / sends_to). Everything outside the boundary is a connection.
-  #
-  # Part of the top-level Hecks API. Extended onto domain modules during boot.
-  # Connections are declarative -- they describe the wiring, not the implementation.
-  # The runtime reads these declarations to set up actual adapters and event routing.
+  # what crosses the domain boundary. One verb: `extend`.
   #
   #   app = Hecks.boot(__dir__) do
-  #     persist_to :sqlite
-  #     listens_to DeliveryDomain
-  #     sends_to :notifications, SendgridAdapter.new
+  #     extend :sqlite                           # persist
+  #     extend :tenancy                          # middleware
+  #     extend :slack, webhook: ENV["SLACK_URL"] # outbound events
+  #     extend CommentsDomain                    # listen to domain events
   #   end
   #
-  #   # Or after boot:
-  #   PizzasDomain.persist_to :sqlite
-  #   PizzasDomain.connections  # => { persist: { type: :sqlite }, ... }
-  #
   module DomainConnections
-    # Declare the persistence adapter for this domain. Supports both unnamed
-    # (backward-compatible) and named connections for CQRS read/write separation.
+    # Unified extension method. Dispatches based on argument type:
     #
-    # @overload persist_to(adapter_type, **options)
-    #   Unnamed connection (stored under :default).
-    #   @param adapter_type [Symbol] :memory, :sqlite, :postgres, :mysql
-    #   @param options [Hash] adapter options (e.g., database: "path.db")
+    #   extend CommentsDomain              # Module → listen to their events
+    #   extend :sqlite                     # Symbol (persistence) → persist to adapter
+    #   extend :tenancy                    # Symbol (middleware) → add middleware
+    #   extend :slack, webhook: url        # Symbol + opts → outbound events
+    #   extend :audit, ->(e) { log(e) }   # Symbol + handler → outbound events
     #
-    # @overload persist_to(name, adapter_type, **options)
-    #   Named connection for CQRS.
-    #   @param name [Symbol] connection name (e.g., :write, :read)
-    #   @param adapter_type [Symbol] :memory, :sqlite, :postgres, :mysql
-    #   @param options [Hash] adapter options
-    #
+    # @param target [Module, Symbol] domain module or extension name
+    # @param args [Array] additional arguments (adapter, handler, etc.)
+    # @param kwargs [Hash] options passed through
+    # @param block [Proc] optional handler block (for outbound events)
     # @return [void]
-    def persist_to(name_or_type, type_or_nil = nil, **options)
-      if type_or_nil
-        name = name_or_type
-        type = type_or_nil
+    def extend(target, *args, **kwargs, &block)
+      if target.is_a?(Module)
+        listen_to(target)
+      elsif target.is_a?(Symbol)
+        if args.first.respond_to?(:call) || block
+          send_to(target, args.first, **kwargs, &block)
+        elsif persistence_type?(target)
+          persist(target, **kwargs)
+        elsif kwargs.any? && !persistence_type?(target)
+          send_to(target, nil, **kwargs, &block)
+        else
+          use_extension(target, **kwargs)
+        end
       else
-        name = :default
-        type = name_or_type
+        super
       end
-      @connections ||= default_connections
-      @connections[:persist] ||= {}
-      @connections[:persist][name] = { type: type, **options }
     end
 
-    # Declare that this domain listens to events from another domain module.
-    # The source must have been booted and expose an event_bus.
+    # Return the current connection configuration hash.
     #
-    # @param source [Module] another domain module (e.g., DeliveryDomain)
-    # @return [void]
-    def listens_to(source)
-      @connections ||= default_connections
-      @connections[:listens] << source
-    end
-
-    # Declare an outbound event channel. All events published in this domain
-    # are forwarded to the handler (an adapter object or block).
-    #
-    # @param name_or_domain [Symbol, Module] channel name or target domain
-    # @param adapter [Object, nil] object responding to #call or #publish
-    # @param block [Proc] alternative handler block
-    # @return [void]
-    def sends_to(name_or_domain, adapter = nil, &block)
-      @connections ||= default_connections
-      handler = adapter || block
-      @connections[:sends] << { name: name_or_domain, handler: handler }
-    end
-
-    # Return the current connection configuration hash. Contains three keys:
-    # +:persist+ (Hash of named adapter configs), +:listens+ (Array of source
-    # modules), and +:sends+ (Array of outbound channel hashes).
-    #
-    # @return [Hash{Symbol => Hash, Array}] the connections configuration
+    # @return [Hash{Symbol => Hash, Array}]
     def connections
       @connections || default_connections
     end
 
     # Expose the event bus set by Runtime for cross-domain subscriptions.
-    # Set during boot by the runtime layer; nil if the domain has not been booted.
     #
-    # @return [Hecks::EventBus, nil] the domain's event bus, or nil if not booted
+    # @return [Hecks::EventBus, nil]
     def event_bus
       @event_bus
     end
 
     private
 
-    # Build the default (empty) connections hash.
-    #
-    # @return [Hash{Symbol => Hash, Array}]
+    PERSISTENCE_TYPES = %i[memory sqlite postgres mysql mysql2 filesystem filesystem_store].freeze
+
+    def persistence_type?(name)
+      PERSISTENCE_TYPES.include?(name)
+    end
+
+    def persist(type, as: :default, **options)
+      @connections ||= default_connections
+      @connections[:persist][as] = { type: type, **options }
+    end
+
+    def listen_to(source)
+      @connections ||= default_connections
+      @connections[:listens] << source
+    end
+
+    def send_to(name, adapter = nil, **options, &block)
+      @connections ||= default_connections
+      handler = adapter || block
+      @connections[:sends] << { name: name, handler: handler, **options }
+    end
+
+    def use_extension(name, **kwargs)
+      @connections ||= default_connections
+      @connections[:extensions] << { name: name, **kwargs }
+    end
+
     def default_connections
-      { persist: {}, listens: [], sends: [] }
+      { persist: {}, listens: [], sends: [], extensions: [] }
     end
   end
 end

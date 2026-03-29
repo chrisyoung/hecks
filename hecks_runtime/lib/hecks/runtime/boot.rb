@@ -89,7 +89,7 @@ module Hecks
       mod = load_domain(domain)
       mod_name = mod.name
       load_stubs(dir, domain)
-      mod.extend(Hecks::DomainConnections) unless mod.respond_to?(:persist_to)
+      mod.extend(Hecks::DomainConnections) unless mod.respond_to?(:connections)
 
       # Evaluate the boot block on the domain module before creating Runtime
       mod.instance_eval(&block) if block

@@ -1,13 +1,12 @@
 # Domain Connections
 
-Everything outside the domain boundary is a **connection**. Two things cross:
-data (`persist_to`) and events (`listens_to` / `sends_to`).
+Everything outside the domain boundary is a **connection**. One verb: `extend`.
 
-## persist_to — data crosses the boundary
+## Persistence
 
 ```ruby
 app = Hecks.boot(__dir__) do
-  persist_to :sqlite
+  extend :sqlite
 end
 ```
 
@@ -17,7 +16,16 @@ With options:
 
 ```ruby
 app = Hecks.boot(__dir__) do
-  persist_to :sqlite, database: "production.db"
+  extend :sqlite, database: "production.db"
+end
+```
+
+Named connections for CQRS:
+
+```ruby
+app = Hecks.boot(__dir__) do
+  extend :sqlite, as: :write
+  extend :sqlite, as: :read, database: "read.db"
 end
 ```
 
@@ -27,33 +35,26 @@ The `adapter:` keyword argument still works as shorthand:
 app = Hecks.boot(__dir__, adapter: :sqlite)
 ```
 
-## sends_to — events leave the boundary
+## Outbound events
 
-Forward all domain events to an external adapter (e.g., email, Kafka, logging):
-
-```ruby
-app = Hecks.boot(__dir__) do
-  sends_to :notifications, SendgridAdapter.new
-end
-```
-
-The handler can be any object that responds to `#call(event)` or `#publish(event)`,
-or a block:
+Forward all domain events to an external handler:
 
 ```ruby
 app = Hecks.boot(__dir__) do
-  sends_to(:audit) { |event| AuditLog.record(event) }
+  extend :slack, webhook: ENV["SLACK_URL"]
+  extend :audit, ->(event) { AuditLog.record(event) }
+  extend(:logs) { |event| puts event }
 end
 ```
 
-## listens_to — events enter the boundary
+## Cross-domain events
 
 Subscribe to events from another domain. The source domain must be booted first:
 
 ```ruby
 delivery_app = Hecks.boot(delivery_dir)
 pizza_app = Hecks.boot(pizza_dir) do
-  listens_to DeliveryDomain
+  extend DeliveryDomain
 end
 
 pizza_app.on("DeliveredOrder") do |event|
@@ -61,17 +62,20 @@ pizza_app.on("DeliveredOrder") do |event|
 end
 ```
 
-## Inspecting connections
+## Middleware
 
-Every domain module exposes its connection configuration:
+```ruby
+app = Hecks.boot(__dir__) do
+  extend :tenancy
+  extend :auth
+end
+```
+
+## Inspecting connections
 
 ```ruby
 PizzasDomain.connections
-# => { persist: { type: :sqlite }, listens: [], sends: [{ name: :audit, handler: #<Proc> }] }
-```
+# => { persist: { default: { type: :sqlite } }, listens: [], sends: [], extensions: [] }
 
-Each domain module also exposes its event bus for cross-domain wiring:
-
-```ruby
-PizzasDomain.event_bus  # => #<Hecks::Services::EventBus>
+PizzasDomain.event_bus  # => #<Hecks::EventBus>
 ```

@@ -86,10 +86,12 @@
 - `hecks_retry` — exponential backoff for transient errors
 
 ### Domain Connections DSL
-- `persist_to :sqlite` — declare persistence adapter in boot block or on domain module
-- `sends_to :notifications, adapter` — forward all domain events to an outbound handler
-- `sends_to(:audit) { |event| ... }` — forward events to a block handler
-- `listens_to OtherDomain` — subscribe to another domain's event bus (cross-domain events)
+- `extend :sqlite` — declare persistence adapter
+- `extend :slack, webhook: url` — forward all domain events to an outbound handler
+- `extend(:audit) { |event| ... }` — forward events to a block handler
+- `extend CommentsDomain` — subscribe to another domain's event bus (cross-domain events)
+- `extend :tenancy` — add middleware extension
+- `extend :sqlite, as: :write` — named CQRS connections
 - `SomeDomain.connections` — inspect current connection configuration
 - `SomeDomain.event_bus` — access the domain's event bus for cross-domain wiring
 - `Runtime#swap_adapter(name, repo)` — extension gems swap memory adapters for SQL
@@ -97,7 +99,7 @@
 ## Runtime API
 - `Hecks.boot(__dir__)` — find domain file, validate, build, load, and wire in one call
 - `Hecks.boot(__dir__, adapter: :sqlite)` — automatic SQL setup
-- `Hecks.boot(__dir__) { persist_to :sqlite }` — boot block with connections
+- `Hecks.boot(__dir__) { extend :sqlite }` — boot block with connections
 - `Hecks.load(domain)` — load domain and wire runtime in one step
 - `app["Pizza"]` — access aggregate repository
 - `app.on("EventName") { }` — subscribe to events at runtime

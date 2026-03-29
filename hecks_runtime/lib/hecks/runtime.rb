@@ -77,7 +77,7 @@ module Hecks
         @port_name = port
         @mod_name = domain.module_name + "Domain"
         @mod = Object.const_get(@mod_name)
-        @mod.extend(Hecks::DomainConnections) unless @mod.respond_to?(:persist_to)
+        @mod.extend(Hecks::DomainConnections) unless @mod.respond_to?(:connections)
         @event_bus = event_bus || EventBus.new
         @repositories = {}
         @adapter_overrides = {}
