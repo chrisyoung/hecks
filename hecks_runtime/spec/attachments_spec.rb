@@ -18,9 +18,6 @@ RSpec.describe "Attachments (HEC-165)" do
     @app = Hecks.load(domain)
   end
 
-  after do
-    Object.send(:remove_const, :AttachTestDomain) if defined?(AttachTestDomain)
-  end
 
   it "marks aggregate as attachable in the IR" do
     agg = domain.aggregates.first
@@ -36,7 +33,6 @@ RSpec.describe "Attachments (HEC-165)" do
     end
     agg = plain.aggregates.first
     expect(agg.attachable?).to be false
-    Object.send(:remove_const, :PlainTestDomain) if defined?(PlainTestDomain)
   end
 
   it "attaches file metadata and lists attachments" do

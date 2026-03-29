@@ -243,5 +243,43 @@ module Hecks
         h[name.to_s] = obj.send(name) if obj.respond_to?(name)
       end
     end
+
+    # Remove a constant from a module if it exists.
+    #
+    #   Hecks::Utils.remove_constant(:PizzasDomain)
+    #
+    def remove_constant(name, from: Object)
+      from.send(:remove_const, name) if from.const_defined?(name, false)
+    end
+
+    # Start tracking constants for the current scope (test, REPL session).
+    # Call before a test runs to snapshot what's already tracked.
+    #
+    def begin_constant_tracking
+      @tracked_constants ||= []
+      @tracking_watermark = @tracked_constants.size
+    end
+
+    # Track a constant that was hoisted to Object.
+    #
+    #   Hecks::Utils.track_constant(:PizzasDomain)
+    #
+    def track_constant(name)
+      @tracked_constants ||= []
+      @tracked_constants << name.to_sym
+    end
+
+    # Remove constants added since the last begin_constant_tracking call.
+    # Only cleans up what the current scope created, not shared setup.
+    #
+    def cleanup_constants!
+      @tracked_constants ||= []
+      watermark = @tracking_watermark || 0
+      to_remove = @tracked_constants[watermark..]
+      to_remove&.each { |name| remove_constant(name) }
+      @tracked_constants = @tracked_constants[0...watermark]
+      @tracking_watermark = watermark
+      remove_constant(:APP)
+    end
   end
 end

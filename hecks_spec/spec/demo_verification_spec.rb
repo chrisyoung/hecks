@@ -70,8 +70,6 @@ RSpec.describe "Demo Script Verification" do
         mod = Object.const_get("PlayBasicDomain")
         created = mod::Post.create(title: "Hello World")
         expect(created.title).to eq("Hello World")
-      ensure
-        Object.send(:remove_const, :PlayBasicDomain) if Object.const_defined?(:PlayBasicDomain)
       end
 
       it "lifecycle sets default status on create" do
@@ -87,8 +85,6 @@ RSpec.describe "Demo Script Verification" do
         mod = Object.const_get("PlayDefaultDomain")
         created = mod::Post.create(title: "Hello World")
         expect(created.status).to eq("draft")
-      ensure
-        Object.send(:remove_const, :PlayDefaultDomain) if Object.const_defined?(:PlayDefaultDomain)
       end
 
       it "publishes a post via lifecycle transition" do
@@ -105,8 +101,6 @@ RSpec.describe "Demo Script Verification" do
         created = mod::Post.create(title: "Hello World")
         published = mod::Post.publish(post_id: created.id)
         expect(published.status).to eq("published")
-      ensure
-        Object.send(:remove_const, :PlayTransitionDomain) if Object.const_defined?(:PlayTransitionDomain)
       end
 
       it "captures events" do
@@ -119,8 +113,6 @@ RSpec.describe "Demo Script Verification" do
         mod = Object.const_get("PlayEventsDomain")
         mod::Post.create(title: "Test")
         expect(wb.events.size).to eq(1)
-      ensure
-        Object.send(:remove_const, :PlayEventsDomain) if Object.const_defined?(:PlayEventsDomain)
       end
     end
   end
@@ -176,8 +168,6 @@ RSpec.describe "Demo Script Verification" do
       %i[tenancy audit].each do |ext|
         expect { wb.extend(ext) }.not_to raise_error
       end
-    ensure
-      Object.send(:remove_const, :ExtendDemoDomain) if Object.const_defined?(:ExtendDemoDomain)
     end
   end
 

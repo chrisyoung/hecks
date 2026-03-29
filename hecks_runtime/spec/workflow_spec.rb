@@ -38,9 +38,6 @@ RSpec.describe "Workflow Engine (HEC-163)" do
     @app = Hecks.load(domain)
   end
 
-  after do
-    Object.send(:remove_const, :WorkflowTestDomain) if defined?(WorkflowTestDomain)
-  end
 
   it "registers workflows in the domain IR" do
     expect(domain.workflows.size).to eq(1)

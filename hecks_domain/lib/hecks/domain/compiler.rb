@@ -81,7 +81,7 @@ module Hecks
         end
       end
 
-      Object.send(:remove_const, mod) if Object.const_defined?(mod)
+      Hecks::Utils.remove_constant(mod.to_sym)
       begin
         InMemoryLoader.load(domain, mod)
       rescue SyntaxError, NameError => e
