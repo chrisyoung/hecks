@@ -20,6 +20,7 @@ module Hecks
     # This module is included in +Hecks::Boot+ and called during +boot_multi+
     # before any domain is loaded.
     module CrossDomainValidator
+      include Hecks::NamingHelpers
       # Scans all domains for +reference_to+ attributes that point to aggregates
       # in other domains. Collects all violations and raises a single error with
       # all violations listed if any are found.
@@ -40,7 +41,7 @@ module Hecks
               if owner
                 errors << "#{domain.name}::#{agg.name} uses reference_to(\"#{ref_name}\") " \
                           "which belongs to #{owner.name}. Cross-domain references must use " \
-                          "plain String IDs, not reference_to. Use: attribute :#{Hecks::Templating::Names.domain_snake_name(ref_name)}_id, String"
+                          "plain String IDs, not reference_to. Use: attribute :#{domain_snake_name(ref_name)}_id, String"
               end
             end
           end

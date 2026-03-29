@@ -40,6 +40,8 @@ module Hecks
   #   Pizza.new(name: "Margherita").name  # => "Margherita"
   #
   module Model
+    extend Hecks::NamingHelpers
+
     # Hook called when a class includes +Hecks::Model+. Sets up identity readers
     # (+id+, +created_at+, +updated_at+), extends the class with the attribute
     # DSL, and creates auto-discovery submodules for commands, events, queries,
@@ -59,6 +61,7 @@ module Hecks
 
     # Class-level DSL for declaring model attributes.
     module ClassMethods
+      include Hecks::NamingHelpers
       # Declares a named attribute with optional default and freeze behavior.
       # Each call to +attribute+ regenerates the constructor to accept the
       # new attribute as a keyword argument. Also defines +attr_reader+ and
@@ -191,14 +194,15 @@ module Hecks
       return if base.const_defined?(type, false)
 
       mod = Module.new
-      type_dir = Hecks::Templating::Names.domain_snake_name(type.to_s)
+      type_dir = domain_snake_name(type.to_s)
       mixin_proc = MIXINS[type]
 
+      snake = method(:domain_snake_name)
       mod.define_singleton_method(:const_missing) do |name|
         parts = base.name.split("::")
-        gem_name = Hecks::Templating::Names.domain_snake_name(parts.first)
-        agg_name = Hecks::Templating::Names.domain_snake_name(parts.last)
-        file_name = Hecks::Templating::Names.domain_snake_name(name.to_s)
+        gem_name = snake.call(parts.first)
+        agg_name = snake.call(parts.last)
+        file_name = snake.call(name.to_s)
 
         if mixin_proc
           # Pre-create class with mixin so DSL methods (emits, where, etc.)

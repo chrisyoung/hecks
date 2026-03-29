@@ -8,6 +8,7 @@ module Hecks
         # and invariant enforcement. Mixed into SpecGenerator.
         #
         module EntitySpec
+          include Hecks::NamingHelpers
           # Generates an RSpec spec file for a sub-entity class.
           #
           # The generated spec covers:
@@ -22,9 +23,9 @@ module Hecks
           #   aggregate, used to build the fully qualified class name
           # @return [String] the complete RSpec file content
           def generate_entity_spec(entity, aggregate)
-            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
+            safe_agg = domain_constant_name(aggregate.name)
             fqn = full_class_name("#{safe_agg}::#{entity.name}")
-            snake = Hecks::Templating::Names.domain_snake_name(entity.name)
+            snake = domain_snake_name(entity.name)
             lines = []
 
             lines << "require \"spec_helper\""

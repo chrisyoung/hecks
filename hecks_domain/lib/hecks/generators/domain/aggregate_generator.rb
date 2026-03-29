@@ -25,6 +25,7 @@ module Hecks
     #   gen.generate  # => "module PizzasDomain\n  class Pizza\n  ..."
     #
     class AggregateGenerator
+      include Hecks::NamingHelpers
       include ValidationGeneration
       include InvariantGeneration
 
@@ -38,7 +39,7 @@ module Hecks
         @aggregate = aggregate
         @domain_module = domain_module
         @mixin_prefix = mixin_prefix
-        @safe_name = Hecks::Templating::Names.domain_constant_name(@aggregate.name)
+        @safe_name = domain_constant_name(@aggregate.name)
         @user_attrs = @aggregate.attributes.reject { |a| Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(a.name.to_s) }
       end
 

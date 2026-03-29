@@ -6,13 +6,14 @@
 module HecksStatic
   class UIGenerator
     module ConfigRoutes
+      include Hecks::NamingHelpers
       private
 
       def config_route(mod)
         dc = Hecks::DisplayContract
 
         agg_rows = @domain.aggregates.map do |agg|
-          safe = Hecks::Templating::Names.domain_constant_name(agg.name)
+          safe = domain_constant_name(agg.name)
           summary = dc.aggregate_summary(agg)
           "{ name: \"#{safe}\", href: \"/#{plural(agg)}\", count: #{safe}.count, commands: \"#{summary[:commands]}\", ports: \"#{summary[:ports]}\" }"
         end

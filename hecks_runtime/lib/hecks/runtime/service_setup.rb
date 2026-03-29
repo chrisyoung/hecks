@@ -10,6 +10,7 @@ module Hecks
   #   Banking.transfer_money(source_id: "abc", target_id: "xyz", amount: 500)
   #
   module ServiceSetup
+    extend Hecks::NamingHelpers
     # Binds all domain services as singleton methods on the domain module.
     #
     # Iterates through +domain.services+ and wires each one as a callable
@@ -37,7 +38,7 @@ module Hecks
     # @param command_bus [Hecks::CommandBus] the command bus for the service context
     # @return [void]
     def self.wire_service(svc, mod, command_bus)
-      method_name = Hecks::Templating::Names.domain_snake_name(svc.name).to_sym
+      method_name = domain_snake_name(svc.name).to_sym
       call_body = svc.call_body
       attr_names = svc.attributes.map(&:name)
 

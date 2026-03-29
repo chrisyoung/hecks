@@ -36,6 +36,7 @@ module Hecks
     #   gen.generate
     #
     class CommandGenerator
+      include Hecks::NamingHelpers
       include InjectionHelpers
 
       # Initializes the command generator.
@@ -56,7 +57,7 @@ module Hecks
         @event = event
         @mixin_prefix = mixin_prefix
         @has_keyword_attrs = @command.attributes.any? { |a| Hecks::Utils.ruby_keyword?(a.name) }
-        agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate_name)
+        agg_snake = domain_snake_name(aggregate_name)
         @self_id_attr = find_self_id_attr(agg_snake)
         @is_create = @self_id_attr.nil?
       end

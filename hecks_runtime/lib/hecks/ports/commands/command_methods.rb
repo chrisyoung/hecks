@@ -23,6 +23,7 @@ module Hecks
     #   # creates shortcut methods using a custom executor proc
     #
     module CommandMethods
+      extend Hecks::NamingHelpers
       # Wires command classes to their repository and event bus, then creates shortcut methods.
       #
       # For each command defined on the aggregate, this method:
@@ -94,7 +95,7 @@ module Hecks
       #   definition, used to derive the ID field name
       # @return [void]
       def self.bind_bulk(klass, aggregate)
-        agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
+        agg_snake = domain_snake_name(aggregate.name)
 
         klass.define_singleton_method(:bulk) do |command_method, where: {}, spec: nil|
           items = if where.empty?
@@ -136,14 +137,14 @@ module Hecks
       # @yieldreturn [Proc] a proc that accepts a Hash of attributes and executes the command
       # @return [void]
       def self.bind_shortcuts(klass, aggregate)
-        agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
+        agg_snake = domain_snake_name(aggregate.name)
         agg_suffixes = agg_snake.split("_").each_index.map { |i|
           agg_snake.split("_").drop(i).join("_")
         }.uniq
 
         aggregate.commands.each do |cmd|
           executor = yield(cmd)
-          full_name = Hecks::Templating::Names.domain_snake_name(cmd.name)
+          full_name = domain_snake_name(cmd.name)
           method_name = full_name
           agg_suffixes.each do |suffix|
             stripped = full_name.sub(/_#{suffix}$/, "")

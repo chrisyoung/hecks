@@ -11,6 +11,7 @@ module Hecks
     module Infrastructure
       class SpecGenerator
         module LifecycleSpec
+          include Hecks::NamingHelpers
           # Generates an RSpec spec for an aggregate's lifecycle.
           #
           # @param aggregate [Hecks::DomainModel::Structure::Aggregate]
@@ -19,7 +20,7 @@ module Hecks
             lc = aggregate.lifecycle
             return nil unless lc
 
-            safe_agg = Hecks::Templating::Names.domain_constant_name(aggregate.name)
+            safe_agg = domain_constant_name(aggregate.name)
             create_cmd = find_create_cmd(aggregate)
             return nil unless create_cmd
 
@@ -85,7 +86,7 @@ module Hecks
           private
 
           def find_create_cmd(aggregate)
-            agg_snake = Hecks::Templating::Names.domain_snake_name(aggregate.name)
+            agg_snake = domain_snake_name(aggregate.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
@@ -99,12 +100,12 @@ module Hecks
           end
 
           def derive_method(cmd, agg)
-            agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+            agg_snake = domain_snake_name(agg.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq
 
-            full = Hecks::Templating::Names.domain_snake_name(cmd.name)
+            full = domain_snake_name(cmd.name)
             suffixes.each do |s|
               stripped = full.sub(/_#{s}$/, "")
               return stripped if stripped != full
@@ -113,7 +114,7 @@ module Hecks
           end
 
           def update_args(cmd, agg)
-            agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+            agg_snake = domain_snake_name(agg.name)
             suffixes = agg_snake.split("_").each_index.map { |i|
               agg_snake.split("_").drop(i).join("_")
             }.uniq

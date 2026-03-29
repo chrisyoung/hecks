@@ -7,6 +7,7 @@ module Hecks
     # per aggregate. Used by RpcServer to advertise its capabilities.
     #
     class RpcDiscovery
+      include Hecks::NamingHelpers
       # Creates a new RpcDiscovery generator for a domain.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR
@@ -54,7 +55,7 @@ module Hecks
             }
           end
           agg.queries.each do |query|
-            qn = Hecks::Templating::Names.domain_snake_name(query.name)
+            qn = domain_snake_name(query.name)
             params = query.block.parameters.map { |_, n| { name: n.to_s, type: "string" } }
             methods << { name: "#{agg.name}.#{qn}", description: "#{agg.name} lookup", params: params }
           end
