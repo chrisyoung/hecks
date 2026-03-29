@@ -44,7 +44,9 @@ module Hecks
           say "Built #{domain.gem_name} v#{version} (static)", :green
           say "  Output: #{output}/"
         when "rails"
-          say "Rails target not yet implemented (HEC-272)", :yellow
+          output = Hecks.build_rails(domain, output_dir: ".")
+          say "Built Rails app: #{output}/", :green
+          say "  cd #{output} && bundle install && rails server"
         else
           output = Hecks.build(domain, version: version)
           say "Built #{domain.gem_name} v#{version}", :green
