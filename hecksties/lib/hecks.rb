@@ -24,6 +24,7 @@ require_relative "hecks/registries/extension_registry"
 require_relative "hecks/registries/domain_registry"
 require_relative "hecks/registries/cross_domain"
 require_relative "hecks/registries/thread_context"
+require_relative "hecks/registries/target_registry"
 
 # = Hecks
 #
@@ -41,6 +42,7 @@ module Hecks
   extend DomainRegistryMethods
   extend CrossDomainMethods
   extend ThreadContextMethods
+  extend TargetRegistryMethods
 
   @configuration = nil
   @loaded_domains = {}
@@ -51,6 +53,7 @@ module Hecks
   @extension_meta = {}
   @cross_domain_queries = {}
   @cross_domain_views = {}
+  @target_registry = {}
 
   def self.configure(&block)
     @configuration = Configuration.new
@@ -67,6 +70,12 @@ module Hecks
     load_domain(domain, force: force)
     Runtime.new(domain, **opts, &config)
   end
+
+  # Register built-in build targets
+  register_target(:ruby) { |domain, **opts| Hecks.build(domain, **opts) }
+  register_target(:static) { |domain, **opts| Hecks.build_static(domain, **opts) }
+  register_target(:go) { |domain, **opts| Hecks.build_go(domain, **opts) }
+  register_target(:rails) { |domain, **opts| Hecks.build_rails(domain, **opts) }
 
   if defined?(::Rails::Railtie)
     begin
