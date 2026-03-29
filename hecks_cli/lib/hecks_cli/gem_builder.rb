@@ -10,10 +10,17 @@ module Hecks
   #   builder.install    # build + install all gems
   #
   class GemBuilder
-    COMPONENTS = %w[
-      hecksties hecks_model hecks_domain hecks_runtime
-      hecks_workshop hecks_cli hecks_persist hecks_watchers
-    ].freeze
+    # Discover components by finding directories with gemspecs
+    def self.discover_components(root)
+      Dir[File.join(root, "*/")].filter_map do |dir|
+        name = File.basename(dir)
+        next if name == "examples" || name.start_with?(".")
+        gemspec = File.join(dir, "#{name}.gemspec")
+        name if File.exist?(gemspec)
+      end.sort
+    end
+
+    COMPONENTS = discover_components(File.expand_path("../../..", __dir__)).freeze
 
     attr_reader :root
 
