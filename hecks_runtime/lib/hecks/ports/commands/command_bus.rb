@@ -123,11 +123,7 @@ module Hecks
         # Wrap middleware around the inner handler, outermost first
         chain = @middleware.reverse.reduce(inner) do |next_handler, mw|
           handler = mw[:handler]
-          if handler.is_a?(Proc)
-            -> { handler.call(command, next_handler) }
-          else
-            -> { handler.call(command, next_handler) }
-          end
+          -> { handler.call(command, next_handler) }
         end
 
         chain.call
