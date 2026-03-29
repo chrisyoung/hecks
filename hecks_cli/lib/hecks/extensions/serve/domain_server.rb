@@ -4,7 +4,7 @@ require "stringio"
 require "tmpdir"
 require_relative "route_builder"
 
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module HTTP
@@ -146,7 +146,7 @@ module Hecks
       #
       # @return [void]
       def boot_domain
-        mod_name = Names.domain_module_name(@domain.name)
+        mod_name = DomainNaming.domain_module_name(@domain.name)
         unless Object.const_defined?(mod_name)
           tmpdir = Dir.mktmpdir("hecks_serve")
           gem_path = Hecks.build(@domain, output_dir: tmpdir)
