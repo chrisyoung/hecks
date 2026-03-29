@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 # Hecks::CLI::Domain#generate_sinatra
 #
 # Scaffolds a Sinatra web app from a domain definition. Generates a Gemfile,
@@ -97,11 +99,11 @@ module Hecks
       # @param domain [DomainModel::Structure::Domain] the domain
       # @return [String] the app.rb source code
       def sinatra_app_rb(domain)
-        mod = Hecks::Templating::Names.domain_module_name(domain.name)
+        mod = Names.domain_module_name(domain.name)
         routes = []
 
         domain.aggregates.each do |agg|
-          slug = Hecks::Templating::Names.aggregate_slug(agg.name)
+          slug = Names.aggregate_slug(agg.name)
           klass = "#{agg.name}"
 
           # Queries first
@@ -122,7 +124,7 @@ module Hecks
 
           create_cmd = agg.commands.find { |c| c.name.start_with?("Create") }
           if create_cmd
-            method_name = Hecks::Templating::Names.derive_method_name(create_cmd.name, agg.name)
+            method_name = Names.derive_method_name(create_cmd.name, agg.name)
             routes << "  post '/#{slug}' do\n    attrs = JSON.parse(request.body.read, symbolize_names: true)\n    result = #{klass}.#{method_name}(**attrs)\n    status 201\n    json serialize(result)\n  end"
           end
 

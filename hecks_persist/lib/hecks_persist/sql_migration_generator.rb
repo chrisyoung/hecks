@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   module Generators
     module SQL
@@ -153,7 +155,7 @@ module Hecks
       # @param name [String] the element name (e.g., "Pizza")
       # @return [String] the table name (e.g., "pizzas")
       def table_name(name)
-        Hecks::Templating::Names.table_name(name)
+        Names.table_name(name)
       end
     end
     end

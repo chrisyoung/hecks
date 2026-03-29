@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 # Hecks::CLI::Domain#build
 #
 # Validates the domain, assigns a CalVer version, and generates the output.
@@ -61,7 +63,7 @@ module Hecks
         # Try to compile the Go binary
         if system("which go > /dev/null 2>&1")
           say "  Compiling Go binary..."
-          slug = Hecks::Templating::Names.domain_slug(domain.name)
+          slug = Names.domain_slug(domain.name)
           binary = "#{slug}_server"
           if system("cd #{output} && go mod tidy 2>&1 && go build -o #{binary} ./cmd/#{slug}/ 2>&1")
             say "  Binary: #{output}/#{binary}", :green

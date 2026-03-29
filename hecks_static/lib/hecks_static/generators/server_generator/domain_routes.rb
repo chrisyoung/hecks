@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 # HecksStatic::ServerGenerator::DomainRoutes
 #
 # Generates query, scope, specification, and event log routes for the
@@ -32,7 +34,7 @@ module HecksStatic
       end
 
       def reset_route
-        mod = Hecks::Templating::Names.domain_module_name(@domain.name)
+        mod = Names.domain_module_name(@domain.name)
         lines = []
         lines << "        server.mount_proc \"/_reset\" do |req, res|"
         lines << "          next unless req.request_method == \"POST\" || req.request_method == \"DELETE\""
@@ -44,7 +46,7 @@ module HecksStatic
       end
 
       def events_route
-        mod = Hecks::Templating::Names.domain_module_name(@domain.name)
+        mod = Names.domain_module_name(@domain.name)
         mapper = Hecks::EventLogContract.ruby_mapper(event_var: "e")
         [
           "        server.mount_proc \"/_events\" do |req, res|",
@@ -101,7 +103,7 @@ module HecksStatic
       end
 
       def view_routes
-        mod = Hecks::Templating::Names.domain_module_name(@domain.name)
+        mod = Names.domain_module_name(@domain.name)
         lines = []
         @domain.views.each do |view|
           view_snake = Hecks::Utils.underscore(view.name)
@@ -115,7 +117,7 @@ module HecksStatic
       end
 
       def workflow_routes
-        mod = Hecks::Templating::Names.domain_module_name(@domain.name)
+        mod = Names.domain_module_name(@domain.name)
         lines = []
         @domain.workflows.each do |wf|
           wf_snake = Hecks::Utils.underscore(wf.name)
@@ -134,7 +136,7 @@ module HecksStatic
       end
 
       def service_routes
-        mod = Hecks::Templating::Names.domain_module_name(@domain.name)
+        mod = Names.domain_module_name(@domain.name)
         lines = []
         @domain.services.each do |svc|
           svc_snake = Hecks::Utils.underscore(svc.name)
@@ -156,7 +158,7 @@ module HecksStatic
         lines = []
         agg.specifications.each do |spec|
           spec_snake = Hecks::Utils.underscore(spec.name)
-          mod = Hecks::Templating::Names.domain_module_name(@domain.name)
+          mod = Names.domain_module_name(@domain.name)
           lines << "        server.mount_proc \"/#{plural}/specifications/#{spec_snake}\" do |req, res|"
           lines << "          begin"
           lines << "            obj = #{safe}.find(req.query[\"id\"])"

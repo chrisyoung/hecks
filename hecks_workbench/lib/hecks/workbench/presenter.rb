@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   class Workbench
     # Hecks::Workbench::Presenter
@@ -31,7 +33,7 @@ module Hecks
         lines << ""
 
         domain.aggregates.each do |agg|
-          handle = @handles[agg.name] || AggregateHandle.new(agg.name, @aggregate_builders[agg.name], domain_module: @nameHecks::Templating::NamesHecks::Templating::Names.domain_module())
+          handle = @handles[agg.name] || AggregateHandle.new(agg.name, @aggregate_builders[agg.name], domain_module: @nameHecks::Templating::NamesNames.domain_module())
           lines << "  #{agg.name}"
 
           unless agg.attributes.empty?

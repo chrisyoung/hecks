@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 # Hecks::CLI::Domain migration commands
 #
 # Three migration-related subcommands:
@@ -68,7 +70,7 @@ module Hecks
       def generate_sql
         domain = resolve_domain_option
         return unless domain
-        mod = Hecks::Templating::Names.domain_module(domain.name)
+        mod = Names.domain_module(domain.name)
         gem_name = domain.gem_name
 
         migration_gen = Generators::SQL::SqlMigrationGenerator.new(domain)

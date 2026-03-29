@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   module Generators
     module Infrastructure
@@ -35,7 +37,7 @@ module Hecks
       # @return [String] the complete Ruby source code for +lib/<gem_name>.rb+
       def generate_entry_point
         gem_name = @domain.gem_name
-        mod = Hecks::Templating::Names.domain_module_name(@domain.name)
+        mod = Names.domain_module_name(@domain.name)
 
         lines = []
         lines << "require \"securerandom\""

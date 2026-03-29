@@ -2,6 +2,8 @@ require "fileutils"
 require_relative "runtime_writer"
 require_relative "gem_generator/domain_writer"
 
+Names = Hecks::Templating::Names
+
 module HecksStatic
 # HecksStatic::GemGenerator
 #
@@ -24,7 +26,7 @@ class GemGenerator
   def generate
     gem_name = @domain.gem_name
     static_name = @domain.name.downcase + "_static_ruby"
-    mod = Hecks::Templating::Names.domain_module_name(@domain.name)
+    mod = Names.domain_module_name(@domain.name)
     root = File.join(@output_dir, static_name)
 
     FileUtils.mkdir_p(root)

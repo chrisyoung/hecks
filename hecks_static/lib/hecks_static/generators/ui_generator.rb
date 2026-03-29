@@ -1,6 +1,8 @@
 require_relative "ui_generator/form_routes"
 require_relative "ui_generator/config_routes"
 
+Names = Hecks::Templating::Names
+
 module HecksStatic
 # HecksStatic::UIGenerator
 #
@@ -55,7 +57,7 @@ class UIGenerator
   end
 
   def plural(agg)
-    Hecks::Templating::Names.aggregate_slug(agg.name)
+    Names.aggregate_slug(agg.name)
   end
 
   def user_attrs(agg)

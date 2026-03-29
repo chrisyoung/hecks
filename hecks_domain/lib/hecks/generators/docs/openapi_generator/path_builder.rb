@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   module HTTP
     class OpenapiGenerator
@@ -19,7 +21,7 @@ module Hecks
         def build_paths
           paths = {}
           @domain.aggregates.each do |agg|
-            slug = Hecks::Templating::Names.aggregate_slug(agg.name)
+            slug = Names.aggregate_slug(agg.name)
             paths.merge!(crud_paths(agg, slug))
             paths.merge!(query_paths(agg, slug))
           end
