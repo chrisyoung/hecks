@@ -26,6 +26,8 @@ module Hecks
     # Includes AttributeCollector for the +attribute+, +list_of+, and
     # +reference_to+ DSL methods.
     class ValueObjectBuilder
+      Structure = DomainModel::Structure
+
       include AttributeCollector
 
       # Initialize a new value object builder with the given type name.
@@ -46,7 +48,7 @@ module Hecks
       # @yield block that returns true when the invariant holds, false when violated
       # @return [void]
       def invariant(message, &block)
-        @invariants << DomainModel::Structure::Invariant.new(message: message, block: block)
+        @invariants << Structure::Invariant.new(message: message, block: block)
       end
 
       # Implicit DSL: `name Type` → attribute
@@ -66,7 +68,7 @@ module Hecks
       #
       # @return [DomainModel::Structure::ValueObject] the fully built value object IR object
       def build
-        DomainModel::Structure::ValueObject.new(
+        Structure::ValueObject.new(
           name: @name,
           attributes: @attributes,
           invariants: @invariants

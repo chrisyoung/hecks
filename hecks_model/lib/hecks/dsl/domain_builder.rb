@@ -35,6 +35,8 @@ module Hecks
     # Includes AttributeCollector for domain-level attribute declarations
     # (rarely used, but available for domain metadata).
     class DomainBuilder
+      Structure = DomainModel::Structure
+
       include AttributeCollector
 
       # Initialize a new domain builder with the given domain name.
@@ -203,7 +205,7 @@ module Hecks
       #
       # @return [DomainModel::Structure::Domain] the fully built domain IR object
       def build
-        DomainModel::Structure::Domain.new(
+        Structure::Domain.new(
           name: @name, aggregates: @aggregates, policies: @policies,
           services: @services, views: @views, workflows: @workflows,
           tenancy: @tenancy, event_subscribers: @event_subscribers

@@ -2,7 +2,7 @@ module Hecks
   module EventStorm
     # Hecks::EventStorm::DomainBuilder
     #
-    # Builds a DomainModel::Structure::Domain from a Parser::ParseResult. Groups commands
+    # Builds a Structure::Domain from a Parser::ParseResult. Groups commands
     # under their aggregates, wires policies, attaches read models and external
     # systems, and validates that event names match command inferences.
     #
@@ -13,6 +13,9 @@ module Hecks
     #   domain = EventStorm::DomainBuilder.new(result, name: "Ordering").build
     #
     class DomainBuilder
+      Structure = DomainModel::Structure
+      Behavior  = DomainModel::Behavior
+
       # Initializes a DomainBuilder from a parse result.
       #
       # @param parse_result [Parser::ParseResult] the intermediate representation
@@ -31,13 +34,13 @@ module Hecks
       # by aggregate, validates event consistency, and constructs the Domain
       # with fully wired aggregates.
       #
-      # @return [DomainModel::Structure::Domain] the built domain containing
+      # @return [Structure::Domain] the built domain containing
       #   aggregates with commands, events, and policies
       def build
         # Flatten all context elements into a single aggregate list
         all_elements = @parse_result.contexts.flat_map(&:elements)
         aggregates = group_by_aggregate(all_elements)
-        DomainModel::Structure::Domain.new(name: @name, aggregates: aggregates)
+        Structure::Domain.new(name: @name, aggregates: aggregates)
       end
 
       private
@@ -50,7 +53,7 @@ module Hecks
       # Events are inferred from command names.
       #
       # @param elements [Array<Parser::ParsedElement>] all elements from all contexts
-      # @return [Array<DomainModel::Structure::Aggregate>] built aggregate objects
+      # @return [Array<Structure::Aggregate>] built aggregate objects
       def group_by_aggregate(elements)
         aggregate_commands = {}
         aggregate_policies = {}
@@ -86,7 +89,7 @@ module Hecks
           commands += unassigned_commands if agg_name == all_agg_names.first && !unassigned_commands.empty?
           policies = aggregate_policies.fetch(agg_name, [])
 
-          DomainModel::Structure::Aggregate.new(
+          Structure::Aggregate.new(
             name: agg_name,
             commands: commands,
             events: infer_events(commands),
@@ -101,16 +104,16 @@ module Hecks
       # and wraps them as domain model structures.
       #
       # @param element [Parser::ParsedElement] a parsed element with type :command
-      # @return [DomainModel::Behavior::Command] the constructed command
+      # @return [Behavior::Command] the constructed command
       def build_command(element)
         read_models = (element.meta[:read_models] || []).map do |name|
-          DomainModel::Structure::ReadModel.new(name: name)
+          Structure::ReadModel.new(name: name)
         end
         externals = (element.meta[:external_systems] || []).map do |name|
-          DomainModel::Structure::ExternalSystem.new(name: name)
+          Structure::ExternalSystem.new(name: name)
         end
 
-        DomainModel::Behavior::Command.new(
+        Behavior::Command.new(
           name: element.name,
           read_models: read_models,
           external_systems: externals
@@ -120,10 +123,10 @@ module Hecks
       # Constructs a Policy domain object from a parsed element.
       #
       # @param element [Parser::ParsedElement] a parsed element with type :policy
-      # @return [DomainModel::Behavior::Policy] the constructed policy with
+      # @return [Behavior::Policy] the constructed policy with
       #   event_name and trigger_command set from metadata
       def build_policy(element)
-        DomainModel::Behavior::Policy.new(
+        Behavior::Policy.new(
           name: element.name,
           event_name: element.meta[:event_name],
           trigger_command: element.meta[:trigger]
@@ -151,11 +154,11 @@ module Hecks
       # Each command produces one event whose name is derived from the command
       # name via Command#inferred_event_name (e.g., "PlaceOrder" -> "OrderPlaced").
       #
-      # @param commands [Array<DomainModel::Behavior::Command>] commands to infer from
-      # @return [Array<DomainModel::Behavior::DomainEvent>] inferred events
+      # @param commands [Array<Behavior::Command>] commands to infer from
+      # @return [Array<Behavior::DomainEvent>] inferred events
       def infer_events(commands)
         commands.map do |cmd|
-          DomainModel::Behavior::DomainEvent.new(
+          Behavior::DomainEvent.new(
             name: cmd.inferred_event_name,
             attributes: cmd.attributes
           )
@@ -176,7 +179,7 @@ module Hecks
 
         inferred = {}
         commands.each do |cmd|
-          dummy = DomainModel::Behavior::Command.new(name: cmd.name)
+          dummy = Behavior::Command.new(name: cmd.name)
           inferred[dummy.inferred_event_name] = cmd.name
         end
 
