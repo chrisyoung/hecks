@@ -1,35 +1,60 @@
 require "spec_helper"
 
 RSpec.describe PizzasDomain::Pizza do
-  subject(:pizza) do
-    described_class.new(name: "example", style: "example", price: 1.0)
-  end
+  describe "creating a Pizza" do
+    subject(:pizza) { described_class.new(
+          name: "example",
+          style: "example",
+          price: 1.0
+        ) }
 
-  describe "#initialize" do
-    it "creates a Pizza with an id" do
+    it "assigns an id" do
       expect(pizza.id).not_to be_nil
     end
 
-    it "has name" do
-      expect(pizza.name).not_to be_nil
+    it "sets name" do
+      expect(pizza.name).to eq("example")
     end
 
-    it "has style" do
-      expect(pizza.style).not_to be_nil
+    it "sets style" do
+      expect(pizza.style).to eq("example")
     end
 
-    it "has price" do
-      expect(pizza.price).not_to be_nil
+    it "sets price" do
+      expect(pizza.price).to eq(1.0)
     end
   end
 
+  describe "identity" do
+    it "two Pizzas with the same id are equal" do
+      id = SecureRandom.uuid
+      a = described_class.new(
+          name: "example",
+          style: "example",
+          price: 1.0,
+          id: id
+        )
+      b = described_class.new(
+          name: "example",
+          style: "example",
+          price: 1.0,
+          id: id
+        )
+      expect(a).to eq(b)
+    end
 
-describe "equality" do
-  it "is equal to another Pizza with the same id" do
-    id = SecureRandom.uuid
-    a = described_class.new(name: "example", style: "example", price: 1.0, id: id)
-    b = described_class.new(name: "example", style: "example", price: 1.0, id: id)
-    expect(a).to eq(b)
+    it "two Pizzas with different ids are not equal" do
+      a = described_class.new(
+          name: "example",
+          style: "example",
+          price: 1.0
+        )
+      b = described_class.new(
+          name: "example",
+          style: "example",
+          price: 1.0
+        )
+      expect(a).not_to eq(b)
+    end
   end
-end
 end

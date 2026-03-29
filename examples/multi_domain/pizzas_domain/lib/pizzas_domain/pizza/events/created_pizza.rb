@@ -2,9 +2,10 @@ module PizzasDomain
   class Pizza
     module Events
       class CreatedPizza
-        attr_reader :name, :style, :price, :occurred_at
+        attr_reader :aggregate_id, :name, :style, :price, :occurred_at
 
-        def initialize(name: nil, style: nil, price: nil)
+        def initialize(aggregate_id: nil, name: nil, style: nil, price: nil)
+          @aggregate_id = aggregate_id
           @name = name
           @style = style
           @price = price
