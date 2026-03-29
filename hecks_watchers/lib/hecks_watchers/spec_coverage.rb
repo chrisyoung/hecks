@@ -56,4 +56,6 @@ module HecksWatchers
       end
     end
   end
+
+  register_watcher(:advisory, SpecCoverage)
 end
