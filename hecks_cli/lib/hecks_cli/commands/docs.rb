@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:readme, "Generate README.md and extension docs") do
+Hecks::CLI.register_command(:readme, "Generate README.md and extension docs", group: "Domain Tools") do
   require "hecks/domain/readme_generator"
   root = Dir.pwd
   Hecks::ReadmeGenerator.new(root).generate
@@ -9,7 +9,7 @@ Hecks::CLI.register_command(:readme, "Generate README.md and extension docs") do
 end
 
 Hecks::CLI.register_command(:serve_docs, "Serve API documentation (Swagger UI)",
-  options: {
+  group: "Domain Tools", options: {
     domain:  { type: :string,  desc: "Domain gem name or path" },
     version: { type: :string,  desc: "Domain version" },
     port:    { type: :numeric, default: 9393, desc: "Port" }

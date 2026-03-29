@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:mcp, "Start MCP server — build domains (default) or serve one (--domain)",
+Hecks::CLI.register_command(:mcp, "Start MCP server — build domains (default) or serve one (--domain)", group: "Core",
   options: {
     domain:  { type: :string, desc: "Domain gem name or path (serves it as MCP tools)" },
     version: { type: :string, desc: "Domain version" }

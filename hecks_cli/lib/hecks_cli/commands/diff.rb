@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:diff, "Show changes since last build",
+Hecks::CLI.register_command(:diff, "Show changes since last build", group: "Core",
   options: {
     domain:  { type: :string, desc: "Domain gem name or path" },
     version: { type: :string, desc: "Domain version" }

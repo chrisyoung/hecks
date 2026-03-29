@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:generate_migrations, "Generate SQL migrations from domain changes",
+Hecks::CLI.register_command(:generate_migrations, "Generate SQL migrations from domain changes", group: "Generate",
   options: {
     domain:  { type: :string, desc: "Domain gem name or path" },
     version: { type: :string, desc: "Domain version" }
@@ -40,7 +40,7 @@ Hecks::CLI.register_command(:generate_migrations, "Generate SQL migrations from 
   say "Saved domain snapshot to #{snapshot_path}", :green
 end
 
-Hecks::CLI.register_command(:generate_sql, "Generate SQL schema and adapters",
+Hecks::CLI.register_command(:generate_sql, "Generate SQL schema and adapters", group: "Generate",
   options: {
     domain:  { type: :string, desc: "Domain gem name or path" },
     version: { type: :string, desc: "Domain version" }
@@ -71,7 +71,7 @@ Hecks::CLI.register_command(:generate_sql, "Generate SQL schema and adapters",
   end
 end
 
-Hecks::CLI.register_command(:db_migrate, "Run pending Hecks SQL migrations",
+Hecks::CLI.register_command(:db_migrate, "Run pending Hecks SQL migrations", group: "Database",
   options: {
     database: { type: :string, desc: "SQLite database path" }
   }

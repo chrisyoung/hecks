@@ -1,8 +1,7 @@
 # Hecks::CLI
 #
-# Thor-based CLI. Commands are registered by each sub-gem via
-# Hecks::CLI.register_command. No more god class — each module
-# owns its own commands.
+# Thor-based CLI with grouped commands. Each sub-gem registers
+# commands via Hecks::CLI.register_command with a group label.
 #
 begin
   require "thor"
@@ -21,36 +20,62 @@ module Hecks
 
     def self.exit_on_failure? = true
 
-    # Command registry — sub-gems call this to register their commands.
-    #
-    #   Hecks::CLI.register_command(:build, "Generate the domain gem",
-    #     options: { target: { type: :string, desc: "Build target" } }
-    #   ) do |cli|
-    #     domain = cli.resolve_domain_option
-    #     # ...
-    #   end
-    #
     @pending_commands = []
+    @command_groups = {}
 
-    def self.register_command(name, description, options: {}, args: [], &block)
-      @pending_commands << { name: name, description: description, options: options, args: args, block: block }
+    def self.register_command(name, description, group: "Commands", options: {}, args: [], &block)
+      @pending_commands << { name: name, description: description, group: group, options: options, args: args, block: block }
     end
 
     def self.pending_commands = @pending_commands
+    def self.command_groups = @command_groups
 
-    # Called after all sub-gems have registered their commands.
-    # Converts pending registrations into Thor commands.
     def self.install_commands!
       @pending_commands.each do |cmd|
         desc_args = cmd[:args].empty? ? cmd[:name].to_s : "#{cmd[:name]} #{cmd[:args].join(' ')}"
         desc desc_args, cmd[:description]
-        cmd[:options].each { |name, opts| method_option name.to_s, **opts }
+        cmd[:options].each { |n, opts| method_option n.to_s, **opts }
         define_method(cmd[:name], &cmd[:block])
+        (@command_groups[cmd[:group]] ||= []) << cmd
       end
       @pending_commands = []
     end
 
-    # Gem subcommand stays on CLI — it's about packaging hecks itself
+    # Custom help that groups commands
+    desc "help [COMMAND]", "Describe available commands"
+    def help(command = nil)
+      if command
+        self.class.command_help(shell, command)
+      else
+        print_grouped_help
+      end
+    end
+
+    private
+
+    def print_grouped_help
+      groups = self.class.command_groups
+      max_name = groups.values.flatten.map { |c| c[:args].empty? ? c[:name].to_s.length : "#{c[:name]} #{c[:args].join(' ')}".length }.max || 20
+
+      groups.each do |group_name, commands|
+        shell.say ""
+        shell.say "#{group_name}:", :bold
+        commands.sort_by { |c| c[:name] }.each do |cmd|
+          name = cmd[:args].empty? ? cmd[:name].to_s : "#{cmd[:name]} #{cmd[:args].join(' ')}"
+          shell.say "  hecks %-#{max_name}s  # %s" % [name, cmd[:description]]
+        end
+      end
+
+      shell.say ""
+      shell.say "Subcommands:", :bold
+      shell.say "  hecks gem build              # Build all component gems"
+      shell.say "  hecks gem install            # Install all component gems"
+      shell.say "  hecks docs update            # Update doc headers and markdown"
+      shell.say ""
+      shell.say "Run `hecks help COMMAND` for details on a specific command."
+    end
+
+    # Subcommands
     class Gem < Thor
     end
 
@@ -63,17 +88,16 @@ module Hecks
       end
     end
 
-    desc "docs SUBCOMMAND ...ARGS", "Documentation commands"
+    desc "docs SUBCOMMAND", "Documentation commands", hide: true
     subcommand "docs", Docs
 
-    desc "gem SUBCOMMAND ...ARGS", "Gem packaging commands"
+    desc "gem SUBCOMMAND", "Gem packaging commands", hide: true
     subcommand "gem", Gem
 
     # Load and install all registered commands
     Dir[File.join(__dir__, "commands/*.rb")].each { |f| require f }
     install_commands!
 
-    # Thor aliases for colon-separated command names
     map "generate:config"     => :generate_config
     map "generate:sinatra"    => :generate_sinatra
     map "generate:stub"       => :generate_stub

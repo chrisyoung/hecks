@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:claude, "Start file watchers and launch Claude Code",
+Hecks::CLI.register_command(:claude, "Start file watchers and launch Claude Code", group: "Dev",
   args: ["ARGS..."]
 ) do |*args|
   local = File.expand_path("../../../../bin/hecks_claude", __dir__)

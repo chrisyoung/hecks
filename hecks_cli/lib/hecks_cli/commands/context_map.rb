@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:context_map, "Show DDD context map of bounded contexts") do
+Hecks::CLI.register_command(:context_map, "Show DDD context map of bounded contexts", group: "Domain Tools") do
   load_all_domains_local = lambda do
     domains_dir = File.join(Dir.pwd, "domains")
     if File.directory?(domains_dir)
