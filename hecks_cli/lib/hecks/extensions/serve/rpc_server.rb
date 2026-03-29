@@ -150,7 +150,7 @@ module Hecks
       # @return [void]
       def register_commands(agg, klass)
         agg.commands.each do |cmd|
-          method_name = Names.derive_method_name(cmd.name, agg.name)
+          method_name = Names.command_method_name(cmd.name, agg.name)
           @methods[cmd.name] = ->(params) {
             serialize(klass.send(method_name, **params.transform_keys(&:to_sym)))
           }

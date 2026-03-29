@@ -55,7 +55,7 @@ module Hecks
         @domains.each_with_index do |domain, i|
           runtime = @runtimes[i]
           slug = Names.domain_slug(domain.name)
-          mod_name = Names.domain_module(domain.name)
+          mod_name = Names.domain_module_name(domain.name)
           mod = Object.const_get(mod_name)
           routes = RouteBuilder.new(domain, mod).build
           @entries << { domain: domain, runtime: runtime, mod: mod, slug: slug, routes: routes }

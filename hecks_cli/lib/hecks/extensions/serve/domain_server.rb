@@ -146,7 +146,7 @@ module Hecks
       #
       # @return [void]
       def boot_domain
-        mod_name = Names.domain_module(@domain.name)
+        mod_name = Names.domain_module_name(@domain.name)
         unless Object.const_defined?(mod_name)
           tmpdir = Dir.mktmpdir("hecks_serve")
           gem_path = Hecks.build(@domain, output_dir: tmpdir)

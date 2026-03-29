@@ -162,7 +162,7 @@ module Hecks
       # @param agg_name [Symbol, String] the aggregate name (e.g. :Pizza)
       # @return [Symbol] the method name to call on the aggregate class
       def derive_method(cmd_name, agg_name)
-        Names.method_name(cmd_name, agg_name)
+        Names.command_method_name(cmd_name, agg_name)
       end
     end
   end
