@@ -1,7 +1,5 @@
 require "tmpdir"
 
-DomainNaming = Hecks::Templating::Names
-
 module Hecks
   # Hecks::DomainCompiler
   #
@@ -19,6 +17,7 @@ module Hecks
   #   Hecks.load_domain(domain)
   #
   module DomainCompiler
+    include Hecks::Templating::Names
     # Build a complete domain gem on disk. Validates the domain first, then
     # generates all Ruby source files, specs, and documentation artifacts
     # (OpenAPI JSON, RPC discovery, JSON Schema, glossary markdown).
@@ -71,7 +70,7 @@ module Hecks
     # @raise [Hecks::ValidationError] if validation fails and skip_validation is false
     # @raise [Hecks::DomainLoadError] if generated code has syntax or naming errors
     def load_domain(domain, force: false, skip_validation: false)
-      mod = DomainNaming.domain_module_name(domain.name)
+      mod = domain_module_name(domain.name)
       key = domain.object_id
       return Object.const_get(mod) if !force && @loaded_domains[mod] == key && Object.const_defined?(mod)
 

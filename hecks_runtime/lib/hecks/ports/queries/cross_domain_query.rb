@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   # Hecks::CrossDomainQuery
@@ -57,6 +56,7 @@ module Hecks
     # aggregate classes across domain boundaries. Each call to +call+
     # creates a fresh context to avoid state leakage between invocations.
     class QueryContext
+      include Hecks::Templating::Names
       # Resolves an aggregate class from a named domain.
       #
       # Converts the domain and aggregate names to constants and looks them
@@ -67,8 +67,8 @@ module Hecks
       # @return [Class] the aggregate class (e.g., +ModelRegistryDomain::AiModel+)
       # @raise [NameError] if the domain or aggregate constant does not exist
       def from(domain_name, aggregate_name)
-        mod_name = DomainNaming.domain_module_name(domain_name)
-        agg_name = DomainNaming.constant_name(aggregate_name)
+        mod_name = domain_module_name(domain_name)
+        agg_name = domain_constant_name(aggregate_name)
         Object.const_get("#{mod_name}::#{agg_name}")
       end
     end

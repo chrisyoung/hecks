@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 # Hecks::CLI::Domain#serve
 #
@@ -10,6 +9,7 @@ DomainNaming = Hecks::Templating::Names
 module Hecks
   class CLI < Thor
     class Domain < Thor
+      include Hecks::Templating::Names
       desc "serve", "Serve a domain as HTTP (default) or JSON-RPC (--rpc)"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
@@ -70,7 +70,7 @@ module Hecks
         $LOAD_PATH.unshift(lib_path)
         gem_name = domain.gem_name
         require gem_name
-        mod = Object.const_get(DomainNaming.domain_module_name(domain.name))
+        mod = Object.const_get(domain_module_name(domain.name))
         say "Serving #{mod.name} (static) on http://localhost:#{port}", :green
         mod.serve(port: port)
       ensure

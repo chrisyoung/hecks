@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Generators
@@ -14,6 +13,7 @@ module Hecks
     #   gen.generate  # => "CREATE TABLE pizzas (\n  id VARCHAR(36) PRIMARY KEY,\n  ..."
     #
     class SqlMigrationGenerator
+      include Hecks::Templating::Names
       # Initializes a migration generator for a full domain.
       #
       # @param domain [DomainModel::Structure::Domain] the domain to generate SQL for
@@ -155,7 +155,7 @@ module Hecks
       # @param name [String] the element name (e.g., "Pizza")
       # @return [String] the table name (e.g., "pizzas")
       def table_name(name)
-        DomainNaming.aggregate_slug(name)
+        domain_aggregate_slug(name)
       end
     end
     end

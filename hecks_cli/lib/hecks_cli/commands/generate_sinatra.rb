@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 # Hecks::CLI::Domain#generate_sinatra
 #
@@ -11,6 +10,7 @@ DomainNaming = Hecks::Templating::Names
 module Hecks
   class CLI < Thor
     class Domain < Thor
+      include Hecks::Templating::Names
       desc "generate:sinatra", "Scaffold a Sinatra app from a domain"
       map "generate:sinatra" => :generate_sinatra
       option :domain, type: :string, desc: "Domain gem name or path"
@@ -99,11 +99,11 @@ module Hecks
       # @param domain [DomainModel::Structure::Domain] the domain
       # @return [String] the app.rb source code
       def sinatra_app_rb(domain)
-        mod = DomainNaming.domain_module_name(domain.name)
+        mod = domain_module_name(domain.name)
         routes = []
 
         domain.aggregates.each do |agg|
-          slug = DomainNaming.aggregate_slug(agg.name)
+          slug = domain_aggregate_slug(agg.name)
           klass = "#{agg.name}"
 
           # Queries first
@@ -124,7 +124,7 @@ module Hecks
 
           create_cmd = agg.commands.find { |c| c.name.start_with?("Create") }
           if create_cmd
-            method_name = DomainNaming.command_method_name(create_cmd.name, agg.name)
+            method_name = domain_command_method(create_cmd.name, agg.name)
             routes << "  post '/#{slug}' do\n    attrs = JSON.parse(request.body.read, symbolize_names: true)\n    result = #{klass}.#{method_name}(**attrs)\n    status 201\n    json serialize(result)\n  end"
           end
 

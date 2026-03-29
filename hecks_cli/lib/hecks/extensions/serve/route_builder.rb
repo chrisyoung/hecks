@@ -1,7 +1,5 @@
 require "time"
 
-DomainNaming = Hecks::Templating::Names
-
 module Hecks
   module HTTP
     # Hecks::HTTP::RouteBuilder
@@ -16,6 +14,7 @@ module Hecks
     # (e.g. +Pizza.all+, +Pizza.create+, +Pizza.find+).
     #
     class RouteBuilder
+      include Hecks::Templating::Names
       # Initialize the builder with a domain definition and its module constant.
       #
       # @param domain [Hecks::Domain] the parsed domain definition containing
@@ -42,8 +41,8 @@ module Hecks
       def build
         routes = []
         @domain.aggregates.each do |agg|
-          klass = @mod.const_get(DomainNaming.constant_name(agg.name))
-          slug = DomainNaming.aggregate_slug(agg.name)
+          klass = @mod.const_get(domain_constant_name(agg.name))
+          slug = domain_aggregate_slug(agg.name)
           routes.concat(query_routes(agg, klass, slug))
           routes.concat(crud_routes(agg, klass, slug))
         end
@@ -162,7 +161,7 @@ module Hecks
       # @param agg_name [Symbol, String] the aggregate name (e.g. :Pizza)
       # @return [Symbol] the method name to call on the aggregate class
       def derive_method(cmd_name, agg_name)
-        DomainNaming.command_method_name(cmd_name, agg_name)
+        domain_command_method(cmd_name, agg_name)
       end
     end
   end

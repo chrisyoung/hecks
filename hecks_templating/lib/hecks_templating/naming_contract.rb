@@ -1,12 +1,12 @@
 # = Hecks::Templating::Names
 #
 # Single source of truth for all naming conventions in Hecks.
-# Include for bare method calls:
+# Include in any class/module for bare method calls:
 #
 #   include Hecks::Templating::Names
 #   domain_module_name("Pizzas")     # => "PizzasDomain"
-#   aggregate_slug("Pizza")          # => "pizzas"
-#   command_method_name("CreatePizza", "Pizza") # => :create
+#   domain_aggregate_slug("Pizza")   # => "pizzas"
+#   domain_command_method("CreatePizza", "Pizza") # => :create
 #
 module Hecks
   module Templating
@@ -24,17 +24,17 @@ module Hecks
       end
 
       # "pizza order" → "PizzaOrder"
-      def constant_name(name)
+      def domain_constant_name(name)
         Hecks::Utils.sanitize_constant(name)
       end
 
       # "GovernancePolicy" → "governance_policy"
-      def snake_name(name)
+      def domain_snake_name(name)
         Hecks::Utils.underscore(name)
       end
 
       # "Pizza" → "pizzas"
-      def aggregate_slug(name)
+      def domain_aggregate_slug(name)
         s = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(name))
         s.end_with?("s") ? s : s + "s"
       end
@@ -45,7 +45,7 @@ module Hecks
       end
 
       # ("create", "Pizza") → "CreatePizza"
-      def infer_command_name(verb, aggregate_name)
+      def domain_command_name(verb, aggregate_name)
         parts = verb.to_s.split("_")
         if parts.size == 1
           parts.first.capitalize + Hecks::Utils.sanitize_constant(aggregate_name)
@@ -55,23 +55,23 @@ module Hecks
       end
 
       # "post_id" → "post"
-      def referenced_name(foreign_key)
+      def domain_referenced_name(foreign_key)
         foreign_key.to_s.sub(/_id$/, "")
       end
 
       # "CreatePizza" on "Pizza" → :create
-      def command_method_name(cmd_name, agg_name)
+      def domain_command_method(cmd_name, agg_name)
         Hecks::Utils.underscore(cmd_name)
           .sub(/_#{Hecks::Utils.underscore(agg_name)}$/, "").to_sym
       end
 
       # ("Blog", "Post") → "/blog/posts"
-      def route_path(domain_name, aggregate_name)
-        "/#{domain_slug(domain_name)}/#{aggregate_slug(aggregate_name)}"
+      def domain_route_path(domain_name, aggregate_name)
+        "/#{domain_slug(domain_name)}/#{domain_aggregate_slug(aggregate_name)}"
       end
 
       # "Pizzas" → "pizzas_domain"
-      def output_dir_name(domain_name)
+      def domain_output_dir(domain_name)
         Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(domain_name)) + "_domain"
       end
     end

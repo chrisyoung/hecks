@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Migrations
@@ -10,12 +9,13 @@ module Hecks
       # SqlStrategy to keep it under the 200-line limit.
       #
       module SqlHelpers
+        include Hecks::Templating::Names
         # Computes the SQL table name for an aggregate (underscore + pluralized).
         #
         # @param aggregate_name [String] the aggregate name (e.g., "Pizza")
         # @return [String] the table name (e.g., "pizzas")
         def table_name(aggregate_name)
-          DomainNaming.aggregate_slug(aggregate_name)
+          domain_aggregate_slug(aggregate_name)
         end
 
         # Computes the join table name for a value object on an aggregate.

@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Generators
@@ -15,6 +14,7 @@ module Hecks
     #   gen.generate_entry_point  # => "module PizzasDomain\n  autoload :Pizza, ..."
     #
     class AutoloadGenerator
+      include Hecks::Templating::Names
       # Creates a new AutoloadGenerator for a domain.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR
@@ -37,7 +37,7 @@ module Hecks
       # @return [String] the complete Ruby source code for +lib/<gem_name>.rb+
       def generate_entry_point
         gem_name = @domain.gem_name
-        mod = DomainNaming.domain_module_name(@domain.name)
+        mod = domain_module_name(@domain.name)
 
         lines = []
         lines << "require \"securerandom\""
