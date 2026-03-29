@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   # Hecks::PortEnforcer
   #
@@ -101,7 +103,7 @@ module Hecks
       # @return [Array<Symbol>] the command method names
       def command_method_names(agg)
         agg.commands.map do |cmd|
-          Hecks::Templating::Names.derive_method_name(cmd.name, agg.name)
+          Names.derive_method_name(cmd.name, agg.name)
         end
       end
   end

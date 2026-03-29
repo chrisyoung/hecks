@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   class Workbench
     # Hecks::Workbench::PlayMode
@@ -146,7 +148,7 @@ module Hecks
       # @return [Session] self
       def serve!(port: 9292)
         play! unless play?
-        mod_name = @nameHecks::Templating::NamesHecks::Templating::Names.domain_module()
+        mod_name = @nameHecks::Templating::NamesNames.domain_module()
         if Object.const_defined?(mod_name)
           mod = Object.const_get(mod_name)
           if mod.respond_to?(:serve)

@@ -14,6 +14,8 @@ require_relative "spec_generator/workflow_spec"
 require_relative "spec_generator/service_spec"
 require_relative "spec_generator/port_spec"
 
+Names = Hecks::Templating::Names
+
 module Hecks
   module Generators
     module Infrastructure
@@ -103,7 +105,7 @@ module Hecks
       #
       # @return [String] the domain module name with "Domain" suffix
       def mod_name
-        Hecks::Templating::Names.domain_module_name(@domain.name)
+        Names.domain_module_name(@domain.name)
       end
     end
     end

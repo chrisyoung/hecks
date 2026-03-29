@@ -1,5 +1,7 @@
 require "time"
 
+Names = Hecks::Templating::Names
+
 module Hecks
   module HTTP
     # Hecks::HTTP::RouteBuilder
@@ -40,8 +42,8 @@ module Hecks
       def build
         routes = []
         @domain.aggregates.each do |agg|
-          klass = @mod.const_get(Hecks::Templating::Names.constant_name(agg.name))
-          slug = Hecks::Templating::Names.aggregate_slug(agg.name)
+          klass = @mod.const_get(Names.constant_name(agg.name))
+          slug = Names.aggregate_slug(agg.name)
           routes.concat(query_routes(agg, klass, slug))
           routes.concat(crud_routes(agg, klass, slug))
         end
@@ -160,7 +162,7 @@ module Hecks
       # @param agg_name [Symbol, String] the aggregate name (e.g. :Pizza)
       # @return [Symbol] the method name to call on the aggregate class
       def derive_method(cmd_name, agg_name)
-        Hecks::Templating::Names.method_name(cmd_name, agg_name)
+        Names.method_name(cmd_name, agg_name)
       end
     end
   end

@@ -1,6 +1,8 @@
 require "fileutils"
 require_relative "sql_helpers"
 
+Names = Hecks::Templating::Names
+
 module Hecks
   module Migrations
     module Strategies
@@ -115,7 +117,7 @@ module Hecks
       def column_def(attr, presence_fields = [], unique_fields = [])
         parts = [attr.name.to_s, sql_type(attr)]
         if attr.reference?
-          ref_table = Hecks::Templating::Names.table_name(Hecks::Templating::Names.referenced_name(attr.type))
+          ref_table = Names.table_name(Names.referenced_name(attr.type))
           parts << "REFERENCES #{ref_table}(id) ON DELETE SET NULL"
         end
         parts << "NOT NULL" if presence_fields.include?(attr.name.to_sym)
@@ -159,7 +161,7 @@ module Hecks
         type = d[:reference] ? "VARCHAR(36)" : sql_type_for(d[:type])
         parts = ["#{d[:name]} #{type}"]
         if d[:reference]
-          ref_table = Hecks::Templating::Names.table_name(Hecks::Templating::Names.referenced_name(d[:type]))
+          ref_table = Names.table_name(Names.referenced_name(d[:type]))
           parts << "REFERENCES #{ref_table}(id) ON DELETE SET NULL"
         end
         parts << "NOT NULL" if d[:presence]

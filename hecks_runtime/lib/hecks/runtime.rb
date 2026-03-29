@@ -8,6 +8,8 @@ require_relative "runtime/constant_hoisting"
 require_relative "runtime/connection_setup"
 require_relative "runtime/service_setup"
 
+Names = Hecks::Templating::Names
+
 module Hecks
   # Hecks::Runtime
   #
@@ -75,7 +77,7 @@ module Hecks
       def initialize(domain, port: nil, event_bus: nil, &config)
         @domain = domain
         @port_name = port
-        @mod_name = Hecks::Templating::Names.domain_module(domain.name)
+        @mod_name = Names.domain_module(domain.name)
         @mod = Object.const_get(@mod_name)
         @mod.extend(Hecks::DomainConnections) unless @mod.respond_to?(:connections)
         @event_bus = event_bus || EventBus.new

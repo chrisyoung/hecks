@@ -1,3 +1,5 @@
+Names = Hecks::Templating::Names
+
 module Hecks
   module Boot
     # Hecks::Boot::SqlBoot
@@ -52,7 +54,7 @@ module Hecks
       # @param db [Sequel::Database] the database connection
       # @return [Hash<String, Object>] adapter instances keyed by aggregate name
       def setup(domain, db)
-        mod_name = Hecks::Templating::Names.domain_module_name(domain.name)
+        mod_name = Names.domain_module_name(domain.name)
         generate_adapters(domain, mod_name)
         create_tables(domain, db)
         instantiate_adapters(domain, db, mod_name)
@@ -162,7 +164,7 @@ module Hecks
       # @param agg [DomainModel::Structure::Aggregate] the aggregate
       # @return [Symbol] the table name as a symbol (e.g., :pizzas)
       def table_name_for(agg)
-        Hecks::Templating::Names.table_name(agg.name).to_sym
+        Names.table_name(agg.name).to_sym
       end
 
       # Maps a domain attribute to a Sequel column type.
