@@ -1,4 +1,4 @@
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Generators
@@ -155,7 +155,7 @@ module Hecks
       # @param name [String] the element name (e.g., "Pizza")
       # @return [String] the table name (e.g., "pizzas")
       def table_name(name)
-        Names.aggregate_slug(name)
+        DomainNaming.aggregate_slug(name)
       end
     end
     end

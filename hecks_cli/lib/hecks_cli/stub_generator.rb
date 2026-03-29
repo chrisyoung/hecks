@@ -1,4 +1,4 @@
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   class CLI < Thor
@@ -24,7 +24,7 @@ module Hecks
         @type = type
         @name = name
         @gem = domain.gem_name
-        @mod = Names.domain_module_name(domain.name)
+        @mod = DomainNaming.domain_module_name(domain.name)
       end
 
       # Generates stub files for the requested element.

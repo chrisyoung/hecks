@@ -1,4 +1,4 @@
-Names = Hecks::Templating::Names
+DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Generators
@@ -22,7 +22,7 @@ module Hecks
       #   (e.g. +"Pizza::Commands::CreatePizza"+)
       # @return [String] the fully qualified name (e.g. +"PizzasDomain::Pizza::Commands::CreatePizza"+)
       def full_class_name(class_path)
-        mod = Names.domain_module_name(@domain.name)
+        mod = DomainNaming.domain_module_name(@domain.name)
         "#{mod}::#{class_path}"
       end
 
