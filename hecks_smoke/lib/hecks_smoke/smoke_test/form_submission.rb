@@ -1,0 +1,101 @@
+# HecksTemplating::SmokeTest::FormSubmission
+#
+# Browser-style form submission. GETs the form page, parses the HTML
+# to extract the action URL and all input fields (including hidden
+# ones with pre-filled values), fills sample data, POSTs form-urlencoded,
+# and follows the redirect to the show page.
+#
+module HecksTemplating
+  class SmokeTest
+    module FormSubmission
+      private
+
+      # Submit a form the way a browser would:
+      # 1. GET the form page
+      # 2. Parse action URL and all input fields from HTML
+      # 3. Fill empty fields with sample data
+      # 4. POST form-urlencoded to the action URL
+      # 5. Expect redirect (3xx) or success (2xx)
+      #
+      # @param form_path [String] GET path for the form page (e.g., /pizzas/create_pizza/new)
+      # @param cmd [Command] the command IR for generating sample values
+      # @param label [String] human-readable label for results
+      # @param strict [Boolean] if true, 422 is a failure
+      # @return [Array<Result>] results for the GET and POST.
+      #   The last result's error field contains the redirect ID if available.
+      def submit_form(form_path, cmd, label, strict: true)
+        results = []
+
+        # 1. GET the form page
+        get_result = check_get(form_path, "#{label} form")
+        results << get_result
+        return results unless get_result.status == :pass
+
+        # 2. Parse the HTML
+        uri = URI("#{@base}#{form_path}")
+        html = Net::HTTP.get(uri)
+        action = parse_form_action(html) || form_path.sub(/\/new$/, "/submit")
+        fields = parse_form_fields(html)
+
+        # 3. Fill empty fields with sample data from command
+        cmd.attributes.each do |attr|
+          key = attr.name.to_s
+          # Only fill if the field is empty or missing
+          if !fields.key?(key) || fields[key].to_s.empty?
+            fields[key] = sample_value(attr)
+          end
+        end
+
+        # 4. POST form-urlencoded
+        post_uri = URI("#{@base}#{action}")
+        res = Net::HTTP.post_form(post_uri, fields)
+        code = res.code.to_i
+
+        # 5. Check result
+        if (200..399).include?(code)
+          results << Result.new(status: :pass, method: "POST", path: action, http_code: code)
+          # Follow redirect to verify show page
+          if (300..399).include?(code) && res["Location"]
+            show_path = res["Location"]
+            # Extract ID from redirect for callers to use
+            @last_submitted_id = show_path[/id=([^&]+)/, 1]
+            results << check_get(show_path, "#{label} show after submit")
+          end
+        elsif code == 422 && !strict
+          results << Result.new(status: :pass, method: "POST", path: action, http_code: code)
+        else
+          error = res.body.to_s.slice(0, 200)
+          results << Result.new(status: :fail, method: "POST", path: action, http_code: code, error: error)
+        end
+
+        results
+      rescue => e
+        results << Result.new(status: :fail, method: "POST", path: form_path, http_code: 0, error: e.message)
+        results
+      end
+
+      # Parse <form action="..."> from HTML
+      def parse_form_action(html)
+        match = html.match(/<form[^>]*action="([^"]*)"/)
+        match ? match[1] : nil
+      end
+
+      # Parse all <input> fields from HTML, returning { name => value }
+      # Captures hidden fields (pre-filled by server), text inputs, etc.
+      def parse_form_fields(html)
+        fields = {}
+        # Match <input ... name="..." value="..." ...>
+        html.scan(/<input[^>]*>/).each do |tag|
+          name = tag[/name="([^"]*)"/, 1]
+          value = tag[/value="([^"]*)"/, 1] || ""
+          fields[name] = value if name
+        end
+        # Match <select ... name="..."> with first <option value="...">
+        html.scan(/<select[^>]*name="([^"]*)"[^>]*>.*?<option[^>]*value="([^"]*)"[^>]*>/m).each do |name, value|
+          fields[name] = value if name
+        end
+        fields
+      end
+    end
+  end
+end
