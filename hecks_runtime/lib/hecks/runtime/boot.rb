@@ -33,7 +33,9 @@ module Hecks
 
     private
 
-    PERSISTENCE_EXTENSIONS = %i[sqlite postgres mysql mysql2 filesystem_store filesystem].freeze
+    def persistence_extension?(name)
+      Hecks.adapter?(name)
+    end
 
     def find_domains_dir(dir)
       candidates = [File.join(dir, "hecks_domains"), File.join(dir, "domains")]
@@ -74,7 +76,7 @@ module Hecks
       explicit = config&.extensions_explicit?
 
       Hecks.extension_registry.each do |name, hook|
-        next if PERSISTENCE_EXTENSIONS.include?(name)
+        next if persistence_extension?(name)
         next unless hook.respond_to?(:call)
         next if explicit && !config.extensions.key?(name)
         hook.call(mod, domain, runtime)
