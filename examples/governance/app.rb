@@ -1,3 +1,3 @@
 require "hecks"
 
-Hecks.boot
+Hecks.boot(__dir__)

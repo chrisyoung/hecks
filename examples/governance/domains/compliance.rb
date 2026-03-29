@@ -127,9 +127,9 @@ Hecks.domain "Compliance" do
 
   ComplianceReview "Reviews of AI models against governance policies" do
     attachable
-    attribute :model_id, reference_to("AiModel")
+    attribute :model_id, String
     attribute :policy_id, reference_to("GovernancePolicy")
-    attribute :reviewer_id, reference_to("Stakeholder")
+    attribute :reviewer_id, String
     outcome String, enum: %w[approved rejected]
     notes String
     completed_at DateTime
@@ -153,9 +153,9 @@ Hecks.domain "Compliance" do
     validation :reviewer_id, presence: true
 
     open_review do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :policy_id, reference_to("GovernancePolicy")
-      attribute :reviewer_id, reference_to("Stakeholder")
+      attribute :reviewer_id, String
       actor "reviewer"
       actor "admin"
     end
@@ -197,11 +197,11 @@ Hecks.domain "Compliance" do
   end
 
   Exemption "Approved exceptions to policy requirements" do
-    attribute :model_id, reference_to("AiModel")
+    attribute :model_id, String
     attribute :policy_id, reference_to("GovernancePolicy")
     requirement String
     reason String
-    attribute :approved_by_id, reference_to("Stakeholder")
+    attribute :approved_by_id, String
     approved_at DateTime
     expires_at Date
     attribute :scope, String
@@ -217,7 +217,7 @@ Hecks.domain "Compliance" do
     validation :policy_id, presence: true
 
     request_exemption do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :policy_id, reference_to("GovernancePolicy")
       requirement String
       reason String
@@ -225,7 +225,7 @@ Hecks.domain "Compliance" do
 
     approve_exemption do
       exemption_id String
-      attribute :approved_by_id, reference_to("Stakeholder")
+      attribute :approved_by_id, String
       expires_at Date
       sets approved_at: :now
       actor "governance_board"
@@ -252,7 +252,7 @@ Hecks.domain "Compliance" do
   end
 
   TrainingRecord "Staff training completion and certification tracking" do
-    attribute :stakeholder_id, reference_to("Stakeholder")
+    attribute :stakeholder_id, String
     attribute :policy_id, reference_to("GovernancePolicy")
     completed_at DateTime
     expires_at Date
@@ -273,7 +273,7 @@ Hecks.domain "Compliance" do
     end
 
     assign_training do
-      attribute :stakeholder_id, reference_to("Stakeholder")
+      attribute :stakeholder_id, String
       attribute :policy_id, reference_to("GovernancePolicy")
     end
 

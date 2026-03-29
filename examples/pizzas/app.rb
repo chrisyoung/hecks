@@ -27,7 +27,7 @@ margherita = Pizza.create(name: "Margherita", description: "Classic")
 pepperoni = Pizza.create(name: "Pepperoni", description: "Spicy")
 
 puts "\nPlacing an order..."
-Order.place(pizza_id: margherita.id, quantity: 3)
+Order.place(pizza_id: margherita.id, quantity: 3, customer_name: "Alice")
 
 # 8. Use collection proxies for toppings
 puts "\n--- Collection proxies ---"
