@@ -32,7 +32,7 @@ module Hecks
   #   workbench.play!
   #
   class Workbench
-    include Hecks::Templating::Names
+    include Hecks::NamingHelpers
     include BuildActions
     include PlayMode
     include Presenter

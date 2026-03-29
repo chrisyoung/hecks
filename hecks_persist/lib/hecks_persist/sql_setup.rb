@@ -8,7 +8,7 @@ module Hecks
     # Mixed into Configuration to provide SQL persistence setup during Hecks.configure.
     #
     module SqlSetup
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       private
 
       # Generates SQL adapter (repository) classes for each aggregate in the domain.

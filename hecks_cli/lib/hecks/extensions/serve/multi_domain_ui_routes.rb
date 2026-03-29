@@ -9,7 +9,7 @@ module Hecks
       # Extracted from MultiDomainServer to stay under the 200-line limit.
       #
       module UIRoutes
-        include Hecks::Templating::Names
+        include Hecks::NamingHelpers
         private
 
         def serve_ui_route(req, res, entry, sub_path)

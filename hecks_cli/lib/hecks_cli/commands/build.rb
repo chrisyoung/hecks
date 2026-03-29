@@ -9,7 +9,7 @@
 module Hecks
   class CLI < Thor
     class Domain < Thor
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       desc "build", "Generate the domain gem"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"

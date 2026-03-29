@@ -8,7 +8,7 @@ module HecksStatic
 # Each route builds a locals hash and calls renderer.render(:template, locals).
 #
 class UIGenerator
-  include Hecks::Templating::Names
+  include Hecks::NamingHelpers
   include FormRoutes
   include ConfigRoutes
 

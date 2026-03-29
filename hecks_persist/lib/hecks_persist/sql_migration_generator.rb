@@ -13,7 +13,7 @@ module Hecks
     #   gen.generate  # => "CREATE TABLE pizzas (\n  id VARCHAR(36) PRIMARY KEY,\n  ..."
     #
     class SqlMigrationGenerator
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       # Initializes a migration generator for a full domain.
       #
       # @param domain [DomainModel::Structure::Domain] the domain to generate SQL for

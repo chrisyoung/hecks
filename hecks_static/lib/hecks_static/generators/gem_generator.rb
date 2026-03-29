@@ -13,7 +13,7 @@ module HecksStatic
 #   gen.generate  # => path to generated static project
 #
 class GemGenerator
-  include Hecks::Templating::Names
+  include Hecks::NamingHelpers
   include DomainWriter
 
   def initialize(domain, version: "0.1.0", output_dir: ".")
