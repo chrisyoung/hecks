@@ -192,6 +192,10 @@ module Hecks
       def extend(name, **kwargs)
         hook = Hecks.extension_registry[name.to_sym]
         raise "Unknown extension: #{name}. Available: #{Hecks.extension_registry.keys.join(', ')}" unless hook
+        # Set connection config on the module so the hook can read it
+        if kwargs.any? && @mod.respond_to?(:connections)
+          @mod.connections[:sends] << { name: name.to_sym, **kwargs }
+        end
         hook.call(@mod, @domain, self)
         puts "#{name} extension applied"
       end
