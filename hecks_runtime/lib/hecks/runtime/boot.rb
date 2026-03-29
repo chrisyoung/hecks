@@ -1,7 +1,3 @@
-require_relative "cross_domain_validator"
-require_relative "event_directionality"
-require_relative "queue_wiring"
-require_relative "../ports/event_bus/filtered_event_bus"
 
 # Hecks::Boot
 #
@@ -14,8 +10,6 @@ require_relative "../ports/event_bus/filtered_event_bus"
 module Hecks
   module Boot
     include HecksTemplating::NamingHelpers
-    include CrossDomainValidator
-    include QueueWiring
 
     # @param dir [String] directory containing hecks_domain.rb or hecks_domains/
     # @param adapter [Symbol, Hash] persistence adapter (:memory, :sqlite, etc.)
@@ -98,13 +92,17 @@ module Hecks
       raise Hecks::DomainLoadError, "No .rb files in #{domains_dir}" if domain_files.empty?
 
       domains = domain_files.map { |path| eval(File.read(path), nil, path, 1) }
-      validate_no_cross_domain_references(domains)
+      Hecks::MultiDomain::Validator.validate_no_cross_domain_references(domains)
       domains.each { |d| load_domain(d); load_stubs(dir, d) }
 
       shared_bus = EventBus.new
       @shared_event_bus = shared_bus
-      runtimes = domains.map { |d| Runtime.new(d, event_bus: filtered_bus(shared_bus, d, domains)) }
-      wire_queue(domains, runtimes)
+      directionality = Hecks::MultiDomain::Directionality.build(domains)
+      runtimes = domains.map do |d|
+        bus = directionality.any? ? FilteredEventBus.new(inner: shared_bus, domain_gem_name: d.gem_name, allowed_sources: directionality[d.gem_name]) : shared_bus
+        Runtime.new(d, event_bus: bus)
+      end
+      Hecks::MultiDomain::QueueWiring.wire(domains, runtimes)
 
       domains.each_with_index do |domain, i|
         mod = Object.const_get(domain_module_name(domain.name))
