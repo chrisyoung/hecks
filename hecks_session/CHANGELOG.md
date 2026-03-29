@@ -10,4 +10,5 @@
 - MCP tools capture and return terse REPL feedback for visible output in Claude Code
 - New MCP tools: add_lifecycle, add_transition, add_attribute, extend
 - Live `extend` in play mode — apply extensions without rebooting
+- `promote("Comments")` — extract aggregate into its own standalone domain file
 - Initial release as a standalone component
