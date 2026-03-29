@@ -202,4 +202,29 @@ RSpec.describe "CLI commands" do
       expect(out).to include("Installed")
     end
   end
+
+  describe "diff" do
+    it "reports no snapshot when none exists" do
+      Dir.chdir(tmpdir) do
+        out = run_cli("domain", "diff", "--domain", tmpdir)
+        expect(out).to include("No snapshot found")
+      end
+    end
+
+    it "detects changes when snapshot exists" do
+      Dir.chdir(tmpdir) do
+        # Save a snapshot with just Widget (no Part)
+        Kernel.load(File.join(tmpdir, "hecks_domain.rb"))
+        domain = Hecks.last_domain
+        old_domain = Hecks::DomainModel::Structure::Domain.new(
+          name: domain.name,
+          aggregates: domain.aggregates.select { |a| a.name == "Widget" }
+        )
+        Hecks::Migrations::DomainSnapshot.save(old_domain)
+
+        out = run_cli("domain", "diff", "--domain", tmpdir)
+        expect(out).to include("Added aggregate: Part")
+      end
+    end
+  end
 end
