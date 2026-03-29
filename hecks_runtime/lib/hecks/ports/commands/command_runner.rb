@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Commands
@@ -18,6 +17,7 @@ module Hecks
     #   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
     #
     class CommandRunner
+      include Hecks::Templating::Names
       # Initializes the runner with a domain definition, repositories, and event bus.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the domain IR containing
@@ -29,7 +29,7 @@ module Hecks
         @domain = domain
         @repositories = repositories
         @event_bus = event_bus
-        @mod = Object.const_get(DomainNaming.domain_module_name(domain.name))
+        @mod = Object.const_get(domain_module_name(domain.name))
       end
 
       # Dispatches a command by name, creates the corresponding event, and publishes it.

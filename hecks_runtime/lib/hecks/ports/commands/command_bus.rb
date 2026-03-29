@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Commands
@@ -30,6 +29,7 @@ module Hecks
     #   # => #<PizzasDomain::Pizza::Events::CreatedPizza>
     #
     class CommandBus
+      include Hecks::Templating::Names
       # @return [Array<Hash>] registered middleware entries, each with :name and :handler keys
       attr_reader :middleware
 
@@ -44,7 +44,7 @@ module Hecks
       def initialize(domain:, event_bus:)
         @domain = domain
         @event_bus = event_bus
-        @mod = Object.const_get(DomainNaming.domain_module_name(domain.name))
+        @mod = Object.const_get(domain_module_name(domain.name))
         @middleware = []
       end
 

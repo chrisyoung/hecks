@@ -4,8 +4,6 @@ require "stringio"
 require "tmpdir"
 require_relative "route_builder"
 
-DomainNaming = Hecks::Templating::Names
-
 module Hecks
   module HTTP
     # Hecks::HTTP::DomainServer
@@ -24,6 +22,7 @@ module Hecks
     #   hecks domain serve pizzas_domain --live
     #
     class DomainServer
+      include Hecks::Templating::Names
       # Initialize the server, boot the domain gem, and build routes.
       #
       # Builds the domain gem into a temporary directory, requires it,
@@ -146,7 +145,7 @@ module Hecks
       #
       # @return [void]
       def boot_domain
-        mod_name = DomainNaming.domain_module_name(@domain.name)
+        mod_name = domain_module_name(@domain.name)
         unless Object.const_defined?(mod_name)
           tmpdir = Dir.mktmpdir("hecks_serve")
           gem_path = Hecks.build(@domain, output_dir: tmpdir)

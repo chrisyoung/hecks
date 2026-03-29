@@ -1,8 +1,6 @@
 require_relative "playground/gem_bootstrap"
 require_relative "playground/runtime_resolver"
 
-DomainNaming = Hecks::Templating::Names
-
 module Hecks
   class Workbench
     # Hecks::Workbench::Playground
@@ -31,6 +29,7 @@ module Hecks
     #   playground.reset!      # clears events and repositories
     #
     class Playground
+      include Hecks::Templating::Names
     include GemBootstrap
     include RuntimeResolver
 
@@ -45,7 +44,7 @@ module Hecks
     # @param domain [DomainModel::Structure::Domain] the domain to compile and run
     def initialize(domain)
       @domain = domain
-      @mod_name = DomainNaming.domain_module_name(domain.name)
+      @mod_name = domain_module_name(domain.name)
       @events = []
       @policies = collect_policies
       compile!

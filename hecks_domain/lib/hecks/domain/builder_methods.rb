@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   # Hecks::DomainBuilderMethods
@@ -17,6 +16,7 @@ module Hecks
   #   Hecks.workbench("Pizzas")
   #
   module DomainBuilderMethods
+    include Hecks::Templating::Names
     # Define a new domain using the Hecks DSL. Evaluates the given block
     # inside a DomainBuilder, which collects aggregate definitions, policies,
     # workflows, views, and services. The resulting Domain object is stored
@@ -62,7 +62,7 @@ module Hecks
     # @return [String] generated Ruby source code for the aggregate class
     # @raise [RuntimeError] if the named aggregate does not exist in the domain
     def preview(domain, aggregate_name)
-      mod = DomainNaming.domain_module_name(domain.name)
+      mod = domain_module_name(domain.name)
       agg = domain.aggregates.find { |a| a.name == aggregate_name }
       raise "Unknown aggregate: #{aggregate_name}" unless agg
       Generators::Domain::AggregateGenerator.new(agg, domain_module: mod).generate

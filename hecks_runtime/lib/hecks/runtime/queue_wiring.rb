@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Boot
@@ -12,6 +11,7 @@ module Hecks
     #   wire_queue(domains, runtimes)
     #
     module QueueWiring
+      include Hecks::Templating::Names
       # Creates a global +Hecks.queue+ backed by a +MemoryQueue+ whose resolver
       # can find and dispatch any command across all booted domain runtimes.
       #
@@ -32,7 +32,7 @@ module Hecks
             runtimes.each do |rt|
               rt.domain.aggregates.each do |agg|
                 next unless agg.commands.any? { |c| c.name == cmd_name }
-                mod = Object.const_get(DomainNaming.domain_module_name(domain.name))
+                mod = Object.const_get(domain_module_name(domain.name))
                 klass = mod.const_get(agg.name).const_get(:Commands).const_get(cmd_name)
                 return klass.call(**attrs)
               end

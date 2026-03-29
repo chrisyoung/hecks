@@ -3,8 +3,6 @@ require_relative "event_directionality"
 require_relative "queue_wiring"
 require_relative "../ports/event_bus/filtered_event_bus"
 
-DomainNaming = Hecks::Templating::Names
-
 # Hecks::Boot
 #
 # Convenience method that loads a domain from a directory, validates it,
@@ -37,6 +35,7 @@ module Hecks
   # For multi-domain setups, also handles cross-domain validation,
   # event directionality filtering, and queue wiring.
   module Boot
+    include Hecks::Templating::Names
     include CrossDomainValidator
     include QueueWiring
 
@@ -187,7 +186,7 @@ module Hecks
 
       # Fire registered extensions on each domain
       domains.each_with_index do |domain, i|
-        mod = Object.const_get(DomainNaming.domain_module_name(domain.name))
+        mod = Object.const_get(domain_module_name(domain.name))
         Hecks.extension_registry.each do |_name, hook|
           hook.call(mod, domain, runtimes[i])
         end

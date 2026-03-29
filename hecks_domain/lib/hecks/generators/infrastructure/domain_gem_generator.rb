@@ -3,8 +3,6 @@ require_relative "domain_gem_generator/file_writer"
 require_relative "domain_gem_generator/llms_txt_writer"
 require_relative "domain_gem_generator/spec_writer"
 
-DomainNaming = Hecks::Templating::Names
-
 module Hecks
   module Generators
     module Infrastructure
@@ -20,6 +18,7 @@ module Hecks
     #   gen.generate  # => path to generated gem root
     #
     class DomainGemGenerator
+      include Hecks::Templating::Names
       include FileWriter
       include LlmsTxtWriter
       include SpecWriter
@@ -55,7 +54,7 @@ module Hecks
       # @return [String] the absolute path to the generated gem root directory
       def generate
         gem_name = @domain.gem_name
-        mod = DomainNaming.domain_module_name(@domain.name)
+        mod = domain_module_name(@domain.name)
         root = File.join(@output_dir, gem_name)
 
         FileUtils.mkdir_p(root)

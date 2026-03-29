@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   class Workbench
@@ -20,6 +19,7 @@ module Hecks
     #   ConsoleRunner.new(name: "Pizzas").run
     #
     class ConsoleRunner
+      include Hecks::Templating::Names
     # Create a new ConsoleRunner.
     #
     # @param name [String, nil] domain name to start with; if nil, attempts to
@@ -85,7 +85,7 @@ module Hecks
       result = @workbench.play!
       if @workbench.play? && @workbench.playground
         @hoisted_constants = []
-        mod_name = DomainNaming.domain_module_name(@workbench.name)
+        mod_name = domain_module_name(@workbench.name)
         if Object.const_defined?(mod_name)
           mod = Object.const_get(mod_name)
           mod.constants.each do |const_name|
