@@ -3,4 +3,4 @@
 -I hecks_spec
 -I hecks_watchers/lib
 --require spec_helper
---pattern {hecksties,hecks_model,hecks_domain,hecks_runtime,hecks_multidomain,hecks_workshop,hecks_cli,hecks_persist,hecks_watchers,hecks_spec}/spec/**/*_spec.rb
+--pattern {hecksties,hecks_modules,hecks_model,hecks_domain,hecks_runtime,hecks_multidomain,hecks_workshop,hecks_cli,hecks_persist,hecks_watchers,hecks_deprecations,hecks_spec}/spec/**/*_spec.rb

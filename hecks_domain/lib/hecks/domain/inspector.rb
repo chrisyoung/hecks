@@ -6,7 +6,7 @@ module Hecks
   # Extended onto the Hecks module so these are available as top-level
   # calls after domains have been loaded.
   #
-  # Each method iterates over +@domain_objects+ (a Hash of module_name =>
+  # Each method iterates over +domain_objects+ (a Hash of module_name =>
   # Domain maintained by DomainCompiler) to collect information from all
   # loaded domains.
   #
@@ -56,7 +56,7 @@ module Hecks
         end
       end
 
-      @domain_objects.each_value do |domain|
+      domain_objects.each_value do |domain|
         domain.policies.each do |pol|
           async = pol.async ? " [async]" : ""
           result << "#{domain.name}: #{pol.event_name} -> #{pol.trigger_command}#{async}"
@@ -82,7 +82,7 @@ module Hecks
     #
     # @return [nil]
     def glossary
-      @domain_objects.each_value { |domain| DomainGlossary.new(domain).print }
+      domain_objects.each_value { |domain| DomainGlossary.new(domain).print }
       nil
     end
 
@@ -92,7 +92,7 @@ module Hecks
     #
     # @return [Array<Hecks::DomainModel::Aggregate>] all aggregates
     def each_aggregate
-      @domain_objects.flat_map { |_, domain| domain.aggregates }
+      domain_objects.flat_map { |_, domain| domain.aggregates }
     end
   end
 end

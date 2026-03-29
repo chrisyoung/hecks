@@ -72,7 +72,7 @@ module Hecks
     def load_domain(domain, force: false, skip_validation: false)
       mod = domain_module_name(domain.name)
       key = domain.object_id
-      return Object.const_get(mod) if !force && @loaded_domains[mod] == key && Object.const_defined?(mod)
+      return Object.const_get(mod) if !force && loaded_domains[mod] == key && Object.const_defined?(mod)
 
       unless skip_validation
         validator = Validator.new(domain)
@@ -87,8 +87,8 @@ module Hecks
       rescue SyntaxError, NameError => e
         raise Hecks::DomainLoadError, "Failed to load domain '#{domain.name}': #{e.message}"
       end
-      @loaded_domains[mod] = key
-      @domain_objects[mod] = domain
+      loaded_domains[mod] = key
+      domain_objects[mod] = domain
       Object.const_get(mod)
     end
 

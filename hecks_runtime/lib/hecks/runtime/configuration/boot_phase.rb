@@ -24,7 +24,7 @@ module Hecks
 
       def store_domain_object(domain_obj)
         mod = domain_module_name(domain_obj.name)
-        Hecks.instance_variable_get(:@domain_objects)[mod] = domain_obj
+        Hecks.domain_objects[mod] = domain_obj
       end
 
       def create_runtime(d, domain_obj, domain_module)
