@@ -16,6 +16,7 @@ examples/pizzas_rails/tmp/
 examples/pizzas_rails/storage/
 examples/pizzas_rails/bin/
 examples/pizzas_rails/public/
+!examples/pizzas_rails/public/index.html
 examples/pizzas_rails/vendor/
 examples/pizzas_rails/lib/tasks/
 examples/pizzas_rails/lib/assets/

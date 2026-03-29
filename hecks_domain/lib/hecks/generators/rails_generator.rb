@@ -88,8 +88,39 @@ module Hecks
         # Add Hecks version after Rack version
         html = html.sub(
           %r{(<li><strong>Rack version:</strong>.*?</li>)},
-          "\\1\n    <li><strong>Hecks version:</strong> #{Hecks::VERSION}</li>"
+          "\\1\n    <li class=\"hecks-version\"><strong>Hecks version:</strong> #{Hecks::VERSION}</li>"
         )
+
+        # Animated gradient border + Hecks version shimmer
+        extra_css = <<~CSS
+          @keyframes border-rotate {
+            0% { --angle: 0deg; }
+            100% { --angle: 360deg; }
+          }
+
+          @property --angle {
+            syntax: "<angle>";
+            initial-value: 0deg;
+            inherits: false;
+          }
+
+          .hecks-version {
+            background: linear-gradient(90deg, #1a1a4e, #3333cc, #00bfff, #7b2fff, #1a1a4e);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: hecks-shimmer 3s linear infinite;
+            font-weight: bold;
+          }
+
+          @keyframes hecks-shimmer {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+          }
+        CSS
+        html = html.sub("<style type=\"text/css\">", "<style type=\"text/css\">\n    #{extra_css.strip.gsub("\n", "\n    ")}")
+        html = html.sub("min-height: 100vh;", "min-height: 100vh;\n      border: 4px solid transparent;\n      border-image: conic-gradient(from var(--angle), #1a1a4e, #3333cc, #00bfff, #7b2fff, #1a1a4e) 1;\n      animation: border-rotate 3s linear infinite;")
 
         write "public/index.html", html
       end
