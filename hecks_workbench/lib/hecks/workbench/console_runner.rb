@@ -83,7 +83,7 @@ module Hecks
       result = @workbench.play!
       if @workbench.play? && @workbench.playground
         @hoisted_constants = []
-        mod_name = @workbench.name.gsub(/\s+/, "") + "Domain"
+        mod_name = Hecks::Templating::Names.domain_module(@workbench.name)
         if Object.const_defined?(mod_name)
           mod = Object.const_get(mod_name)
           mod.constants.each do |const_name|

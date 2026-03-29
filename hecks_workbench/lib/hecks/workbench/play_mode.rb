@@ -146,7 +146,7 @@ module Hecks
       # @return [Session] self
       def serve!(port: 9292)
         play! unless play?
-        mod_name = @name.gsub(/\s+/, "") + "Domain"
+        mod_name = @nameHecks::Templating::NamesHecks::Templating::Names.domain_module()
         if Object.const_defined?(mod_name)
           mod = Object.const_get(mod_name)
           if mod.respond_to?(:serve)

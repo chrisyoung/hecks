@@ -22,7 +22,7 @@ module Hecks
         @type = type
         @name = name
         @gem = domain.gem_name
-        @mod = domain.module_name + "Domain"
+        @mod = Hecks::Templating::Names.domain_module(domain.name)
       end
 
       # Generates stub files for the requested element.

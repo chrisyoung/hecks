@@ -65,8 +65,8 @@ module Hecks
       # @return [Class] the aggregate class (e.g., +ModelRegistryDomain::AiModel+)
       # @raise [NameError] if the domain or aggregate constant does not exist
       def from(domain_name, aggregate_name)
-        mod_name = Hecks::Utils.sanitize_constant(domain_name) + "Domain"
-        agg_name = Hecks::Utils.sanitize_constant(aggregate_name)
+        mod_name = Hecks::Templating::Names.domain_module(domain_name)
+        agg_name = Hecks::Templating::Names.constant_name(aggregate_name)
         Object.const_get("#{mod_name}::#{agg_name}")
       end
     end

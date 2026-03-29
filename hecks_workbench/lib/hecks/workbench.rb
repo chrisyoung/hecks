@@ -91,7 +91,7 @@ module Hecks
       builder = @aggregate_builders[name] ||= DSL::AggregateBuilder.new(name)
       builder.instance_eval(&block) if block
 
-      handle = @handles[name] ||= AggregateHandle.new(name, builder, domain_module: @name.gsub(/\s+/, "") + "Domain", workbench: self)
+      handle = @handles[name] ||= AggregateHandle.new(name, builder, domain_module: Hecks::Templating::Names.domain_module(@name), workbench: self)
 
       if block
         agg = builder.build
@@ -129,7 +129,7 @@ module Hecks
         return mod
       end
       ActiveHecks.activate(mod, domain: domain)
-      puts "ActiveHecks loaded for #{domain.module_name}Domain"
+      puts "ActiveHecks loaded for #{Hecks::Templating::Names.domain_module(domain.name)}"
       mod
     end
 
