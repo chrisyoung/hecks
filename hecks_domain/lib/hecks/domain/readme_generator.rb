@@ -147,24 +147,8 @@ module Hecks
       "| Command | Description |\n|---|---|\n#{commands.join("\n")}"
     end
 
-    # Generate the Smalltalk-inspired features section by loading feature
-    # definitions from SmalltalkFeatures.
-    #
-    # @return [String] markdown sections with feature names, descriptions, and examples
     def smalltalk
-      require "hecks/smalltalk_features"
-      lines = ["## Hecks Loves Smalltalk", ""]
-      SmalltalkFeatures.all.each do |feature|
-        lines << "### #{feature[:name]}"
-        lines << ""
-        lines << feature[:description]
-        lines << ""
-        lines << "```ruby"
-        lines << feature[:example]
-        lines << "```"
-        lines << ""
-      end
-      lines.join("\n").strip
+      ""
     end
 
     # Generate the connections/extensions section grouped by category

@@ -41,8 +41,6 @@ module Hecks
   autoload :Versioner,      "hecks/domain/versioner"
   autoload :Migrations,     "hecks/domain/migrations"
 
-  # Smalltalk-inspired feature metadata (used by ReadmeGenerator)
-  autoload :SmalltalkFeatures, "hecks/smalltalk_features"
 
   # Domain tools
   autoload :Validator,         "hecks/domain/validator"
