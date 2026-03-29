@@ -167,7 +167,7 @@ module Hecks
       return self if @chain_error
       begin
         result = yield(self)
-        result.instance_variable_set(:@chain_steps, steps + [result]) if result.is_a?(self.class) || (result.class.ancestors.include?(Hecks::Command))
+        result.instance_variable_set(:@chain_steps, steps + [result]) if result.respond_to?(:aggregate)
         result
       rescue => e
         @chain_error = e

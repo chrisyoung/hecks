@@ -72,7 +72,7 @@ module Hecks
         # @param item [Object, Hecks::Persistence::CollectionItem] the item to remove
         # @return [Object] the item that was passed in (unchanged)
         def delete(item)
-          raw = item.is_a?(CollectionItem) ? item.__raw__ : item
+          raw = item.respond_to?(:__raw__) ? item.__raw__ : item
           found = false
           new_items = @items.reject { |i| !found && i == raw && (found = true) }
           rebuild_owner(new_items)
