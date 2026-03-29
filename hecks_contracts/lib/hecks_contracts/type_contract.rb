@@ -1,16 +1,22 @@
 # = HecksTemplating::TypeContract
 #
-# Single source of truth for mapping domain IR types to target-specific
-# representations. Every generator (Go, SQL, JSON Schema, OpenAPI)
-# consumes this contract instead of maintaining its own type map.
+# Registry-based type mapping. Targets register their own type maps.
+# Generators query by target name instead of hardcoded methods.
 #
-#   HecksTemplating::TypeContract.go("Integer")      # => "int64"
-#   HecksTemplating::TypeContract.sql("Integer")     # => "INTEGER"
-#   HecksTemplating::TypeContract.json("Integer")    # => "integer"
-#   HecksTemplating::TypeContract.openapi("Integer") # => "integer"
+#   HecksTemplating::TypeContract.for(:go, "Integer")  # => "int64"
+#   HecksTemplating::TypeContract.for(:sql, "Integer") # => "INTEGER"
+#
+#   # New targets register themselves:
+#   HecksTemplating::TypeContract.register_target(:java, {
+#     "String" => "String", "Integer" => "long", ...
+#   })
 #
 module HecksTemplating
   module TypeContract
+    @targets = {}
+    @defaults = {}
+
+    # Built-in type definitions
     TYPES = {
       "String"   => { go: "string",          sql: "VARCHAR(255)", json: "string",  openapi: "string"  },
       "Integer"  => { go: "int64",           sql: "INTEGER",      json: "integer", openapi: "integer" },
@@ -21,12 +27,49 @@ module HecksTemplating
       "JSON"     => { go: "json.RawMessage", sql: "TEXT",         json: "object",  openapi: "object"  },
     }.freeze
 
-    def self.go(type)      = TYPES.dig(type.to_s, :go) || "string"
-    def self.sql(type)     = TYPES.dig(type.to_s, :sql) || "TEXT"
-    def self.json(type)    = TYPES.dig(type.to_s, :json) || "string"
-    def self.openapi(type) = TYPES.dig(type.to_s, :openapi) || "string"
+    # Register a target with its type mappings and default.
+    #
+    #   TypeContract.register_target(:java, { "String" => "String", "Integer" => "long" }, default: "Object")
+    #
+    def self.register_target(name, mappings, default: "string")
+      @targets[name.to_sym] = mappings
+      @defaults[name.to_sym] = default
+    end
 
-    # Go-specific helpers derived from the contract
+    # Look up a type for a target. Falls back to registered targets,
+    # then built-in TYPES, then the target's default.
+    #
+    #   TypeContract.for(:go, "Integer")  # => "int64"
+    #   TypeContract.for(:java, "String") # => "String" (if registered)
+    #
+    def self.for(target, type)
+      target = target.to_sym
+      # Check registered targets first
+      if @targets[target]
+        return @targets[target][type.to_s] || @defaults[target]
+      end
+      # Fall back to built-in TYPES
+      TYPES.dig(type.to_s, target) || @defaults[target] || "string"
+    end
+
+    # List all registered target names (including built-in)
+    def self.targets
+      (TYPES.values.first&.keys || []) | @targets.keys
+    end
+
+    # Convenience methods for built-in targets
+    def self.go(type)      = self.for(:go, type)
+    def self.sql(type)     = self.for(:sql, type)
+    def self.json(type)    = self.for(:json, type)
+    def self.openapi(type) = self.for(:openapi, type)
+
+    # Register built-in defaults
+    @defaults[:go] = "string"
+    @defaults[:sql] = "TEXT"
+    @defaults[:json] = "string"
+    @defaults[:openapi] = "string"
+
+    # Go-specific helpers
 
     def self.go_zero_value(go_type)
       case go_type
@@ -48,21 +91,14 @@ module HecksTemplating
       attrs.any? { |a| a.type.to_s == "JSON" }
     end
 
-    # Format a Ruby literal value as a Go literal for the given Go type.
-    # Used by query and specification generators to produce correct
-    # typed comparisons in generated Go code.
-    #
-    # @param value [String, Numeric] the Ruby value
-    # @param go_type [String] the Go type string (e.g., "int64", "string")
-    # @return [String] a Go literal (e.g., '"hello"', '42', 'true')
     def self.format_go_literal(value, go_type)
       case go_type
       when "int64", "float64"
-        value.to_s.gsub(/_/, "")
+        value.to_s
       when "bool"
-        value.to_s.downcase == "true" ? "true" : "false"
-      when "time.Time"
-        "parseDate(\"#{value}\")"
+        value.to_s
+      when "string"
+        "\"#{value}\""
       else
         "\"#{value}\""
       end
