@@ -174,6 +174,28 @@ module Hecks
         wire_aggregate!(name)
       end
 
+      # Apply an extension to the live runtime without rebooting.
+      #
+      # Looks up the extension hook in the registry and calls it with the
+      # current domain module, domain IR, and this runtime instance. The hook
+      # can register middleware, swap adapters, or subscribe to events — all
+      # take effect immediately on the next command dispatch.
+      #
+      #   runtime.extend(:logging)
+      #   runtime.extend(:sqlite)
+      #   runtime.extend(:tenancy)
+      #
+      # @param name [Symbol] the registered extension name
+      # @param kwargs [Hash] options (currently unused, reserved for future extensions)
+      # @return [void]
+      # @raise [RuntimeError] if the extension is not registered
+      def extend(name, **kwargs)
+        hook = Hecks.extension_registry[name.to_sym]
+        raise "Unknown extension: #{name}. Available: #{Hecks.extension_registry.keys.join(', ')}" unless hook
+        hook.call(@mod, @domain, self)
+        puts "#{name} extension applied"
+      end
+
       # Returns a human-readable summary of this runtime instance, showing the
       # domain name and number of wired repositories.
       #

@@ -235,4 +235,23 @@ RSpec.describe "Play mode" do
       expect(event.name).to eq("Henry")
     end
   end
+
+  describe "live extend" do
+    before { session.play! }
+
+    it "applies logging extension to running runtime" do
+      session.extend(:logging)
+      mod = Object.const_get("ScratchDomain")
+      expect { mod::Pizza.create(name: "Test", style: "NY") }.to output(/CreatePizza/).to_stdout
+    end
+
+    it "raises for unknown extension" do
+      expect { session.extend(:nonexistent) }.to raise_error(RuntimeError, /Unknown extension/)
+    end
+
+    it "requires play mode" do
+      session.sketch!
+      expect { session.extend(:logging) }.to raise_error(RuntimeError, /Not in play mode/)
+    end
+  end
 end
