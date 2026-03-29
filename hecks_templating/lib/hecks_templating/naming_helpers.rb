@@ -1,8 +1,8 @@
 # = Hecks::NamingHelpers
 #
-# Universal mixin that delegates to Hecks::Templating::Names.
-# Include in any class or module — methods are available as both
-# instance methods AND class/module methods. Works everywhere.
+# Mixin that provides naming convention helpers as regular methods.
+# Include in any class or module — methods propagate through include
+# chains, so mixins-into-mixins work correctly.
 #
 #   include Hecks::NamingHelpers
 #   domain_module_name("Pizzas")     # => "PizzasDomain"
@@ -11,22 +11,50 @@
 #
 module Hecks
   module NamingHelpers
-    def self.included(base)
-      methods = Hecks::Templating::Names.singleton_class.public_instance_methods(false)
-      # Instance methods (for use inside class/module instance methods)
-      methods.each do |m|
-        base.define_method(m) { |*args, **kwargs| Hecks::Templating::Names.send(m, *args, **kwargs) }
-      end
-      # Class/module methods (for use in self.method, module_function, etc.)
-      methods.each do |m|
-        base.define_singleton_method(m) { |*args, **kwargs| Hecks::Templating::Names.send(m, *args, **kwargs) }
-      end
+    private
+
+    def domain_module_name(name)
+      Hecks::Templating::Names.domain_module_name(name)
     end
 
-    def self.extended(base)
-      Hecks::Templating::Names.singleton_class.public_instance_methods(false).each do |m|
-        base.define_singleton_method(m) { |*args, **kwargs| Hecks::Templating::Names.send(m, *args, **kwargs) }
-      end
+    def domain_gem_name(name)
+      Hecks::Templating::Names.domain_gem_name(name)
+    end
+
+    def domain_constant_name(name)
+      Hecks::Templating::Names.domain_constant_name(name)
+    end
+
+    def domain_snake_name(name)
+      Hecks::Templating::Names.domain_snake_name(name)
+    end
+
+    def domain_aggregate_slug(name)
+      Hecks::Templating::Names.domain_aggregate_slug(name)
+    end
+
+    def domain_slug(name)
+      Hecks::Templating::Names.domain_slug(name)
+    end
+
+    def domain_command_name(verb, aggregate_name)
+      Hecks::Templating::Names.domain_command_name(verb, aggregate_name)
+    end
+
+    def domain_referenced_name(foreign_key)
+      Hecks::Templating::Names.domain_referenced_name(foreign_key)
+    end
+
+    def domain_command_method(cmd_name, agg_name)
+      Hecks::Templating::Names.domain_command_method(cmd_name, agg_name)
+    end
+
+    def domain_route_path(domain_name, aggregate_name)
+      Hecks::Templating::Names.domain_route_path(domain_name, aggregate_name)
+    end
+
+    def domain_output_dir(domain_name)
+      Hecks::Templating::Names.domain_output_dir(domain_name)
     end
   end
 end

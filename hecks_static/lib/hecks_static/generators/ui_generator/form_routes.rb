@@ -7,16 +7,17 @@
 module HecksStatic
   class UIGenerator
     module FormRoutes
+      include Hecks::NamingHelpers
       private
 
       def new_routes(agg, mod)
-        safe = Hecks::Templating::Names.domain_constant_name(agg.name)
+        safe = domain_constant_name(agg.name)
         p = plural(agg)
-        agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+        agg_snake = domain_snake_name(agg.name)
         lines = []
 
         agg.commands.each do |cmd|
-          cmd_snake = Hecks::Templating::Names.domain_snake_name(cmd.name)
+          cmd_snake = domain_snake_name(cmd.name)
           self_id_attr = Hecks::AggregateContract.self_ref_attr(cmd, agg_snake)
 
           # Build field descriptors
@@ -43,7 +44,7 @@ module HecksStatic
       end
 
       def field_descriptor(attr, agg, self_id_attr)
-        agg_snake = Hecks::Templating::Names.domain_snake_name(agg.name)
+        agg_snake = domain_snake_name(agg.name)
         if attr == self_id_attr
           { type: :hidden, name: attr.name.to_s }
         elsif attr.name.to_s.end_with?("_id")
@@ -52,11 +53,11 @@ module HecksStatic
             @domain.aggregates.find { |ra| ra.name == attr.type.to_s }
           else
             ref_name = attr.name.to_s.sub(/_id$/, "")
-            @domain.aggregates.find { |ra| Hecks::Templating::Names.domain_snake_name(ra.name) == ref_name }
+            @domain.aggregates.find { |ra| domain_snake_name(ra.name) == ref_name }
           end
           if ref_agg
             display = Hecks::DisplayContract.reference_display_field(ref_agg)
-            { type: :select, name: attr.name.to_s, ref: Hecks::Templating::Names.domain_constant_name(ref_agg.name),
+            { type: :select, name: attr.name.to_s, ref: domain_constant_name(ref_agg.name),
               label: humanize(attr.name.to_s.sub(/_id$/, "")), required: required_field?(agg, attr.name),
               display: display }
           else

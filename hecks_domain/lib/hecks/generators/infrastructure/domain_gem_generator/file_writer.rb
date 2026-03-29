@@ -14,6 +14,7 @@ module Hecks
         #   generate_aggregates(root, gem_name, mod)
         #
         module FileWriter
+          include Hecks::NamingHelpers
           private
 
           # Writes the +.gemspec+ file for the domain gem.
@@ -60,8 +61,8 @@ module Hecks
           # @return [void]
           def generate_aggregates(root, gem_name, mod)
             @domain.aggregates.each do |agg|
-              safe_name = Hecks::Templating::Names.domain_constant_name(agg.name)
-              snake = Hecks::Templating::Names.domain_snake_name(safe_name)
+              safe_name = domain_constant_name(agg.name)
+              snake = domain_snake_name(safe_name)
               base = "lib/#{gem_name}/#{snake}"
 
               agg_gen = Domain::AggregateGenerator.new(agg, domain_module: mod)
@@ -74,38 +75,38 @@ module Hecks
 
               agg.value_objects.each do |vo|
                 vo_gen = Domain::ValueObjectGenerator.new(vo, domain_module: mod, aggregate_name: safe_name)
-                write_file(root, "#{base}/#{Hecks::Templating::Names.domain_snake_name(vo.name)}.rb", vo_gen.generate)
+                write_file(root, "#{base}/#{domain_snake_name(vo.name)}.rb", vo_gen.generate)
               end
 
               agg.entities.each do |ent|
                 ent_gen = Domain::EntityGenerator.new(ent, domain_module: mod, aggregate_name: safe_name)
-                write_file(root, "#{base}/#{Hecks::Templating::Names.domain_snake_name(ent.name)}.rb", ent_gen.generate)
+                write_file(root, "#{base}/#{domain_snake_name(ent.name)}.rb", ent_gen.generate)
               end
 
               agg.commands.each_with_index do |cmd, i|
                 cmd_gen = Domain::CommandGenerator.new(cmd, domain_module: mod, aggregate_name: safe_name, aggregate: agg, event: agg.events[i])
-                cmd_path = "#{base}/commands/#{Hecks::Templating::Names.domain_snake_name(cmd.name)}.rb"
+                cmd_path = "#{base}/commands/#{domain_snake_name(cmd.name)}.rb"
                 write_command_file(root, cmd_path, cmd_gen.generate, cmd)
               end
 
               agg.events.each do |evt|
                 evt_gen = Domain::EventGenerator.new(evt, domain_module: mod, aggregate_name: safe_name)
-                write_file(root, "#{base}/events/#{Hecks::Templating::Names.domain_snake_name(evt.name)}.rb", evt_gen.generate)
+                write_file(root, "#{base}/events/#{domain_snake_name(evt.name)}.rb", evt_gen.generate)
               end
 
               agg.policies.each do |pol|
                 pol_gen = Domain::PolicyGenerator.new(pol, domain_module: mod, aggregate_name: safe_name)
-                write_file(root, "#{base}/policies/#{Hecks::Templating::Names.domain_snake_name(pol.name)}.rb", pol_gen.generate)
+                write_file(root, "#{base}/policies/#{domain_snake_name(pol.name)}.rb", pol_gen.generate)
               end
 
               agg.subscribers.each do |sub|
                 sub_gen = Domain::SubscriberGenerator.new(sub, domain_module: mod, aggregate_name: safe_name)
-                write_file(root, "#{base}/subscribers/#{Hecks::Templating::Names.domain_snake_name(sub.name)}.rb", sub_gen.generate)
+                write_file(root, "#{base}/subscribers/#{domain_snake_name(sub.name)}.rb", sub_gen.generate)
               end
 
               agg.specifications.each do |spec|
                 spec_gen = Domain::SpecificationGenerator.new(spec, domain_module: mod, aggregate_name: safe_name)
-                write_file(root, "#{base}/specifications/#{Hecks::Templating::Names.domain_snake_name(spec.name)}.rb", spec_gen.generate)
+                write_file(root, "#{base}/specifications/#{domain_snake_name(spec.name)}.rb", spec_gen.generate)
               end
 
               if agg.lifecycle
@@ -129,10 +130,10 @@ module Hecks
           # @return [void]
           def generate_queries(root, gem_name, mod)
             @domain.aggregates.each do |agg|
-              safe = Hecks::Templating::Names.domain_constant_name(agg.name)
-              snake = Hecks::Templating::Names.domain_snake_name(safe)
+              safe = domain_constant_name(agg.name)
+              snake = domain_snake_name(safe)
               agg.queries.each do |q|
-                write_file(root, "lib/#{gem_name}/#{snake}/queries/#{Hecks::Templating::Names.domain_snake_name(q.name)}.rb",
+                write_file(root, "lib/#{gem_name}/#{snake}/queries/#{domain_snake_name(q.name)}.rb",
                            Domain::QueryGenerator.new(q, domain_module: mod, aggregate_name: safe).generate)
               end
             end
@@ -147,7 +148,7 @@ module Hecks
           # @return [void]
           def generate_ports(root, gem_name, mod)
             @domain.aggregates.each do |agg|
-              snake = Hecks::Templating::Names.domain_snake_name(Hecks::Templating::Names.domain_constant_name(agg.name))
+              snake = domain_snake_name(domain_constant_name(agg.name))
               write_file(root, "lib/#{gem_name}/ports/#{snake}_repository.rb",
                          Infrastructure::PortGenerator.new(agg, domain_module: mod).generate)
             end
@@ -162,7 +163,7 @@ module Hecks
           # @return [void]
           def generate_adapters(root, gem_name, mod)
             @domain.aggregates.each do |agg|
-              snake = Hecks::Templating::Names.domain_snake_name(Hecks::Templating::Names.domain_constant_name(agg.name))
+              snake = domain_snake_name(domain_constant_name(agg.name))
               write_file(root, "lib/#{gem_name}/adapters/#{snake}_memory_repository.rb",
                          Infrastructure::MemoryAdapterGenerator.new(agg, domain_module: mod).generate)
             end
@@ -176,7 +177,7 @@ module Hecks
           # @return [void]
           def generate_workflows(root, gem_name, mod)
             @domain.workflows.each do |wf|
-              snake = Hecks::Templating::Names.domain_snake_name(wf.name)
+              snake = domain_snake_name(wf.name)
               write_file(root, "lib/#{gem_name}/workflows/#{snake}.rb",
                          Domain::WorkflowGenerator.new(wf, domain_module: mod).generate)
             end
@@ -190,7 +191,7 @@ module Hecks
           # @return [void]
           def generate_views(root, gem_name, mod)
             @domain.views.each do |v|
-              snake = Hecks::Templating::Names.domain_snake_name(v.name)
+              snake = domain_snake_name(v.name)
               write_file(root, "lib/#{gem_name}/views/#{snake}.rb",
                          Domain::ViewGenerator.new(v, domain_module: mod).generate)
             end
@@ -204,7 +205,7 @@ module Hecks
           # @return [void]
           def generate_services(root, gem_name, mod)
             @domain.services.each do |svc|
-              snake = Hecks::Templating::Names.domain_snake_name(svc.name)
+              snake = domain_snake_name(svc.name)
               write_file(root, "lib/#{gem_name}/services/#{snake}.rb",
                          Domain::ServiceGenerator.new(svc, domain_module: mod).generate)
             end

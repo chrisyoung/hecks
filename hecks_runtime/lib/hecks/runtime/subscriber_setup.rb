@@ -11,6 +11,7 @@ module Hecks
       #   end
       #
       module SubscriberSetup
+        include Hecks::NamingHelpers
         private
 
         # Wires all aggregate-level and domain-level event subscribers to the event bus.
@@ -30,7 +31,7 @@ module Hecks
         def setup_subscribers
           @domain.aggregates.each do |agg|
             agg.subscribers.each do |sub|
-              safe_name = Hecks::Templating::Names.domain_constant_name(agg.name)
+              safe_name = domain_constant_name(agg.name)
               sub_class = @mod.const_get(safe_name)::Subscribers.const_get(sub.name)
               handler = sub_class.new
 

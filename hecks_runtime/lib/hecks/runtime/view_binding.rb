@@ -11,6 +11,7 @@ module Hecks
   #   PizzasDomain::OrderSummary.current  # => { total_orders: 5 }
   #
   class ViewBinding
+    extend Hecks::NamingHelpers
     # Binds a view (read model) definition to the event bus and domain module.
     #
     # Creates a new anonymous module under the domain namespace (e.g.,
@@ -34,7 +35,7 @@ module Hecks
         define_singleton_method(:current) { mutex.synchronize { state.dup } }
       end
 
-      mod.const_set(Hecks::Templating::Names.domain_constant_name(view.name), view_mod)
+      mod.const_set(domain_constant_name(view.name), view_mod)
 
       view.projections.each do |event_name, projection|
         event_bus.subscribe(event_name) do |event|

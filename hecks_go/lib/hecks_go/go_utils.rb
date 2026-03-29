@@ -5,6 +5,7 @@
 #
 module HecksGo
   module GoUtils
+    include Hecks::NamingHelpers
     module_function
 
     def go_type(attr)
@@ -33,7 +34,7 @@ module HecksGo
     end
 
     def snake_case(str)
-      Hecks::Templating::Names.domain_snake_name(str.to_s)
+      domain_snake_name(str.to_s)
     end
 
     def go_package(name)

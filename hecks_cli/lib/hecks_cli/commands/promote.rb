@@ -11,6 +11,7 @@
 module Hecks
   class CLI < Thor
     class Domain < Thor
+      include Hecks::NamingHelpers
       desc "promote AGGREGATE", "Extract an aggregate into its own domain"
       # Promotes an aggregate from the current domain into a standalone domain.
       #
@@ -24,7 +25,7 @@ module Hecks
         domain = resolve_domain_option
         return unless domain
 
-        agg_name = Hecks::Templating::Names.domain_constant_name(aggregate_name)
+        agg_name = domain_constant_name(aggregate_name)
         agg = domain.aggregates.find { |a| a.name == agg_name }
         unless agg
           say "No aggregate named #{agg_name} in #{domain.name}", :red
@@ -36,7 +37,7 @@ module Hecks
         new_domain = DomainModel::Structure::Domain.new(
           name: agg_name, aggregates: [agg], custom_verbs: []
         )
-        new_file = "#{Hecks::Templating::Names.domain_snake_name(agg_name)}_domain.rb"
+        new_file = "#{domain_snake_name(agg_name)}_domain.rb"
         File.write(new_file, DslSerializer.new(new_domain).serialize)
         say "Wrote #{new_file} (#{agg.attributes.size} attributes, #{agg.commands.size} commands)", :green
 

@@ -17,6 +17,7 @@ module Hecks
       #   #    Create it with: Cat.command("Feed") { attribute :name, String }
       #
       module MessageNotUnderstood
+        include Hecks::NamingHelpers
         # Handle unknown method calls with a helpful suggestion message.
         #
         # Converts the method name to a command-style constant name and raises
@@ -29,7 +30,7 @@ module Hecks
         # @param block [Proc, nil] block argument (unused)
         # @raise [NoMethodError] always, with a helpful suggestion message
         def method_missing(method_name, *args, **kwargs, &block)
-          cmd_name = Hecks::Templating::Names.domain_constant_name(method_name.to_s)
+          cmd_name = domain_constant_name(method_name.to_s)
           available = commands
           msg = "#{@name} doesn't understand '#{method_name}'."
           if available.any?
