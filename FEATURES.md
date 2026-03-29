@@ -216,6 +216,8 @@
 - `handle.build(**attrs)` — compile domain and return a live domain object
 - Auto-normalize names to PascalCase
 - `serve!` — start web explorer from REPL in background thread
+- `promote("Comments")` — extract aggregate into its own standalone domain file
+- `extend :logging` — apply extensions to live runtime without rebooting
 - Play mode compiles domain on the fly with full Runtime
 - Real-time event display and policy triggering feedback
 - Event history with timestamps, reset/replay capability

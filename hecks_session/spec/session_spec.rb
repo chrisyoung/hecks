@@ -376,4 +376,49 @@ RSpec.describe Hecks::Session do
       expect { session.browse("Pizza") }.to output(/Pizza.*attributes.*commands/m).to_stdout
     end
   end
+
+  describe "#promote" do
+    let(:tmpdir) { Dir.mktmpdir("hecks-promote-") }
+
+    before do
+      session.aggregate "Pizza" do
+        attribute :name, String
+        command "CreatePizza" do
+          attribute :name, String
+        end
+      end
+
+      session.aggregate "Comment" do
+        attribute :body, String
+        command "CreateComment" do
+          attribute :body, String
+        end
+      end
+
+      Dir.chdir(tmpdir)
+    end
+
+    after do
+      Dir.chdir("/")
+      FileUtils.rm_rf(tmpdir)
+    end
+
+    it "creates a new domain file for the promoted aggregate" do
+      session.promote("Comment")
+      expect(File.exist?(File.join(tmpdir, "comment_domain.rb"))).to be true
+      content = File.read(File.join(tmpdir, "comment_domain.rb"))
+      expect(content).to include('Hecks.domain "Comment"')
+      expect(content).to include('aggregate "Comment"')
+      expect(content).to include('command "CreateComment"')
+    end
+
+    it "removes the promoted aggregate from the session" do
+      session.promote("Comment")
+      expect(session.aggregates).to eq(["Pizza"])
+    end
+
+    it "raises for unknown aggregate" do
+      expect { session.promote("Nonexistent") }.to raise_error(RuntimeError, /No aggregate/)
+    end
+  end
 end
