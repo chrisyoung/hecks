@@ -95,98 +95,48 @@ module Hecks
       end
 
       def write_landing_page
-        agg_items = @domain.aggregates.map do |a|
-          cmds = a.commands.map(&:name).join(", ")
-          "              <li><strong>#{a.name}</strong> — #{cmds}</li>"
-        end.join("\n")
-        first_agg = @domain.aggregates.first&.name || "Aggregate"
+        # Copy the actual Rails 8 welcome page and modify only 3 things:
+        # 1. Title → "Hecks on Rails!"
+        # 2. Logo background → animated rust gradient
+        # 3. Version info → domain info
+        source = File.join(
+          ::Gem.loaded_specs["railties"].full_gem_path,
+          "lib/rails/templates/rails/welcome/index.html.erb"
+        )
 
-        write "public/index.html", <<~HTML
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Hecks on Rails!</title>
-            <style>
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                margin: 0; padding: 40px 20px;
-                background: #f5f5f5; color: #333;
-                display: flex; justify-content: center;
-              }
-              .container { max-width: 720px; width: 100%; }
-              .hero {
-                background: #fff;
-                border-radius: 12px;
-                padding: 48px;
-                text-align: center;
-                position: relative;
-                border: 3px solid transparent;
-              }
-              .hero::before {
-                content: "";
-                position: absolute; inset: -3px;
-                border-radius: 14px;
-                background: linear-gradient(135deg, #8B4513, #CD7F32, #B87333, #A0522D, #8B4513);
-                background-size: 300% 300%;
-                animation: rust 4s ease infinite;
-                z-index: -1;
-              }
-              @keyframes rust {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-              }
-              h1 { font-size: 2.2rem; margin: 0 0 4px; }
-              h1 span { color: #CD7F32; }
-              .version { color: #999; font-size: 0.9rem; margin-bottom: 24px; }
-              .section {
-                background: #fafafa; border: 1px solid #e0e0e0;
-                border-radius: 8px; padding: 20px 24px;
-                margin-top: 20px; text-align: left;
-              }
-              .section h3 { margin: 0 0 8px; color: #8B4513; }
-              .section ul { margin: 0; padding-left: 20px; }
-              .section li { line-height: 1.8; }
-              .section code {
-                background: #f0ebe3; padding: 1px 5px;
-                border-radius: 3px; font-size: 0.9em;
-              }
-              .next-steps { margin-top: 24px; text-align: left; }
-              .next-steps p { line-height: 1.8; color: #666; }
-              .next-steps code { background: #f0ebe3; padding: 1px 5px; border-radius: 3px; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="hero">
-                <h1>Hecks <span>on Rails!</span></h1>
-                <p class="version">#{@domain.name} Domain</p>
-              </div>
+        if File.exist?(source)
+          html = File.read(source)
+          # Strip ERB tags (static file, no Rails runtime)
+          html = html.gsub(/<%= Rails\.version %>/, "8.x")
+                     .gsub(/<%= Rack\.release %>/, "")
+                     .gsub(/<%= RUBY_DESCRIPTION %>/, RUBY_DESCRIPTION)
+          # 1. Title
+          html = html.sub("<title>Ruby on Rails 8.x</title>", "<title>Hecks on Rails!</title>")
+          # 2. Logo gradient border
+          html = html.sub(
+            "background: #D30001;",
+            "background: linear-gradient(135deg, #8B4513, #CD7F32, #B87333, #A0522D, #8B4513);\n      background-size: 300% 300%;\n      animation: rust 4s ease infinite;"
+          )
+          html = html.sub("</style>", "    @keyframes rust {\n      0% { background-position: 0% 50%; }\n      50% { background-position: 100% 50%; }\n      100% { background-position: 0% 50%; }\n    }\n  </style>")
+          # 3. Version info → domain info
+          aggs = @domain.aggregates.map(&:name).join(", ")
+          html = html.sub(
+            /<li><strong>Rails version:<\/strong>.*<\/li>/,
+            "<li><strong>Domain:</strong> #{@domain.name}</li>"
+          )
+          html = html.sub(
+            /<li><strong>Rack version:<\/strong>.*<\/li>/,
+            "<li><strong>Aggregates:</strong> #{aggs}</li>"
+          )
+          html = html.sub(
+            /<li><strong>Ruby version:<\/strong>.*<\/li>/,
+            "<li><strong>Hecks on Rails!</strong></li>"
+          )
+        else
+          html = "<html><body><h1>Hecks on Rails!</h1><p>#{@domain.name} Domain</p></body></html>"
+        end
 
-              <div class="section">
-                <h3>Your domain is loaded</h3>
-                <ul>
-          #{agg_items}
-                </ul>
-              </div>
-
-              <div class="next-steps">
-                <p>
-                  Add routes in <code>config/routes.rb</code>,
-                  create a controller, and start using your domain:
-                </p>
-                <p><code>#{first_agg}.create(name: "Hello World")</code></p>
-                <p>
-                  No ActiveRecord. No migrations. Hecks handles the domain.
-                  Rails handles the web.
-                </p>
-              </div>
-            </div>
-          </body>
-          </html>
-        HTML
+        write "public/index.html", html
       end
 
       def write_boilerplate
