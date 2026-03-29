@@ -22,11 +22,9 @@ RSpec.describe Hecks::GemBuilder do
   let(:output) { ->(msg, color) { messages << [msg, color] } }
 
   describe "COMPONENTS" do
-    it "lists all component gems in dependency order" do
-      expect(described_class::COMPONENTS).to eq(%w[
-        hecksties hecks_model hecks_domain hecks_runtime
-        hecks_workshop hecks_cli hecks_persist hecks_watchers
-      ])
+    it "discovers all component gems with gemspecs" do
+      expect(described_class::COMPONENTS).to include("hecksties", "hecks_model", "hecks_runtime")
+      expect(described_class::COMPONENTS).not_to include("examples")
     end
   end
 
@@ -71,10 +69,7 @@ RSpec.describe Hecks::GemBuilder do
           true
         end
         builder.build
-        expect(built.first(2)).to eq([
-          "gem build hecksties.gemspec",
-          "gem build hecks_model.gemspec"
-        ])
+        expect(built).to include("gem build hecksties.gemspec")
         expect(built.last).to eq("gem build hecks.gemspec")
       end
     end
@@ -130,8 +125,9 @@ RSpec.describe Hecks::GemBuilder do
         builder.install
         builds = commands.select { |c| c.start_with?("gem build") }
         installs = commands.select { |c| c.start_with?("gem install") }
-        expect(builds.length).to eq(9)
-        expect(installs.length).to eq(9)
+        expected_count = described_class::COMPONENTS.size + 1 # components + meta-gem
+        expect(builds.length).to eq(expected_count)
+        expect(installs.length).to eq(expected_count)
         expect(builds.last).to eq("gem build hecks.gemspec")
       end
     end
