@@ -1,3 +1,5 @@
+require_relative "command/lifecycle_steps"
+
 module Hecks
   # Hecks::Command
   #
@@ -141,20 +143,12 @@ module Hecks
       # @raise [Hecks::PostconditionError] if any postcondition fails
       def call(**attrs)
         cmd = new(**attrs)
-        cmd.send(:run_guard)
-        cmd.send(:run_handler)
-        cmd.send(:check_preconditions)
-        result = if command_bus && !command_bus.middleware.empty?
-          command_bus.dispatch_with_command(cmd) { cmd.call }
-        else
-          cmd.call
-        end
-        cmd.instance_variable_set(:@aggregate, result)
-        cmd.send(:check_postconditions, cmd.send(:find_existing_for_postcondition), result)
-        cmd.send(:persist_aggregate)
-        cmd.send(:emit_event)
-        cmd.send(:record_event_for_aggregate)
+        lifecycle_pipeline.each { |step| step.call(cmd) }
         cmd
+      end
+
+      def lifecycle_pipeline
+        Command::LifecycleSteps::PIPELINE
       end
     end
 
