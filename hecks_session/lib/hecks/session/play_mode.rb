@@ -122,6 +122,30 @@ module Hecks
 
       private
 
+      # Start the web explorer server in a background thread.
+      #
+      # Enters play mode first if not already in it. Requires the static
+      # server gem and starts it on the given port.
+      #
+      # @param port [Integer] the port to serve on (default: 9292)
+      # @return [Session] self
+      def serve!(port: 9292)
+        play! unless play?
+        mod_name = @name.gsub(/\s+/, "") + "Domain"
+        if Object.const_defined?(mod_name)
+          mod = Object.const_get(mod_name)
+          if mod.respond_to?(:serve)
+            Thread.new { mod.serve(port: port) }
+            puts "Serving #{@name} on http://localhost:#{port}"
+          else
+            puts "#{mod_name} does not support serve — build static first"
+          end
+        else
+          puts "#{mod_name} not found"
+        end
+        self
+      end
+
       # Guard that raises unless the session is in play mode.
       #
       # @raise [RuntimeError] if not in play mode

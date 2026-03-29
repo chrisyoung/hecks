@@ -31,7 +31,7 @@ module Hecks
     %i[
       aggregates remove add_verb active_hecks!
       validate preview describe build save to_dsl status browse
-      play! sketch! events events_of commands history reset!
+      play! sketch! serve! events events_of commands history reset!
     ].each do |m|
       define_method(m) do |*args, **kwargs, &block|
         @session.send(m, *args, **kwargs, &block)
@@ -48,6 +48,7 @@ module Hecks
     # @yield optional block passed through to Session#aggregate
     # @return [AggregateHandle] the handle for the aggregate
     def aggregate(name, &block)
+      is_new = !@session.aggregate_builders.key?(Hecks::Utils.sanitize_constant(name))
       handle = @session.aggregate(name, &block)
       const_name = Hecks::Utils.sanitize_constant(name).to_sym
       @hoisted_handle_constants ||= []
@@ -55,6 +56,7 @@ module Hecks
         self.class.const_set(const_name, handle)
         @hoisted_handle_constants << const_name
       end
+      puts "#{const_name} aggregate created" if is_new && !block
       handle
     end
 
@@ -231,15 +233,16 @@ module Hecks
     # @return [void]
     def print_help
       puts ""
-      puts "  aggregate(\"Pizza\")              # creates Pizza constant"
-      puts "  Pizza.attr :name                 # add attribute"
-      puts "  Pizza.command(\"Create\") { attribute :name, String }"
+      puts "  Post                             # create aggregate"
+      puts "  Post.title String                # add attribute"
+      puts "  Post.create                      # add command"
+      puts "  Post.create.title String         # add attribute to command"
+      puts "  Post.lifecycle :status, default: \"draft\""
+      puts "  Post.transition \"PublishPost\" => \"published\""
       puts ""
-      puts "  browse                           # system browser"
-      puts "  validate / describe / preview"
-      puts "  play!                            # enter play mode"
-      puts "  sketch!                          # back to sketch mode"
+      puts "  play! / sketch!                  # switch modes"
       puts "  save / build"
+      puts "  validate / describe / preview / browse"
       puts ""
     end
   end
