@@ -7,20 +7,13 @@ module Hecks
   module DSL
     class AggregateBuilder
       module ImplicitSyntax
-        # Implicit DSL dispatch:
-        # - PascalCase + block → value_object
-        # - snake_case + block → command (name inferred)
-        # - name Type → attribute
         def method_missing(name, *args, **kwargs, &block)
           name_s = name.to_s
           if name_s =~ /\A[A-Z]/ && block_given?
             value_object(name_s, &block)
           elsif block_given?
-            cmd_name = infer_command_name(name_s)
-            command(cmd_name, &block)
-          elsif args.first.is_a?(Class) || (args.first.is_a?(String) && args.first =~ /\A[A-Z]/)
-            attribute(name, args.first, **kwargs)
-          elsif args.first.is_a?(Hash) && (args.first[:list] || args.first[:reference])
+            command(infer_command_name(name_s), &block)
+          elsif type_argument?(args.first)
             attribute(name, args.first, **kwargs)
           else
             super
@@ -33,16 +26,20 @@ module Hecks
 
         private
 
-        # Infer PascalCase command name from snake_case method.
-        # Single verb → verb + aggregate name (create → CreatePizza)
-        # Multi-word → PascalCase as-is (add_topping → AddTopping)
+        # Detects whether an argument looks like a type descriptor:
+        # - A Class (String, Integer)
+        # - A PascalCase string ("Topping")
+        # - A hash with :list or :reference key
+        def type_argument?(arg)
+          return false unless arg
+          arg.is_a?(Class) ||
+            (arg.is_a?(String) && arg =~ /\A[A-Z]/) ||
+            (arg.respond_to?(:key?) && (arg.key?(:list) || arg.key?(:reference)))
+        end
+
         def infer_command_name(snake)
           parts = snake.split("_")
-          if parts.size == 1
-            parts.first.capitalize + @name
-          else
-            parts.map(&:capitalize).join
-          end
+          parts.size == 1 ? parts.first.capitalize + @name : parts.map(&:capitalize).join
         end
       end
     end
