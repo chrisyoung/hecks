@@ -7,6 +7,9 @@ JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
 require_relative "hecks/errors"
 require_relative "hecks/autoloads"
 
+# Module infrastructure — DSL, registries, discovery
+require "hecks_modules"
+
 # Default modules — loaded with require "hecks"
 require "hecks_contracts"
 require "hecks_templating"
@@ -18,16 +21,6 @@ require "hecks/domain/event_storm_importer"
 require "hecks/domain/visualizer_methods"
 require "hecks/runtime/boot"
 require "hecks/workshop"
-
-# Registries
-require_relative "hecks/registries/extension_registry"
-require_relative "hecks/registries/domain_registry"
-require_relative "hecks/registries/cross_domain"
-require_relative "hecks/registries/thread_context"
-require_relative "hecks/registries/target_registry"
-require_relative "hecks/registries/adapter_registry"
-require_relative "hecks/registries/validation_registry"
-require_relative "hecks/registries/dump_format_registry"
 
 # = Hecks
 #
@@ -54,20 +47,6 @@ module Hecks
   extend AdapterRegistryMethods
   extend ValidationRegistryMethods
   extend DumpFormatRegistryMethods
-
-  @configuration = nil
-  @loaded_domains = {}
-  @domain_objects = {}
-  @last_domain = nil
-  @load_strategy = :memory
-  @extension_registry = {}
-  @extension_meta = {}
-  @cross_domain_queries = {}
-  @cross_domain_views = {}
-  @target_registry = {}
-  @adapter_registry = %i[memory sqlite postgres mysql mysql2 filesystem filesystem_store]
-  @validation_rules = []
-  @dump_format_registry = {}
 
   def self.configure(&block)
     @configuration = Configuration.new

@@ -5,6 +5,11 @@
 #
 module Hecks
   module DomainRegistryMethods
+    extend ModuleDSL
+
+    lazy_registry :loaded_domains
+    lazy_registry :domain_objects
+
     def last_domain
       @last_domain
     end
@@ -14,19 +19,11 @@ module Hecks
     end
 
     def load_strategy
-      @load_strategy
+      @load_strategy ||= :memory
     end
 
     def load_strategy=(strategy)
       @load_strategy = strategy
-    end
-
-    def loaded_domains
-      @loaded_domains
-    end
-
-    def domain_objects
-      @domain_objects
     end
   end
 end

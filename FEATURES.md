@@ -264,6 +264,19 @@
 - Hexagonal / ports-and-adapters: domain layer has zero persistence knowledge
 - Domain gems are the bounded context boundaries
 
+### Module Infrastructure (hecks_modules)
+- `Hecks::ModuleDSL` — declarative `lazy_registry` for defining lazily-initialized registries
+- All registries (targets, adapters, extensions, domains, dump formats, validations) use `lazy_registry`
+- Zero module-level instance variable assignments — all state lazy-initialized on first access
+- `Hecks::CoreExtensions` — namespace for Ruby core class extensions
+
+### Deprecation System (hecks_deprecations)
+- `HecksDeprecations.register(target_class, method_name) { ... }` — register deprecated shims
+- Modules prepend warning wrappers onto target classes with `[DEPRECATION]` messages
+- Covers hash-style `[]`, `to_h`, `== Hash` on refactored value objects
+- Generated examples exclude this module — always use current API
+- `HecksDeprecations.registered` — introspect all registered deprecations
+
 ## CLI Commands
 - `hecks new NAME` — scaffold a complete project
 - `hecks domain build` — validate and generate versioned gem
