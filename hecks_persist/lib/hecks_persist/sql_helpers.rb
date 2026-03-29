@@ -24,7 +24,7 @@ module Hecks
         # @param vo_name [String] the value object name
         # @return [String] the join table name (e.g., "pizzas_toppings")
         def join_table_name(aggregate_name, vo_name)
-          "#{table_name(aggregate_name)}_#{Hecks::Utils.underscore(vo_name)}s"
+          "#{table_name(aggregate_name)}_#{domain_snake_name(vo_name)}s"
         end
 
         # Computes an index name from aggregate and field names.

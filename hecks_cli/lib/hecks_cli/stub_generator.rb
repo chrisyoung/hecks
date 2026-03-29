@@ -58,8 +58,8 @@ module Hecks
         agg, cmd, idx = find_command
         return error_not_found("command", @name) unless cmd
         event = agg.events[idx]
-        safe = Hecks::Utils.sanitize_constant(agg.name)
-        snake = Hecks::Utils.underscore(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         src = gen(Generators::Domain::CommandGenerator, cmd,
                   domain_module: @mod, aggregate_name: safe, aggregate: agg, event: event)
         { path_for(snake, "commands", cmd.name) => src }
@@ -71,8 +71,8 @@ module Hecks
       def generate_query
         agg, query = find_in_aggregates(:queries)
         return error_not_found("query", @name) unless query
-        safe = Hecks::Utils.sanitize_constant(agg.name)
-        snake = Hecks::Utils.underscore(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         src = gen(Generators::Domain::QueryGenerator, query,
                   domain_module: @mod, aggregate_name: safe)
         { path_for(snake, "queries", query.name) => src }
@@ -84,8 +84,8 @@ module Hecks
       def generate_policy
         agg, policy = find_in_aggregates(:policies)
         return error_not_found("policy", @name) unless policy
-        safe = Hecks::Utils.sanitize_constant(agg.name)
-        snake = Hecks::Utils.underscore(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         src = gen(Generators::Domain::PolicyGenerator, policy,
                   domain_module: @mod, aggregate_name: safe)
         { path_for(snake, "policies", policy.name) => src }
@@ -97,8 +97,8 @@ module Hecks
       def generate_specification
         agg, spec = find_in_aggregates(:specifications)
         return error_not_found("specification", @name) unless spec
-        safe = Hecks::Utils.sanitize_constant(agg.name)
-        snake = Hecks::Utils.underscore(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         src = gen(Generators::Domain::SpecificationGenerator, spec,
                   domain_module: @mod, aggregate_name: safe)
         { path_for(snake, "specifications", spec.name) => src }
@@ -111,8 +111,8 @@ module Hecks
       def generate_aggregate
         agg = @domain.aggregates.find { |a| a.name == @name }
         return error_not_found("aggregate", @name) unless agg
-        safe = Hecks::Utils.sanitize_constant(agg.name)
-        snake = Hecks::Utils.underscore(safe)
+        safe = domain_constant_name(agg.name)
+        snake = domain_snake_name(safe)
         files = {}
         files[path_for(snake, nil, agg.name)] =
           gen(Generators::Domain::AggregateGenerator, agg, domain_module: @mod)
@@ -131,7 +131,7 @@ module Hecks
         wf = @domain.workflows.find { |w| w.name == @name }
         return error_not_found("workflow", @name) unless wf
         src = Generators::Domain::WorkflowGenerator.new(wf, domain_module: @mod).generate
-        { "lib/#{@gem}/workflows/#{Hecks::Utils.underscore(wf.name)}.rb" => src }
+        { "lib/#{@gem}/workflows/#{domain_snake_name(wf.name)}.rb" => src }
       end
 
       # Generates a service stub file.
@@ -141,7 +141,7 @@ module Hecks
         svc = @domain.services.find { |s| s.name == @name }
         return error_not_found("service", @name) unless svc
         src = Generators::Domain::ServiceGenerator.new(svc, domain_module: @mod).generate
-        { "lib/#{@gem}/services/#{Hecks::Utils.underscore(svc.name)}.rb" => src }
+        { "lib/#{@gem}/services/#{domain_snake_name(svc.name)}.rb" => src }
       end
 
       # Finds a command by name across all aggregates.
@@ -185,7 +185,7 @@ module Hecks
       # @param name [String] the element name
       # @return [String] the relative file path
       def path_for(agg_snake, subdir, name)
-        snake_name = Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(name))
+        snake_name = domain_snake_name(domain_constant_name(name))
         parts = ["lib", @gem, agg_snake]
         parts << subdir if subdir
         parts << "#{snake_name}.rb"

@@ -133,7 +133,7 @@ module Hecks
       def generate_create_join_table_from_vo(aggregate_name, vo)
         parent_table = table_name(aggregate_name)
         jt = join_table_name(aggregate_name, vo.name)
-        parent_fk = "#{Hecks::Utils.underscore(aggregate_name)}_id"
+        parent_fk = "#{domain_snake_name(aggregate_name)}_id"
 
         cols = [
           "  id VARCHAR(36) PRIMARY KEY",
@@ -178,7 +178,7 @@ module Hecks
         parent_table = table_name(change.aggregate)
         vo_name = change.details[:name]
         jt = join_table_name(change.aggregate, vo_name)
-        parent_fk = "#{Hecks::Utils.underscore(change.aggregate)}_id"
+        parent_fk = "#{domain_snake_name(change.aggregate)}_id"
 
         cols = [
           "  id VARCHAR(36) PRIMARY KEY",

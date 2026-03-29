@@ -205,7 +205,7 @@ module Hecks
 
       # Serialize and write
       dsl = DslSerializer.new(new_domain).serialize
-      file_name = "#{Hecks::Utils.underscore(name)}_domain.rb"
+      file_name = "#{domain_snake_name(name)}_domain.rb"
       File.write(file_name, dsl)
 
       # Remove from current workbench
@@ -224,7 +224,7 @@ module Hecks
     # @param name [String] the raw name
     # @return [String] sanitized constant name
     def normalize_name(name)
-      Hecks::Utils.sanitize_constant(name)
+      domain_constant_name(name)
     end
 
     # Build a human-readable summary string for an aggregate.

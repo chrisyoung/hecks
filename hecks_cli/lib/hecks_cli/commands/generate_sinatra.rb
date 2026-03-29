@@ -27,7 +27,7 @@ module Hecks
         domain = resolve_domain_option
         return unless domain
 
-        app_name = options[:dir] || "#{Hecks::Utils.underscore(domain.module_name)}_app"
+        app_name = options[:dir] || "#{domain_snake_name(domain.module_name)}_app"
         generate_sinatra_app(domain, app_name)
       end
 
@@ -108,7 +108,7 @@ module Hecks
 
           # Queries first
           agg.queries.each do |query|
-            qn = Hecks::Utils.underscore(query.name)
+            qn = domain_snake_name(query.name)
             params = query.block.parameters
             if params.empty?
               routes << "  get '/#{slug}/#{qn}' do\n    json #{klass}.#{qn}.map { |r| serialize(r) }\n  end"
@@ -187,7 +187,7 @@ module Hecks
           # Uncomment for SQL persistence:
           # Hecks.configure do
           #   domain "#{domain.gem_name}"
-          #   adapter :sql, database: :sqlite, name: "#{Hecks::Utils.underscore(domain.module_name)}.db"
+          #   adapter :sql, database: :sqlite, name: "#{domain_snake_name(domain.module_name)}.db"
           #   include_ad_hoc_queries
           # end
         RUBY

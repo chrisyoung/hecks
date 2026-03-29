@@ -74,7 +74,7 @@ class UIGenerator
   end
 
   def find_self_ref_attr(cmd, agg)
-    agg_snake = Hecks::Utils.underscore(agg.name)
+    agg_snake = domain_snake_name(agg.name)
     suffixes = agg_snake.split("_").each_index.map { |i|
       agg_snake.split("_").drop(i).join("_")
     }.uniq
@@ -110,18 +110,18 @@ class UIGenerator
   end
 
   def index_route(agg, mod)
-    safe = Hecks::Utils.sanitize_constant(agg.name)
+    safe = domain_constant_name(agg.name)
     p = plural(agg)
     attrs = user_attrs(agg)
-    agg_snake = Hecks::Utils.underscore(agg.name)
+    agg_snake = domain_snake_name(agg.name)
     ac = Hecks::AggregateContract
     dc = Hecks::DisplayContract
     create_cmds, update_cmds = ac.partition_commands(agg)
 
     columns = attrs.map { |a| "{ label: \"#{humanize(a.name)}\" }" }
-    btns = create_cmds.map { |c| cm = Hecks::Utils.underscore(c.name); "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/new\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
+    btns = create_cmds.map { |c| cm = domain_snake_name(c.name); "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/new\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\") }" }
     row_acts = update_cmds.map do |c|
-      cm = Hecks::Utils.underscore(c.name)
+      cm = domain_snake_name(c.name)
       if ac.direct_action?(c, agg_snake)
         self_id = ac.self_ref_attr(c, agg_snake)
         "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href_prefix: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id&.name}\" }"
@@ -150,10 +150,10 @@ class UIGenerator
   end
 
   def show_route(agg, mod)
-    safe = Hecks::Utils.sanitize_constant(agg.name)
+    safe = domain_constant_name(agg.name)
     p = plural(agg)
     attrs = user_attrs(agg)
-    agg_snake = Hecks::Utils.underscore(agg.name)
+    agg_snake = domain_snake_name(agg.name)
 
     lc = agg.lifecycle
     lc_field = lc&.field&.to_s
@@ -181,7 +181,7 @@ class UIGenerator
     btn_parts = []
     _, update_cmds = ac.partition_commands(agg)
     update_cmds.each do |c|
-      cm = Hecks::Utils.underscore(c.name)
+      cm = domain_snake_name(c.name)
       if ac.direct_action?(c, agg_snake)
         self_id = ac.self_ref_attr(c, agg_snake)
         btn_parts << "{ label: \"#{Hecks::UILabelContract.label(c.name)}\", href: \"/#{p}/#{cm}/submit\", allowed: #{mod}.role_allows?(\"#{safe}\", \"#{cm}\"), direct: true, id_field: \"#{self_id.name}\" }"
@@ -190,14 +190,14 @@ class UIGenerator
       end
     end
     # Cross-aggregate commands
-    snake = Hecks::Utils.underscore(agg.name)
+    snake = domain_snake_name(agg.name)
     @domain.aggregates.each do |other|
       next if other.name == agg.name
-      other_safe = Hecks::Utils.sanitize_constant(other.name)
+      other_safe = domain_constant_name(other.name)
       other_p = plural(other)
       other.commands.each do |cmd|
         next unless cmd.attributes.any? { |a| a.name.to_s == "#{snake}_id" }
-        cm = Hecks::Utils.underscore(cmd.name)
+        cm = domain_snake_name(cmd.name)
         btn_parts << "{ label: \"#{Hecks::UILabelContract.label(cmd.name)}\", href: \"/#{other_p}/#{cm}/new?id=\" + obj.id, allowed: #{mod}.role_allows?(\"#{other_safe}\", \"#{cm}\") }"
       end
     end

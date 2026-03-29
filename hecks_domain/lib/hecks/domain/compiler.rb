@@ -137,7 +137,7 @@ module Hecks
     # Start, smoke-test, and stop a static Ruby server.
     def run_ruby_smoke_test(root, domain)
       require "hecks_templating"
-      name = Hecks::Utils.underscore(domain.name)
+      name = domain_snake_name(domain.name)
       bin = File.join(root, "bin", name)
       return unless File.exist?(bin)
 
@@ -158,7 +158,7 @@ module Hecks
     # Build, start, smoke-test, and stop a Go server.
     def run_smoke_test(root, domain)
       require "hecks_templating"
-      name = Hecks::Utils.underscore(domain.name)
+      name = domain_snake_name(domain.name)
       cmd_dir = File.join(root, "cmd", name)
       return unless File.directory?(cmd_dir)
 

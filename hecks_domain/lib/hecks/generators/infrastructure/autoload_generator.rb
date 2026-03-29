@@ -53,16 +53,16 @@ module Hecks
         lines << ""
 
         @domain.aggregates.each do |agg|
-          safe_name = Hecks::Utils.sanitize_constant(agg.name)
-          snake = Hecks::Utils.underscore(safe_name)
+          safe_name = domain_constant_name(agg.name)
+          snake = domain_snake_name(safe_name)
           lines << "  autoload :#{safe_name}, \"#{gem_name}/#{snake}/#{snake}\""
         end
 
         lines << ""
         lines << "  module Ports"
         @domain.aggregates.each do |agg|
-          safe_name = Hecks::Utils.sanitize_constant(agg.name)
-          snake = Hecks::Utils.underscore(safe_name)
+          safe_name = domain_constant_name(agg.name)
+          snake = domain_snake_name(safe_name)
           lines << "    autoload :#{safe_name}Repository, \"#{gem_name}/ports/#{snake}_repository\""
         end
         lines << "  end"
@@ -70,8 +70,8 @@ module Hecks
         lines << ""
         lines << "  module Adapters"
         @domain.aggregates.each do |agg|
-          safe_name = Hecks::Utils.sanitize_constant(agg.name)
-          snake = Hecks::Utils.underscore(safe_name)
+          safe_name = domain_constant_name(agg.name)
+          snake = domain_snake_name(safe_name)
           lines << "    autoload :#{safe_name}MemoryRepository, \"#{gem_name}/adapters/#{snake}_memory_repository\""
         end
         lines << "  end"
@@ -80,7 +80,7 @@ module Hecks
           lines << ""
           lines << "  module Workflows"
           @domain.workflows.each do |wf|
-            snake = Hecks::Utils.underscore(wf.name)
+            snake = domain_snake_name(wf.name)
             lines << "    autoload :#{wf.name}, \"#{gem_name}/workflows/#{snake}\""
           end
           lines << "  end"
@@ -90,7 +90,7 @@ module Hecks
           lines << ""
           lines << "  module Views"
           @domain.views.each do |v|
-            snake = Hecks::Utils.underscore(v.name)
+            snake = domain_snake_name(v.name)
             lines << "    autoload :#{v.name}, \"#{gem_name}/views/#{snake}\""
           end
           lines << "  end"
@@ -100,7 +100,7 @@ module Hecks
           lines << ""
           lines << "  module Services"
           @domain.services.each do |svc|
-            snake = Hecks::Utils.underscore(svc.name)
+            snake = domain_snake_name(svc.name)
             lines << "    autoload :#{svc.name}, \"#{gem_name}/services/#{snake}\""
           end
           lines << "  end"
@@ -153,19 +153,19 @@ module Hecks
       #   injection into the aggregate class body; empty string if no value objects
       #   or entities exist
       def generate_aggregate_autoloads(aggregate, gem_name, domain_module)
-        safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
-        snake = Hecks::Utils.underscore(safe_name)
+        safe_name = domain_constant_name(aggregate.name)
+        snake = domain_snake_name(safe_name)
         base = "#{gem_name}/#{snake}"
         base_indent = "    "
 
         lines = []
         aggregate.value_objects.each do |vo|
-          vo_snake = Hecks::Utils.underscore(vo.name)
+          vo_snake = domain_snake_name(vo.name)
           lines << "#{base_indent}autoload :#{vo.name}, \"#{base}/#{vo_snake}\""
         end
 
         aggregate.entities.each do |ent|
-          ent_snake = Hecks::Utils.underscore(ent.name)
+          ent_snake = domain_snake_name(ent.name)
           lines << "#{base_indent}autoload :#{ent.name}, \"#{base}/#{ent_snake}\""
         end
 
@@ -183,17 +183,17 @@ module Hecks
       # @param gem_name [String]
       # @return [Array<String>]
       def aggregate_autoloads(aggregate, gem_name)
-        safe_name = Hecks::Utils.sanitize_constant(aggregate.name)
-        snake = Hecks::Utils.underscore(safe_name)
+        safe_name = domain_constant_name(aggregate.name)
+        snake = domain_snake_name(safe_name)
         base = "#{gem_name}/#{snake}"
 
         lines = []
         aggregate.value_objects.each do |vo|
-          vo_snake = Hecks::Utils.underscore(vo.name)
+          vo_snake = domain_snake_name(vo.name)
           lines << "autoload :#{vo.name}, \"#{base}/#{vo_snake}\""
         end
         aggregate.entities.each do |ent|
-          ent_snake = Hecks::Utils.underscore(ent.name)
+          ent_snake = domain_snake_name(ent.name)
           lines << "autoload :#{ent.name}, \"#{base}/#{ent_snake}\""
         end
         lines

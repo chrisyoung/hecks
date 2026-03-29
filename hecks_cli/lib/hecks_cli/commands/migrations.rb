@@ -82,7 +82,7 @@ module Hecks
         if Dir.exist?(gem_dir)
           domain.aggregates.each do |agg|
             adapter_gen = Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: mod)
-            path = File.join(gem_dir, "lib/#{gem_name}/adapters/#{Hecks::Utils.underscore(agg.name)}_sql_repository.rb")
+            path = File.join(gem_dir, "lib/#{gem_name}/adapters/#{domain_snake_name(agg.name)}_sql_repository.rb")
             FileUtils.mkdir_p(File.dirname(path))
             File.write(path, adapter_gen.generate)
             say "Generated #{path}", :green

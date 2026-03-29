@@ -46,7 +46,7 @@ module Hecks
         example_cmd = first_agg&.commands&.first
         if first_agg && example_cmd
           agg_name = first_agg.name
-          cmd_snake = Hecks::Utils.underscore(example_cmd.name)
+          cmd_snake = domain_snake_name(example_cmd.name)
           puts "Entering play mode"
           puts ""
           puts "  #{agg_name}.#{cmd_snake}(...)            # run a command"
