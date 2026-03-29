@@ -32,12 +32,12 @@ RSpec.describe HecksCqrs do
 
     it "returns config for a named connection" do
       mod.extend(:sqlite, as: :write)
-      expect(HecksCqrs.connection_for(mod, :write)).to eq({ type: :sqlite })
+      expect(HecksCqrs.connection_for(mod, :write).type).to eq(:sqlite)
     end
 
     it "returns config for :default unnamed connection" do
       mod.extend(:sqlite)
-      expect(HecksCqrs.connection_for(mod, :default)).to eq({ type: :sqlite })
+      expect(HecksCqrs.connection_for(mod, :default).type).to eq(:sqlite)
     end
 
     it "returns nil for unknown connection name" do
