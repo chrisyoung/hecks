@@ -195,7 +195,17 @@
 ### Named Constants & System Browser
 - Named constants: `aggregate("Cat")` creates `Cat` constant in the REPL
 - System browser: `browse` prints a tree of all domain elements
-- Message not understood: unknown methods suggest creating commands
+
+### One-Line Dot Syntax
+- Implicit attributes: `Post.title String` adds attribute via method_missing
+- Implicit commands: `Post.create` creates CreatePost command, returns CommandHandle
+- Command attribute chaining: `Post.create.title String` adds attribute to command
+- Lifecycle from handle: `Post.lifecycle :status, default: "draft"`
+- Transitions from handle: `Post.transition "PublishPost" => "published"`
+- Value objects via PascalCase + block: `Post.Address { attribute :street, String }`
+- Commands via snake_case + block: `Post.bake { attribute :temp, Integer }`
+- Reference attributes: `Post.order_id reference_to("Order")`
+- Terse single-line feedback after every operation (e.g. "title attribute added to Post")
 
 ### Session Features
 - All session methods hoisted to top level in console
@@ -203,6 +213,7 @@
 - Duplicate attribute detection
 - `handle.build(**attrs)` — compile domain and return a live domain object
 - Auto-normalize names to PascalCase
+- `serve!` — start web explorer from REPL in background thread
 - Play mode compiles domain on the fly with full Runtime
 - Real-time event display and policy triggering feedback
 - Event history with timestamps, reset/replay capability
