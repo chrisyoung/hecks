@@ -15,7 +15,7 @@ module Hecks
     #   builder.attribute :name, String
     #   builder.command("CreatePizza") { attribute :name, String }
     #   builder.scope :large, size: "L"
-    #   builder.port(:guest) { allow :find, :all }
+    #   builder.extend(:guest) { allow :find, :all }
     #   agg = builder.build  # => #<Aggregate name="Pizza" ...>
     #
     # Builds a DomainModel::Structure::Aggregate from DSL declarations.
