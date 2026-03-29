@@ -66,8 +66,9 @@ module Hecks
     end
 
     def persist(type, as: :default, **options)
+      require_relative "connection_config"
       @connections ||= default_connections
-      @connections[:persist][as] = { type: type, **options }
+      @connections[:persist][as] = PersistConfig.new(type: type, **options)
     end
 
     def listen_to(source)
@@ -76,14 +77,16 @@ module Hecks
     end
 
     def send_to(name, adapter = nil, **options, &block)
+      require_relative "connection_config"
       @connections ||= default_connections
       handler = adapter || block
-      @connections[:sends] << { name: name, handler: handler, **options }
+      @connections[:sends] << SendConfig.new(name: name, handler: handler, **options)
     end
 
     def use_extension(name, **kwargs)
+      require_relative "connection_config"
       @connections ||= default_connections
-      @connections[:extensions] << { name: name, **kwargs }
+      @connections[:extensions] << ExtensionConfig.new(name: name, **kwargs)
     end
 
     def default_connections
