@@ -23,7 +23,7 @@ RSpec.describe "hecks domain promote" do
         end
       RUBY
       Dir.chdir(dir) do
-        cli = Hecks::CLI::Domain.new
+        cli = Hecks::CLI.new
         allow(cli).to receive(:say)
         cli.promote("Comment")
 
