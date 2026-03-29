@@ -24,24 +24,11 @@ module Hecks
   #   validator.errors   # => ["Order references unknown aggregate: Widget"]
   #
   class Validator
-    # Ordered list of validation rule classes to run. Each class must
-    # respond to .new(domain) and provide an #errors method returning
-    # an Array<String>.
-    RULES = [
-      ValidationRules::Naming::UniqueAggregateNames,
-      ValidationRules::Naming::NameCollisions,
-      ValidationRules::Naming::CommandNaming,
-      ValidationRules::Naming::ReservedNames,
-      ValidationRules::References::ValidReferences,
-      ValidationRules::References::NoBidirectionalReferences,
-      ValidationRules::References::NoSelfReferences,
-      ValidationRules::References::NoValueObjectReferences,
-      ValidationRules::Structure::AggregatesHaveCommands,
-      ValidationRules::Structure::CommandsHaveAttributes,
-      ValidationRules::Structure::ValidPolicyEvents,
-      ValidationRules::Structure::ValidPolicyTriggers,
-      ValidationRules::References::NoImplicitForeignKeys,
-    ].freeze
+    # Trigger autoloading of all validation rule modules so each rule
+    # registers itself with Hecks.register_validation_rule.
+    [ValidationRules::Naming, ValidationRules::References, ValidationRules::Structure].each do |mod|
+      mod.constants.each { |c| mod.const_get(c) }
+    end
 
     # @return [Array<String>] validation error messages (populated after #valid? is called)
     attr_reader :errors
@@ -61,8 +48,9 @@ module Hecks
     #
     # @return [Boolean] true if no validation errors were found
     def valid?
-      @errors = RULES.flat_map { |rule| rule.new(@domain).errors }
-      @warnings = RULES.flat_map { |rule|
+      rules = Hecks.validation_rules
+      @errors = rules.flat_map { |rule| rule.new(@domain).errors }
+      @warnings = rules.flat_map { |rule|
         r = rule.new(@domain)
         r.respond_to?(:warnings) ? r.warnings : []
       }

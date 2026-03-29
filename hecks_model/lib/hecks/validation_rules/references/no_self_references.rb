@@ -28,6 +28,7 @@ module Hecks
         result
       end
     end
+    Hecks.register_validation_rule(NoSelfReferences)
     end
   end
 end

@@ -43,6 +43,7 @@ module Hecks
         result
       end
     end
+    Hecks.register_validation_rule(ValidPolicyTriggers)
     end
   end
 end

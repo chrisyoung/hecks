@@ -24,6 +24,7 @@ module Hecks
         end
       end
     end
+    Hecks.register_validation_rule(UniqueAggregateNames)
     end
   end
 end
