@@ -101,7 +101,7 @@ module Hecks
           end
           mod = klass
           params = req.query
-          method_name = Names.derive_method_name(cmd.name, agg.name)
+          method_name = Names.command_method_name(cmd.name, agg.name)
           attrs = cmd.attributes.each_with_object({}) { |a, h| h[a.name] = params[a.name.to_s] || "" }
           result = klass.send(method_name, **attrs)
           id = result.respond_to?(:aggregate) ? result.aggregate.id : result.id

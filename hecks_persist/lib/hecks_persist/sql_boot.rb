@@ -164,7 +164,7 @@ module Hecks
       # @param agg [DomainModel::Structure::Aggregate] the aggregate
       # @return [Symbol] the table name as a symbol (e.g., :pizzas)
       def table_name_for(agg)
-        Names.table_name(agg.name).to_sym
+        Names.aggregate_slug(agg.name).to_sym
       end
 
       # Maps a domain attribute to a Sequel column type.

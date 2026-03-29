@@ -85,7 +85,7 @@ module Hecks
       result = @workbench.play!
       if @workbench.play? && @workbench.playground
         @hoisted_constants = []
-        mod_name = Names.domain_module(@workbench.name)
+        mod_name = Names.domain_module_name(@workbench.name)
         if Object.const_defined?(mod_name)
           mod = Object.const_get(mod_name)
           mod.constants.each do |const_name|

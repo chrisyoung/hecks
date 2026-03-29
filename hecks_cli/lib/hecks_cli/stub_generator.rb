@@ -24,7 +24,7 @@ module Hecks
         @type = type
         @name = name
         @gem = domain.gem_name
-        @mod = Names.domain_module(domain.name)
+        @mod = Names.domain_module_name(domain.name)
       end
 
       # Generates stub files for the requested element.

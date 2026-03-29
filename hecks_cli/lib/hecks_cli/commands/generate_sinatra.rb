@@ -124,7 +124,7 @@ module Hecks
 
           create_cmd = agg.commands.find { |c| c.name.start_with?("Create") }
           if create_cmd
-            method_name = Names.derive_method_name(create_cmd.name, agg.name)
+            method_name = Names.command_method_name(create_cmd.name, agg.name)
             routes << "  post '/#{slug}' do\n    attrs = JSON.parse(request.body.read, symbolize_names: true)\n    result = #{klass}.#{method_name}(**attrs)\n    status 201\n    json serialize(result)\n  end"
           end
 

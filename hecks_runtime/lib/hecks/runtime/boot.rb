@@ -187,7 +187,7 @@ module Hecks
 
       # Fire registered extensions on each domain
       domains.each_with_index do |domain, i|
-        mod = Object.const_get(Names.domain_module(domain.name))
+        mod = Object.const_get(Names.domain_module_name(domain.name))
         Hecks.extension_registry.each do |_name, hook|
           hook.call(mod, domain, runtimes[i])
         end
