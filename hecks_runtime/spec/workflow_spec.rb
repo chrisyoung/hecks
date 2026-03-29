@@ -44,7 +44,7 @@ RSpec.describe "Workflow Engine (HEC-163)" do
     wf = domain.workflows.first
     expect(wf.name).to eq("LoanApproval")
     expect(wf.steps.size).to eq(2)
-    expect(wf.steps.first[:command]).to eq("ScoreLoan")
+    expect(wf.steps.first.command).to eq("ScoreLoan")
     expect(wf.steps.last).to be_a(Hecks::DomainModel::Behavior::BranchStep)
   end
 

@@ -55,13 +55,6 @@ module Hecks
           result = dispatch_step(step, attrs, result)
         when DomainModel::Behavior::BranchStep
           result = execute_branch(step, attrs, result)
-        else
-          # Backward compat with plain hashes
-          if step[:command]
-            result = dispatch_step(step, attrs, result)
-          elsif step[:branch]
-            result = execute_branch(step[:branch], attrs, result)
-          end
         end
       end
 
@@ -78,10 +71,8 @@ module Hecks
     # @param last_result [Object, nil] the result of the previous step (used for mapping)
     # @return [Object] the result of the dispatched command
     def dispatch_step(step, attrs, last_result)
-      mapping = step.respond_to?(:mapping) ? step.mapping : step[:mapping]
-      command = step.respond_to?(:command) ? step.command : step[:command]
-      mapped = apply_mapping(mapping, attrs, last_result)
-      @command_bus.dispatch(command, **mapped)
+      mapped = apply_mapping(step.mapping, attrs, last_result)
+      @command_bus.dispatch(step.command, **mapped)
     end
 
     # Evaluates a branch by checking the named specification against the last result.
@@ -94,15 +85,12 @@ module Hecks
     # @param last_result [Object, nil] the result to check against the specification
     # @return [Object, nil] the result of executing the chosen branch path
     def execute_branch(branch, attrs, last_result)
-      spec = branch.respond_to?(:spec) ? branch.spec : branch[:spec]
-      if_steps = branch.respond_to?(:if_steps) ? branch.if_steps : branch[:if_steps]
-      else_steps = branch.respond_to?(:else_steps) ? branch.else_steps : branch[:else_steps]
-      spec_class = find_specification(spec)
+      spec_class = find_specification(branch.spec)
 
       chosen = if spec_class && spec_class.satisfied_by?(last_result)
-        if_steps
+        branch.if_steps
       else
-        else_steps
+        branch.else_steps
       end
 
       execute_steps(chosen, attrs)

@@ -37,10 +37,10 @@ RSpec.describe "Scheduled workflows" do
     expect(wf.steps.size).to eq(1)
 
     step = wf.steps.first
-    expect(step[:name]).to eq("revoke_expired")
-    expect(step[:find_aggregate]).to eq("License")
-    expect(step[:find_spec]).to eq("Expired")
-    expect(step[:trigger]).to eq("RevokeLicense")
+    expect(step.name).to eq("revoke_expired")
+    expect(step.find_aggregate).to eq("License")
+    expect(step.find_spec).to eq("Expired")
+    expect(step.trigger).to eq("RevokeLicense")
   end
 
   it "non-scheduled workflows have no schedule" do
@@ -89,7 +89,7 @@ RSpec.describe "Scheduled workflows" do
 
     wf = domain.workflows.first
     expect(wf.steps.size).to eq(2)
-    expect(wf.steps[0][:command]).to eq("CreateItem")
-    expect(wf.steps[1][:find_aggregate]).to eq("Item")
+    expect(wf.steps[0].command).to eq("CreateItem")
+    expect(wf.steps[1].find_aggregate).to eq("Item")
   end
 end
