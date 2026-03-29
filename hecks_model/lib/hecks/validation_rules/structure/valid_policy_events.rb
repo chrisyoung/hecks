@@ -49,6 +49,7 @@ module Hecks
         result
       end
     end
+    Hecks.register_validation_rule(ValidPolicyEvents)
     end
   end
 end

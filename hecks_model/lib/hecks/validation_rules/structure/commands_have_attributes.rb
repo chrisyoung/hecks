@@ -27,6 +27,7 @@ module Hecks
         result
       end
     end
+    Hecks.register_validation_rule(CommandsHaveAttributes)
     end
   end
 end

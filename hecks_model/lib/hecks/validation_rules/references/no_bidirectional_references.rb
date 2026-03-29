@@ -38,6 +38,7 @@ module Hecks
         result
       end
     end
+    Hecks.register_validation_rule(NoBidirectionalReferences)
     end
   end
 end

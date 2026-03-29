@@ -46,6 +46,7 @@ module Hecks
           end
           issues
         end
+      Hecks.register_validation_rule(NoImplicitForeignKeys)
       end
     end
   end

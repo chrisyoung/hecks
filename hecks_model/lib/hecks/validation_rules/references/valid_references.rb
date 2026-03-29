@@ -55,6 +55,7 @@ module Hecks
         result
       end
     end
+    Hecks.register_validation_rule(ValidReferences)
     end
   end
 end
