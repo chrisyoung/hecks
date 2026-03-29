@@ -96,7 +96,7 @@ module Hecks
                      scopes: [], ports: {}, queries: [], subscribers: [], indexes: [],
                      specifications: [], lifecycle: nil, versioned: false, attachable: false,
                      metadata: {}, origin_domain: nil)
-        @name = name
+        @name = Names.aggregate_name(name)
         @attributes = attributes
         @value_objects = value_objects
         @entities = entities

@@ -48,7 +48,7 @@ module Hecks
       def initialize(name:, attributes: [], handler: nil, guard_name: nil,
                      read_models: [], external_systems: [], actors: [],
                      call_body: nil, sets: {}, preconditions: [], postconditions: [])
-        @name = name
+        @name = Names.command_name(name)
         @attributes = attributes
         @handler = handler
         @guard_name = guard_name

@@ -38,6 +38,9 @@ module Hecks
       autoload :Service,         "hecks/domain_model/behavior/service"
       autoload :ReadModel,       "hecks/domain_model/behavior/read_model"
       autoload :Workflow,        "hecks/domain_model/behavior/workflow"
+      autoload :CommandStep,    "hecks/domain_model/behavior/workflow_step"
+      autoload :BranchStep,     "hecks/domain_model/behavior/workflow_step"
+      autoload :ScheduledStep,  "hecks/domain_model/behavior/workflow_step"
     end
   end
 end

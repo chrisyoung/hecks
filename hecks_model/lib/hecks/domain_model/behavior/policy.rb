@@ -64,8 +64,8 @@ module Hecks
       # @return [Policy]
       def initialize(name:, event_name: nil, trigger_command: nil, async: false, block: nil, attribute_map: {}, condition: nil, defaults: {})
         @name = name
-        @event_name = event_name
-        @trigger_command = trigger_command
+        @event_name = event_name && Names.event_name(event_name)
+        @trigger_command = trigger_command && Names.command_name(trigger_command)
         @async = async
         @block = block
         @attribute_map = attribute_map
