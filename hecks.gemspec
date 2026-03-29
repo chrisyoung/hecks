@@ -27,4 +27,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "hecks_workbench",  Hecks::VERSION
   spec.add_dependency "hecks_cli",      Hecks::VERSION
   spec.add_dependency "hecks_persist",  Hecks::VERSION
+  spec.add_dependency "railties",       "~> 8.0"
 end
