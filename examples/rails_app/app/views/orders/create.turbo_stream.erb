@@ -1,4 +1,0 @@
-<% extra_price = @pricing&.extra_topping_price || 200 %>
-<%= turbo_stream.append "orders-table" do %>
-  <%= render partial: "orders/order_row", locals: { order: @order, pizzas: @pizzas, extra_price: extra_price } %>
-<% end %>
