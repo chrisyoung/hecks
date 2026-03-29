@@ -23,14 +23,27 @@ Hecks::CLI.register_command(:build, "Generate the domain gem",
   versioner = Hecks::Versioner.new(".")
   version = versioner.next
 
-  build_go_target = lambda do |d|
-    output = Hecks.build_go(d, smoke_test: false)
-    say "Built #{d.name} Go project", :green
-    say "  Output: #{output}/"
+  builder = Hecks.target_registry[target.to_sym]
+  unless builder
+    say "Unknown build target: #{target}. Available: #{Hecks.target_registry.keys.join(', ')}", :red
+    next
+  end
 
+  opts = case target
+         when "go"    then { smoke_test: false }
+         when "rails" then { output_dir: "." }
+         else              { version: version }
+         end
+
+  output = builder.call(domain, **opts)
+
+  case target
+  when "go"
+    say "Built #{domain.name} Go project", :green
+    say "  Output: #{output}/"
     if system("which go > /dev/null 2>&1")
       say "  Compiling Go binary..."
-      slug = domain_slug(d.name)
+      slug = domain_slug(domain.name)
       binary = "#{slug}_server"
       if system("cd #{output} && go mod tidy 2>&1 && go build -o #{binary} ./cmd/#{slug}/ 2>&1")
         say "  Binary: #{output}/#{binary}", :green
@@ -40,21 +53,13 @@ Hecks::CLI.register_command(:build, "Generate the domain gem",
     else
       say "  Go not installed — run `go build` in #{output}/ to compile", :yellow
     end
-  end
-
-  case target
-  when "go"
-    build_go_target.call(domain)
   when "static"
-    output = Hecks.build_static(domain, version: version)
     say "Built #{domain.gem_name} v#{version} (static)", :green
     say "  Output: #{output}/"
   when "rails"
-    output = Hecks.build_rails(domain, output_dir: ".")
     say "Built Rails app: #{output}/", :green
     say "  cd #{output} && bundle install && rails server"
   else
-    output = Hecks.build(domain, version: version)
     say "Built #{domain.gem_name} v#{version}", :green
     say "  Docs: #{output}/docs/"
     say "  Output: #{output}/"
