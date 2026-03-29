@@ -2,7 +2,7 @@ require "spec_helper"
 
 RSpec.describe Hecks::Workbench::Playground do
   let(:domain) do
-    Hecks.domain "Pizzas" do
+    Hecks.domain "PlaygroundTest" do
       aggregate "Pizza" do
         attribute :name, String
         attribute :toppings, list_of("Topping")
