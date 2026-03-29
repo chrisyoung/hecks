@@ -1,5 +1,5 @@
-Hecks::CLI.register_command(:console, "Start the interactive workbench",
+Hecks::CLI.register_command(:console, "Start the interactive workshop",
   args: ["NAME"]
 ) do |name = nil|
-  Hecks::Workbench::ConsoleRunner.new(name: name).run
+  Hecks::Workshop::ConsoleRunner.new(name: name).run
 end

@@ -34,7 +34,7 @@ module BillingDomain
             conditions.all? do |k, v|
               next false unless obj.respond_to?(k)
               actual = obj.send(k)
-              v.respond_to?(:match?) ? v.match?(actual) : actual == v
+              v.is_a?(Hecks::Querying::Operators::Operator) ? v.match?(actual) : actual == v
             end
           end
         end

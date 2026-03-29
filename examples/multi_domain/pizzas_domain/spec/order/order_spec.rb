@@ -1,31 +1,42 @@
 require "spec_helper"
 
 RSpec.describe PizzasDomain::Order do
-  subject(:order) do
-    described_class.new(pizza_id: "ref-id-123", quantity: 1)
-  end
+  describe "creating a Order" do
+    subject(:order) { described_class.new(pizza_id: "ref-id-123", quantity: 1) }
 
-  describe "#initialize" do
-    it "creates a Order with an id" do
+    it "assigns an id" do
       expect(order.id).not_to be_nil
     end
 
-    it "has pizza_id" do
-      expect(order.pizza_id).not_to be_nil
+    it "sets pizza_id" do
+      expect(order.pizza_id).to eq("ref-id-123")
     end
 
-    it "has quantity" do
-      expect(order.quantity).not_to be_nil
+    it "sets quantity" do
+      expect(order.quantity).to eq(1)
     end
   end
 
+  describe "identity" do
+    it "two Orders with the same id are equal" do
+      id = SecureRandom.uuid
+      a = described_class.new(
+          pizza_id: "ref-id-123",
+          quantity: 1,
+          id: id
+        )
+      b = described_class.new(
+          pizza_id: "ref-id-123",
+          quantity: 1,
+          id: id
+        )
+      expect(a).to eq(b)
+    end
 
-describe "equality" do
-  it "is equal to another Order with the same id" do
-    id = SecureRandom.uuid
-    a = described_class.new(pizza_id: "ref-id-123", quantity: 1, id: id)
-    b = described_class.new(pizza_id: "ref-id-123", quantity: 1, id: id)
-    expect(a).to eq(b)
+    it "two Orders with different ids are not equal" do
+      a = described_class.new(pizza_id: "ref-id-123", quantity: 1)
+      b = described_class.new(pizza_id: "ref-id-123", quantity: 1)
+      expect(a).not_to eq(b)
+    end
   end
-end
 end

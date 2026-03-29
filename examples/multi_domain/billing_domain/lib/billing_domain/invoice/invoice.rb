@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module BillingDomain
   class Invoice

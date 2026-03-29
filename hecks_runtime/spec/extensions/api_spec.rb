@@ -13,10 +13,10 @@ RSpec.describe "Hecks top-level API" do
     end
   end
 
-  describe "Hecks.workbench" do
+  describe "Hecks.workshop" do
     it "returns a Session" do
-      session = Hecks.workbench("Test")
-      expect(session).to be_a(Hecks::Workbench)
+      session = Hecks.workshop("Test")
+      expect(session).to be_a(Hecks::Workshop)
     end
   end
 

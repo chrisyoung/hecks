@@ -1,3 +1,4 @@
+require "hecks"
 require "pizzas_domain"
 
 RSpec.configure do |config|

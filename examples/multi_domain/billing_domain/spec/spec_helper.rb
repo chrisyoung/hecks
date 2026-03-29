@@ -1,3 +1,4 @@
+require "hecks"
 require "billing_domain"
 
 RSpec.configure do |config|

@@ -1,35 +1,60 @@
 require "spec_helper"
 
 RSpec.describe ShippingDomain::Shipment do
-  subject(:shipment) do
-    described_class.new(pizza_id: "example", quantity: 1, status: "example")
-  end
+  describe "creating a Shipment" do
+    subject(:shipment) { described_class.new(
+          pizza_id: "example",
+          quantity: 1,
+          status: "example"
+        ) }
 
-  describe "#initialize" do
-    it "creates a Shipment with an id" do
+    it "assigns an id" do
       expect(shipment.id).not_to be_nil
     end
 
-    it "has pizza_id" do
-      expect(shipment.pizza_id).not_to be_nil
+    it "sets pizza_id" do
+      expect(shipment.pizza_id).to eq("example")
     end
 
-    it "has quantity" do
-      expect(shipment.quantity).not_to be_nil
+    it "sets quantity" do
+      expect(shipment.quantity).to eq(1)
     end
 
-    it "has status" do
-      expect(shipment.status).not_to be_nil
+    it "sets status" do
+      expect(shipment.status).to eq("example")
     end
   end
 
+  describe "identity" do
+    it "two Shipments with the same id are equal" do
+      id = SecureRandom.uuid
+      a = described_class.new(
+          pizza_id: "example",
+          quantity: 1,
+          status: "example",
+          id: id
+        )
+      b = described_class.new(
+          pizza_id: "example",
+          quantity: 1,
+          status: "example",
+          id: id
+        )
+      expect(a).to eq(b)
+    end
 
-describe "equality" do
-  it "is equal to another Shipment with the same id" do
-    id = SecureRandom.uuid
-    a = described_class.new(pizza_id: "example", quantity: 1, status: "example", id: id)
-    b = described_class.new(pizza_id: "example", quantity: 1, status: "example", id: id)
-    expect(a).to eq(b)
+    it "two Shipments with different ids are not equal" do
+      a = described_class.new(
+          pizza_id: "example",
+          quantity: 1,
+          status: "example"
+        )
+      b = described_class.new(
+          pizza_id: "example",
+          quantity: 1,
+          status: "example"
+        )
+      expect(a).not_to eq(b)
+    end
   end
-end
 end

@@ -39,9 +39,12 @@ savings = Account.open(customer_id: alice.id, account_type: "savings", daily_lim
 bob_acct = Account.open(customer_id: bob.id, account_type: "checking", daily_limit: 3000.0)
 
 puts "\n--- Deposits ---"
-checking = Account.deposit(account_id: checking.id, amount: 5000.0)
-savings = Account.deposit(account_id: savings.id, amount: 10000.0)
-bob_acct = Account.deposit(account_id: bob_acct.id, amount: 2000.0)
+Account.deposit(account_id: checking.id, amount: 5000.0)
+Account.deposit(account_id: savings.id, amount: 10000.0)
+Account.deposit(account_id: bob_acct.id, amount: 2000.0)
+checking = Account.find(checking.id)
+savings = Account.find(savings.id)
+bob_acct = Account.find(bob_acct.id)
 puts "Alice checking: $#{"%.2f" % checking.balance}"
 puts "Alice savings:  $#{"%.2f" % savings.balance}"
 puts "Bob checking:   $#{"%.2f" % bob_acct.balance}"
