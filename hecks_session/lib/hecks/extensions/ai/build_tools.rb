@@ -58,6 +58,21 @@ module Hecks
           Thread.new { Hecks::HTTP::DomainServer.new(domain, port: port).run }
           "Serving domain on http://localhost:#{port}"
         end
+
+        server.define_tool(
+          name: "promote",
+          description: "Promote an aggregate into its own standalone domain",
+          input_schema: {
+            type: "object",
+            properties: {
+              aggregate: { type: "string", description: "Aggregate name to promote (e.g. Comments)" }
+            },
+            required: ["aggregate"]
+          }
+        ) do |args|
+          ctx.ensure_session!
+          ctx.capture_output { ctx.session.promote(args["aggregate"]) }
+        end
       end
     end
   end

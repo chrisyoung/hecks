@@ -221,7 +221,8 @@ RSpec.describe Hecks::EventStorm::YamlParser do
     end
 
     it "auto-detects YAML format from file extension" do
-      result = Hecks.from_event_storm("examples/pizzas/event_storm.yml")
+      yaml_path = File.expand_path("../../../examples/pizzas/event_storm.yml", __dir__)
+      result = Hecks.from_event_storm(yaml_path)
       expect(result.domain).to be_a(Hecks::DomainModel::Structure::Domain)
       expect(result.domain.aggregates.map(&:name)).not_to be_empty
     end
