@@ -8,12 +8,12 @@
 #
 module Hecks
   module TargetRegistryMethods
-    def target_registry
-      @target_registry
-    end
+    extend ModuleDSL
+
+    lazy_registry :target_registry
 
     def register_target(name, &builder)
-      @target_registry[name.to_sym] = builder
+      target_registry[name.to_sym] = builder
     end
   end
 end

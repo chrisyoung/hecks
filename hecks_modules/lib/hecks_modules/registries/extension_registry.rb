@@ -5,20 +5,17 @@
 #
 module Hecks
   module ExtensionRegistryMethods
-    def extension_registry
-      @extension_registry
-    end
+    extend ModuleDSL
 
-    def extension_meta
-      @extension_meta
-    end
+    lazy_registry :extension_registry
+    lazy_registry :extension_meta
 
     def register_extension(name, &hook)
-      @extension_registry[name.to_sym] = hook
+      extension_registry[name.to_sym] = hook
     end
 
     def describe_extension(name, description:, config: {}, wires_to: nil)
-      @extension_meta[name.to_sym] = {
+      extension_meta[name.to_sym] = {
         description: description, config: config, wires_to: wires_to
       }
     end

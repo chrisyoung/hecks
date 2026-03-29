@@ -12,12 +12,12 @@
 #
 module Hecks
   module DumpFormatRegistryMethods
-    def dump_formats
-      @dump_format_registry
-    end
+    extend ModuleDSL
+
+    lazy_registry :dump_formats
 
     def register_dump_format(name, desc: name.to_s, &handler)
-      @dump_format_registry[name.to_sym] = { desc: desc, handler: handler }
+      dump_formats[name.to_sym] = { desc: desc, handler: handler }
     end
   end
 end
