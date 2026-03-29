@@ -55,8 +55,7 @@ class UIGenerator
   end
 
   def plural(agg)
-    s = Hecks::Utils.underscore(agg.name)
-    s.end_with?("s") ? s : s + "s"
+    Hecks::Templating::Names.aggregate_slug(agg.name)
   end
 
   def user_attrs(agg)

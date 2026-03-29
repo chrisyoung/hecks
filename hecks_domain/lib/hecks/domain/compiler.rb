@@ -69,7 +69,7 @@ module Hecks
     # @raise [Hecks::ValidationError] if validation fails and skip_validation is false
     # @raise [Hecks::DomainLoadError] if generated code has syntax or naming errors
     def load_domain(domain, force: false, skip_validation: false)
-      mod = domain.module_name + "Domain"
+      mod = Hecks::Templating::Names.domain_module_name(domain.name)
       key = domain.object_id
       return Object.const_get(mod) if !force && @loaded_domains[mod] == key && Object.const_defined?(mod)
 

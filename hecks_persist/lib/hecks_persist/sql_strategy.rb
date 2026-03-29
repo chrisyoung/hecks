@@ -115,7 +115,7 @@ module Hecks
       def column_def(attr, presence_fields = [], unique_fields = [])
         parts = [attr.name.to_s, sql_type(attr)]
         if attr.reference?
-          ref_table = Hecks::Utils.underscore(attr.type.to_s.sub(/_id$/, "")) + "s"
+          ref_table = Hecks::Templating::Names.table_name(attr.type.to_s.sub(/_id$/, ""))
           parts << "REFERENCES #{ref_table}(id) ON DELETE SET NULL"
         end
         parts << "NOT NULL" if presence_fields.include?(attr.name.to_sym)
@@ -159,7 +159,7 @@ module Hecks
         type = d[:reference] ? "VARCHAR(36)" : sql_type_for(d[:type])
         parts = ["#{d[:name]} #{type}"]
         if d[:reference]
-          ref_table = Hecks::Utils.underscore(d[:type].to_s.sub(/_id$/, "")) + "s"
+          ref_table = Hecks::Templating::Names.table_name(d[:type].to_s.sub(/_id$/, ""))
           parts << "REFERENCES #{ref_table}(id) ON DELETE SET NULL"
         end
         parts << "NOT NULL" if d[:presence]

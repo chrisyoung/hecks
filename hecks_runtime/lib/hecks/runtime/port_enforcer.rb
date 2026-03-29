@@ -101,8 +101,7 @@ module Hecks
       # @return [Array<Symbol>] the command method names
       def command_method_names(agg)
         agg.commands.map do |cmd|
-          agg_snake = Hecks::Utils.underscore(agg.name)
-          Hecks::Utils.underscore(cmd.name).sub(/_#{agg_snake}$/, "").to_sym
+          Hecks::Templating::Names.derive_method_name(cmd.name, agg.name)
         end
       end
   end

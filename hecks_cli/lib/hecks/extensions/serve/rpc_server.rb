@@ -109,7 +109,7 @@ module Hecks
       #
       # @return [void]
       def boot_domain
-        mod_name = @Hecks::Templating::Names.domain_module(domain.name)
+        mod_name = Hecks::Templating::Names.domain_module_name(@domain.name)
         unless Object.const_defined?(mod_name)
           tmpdir = Dir.mktmpdir("hecks_rpc")
           gem_path = Hecks.build(@domain, output_dir: tmpdir)
@@ -148,8 +148,7 @@ module Hecks
       # @return [void]
       def register_commands(agg, klass)
         agg.commands.each do |cmd|
-          method_name = Hecks::Utils.underscore(cmd.name)
-            .sub(/_#{Hecks::Utils.underscore(agg.name)}$/, "").to_sym
+          method_name = Hecks::Templating::Names.derive_method_name(cmd.name, agg.name)
           @methods[cmd.name] = ->(params) {
             serialize(klass.send(method_name, **params.transform_keys(&:to_sym)))
           }

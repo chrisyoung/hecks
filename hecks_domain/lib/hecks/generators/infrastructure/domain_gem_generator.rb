@@ -53,7 +53,7 @@ module Hecks
       # @return [String] the absolute path to the generated gem root directory
       def generate
         gem_name = @domain.gem_name
-        mod = @domain.module_name + "Domain"
+        mod = Hecks::Templating::Names.domain_module_name(@domain.name)
         root = File.join(@output_dir, gem_name)
 
         FileUtils.mkdir_p(root)
