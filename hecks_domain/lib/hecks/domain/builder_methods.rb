@@ -60,7 +60,7 @@ module Hecks
     # @return [String] generated Ruby source code for the aggregate class
     # @raise [RuntimeError] if the named aggregate does not exist in the domain
     def preview(domain, aggregate_name)
-      mod = domain.module_name + "Domain"
+      mod = Hecks::Templating::Names.domain_module_name(domain.name)
       agg = domain.aggregates.find { |a| a.name == aggregate_name }
       raise "Unknown aggregate: #{aggregate_name}" unless agg
       Generators::Domain::AggregateGenerator.new(agg, domain_module: mod).generate

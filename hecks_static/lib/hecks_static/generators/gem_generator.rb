@@ -24,7 +24,7 @@ class GemGenerator
   def generate
     gem_name = @domain.gem_name
     static_name = @domain.name.downcase + "_static_ruby"
-    mod = @domain.module_name + "Domain"
+    mod = Hecks::Templating::Names.domain_module_name(@domain.name)
     root = File.join(@output_dir, static_name)
 
     FileUtils.mkdir_p(root)

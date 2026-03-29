@@ -153,7 +153,7 @@ module Hecks
       # @param name [String] the element name (e.g., "Pizza")
       # @return [String] the table name (e.g., "pizzas")
       def table_name(name)
-        Hecks::Utils.underscore(Hecks::Utils.sanitize_constant(name)) + "s"
+        Hecks::Templating::Names.table_name(name)
       end
     end
     end
