@@ -1,8 +1,6 @@
 require_relative "ui_generator/form_routes"
 require_relative "ui_generator/config_routes"
 
-DomainNaming = Hecks::Templating::Names
-
 module HecksStatic
 # HecksStatic::UIGenerator
 #
@@ -10,6 +8,7 @@ module HecksStatic
 # Each route builds a locals hash and calls renderer.render(:template, locals).
 #
 class UIGenerator
+  include Hecks::Templating::Names
   include FormRoutes
   include ConfigRoutes
 
@@ -57,7 +56,7 @@ class UIGenerator
   end
 
   def plural(agg)
-    DomainNaming.aggregate_slug(agg.name)
+    domain_aggregate_slug(agg.name)
   end
 
   def user_attrs(agg)

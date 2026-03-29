@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   class Workbench
@@ -17,6 +16,7 @@ module Hecks
     #   workbench.status     # alias for describe
     #
     module Presenter
+      include Hecks::Templating::Names
       # Print a full description of the domain and all its aggregates.
       #
       # Builds the domain, then iterates each aggregate printing its
@@ -33,7 +33,7 @@ module Hecks
         lines << ""
 
         domain.aggregates.each do |agg|
-          handle = @handles[agg.name] || AggregateHandle.new(agg.name, @aggregate_builders[agg.name], domain_module: @nameHecks::Templating::NamesNames.domain_module_name())
+          handle = @handles[agg.name] || AggregateHandle.new(agg.name, @aggregate_builders[agg.name], domain_module: domain_module_name(@name))
           lines << "  #{agg.name}"
 
           unless agg.attributes.empty?

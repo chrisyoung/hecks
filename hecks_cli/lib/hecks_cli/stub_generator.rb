@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   class CLI < Thor
@@ -13,6 +12,7 @@ module Hecks
     #   gen.generate  # => { "lib/banking_domain/account/commands/withdraw.rb" => "..." }
     #
     class StubGenerator
+      include Hecks::Templating::Names
       # Initializes a StubGenerator for a specific element type and name.
       #
       # @param domain [DomainModel::Structure::Domain] the domain to search in
@@ -24,7 +24,7 @@ module Hecks
         @type = type
         @name = name
         @gem = domain.gem_name
-        @mod = DomainNaming.domain_module_name(domain.name)
+        @mod = domain_module_name(domain.name)
       end
 
       # Generates stub files for the requested element.

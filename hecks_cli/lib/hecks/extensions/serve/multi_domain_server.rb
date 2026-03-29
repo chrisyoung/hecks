@@ -7,8 +7,6 @@ require "hecks_templating/ui_label_contract"
 require "hecks_templating/display_contract"
 require_relative "multi_domain_ui_routes"
 
-DomainNaming = Hecks::Templating::Names
-
 module Hecks
   module HTTP
     # Hecks::HTTP::MultiDomainServer
@@ -24,6 +22,7 @@ module Hecks
     #   MultiDomainServer.new(domains, runtimes, port: 9292).run
     #
     class MultiDomainServer
+      include Hecks::Templating::Names
       include UIRoutes
 
       def initialize(domains, runtimes, port: 9292)
@@ -54,8 +53,8 @@ module Hecks
       def setup_domains
         @domains.each_with_index do |domain, i|
           runtime = @runtimes[i]
-          slug = DomainNaming.domain_slug(domain.name)
-          mod_name = DomainNaming.domain_module_name(domain.name)
+          slug = domain_slug(domain.name)
+          mod_name = domain_module_name(domain.name)
           mod = Object.const_get(mod_name)
           routes = RouteBuilder.new(domain, mod).build
           @entries << { domain: domain, runtime: runtime, mod: mod, slug: slug, routes: routes }
@@ -157,7 +156,7 @@ module Hecks
       end
 
       def plural(agg)
-        DomainNaming.aggregate_slug(agg.name)
+        domain_aggregate_slug(agg.name)
       end
 
       def humanize(name)

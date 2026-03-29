@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   class Workbench
@@ -23,6 +22,7 @@ module Hecks
     #   workbench.sketch!   # back to sketch mode
     #
     module PlayMode
+      include Hecks::Templating::Names
       # Switch to play mode by compiling the domain and booting a live runtime.
       #
       # Validates the domain first; if invalid, prints errors and stays in
@@ -148,7 +148,7 @@ module Hecks
       # @return [Session] self
       def serve!(port: 9292)
         play! unless play?
-        mod_name = @nameHecks::Templating::NamesNames.domain_module_name()
+        mod_name = domain_module_name(@name)
         if Object.const_defined?(mod_name)
           mod = Object.const_get(mod_name)
           if mod.respond_to?(:serve)

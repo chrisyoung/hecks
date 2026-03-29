@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 # Hecks::CLI::Domain#build
 #
@@ -10,6 +9,7 @@ DomainNaming = Hecks::Templating::Names
 module Hecks
   class CLI < Thor
     class Domain < Thor
+      include Hecks::Templating::Names
       desc "build", "Generate the domain gem"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
@@ -63,7 +63,7 @@ module Hecks
         # Try to compile the Go binary
         if system("which go > /dev/null 2>&1")
           say "  Compiling Go binary..."
-          slug = DomainNaming.domain_slug(domain.name)
+          slug = domain_slug(domain.name)
           binary = "#{slug}_server"
           if system("cd #{output} && go mod tidy 2>&1 && go build -o #{binary} ./cmd/#{slug}/ 2>&1")
             say "  Binary: #{output}/#{binary}", :green

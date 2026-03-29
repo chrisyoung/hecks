@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module Generators
@@ -14,6 +13,7 @@ module Hecks
     #   example_args(aggregate)  # => "name: \"example\", size: \"example\""
     #
     module SpecHelpers
+      include Hecks::Templating::Names
       private
 
       # Returns the fully qualified class name for use in RSpec +describe+ blocks.
@@ -22,7 +22,7 @@ module Hecks
       #   (e.g. +"Pizza::Commands::CreatePizza"+)
       # @return [String] the fully qualified name (e.g. +"PizzasDomain::Pizza::Commands::CreatePizza"+)
       def full_class_name(class_path)
-        mod = DomainNaming.domain_module_name(@domain.name)
+        mod = domain_module_name(@domain.name)
         "#{mod}::#{class_path}"
       end
 

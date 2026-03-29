@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   # Hecks::PortEnforcer
@@ -12,6 +11,7 @@ module Hecks
   # remain accessible (backward compatible).
   #
   class PortEnforcer
+    include Hecks::Templating::Names
       # Standard class-level methods that may be restricted by a port definition.
       # These are the built-in persistence and query methods wired onto aggregate classes.
       CLASS_METHODS    = %i[find all count delete where first last create].freeze
@@ -103,7 +103,7 @@ module Hecks
       # @return [Array<Symbol>] the command method names
       def command_method_names(agg)
         agg.commands.map do |cmd|
-          DomainNaming.command_method_name(cmd.name, agg.name)
+          domain_command_method(cmd.name, agg.name)
         end
       end
   end

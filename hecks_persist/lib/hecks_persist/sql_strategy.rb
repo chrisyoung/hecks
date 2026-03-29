@@ -1,8 +1,6 @@
 require "fileutils"
 require_relative "sql_helpers"
 
-DomainNaming = Hecks::Templating::Names
-
 module Hecks
   module Migrations
     module Strategies
@@ -18,6 +16,7 @@ module Hecks
       #   strategy.generate(changes)
       #
       class SqlStrategy < MigrationStrategy
+        include Hecks::Templating::Names
       include SqlHelpers
 
       # Generates SQL migration content from a list of domain changes.
@@ -117,7 +116,7 @@ module Hecks
       def column_def(attr, presence_fields = [], unique_fields = [])
         parts = [attr.name.to_s, sql_type(attr)]
         if attr.reference?
-          ref_table = DomainNaming.aggregate_slug(DomainNaming.referenced_name(attr.type))
+          ref_table = domain_aggregate_slug(domain_referenced_name(attr.type))
           parts << "REFERENCES #{ref_table}(id) ON DELETE SET NULL"
         end
         parts << "NOT NULL" if presence_fields.include?(attr.name.to_sym)
@@ -161,7 +160,7 @@ module Hecks
         type = d[:reference] ? "VARCHAR(36)" : sql_type_for(d[:type])
         parts = ["#{d[:name]} #{type}"]
         if d[:reference]
-          ref_table = DomainNaming.aggregate_slug(DomainNaming.referenced_name(d[:type]))
+          ref_table = domain_aggregate_slug(domain_referenced_name(d[:type]))
           parts << "REFERENCES #{ref_table}(id) ON DELETE SET NULL"
         end
         parts << "NOT NULL" if d[:presence]

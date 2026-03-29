@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module HTTP
@@ -10,6 +9,7 @@ module Hecks
       # Extracted from MultiDomainServer to stay under the 200-line limit.
       #
       module UIRoutes
+        include Hecks::Templating::Names
         private
 
         def serve_ui_route(req, res, entry, sub_path)
@@ -101,7 +101,7 @@ module Hecks
           end
           mod = klass
           params = req.query
-          method_name = DomainNaming.command_method_name(cmd.name, agg.name)
+          method_name = domain_command_method(cmd.name, agg.name)
           attrs = cmd.attributes.each_with_object({}) { |a, h| h[a.name] = params[a.name.to_s] || "" }
           result = klass.send(method_name, **attrs)
           id = result.respond_to?(:aggregate) ? result.aggregate.id : result.id

@@ -2,8 +2,6 @@ require "webrick"
 require "json"
 require "tmpdir"
 
-DomainNaming = Hecks::Templating::Names
-
 module Hecks
   module HTTP
     # Hecks::HTTP::RpcServer
@@ -24,6 +22,7 @@ module Hecks
     #   # POST / {"jsonrpc":"2.0","method":"CreatePizza","params":{"name":"Margherita"},"id":1}
     #
     class RpcServer
+      include Hecks::Templating::Names
       # Initialize the RPC server, boot the domain, and register all methods.
       #
       # Builds the domain gem into a temp directory, boots it, then
@@ -111,7 +110,7 @@ module Hecks
       #
       # @return [void]
       def boot_domain
-        mod_name = DomainNaming.domain_module_name(@domain.name)
+        mod_name = domain_module_name(@domain.name)
         unless Object.const_defined?(mod_name)
           tmpdir = Dir.mktmpdir("hecks_rpc")
           gem_path = Hecks.build(@domain, output_dir: tmpdir)
@@ -150,7 +149,7 @@ module Hecks
       # @return [void]
       def register_commands(agg, klass)
         agg.commands.each do |cmd|
-          method_name = DomainNaming.command_method_name(cmd.name, agg.name)
+          method_name = domain_command_method(cmd.name, agg.name)
           @methods[cmd.name] = ->(params) {
             serialize(klass.send(method_name, **params.transform_keys(&:to_sym)))
           }

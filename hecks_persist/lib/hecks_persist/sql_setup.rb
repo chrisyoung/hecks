@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   class Configuration
@@ -9,6 +8,7 @@ module Hecks
     # Mixed into Configuration to provide SQL persistence setup during Hecks.configure.
     #
     module SqlSetup
+      include Hecks::Templating::Names
       private
 
       # Generates SQL adapter (repository) classes for each aggregate in the domain.
@@ -23,7 +23,7 @@ module Hecks
       def generate_adapters(domain_obj)
         domain_obj.aggregates.each do |agg|
           gen = Generators::SQL::SqlAdapterGenerator.new(
-            agg, domain_module: DomainNaming.domain_module_name(domain_obj.name)
+            agg, domain_module: domain_module_name(domain_obj.name)
           )
           eval(gen.generate, TOPLEVEL_BINDING, "(hecks:sql:#{agg.name})")
         end

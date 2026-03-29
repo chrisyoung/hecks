@@ -1,4 +1,3 @@
-DomainNaming = Hecks::Templating::Names
 
 module Hecks
   module HTTP
@@ -11,6 +10,7 @@ module Hecks
       # Mixed into OpenapiGenerator to keep path logic separate from schemas.
       #
       module PathBuilder
+        include Hecks::Templating::Names
         private
 
         # Builds all OpenAPI path entries for the domain. Iterates over every
@@ -21,7 +21,7 @@ module Hecks
         def build_paths
           paths = {}
           @domain.aggregates.each do |agg|
-            slug = DomainNaming.aggregate_slug(agg.name)
+            slug = domain_aggregate_slug(agg.name)
             paths.merge!(crud_paths(agg, slug))
             paths.merge!(query_paths(agg, slug))
           end
