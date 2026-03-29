@@ -11,20 +11,15 @@ Gem::Specification.new do |spec|
 
   spec.files         = [
     "README.md", "FEATURES.md", "hecks_logo.png",
+    "lib/hecks.rb",
     "bin/hecks", "bin/hecks_claude",
     "bin/watch-all", "bin/watch-autoloads", "bin/watch-cli",
     "bin/watch-cross-require", "bin/watch-file-size", "bin/watch-spec-coverage"
   ]
+  spec.require_paths = ["lib"]
   spec.bindir        = "bin"
   spec.executables   = ["hecks"]
 
   spec.required_ruby_version = ">= 3.0"
 
-  spec.add_dependency "hecksties",      Hecks::VERSION
-  spec.add_dependency "hecks_model",    Hecks::VERSION
-  spec.add_dependency "hecks_domain",   Hecks::VERSION
-  spec.add_dependency "hecks_runtime",  Hecks::VERSION
-  spec.add_dependency "hecks_workbench",  Hecks::VERSION
-  spec.add_dependency "hecks_cli",      Hecks::VERSION
-  spec.add_dependency "hecks_persist",  Hecks::VERSION
 end

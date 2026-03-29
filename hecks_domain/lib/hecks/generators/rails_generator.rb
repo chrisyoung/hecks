@@ -28,7 +28,6 @@ module Hecks
         patch_gemfile
         add_hecks_initializer
         patch_welcome_page
-        build_domain_gem
         @root
       end
 
@@ -50,15 +49,10 @@ module Hecks
           hecks_root = File.expand_path("../..", File.dirname(@domain.source_path))
           rel = Pathname.new(hecks_root).relative_path_from(Pathname.new(File.expand_path(@root)))
           content += "\ngem \"hecks\", path: \"#{rel}\"\n"
-          # Sub-gems that hecks depends on
-          %w[hecksties hecks_model hecks_domain hecks_runtime hecks_workbench hecks_cli hecks_persist hecks_templating].each do |sub|
-            sub_path = File.join(rel, sub)
-            content += "gem \"#{sub}\", path: \"#{sub_path}\"\n" if File.directory?(File.join(hecks_root, sub))
-          end
         else
           content += "\ngem \"hecks\"\n"
         end
-        content += "gem \"#{@gem_name}\", path: \"./#{@gem_name}\"\n"
+        content += "gem \"#{@gem_name}\", path: \"../#{@gem_name}\"\n"
         File.write(gemfile, content)
       end
 
@@ -75,7 +69,7 @@ module Hecks
       end
 
       def patch_welcome_page
-        # Find the welcome page ERB in the railties gem
+        # Copy the Rails welcome page ERB, resolve tags, add Hecks version
         railties = ::Gem.loaded_specs["railties"]
         return unless railties
 
@@ -85,37 +79,19 @@ module Hecks
         html = File.read(source)
 
         # Resolve ERB tags to static values
-        html = html.gsub(/<%= Rails\.version %>/, "8")
-                   .gsub(/<%= Rack\.release %>/, "")
+        rails_v = ::Gem.loaded_specs["railties"]&.version&.to_s || "8"
+        rack_v = ::Gem.loaded_specs["rack"]&.version&.to_s || ""
+        html = html.gsub(/<%= Rails\.version %>/, rails_v)
+                   .gsub(/<%= Rack\.release %>/, rack_v)
                    .gsub(/<%= RUBY_DESCRIPTION %>/, RUBY_DESCRIPTION)
 
-        # 1. Title
-        html = html.sub(/Ruby on Rails \S+/, "Hecks on Rails!")
-
-        # 2. Logo: red → animated rust gradient
+        # Add Hecks version after Rack version
         html = html.sub(
-          "background: #D30001;",
-          "background: linear-gradient(135deg, #8B4513, #CD7F32, #B87333, #A0522D, #8B4513);\n      background-size: 300% 300%;\n      animation: rust 4s ease infinite;"
+          %r{(<li><strong>Rack version:</strong>.*?</li>)},
+          "\\1\n    <li><strong>Hecks version:</strong> #{Hecks::VERSION}</li>"
         )
-        html = html.sub(
-          "  </style>",
-          "    @keyframes rust {\n      0% { background-position: 0% 50%; }\n      50% { background-position: 100% 50%; }\n      100% { background-position: 0% 50%; }\n    }\n  </style>"
-        )
-
-        # 3. Version info → domain info
-        aggs = @domain.aggregates.map(&:name).join(", ")
-        html = html.sub(/<li><strong>Rails version:<\/strong>.*?<\/li>/, "<li><strong>Domain:</strong> #{@domain.name}</li>")
-        html = html.sub(/<li><strong>Rack version:<\/strong>.*?<\/li>/, "<li><strong>Aggregates:</strong> #{aggs}</li>")
-        html = html.sub(/<li><strong>Ruby version:<\/strong>.*?<\/li>/, "<li><strong>Hecks on Rails!</strong></li>")
 
         write "public/index.html", html
-      end
-
-      def build_domain_gem
-        Hecks.build(@domain, output_dir: @root)
-        if @domain.source_path && File.exist?(@domain.source_path)
-          FileUtils.cp(@domain.source_path, File.join(@root, "hecks_domain.rb"))
-        end
       end
 
       def write(path, content)
