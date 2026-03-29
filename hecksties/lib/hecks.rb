@@ -27,6 +27,7 @@ require_relative "hecks/registries/thread_context"
 require_relative "hecks/registries/target_registry"
 require_relative "hecks/registries/adapter_registry"
 require_relative "hecks/registries/validation_registry"
+require_relative "hecks/registries/dump_format_registry"
 
 # = Hecks
 #
@@ -47,6 +48,7 @@ module Hecks
   extend TargetRegistryMethods
   extend AdapterRegistryMethods
   extend ValidationRegistryMethods
+  extend DumpFormatRegistryMethods
 
   @configuration = nil
   @loaded_domains = {}
@@ -60,6 +62,7 @@ module Hecks
   @target_registry = {}
   @adapter_registry = %i[memory sqlite postgres mysql mysql2 filesystem filesystem_store]
   @validation_rules = []
+  @dump_format_registry = {}
 
   def self.configure(&block)
     @configuration = Configuration.new
@@ -75,6 +78,37 @@ module Hecks
   def self.load(domain, force: false, **opts, &config)
     load_domain(domain, force: force)
     Runtime.new(domain, **opts, &config)
+  end
+
+  # Register built-in dump formats
+  register_dump_format(:schema, desc: "JSON Schema (all types and commands)") do |domain, say:|
+    require "hecks_serve"
+    File.write("schema.json", JSON.pretty_generate(Hecks::HTTP::JsonSchemaGenerator.new(domain).generate))
+    say.call("Dumped schema.json", :green)
+  end
+
+  register_dump_format(:swagger, desc: "OpenAPI 3.0 spec") do |domain, say:|
+    require "hecks_serve"
+    File.write("openapi.json", JSON.pretty_generate(Hecks::HTTP::OpenapiGenerator.new(domain).generate))
+    say.call("Dumped openapi.json", :green)
+  end
+
+  register_dump_format(:rpc, desc: "JSON-RPC discovery") do |domain, say:|
+    require "hecks_serve"
+    File.write("rpc_methods.json", JSON.pretty_generate(Hecks::HTTP::RpcDiscovery.new(domain).generate))
+    say.call("Dumped rpc_methods.json", :green)
+  end
+
+  register_dump_format(:domain, desc: "domain gem to domain/ folder") do |domain, say:|
+    FileUtils.mkdir_p("domain")
+    gem_path = Hecks.build(domain, output_dir: "domain")
+    say.call("Dumped domain gem to domain/#{File.basename(gem_path)}/", :green)
+  end
+
+  register_dump_format(:glossary, desc: "plain-English domain glossary") do |domain, say:|
+    glossary = Hecks::DomainGlossary.new(domain)
+    File.write("glossary.md", glossary.generate.join("\n") + "\n")
+    say.call("Dumped glossary.md", :green)
   end
 
   # Register built-in build targets
