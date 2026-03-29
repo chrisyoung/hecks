@@ -28,8 +28,7 @@ module Hecks
         end
 
         def transition(mapping)
-          @builder.instance_eval { @lifecycle ||= nil }
-          lc = @builder.instance_variable_get(:@lifecycle)
+          lc = @builder.current_lifecycle
           if lc.nil?
             puts "no lifecycle on #{@name} — call lifecycle first"
             return self
@@ -37,11 +36,11 @@ module Hecks
           builder = DSL::LifecycleBuilder.new(lc.field, default: lc.default)
           lc.transitions.each { |cmd, target| builder.transition(cmd => target) }
           builder.transition(mapping)
-          @builder.instance_variable_set(:@lifecycle, builder.build)
+          @builder.lifecycle = builder.build
           cmd_name = mapping.keys.first
           target = mapping.values.first
           id_name = "#{Hecks::Utils.underscore(@name)}_id"
-          unless @builder.instance_variable_get(:@commands)&.any? { |c| c.name == cmd_name }
+          unless @builder.commands.any? { |c| c.name == cmd_name }
             command(cmd_name) { attribute id_name.to_sym, reference_to(@name) }
           end
           puts "#{cmd_name} transition added -> #{target}"
