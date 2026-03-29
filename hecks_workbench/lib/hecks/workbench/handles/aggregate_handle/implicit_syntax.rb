@@ -13,17 +13,12 @@ module Hecks
           if name_s =~ /\A[A-Z]/ && block_given?
             value_object(name_s, &block)
           elsif block_given?
-            cmd_name = infer_command_name(name_s)
-            command(cmd_name, &block)
-          elsif args.first.is_a?(Class) || (args.first.is_a?(String) && args.first =~ /\A[A-Z]/)
-            attr(name, args.first, **kwargs)
-          elsif args.first.is_a?(Hash) && (args.first[:list] || args.first[:reference])
+            command(infer_command_name(name_s), &block)
+          elsif type_argument?(args.first)
             attr(name, args.first, **kwargs)
           elsif args.empty? && kwargs.empty? && !block_given?
             cmd_name = infer_command_name(name_s)
-            unless @command_handles.key?(cmd_name)
-              command(cmd_name)
-            end
+            command(cmd_name) unless @command_handles.key?(cmd_name)
             @command_handles[cmd_name] ||= CommandHandle.new(cmd_name, @builder, @name)
           else
             super
@@ -32,6 +27,15 @@ module Hecks
 
         def respond_to_missing?(name, include_private = false)
           true
+        end
+
+        private
+
+        def type_argument?(arg)
+          return false unless arg
+          arg.is_a?(Class) ||
+            (arg.is_a?(String) && arg =~ /\A[A-Z]/) ||
+            (arg.respond_to?(:key?) && (arg.key?(:list) || arg.key?(:reference)))
         end
       end
     end

@@ -89,11 +89,11 @@ module Hecks
     end
 
     def value_objects
-      @builder.value_objects.map { |vo| vo.is_a?(DomainModel::Structure::ValueObject) ? vo.name : vo.build.name }
+      @builder.value_objects.map { |vo| vo.respond_to?(:name) ? vo.name : vo.build.name }
     end
 
     def entities
-      @builder.entities.map { |ent| ent.is_a?(DomainModel::Structure::Entity) ? ent.name : ent.build.name }
+      @builder.entities.map { |ent| ent.respond_to?(:name) ? ent.name : ent.build.name }
     end
 
     def list_of(type) = { list: type }
