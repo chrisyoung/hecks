@@ -1,5 +1,5 @@
 require_relative "aggregate_handle/presenter"
-require_relative "aggregate_handle/message_not_understood"
+require_relative "command_handle"
 
 module Hecks
   class Session
@@ -7,26 +7,19 @@ module Hecks
     #
     # Interactive handle for incrementally building a single aggregate in the
     # REPL. Wraps an AggregateBuilder and provides add/remove methods that
-    # print feedback as you go.
+    # print feedback as you go. Supports one-line dot syntax via method_missing.
     #
     # Part of the Session layer -- returned by Session#aggregate to allow
     # step-by-step aggregate construction without full DSL blocks.
     #
-    # Includes:
-    # - Presenter          -- describe, preview, valid?, errors, inspect
-    # - MessageNotUnderstood -- Smalltalk-style helpful NoMethodError messages
-    #
-    #   session = Hecks.session("Pizzas")
-    #   pizza = session.aggregate("Pizza")
-    #   pizza.attr(:name, String)
-    #   pizza.command("CreatePizza") { attribute :name, String }
-    #   pizza.validation(:name, presence: true)
-    #   pizza.describe   # prints a summary of the aggregate
-    #   pizza.preview    # prints generated Ruby code
+    #   Post.title String         # implicit attribute
+    #   Post.create               # implicit command, returns CommandHandle
+    #   Post.create.title String  # add attribute to command
+    #   Post.lifecycle :status, default: "draft"
+    #   Post.transition "PublishPost" => "published"
     #
     class AggregateHandle
     include Presenter
-    include MessageNotUnderstood
 
     attr_reader :name
 
@@ -41,6 +34,7 @@ module Hecks
       @builder = builder
       @domain_module = domain_module
       @session = session
+      @command_handles = {}
     end
 
     # Add an attribute to the aggregate.
@@ -58,12 +52,12 @@ module Hecks
     def attr(name, type = String, **options)
       check_duplicate_attr!(name)
       @builder.attribute(name, type, **options)
-      puts "  + attr :#{name}, #{type_label(type)}"
-
       if type.is_a?(Hash) && type[:reference]
+        puts "#{name} reference added to #{@name} -> #{type[:reference]}"
         check_bidirectional(type[:reference])
+      else
+        puts "#{name} attribute added to #{@name}"
       end
-
       self
     end
 
@@ -75,9 +69,9 @@ module Hecks
       attrs = @builder.attributes
       removed = attrs.reject! { |a| a.name == name.to_sym }
       if removed
-        puts "  - attribute :#{name}"
+        puts "#{name} attribute removed from #{@name}"
       else
-        puts "  No attribute :#{name}"
+        puts "no attribute #{name} on #{@name}"
       end
       self
     end
@@ -90,7 +84,7 @@ module Hecks
     def value_object(name, &block)
       name = normalize_name(name)
       @builder.value_object(name, &block)
-      puts "  + value_object #{name}"
+      puts "#{name} value object created on #{@name}"
       self
     end
 
@@ -102,7 +96,7 @@ module Hecks
     def entity(name, &block)
       name = normalize_name(name)
       @builder.entity(name, &block)
-      puts "  + entity #{name}"
+      puts "#{name} entity created on #{@name}"
       self
     end
 
@@ -117,8 +111,7 @@ module Hecks
     def command(name, &block)
       name = normalize_name(name)
       @builder.command(name, &block)
-      cmd = @builder.commands.last
-      puts "  + command #{name} -> #{cmd.inferred_event_name}"
+      puts "#{name} command created on #{@name}"
       self
     end
 
@@ -129,7 +122,7 @@ module Hecks
     # @return [AggregateHandle] self, for chaining
     def validation(field, rules)
       @builder.validation(field, rules)
-      puts "  + validation :#{field}, #{rules.keys.join(', ')}"
+      puts "#{field} validation added to #{@name} (#{rules.keys.join(', ')})"
       self
     end
 
@@ -140,7 +133,7 @@ module Hecks
     # @return [AggregateHandle] self, for chaining
     def invariant(message, &block)
       @builder.invariant(message, &block)
-      puts "  + invariant \"#{message}\""
+      puts "invariant added to #{@name}: #{message}"
       self
     end
 
@@ -155,8 +148,7 @@ module Hecks
     def policy(name, &block)
       name = normalize_name(name)
       @builder.policy(name, &block)
-      pol = @builder.policies.last
-      puts "  + policy #{name} (on #{pol.event_name} -> #{pol.trigger_command})"
+      puts "#{name} policy created on #{@name}"
       self
     end
 
@@ -168,7 +160,7 @@ module Hecks
     # @return [AggregateHandle] self, for chaining
     def verb(word)
       @session&.add_verb(word)
-      puts "  + verb \"#{word}\""
+      puts "#{word} verb registered"
       self
     end
 
@@ -179,7 +171,7 @@ module Hecks
     # @return [AggregateHandle] self, for chaining
     def query(name, &block)
       @builder.query(name, &block)
-      puts "  + query #{name}"
+      puts "#{name} query added to #{@name}"
       self
     end
 
@@ -191,7 +183,7 @@ module Hecks
     # @return [AggregateHandle] self, for chaining
     def scope(name, conditions = nil, &block)
       @builder.scope(name, conditions, &block)
-      puts "  + scope #{name}"
+      puts "#{name} scope added to #{@name}"
       self
     end
 
@@ -203,7 +195,7 @@ module Hecks
     def specification(name, &block)
       name = normalize_name(name)
       @builder.specification(name, &block)
-      puts "  + specification #{name}"
+      puts "#{name} specification added to #{@name}"
       self
     end
 
@@ -215,7 +207,7 @@ module Hecks
     # @return [AggregateHandle] self, for chaining
     def on_event(event_name, async: false, &block)
       @builder.on_event(event_name, async: async, &block)
-      puts "  + subscriber on #{event_name}"
+      puts "#{event_name} subscriber added to #{@name}"
       self
     end
 
@@ -247,6 +239,44 @@ module Hecks
       @builder.entities.map { |ent| ent.is_a?(DomainModel::Structure::Entity) ? ent.name : ent.build.name }
     end
 
+    # Add a lifecycle state machine to the aggregate.
+    #
+    #   Post.lifecycle :status, default: "draft"
+    #
+    # @param field [Symbol] the attribute that holds the state
+    # @param default [String] the initial state value
+    # @yield optional block with transition declarations
+    # @return [AggregateHandle] self, for chaining
+    def lifecycle(field, default:, &block)
+      @builder.lifecycle(field, default: default, &block)
+      puts "lifecycle added to #{@name} on #{field}, default: #{default}"
+      self
+    end
+
+    # Add a lifecycle transition mapping a command to a target state.
+    #
+    #   Post.transition "PublishPost" => "published"
+    #
+    # @param mapping [Hash] command name => target state
+    # @return [AggregateHandle] self, for chaining
+    def transition(mapping)
+      @builder.instance_eval { @lifecycle ||= nil }
+      lc = @builder.instance_variable_get(:@lifecycle)
+      if lc.nil?
+        puts "no lifecycle on #{@name} — call lifecycle first"
+        return self
+      end
+      # Rebuild lifecycle with additional transition
+      builder = DSL::LifecycleBuilder.new(lc.field, default: lc.default)
+      lc.transitions.each { |cmd, target| builder.transition(cmd => target) }
+      builder.transition(mapping)
+      @builder.instance_variable_set(:@lifecycle, builder.build)
+      cmd = mapping.keys.first
+      target = mapping.values.first
+      puts "#{cmd} transition added -> #{target}"
+      self
+    end
+
     # DSL helper to create a list-of type descriptor.
     #
     # @param type [Class] the element type for the list
@@ -261,6 +291,41 @@ module Hecks
     # @return [Hash] type descriptor hash, e.g. {reference: "Order"}
     def reference_to(type)
       { reference: type }
+    end
+
+    # Implicit one-line dot syntax via method_missing.
+    #
+    #   Post.title String          # name + Type → attribute
+    #   Post.create                # bare snake_case → command + CommandHandle
+    #   Post.create { ... }        # snake_case + block → command with block
+    #   Post.Address { ... }       # PascalCase + block → value object
+    #
+    # @return [AggregateHandle, CommandHandle] self or a CommandHandle for chaining
+    def method_missing(name, *args, **kwargs, &block)
+      name_s = name.to_s
+
+      if name_s =~ /\A[A-Z]/ && block_given?
+        value_object(name_s, &block)
+      elsif block_given?
+        cmd_name = infer_command_name(name_s)
+        command(cmd_name, &block)
+      elsif args.first.is_a?(Class) || (args.first.is_a?(String) && args.first =~ /\A[A-Z]/)
+        attr(name, args.first, **kwargs)
+      elsif args.first.is_a?(Hash) && (args.first[:list] || args.first[:reference])
+        attr(name, args.first, **kwargs)
+      elsif args.empty? && kwargs.empty? && !block_given?
+        cmd_name = infer_command_name(name_s)
+        unless @command_handles.key?(cmd_name)
+          command(cmd_name)
+        end
+        @command_handles[cmd_name] ||= CommandHandle.new(cmd_name, @builder, @name)
+      else
+        super
+      end
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      true
     end
 
     private
@@ -281,6 +346,18 @@ module Hecks
     # @return [String] sanitized constant name
     def normalize_name(name)
       Hecks::Utils.sanitize_constant(name)
+    end
+
+    # Infer a PascalCase command name from a snake_case method name.
+    # Single verbs get the aggregate name appended: create → CreatePost
+    # Multi-word names are PascalCased as-is: add_topping → AddTopping
+    def infer_command_name(snake)
+      parts = snake.to_s.split("_")
+      if parts.size == 1
+        parts.first.capitalize + @name
+      else
+        parts.map(&:capitalize).join
+      end
     end
 
     # Check for bidirectional references and warn the user.

@@ -329,16 +329,73 @@ RSpec.describe Hecks::Session::AggregateHandle do
     end
   end
 
-  describe "message not understood" do
-    it "suggests creating a command for unknown methods" do
+  describe "implicit dot syntax" do
+    it "creates a command from a bare snake_case call" do
       pizza = session.aggregate("Pizza")
-      expect { pizza.bake }.to raise_error(NoMethodError, /doesn't understand 'bake'.*Create it with.*command\("Bake"\)/m)
+      pizza.bake
+      expect(pizza.commands).to include("BakePizza")
     end
 
-    it "lists available commands in the suggestion" do
+    it "adds an attribute via name + Type" do
       pizza = session.aggregate("Pizza")
-      pizza.command("CreatePizza") { attribute :name, String }
-      expect { pizza.bake }.to raise_error(NoMethodError, /Available commands: CreatePizza/)
+      pizza.title String
+      expect(pizza.attributes).to include(:title)
+    end
+
+    it "returns a CommandHandle for chained attribute additions" do
+      pizza = session.aggregate("Pizza")
+      handle = pizza.create
+      expect(handle).to be_a(Hecks::Session::CommandHandle)
+    end
+
+    it "adds attributes to a command via CommandHandle" do
+      pizza = session.aggregate("Pizza")
+      cmd_handle = pizza.create
+      cmd_handle.title String
+      domain = session.to_domain
+      cmd = domain.aggregates.first.commands.find { |c| c.name == "CreatePizza" }
+      expect(cmd.attributes.map(&:name)).to include(:title)
+    end
+
+    it "does not re-create command on repeated bare calls" do
+      pizza = session.aggregate("Pizza")
+      pizza.create
+      pizza.create
+      expect(pizza.commands.count("CreatePizza")).to eq(1)
+    end
+
+    it "adds lifecycle and transitions" do
+      post = session.aggregate("Post")
+      post.attr :status, String
+      post.lifecycle :status, default: "draft"
+      post.transition "PublishPost" => "published"
+      domain = session.to_domain
+      agg = domain.aggregates.first
+      expect(agg.lifecycle).not_to be_nil
+      expect(agg.lifecycle.field).to eq(:status)
+      expect(agg.lifecycle.default).to eq("draft")
+      expect(agg.lifecycle.transitions).to include("PublishPost")
+    end
+
+    it "creates value objects via PascalCase + block" do
+      pizza = session.aggregate("Pizza")
+      pizza.Address { attribute :street, String }
+      expect(pizza.value_objects).to include("Address")
+    end
+
+    it "creates commands via snake_case + block" do
+      pizza = session.aggregate("Pizza")
+      pizza.bake { attribute :temp, Integer }
+      domain = session.to_domain
+      cmd = domain.aggregates.first.commands.find { |c| c.name == "BakePizza" }
+      expect(cmd.attributes.map(&:name)).to include(:temp)
+    end
+
+    it "adds reference attributes via hash type" do
+      session.aggregate("Order")
+      pizza = session.aggregate("Pizza")
+      pizza.order_id({ reference: "Order" })
+      expect(pizza.attributes).to include(:order_id)
     end
   end
 end
