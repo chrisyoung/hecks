@@ -1,30 +1,22 @@
 # = HecksContracts
 #
-# Contract registry. Each contract registers itself here.
-# Generators query by name: Hecks::Contracts.for(:types)
+# Contract registry and contract definitions.
 #
-# Targets register on existing contracts:
-#   HecksTemplating::TypeContract.register_target(:java, { "String" => "String" })
-#
+module HecksTemplating; end  # ensure namespace exists
+
 module Hecks
   module Contracts
     @registry = {}
-
-    def self.register(name, contract)
-      @registry[name.to_sym] = contract
-    end
-
-    def self.for(name)
-      @registry[name.to_sym]
-    end
-
-    def self.registered
-      @registry.keys
-    end
+    def self.register(name, contract) = @registry[name.to_sym] = contract
+    def self.for(name) = @registry[name.to_sym]
+    def self.registered = @registry.keys
   end
 end
 
-# Register all built-in contracts (hecks_templating loaded before us)
+# Load all contract files
+Dir[File.join(__dir__, "hecks_contracts", "*.rb")].sort.each { |f| require f }
+
+# Register them
 Hecks::Contracts.register(:types,      HecksTemplating::TypeContract)
 Hecks::Contracts.register(:display,    HecksTemplating::DisplayContract)
 Hecks::Contracts.register(:views,      HecksTemplating::ViewContract)
