@@ -1,8 +1,8 @@
 require "spec_helper"
 
 RSpec.describe "Domain services" do
-  let(:domain) do
-    Hecks.domain "Banking" do
+  before(:all) do
+    @domain = Hecks.domain "Banking" do
       aggregate "Account" do
         attribute :balance, Float
 
@@ -28,9 +28,8 @@ RSpec.describe "Domain services" do
         end
       end
     end
+    @app = Hecks.load(@domain)
   end
-
-  before { @app = Hecks.load(domain) }
 
   it "dispatches multiple commands in sequence" do
     source = Account.create(balance: 1000.0)
@@ -40,7 +39,7 @@ RSpec.describe "Domain services" do
     events_before = @app.events.size
     mod.transfer_money(source_id: source.id, target_id: target.id, amount: 250.0)
 
-    expect(@app.events.size - events_before).to eq(2) # withdraw + deposit
+    expect(@app.events.size - events_before).to eq(2)
   end
 
   it "is available as a method on the domain module" do
@@ -58,8 +57,8 @@ RSpec.describe "Domain services" do
   end
 
   it "stores service definitions on domain IR" do
-    expect(domain.services.size).to eq(1)
-    expect(domain.services.first.name).to eq("TransferMoney")
-    expect(domain.services.first.attributes.map(&:name)).to eq([:source_id, :target_id, :amount])
+    expect(@domain.services.size).to eq(1)
+    expect(@domain.services.first.name).to eq("TransferMoney")
+    expect(@domain.services.first.attributes.map(&:name)).to eq([:source_id, :target_id, :amount])
   end
 end
