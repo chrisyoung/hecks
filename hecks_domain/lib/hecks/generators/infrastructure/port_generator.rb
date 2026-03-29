@@ -10,8 +10,7 @@ module Hecks
     #   gen = PortGenerator.new(agg, domain_module: "PizzasDomain")
     #   gen.generate  # => "module PizzasDomain\n  module Ports\n    module PizzaRepository\n  ..."
     #
-    class PortGenerator
-      include HecksTemplating::NamingHelpers
+    class PortGenerator < Hecks::Generator
 
       # Creates a new PortGenerator for a single aggregate.
       #

@@ -1,7 +1,7 @@
 module Hecks
   module Generators
     module Domain
-      class AggregateGenerator
+      class AggregateGenerator < Hecks::Generator
         # Hecks::Generators::Domain::AggregateGenerator::ConstructorGeneration
         #
         # Mixin that generates an initialize method for aggregates with keyword

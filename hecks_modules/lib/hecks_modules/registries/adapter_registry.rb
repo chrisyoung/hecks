@@ -10,20 +10,22 @@
 #
 module Hecks
   module AdapterRegistryMethods
-    extend ModuleDSL
-
-    lazy_registry(:adapter_registry, private: true) { %i[memory sqlite postgres mysql mysql2 filesystem filesystem_store] }
-
     def registered_adapters
-      adapter_registry.dup
+      adapter_registry.all
     end
 
     def register_adapter(name)
-      adapter_registry << name.to_sym unless adapter_registry.include?(name.to_sym)
+      adapter_registry.register(name)
     end
 
     def adapter?(name)
-      adapter_registry.include?(name.to_sym)
+      adapter_registry.include?(name)
+    end
+
+    private
+
+    def adapter_registry
+      @adapter_registry ||= SetRegistry.new(%i[memory sqlite postgres mysql mysql2 filesystem filesystem_store])
     end
   end
 end

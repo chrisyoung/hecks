@@ -1,7 +1,7 @@
 module Hecks
   module Generators
     module Domain
-      class CommandGenerator
+      class CommandGenerator < Hecks::Generator
         # Hecks::Generators::Domain::CommandGenerator::InjectionHelpers
         #
         # Extracted helpers for injecting sets, lifecycle status, and lifecycle

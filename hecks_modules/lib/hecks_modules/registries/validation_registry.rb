@@ -8,16 +8,18 @@
 #
 module Hecks
   module ValidationRegistryMethods
-    extend ModuleDSL
-
-    lazy_registry(:validation_rule_registry, private: true) { [] }
-
     def validation_rules
-      validation_rule_registry.dup
+      validation_rule_registry.all
     end
 
     def register_validation_rule(rule_class)
-      validation_rule_registry << rule_class unless validation_rule_registry.include?(rule_class)
+      validation_rule_registry.register(rule_class)
+    end
+
+    private
+
+    def validation_rule_registry
+      @validation_rule_registry ||= SetRegistry.new
     end
   end
 end

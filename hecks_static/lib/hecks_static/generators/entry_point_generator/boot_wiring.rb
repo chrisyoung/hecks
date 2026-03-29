@@ -5,7 +5,7 @@
 # EntryPointGenerator to keep the main file under 200 lines.
 #
 module HecksStatic
-  class EntryPointGenerator
+  class EntryPointGenerator < Hecks::Generator
     module BootWiring
       include HecksTemplating::NamingHelpers
       private

@@ -5,7 +5,7 @@
 # coercion, and validation error re-rendering.
 #
 module HecksStatic
-  class UIGenerator
+  class UIGenerator < Hecks::Generator
     module FormRoutes
       include HecksTemplating::NamingHelpers
       private

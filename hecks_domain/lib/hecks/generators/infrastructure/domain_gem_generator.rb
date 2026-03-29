@@ -17,8 +17,7 @@ module Hecks
     #   gen = DomainGemGenerator.new(domain, output_dir: "./generated")
     #   gen.generate  # => path to generated gem root
     #
-    class DomainGemGenerator
-      include HecksTemplating::NamingHelpers
+    class DomainGemGenerator < Hecks::Generator
       include FileWriter
       include LlmsTxtWriter
       include SpecWriter

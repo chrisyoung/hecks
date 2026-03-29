@@ -40,8 +40,7 @@ module Hecks
     #   gen.generate_service_spec(service)
     #   gen.generate_port_spec(port_name, port_def, agg)
     #
-    class SpecGenerator
-      include HecksTemplating::NamingHelpers
+    class SpecGenerator < Hecks::Generator
       include SpecHelpers
       include AggregateSpec
       include ValueObjectSpec

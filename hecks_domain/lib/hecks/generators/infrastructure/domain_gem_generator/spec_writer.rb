@@ -1,7 +1,7 @@
 module Hecks
   module Generators
     module Infrastructure
-      class DomainGemGenerator
+      class DomainGemGenerator < Hecks::Generator
         # Hecks::Generators::Infrastructure::DomainGemGenerator::SpecWriter
         #
         # Mixin that writes RSpec specs for all domain concepts in the gem.

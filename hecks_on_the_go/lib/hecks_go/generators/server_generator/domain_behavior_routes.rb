@@ -7,7 +7,7 @@
 # Go domain generator supports them.
 #
 module HecksOnTheGo
-  class ServerGenerator
+  class ServerGenerator < Hecks::Generator
     module DomainBehaviorRoutes
       private
 

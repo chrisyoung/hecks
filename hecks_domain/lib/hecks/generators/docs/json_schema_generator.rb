@@ -9,8 +9,7 @@ module Hecks
     #
     #   Hecks::HTTP::JsonSchemaGenerator.new(domain).generate
     #
-    class JsonSchemaGenerator
-      include HecksTemplating::NamingHelpers
+    class JsonSchemaGenerator < Hecks::Generator
       # Creates a new JsonSchemaGenerator for a domain.
       #
       # @param domain [Hecks::DomainModel::Structure::Domain] the parsed domain IR

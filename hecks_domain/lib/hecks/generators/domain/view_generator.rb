@@ -24,8 +24,7 @@ module Hecks
     #   gen = ViewGenerator.new(view, domain_module: "ComplianceDomain")
     #   gen.generate
     #
-    class ViewGenerator
-      include HecksTemplating::NamingHelpers
+    class ViewGenerator < Hecks::Generator
 
       # Initializes the view generator.
       #
