@@ -5,10 +5,13 @@
 #
 module Hecks
   module DomainRegistryMethods
-    extend ModuleDSL
+    def loaded_domains
+      @loaded_domains ||= Registry.new
+    end
 
-    lazy_registry :loaded_domains
-    lazy_registry :domain_objects
+    def domain_objects
+      @domain_objects ||= Registry.new
+    end
 
     def last_domain
       @last_domain

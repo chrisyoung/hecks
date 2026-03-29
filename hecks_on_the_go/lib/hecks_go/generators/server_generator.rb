@@ -9,8 +9,7 @@ require_relative "server_generator/domain_behavior_routes"
 # scopes, specifications) rendered via html/template.
 #
 module HecksOnTheGo
-  class ServerGenerator
-    include HecksTemplating::NamingHelpers
+  class ServerGenerator < Hecks::Generator
     include GoUtils
     include DataRoutes
     include UIRoutes

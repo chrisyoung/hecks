@@ -1,7 +1,7 @@
 module Hecks
   module Generators
     module Domain
-      class AggregateGenerator
+      class AggregateGenerator < Hecks::Generator
         # Hecks::Generators::Domain::AggregateGenerator::InvariantGeneration
         #
         # Mixin that generates the +check_invariants!+ method for aggregate classes.

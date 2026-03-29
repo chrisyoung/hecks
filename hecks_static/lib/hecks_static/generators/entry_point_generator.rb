@@ -7,8 +7,7 @@ require_relative "entry_point_generator/boot_wiring"
 # 2. boot.rb — wiring, boot method, serve (stable, written once)
 #
 module HecksStatic
-  class EntryPointGenerator
-    include HecksTemplating::NamingHelpers
+  class EntryPointGenerator < Hecks::Generator
     include BootWiring
 
     def initialize(domain)

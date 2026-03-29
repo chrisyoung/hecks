@@ -12,8 +12,7 @@ require "pathname"
 
 module Hecks
   module Generators
-    class RailsGenerator
-      include HecksTemplating::NamingHelpers
+    class RailsGenerator < Hecks::Generator
 
       def initialize(domain)
         @domain = domain

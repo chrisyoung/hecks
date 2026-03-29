@@ -1,7 +1,7 @@
 module Hecks
   module Generators
     module Domain
-      class AggregateGenerator
+      class AggregateGenerator < Hecks::Generator
         # Hecks::Generators::Domain::AggregateGenerator::ValidationGeneration
         #
         # Mixin that generates the +validate!+ method for aggregate classes.

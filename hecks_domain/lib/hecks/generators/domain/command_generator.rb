@@ -35,8 +35,7 @@ module Hecks
     #     aggregate_name: "Pizza", aggregate: agg, event: evt)
     #   gen.generate
     #
-    class CommandGenerator
-      include HecksTemplating::NamingHelpers
+    class CommandGenerator < Hecks::Generator
       include InjectionHelpers
 
       # Initializes the command generator.

@@ -18,8 +18,7 @@ module Hecks
     #   gen = QueryObjectGenerator.new(agg, domain_module: "PizzasDomain")
     #   gen.generate  # => "module PizzasDomain\n  module Queries\n    module PizzaQueries\n  ..."
     #
-    class QueryObjectGenerator
-      include HecksTemplating::NamingHelpers
+    class QueryObjectGenerator < Hecks::Generator
 
       # Initializes the query object generator.
       #

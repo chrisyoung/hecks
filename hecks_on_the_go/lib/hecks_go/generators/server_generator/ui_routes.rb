@@ -4,7 +4,7 @@
 # All display conventions come from contracts.
 #
 module HecksOnTheGo
-  class ServerGenerator
+  class ServerGenerator < Hecks::Generator
     module UIRoutes
       private
 

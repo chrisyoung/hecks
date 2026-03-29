@@ -1,7 +1,7 @@
 module Hecks
   module Generators
     module Infrastructure
-      class SpecGenerator
+      class SpecGenerator < Hecks::Generator
         # Hecks::Generators::Infrastructure::SpecGenerator::CommandSpec
         #
         # Generates RSpec specs for commands: attribute assignment, event

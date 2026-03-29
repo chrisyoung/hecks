@@ -8,16 +8,16 @@
 #     File.write("schema.json", JSON.pretty_generate(schema_data))
 #     say.call("Dumped schema.json", :green)
 #   end
-#   Hecks.dump_formats  # => { schema: { desc: ..., handler: #<Proc> }, ... }
+#   Hecks.dump_formats  # => Registry with { schema: { desc: ..., handler: ... } }
 #
 module Hecks
   module DumpFormatRegistryMethods
-    extend ModuleDSL
-
-    lazy_registry :dump_formats
+    def dump_formats
+      @dump_formats ||= Registry.new
+    end
 
     def register_dump_format(name, desc: name.to_s, &handler)
-      dump_formats[name.to_sym] = { desc: desc, handler: handler }
+      dump_formats.register(name, { desc: desc, handler: handler })
     end
   end
 end
