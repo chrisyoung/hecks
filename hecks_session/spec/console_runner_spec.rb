@@ -34,7 +34,7 @@ RSpec.describe Hecks::Session::ConsoleRunner do
 
   describe "#help" do
     it "prints help text" do
-      expect { runner.help }.to output(/aggregate.*validate.*build/m).to_stdout
+      expect { runner.help }.to output(/Post.*create.*play!/m).to_stdout
     end
 
     it "returns nil" do

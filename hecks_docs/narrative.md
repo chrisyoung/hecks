@@ -31,37 +31,56 @@ $ hecks console
 
 ```ruby
 hecks(sketch)> Post
-=> #<Post (0 attributes, 0 commands)>
+Post aggregate created
 
 hecks(sketch)> Post.title String
-hecks(sketch)> Post.body String
+title attribute added to Post
+
 hecks(sketch)> Post.status String
+status attribute added to Post
+
 hecks(sketch)> Post.lifecycle :status, default: "draft"
+lifecycle added to Post on status, default: draft
+
 hecks(sketch)> Post.transition "PublishPost" => "published"
+PublishPost transition added -> published
+
 hecks(sketch)> Post.transition "ArchivePost" => "archived"
-=> lifecycle: draft → published → archived
+ArchivePost transition added -> archived
 
 hecks(sketch)> Post.create
-=> + command CreatePost (0 attributes)
+CreatePost command created on Post
+
 hecks(sketch)> Post.create.title String
-hecks(sketch)> Post.create.body String
-=> + command CreatePost → CreatedPost (2 attributes)
+title attribute added to CreatePost -> CreatedPost
 ```
 
 Blogs need comments.
 
 ```ruby
 hecks(sketch)> Comment
-=> #<Comment (0 attributes, 0 commands)>
+Comment aggregate created
 
 hecks(sketch)> Comment.post_id reference_to("Post")
+post_id reference added to Comment -> Post
+
 hecks(sketch)> Comment.author String
+author attribute added to Comment
+
 hecks(sketch)> Comment.body String
+body attribute added to Comment
+
 hecks(sketch)> Comment.create
+CreateComment command created on Comment
+
 hecks(sketch)> Comment.create.post_id reference_to("Post")
+post_id reference added to CreateComment -> Post
+
 hecks(sketch)> Comment.create.author String
+author attribute added to CreateComment -> CreatedComment
+
 hecks(sketch)> Comment.create.body String
-=> + command CreateComment → CreatedComment (3 attributes)
+body attribute added to CreateComment -> CreatedComment
 ```
 
 ---
@@ -75,7 +94,7 @@ hecks(sketch)> play!
 > `Entering play mode (2 aggregates, 2 commands)`
 
 ```ruby
-hecks(play)> Post.create(title: "Hello World", body: "My first post")
+hecks(play)> Post.create(title: "Hello World")
 ```
 
 > `CreatedPost { title: "Hello World", status: "draft" }`
