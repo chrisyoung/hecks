@@ -3,30 +3,27 @@ module Hecks
     # Hecks::MCP::AggregateTools
     #
     # MCP tools for building domain structure: add/remove aggregates, commands,
-    # value objects, entities, validations, and policies. Each tool delegates to
-    # the Session's AggregateHandle API to mutate the in-memory domain model.
-    #
-    # This module is stateless -- it registers tool definitions on the given MCP
-    # server and closes over the shared context (+ctx+) for session access.
+    # value objects, entities, validations, policies, lifecycle, and transitions.
+    # Each tool delegates to the Session's AggregateHandle API and captures
+    # the terse feedback it prints to stdout.
     #
     # Registered tools:
     #   - +add_aggregate+     -- create a new aggregate root with optional attributes
+    #   - +add_attribute+     -- add an attribute to an existing aggregate
     #   - +add_command+       -- add a command (action) to an aggregate
     #   - +add_value_object+  -- add an embedded value object to an aggregate
     #   - +add_entity+        -- add a sub-entity with identity to an aggregate
     #   - +add_validation+    -- add a validation rule to an aggregate field
-    #   - +add_policy+        -- add a reactive policy (event -> trigger) to an aggregate
+    #   - +add_policy+        -- add a reactive policy (event -> trigger)
+    #   - +add_lifecycle+     -- add a state machine to an aggregate
+    #   - +add_transition+    -- add a lifecycle transition
     #   - +remove_aggregate+  -- remove an aggregate from the domain
     #
     module AggregateTools
       # Registers all aggregate structure tools on the given MCP server.
       #
-      # Each tool calls +ctx.ensure_session!+ before executing, and uses
-      # +ctx.resolve_type+ to convert type strings into Ruby types.
-      #
-      # @param server [MCP::Server] the MCP server instance to register tools on
-      # @param ctx [Hecks::McpServer] the shared context providing session access,
-      #   +ensure_session!+, and +resolve_type+ helpers
+      # @param server [MCP::Server] the MCP server instance
+      # @param ctx [Hecks::McpServer] shared context with session, capture_output
       # @return [void]
       def self.register(server, ctx)
         server.define_tool(
@@ -42,11 +39,32 @@ module Hecks
           }
         ) do |args|
           ctx.ensure_session!
-          handle = ctx.session.aggregate(args["name"])
-          (args["attributes"] || []).each do |attr|
-            handle.attr(attr["name"].to_sym, ctx.resolve_type(attr["type"]))
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["name"])
+            (args["attributes"] || []).each do |attr|
+              handle.attr(attr["name"].to_sym, ctx.resolve_type(attr["type"]))
+            end
           end
-          "Added #{args["name"]} with #{(args["attributes"] || []).size} attributes"
+        end
+
+        server.define_tool(
+          name: "add_attribute",
+          description: "Add an attribute to an aggregate (e.g. title String, post_id reference_to(Post))",
+          input_schema: {
+            type: "object",
+            properties: {
+              aggregate: { type: "string" },
+              name: { type: "string" },
+              type: { type: "string", description: "String, Integer, Float, reference_to(Name), list_of(Name)" }
+            },
+            required: ["aggregate", "name"]
+          }
+        ) do |args|
+          ctx.ensure_session!
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["aggregate"])
+            handle.attr(args["name"].to_sym, ctx.resolve_type(args["type"] || "String"))
+          end
         end
 
         server.define_tool(
@@ -63,13 +81,14 @@ module Hecks
           }
         ) do |args|
           ctx.ensure_session!
-          handle = ctx.session.aggregate(args["aggregate"])
-          attrs = args["attributes"] || []
-          resolved = attrs.map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
-          handle.command(args["name"]) do
-            resolved.each { |name, type| attribute name, type }
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["aggregate"])
+            attrs = args["attributes"] || []
+            resolved = attrs.map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
+            handle.command(args["name"]) do
+              resolved.each { |name, type| attribute name, type }
+            end
           end
-          "Added action #{args["name"]} to #{args["aggregate"]}"
         end
 
         server.define_tool(
@@ -86,12 +105,13 @@ module Hecks
           }
         ) do |args|
           ctx.ensure_session!
-          handle = ctx.session.aggregate(args["aggregate"])
-          resolved = (args["attributes"] || []).map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
-          handle.value_object(args["name"]) do
-            resolved.each { |name, type| attribute name, type }
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["aggregate"])
+            resolved = (args["attributes"] || []).map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
+            handle.value_object(args["name"]) do
+              resolved.each { |name, type| attribute name, type }
+            end
           end
-          "Added #{args["name"]} to #{args["aggregate"]}"
         end
 
         server.define_tool(
@@ -108,12 +128,13 @@ module Hecks
           }
         ) do |args|
           ctx.ensure_session!
-          handle = ctx.session.aggregate(args["aggregate"])
-          resolved = (args["attributes"] || []).map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
-          handle.entity(args["name"]) do
-            resolved.each { |name, type| attribute name, type }
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["aggregate"])
+            resolved = (args["attributes"] || []).map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
+            handle.entity(args["name"]) do
+              resolved.each { |name, type| attribute name, type }
+            end
           end
-          "Added entity #{args["name"]} to #{args["aggregate"]}"
         end
 
         server.define_tool(
@@ -126,11 +147,12 @@ module Hecks
           }
         ) do |args|
           ctx.ensure_session!
-          handle = ctx.session.aggregate(args["aggregate"])
-          rules = {}
-          rules[:presence] = true if args["presence"]
-          handle.validation(args["field"].to_sym, rules)
-          "Added validation on #{args["field"]} for #{args["aggregate"]}"
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["aggregate"])
+            rules = {}
+            rules[:presence] = true if args["presence"]
+            handle.validation(args["field"].to_sym, rules)
+          end
         end
 
         server.define_tool(
@@ -146,10 +168,51 @@ module Hecks
           }
         ) do |args|
           ctx.ensure_session!
-          handle = ctx.session.aggregate(args["aggregate"])
-          evt, trig = args["on_event"], args["trigger"]
-          handle.policy(args["name"]) { on evt; trigger trig }
-          "When #{evt} → #{trig}"
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["aggregate"])
+            evt, trig = args["on_event"], args["trigger"]
+            handle.policy(args["name"]) { on evt; trigger trig }
+          end
+        end
+
+        server.define_tool(
+          name: "add_lifecycle",
+          description: "Add a state machine (e.g. status: draft -> published -> archived)",
+          input_schema: {
+            type: "object",
+            properties: {
+              aggregate: { type: "string" },
+              field: { type: "string", description: "Attribute that holds the state (e.g. status)" },
+              default: { type: "string", description: "Initial state (e.g. draft)" }
+            },
+            required: ["aggregate", "field", "default"]
+          }
+        ) do |args|
+          ctx.ensure_session!
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["aggregate"])
+            handle.lifecycle(args["field"].to_sym, default: args["default"])
+          end
+        end
+
+        server.define_tool(
+          name: "add_transition",
+          description: "Add a lifecycle transition (e.g. PublishPost -> published)",
+          input_schema: {
+            type: "object",
+            properties: {
+              aggregate: { type: "string" },
+              command: { type: "string", description: "Command name (e.g. PublishPost)" },
+              target: { type: "string", description: "Target state (e.g. published)" }
+            },
+            required: ["aggregate", "command", "target"]
+          }
+        ) do |args|
+          ctx.ensure_session!
+          ctx.capture_output do
+            handle = ctx.session.aggregate(args["aggregate"])
+            handle.transition(args["command"] => args["target"])
+          end
         end
 
         server.define_tool(
@@ -158,8 +221,7 @@ module Hecks
           input_schema: { type: "object", properties: { name: { type: "string" } }, required: ["name"] }
         ) do |args|
           ctx.ensure_session!
-          ctx.session.remove(args["name"])
-          "Removed #{args["name"]}"
+          ctx.capture_output { ctx.session.remove(args["name"]) }
         end
       end
     end
