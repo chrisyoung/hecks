@@ -103,7 +103,7 @@ module Hecks
       #
       # @return [String] the domain module name with "Domain" suffix
       def mod_name
-        @domain.module_name + "Domain"
+        Hecks::Templating::Names.domain_module_name(@domain.name)
       end
     end
     end
