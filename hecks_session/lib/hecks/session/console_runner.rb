@@ -60,6 +60,17 @@ module Hecks
       handle
     end
 
+    # Apply an extension to the live runtime in play mode.
+    #
+    #   extend :logging
+    #   extend :sqlite
+    #
+    # @param name [Symbol] the extension name
+    # @return [Session] self
+    def extend(name, **kwargs)
+      @session.extend(name, **kwargs)
+    end
+
     # Switch to play mode and hoist domain constants into ConsoleRunner scope.
     #
     # Delegates to Session#play! to compile the domain, then copies all

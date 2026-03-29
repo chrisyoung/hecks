@@ -120,6 +120,21 @@ module Hecks
         @playground.reset!
       end
 
+      # Apply an extension to the live runtime without rebooting.
+      #
+      #   play!
+      #   extend :logging
+      #   extend :sqlite
+      #
+      # @param name [Symbol] the extension name
+      # @return [Session] self
+      # @raise [RuntimeError] if not in play mode
+      def extend(name, **kwargs)
+        ensure_play_mode!
+        @playground.extend(name, **kwargs)
+        self
+      end
+
       private
 
       # Start the web explorer server in a background thread.

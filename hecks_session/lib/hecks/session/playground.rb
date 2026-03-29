@@ -149,6 +149,14 @@ module Hecks
       nil
     end
 
+    # Apply an extension to the live playground runtime.
+    #
+    # @param name [Symbol] the extension name (e.g. :logging, :sqlite)
+    # @return [void]
+    def extend(name, **kwargs)
+      @runtime.extend(name, **kwargs)
+    end
+
     # Return a compact string representation of the playground.
     #
     # @return [String] e.g. '#<Hecks::Session::Playground "Pizzas" (3 events)>'
