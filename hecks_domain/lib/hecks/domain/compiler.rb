@@ -132,6 +132,21 @@ module Hecks
       root
     end
 
+    # Generate a bootstrapped Rails app with the domain loaded.
+    #
+    # @param domain [Hecks::DomainModel::Domain] the domain to compile
+    # @param output_dir [String] parent directory for the generated Rails app
+    # @return [String] path to the generated Rails app root
+    def build_rails(domain, output_dir: ".")
+      valid, errors = validate(domain)
+      unless valid
+        raise Hecks::ValidationError, "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
+      end
+
+      require "hecks/generators/rails_generator"
+      Generators::RailsGenerator.new(domain).generate(output_dir: output_dir)
+    end
+
     private
 
     # Start, smoke-test, and stop a static Ruby server.
