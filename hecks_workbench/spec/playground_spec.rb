@@ -33,6 +33,11 @@ RSpec.describe Hecks::Workbench::Playground do
           attribute :quantity, Integer
         end
 
+        command "ReserveStock" do
+          attribute :pizza_id, reference_to("Pizza")
+          attribute :quantity, Integer
+        end
+
         policy "ReserveIngredients" do
           on "PlacedOrder"
           trigger "ReserveStock"
