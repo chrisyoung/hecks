@@ -16,7 +16,7 @@ module Hecks
   #   Hecks.workbench("Pizzas")
   #
   module DomainBuilderMethods
-    include Hecks::Templating::Names
+    include Hecks::NamingHelpers
     # Define a new domain using the Hecks DSL. Evaluates the given block
     # inside a DomainBuilder, which collects aggregate definitions, policies,
     # workflows, views, and services. The resulting Domain object is stored

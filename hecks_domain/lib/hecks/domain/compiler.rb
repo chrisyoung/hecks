@@ -17,7 +17,7 @@ module Hecks
   #   Hecks.load_domain(domain)
   #
   module DomainCompiler
-    include Hecks::Templating::Names
+    include Hecks::NamingHelpers
     # Build a complete domain gem on disk. Validates the domain first, then
     # generates all Ruby source files, specs, and documentation artifacts
     # (OpenAPI JSON, RPC discovery, JSON Schema, glossary markdown).

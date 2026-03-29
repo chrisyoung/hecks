@@ -12,7 +12,7 @@
 module HecksStatic
   class ServerGenerator
     module DomainRoutes
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       private
 
       def domain_behavior_routes

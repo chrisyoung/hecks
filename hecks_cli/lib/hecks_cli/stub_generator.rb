@@ -12,7 +12,7 @@ module Hecks
     #   gen.generate  # => { "lib/banking_domain/account/commands/withdraw.rb" => "..." }
     #
     class StubGenerator
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       # Initializes a StubGenerator for a specific element type and name.
       #
       # @param domain [DomainModel::Structure::Domain] the domain to search in

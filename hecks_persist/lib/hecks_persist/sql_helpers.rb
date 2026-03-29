@@ -9,7 +9,7 @@ module Hecks
       # SqlStrategy to keep it under the 200-line limit.
       #
       module SqlHelpers
-        include Hecks::Templating::Names
+        include Hecks::NamingHelpers
         # Computes the SQL table name for an aggregate (underscore + pluralized).
         #
         # @param aggregate_name [String] the aggregate name (e.g., "Pizza")

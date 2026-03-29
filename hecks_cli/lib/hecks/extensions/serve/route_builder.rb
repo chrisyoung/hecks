@@ -14,7 +14,7 @@ module Hecks
     # (e.g. +Pizza.all+, +Pizza.create+, +Pizza.find+).
     #
     class RouteBuilder
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       # Initialize the builder with a domain definition and its module constant.
       #
       # @param domain [Hecks::Domain] the parsed domain definition containing

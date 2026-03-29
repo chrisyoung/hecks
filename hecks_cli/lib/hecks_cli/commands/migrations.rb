@@ -13,7 +13,7 @@
 module Hecks
   class CLI < Thor
     class Domain < Thor
-      include Hecks::Templating::Names
+      include Hecks::NamingHelpers
       desc "generate:migrations", "Generate SQL migrations from domain changes"
       option :domain, type: :string, desc: "Domain gem name or path"
       option :version, type: :string, desc: "Domain version"
