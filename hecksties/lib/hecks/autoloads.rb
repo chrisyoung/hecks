@@ -116,6 +116,8 @@ module Hecks
     autoload :Infrastructure, "hecks/generators/infrastructure"
   end
 
+  require "hecks/generators/registry"
+
   # = Hecks::EventStorm
   #
   # Namespace for event storming import tools. Parses event storm artifacts
