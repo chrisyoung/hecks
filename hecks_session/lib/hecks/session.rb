@@ -176,6 +176,46 @@ module Hecks
       self
     end
 
+    # Promote an aggregate into its own standalone domain.
+    #
+    # Extracts the named aggregate from this session, creates a new domain
+    # containing just that aggregate, writes it to a file, and removes it
+    # from the current session. The new domain can be wired back via
+    # `extend NewDomain` for cross-domain event listening.
+    #
+    #   session.promote("Comments")
+    #   # => Wrote comments_domain.rb (1 aggregate, 2 commands)
+    #   # => Comments removed from Blog
+    #
+    # @param aggregate_name [String] the aggregate to promote
+    # @param output_dir [String] directory to write the new domain file (default: ".")
+    # @return [String] path to the new domain file
+    # @raise [RuntimeError] if the aggregate doesn't exist
+    def promote(aggregate_name)
+      name = normalize_name(aggregate_name)
+      builder = @aggregate_builders[name]
+      raise "No aggregate named #{name}" unless builder
+
+      # Build a standalone domain from this aggregate
+      agg = builder.build
+      new_domain = DomainModel::Structure::Domain.new(
+        name: name, aggregates: [agg], custom_verbs: []
+      )
+
+      # Serialize and write
+      dsl = DslSerializer.new(new_domain).serialize
+      file_name = "#{Hecks::Utils.underscore(name)}_domain.rb"
+      File.write(file_name, dsl)
+
+      # Remove from current session
+      @aggregate_builders.delete(name)
+      @handles.delete(name)
+
+      puts "Wrote #{file_name} (#{agg.attributes.size} attributes, #{agg.commands.size} commands)"
+      puts "#{name} removed from #{@name}"
+      file_name
+    end
+
     private
 
     # Normalize a user-provided name into a valid Ruby constant string.
