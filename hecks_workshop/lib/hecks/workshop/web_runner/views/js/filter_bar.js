@@ -20,10 +20,10 @@ class FilterBar extends HTMLElement {
         ${BASE_STYLES}
         :host { display: flex; gap: 4px; margin-bottom: 8px; }
         button { font-size: 10px; padding: 2px 8px; border-radius: 3px; border: 1px solid ${COLORS.border};
-                 color: ${COLORS.muted}; cursor: pointer; font-family: inherit; }
+                 color: #fff; cursor: pointer; font-family: inherit; }
         button.active { background: ${COLORS.border}; }
-        button:not(.active) { background: transparent; }
-        button:hover { color: ${COLORS.text}; }
+        button:not(.active) { background: transparent; color: #ffffffaa; }
+        button:hover { color: #fff; }
       </style>
       ${this._filters.map(f =>
         `<button data-filter="${f}" class="${f === this._active ? 'active' : ''}">${f}</button>`

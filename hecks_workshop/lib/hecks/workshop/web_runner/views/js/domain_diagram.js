@@ -18,16 +18,32 @@ class DomainDiagram extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         ${BASE_STYLES}
-        :host { display: block; position: relative; overflow: hidden; }
-        .container { position: relative; overflow: hidden; transform-origin: top left; }
+        :host { display: block; position: relative; }
+        .container { position: relative; transform-origin: top left; }
         svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
         .cards { position: relative; z-index: 1; }
-        .header { color: ${COLORS.blue}; font-weight: 600; font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .hint { color: ${COLORS.muted}88; font-size: 10px; background: ${COLORS.panel}cc; border: 1px solid ${COLORS.border}; border-radius: 4px; padding: 2px 8px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .title { color: ${COLORS.blue}; font-weight: 600; font-size: 14px; }
+        .nav-hint { font-size: 10px; color: #ffffffaa; padding: 2px 8px; border-radius: 3px; border: 1px solid ${COLORS.border}; }
       </style>
-      <div class="header"><span>${escHtml(state.domain_name || 'Domain')} Domain</span><span class="hint">${navigator.platform.indexOf('Mac')>=0?'⌥':'Alt'}+scroll zoom · 0 reset · drag to move</span></div>
+      <div class="toolbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="title">${escHtml(state.domain_name || 'Domain')} Domain</span>
+          <span id="filter-slot"></span>
+        </div>
+        <span class="nav-hint">${navigator.platform.indexOf('Mac')>=0?'⌥':'Alt'}+scroll zoom · 0 reset · drag to move</span>
+      </div>
       <div class="container"><svg></svg><div class="cards"></div></div>
     `;
+
+    // Filter bar
+    const hasPolicies = state.policy_flows && state.policy_flows.length > 0;
+    if (hasPolicies) {
+      const fb = document.createElement('filter-bar');
+      fb.filters = ['all', 'references', 'policies'];
+      fb.addEventListener('filter-change', (e) => { this._filter = e.detail.filter; this._drawLines(this._svgEl, this._container); });
+      this.shadowRoot.getElementById('filter-slot').appendChild(fb);
+    }
 
     this._container = this.shadowRoot.querySelector('.container');
     this._svgEl = this.shadowRoot.querySelector('svg');
@@ -101,8 +117,8 @@ class DomainDiagram extends HTMLElement {
       card.style.zIndex = '20'; card.style.cursor = 'grabbing'; e.preventDefault();
       const onMove = (e2) => {
         const cr = cardsEl.getBoundingClientRect();
-        card.style.left = Math.max(0, Math.min(cr.width - 160, e2.clientX - cr.left - dx)) + 'px';
-        card.style.top = Math.max(0, Math.min(cr.height - 80, e2.clientY - cr.top - dy)) + 'px';
+        card.style.left = Math.max(0, e2.clientX - cr.left - dx) + 'px';
+        card.style.top = Math.max(0, e2.clientY - cr.top - dy) + 'px';
         this._drawLines(svgEl, container);
       };
       const onUp = () => { card.style.zIndex = ''; card.style.cursor = ''; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };

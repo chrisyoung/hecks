@@ -225,15 +225,6 @@
     function renderDomainOverview() {
       if (!lastState || !lastState.aggregates.length) return;
 
-      var hasPolicies = lastState.policy_flows && lastState.policy_flows.length > 0;
-      var filters = hasPolicies ? ['all', 'references', 'policies'] : [];
-      if (filters.length) {
-        var filterBar = document.createElement('filter-bar');
-        filterBar.filters = filters;
-        filterBar.addEventListener('filter-change', function(e) { diagram.filter = e.detail.filter; });
-        terminal.appendChild(filterBar);
-      }
-
       var diagram = document.createElement('domain-diagram');
       diagram.state = lastState;
       diagram.style.minHeight = Math.max(400, terminal.offsetHeight - 80) + 'px';
