@@ -49,7 +49,7 @@ module Hecks
 
       attr_reader :attributes, :commands, :value_objects, :entities,
                   :policies, :validations, :invariants, :scopes, :ports,
-                  :queries, :subscribers, :indexes, :specifications
+                  :queries, :subscribers, :indexes, :specifications, :references
       # Writer for lifecycle — used by AggregateHandle to update lifecycle
       # without reaching into instance variables. Reader is the DSL method
       # in BehaviorMethods; use current_lifecycle to read.
@@ -74,6 +74,7 @@ module Hecks
         @subscribers = []
         @indexes = []
         @specifications = []
+        @references = []
         @lifecycle = nil
         @versioned = false
         @attachable = false
@@ -92,6 +93,29 @@ module Hecks
       def attachable
         @attachable = true
       end
+
+      # Declare a relationship to another aggregate root.
+      #
+      # Standalone form (domain relationship — adapter creates FK):
+      #   reference_to "Order"
+      #   reference_to "Order", as: :placed_order
+      #
+      # Type wrapper form (for use inside attribute):
+      #   attribute :order_id, reference_to("Order")
+      #
+      # Standalone: declares a domain relationship (adapter creates FK).
+      #   reference_to "Order"
+      #   reference_to "Stakeholder", as: :reviewer
+      #
+      def reference_to(type, as: nil)
+        @references ||= []
+        name = as || type.to_s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                              .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase.to_sym
+        @references << { name: name, type: type.to_s }
+        { reference: type }
+      end
+
+      def ref(type, **opts) = reference_to(type, **opts)
 
       # Define a nested value object within this aggregate.
       #
@@ -132,7 +156,7 @@ module Hecks
           subscribers: @subscribers, indexes: @indexes,
           specifications: @specifications, lifecycle: @lifecycle,
           versioned: @versioned, attachable: @attachable,
-          metadata: @metadata
+          metadata: @metadata, references: @references
         )
       end
 

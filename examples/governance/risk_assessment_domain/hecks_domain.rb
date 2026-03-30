@@ -1,7 +1,7 @@
 Hecks.domain "RiskAssessment" do
   aggregate "Assessment" do
-    attribute :model_id, reference_to("AiModel")
-    attribute reference_to("Stakeholder"), :assessor_id
+    reference_to "AiModel", as: :model
+    reference_to "Stakeholder", as: :assessor
     attribute :risk_level, String
     attribute :bias_score, Float
     attribute :safety_score, Float
@@ -47,14 +47,14 @@ s.nil? || (s >= 0.0 && s <= 1.0)
     end
 
     command "InitiateAssessment" do
-      attribute :model_id, String
-      attribute :assessor_id, String
+      attribute :model_id, reference_to("AiModel")
+      attribute :assessor_id, reference_to("Stakeholder")
       actor "assessor"
       actor "admin"
     end
 
     command "RecordFinding" do
-      attribute :assessment_id, String
+      attribute :assessment_id, reference_to("Assessment")
       attribute :category, String
       attribute :severity, String
       attribute :description, String
@@ -63,7 +63,7 @@ s.nil? || (s >= 0.0 && s <= 1.0)
     end
 
     command "SubmitAssessment" do
-      attribute :assessment_id, String
+      attribute :assessment_id, reference_to("Assessment")
       attribute :risk_level, String
       attribute :bias_score, Float
       attribute :safety_score, Float
@@ -74,7 +74,7 @@ s.nil? || (s >= 0.0 && s <= 1.0)
     end
 
     command "RejectAssessment" do
-      attribute :assessment_id, String
+      attribute :assessment_id, reference_to("Assessment")
       actor "governance_board"
       actor "admin"
     end

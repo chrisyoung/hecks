@@ -1,6 +1,6 @@
 Hecks.domain "Operations" do
   aggregate "Deployment" do
-    attribute :model_id, reference_to("AiModel")
+    reference_to "AiModel", as: :model
     attribute :environment, String
     attribute :endpoint, String
     attribute :purpose, String
@@ -38,20 +38,20 @@ Hecks.domain "Operations" do
     end
 
     command "DeployModel" do
-      attribute :deployment_id, String
+      attribute :deployment_id, reference_to("Deployment")
     end
 
     command "DecommissionDeployment" do
-      attribute :deployment_id, String
+      attribute :deployment_id, reference_to("Deployment")
     end
   end
 
   aggregate "Incident" do
-    attribute :model_id, reference_to("AiModel")
+    reference_to "AiModel", as: :model
     attribute :severity, String
     attribute :category, String
     attribute :description, String
-    attribute :reported_by_id, String
+    reference_to "Stakeholder", as: :reported_by
     attribute :reported_at, DateTime
     attribute :resolved_at, DateTime
     attribute :resolution, String
@@ -83,31 +83,31 @@ Hecks.domain "Operations" do
       attribute :severity, String
       attribute :category, String
       attribute :description, String
-      attribute :reported_by_id, String
+      attribute :reported_by_id, reference_to("Stakeholder")
     end
 
     command "InvestigateIncident" do
-      attribute :incident_id, String
+      attribute :incident_id, reference_to("Incident")
     end
 
     command "MitigateIncident" do
-      attribute :incident_id, String
+      attribute :incident_id, reference_to("Incident")
     end
 
     command "ResolveIncident" do
-      attribute :incident_id, String
+      attribute :incident_id, reference_to("Incident")
       attribute :resolution, String
       attribute :root_cause, String
     end
 
     command "CloseIncident" do
-      attribute :incident_id, String
+      attribute :incident_id, reference_to("Incident")
     end
   end
 
   aggregate "Monitoring" do
-    attribute :model_id, reference_to("AiModel")
-    attribute :deployment_id, String
+    reference_to "AiModel", as: :model
+    reference_to "Deployment"
     attribute :metric_name, String
     attribute :value, Float
     attribute :threshold, Float
@@ -135,14 +135,14 @@ Hecks.domain "Operations" do
 
     command "RecordMetric" do
       attribute :model_id, reference_to("AiModel")
-      attribute :deployment_id, String
+      attribute :deployment_id, reference_to("Deployment")
       attribute :metric_name, String
       attribute :value, Float
       attribute :threshold, Float
     end
 
     command "SetThreshold" do
-      attribute :monitoring_id, String
+      attribute :monitoring_id, reference_to("Monitoring")
       attribute :threshold, Float
     end
   end
