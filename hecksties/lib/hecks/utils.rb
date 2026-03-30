@@ -92,6 +92,19 @@ module Hecks
       RUBY_KEYWORDS.include?(name.to_s)
     end
 
+    # Converts a PascalCase string to space-separated human-readable form.
+    #
+    # @param name [String, Symbol] the PascalCase name to humanize
+    # @return [String] human-readable form (e.g., "Create Pizza")
+    #
+    # @example
+    #   humanize("CreatePizza")  # => "Create Pizza"
+    #   humanize("IssueLoan")    # => "Issue Loan"
+    #   humanize(:by_category)   # => "by category"
+    def humanize(name)
+      name.to_s.gsub(/([A-Z])/, ' \1').strip
+    end
+
     # Converts a PascalCase or camelCase string to snake_case.
     # Handles consecutive uppercase letters (e.g., "HTMLParser" => "html_parser").
     #
