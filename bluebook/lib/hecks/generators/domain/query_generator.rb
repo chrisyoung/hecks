@@ -43,7 +43,7 @@ module Hecks
         lines << "module #{@domain_module}"
         lines << "  class #{@aggregate_name}"
         lines << "    module Queries"
-        lines << "      class #{@query.name}"
+        lines << "      class #{Hecks::Utils.sanitize_constant(@query.name.to_s)}"
         lines << "        def call#{call_params}"
         lines << "          #{call_body}"
         lines << "        end"

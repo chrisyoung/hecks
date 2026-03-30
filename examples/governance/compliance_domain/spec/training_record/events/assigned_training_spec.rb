@@ -4,10 +4,10 @@ RSpec.describe ComplianceDomain::TrainingRecord::Events::AssignedTraining do
   subject(:event) { described_class.new(
           aggregate_id: "example",
           stakeholder_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           completed_at: DateTime.now,
           expires_at: Date.today,
-          certification_id: "example",
+          certification: "example",
           status: "example"
         ) }
 
@@ -28,7 +28,7 @@ RSpec.describe ComplianceDomain::TrainingRecord::Events::AssignedTraining do
   end
 
   it "carries policy_id" do
-    expect(event.policy_id).to eq("example")
+    expect(event.policy_id).to eq("ref-id-123")
   end
 
   it "carries completed_at" do
@@ -39,8 +39,8 @@ RSpec.describe ComplianceDomain::TrainingRecord::Events::AssignedTraining do
     expect(event.expires_at).not_to be_nil
   end
 
-  it "carries certification_id" do
-    expect(event.certification_id).to eq("example")
+  it "carries certification" do
+    expect(event.certification).to eq("example")
   end
 
   it "carries status" do

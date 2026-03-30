@@ -15,7 +15,7 @@ module IdentityDomain
           existing = repository.find(stakeholder_id)
           if existing
             unless existing.status == "active"
-              raise Hecks::Error, "Cannot DeactivateStakeholder: status must be 'active', got '#{existing.status}'"
+              raise IdentityDomain::Error, "Cannot DeactivateStakeholder: status must be 'active', got '#{existing.status}'"
             end
             Stakeholder.new(
               id: existing.id,
@@ -26,7 +26,7 @@ module IdentityDomain
               status: "deactivated"
             )
           else
-            raise Hecks::Error, "Stakeholder not found: #{stakeholder_id}"
+            raise IdentityDomain::Error, "Stakeholder not found: #{stakeholder_id}"
           end
         end
       end

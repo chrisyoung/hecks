@@ -933,7 +933,7 @@
           "expires_at": {
             "type": "string"
           },
-          "certification_id": {
+          "certification": {
             "type": "string"
           },
           "status": {

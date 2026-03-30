@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module ComplianceDomain
   class TrainingRecord
@@ -10,7 +10,7 @@ module ComplianceDomain
     attribute :policy_id
     attribute :completed_at
     attribute :expires_at
-    attribute :certification_id
+    attribute :certification
     attribute :status
 
     # State predicates — see lifecycle.rb for full state machine
@@ -20,8 +20,8 @@ module ComplianceDomain
     private
 
     def validate!
-      raise ValidationError, "stakeholder_id can't be blank" if stakeholder_id.nil? || (stakeholder_id.respond_to?(:empty?) && stakeholder_id.empty?)
-      raise ValidationError, "policy_id can't be blank" if policy_id.nil? || (policy_id.respond_to?(:empty?) && policy_id.empty?)
+      raise ValidationError.new("stakeholder_id can't be blank", field: :stakeholder_id, rule: :presence) if stakeholder_id.nil? || (stakeholder_id.respond_to?(:empty?) && stakeholder_id.empty?)
+      raise ValidationError.new("policy_id can't be blank", field: :policy_id, rule: :presence) if policy_id.nil? || (policy_id.respond_to?(:empty?) && policy_id.empty?)
     end
 
     def check_invariants!

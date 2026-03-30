@@ -34,6 +34,9 @@ Hecks.domain "Identity" do
       actor "admin"
     end
 
+    scope :admins, role: "admin"
+    scope :auditors, role: "auditor"
+
     query :by_role do |role|
       where(role: role)
     end
@@ -75,6 +78,7 @@ Hecks.domain "Identity" do
       where(actor_id: actor_id)
     end
 
+    # Cross-domain audit policies
     policy "AuditModelRegistration" do
       on "RegisteredModel"
       trigger "RecordEntry"
@@ -94,5 +98,12 @@ Hecks.domain "Identity" do
       map description: :details
       defaults entity_type: "Incident", action: "reported", actor_id: "system"
     end
+  end
+
+  # Intra-domain: Stakeholder -> AuditLog
+  policy "AuditDeactivation" do
+    on "DeactivatedStakeholder"       # from Identity::Stakeholder
+    trigger "RecordEntry"             # on   Identity::AuditLog
+    defaults entity_type: "Stakeholder", action: "deactivated", actor_id: "system"
   end
 end

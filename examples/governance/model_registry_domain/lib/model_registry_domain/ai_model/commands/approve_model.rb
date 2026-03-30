@@ -5,6 +5,8 @@ module ModelRegistryDomain
         include Hecks::Command
         emits "ApprovedModel"
 
+        # precondition: Model must be classified before approval
+
         attr_reader :model_id
 
         def initialize(model_id: nil)
@@ -15,7 +17,7 @@ module ModelRegistryDomain
           existing = repository.find(model_id)
           if existing
             unless existing.status == "classified"
-              raise Hecks::Error, "Cannot ApproveModel: status must be 'classified', got '#{existing.status}'"
+              raise ModelRegistryDomain::Error, "Cannot ApproveModel: status must be 'classified', got '#{existing.status}'"
             end
             AiModel.new(
               id: existing.id,
@@ -32,7 +34,7 @@ module ModelRegistryDomain
               status: "approved"
             )
           else
-            raise Hecks::Error, "AiModel not found: #{model_id}"
+            raise ModelRegistryDomain::Error, "AiModel not found: #{model_id}"
           end
         end
       end

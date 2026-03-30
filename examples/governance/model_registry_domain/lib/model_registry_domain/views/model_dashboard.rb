@@ -7,7 +7,7 @@ module ModelRegistryDomain
 
       def call(event, state = {})
         name = event.class.name.split('::').last
-        method = :"project_#{Hecks::Utils.underscore(name)}"
+        method = :"project_#{domain_snake_name(name)}"
         @state = respond_to?(method) ? send(method, event, state) : state
         self
       end

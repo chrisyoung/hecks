@@ -24,7 +24,7 @@ module IdentityDomain
               role: role
             )
           else
-            raise Hecks::Error, "Stakeholder not found: #{stakeholder_id}"
+            raise IdentityDomain::Error, "Stakeholder not found: #{stakeholder_id}"
           end
         end
       end

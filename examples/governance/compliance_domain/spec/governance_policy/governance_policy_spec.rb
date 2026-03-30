@@ -6,7 +6,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy do
           name: "example",
           description: "example",
           category: "regulatory",
-          framework_id: "example",
+          framework_id: "ref-id-123",
           effective_date: Date.today,
           review_date: Date.today,
           requirements: [],
@@ -30,7 +30,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy do
     end
 
     it "sets framework_id" do
-      expect(governance_policy.framework_id).to eq("example")
+      expect(governance_policy.framework_id).to eq("ref-id-123")
     end
 
     it "sets effective_date" do
@@ -57,7 +57,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy do
           name: nil,
           description: "example",
           category: "regulatory",
-          framework_id: "example",
+          framework_id: "ref-id-123",
           effective_date: Date.today,
           review_date: Date.today,
           requirements: [],
@@ -74,7 +74,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy do
           name: "example",
           description: "example",
           category: nil,
-          framework_id: "example",
+          framework_id: "ref-id-123",
           effective_date: Date.today,
           review_date: Date.today,
           requirements: [],
@@ -91,7 +91,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy do
           name: "example",
           description: "example",
           category: "regulatory",
-          framework_id: "example",
+          framework_id: "ref-id-123",
           effective_date: Date.today,
           review_date: Date.today,
           requirements: [],
@@ -102,7 +102,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy do
           name: "example",
           description: "example",
           category: "regulatory",
-          framework_id: "example",
+          framework_id: "ref-id-123",
           effective_date: Date.today,
           review_date: Date.today,
           requirements: [],
@@ -117,7 +117,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy do
           name: "example",
           description: "example",
           category: "regulatory",
-          framework_id: "example",
+          framework_id: "ref-id-123",
           effective_date: Date.today,
           review_date: Date.today,
           requirements: [],
@@ -127,7 +127,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy do
           name: "example",
           description: "example",
           category: "regulatory",
-          framework_id: "example",
+          framework_id: "ref-id-123",
           effective_date: Date.today,
           review_date: Date.today,
           requirements: [],

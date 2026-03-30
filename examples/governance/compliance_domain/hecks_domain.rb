@@ -1,37 +1,9 @@
 Hecks.domain "Compliance" do
-  uses_kernel "Identity"
-
-  driving_port :http, description: "REST API"
-  driving_port :events, description: "Cross-domain event bus"
-
-  driven_port :persistence, [:find, :save, :delete, :all]
-  driven_port :notifications, [:send_email], description: "Policy change alerts"
-
-  actor "governance_board", description: "Policy oversight committee"
-  actor "reviewer", description: "Compliance reviewer"
-  actor "admin", description: "System administrator"
-
-  anti_corruption_layer "ModelRegistry" do
-    translate "AiModel", model_name: :name, model_version: :version
-  end
-
-  published_event "ReviewCompleted", version: 1 do
-    attribute :review_id, String
-    attribute :model_id, String
-    attribute :outcome, String
-  end
-
-  saga "ComplianceCheck" do
-    step "OpenReview", on_success: "ApproveReview", on_failure: "RejectReview"
-    step "RejectReview", on_success: "SuspendModel"
-    compensation "SuspendModel"
-  end
-
   aggregate "GovernancePolicy" do
     attribute :name, String
     attribute :description, String
     attribute :category, String
-    reference_to "RegulatoryFramework"
+    attribute :framework_id, reference_to("RegulatoryFramework")
     attribute :effective_date, Date
     attribute :review_date, Date
     attribute :requirements, list_of("Requirement")
@@ -47,15 +19,19 @@ Hecks.domain "Compliance" do
 
     validation :category, {:presence=>true}
 
-    query "ByCategory" do
+    scope :active_policies, status: "active"
+
+    scope :draft_policies, status: "draft"
+
+    query "by_category" do
       where(category: category)
     end
 
-    query "ByFramework" do
+    query "by_framework" do
       where(framework_id: framework_id)
     end
 
-    query "Active" do
+    query "active" do
       where(status: "active")
     end
 
@@ -69,26 +45,26 @@ Hecks.domain "Compliance" do
     end
 
     command "ActivatePolicy" do
-      attribute :policy_id, reference_to("GovernancePolicy")
+      attribute :policy_id, String
       attribute :effective_date, Date
       actor "governance_board"
       actor "admin"
     end
 
     command "SuspendPolicy" do
-      attribute :policy_id, reference_to("GovernancePolicy")
+      attribute :policy_id, String
       actor "governance_board"
       actor "admin"
     end
 
     command "RetirePolicy" do
-      attribute :policy_id, reference_to("GovernancePolicy")
+      attribute :policy_id, String
       actor "governance_board"
       actor "admin"
     end
 
     command "UpdateReviewDate" do
-      attribute :policy_id, reference_to("GovernancePolicy")
+      attribute :policy_id, String
       attribute :review_date, Date
       actor "governance_board"
       actor "admin"
@@ -115,11 +91,11 @@ Hecks.domain "Compliance" do
 
     validation :jurisdiction, {:presence=>true}
 
-    query "ByJurisdiction" do
+    query "by_jurisdiction" do
       where(jurisdiction: jurisdiction)
     end
 
-    query "Active" do
+    query "active" do
       where(status: "active")
     end
 
@@ -131,19 +107,19 @@ Hecks.domain "Compliance" do
     end
 
     command "ActivateFramework" do
-      attribute :framework_id, reference_to("RegulatoryFramework")
+      attribute :framework_id, String
       attribute :effective_date, Date
     end
 
     command "RetireFramework" do
-      attribute :framework_id, reference_to("RegulatoryFramework")
+      attribute :framework_id, String
     end
   end
 
   aggregate "ComplianceReview" do
-    reference_to "ModelRegistry::AiModel", as: :model
-    reference_to "GovernancePolicy", as: :policy
-    reference_to "Identity::Stakeholder", as: :reviewer
+    attribute :model_id, String
+    attribute :policy_id, reference_to("GovernancePolicy")
+    attribute :reviewer_id, String
     attribute :outcome, String
     attribute :notes, String
     attribute :completed_at, DateTime
@@ -160,51 +136,59 @@ Hecks.domain "Compliance" do
 
     validation :reviewer_id, {:presence=>true}
 
-    query "ByModel" do
+    scope :open_reviews, status: "open"
+
+    query "by_model" do
       where(model_id: model_id)
     end
 
-    query "Pending" do
+    query "pending" do
       where(status: "open")
     end
 
-    query "ByReviewer" do
+    query "by_reviewer" do
       where(reviewer_id: reviewer_id)
     end
 
     command "OpenReview" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :policy_id, reference_to("GovernancePolicy")
-      attribute :reviewer_id, reference_to("Stakeholder")
+      attribute :reviewer_id, String
       actor "reviewer"
       actor "admin"
     end
 
     command "ApproveReview" do
-      attribute :review_id, reference_to("ComplianceReview")
+      attribute :review_id, String
       attribute :notes, String
+      external "NotificationGateway"
       actor "reviewer"
       actor "admin"
     end
 
     command "RejectReview" do
-      attribute :review_id, reference_to("ComplianceReview")
+      attribute :review_id, String
       attribute :notes, String
+      external "NotificationGateway"
       actor "reviewer"
       actor "admin"
     end
 
     command "RequestChanges" do
-      attribute :review_id, reference_to("ComplianceReview")
+      attribute :review_id, String
       attribute :notes, String
       actor "reviewer"
       actor "admin"
     end
+
+    on_event "RejectedReview" do |event|
+      # Side-effect: notify model owner of rejection
+    end
   end
 
   aggregate "Exemption" do
-    reference_to "ModelRegistry::AiModel", as: :model
-    reference_to "GovernancePolicy", as: :policy
+    attribute :model_id, String
+    attribute :policy_id, reference_to("GovernancePolicy")
     attribute :requirement, String
     attribute :reason, String
     attribute :approved_by_id, String
@@ -217,11 +201,11 @@ Hecks.domain "Compliance" do
 
     validation :policy_id, {:presence=>true}
 
-    query "ByModel" do
+    query "by_model" do
       where(model_id: model_id)
     end
 
-    query "Active" do
+    query "active" do
       where(status: "active")
     end
 
@@ -230,14 +214,14 @@ Hecks.domain "Compliance" do
     end
 
     command "RequestExemption" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :policy_id, reference_to("GovernancePolicy")
       attribute :requirement, String
       attribute :reason, String
     end
 
     command "ApproveExemption" do
-      attribute :exemption_id, reference_to("Exemption")
+      attribute :exemption_id, String
       attribute :approved_by_id, String
       attribute :expires_at, Date
       actor "governance_board"
@@ -245,18 +229,18 @@ Hecks.domain "Compliance" do
     end
 
     command "RevokeExemption" do
-      attribute :exemption_id, reference_to("Exemption")
+      attribute :exemption_id, String
       actor "governance_board"
       actor "admin"
     end
   end
 
   aggregate "TrainingRecord" do
-    reference_to "Identity::Stakeholder"
-    reference_to "GovernancePolicy", as: :policy
+    attribute :stakeholder_id, String
+    attribute :policy_id, reference_to("GovernancePolicy")
     attribute :completed_at, DateTime
     attribute :expires_at, Date
-    attribute :certification_id, String
+    attribute :certification, String
     attribute :status, String
 
     validation :stakeholder_id, {:presence=>true}
@@ -267,15 +251,15 @@ Hecks.domain "Compliance" do
       !expires_at || !completed_at || expires_at.to_s >= completed_at.to_s[0, 10]
     end
 
-    query "ByStakeholder" do
+    query "by_stakeholder" do
       where(stakeholder_id: stakeholder_id)
     end
 
-    query "ByPolicy" do
+    query "by_policy" do
       where(policy_id: policy_id)
     end
 
-    query "Incomplete" do
+    query "incomplete" do
       where(status: "assigned")
     end
 
@@ -284,19 +268,19 @@ Hecks.domain "Compliance" do
     end
 
     command "AssignTraining" do
-      attribute :stakeholder_id, reference_to("Stakeholder")
+      attribute :stakeholder_id, String
       attribute :policy_id, reference_to("GovernancePolicy")
     end
 
     command "CompleteTraining" do
-      attribute :training_record_id, reference_to("TrainingRecord")
-      attribute :certification_id, String
+      attribute :training_record_id, String
+      attribute :certification, String
       attribute :expires_at, Date
     end
 
     command "RenewTraining" do
-      attribute :training_record_id, reference_to("TrainingRecord")
-      attribute :certification_id, String
+      attribute :training_record_id, String
+      attribute :certification, String
       attribute :expires_at, Date
     end
   end

@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module OperationsDomain
   class Incident
@@ -30,8 +30,8 @@ module OperationsDomain
     private
 
     def validate!
-      raise ValidationError, "model_id can't be blank" if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
-      raise ValidationError, "severity can't be blank" if severity.nil? || (severity.respond_to?(:empty?) && severity.empty?)
+      raise ValidationError.new("model_id can't be blank", field: :model_id, rule: :presence) if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
+      raise ValidationError.new("severity can't be blank", field: :severity, rule: :presence) if severity.nil? || (severity.respond_to?(:empty?) && severity.empty?)
       if severity && !VALID_SEVERITY.include?(severity)
         raise ValidationError, "severity must be one of: #{VALID_SEVERITY.join(', ')}, got: #{severity}"
       end

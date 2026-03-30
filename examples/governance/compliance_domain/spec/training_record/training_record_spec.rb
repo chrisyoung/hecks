@@ -4,10 +4,10 @@ RSpec.describe ComplianceDomain::TrainingRecord do
   describe "creating a TrainingRecord" do
     subject(:training_record) { described_class.new(
           stakeholder_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           completed_at: DateTime.now,
           expires_at: Date.today,
-          certification_id: "example",
+          certification: "example",
           status: "example"
         ) }
 
@@ -20,7 +20,7 @@ RSpec.describe ComplianceDomain::TrainingRecord do
     end
 
     it "sets policy_id" do
-      expect(training_record.policy_id).to eq("example")
+      expect(training_record.policy_id).to eq("ref-id-123")
     end
 
     it "sets completed_at" do
@@ -31,8 +31,8 @@ RSpec.describe ComplianceDomain::TrainingRecord do
       expect(training_record.expires_at).not_to be_nil
     end
 
-    it "sets certification_id" do
-      expect(training_record.certification_id).to eq("example")
+    it "sets certification" do
+      expect(training_record.certification).to eq("example")
     end
 
     it "sets status" do
@@ -45,10 +45,10 @@ RSpec.describe ComplianceDomain::TrainingRecord do
       expect {
         described_class.new(
           stakeholder_id: nil,
-          policy_id: "example",
+          policy_id: "ref-id-123",
           completed_at: DateTime.now,
           expires_at: Date.today,
-          certification_id: "example",
+          certification: "example",
           status: "example"
         )
       }.to raise_error(ComplianceDomain::ValidationError, /stakeholder_id/)
@@ -63,7 +63,7 @@ RSpec.describe ComplianceDomain::TrainingRecord do
           policy_id: nil,
           completed_at: DateTime.now,
           expires_at: Date.today,
-          certification_id: "example",
+          certification: "example",
           status: "example"
         )
       }.to raise_error(ComplianceDomain::ValidationError, /policy_id/)
@@ -82,19 +82,19 @@ RSpec.describe ComplianceDomain::TrainingRecord do
       id = SecureRandom.uuid
       a = described_class.new(
           stakeholder_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           completed_at: DateTime.now,
           expires_at: Date.today,
-          certification_id: "example",
+          certification: "example",
           status: "example",
           id: id
         )
       b = described_class.new(
           stakeholder_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           completed_at: DateTime.now,
           expires_at: Date.today,
-          certification_id: "example",
+          certification: "example",
           status: "example",
           id: id
         )
@@ -104,18 +104,18 @@ RSpec.describe ComplianceDomain::TrainingRecord do
     it "two TrainingRecords with different ids are not equal" do
       a = described_class.new(
           stakeholder_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           completed_at: DateTime.now,
           expires_at: Date.today,
-          certification_id: "example",
+          certification: "example",
           status: "example"
         )
       b = described_class.new(
           stakeholder_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           completed_at: DateTime.now,
           expires_at: Date.today,
-          certification_id: "example",
+          certification: "example",
           status: "example"
         )
       expect(a).not_to eq(b)

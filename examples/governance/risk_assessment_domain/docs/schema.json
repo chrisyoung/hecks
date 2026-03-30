@@ -65,6 +65,10 @@
     "Assessment::Finding": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
         "category": {
           "type": "string"
         },
@@ -73,12 +77,22 @@
         },
         "description": {
           "type": "string"
+        },
+        "status": {
+          "type": "string"
         }
-      }
+      },
+      "required": [
+        "id"
+      ]
     },
     "Assessment::Mitigation": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
         "finding_category": {
           "type": "string"
         },
@@ -88,7 +102,10 @@
         "status": {
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "id"
+      ]
     },
     "InitiateAssessment": {
       "type": "object",

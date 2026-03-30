@@ -6,7 +6,7 @@ RSpec.describe ComplianceDomain::ComplianceReview::Events::RejectedReview do
           review_id: "example",
           notes: "example",
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: "example",
           outcome: "approved",
           completed_at: DateTime.now,
@@ -39,7 +39,7 @@ RSpec.describe ComplianceDomain::ComplianceReview::Events::RejectedReview do
   end
 
   it "carries policy_id" do
-    expect(event.policy_id).to eq("example")
+    expect(event.policy_id).to eq("ref-id-123")
   end
 
   it "carries reviewer_id" do

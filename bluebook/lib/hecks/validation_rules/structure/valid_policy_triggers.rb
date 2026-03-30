@@ -26,7 +26,7 @@ module Hecks
 
         @domain.aggregates.each do |agg|
           agg.policies.select(&:reactive?).each do |policy|
-            unless all_commands.include?(policy.trigger_command)
+            unless command_known?(policy.trigger_command, all_commands)
               hint = all_commands.any? ? " Available commands: #{all_commands.join(', ')}." : ""
               result << "Policy #{policy.name} in #{agg.name} triggers unknown command: #{policy.trigger_command}.#{hint}"
             end
@@ -34,13 +34,22 @@ module Hecks
         end
 
         @domain.policies.select(&:reactive?).each do |policy|
-          unless all_commands.include?(policy.trigger_command)
+          unless command_known?(policy.trigger_command, all_commands)
             hint = all_commands.any? ? " Available commands: #{all_commands.join(', ')}." : ""
             result << "Domain policy #{policy.name} triggers unknown command: #{policy.trigger_command}.#{hint}"
           end
         end
 
         result
+      end
+
+      private
+
+      # Matches bare names ("RecordEntry") and qualified names
+      # ("Identity::AuditLog::RecordEntry") against known commands.
+      def command_known?(trigger, all_commands)
+        bare = trigger.include?("::") ? trigger.split("::").last : trigger
+        all_commands.include?(bare)
       end
     end
     Hecks.register_validation_rule(ValidPolicyTriggers)

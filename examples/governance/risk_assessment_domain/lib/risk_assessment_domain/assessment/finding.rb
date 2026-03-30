@@ -1,31 +1,20 @@
+require 'hecks/mixins/model'
+
 module RiskAssessmentDomain
   class Assessment
     class Finding
-      attr_reader :category, :severity, :description
+      include Hecks::Model
 
-      def initialize(category:, severity:, description:)
-        @category = category
-        @severity = severity
-        @description = description
-        check_invariants!
-        freeze
-      end
-
-      def ==(other)
-        other.is_a?(self.class) &&
-          category == other.category &&
-          severity == other.severity &&
-          description == other.description
-      end
-      alias eql? ==
-
-      def hash
-        [self.class, category, severity, description].hash
-      end
+      attribute :category
+      attribute :severity
+      attribute :description
+      attribute :status
 
       private
 
-      def check_invariants!; end
+      def check_invariants!
+        raise RiskAssessmentDomain::InvariantError, "severity must be valid" unless instance_eval(&proc {  })
+      end
     end
   end
 end

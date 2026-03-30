@@ -16,7 +16,7 @@ module ComplianceDomain
           existing = repository.find(review_id)
           if existing
             unless existing.status == "open"
-              raise Hecks::Error, "Cannot RequestChanges: status must be 'open', got '#{existing.status}'"
+              raise ComplianceDomain::Error, "Cannot RequestChanges: status must be 'open', got '#{existing.status}'"
             end
             ComplianceReview.new(
               id: existing.id,
@@ -30,7 +30,7 @@ module ComplianceDomain
               status: "changes_requested"
             )
           else
-            raise Hecks::Error, "ComplianceReview not found: #{review_id}"
+            raise ComplianceDomain::Error, "ComplianceReview not found: #{review_id}"
           end
         end
       end

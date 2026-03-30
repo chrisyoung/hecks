@@ -15,7 +15,7 @@ module OperationsDomain
           existing = repository.find(deployment_id)
           if existing
             unless existing.status == "deployed"
-              raise Hecks::Error, "Cannot DecommissionDeployment: status must be 'deployed', got '#{existing.status}'"
+              raise OperationsDomain::Error, "Cannot DecommissionDeployment: status must be 'deployed', got '#{existing.status}'"
             end
             Deployment.new(
               id: existing.id,
@@ -29,7 +29,7 @@ module OperationsDomain
               status: "decommissioned"
             )
           else
-            raise Hecks::Error, "Deployment not found: #{deployment_id}"
+            raise OperationsDomain::Error, "Deployment not found: #{deployment_id}"
           end
         end
       end

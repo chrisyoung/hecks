@@ -19,4 +19,20 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement::Commands::RenewAgreement
       expect(described_class.event_name).to eq("RenewedAgreement")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits RenewedAgreement" do
+      agg = DataUsageAgreement.create(
+          model_id: "ref-id-123",
+          data_source: "example",
+          purpose: "example",
+          consent_type: "example"
+        )
+      DataUsageAgreement.renew(agreement_id: "example", expiration_date: Date.today)
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("RenewedAgreement")
+    end
+  end
 end

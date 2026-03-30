@@ -15,7 +15,7 @@ module RiskAssessmentDomain
           existing = repository.find(assessment_id)
           if existing
             unless ["pending", "submitted"].include?(existing.status)
-              raise Hecks::Error, "Cannot RejectAssessment: status must be one of pending, submitted, got '#{existing.status}'"
+              raise RiskAssessmentDomain::Error, "Cannot RejectAssessment: status must be one of pending, submitted, got '#{existing.status}'"
             end
             Assessment.new(
               id: existing.id,
@@ -32,7 +32,7 @@ module RiskAssessmentDomain
               status: "rejected"
             )
           else
-            raise Hecks::Error, "Assessment not found: #{assessment_id}"
+            raise RiskAssessmentDomain::Error, "Assessment not found: #{assessment_id}"
           end
         end
       end

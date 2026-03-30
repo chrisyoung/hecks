@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module ComplianceDomain
   class GovernancePolicy
@@ -27,8 +27,8 @@ module ComplianceDomain
     private
 
     def validate!
-      raise ValidationError, "name can't be blank" if name.nil? || (name.respond_to?(:empty?) && name.empty?)
-      raise ValidationError, "category can't be blank" if category.nil? || (category.respond_to?(:empty?) && category.empty?)
+      raise ValidationError.new("name can't be blank", field: :name, rule: :presence) if name.nil? || (name.respond_to?(:empty?) && name.empty?)
+      raise ValidationError.new("category can't be blank", field: :category, rule: :presence) if category.nil? || (category.respond_to?(:empty?) && category.empty?)
       if category && !VALID_CATEGORY.include?(category)
         raise ValidationError, "category must be one of: #{VALID_CATEGORY.join(', ')}, got: #{category}"
       end

@@ -1,24 +1,7 @@
 Hecks.domain "RiskAssessment" do
-  uses_kernel "Identity"
-
-  actor "assessor", description: "Risk assessment specialist"
-  actor "governance_board", description: "Final approval authority"
-  actor "admin", description: "System administrator"
-
-  anti_corruption_layer "ModelRegistry" do
-    translate "AiModel", model_name: :name, risk_tier: :risk_level
-  end
-
-  published_event "AssessmentSubmitted", version: 1 do
-    attribute :assessment_id, String
-    attribute :model_id, String
-    attribute :risk_level, String
-    attribute :overall_score, Float
-  end
-
   aggregate "Assessment" do
-    reference_to "ModelRegistry::AiModel", as: :model
-    reference_to "Identity::Stakeholder", as: :assessor
+    attribute :model_id, String
+    attribute :assessor_id, String
     attribute :risk_level, String
     attribute :bias_score, Float
     attribute :safety_score, Float
@@ -29,13 +12,18 @@ Hecks.domain "RiskAssessment" do
     attribute :mitigations, list_of("Mitigation")
     attribute :status, String
 
-    value_object "Finding" do
+    entity "Finding" do
       attribute :category, String
       attribute :severity, String
       attribute :description, String
+      attribute :status, String
+
+      invariant "severity must be valid" do
+        
+      end
     end
 
-    value_object "Mitigation" do
+    entity "Mitigation" do
       attribute :finding_category, String
       attribute :action, String
       attribute :status, String
@@ -51,11 +39,15 @@ s.nil? || (s >= 0.0 && s <= 1.0)
 }
     end
 
-    query "ByModel" do
+    scope :submitted, status: "submitted"
+
+    scope :rejected, status: "rejected"
+
+    query "by_model" do
       where(model_id: model_id)
     end
 
-    query "Pending" do
+    query "pending" do
       where(status: "pending")
     end
 
@@ -64,14 +56,14 @@ s.nil? || (s >= 0.0 && s <= 1.0)
     end
 
     command "InitiateAssessment" do
-      attribute :model_id, reference_to("AiModel")
-      attribute :assessor_id, reference_to("Stakeholder")
+      attribute :model_id, String
+      attribute :assessor_id, String
       actor "assessor"
       actor "admin"
     end
 
     command "RecordFinding" do
-      attribute :assessment_id, reference_to("Assessment")
+      attribute :assessment_id, String
       attribute :category, String
       attribute :severity, String
       attribute :description, String
@@ -80,18 +72,19 @@ s.nil? || (s >= 0.0 && s <= 1.0)
     end
 
     command "SubmitAssessment" do
-      attribute :assessment_id, reference_to("Assessment")
+      attribute :assessment_id, String
       attribute :risk_level, String
       attribute :bias_score, Float
       attribute :safety_score, Float
       attribute :transparency_score, Float
       attribute :overall_score, Float
+      external "RiskScoringEngine"
       actor "assessor"
       actor "admin"
     end
 
     command "RejectAssessment" do
-      attribute :assessment_id, reference_to("Assessment")
+      attribute :assessment_id, String
       actor "governance_board"
       actor "admin"
     end

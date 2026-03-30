@@ -5,7 +5,7 @@ RSpec.describe ModelRegistryDomain::AiModel::Events::RegisteredModel do
           aggregate_id: "example",
           name: "example",
           version: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           risk_level: "low",
           registered_at: DateTime.now,
@@ -37,7 +37,7 @@ RSpec.describe ModelRegistryDomain::AiModel::Events::RegisteredModel do
   end
 
   it "carries provider_id" do
-    expect(event.provider_id).to eq("example")
+    expect(event.provider_id).to eq("ref-id-123")
   end
 
   it "carries description" do

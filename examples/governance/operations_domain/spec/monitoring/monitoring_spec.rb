@@ -4,7 +4,7 @@ RSpec.describe OperationsDomain::Monitoring do
   describe "creating a Monitoring" do
     subject(:monitoring) { described_class.new(
           model_id: "example",
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: "example",
           value: 1.0,
           threshold: 1.0,
@@ -20,7 +20,7 @@ RSpec.describe OperationsDomain::Monitoring do
     end
 
     it "sets deployment_id" do
-      expect(monitoring.deployment_id).to eq("example")
+      expect(monitoring.deployment_id).to eq("ref-id-123")
     end
 
     it "sets metric_name" do
@@ -45,7 +45,7 @@ RSpec.describe OperationsDomain::Monitoring do
       expect {
         described_class.new(
           model_id: nil,
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: "example",
           value: 1.0,
           threshold: 1.0,
@@ -60,7 +60,7 @@ RSpec.describe OperationsDomain::Monitoring do
       expect {
         described_class.new(
           model_id: "example",
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: nil,
           value: 1.0,
           threshold: 1.0,
@@ -82,7 +82,7 @@ RSpec.describe OperationsDomain::Monitoring do
       id = SecureRandom.uuid
       a = described_class.new(
           model_id: "example",
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: "example",
           value: 1.0,
           threshold: 1.0,
@@ -91,7 +91,7 @@ RSpec.describe OperationsDomain::Monitoring do
         )
       b = described_class.new(
           model_id: "example",
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: "example",
           value: 1.0,
           threshold: 1.0,
@@ -104,7 +104,7 @@ RSpec.describe OperationsDomain::Monitoring do
     it "two Monitorings with different ids are not equal" do
       a = described_class.new(
           model_id: "example",
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: "example",
           value: 1.0,
           threshold: 1.0,
@@ -112,7 +112,7 @@ RSpec.describe OperationsDomain::Monitoring do
         )
       b = described_class.new(
           model_id: "example",
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: "example",
           value: 1.0,
           threshold: 1.0,

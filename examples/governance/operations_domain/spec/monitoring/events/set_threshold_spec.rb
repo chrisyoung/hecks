@@ -6,7 +6,7 @@ RSpec.describe OperationsDomain::Monitoring::Events::SetThreshold do
           monitoring_id: "example",
           threshold: 1.0,
           model_id: "example",
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: "example",
           value: 1.0,
           recorded_at: DateTime.now
@@ -37,7 +37,7 @@ RSpec.describe OperationsDomain::Monitoring::Events::SetThreshold do
   end
 
   it "carries deployment_id" do
-    expect(event.deployment_id).to eq("example")
+    expect(event.deployment_id).to eq("ref-id-123")
   end
 
   it "carries metric_name" do

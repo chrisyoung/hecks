@@ -28,9 +28,13 @@ Hecks.domain "Operations" do
       audience String
     end
 
+    scope :production, environment: "production"
+    scope :customer_facing, audience: "customer-facing"
+
     deploy_model do
       deployment_id String
       sets deployed_at: :now
+      external "DeploymentPipeline"
     end
 
     decommission_deployment do
@@ -78,6 +82,9 @@ Hecks.domain "Operations" do
     validation :model_id, presence: true
     validation :severity, presence: true
 
+    scope :critical, severity: "critical"
+    scope :open_incidents, status: "reported"
+
     report_incident do
       attribute :model_id, String
       severity String
@@ -85,6 +92,7 @@ Hecks.domain "Operations" do
       description String
       attribute :reported_by_id, String
       sets reported_at: :now
+      external "AlertingService"
     end
 
     investigate_incident do
@@ -108,6 +116,10 @@ Hecks.domain "Operations" do
 
     specification "Critical" do |incident|
       incident.severity == "critical" || incident.category == "safety"
+    end
+
+    on_event "ReportedIncident", async: true do |event|
+      # Side-effect: page on-call when critical incident reported
     end
 
     query :by_model do |model_id|
@@ -164,5 +176,18 @@ Hecks.domain "Operations" do
     query :by_deployment do |deployment_id|
       where(deployment_id: deployment_id)
     end
+  end
+
+  # Intra-domain: Incident -> Incident (auto-triage, auto-close)
+  policy "AutoTriage" do
+    on "ReportedIncident"             # from Operations::Incident
+    trigger "InvestigateIncident"     # on   Operations::Incident
+    map incident_id: :id
+  end
+
+  policy "AutoClose" do
+    on "ResolvedIncident"             # from Operations::Incident
+    trigger "CloseIncident"           # on   Operations::Incident
+    map incident_id: :id
   end
 end

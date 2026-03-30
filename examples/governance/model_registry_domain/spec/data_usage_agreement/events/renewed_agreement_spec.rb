@@ -5,7 +5,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement::Events::RenewedAgreement
           aggregate_id: "example",
           agreement_id: "example",
           expiration_date: Date.today,
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: "example",
           purpose: "example",
           consent_type: "public_domain",
@@ -35,7 +35,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement::Events::RenewedAgreement
   end
 
   it "carries model_id" do
-    expect(event.model_id).to eq("example")
+    expect(event.model_id).to eq("ref-id-123")
   end
 
   it "carries data_source" do

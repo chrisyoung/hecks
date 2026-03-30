@@ -19,4 +19,21 @@ RSpec.describe OperationsDomain::Monitoring::Commands::SetThreshold do
       expect(described_class.event_name).to eq("SetThreshold")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits SetThreshold" do
+      agg = Monitoring.record_metric(
+          model_id: "example",
+          deployment_id: "ref-id-123",
+          metric_name: "example",
+          value: 1.0,
+          threshold: 1.0
+        )
+      Monitoring.set_threshold(monitoring_id: "example", threshold: 1.0)
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("SetThreshold")
+    end
+  end
 end

@@ -15,7 +15,7 @@ module ComplianceDomain
           existing = repository.find(policy_id)
           if existing
             unless existing.status == "active"
-              raise Hecks::Error, "Cannot SuspendPolicy: status must be 'active', got '#{existing.status}'"
+              raise ComplianceDomain::Error, "Cannot SuspendPolicy: status must be 'active', got '#{existing.status}'"
             end
             GovernancePolicy.new(
               id: existing.id,
@@ -29,7 +29,7 @@ module ComplianceDomain
               status: "suspended"
             )
           else
-            raise Hecks::Error, "GovernancePolicy not found: #{policy_id}"
+            raise ComplianceDomain::Error, "GovernancePolicy not found: #{policy_id}"
           end
         end
       end

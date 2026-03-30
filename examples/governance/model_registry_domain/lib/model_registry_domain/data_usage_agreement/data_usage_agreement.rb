@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module ModelRegistryDomain
   class DataUsageAgreement
@@ -26,8 +26,8 @@ module ModelRegistryDomain
     private
 
     def validate!
-      raise ValidationError, "data_source can't be blank" if data_source.nil? || (data_source.respond_to?(:empty?) && data_source.empty?)
-      raise ValidationError, "purpose can't be blank" if purpose.nil? || (purpose.respond_to?(:empty?) && purpose.empty?)
+      raise ValidationError.new("data_source can't be blank", field: :data_source, rule: :presence) if data_source.nil? || (data_source.respond_to?(:empty?) && data_source.empty?)
+      raise ValidationError.new("purpose can't be blank", field: :purpose, rule: :presence) if purpose.nil? || (purpose.respond_to?(:empty?) && purpose.empty?)
       if consent_type && !VALID_CONSENT_TYPE.include?(consent_type)
         raise ValidationError, "consent_type must be one of: #{VALID_CONSENT_TYPE.join(', ')}, got: #{consent_type}"
       end

@@ -19,4 +19,20 @@ RSpec.describe IdentityDomain::Stakeholder::Commands::AssignRole do
       expect(described_class.event_name).to eq("AssignedRole")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits AssignedRole" do
+      agg = Stakeholder.register(
+          name: "example",
+          email: "example",
+          role: "example",
+          team: "example"
+        )
+      Stakeholder.assign_role(stakeholder_id: "example", role: "example")
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("AssignedRole")
+    end
+  end
 end

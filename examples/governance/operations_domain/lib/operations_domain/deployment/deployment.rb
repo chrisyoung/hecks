@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module OperationsDomain
   class Deployment
@@ -26,8 +26,8 @@ module OperationsDomain
     private
 
     def validate!
-      raise ValidationError, "model_id can't be blank" if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
-      raise ValidationError, "environment can't be blank" if environment.nil? || (environment.respond_to?(:empty?) && environment.empty?)
+      raise ValidationError.new("model_id can't be blank", field: :model_id, rule: :presence) if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
+      raise ValidationError.new("environment can't be blank", field: :environment, rule: :presence) if environment.nil? || (environment.respond_to?(:empty?) && environment.empty?)
       if environment && !VALID_ENVIRONMENT.include?(environment)
         raise ValidationError, "environment must be one of: #{VALID_ENVIRONMENT.join(', ')}, got: #{environment}"
       end

@@ -8,7 +8,7 @@ RSpec.describe ModelRegistryDomain::AiModel::Events::DerivedModel do
           parent_model_id: "example",
           derivation_type: "example",
           description: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           risk_level: "low",
           registered_at: DateTime.now,
           capabilities: [],
@@ -49,7 +49,7 @@ RSpec.describe ModelRegistryDomain::AiModel::Events::DerivedModel do
   end
 
   it "carries provider_id" do
-    expect(event.provider_id).to eq("example")
+    expect(event.provider_id).to eq("ref-id-123")
   end
 
   it "carries risk_level" do

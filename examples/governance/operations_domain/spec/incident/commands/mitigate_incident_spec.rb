@@ -15,4 +15,21 @@ RSpec.describe OperationsDomain::Incident::Commands::MitigateIncident do
       expect(described_class.event_name).to eq("MitigatedIncident")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits MitigatedIncident" do
+      agg = Incident.report(
+          model_id: "example",
+          severity: "example",
+          category: "example",
+          description: "example",
+          reported_by_id: "example"
+        )
+      Incident.mitigate(incident_id: "example")
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("MitigatedIncident")
+    end
+  end
 end

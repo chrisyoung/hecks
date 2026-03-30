@@ -20,16 +20,18 @@ Hecks.domain "RiskAssessment" do
       transition "RejectAssessment"   => "rejected",  from: ["pending", "submitted"]
     end
 
-    Finding do
-      category String
-      severity String, enum: %w[low medium high critical]
-      description String
+    entity "Finding" do
+      attribute :category, String
+      attribute :severity, String
+      attribute :description, String
+      attribute :status, String
+      invariant("severity must be valid") { %w[low medium high critical].include?(severity) }
     end
 
-    Mitigation do
-      finding_category String
-      action String
-      status String
+    entity "Mitigation" do
+      attribute :finding_category, String
+      attribute :action, String
+      attribute :status, String
     end
 
     validation :model_id, presence: true
@@ -65,6 +67,8 @@ Hecks.domain "RiskAssessment" do
       transparency_score Float
       overall_score Float
       sets submitted_at: :now
+      precondition("Must have at least one finding") { |cmd| true }
+      external "RiskScoringEngine"
       actor "assessor"
       actor "admin"
     end
@@ -78,6 +82,9 @@ Hecks.domain "RiskAssessment" do
     specification "CriticalFindings" do |assessment|
       assessment.findings.any? { |f| f.severity == "critical" }
     end
+
+    scope :submitted, status: "submitted"
+    scope :rejected, status: "rejected"
 
     query :by_model do |model_id|
       where(model_id: model_id)

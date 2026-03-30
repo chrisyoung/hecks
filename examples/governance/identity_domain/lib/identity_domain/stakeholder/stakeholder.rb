@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module IdentityDomain
   class Stakeholder
@@ -21,8 +21,8 @@ module IdentityDomain
     private
 
     def validate!
-      raise ValidationError, "name can't be blank" if name.nil? || (name.respond_to?(:empty?) && name.empty?)
-      raise ValidationError, "email can't be blank" if email.nil? || (email.respond_to?(:empty?) && email.empty?)
+      raise ValidationError.new("name can't be blank", field: :name, rule: :presence) if name.nil? || (name.respond_to?(:empty?) && name.empty?)
+      raise ValidationError.new("email can't be blank", field: :email, rule: :presence) if email.nil? || (email.respond_to?(:empty?) && email.empty?)
       if role && !VALID_ROLE.include?(role)
         raise ValidationError, "role must be one of: #{VALID_ROLE.join(', ')}, got: #{role}"
       end

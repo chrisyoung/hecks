@@ -15,7 +15,7 @@ module ComplianceDomain
           existing = repository.find(exemption_id)
           if existing
             unless existing.status == "active"
-              raise Hecks::Error, "Cannot RevokeExemption: status must be 'active', got '#{existing.status}'"
+              raise ComplianceDomain::Error, "Cannot RevokeExemption: status must be 'active', got '#{existing.status}'"
             end
             Exemption.new(
               id: existing.id,
@@ -30,7 +30,7 @@ module ComplianceDomain
               status: "revoked"
             )
           else
-            raise Hecks::Error, "Exemption not found: #{exemption_id}"
+            raise ComplianceDomain::Error, "Exemption not found: #{exemption_id}"
           end
         end
       end

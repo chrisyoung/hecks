@@ -1,0 +1,10 @@
+require "spec_helper"
+
+RSpec.describe "Stakeholder.active" do
+  before { @app = Hecks.load(domain, force: true) }
+
+  it "returns an Array" do
+    results = Stakeholder.active
+    expect(results).to be_an(Array)
+  end
+end

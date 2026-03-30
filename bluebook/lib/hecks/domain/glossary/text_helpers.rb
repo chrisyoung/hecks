@@ -50,7 +50,7 @@ module Hecks
       # @param name [String] a PascalCase name (e.g., "FindByName")
       # @return [String] humanized form (e.g., "find by name")
       def humanize(name)
-        name.gsub(/([A-Z])/, ' \1').strip.downcase
+        name.to_s.gsub(/([A-Z])/, ' \1').strip.downcase
       end
 
       # Join an array of items into an English list with commas and "and".

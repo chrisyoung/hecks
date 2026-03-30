@@ -62,6 +62,9 @@ Hecks.domain "Compliance" do
       actor "admin"
     end
 
+    scope :active_policies, status: "active"
+    scope :draft_policies, status: "draft"
+
     query :by_category do |category|
       where(category: category)
     end
@@ -164,6 +167,7 @@ Hecks.domain "Compliance" do
       review_id String
       notes String
       sets outcome: "approved", completed_at: :now
+      external "NotificationGateway"
       actor "reviewer"
       actor "admin"
     end
@@ -172,6 +176,7 @@ Hecks.domain "Compliance" do
       review_id String
       notes String
       sets outcome: "rejected", completed_at: :now
+      external "NotificationGateway"
       actor "reviewer"
       actor "admin"
     end
@@ -182,6 +187,12 @@ Hecks.domain "Compliance" do
       actor "reviewer"
       actor "admin"
     end
+
+    on_event "RejectedReview" do |event|
+      # Side-effect: notify model owner of rejection
+    end
+
+    scope :open_reviews, status: "open"
 
     query :by_model do |model_id|
       where(model_id: model_id)

@@ -27,4 +27,19 @@ RSpec.describe ModelRegistryDomain::Vendor::Commands::ApproveVendor do
       expect(described_class.event_name).to eq("ApprovedVendor")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits ApprovedVendor" do
+      agg = Vendor.register(
+          name: "example",
+          contact_email: "example",
+          risk_tier: "example"
+        )
+      Vendor.approve(vendor_id: "example", assessment_date: Date.today, next_review_date: Date.today)
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("ApprovedVendor")
+    end
+  end
 end

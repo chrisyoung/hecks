@@ -5,7 +5,7 @@ RSpec.describe ModelRegistryDomain::AiModel do
     subject(:ai_model) { described_class.new(
           name: "example",
           version: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           risk_level: "low",
           registered_at: DateTime.now,
@@ -29,7 +29,7 @@ RSpec.describe ModelRegistryDomain::AiModel do
     end
 
     it "sets provider_id" do
-      expect(ai_model.provider_id).to eq("example")
+      expect(ai_model.provider_id).to eq("ref-id-123")
     end
 
     it "sets description" do
@@ -71,7 +71,7 @@ RSpec.describe ModelRegistryDomain::AiModel do
         described_class.new(
           name: nil,
           version: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           risk_level: "low",
           registered_at: DateTime.now,
@@ -91,7 +91,7 @@ RSpec.describe ModelRegistryDomain::AiModel do
         described_class.new(
           name: "example",
           version: nil,
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           risk_level: "low",
           registered_at: DateTime.now,
@@ -111,7 +111,7 @@ RSpec.describe ModelRegistryDomain::AiModel do
       a = described_class.new(
           name: "example",
           version: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           risk_level: "low",
           registered_at: DateTime.now,
@@ -125,7 +125,7 @@ RSpec.describe ModelRegistryDomain::AiModel do
       b = described_class.new(
           name: "example",
           version: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           risk_level: "low",
           registered_at: DateTime.now,
@@ -143,7 +143,7 @@ RSpec.describe ModelRegistryDomain::AiModel do
       a = described_class.new(
           name: "example",
           version: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           risk_level: "low",
           registered_at: DateTime.now,
@@ -156,7 +156,7 @@ RSpec.describe ModelRegistryDomain::AiModel do
       b = described_class.new(
           name: "example",
           version: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           risk_level: "low",
           registered_at: DateTime.now,

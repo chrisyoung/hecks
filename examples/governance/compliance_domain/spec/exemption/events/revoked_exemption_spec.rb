@@ -5,7 +5,7 @@ RSpec.describe ComplianceDomain::Exemption::Events::RevokedExemption do
           aggregate_id: "example",
           exemption_id: "example",
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_by_id: "example",
@@ -36,7 +36,7 @@ RSpec.describe ComplianceDomain::Exemption::Events::RevokedExemption do
   end
 
   it "carries policy_id" do
-    expect(event.policy_id).to eq("example")
+    expect(event.policy_id).to eq("ref-id-123")
   end
 
   it "carries requirement" do

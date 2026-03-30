@@ -6,7 +6,7 @@ RSpec.describe IdentityDomain::AuditLog do
           entity_type: "example",
           entity_id: "example",
           action: "example",
-          actor_id: "example",
+          actor_id: "ref-id-123",
           details: "example",
           timestamp: DateTime.now
         ) }
@@ -28,7 +28,7 @@ RSpec.describe IdentityDomain::AuditLog do
     end
 
     it "sets actor_id" do
-      expect(audit_log.actor_id).to eq("example")
+      expect(audit_log.actor_id).to eq("ref-id-123")
     end
 
     it "sets details" do
@@ -47,7 +47,7 @@ RSpec.describe IdentityDomain::AuditLog do
           entity_type: nil,
           entity_id: "example",
           action: "example",
-          actor_id: "example",
+          actor_id: "ref-id-123",
           details: "example",
           timestamp: DateTime.now
         )
@@ -62,7 +62,7 @@ RSpec.describe IdentityDomain::AuditLog do
           entity_type: "example",
           entity_id: "example",
           action: nil,
-          actor_id: "example",
+          actor_id: "ref-id-123",
           details: "example",
           timestamp: DateTime.now
         )
@@ -77,7 +77,7 @@ RSpec.describe IdentityDomain::AuditLog do
           entity_type: "example",
           entity_id: "example",
           action: "example",
-          actor_id: "example",
+          actor_id: "ref-id-123",
           details: "example",
           timestamp: DateTime.now,
           id: id
@@ -86,7 +86,7 @@ RSpec.describe IdentityDomain::AuditLog do
           entity_type: "example",
           entity_id: "example",
           action: "example",
-          actor_id: "example",
+          actor_id: "ref-id-123",
           details: "example",
           timestamp: DateTime.now,
           id: id
@@ -99,7 +99,7 @@ RSpec.describe IdentityDomain::AuditLog do
           entity_type: "example",
           entity_id: "example",
           action: "example",
-          actor_id: "example",
+          actor_id: "ref-id-123",
           details: "example",
           timestamp: DateTime.now
         )
@@ -107,7 +107,7 @@ RSpec.describe IdentityDomain::AuditLog do
           entity_type: "example",
           entity_id: "example",
           action: "example",
-          actor_id: "example",
+          actor_id: "ref-id-123",
           details: "example",
           timestamp: DateTime.now
         )

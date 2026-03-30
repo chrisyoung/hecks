@@ -23,7 +23,7 @@ module ComplianceDomain
           existing = repository.find(exemption_id)
           if existing
             unless existing.status == "requested"
-              raise Hecks::Error, "Cannot ApproveExemption: status must be 'requested', got '#{existing.status}'"
+              raise ComplianceDomain::Error, "Cannot ApproveExemption: status must be 'requested', got '#{existing.status}'"
             end
             Exemption.new(
               id: existing.id,
@@ -38,7 +38,7 @@ module ComplianceDomain
               status: "active"
             )
           else
-            raise Hecks::Error, "Exemption not found: #{exemption_id}"
+            raise ComplianceDomain::Error, "Exemption not found: #{exemption_id}"
           end
         end
       end

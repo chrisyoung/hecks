@@ -7,7 +7,7 @@ RSpec.describe ComplianceDomain::Exemption::Events::ApprovedExemption do
           approved_by_id: "example",
           expires_at: Date.today,
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_at: DateTime.now,
@@ -44,7 +44,7 @@ RSpec.describe ComplianceDomain::Exemption::Events::ApprovedExemption do
   end
 
   it "carries policy_id" do
-    expect(event.policy_id).to eq("example")
+    expect(event.policy_id).to eq("ref-id-123")
   end
 
   it "carries requirement" do

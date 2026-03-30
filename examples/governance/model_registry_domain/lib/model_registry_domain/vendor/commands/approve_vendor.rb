@@ -23,7 +23,7 @@ module ModelRegistryDomain
           existing = repository.find(vendor_id)
           if existing
             unless existing.status == "pending_review"
-              raise Hecks::Error, "Cannot ApproveVendor: status must be 'pending_review', got '#{existing.status}'"
+              raise ModelRegistryDomain::Error, "Cannot ApproveVendor: status must be 'pending_review', got '#{existing.status}'"
             end
             Vendor.new(
               id: existing.id,
@@ -36,7 +36,7 @@ module ModelRegistryDomain
               status: "approved"
             )
           else
-            raise Hecks::Error, "Vendor not found: #{vendor_id}"
+            raise ModelRegistryDomain::Error, "Vendor not found: #{vendor_id}"
           end
         end
       end

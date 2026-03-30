@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe ModelRegistryDomain::DataUsageAgreement do
   describe "creating a DataUsageAgreement" do
     subject(:data_usage_agreement) { described_class.new(
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: "example",
           purpose: "example",
           consent_type: "public_domain",
@@ -18,7 +18,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement do
     end
 
     it "sets model_id" do
-      expect(data_usage_agreement.model_id).to eq("example")
+      expect(data_usage_agreement.model_id).to eq("ref-id-123")
     end
 
     it "sets data_source" do
@@ -54,7 +54,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement do
     it "rejects nil data_source" do
       expect {
         described_class.new(
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: nil,
           purpose: "example",
           consent_type: "public_domain",
@@ -71,7 +71,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement do
     it "rejects nil purpose" do
       expect {
         described_class.new(
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: "example",
           purpose: nil,
           consent_type: "public_domain",
@@ -95,7 +95,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement do
     it "two DataUsageAgreements with the same id are equal" do
       id = SecureRandom.uuid
       a = described_class.new(
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: "example",
           purpose: "example",
           consent_type: "public_domain",
@@ -106,7 +106,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement do
           id: id
         )
       b = described_class.new(
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: "example",
           purpose: "example",
           consent_type: "public_domain",
@@ -121,7 +121,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement do
 
     it "two DataUsageAgreements with different ids are not equal" do
       a = described_class.new(
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: "example",
           purpose: "example",
           consent_type: "public_domain",
@@ -131,7 +131,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement do
           status: "example"
         )
       b = described_class.new(
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: "example",
           purpose: "example",
           consent_type: "public_domain",

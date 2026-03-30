@@ -42,4 +42,15 @@ RSpec.describe RiskAssessmentDomain::Assessment::Commands::SubmitAssessment do
       expect(described_class.event_name).to eq("SubmittedAssessment")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits SubmittedAssessment" do
+      agg = Assessment.initiate(model_id: "example", assessor_id: "example")
+      Assessment.submit(assessment_id: "example", risk_level: "example", bias_score: 1.0, safety_score: 1.0, transparency_score: 1.0, overall_score: 1.0)
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("SubmittedAssessment")
+    end
+  end
 end

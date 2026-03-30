@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module ModelRegistryDomain
   class Vendor
@@ -24,7 +24,7 @@ module ModelRegistryDomain
     private
 
     def validate!
-      raise ValidationError, "name can't be blank" if name.nil? || (name.respond_to?(:empty?) && name.empty?)
+      raise ValidationError.new("name can't be blank", field: :name, rule: :presence) if name.nil? || (name.respond_to?(:empty?) && name.empty?)
       if risk_tier && !VALID_RISK_TIER.include?(risk_tier)
         raise ValidationError, "risk_tier must be one of: #{VALID_RISK_TIER.join(', ')}, got: #{risk_tier}"
       end

@@ -3,8 +3,8 @@ module ModelRegistryDomain
     class ModelApproval
       unless defined?(STEPS)
         STEPS = [
-          { command: "{:command=>\"SubmitAssessment\", :mapping=>{}}" },
-          { command: "{:branch=>{:spec=>\"HighRisk\", :if_steps=>[{:command=>\"OpenReview\", :mapping=>{}}], :else_steps=>[{:command=>\"ApproveModel\", :mapping=>{}}]}}" },
+          { command: "SubmitAssessment" },
+          { command: "#<Hecks::DomainModel::Behavior::BranchStep:0x000000011c45ae30>" },
         ].freeze
       end
 

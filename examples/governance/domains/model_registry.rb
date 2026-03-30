@@ -9,7 +9,7 @@ Hecks.domain "ModelRegistry" do
     description String
     risk_level String, enum: %w[low medium high critical]
     registered_at DateTime
-    attribute :parent_model_id, reference_to("AiModel")
+    attribute :parent_model_id, String
     derivation_type String, enum: %w[fine-tuned distilled retrained quantized]
     capabilities list_of("Capability")
     intended_uses list_of("IntendedUse")
@@ -48,7 +48,7 @@ Hecks.domain "ModelRegistry" do
     derive_model do
       name String
       version String
-      attribute :parent_model_id, reference_to("AiModel")
+      attribute :parent_model_id, String
       derivation_type String
       description String
       sets registered_at: :now
@@ -62,12 +62,14 @@ Hecks.domain "ModelRegistry" do
 
     approve_model do
       model_id String
+      precondition("Model must be classified before approval") { |cmd| cmd.respond_to?(:risk_level) }
       actor "governance_board"
       actor "admin"
     end
 
     suspend_model do
       model_id String
+      external "NotificationGateway"
       actor "governance_board"
       actor "admin"
     end
@@ -81,6 +83,9 @@ Hecks.domain "ModelRegistry" do
     specification "HighRisk" do |model|
       model.risk_level == "high" || model.risk_level == "critical"
     end
+
+    scope :approved, status: "approved"
+    scope :suspended, status: "suspended"
 
     query :by_provider do |provider_id|
       where(provider_id: provider_id)
@@ -98,6 +103,7 @@ Hecks.domain "ModelRegistry" do
       where(parent_model_id: parent_id)
     end
 
+    # Cross-domain reactive policies
     policy "ClassifyAfterAssessment" do
       on "SubmittedAssessment"
       trigger "ClassifyRisk"
@@ -115,6 +121,11 @@ Hecks.domain "ModelRegistry" do
       trigger "SuspendModel"
       map model_id: :model_id
       condition { |event| event.severity == "critical" }
+      async true
+    end
+
+    on_event "SuspendedModel" do |event|
+      # Side-effect: notify vendor when their model is suspended
     end
   end
 
@@ -242,6 +253,14 @@ Hecks.domain "ModelRegistry" do
       when_spec("HighRisk") { step "OpenReview" }
       otherwise { step "ApproveModel" }
     end
+  end
+
+  # Intra-domain: AiModel -> AiModel (auto-approve low-risk after classification)
+  policy "AutoApproveLowRisk" do
+    on "ClassifiedRisk"               # from ModelRegistry::AiModel
+    trigger "ApproveModel"            # on   ModelRegistry::AiModel
+    map model_id: :model_id
+    condition { |event| event.risk_level == "low" }
   end
 
   view "ModelDashboard" do

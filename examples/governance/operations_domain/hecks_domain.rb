@@ -1,29 +1,6 @@
 Hecks.domain "Operations" do
-  uses_kernel "Identity"
-
-  anti_corruption_layer "ModelRegistry" do
-    translate "AiModel", model_name: :name
-  end
-
-  published_event "IncidentReported", version: 1 do
-    attribute :incident_id, String
-    attribute :model_id, String
-    attribute :severity, String
-  end
-
-  saga "IncidentResponse" do
-    step "ReportIncident", on_success: "InvestigateIncident"
-    step "InvestigateIncident", on_success: "MitigateIncident", on_failure: "EscalateIncident"
-    step "MitigateIncident", on_success: "ResolveIncident"
-    compensation "EscalateIncident"
-  end
-
-  service "IncidentResponseService" do
-    coordinates "Incident", "Deployment", "Monitoring"
-  end
-
   aggregate "Deployment" do
-    reference_to "ModelRegistry::AiModel", as: :model
+    attribute :model_id, String
     attribute :environment, String
     attribute :endpoint, String
     attribute :purpose, String
@@ -36,15 +13,19 @@ Hecks.domain "Operations" do
 
     validation :environment, {:presence=>true}
 
-    query "ByModel" do
+    scope :production, environment: "production"
+
+    scope :customer_facing, audience: "customer-facing"
+
+    query "by_model" do
       where(model_id: model_id)
     end
 
-    query "ByEnvironment" do
+    query "by_environment" do
       where(environment: env)
     end
 
-    query "Active" do
+    query "active" do
       where(status: "deployed")
     end
 
@@ -53,7 +34,7 @@ Hecks.domain "Operations" do
     end
 
     command "PlanDeployment" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :environment, String
       attribute :endpoint, String
       attribute :purpose, String
@@ -61,20 +42,21 @@ Hecks.domain "Operations" do
     end
 
     command "DeployModel" do
-      attribute :deployment_id, reference_to("Deployment")
+      attribute :deployment_id, String
+      external "DeploymentPipeline"
     end
 
     command "DecommissionDeployment" do
-      attribute :deployment_id, reference_to("Deployment")
+      attribute :deployment_id, String
     end
   end
 
   aggregate "Incident" do
-    reference_to "ModelRegistry::AiModel", as: :model
+    attribute :model_id, String
     attribute :severity, String
     attribute :category, String
     attribute :description, String
-    reference_to "Identity::Stakeholder", as: :reported_by
+    attribute :reported_by_id, String
     attribute :reported_at, DateTime
     attribute :resolved_at, DateTime
     attribute :resolution, String
@@ -85,15 +67,19 @@ Hecks.domain "Operations" do
 
     validation :severity, {:presence=>true}
 
-    query "ByModel" do
+    scope :critical, severity: "critical"
+
+    scope :open_incidents, status: "reported"
+
+    query "by_model" do
       where(model_id: model_id)
     end
 
-    query "BySeverity" do
+    query "by_severity" do
       where(severity: severity)
     end
 
-    query "Open" do
+    query "open" do
       where(status: "reported")
     end
 
@@ -102,35 +88,40 @@ Hecks.domain "Operations" do
     end
 
     command "ReportIncident" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :severity, String
       attribute :category, String
       attribute :description, String
-      attribute :reported_by_id, reference_to("Stakeholder")
+      attribute :reported_by_id, String
+      external "AlertingService"
     end
 
     command "InvestigateIncident" do
-      attribute :incident_id, reference_to("Incident")
+      attribute :incident_id, String
     end
 
     command "MitigateIncident" do
-      attribute :incident_id, reference_to("Incident")
+      attribute :incident_id, String
     end
 
     command "ResolveIncident" do
-      attribute :incident_id, reference_to("Incident")
+      attribute :incident_id, String
       attribute :resolution, String
       attribute :root_cause, String
     end
 
     command "CloseIncident" do
-      attribute :incident_id, reference_to("Incident")
+      attribute :incident_id, String
+    end
+
+    on_event "ReportedIncident", async: true do |event|
+      # Side-effect: page on-call when critical incident reported
     end
   end
 
   aggregate "Monitoring" do
-    reference_to "ModelRegistry::AiModel", as: :model
-    reference_to "Deployment"
+    attribute :model_id, String
+    attribute :deployment_id, reference_to("Deployment")
     attribute :metric_name, String
     attribute :value, Float
     attribute :threshold, Float
@@ -144,11 +135,11 @@ Hecks.domain "Operations" do
       !threshold || threshold > 0
     end
 
-    query "ByModel" do
+    query "by_model" do
       where(model_id: model_id)
     end
 
-    query "ByDeployment" do
+    query "by_deployment" do
       where(deployment_id: deployment_id)
     end
 
@@ -157,7 +148,7 @@ Hecks.domain "Operations" do
     end
 
     command "RecordMetric" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :deployment_id, reference_to("Deployment")
       attribute :metric_name, String
       attribute :value, Float
@@ -165,8 +156,20 @@ Hecks.domain "Operations" do
     end
 
     command "SetThreshold" do
-      attribute :monitoring_id, reference_to("Monitoring")
+      attribute :monitoring_id, String
       attribute :threshold, Float
     end
+  end
+
+  policy "AutoTriage" do
+    on "ReportedIncident"
+    trigger "InvestigateIncident"
+    map incident_id: :id
+  end
+
+  policy "AutoClose" do
+    on "ResolvedIncident"
+    trigger "CloseIncident"
+    map incident_id: :id
   end
 end

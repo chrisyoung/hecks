@@ -52,16 +52,38 @@ module Hecks
         "Create#{agg_name}#{suffix}"
       end
 
-      # Checks whether a word is a recognized verb, either from the custom
-      # verbs list or via WordNet lookup.
+      BUILT_IN_VERBS = %w[
+        Create Update Delete Remove Add Set Place Cancel Send Submit
+        Approve Reject Accept Decline Confirm Deny
+        Register Activate Suspend Retire Deactivate Archive
+        Open Close Resolve Complete Start Stop Finish
+        Assign Transfer Move Promote Demote
+        Request Revoke Grant Renew Extend Expire
+        Report Investigate Mitigate Escalate
+        Deploy Decommission Plan Schedule
+        Record Log Track Audit
+        Derive Classify Initiate Import Export
+        Notify Alert Publish Broadcast
+        Lock Unlock Block Unblock Enable Disable
+        Verify Validate Check Review Inspect
+        Sign Seal Stamp Mark Tag
+        Pay Charge Refund Bill Invoice
+        Ship Deliver Return Receive
+        Connect Disconnect Link Unlink Attach Detach
+      ].freeze
+
+      # Checks whether a word is a recognized verb, either from the built-in
+      # list, custom verbs, or via WordNet lookup.
       #
       # @param word [String] the word to check (case-insensitive)
       # @param custom [Array<String>] custom verbs registered by the domain
       # @return [Boolean] true if the word is a recognized verb
       def verb?(word, custom)
-        return true if custom.any? { |v| v.downcase == word.downcase }
+        lower = word.downcase
+        return true if BUILT_IN_VERBS.any? { |v| v.downcase == lower }
+        return true if custom.any? { |v| v.downcase == lower }
         return false unless defined?(WordNet)
-        WordNet::Lemma.find_all(word.downcase).any? { |l| l.pos == "v" }
+        WordNet::Lemma.find_all(lower).any? { |l| l.pos == "v" }
       end
 
       # Loads custom verbs from +domain.custom_verbs+ and from a +verbs.txt+

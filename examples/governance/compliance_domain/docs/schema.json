@@ -20,7 +20,9 @@
           "type": "string"
         },
         "framework_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to RegulatoryFramework"
         },
         "effective_date": {
           "type": "string"
@@ -77,7 +79,9 @@
           "type": "string"
         },
         "framework_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to RegulatoryFramework"
         }
       },
       "required": [
@@ -159,7 +163,9 @@
           "type": "string"
         },
         "framework_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to RegulatoryFramework"
         },
         "effective_date": {
           "type": "string"
@@ -201,7 +207,9 @@
           "type": "string"
         },
         "framework_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to RegulatoryFramework"
         },
         "review_date": {
           "type": "string"
@@ -237,7 +245,9 @@
           "type": "string"
         },
         "framework_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to RegulatoryFramework"
         },
         "effective_date": {
           "type": "string"
@@ -276,7 +286,9 @@
           "type": "string"
         },
         "framework_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to RegulatoryFramework"
         },
         "effective_date": {
           "type": "string"
@@ -318,7 +330,9 @@
           "type": "string"
         },
         "framework_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to RegulatoryFramework"
         },
         "effective_date": {
           "type": "string"
@@ -622,7 +636,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "reviewer_id": {
           "type": "string"
@@ -679,7 +695,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "reviewer_id": {
           "type": "string"
@@ -750,7 +768,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "reviewer_id": {
           "type": "string"
@@ -792,7 +812,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "reviewer_id": {
           "type": "string"
@@ -831,7 +853,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "reviewer_id": {
           "type": "string"
@@ -870,7 +894,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "reviewer_id": {
           "type": "string"
@@ -940,7 +966,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "requirement": {
           "type": "string"
@@ -983,7 +1011,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "requirement": {
           "type": "string"
@@ -1043,7 +1073,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "requirement": {
           "type": "string"
@@ -1091,7 +1123,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "requirement": {
           "type": "string"
@@ -1127,7 +1161,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "requirement": {
           "type": "string"
@@ -1188,7 +1224,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "completed_at": {
           "type": "string"
@@ -1196,7 +1234,7 @@
         "expires_at": {
           "type": "string"
         },
-        "certification_id": {
+        "certification": {
           "type": "string"
         },
         "status": {
@@ -1222,7 +1260,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         }
       },
       "required": [
@@ -1236,7 +1276,7 @@
         "training_record_id": {
           "type": "string"
         },
-        "certification_id": {
+        "certification": {
           "type": "string"
         },
         "expires_at": {
@@ -1245,7 +1285,7 @@
       },
       "required": [
         "training_record_id",
-        "certification_id",
+        "certification",
         "expires_at"
       ]
     },
@@ -1255,7 +1295,7 @@
         "training_record_id": {
           "type": "string"
         },
-        "certification_id": {
+        "certification": {
           "type": "string"
         },
         "expires_at": {
@@ -1264,7 +1304,7 @@
       },
       "required": [
         "training_record_id",
-        "certification_id",
+        "certification",
         "expires_at"
       ]
     },
@@ -1282,7 +1322,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "completed_at": {
           "type": "string"
@@ -1290,7 +1332,7 @@
         "expires_at": {
           "type": "string"
         },
-        "certification_id": {
+        "certification": {
           "type": "string"
         },
         "status": {
@@ -1311,7 +1353,7 @@
         "training_record_id": {
           "type": "string"
         },
-        "certification_id": {
+        "certification": {
           "type": "string"
         },
         "expires_at": {
@@ -1321,7 +1363,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "completed_at": {
           "type": "string"
@@ -1344,7 +1388,7 @@
         "training_record_id": {
           "type": "string"
         },
-        "certification_id": {
+        "certification": {
           "type": "string"
         },
         "expires_at": {
@@ -1354,7 +1398,9 @@
           "type": "string"
         },
         "policy_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to GovernancePolicy"
         },
         "completed_at": {
           "type": "string"

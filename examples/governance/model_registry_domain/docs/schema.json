@@ -17,7 +17,9 @@
           "type": "string"
         },
         "provider_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Vendor"
         },
         "description": {
           "type": "string"
@@ -94,7 +96,9 @@
           "type": "string"
         },
         "provider_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Vendor"
         },
         "description": {
           "type": "string"
@@ -199,7 +203,9 @@
           "type": "string"
         },
         "provider_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Vendor"
         },
         "description": {
           "type": "string"
@@ -253,7 +259,9 @@
           "type": "string"
         },
         "provider_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Vendor"
         },
         "risk_level": {
           "type": "string"
@@ -295,7 +303,9 @@
           "type": "string"
         },
         "provider_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Vendor"
         },
         "description": {
           "type": "string"
@@ -340,7 +350,9 @@
           "type": "string"
         },
         "provider_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Vendor"
         },
         "description": {
           "type": "string"
@@ -388,7 +400,9 @@
           "type": "string"
         },
         "provider_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Vendor"
         },
         "description": {
           "type": "string"
@@ -436,7 +450,9 @@
           "type": "string"
         },
         "provider_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Vendor"
         },
         "description": {
           "type": "string"
@@ -752,7 +768,9 @@
           "format": "uuid"
         },
         "model_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to AiModel"
         },
         "data_source": {
           "type": "string"
@@ -806,7 +824,9 @@
       "type": "object",
       "properties": {
         "model_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to AiModel"
         },
         "data_source": {
           "type": "string"
@@ -881,7 +901,9 @@
           "type": "string"
         },
         "model_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to AiModel"
         },
         "data_source": {
           "type": "string"
@@ -926,7 +948,9 @@
           "type": "string"
         },
         "model_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to AiModel"
         },
         "data_source": {
           "type": "string"
@@ -959,7 +983,9 @@
           "type": "string"
         },
         "model_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to AiModel"
         },
         "data_source": {
           "type": "string"
@@ -1001,7 +1027,9 @@
           "type": "string"
         },
         "model_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to AiModel"
         },
         "data_source": {
           "type": "string"

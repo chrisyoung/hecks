@@ -37,4 +37,32 @@ RSpec.describe OperationsDomain::Incident::Commands::ReportIncident do
       expect(described_class.event_name).to eq("ReportedIncident")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "persists the aggregate" do
+      result = Incident.report(
+          model_id: "example",
+          severity: "example",
+          category: "example",
+          description: "example",
+          reported_by_id: "example"
+        )
+      expect(result).not_to be_nil
+      expect(Incident.find(result.id)).not_to be_nil
+    end
+
+    it "emits ReportedIncident to the event log" do
+      Incident.report(
+          model_id: "example",
+          severity: "example",
+          category: "example",
+          description: "example",
+          reported_by_id: "example"
+        )
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("ReportedIncident")
+    end
+  end
 end

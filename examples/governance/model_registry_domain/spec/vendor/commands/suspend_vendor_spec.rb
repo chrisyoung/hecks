@@ -15,4 +15,19 @@ RSpec.describe ModelRegistryDomain::Vendor::Commands::SuspendVendor do
       expect(described_class.event_name).to eq("SuspendedVendor")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits SuspendedVendor" do
+      agg = Vendor.register(
+          name: "example",
+          contact_email: "example",
+          risk_tier: "example"
+        )
+      Vendor.suspend(vendor_id: "example")
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("SuspendedVendor")
+    end
+  end
 end

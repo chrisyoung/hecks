@@ -40,7 +40,7 @@ module RiskAssessmentDomain
               status: existing.status
             )
           else
-            raise Hecks::Error, "Assessment not found: #{assessment_id}"
+            raise RiskAssessmentDomain::Error, "Assessment not found: #{assessment_id}"
           end
         end
       end

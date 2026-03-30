@@ -4,7 +4,7 @@ RSpec.describe ComplianceDomain::TrainingRecord::Commands::CompleteTraining do
   describe "attributes" do
     subject(:command) { described_class.new(
           training_record_id: "example",
-          certification_id: "example",
+          certification: "example",
           expires_at: Date.today
         ) }
 
@@ -12,8 +12,8 @@ RSpec.describe ComplianceDomain::TrainingRecord::Commands::CompleteTraining do
       expect(command.training_record_id).to eq("example")
     end
 
-    it "has certification_id" do
-      expect(command.certification_id).to eq("example")
+    it "has certification" do
+      expect(command.certification).to eq("example")
     end
 
     it "has expires_at" do
@@ -25,6 +25,17 @@ RSpec.describe ComplianceDomain::TrainingRecord::Commands::CompleteTraining do
   describe "event" do
     it "emits CompletedTraining" do
       expect(described_class.event_name).to eq("CompletedTraining")
+    end
+  end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits CompletedTraining" do
+      agg = TrainingRecord.assign_training(stakeholder_id: "example", policy_id: "ref-id-123")
+      TrainingRecord.complete_training(training_record_id: "example", certification: "example", expires_at: Date.today)
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("CompletedTraining")
     end
   end
 end

@@ -1,16 +1,4 @@
 Hecks.domain "Identity" do
-  shared_kernel
-  actor "admin", description: "System administrator"
-
-  glossary do
-    prefer "stakeholder", not: ["user", "person", "account"]
-  end
-
-  published_event "StakeholderDeactivated", version: 1 do
-    attribute :stakeholder_id, String
-    attribute :reason, String
-  end
-
   aggregate "Stakeholder" do
     attribute :name, String
     attribute :email, String
@@ -22,15 +10,19 @@ Hecks.domain "Identity" do
 
     validation :email, {:presence=>true}
 
-    query "ByRole" do
+    scope :admins, role: "admin"
+
+    scope :auditors, role: "auditor"
+
+    query "by_role" do
       where(role: role)
     end
 
-    query "ByTeam" do
+    query "by_team" do
       where(team: team)
     end
 
-    query "Active" do
+    query "active" do
       where(status: "active")
     end
 
@@ -42,12 +34,12 @@ Hecks.domain "Identity" do
     end
 
     command "AssignRole" do
-      attribute :stakeholder_id, reference_to("Stakeholder")
+      attribute :stakeholder_id, String
       attribute :role, String
     end
 
     command "DeactivateStakeholder" do
-      attribute :stakeholder_id, reference_to("Stakeholder")
+      attribute :stakeholder_id, String
       actor "admin"
     end
   end
@@ -56,7 +48,7 @@ Hecks.domain "Identity" do
     attribute :entity_type, String
     attribute :entity_id, String
     attribute :action, String
-    reference_to "Stakeholder", as: :actor
+    attribute :actor_id, reference_to("Stakeholder")
     attribute :details, String
     attribute :timestamp, DateTime
 
@@ -64,11 +56,11 @@ Hecks.domain "Identity" do
 
     validation :action, {:presence=>true}
 
-    query "ByEntity" do
+    query "by_entity" do
       where(entity_type: entity_type, entity_id: entity_id)
     end
 
-    query "ByActor" do
+    query "by_actor" do
       where(actor_id: actor_id)
     end
 
@@ -94,5 +86,10 @@ Hecks.domain "Identity" do
       on "ReportedIncident"
       trigger "RecordEntry"
     end
+  end
+
+  policy "AuditDeactivation" do
+    on "DeactivatedStakeholder"
+    trigger "RecordEntry"
   end
 end
