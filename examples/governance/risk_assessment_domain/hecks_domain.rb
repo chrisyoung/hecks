@@ -1,7 +1,7 @@
 Hecks.domain "RiskAssessment" do
   aggregate "Assessment" do
-    attribute :model_id, String
-    attribute :assessor_id, String
+    attribute :model_id, reference_to("AiModel")
+    attribute reference_to("Stakeholder"), :assessor_id
     attribute :risk_level, String
     attribute :bias_score, Float
     attribute :safety_score, Float

@@ -18,7 +18,7 @@
       }
     }
   </script>
-  <script src="/js/components.js"></script>
+  <script src="/hecks_web_workbench/js/components.js"></script>
   <style>
     #terminal.sketch-grid { background-color: #0a1628; background-image: linear-gradient(rgba(65,130,234,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(65,130,234,0.15) 1px, transparent 1px); background-size: 24px 24px; }
     .hint-fade { opacity: 0 !important; }
@@ -54,10 +54,14 @@
 
   <!-- Right Sidebar -->
   <div id="events-panel" class="w-64 bg-gh-panel border-l border-gh-border p-3 overflow-y-auto text-xs">
-    <agg-inspector id="inspector"></agg-inspector>
-    <h3 class="text-gh-blue text-[11px] uppercase tracking-wider mb-2 mt-3">Events</h3>
-    <div class="text-gh-muted italic" id="events-empty">No events yet</div>
-    <div id="events-list"></div>
+    <div id="inspector-section">
+      <agg-inspector id="inspector"></agg-inspector>
+    </div>
+    <div id="events-section" style="display:none">
+      <h3 class="text-gh-purple text-[11px] uppercase tracking-wider mb-2">Events</h3>
+      <div class="text-gh-muted italic" id="events-empty">No events yet</div>
+      <div id="events-list"></div>
+    </div>
   </div>
 
   <script>
@@ -72,6 +76,19 @@
 
     function saveCmdHistory() { localStorage.setItem('hecks_cmdHistory', JSON.stringify(cmdHistory.slice(0, 100))); }
     function esc(s) { var d = document.createElement('span'); d.textContent = s; return d.innerHTML; }
+
+    // ─── Global keyboard focus + zoom hotkeys ───
+    document.addEventListener('keydown', function(e) {
+      if (e.target === input) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === '0') { window._zoomReset && window._zoomReset(); return; }
+      if (e.key.length === 1) { input.focus(); }
+    });
+
+    // ─── Dismiss autocomplete on outside click ───
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#autocomplete') && e.target !== input) { hideAc(); }
+    });
 
     // ─── Mode toggle ───
     document.getElementById('mode-badge').addEventListener('click', function() {
@@ -110,16 +127,21 @@
     function runCommand(cmd) {
       lastCmd = cmd;
       appendCmd(cmd);
-      fetch('/eval', {
+      fetch('/hecks_web_workbench/eval', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: cmd })
       })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data.output) appendOutput(data.output, cmd);
-        if (data.error) { appendError(data.error); showBanner(data.error); }
-        if (data.state) { lastState = data.state; updateState(data.state); buildCompletions(data.state); }
+        if (data.output && data.output.trim() === '%%DIAGRAM%%') {
+          if (data.state) { lastState = data.state; updateState(data.state); buildCompletions(data.state); }
+          renderDomainOverview();
+        } else {
+          if (data.output) appendOutput(data.output, cmd);
+          if (data.error) { appendError(data.error); showBanner(data.error); }
+          if (data.state) { lastState = data.state; updateState(data.state); buildCompletions(data.state); }
+        }
         detectActiveAgg(cmd);
         renderInspector();
         terminal.scrollTop = terminal.scrollHeight;
@@ -204,19 +226,93 @@
       if (!lastState || !lastState.aggregates.length) return;
 
       var header = document.createElement('div');
-      header.className = 'text-gh-blue font-semibold text-sm mb-3';
-      header.textContent = (lastState.domain_name || 'Domain') + ' Domain';
+      header.className = 'flex items-center gap-4 mb-3';
+      var headerTitle = document.createElement('span');
+      headerTitle.className = 'text-gh-blue font-semibold text-sm';
+      headerTitle.textContent = (lastState.domain_name || 'Domain') + ' Domain';
+      header.appendChild(headerTitle);
+
+      var diagramFilter = 'all';
+      var filterBar = document.createElement('div');
+      filterBar.className = 'flex gap-1';
+      ['all', 'references', 'policies'].forEach(function(f) {
+        var btn = document.createElement('button');
+        btn.textContent = f;
+        btn.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid #30363d;background:' + (f === 'all' ? '#30363d' : 'transparent') + ';color:#8b949e;cursor:pointer;';
+        btn.addEventListener('click', function() {
+          diagramFilter = f;
+          filterBar.querySelectorAll('button').forEach(function(b) { b.style.background = 'transparent'; });
+          btn.style.background = '#30363d';
+          redrawLines();
+        });
+        filterBar.appendChild(btn);
+      });
+      header.appendChild(filterBar);
       terminal.appendChild(header);
 
       var container = document.createElement('div');
       container.className = 'relative mb-4';
-      var totalRows = Math.ceil(lastState.aggregates.length / Math.max(2, Math.floor((terminal.offsetWidth - 40) / 190)));
-      container.style.minHeight = (totalRows * 110 + 60) + 'px';
+      container.style.minHeight = Math.max(400, terminal.offsetHeight - 80) + 'px';
+      container.style.overflow = 'hidden';
+
+      var zoomLevel = 1;
+      var zoomWrapper = document.createElement('div');
+      zoomWrapper.style.cssText = 'position:relative;transform-origin:center center;transition:transform 0.15s;';
+      zoomWrapper.style.minHeight = container.style.minHeight;
+
+      var panX = 0, panY = 0;
+      function applyZoom() {
+        zoomWrapper.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + zoomLevel + ')';
+      }
+      container.addEventListener('wheel', function(e) {
+        if (!e.altKey) return;
+        e.preventDefault();
+        zoomLevel = Math.max(0.3, Math.min(2, zoomLevel - e.deltaY * 0.001));
+        applyZoom();
+      }, { passive: false });
+      window._zoomIn = function() { zoomLevel = Math.min(2, zoomLevel + 0.1); applyZoom(); };
+      window._zoomOut = function() { zoomLevel = Math.max(0.3, zoomLevel - 0.1); applyZoom(); };
+      window._zoomReset = function() { zoomLevel = 1; panX = 0; panY = 0; applyZoom(); };
+
+      // Hold Alt to zoom with mouse movement
+      container.addEventListener('mousemove', function(e) {
+        if (!e.altKey) return;
+        zoomLevel = Math.max(0.3, Math.min(2, zoomLevel - e.movementY * 0.005));
+        applyZoom();
+      });
+
+      // Click-drag to pan canvas
+      var panning = false, panStartX, panStartY;
+      container.addEventListener('mousedown', function(e) {
+        if (e.target.closest('agg-card') || e.altKey) return;
+        panning = true;
+        panStartX = e.clientX - panX;
+        panStartY = e.clientY - panY;
+        container.style.cursor = 'grabbing';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!panning) return;
+        panX = e.clientX - panStartX;
+        panY = e.clientY - panStartY;
+        applyZoom();
+      });
+      document.addEventListener('mouseup', function() {
+        if (panning) { panning = false; container.style.cursor = ''; }
+      });
+
+      // Floating zoom tip
+      var tip = document.createElement('div');
+      tip.style.cssText = 'position:absolute;bottom:8px;right:8px;color:#8b949e;font-size:10px;pointer-events:none;z-index:5;background:#161b22;border:1px solid #30363d;border-radius:4px;padding:3px 8px;';
+      var optKey = navigator.platform.indexOf('Mac') >= 0 ? '⌥' : 'Alt';
+      tip.textContent = optKey + '+scroll zoom · ' + optKey + '+drag zoom · 0 reset · drag to pan';
+      container.appendChild(tip);
 
       var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('class', 'absolute inset-0 w-full h-full pointer-events-none');
+      svg.setAttribute('class', 'absolute inset-0 w-full h-full');
       svg.style.zIndex = '0';
-      container.appendChild(svg);
+      svg.style.pointerEvents = 'none';
+      zoomWrapper.appendChild(svg);
 
       var grid = document.createElement('div');
       grid.className = 'relative';
@@ -224,17 +320,34 @@
 
       var cardEls = {};
       var termWidth = terminal.offsetWidth - 40;
-      var cardW = 160, cardH = 80, pad = 30;
-      var cols = Math.max(2, Math.floor(termWidth / (cardW + pad)));
+      var cardW = 160, cardH = 80;
+      var termHeight = terminal.offsetHeight - 80;
+
+      // Force-directed layout
+      var graphNodes = lastState.aggregates.map(function(a) { return { name: a.name }; });
+      var graphEdges = [];
+      var seenPairs = {};
+      lastState.aggregates.forEach(function(agg) {
+        agg.attributes.forEach(function(a) {
+          var rm = a.type.match(/reference_to\((\w+)\)/);
+          var lm = a.type.match(/list_of\((\w+)\)/);
+          var target = rm ? rm[1] : (lm ? lm[1] : null);
+          if (!target) return;
+          var aggNames = lastState.aggregates.map(function(x) { return x.name; });
+          if (aggNames.indexOf(target) < 0) return;
+          var pk = agg.name + '|' + target;
+          if (!seenPairs[pk]) { seenPairs[pk] = true; graphEdges.push({ from: agg.name, to: target }); }
+        });
+      });
+      var positions = layoutGraph(graphNodes, graphEdges, termWidth, Math.max(termHeight, 400));
 
       lastState.aggregates.forEach(function(agg, i) {
         var card = document.createElement('agg-card');
         card.data = agg;
         card.style.position = 'absolute';
-        var col = i % cols;
-        var row = Math.floor(i / cols);
-        card.style.left = (col * (cardW + pad) + pad) + 'px';
-        card.style.top = (row * (cardH + pad) + pad) + 'px';
+        var p = positions[agg.name];
+        card.style.left = p.x + 'px';
+        card.style.top = p.y + 'px';
 
         // Drag
         var dragging = false, dx, dy;
@@ -249,8 +362,18 @@
           e.preventDefault();
           function onMove(e2) {
             var gr = grid.getBoundingClientRect();
-            card.style.left = (e2.clientX - gr.left - dx) + 'px';
-            card.style.top = (e2.clientY - gr.top - dy) + 'px';
+            var newX = (e2.clientX - gr.left - dx) / zoomLevel;
+            var newY = (e2.clientY - gr.top - dy) / zoomLevel;
+            newX = Math.max(0, newX);
+            newY = Math.max(0, newY);
+            card.style.left = newX + 'px';
+            card.style.top = newY + 'px';
+            // Grow container if card is dragged past bottom
+            var needed = newY + 100;
+            if (needed > parseInt(zoomWrapper.style.minHeight || 0)) {
+              zoomWrapper.style.minHeight = needed + 'px';
+              container.style.minHeight = needed + 'px';
+            }
             redrawLines();
           }
           function onUp() {
@@ -280,44 +403,220 @@
         cardEls[agg.name] = card;
       });
 
-      container.appendChild(grid);
+      zoomWrapper.appendChild(grid);
+      container.appendChild(zoomWrapper);
       terminal.appendChild(container);
 
+      function layoutGraph(nodes, edges, width, height) {
+        var NW = 160, NH = 80, REPULSION = 20000, ATTRACT = 0.003, DAMP = 0.9, ITERS = 300;
+        var cx = width / 2, cy = height / 2, r = Math.min(width, height) / 3;
+        // Count degree per node for hub-aware centering
+        var degree = {};
+        nodes.forEach(function(n) { degree[n.name] = 0; });
+        edges.forEach(function(e) { degree[e.from]++; degree[e.to]++; });
+        var pos = {}, vel = {};
+        nodes.forEach(function(n, i) {
+          var a = (2 * Math.PI * i) / nodes.length;
+          pos[n.name] = { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+          vel[n.name] = { x: 0, y: 0 };
+        });
+        for (var iter = 0; iter < ITERS; iter++) {
+          var forces = {};
+          nodes.forEach(function(n) { forces[n.name] = { x: 0, y: 0 }; });
+          for (var i = 0; i < nodes.length; i++) {
+            for (var j = i + 1; j < nodes.length; j++) {
+              var na = nodes[i].name, nb = nodes[j].name;
+              var dx = pos[na].x - pos[nb].x, dy = pos[na].y - pos[nb].y;
+              var dist = Math.max(Math.sqrt(dx*dx + dy*dy), 20);
+              var f = REPULSION / (dist * dist);
+              var fx = (dx/dist)*f, fy = (dy/dist)*f;
+              forces[na].x += fx; forces[na].y += fy;
+              forces[nb].x -= fx; forces[nb].y -= fy;
+            }
+          }
+          edges.forEach(function(e) {
+            var dx = pos[e.to].x - pos[e.from].x, dy = pos[e.to].y - pos[e.from].y;
+            forces[e.from].x += dx * ATTRACT; forces[e.from].y += dy * ATTRACT;
+            forces[e.to].x -= dx * ATTRACT; forces[e.to].y -= dy * ATTRACT;
+          });
+          nodes.forEach(function(n) {
+            // Hub nodes get stronger centering pull
+            var centerPull = 0.0005 + degree[n.name] * 0.001;
+            forces[n.name].x += (cx - pos[n.name].x) * centerPull;
+            forces[n.name].y += (cy - pos[n.name].y) * centerPull;
+            vel[n.name].x = (vel[n.name].x + forces[n.name].x) * DAMP;
+            vel[n.name].y = (vel[n.name].y + forces[n.name].y) * DAMP;
+            pos[n.name].x += vel[n.name].x;
+            pos[n.name].y += vel[n.name].y;
+            pos[n.name].x = Math.max(NW/2, Math.min(width - NW/2, pos[n.name].x));
+            pos[n.name].y = Math.max(NH/2, Math.min(height - NH/2, pos[n.name].y));
+          });
+        }
+        var result = {};
+        nodes.forEach(function(n) {
+          result[n.name] = { x: Math.round(pos[n.name].x - NW/2), y: Math.round(pos[n.name].y - NH/2) };
+        });
+        return result;
+      }
+      function edgePoint(cx, cy, hw, hh, tx, ty) {
+        var dx = tx - cx, dy = ty - cy;
+        if (dx === 0 && dy === 0) return { x: cx, y: cy };
+        var absDx = Math.abs(dx), absDy = Math.abs(dy);
+        if (absDx * hh > absDy * hw) {
+          var sign = dx > 0 ? 1 : -1;
+          return { x: cx + sign * hw, y: cy + dy * hw / absDx };
+        } else {
+          var sign = dy > 0 ? 1 : -1;
+          return { x: cx + dx * hh / absDy, y: cy + sign * hh };
+        }
+      }
       function redrawLines() {
         svg.innerHTML = '';
         var cr = container.getBoundingClientRect();
         svg.setAttribute('width', container.offsetWidth);
         svg.setAttribute('height', container.offsetHeight);
+
+        // Reference lines
+        if (diagramFilter === 'all' || diagramFilter === 'references') {
+        // Collect edges grouped by directed pair
+        var pairMap = {};
         lastState.aggregates.forEach(function(agg) {
           agg.attributes.forEach(function(a) {
             var rm = a.type.match(/reference_to\((\w+)\)/);
             var lm = a.type.match(/list_of\((\w+)\)/);
             var target = rm ? rm[1] : (lm ? lm[1] : null);
             if (!target || !cardEls[agg.name] || !cardEls[target]) return;
-            var f = cardEls[agg.name].getBoundingClientRect();
-            var t = cardEls[target].getBoundingClientRect();
-            var x1 = f.left + f.width/2 - cr.left, y1 = f.top + f.height/2 - cr.top;
-            var x2 = t.left + t.width/2 - cr.left, y2 = t.top + t.height/2 - cr.top;
+            var key = agg.name + '|' + target;
+            if (!pairMap[key]) pairMap[key] = { from: agg.name, to: target, isList: !!lm, names: [] };
+            pairMap[key].names.push(a.name.replace(/_id$/, ''));
+            if (lm) pairMap[key].isList = true;
+          });
+        });
+
+        // Draw one line per pair with count badge
+        function cardRect(el) {
+          var inner = el.shadowRoot && el.shadowRoot.querySelector('.card');
+          return inner ? inner.getBoundingClientRect() : el.getBoundingClientRect();
+        }
+        Object.keys(pairMap).forEach(function(key) {
+          var edge = pairMap[key];
+          var f = cardRect(cardEls[edge.from]);
+          var t = cardRect(cardEls[edge.to]);
+          var cx1 = f.left + f.width/2 - cr.left, cy1 = f.top + f.height/2 - cr.top;
+          var cx2 = t.left + t.width/2 - cr.left, cy2 = t.top + t.height/2 - cr.top;
+
+          var pad = 6;
+          var p1 = edgePoint(cx1, cy1, f.width/2 + pad, f.height/2 + pad, cx2, cy2);
+          var p2 = edgePoint(cx2, cy2, t.width/2 + pad, t.height/2 + pad, cx1, cy1);
+          var x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
+          var angle = Math.atan2(y2-y1, x2-x1);
+          var color = '#56d4bc';
+          var lineColor = '#6e7681';
+
+          var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+          line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+          line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+          line.setAttribute('stroke', lineColor);
+          line.setAttribute('stroke-width','1.5');
+          line.setAttribute('stroke-dasharray', edge.isList ? '4,3' : 'none');
+          line.setAttribute('opacity','0.6');
+          svg.appendChild(line);
+
+          var al = 8, pa = Math.PI/6;
+          var arrow = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+          arrow.setAttribute('points', x2+','+y2+' '+(x2-Math.cos(angle-pa)*al)+','+(y2-Math.sin(angle-pa)*al)+' '+(x2-Math.cos(angle+pa)*al)+','+(y2-Math.sin(angle+pa)*al));
+          arrow.setAttribute('fill', lineColor);
+          arrow.setAttribute('opacity','0.6');
+          svg.appendChild(arrow);
+
+          // Count badge at midpoint
+          if (edge.names.length > 1) {
+            var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+            var tooltip = edge.names.join(', ');
+            var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+            g.style.cursor = 'pointer';
+            g.style.pointerEvents = 'all';
+            var text = document.createElementNS('http://www.w3.org/2000/svg','text');
+            text.setAttribute('x', mx); text.setAttribute('y', my + 3);
+            text.setAttribute('text-anchor','middle'); text.setAttribute('font-size','10');
+            text.setAttribute('font-weight','bold'); text.setAttribute('fill', color);
+            text.setAttribute('stroke', '#0d1117'); text.setAttribute('stroke-width', '3');
+            text.setAttribute('paint-order', 'stroke');
+            text.textContent = edge.names.length;
+            g.appendChild(text);
+            var title = document.createElementNS('http://www.w3.org/2000/svg','title');
+            title.textContent = tooltip;
+            g.appendChild(title);
+            svg.appendChild(g);
+          } else if (edge.names[0].toLowerCase() !== edge.to.toLowerCase()) {
+            // Single ref — show label only if name differs from target
+            var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+            var label = document.createElementNS('http://www.w3.org/2000/svg','text');
+            label.setAttribute('x', mx); label.setAttribute('y', my - 4);
+            label.setAttribute('text-anchor','middle'); label.setAttribute('font-size','9');
+            label.setAttribute('fill', color); label.setAttribute('opacity','0.7');
+            label.textContent = edge.names[0];
+            svg.appendChild(label);
+          }
+        });
+
+        } // end references filter
+
+        // Policy flow lines (purple dashed)
+        if (diagramFilter === 'all' || diagramFilter === 'policies') {
+        if (lastState.policy_flows) {
+          lastState.policy_flows.forEach(function(flow) {
+            if (!cardEls[flow.from] || !cardEls[flow.to]) return;
+            var f = cardRect(cardEls[flow.from]);
+            var t = cardRect(cardEls[flow.to]);
+            var cx1 = f.left + f.width/2 - cr.left, cy1 = f.top + f.height/2 - cr.top;
+            var cx2 = t.left + t.width/2 - cr.left, cy2 = t.top + t.height/2 - cr.top;
+            var pad = 6;
+            var p1 = edgePoint(cx1, cy1, f.width/2 + pad, f.height/2 + pad, cx2, cy2);
+            var p2 = edgePoint(cx2, cy2, t.width/2 + pad, t.height/2 + pad, cx1, cy1);
+            var x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
             var angle = Math.atan2(y2-y1, x2-x1);
-            x1 += Math.cos(angle)*Math.min(f.width/2,60); y1 += Math.sin(angle)*Math.min(f.height/2,30);
-            x2 -= Math.cos(angle)*Math.min(t.width/2,60); y2 -= Math.sin(angle)*Math.min(t.height/2,30);
+
             var line = document.createElementNS('http://www.w3.org/2000/svg','line');
             line.setAttribute('x1',x1); line.setAttribute('y1',y1);
             line.setAttribute('x2',x2); line.setAttribute('y2',y2);
-            line.setAttribute('stroke', lm ? '#f0883e' : '#58a6ff');
+            line.setAttribute('stroke','#d2a8ff');
             line.setAttribute('stroke-width','1.5');
-            line.setAttribute('stroke-dasharray', lm ? '4,3' : 'none');
-            line.setAttribute('opacity','0.5');
+            line.setAttribute('stroke-dasharray','6,4');
+            line.setAttribute('opacity','0.6');
             svg.appendChild(line);
+
             var al = 8, pa = Math.PI/6;
             var arrow = document.createElementNS('http://www.w3.org/2000/svg','polygon');
             arrow.setAttribute('points', x2+','+y2+' '+(x2-Math.cos(angle-pa)*al)+','+(y2-Math.sin(angle-pa)*al)+' '+(x2-Math.cos(angle+pa)*al)+','+(y2-Math.sin(angle+pa)*al));
-            arrow.setAttribute('fill', lm ? '#f0883e' : '#58a6ff');
-            arrow.setAttribute('opacity','0.5');
+            arrow.setAttribute('fill','#d2a8ff');
+            arrow.setAttribute('opacity','0.6');
             svg.appendChild(arrow);
+
+            // Policy label at midpoint
+            var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+            var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+            g.style.cursor = 'pointer'; g.style.pointerEvents = 'all';
+            var text = document.createElementNS('http://www.w3.org/2000/svg','text');
+            text.setAttribute('x', mx); text.setAttribute('y', my - 4);
+            text.setAttribute('text-anchor','middle'); text.setAttribute('font-size','8');
+            text.setAttribute('fill','#d2a8ff'); text.setAttribute('opacity','0.8');
+            text.setAttribute('stroke', '#0d1117'); text.setAttribute('stroke-width', '2.5');
+            text.setAttribute('paint-order', 'stroke');
+            text.textContent = flow.event;
+            g.appendChild(text);
+            var title = document.createElementNS('http://www.w3.org/2000/svg','title');
+            title.textContent = flow.policy + ': on ' + flow.event + ' => ' + flow.trigger;
+            g.appendChild(title);
+            svg.appendChild(g);
           });
-        });
+        }
+        } // end policies filter
       }
+      window._redrawLines = redrawLines;
+      grid.addEventListener('card-resized', function() {
+        requestAnimationFrame(redrawLines);
+      });
       requestAnimationFrame(redrawLines);
     }
 
@@ -332,22 +631,79 @@
       document.getElementById('domain-title').textContent = (state.domain_name || 'Hecks') + ' Workshop';
       if (state.mode === 'sketch') terminal.classList.add('sketch-grid'); else terminal.classList.remove('sketch-grid');
 
+      // Right sidebar: inspector in sketch, events in play
+      document.getElementById('inspector-section').style.display = state.mode === 'play' ? 'none' : '';
+      document.getElementById('events-section').style.display = state.mode === 'play' ? '' : 'none';
+
       // Sidebar
       var tree = document.getElementById('domain-tree');
-      tree.innerHTML = '<h3 class="text-gh-blue text-[11px] uppercase tracking-wider mb-2">Domain</h3>';
+      tree.innerHTML = '';
       if (!state.aggregates.length) {
-        tree.innerHTML += '<div class="text-gh-muted italic">No aggregates yet</div>';
+        tree.innerHTML = '<div class="text-gh-muted italic">No aggregates yet</div>';
         return;
       }
+
+      // Group aggregates by domain
+      var groups = {};
       state.aggregates.forEach(function(agg) {
-        var card = document.createElement('agg-card');
-        card.data = agg;
-        card.style.position = 'relative';
-        card.style.marginBottom = '4px';
-        card.addEventListener('card-hover', function(e) { activeAggName = e.detail.name; renderInspector(); });
-        card.addEventListener('card-select', function(e) { activeAggName = e.detail.name; renderInspector(); });
-        card.addEventListener('item-navigate', function(e) { activeAggName = e.detail.target; renderInspector(); runCommand(e.detail.target); });
-        tree.appendChild(card);
+        var d = agg.domain || state.domain_name || 'Domain';
+        if (!groups[d]) groups[d] = [];
+        groups[d].push(agg);
+      });
+
+      Object.keys(groups).forEach(function(domainName) {
+        var header = document.createElement('h3');
+        header.className = 'text-gh-blue text-[11px] uppercase tracking-wider mb-1 mt-2';
+        header.textContent = domainName;
+        tree.appendChild(header);
+
+        groups[domainName].forEach(function(agg) {
+          var block = document.createElement('div');
+          block.style.marginBottom = '4px';
+          block.style.marginLeft = '6px';
+
+          var sectionsDiv = document.createElement('div');
+          sectionsDiv.style.display = 'none';
+          var collapsed = true;
+
+          var title = document.createElement('div');
+          title.style.cssText = 'color:#f0883e;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:3px 0;cursor:pointer;user-select:none;';
+          title.textContent = agg.name;
+          title.addEventListener('click', function() {
+            collapsed = !collapsed;
+            sectionsDiv.style.display = collapsed ? 'none' : 'block';
+            activeAggName = agg.name;
+            renderInspector();
+          });
+          block.appendChild(title);
+
+          var tempCard = document.createElement('agg-card');
+          var sections = tempCard._buildSections(agg);
+          sections.forEach(function(sec) {
+            var panel = document.createElement('section-panel');
+            panel.setAttribute('label', sec.key);
+            panel.setAttribute('color', sec.color);
+            panel.setAttribute('collapsed', '');
+            sec.items.forEach(function(item) {
+              var el = document.createElement('agg-item');
+              var isRef = sec.key === 'references';
+              if (isRef) {
+                var m = item.type && item.type.match(/(?:reference_to|list_of)\((\w+)\)/);
+                el.setAttribute('name', item.name || item);
+                if (m) el.setAttribute('nav-target', m[1]);
+              } else {
+                el.setAttribute('name', typeof item === 'string' ? item : item.name);
+                if (item.type && sec.key === 'attributes') el.setAttribute('type', item.type);
+              }
+              panel.appendChild(el);
+            });
+            sectionsDiv.appendChild(panel);
+          });
+          block.appendChild(sectionsDiv);
+
+          block.addEventListener('item-navigate', function(e) { activeAggName = e.detail.target; renderInspector(); runCommand(e.detail.target); });
+          tree.appendChild(block);
+        });
       });
 
       // Events
@@ -356,10 +712,27 @@
       if (state.events.length === 0) { empty.style.display = ''; list.innerHTML = ''; }
       else {
         empty.style.display = 'none';
-        list.innerHTML = state.events.slice().reverse().map(function(ev) {
-          return '<div class="bg-gh-bg border border-gh-border rounded p-1.5 mb-1.5"><div class="text-gh-purple font-semibold">' + esc(ev.type) +
-            '</div><div class="text-gh-muted text-[11px]">' + esc(ev.occurred_at || '') + '</div></div>';
-        }).join('');
+        list.innerHTML = '';
+        state.events.slice().reverse().forEach(function(ev) {
+          var card = document.createElement('div');
+          card.className = 'bg-gh-bg border border-gh-border rounded p-1.5 mb-1.5 cursor-pointer';
+          card.innerHTML = '<div class="text-gh-purple font-semibold">' + esc(ev.type) +
+            '</div><div class="text-gh-blue text-[10px]">' + esc(ev.command || '') +
+            '</div><div class="text-gh-muted text-[11px]">' + esc(ev.occurred_at || '') + '</div>';
+          var details = document.createElement('div');
+          details.style.display = 'none';
+          details.className = 'mt-1 pt-1 border-t border-gh-border';
+          if (ev.data) {
+            Object.keys(ev.data).forEach(function(k) {
+              details.innerHTML += '<div class="text-[11px]"><span class="text-gh-green">' + esc(k) + '</span> <span class="text-gh-muted">' + esc(ev.data[k]) + '</span></div>';
+            });
+          }
+          card.appendChild(details);
+          card.addEventListener('click', function() {
+            details.style.display = details.style.display === 'none' ? '' : 'none';
+          });
+          list.appendChild(card);
+        });
       }
     }
 
@@ -391,28 +764,52 @@
 
     function buildCompletions(state) {
       completions = [];
-      typeOptions.forEach(function(t) { if (t !== 'reference_to("")') completions.push({ text: t, type: 'type' }); });
-      completions = completions.concat([
-        {text:'describe',type:'workshop'},{text:'diagram',type:'workshop'},{text:'browse',type:'workshop'},
-        {text:'validate',type:'workshop'},{text:'preview',type:'workshop'},{text:'play!',type:'mode'},
-        {text:'sketch!',type:'mode'},{text:'events',type:'play'},{text:'history',type:'play'},
-        {text:'reset!',type:'play'},{text:'save',type:'workshop'}
-      ]);
-      state.aggregates.forEach(function(a) {
-        completions.push({text:'reference_to("'+a.name+'")',type:'reference'});
-        completions.push({text:'list_of("'+a.name+'")',type:'collection'});
-        completions.push({text:a.name,type:'aggregate'});
-        completions.push({text:a.name+'.describe',type:'method'});
-        completions.push({text:a.name+'.preview',type:'method'});
-        completions.push({text:a.name+'.attributes',type:'method'});
-        completions.push({text:a.name+'.commands',type:'method'});
-        completions.push({text:a.name+'.remove :name',type:'remove',stops:[':name']});
-        a.commands.forEach(function(c) { completions.push({text:c,type:'command'}); });
-        completions.push({text:a.name+'.attr :name, String',type:'add attribute',stops:[':name','String']});
-        completions.push({text:a.name+'.command :name',type:'add command',stops:[':name']});
-        completions.push({text:a.name+'.lifecycle :status, default: "draft"',type:'add lifecycle',stops:[':status','draft']});
-        completions.push({text:a.name+'.validation :name, presence: true',type:'add validation',stops:[':name']});
-      });
+      if (state.mode === 'play') {
+        completions.push({text:'sketch!',type:'mode'});
+        completions.push({text:'events',type:'play'});
+        completions.push({text:'history',type:'play'});
+        completions.push({text:'reset!',type:'play'});
+        completions.push({text:'diagram',type:'workshop'});
+        state.aggregates.forEach(function(a) {
+          completions.push({text:a.name,type:'aggregate'});
+          completions.push({text:a.name+'.all',type:'query'});
+          completions.push({text:a.name+'.find(id)',type:'query',stops:['id']});
+          completions.push({text:a.name+'.count',type:'query'});
+          a.commands.forEach(function(c) {
+            function defaultFor(t) {
+              if (t === 'Integer') return '0';
+              if (t === 'Float') return '0.0';
+              if (t === 'TrueClass' || t === 'Boolean') return 'true';
+              return '""';
+            }
+            var params = c.attributes.map(function(p) { return p.name + ': ' + defaultFor(p.type); }).join(', ');
+            var stops = c.attributes.map(function(p) { return defaultFor(p.type); });
+            completions.push({text:a.name+'.create(' + params + ')',type:'command',stops:stops});
+          });
+        });
+      } else {
+        typeOptions.forEach(function(t) { if (t !== 'reference_to("")') completions.push({ text: t, type: 'type' }); });
+        completions = completions.concat([
+          {text:'describe',type:'workshop'},{text:'diagram',type:'workshop'},{text:'browse',type:'workshop'},
+          {text:'validate',type:'workshop'},{text:'preview',type:'workshop'},{text:'play!',type:'mode'},
+          {text:'save',type:'workshop'}
+        ]);
+        state.aggregates.forEach(function(a) {
+          completions.push({text:'reference_to("'+a.name+'")',type:'reference'});
+          completions.push({text:'list_of("'+a.name+'")',type:'collection'});
+          completions.push({text:a.name,type:'aggregate'});
+          completions.push({text:a.name+'.describe',type:'method'});
+          completions.push({text:a.name+'.preview',type:'method'});
+          completions.push({text:a.name+'.attributes',type:'method'});
+          completions.push({text:a.name+'.commands',type:'method'});
+          completions.push({text:a.name+'.remove :name',type:'remove',stops:[':name']});
+          a.commands.forEach(function(c) { completions.push({text:c.name,type:'command'}); });
+          completions.push({text:a.name+'.attr :name, String',type:'add attribute',stops:[':name','String']});
+          completions.push({text:a.name+'.command :name',type:'add command',stops:[':name']});
+          completions.push({text:a.name+'.lifecycle :status, default: "draft"',type:'add lifecycle',stops:[':status','draft']});
+          completions.push({text:a.name+'.validation :name, presence: true',type:'add validation',stops:[':name']});
+        });
+      }
     }
 
     input.addEventListener('input', function() {
@@ -458,8 +855,12 @@
       var stop = tabStops[tabStopIdx];
       var pos = input.value.indexOf(stop, tabStopIdx === 0 ? 0 : input.selectionStart);
       if (pos > -1) {
-        var s = stop.charAt(0) === ':' ? pos+1 : pos;
-        input.setSelectionRange(s, pos+stop.length); input.scrollLeft = 0;
+        if (stop === '""') {
+          input.setSelectionRange(pos+1, pos+1);
+        } else {
+          var s = stop.charAt(0) === ':' ? pos+1 : pos;
+          input.setSelectionRange(s, pos+stop.length);
+        }
         showStopHint(stop);
       }
     }
@@ -492,7 +893,7 @@
         aggs.forEach(function(a) {
           a.commands.forEach(function(cmd) {
             var attrs = a.attributes.map(function(at) { return at.name+': ""'; }).join(', ');
-            hints.push(a.name+'.'+cmd.toLowerCase().replace(a.name.toLowerCase(),'')+' ('+attrs+')  # command');
+            hints.push(a.name+'.'+cmd.name.toLowerCase().replace(a.name.toLowerCase(),'')+' ('+attrs+')  # command');
           });
           hints.push(a.name+'.describe  # aggregate');
         });
@@ -512,7 +913,7 @@
     }
 
     // ─── Init ───
-    fetch('/state').then(function(r) { return r.json(); }).then(function(state) {
+    fetch('/hecks_web_workbench/state').then(function(r) { return r.json(); }).then(function(state) {
       lastState = state;
       updateState(state);
       buildCompletions(state);

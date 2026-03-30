@@ -9,10 +9,10 @@ hecks web_console Pizzas
 # => Hecks Web Console: http://localhost:4567
 ```
 
-Open `http://localhost:4567` in your browser. You'll see three panels:
+Open `http://localhost:4567/hecks_web_workbench` in your browser. You'll see three panels:
 
 - **Left sidebar** — Domain tree showing aggregates, attributes, commands, events
-- **Center** — Terminal-like REPL input and output
+- **Center** — Terminal-like REPL input and output, with interactive domain diagram
 - **Right sidebar** — Event log (populated in play mode)
 
 ## Options
@@ -20,6 +20,23 @@ Open `http://localhost:4567` in your browser. You'll see three panels:
 ```bash
 hecks web_console Pizzas --port 3000
 ```
+
+## Multi-Domain
+
+Load multiple domain files into a single console:
+
+```ruby
+Hecks::Workshop::WebRunner.new(
+  name: "Governance",
+  domains: [
+    "examples/governance/compliance_domain/hecks_domain.rb",
+    "examples/governance/model_registry_domain/hecks_domain.rb",
+    "examples/governance/operations_domain/hecks_domain.rb"
+  ]
+).run
+```
+
+Aggregates are grouped by their source domain in the sidebar and diagram.
 
 ## Example Session
 

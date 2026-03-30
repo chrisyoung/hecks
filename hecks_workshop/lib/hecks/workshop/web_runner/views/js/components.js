@@ -196,29 +196,32 @@ class AggCard extends HTMLElement {
       <style>
         ${BASE_STYLES}
         :host { display: block; }
-        .card { background: ${COLORS.panel}; border: 1px solid ${COLORS.border}; border-radius: 6px; padding: 8px; min-width: 120px; max-width: 180px; }
+        .card { background: ${COLORS.panel}e6; border: 1px solid ${COLORS.border}; border-radius: 6px; padding: 8px; min-width: 120px; max-width: 180px; backdrop-filter: blur(4px); }
         .name { color: ${COLORS.orange}; font-weight: 600; font-size: 11px; cursor: pointer; }
         .name:hover { text-decoration: underline; }
         .dots { display: flex; gap: 6px; margin-top: 4px; }
         .dot { width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-               font-size: 8px; font-weight: bold; color: ${COLORS.bg}; cursor: pointer; transition: transform 0.15s; }
+               font-size: 8px; font-weight: bold; color: ${COLORS.bg}; cursor: pointer; transition: transform 0.15s; position: relative; }
         .dot:hover { transform: scale(1.3); }
+        .dot:hover .tooltip { display: block; }
         .dot.dim { opacity: 0.3; }
+        .tooltip { display: none; position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+                   background: ${COLORS.panel}dd; border: 1px solid ${COLORS.border}; border-radius: 4px;
+                   padding: 2px 6px; font-size: 8px; backdrop-filter: blur(4px); white-space: nowrap; color: ${COLORS.text};
+                   font-weight: normal; pointer-events: none; z-index: 30; }
         .detail { margin-top: 6px; }
         .detail-header { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
         .detail-item { font-size: 10px; line-height: 1.6; color: ${COLORS.text}; }
         .ref { color: ${COLORS.orange}; cursor: pointer; }
         .ref:hover { text-decoration: underline; }
-        .collapse { color: ${COLORS.muted}; font-size: 10px; cursor: pointer; text-align: right; margin-top: 4px; }
-        .collapse:hover { color: ${COLORS.text}; }
         .card.open { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-        .dropdown { background: ${COLORS.panel}; border: 1px solid ${COLORS.border}; border-top: none;
+        .dropdown { background: ${COLORS.panel}e6; border: 1px solid ${COLORS.border}; border-top: none; backdrop-filter: blur(4px);
                     border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; padding: 8px; }
       </style>
       <div class="card" part="card">
         <div class="name">${this._esc(agg.name)}</div>
         <div class="dots">${sections.map((s, i) =>
-          `<span class="dot" data-idx="${i}" style="background:${s.color}" title="${s.key} (${s.items.length})">${s.items.length}</span>`
+          `<span class="dot" data-idx="${i}" style="background:${s.color}">${s.items.length}<span class="tooltip" style="color:${s.color}">${s.key} (${s.items.length})</span></span>`
         ).join('')}</div>
       </div>
       <div class="dropdown" style="display:none"></div>
@@ -245,6 +248,8 @@ class AggCard extends HTMLElement {
           card.classList.remove('open');
           dots.forEach(d => d.classList.remove('dim'));
           activeIdx = -1;
+          this.style.zIndex = '';
+          this.dispatchEvent(new CustomEvent('card-resized', { bubbles: true, composed: true }));
           return;
         }
         activeIdx = i;
@@ -253,6 +258,8 @@ class AggCard extends HTMLElement {
         dot.classList.remove('dim');
         this._renderSection(dropdown, sections[i]);
         dropdown.style.display = 'block';
+        this.style.zIndex = '10';
+        this.dispatchEvent(new CustomEvent('card-resized', { bubbles: true, composed: true }));
       });
     });
 
@@ -264,6 +271,7 @@ class AggCard extends HTMLElement {
         card.classList.remove('open');
         dots.forEach(d => d.classList.remove('dim'));
         activeIdx = -1;
+        this.style.zIndex = '';
       }
     });
 
@@ -280,7 +288,6 @@ class AggCard extends HTMLElement {
     section.items.forEach(item => {
       html += `<div class="detail-item">${section.render(item)}</div>`;
     });
-    html += `<div class="collapse">▲</div>`;
     container.innerHTML = html;
 
     // Wire ref clicks
@@ -291,14 +298,6 @@ class AggCard extends HTMLElement {
           bubbles: true, composed: true, detail: { target: ref.dataset.target }
         }));
       });
-    });
-
-    // Collapse button
-    container.querySelector('.collapse').addEventListener('click', (e) => {
-      e.stopPropagation();
-      container.style.display = 'none';
-      this.shadowRoot.querySelector('.card').classList.remove('open');
-      this.shadowRoot.querySelectorAll('.dot').forEach(d => d.classList.remove('dim'));
     });
   }
 
@@ -322,7 +321,7 @@ class AggCard extends HTMLElement {
     });
     if (agg.commands.length) sections.push({
       key: 'commands', color: COLORS.blue, items: agg.commands,
-      render: c => this._esc(c)
+      render: c => this._esc(typeof c === 'string' ? c : c.name)
     });
     if (agg.events.length) sections.push({
       key: 'events', color: COLORS.purple, items: agg.events,
@@ -330,7 +329,7 @@ class AggCard extends HTMLElement {
     });
     if (agg.policies?.length) sections.push({
       key: 'policies', color: COLORS.red, items: agg.policies,
-      render: p => this._esc(p)
+      render: p => this._esc(typeof p === 'string' ? p : p.name)
     });
     if (agg.queries?.length) sections.push({
       key: 'queries', color: COLORS.cyan, items: agg.queries,
@@ -392,7 +391,6 @@ class AggInspector extends HTMLElement {
       const panel = document.createElement('section-panel');
       panel.setAttribute('label', sec.key);
       panel.setAttribute('color', sec.color);
-      panel.setAttribute('collapsed', '');
 
       sec.items.forEach(item => {
         const el = document.createElement('agg-item');
@@ -461,18 +459,33 @@ class DomainDiagram extends HTMLElement {
     const svgEl = this.shadowRoot.querySelector('svg');
     const cardsEl = this.shadowRoot.querySelector('.cards');
     const hostWidth = this.offsetWidth || 700;
-    const cardW = 160, cardH = 80, pad = 30;
-    const cols = Math.max(2, Math.floor(hostWidth / (cardW + pad)));
-    const rows = Math.ceil(aggs.length / cols);
-    container.style.minHeight = (rows * (cardH + pad) + pad) + 'px';
+    const hostHeight = this.offsetHeight || 500;
+    container.style.minHeight = Math.max(400, hostHeight) + 'px';
+
+    // Force-directed layout
+    const graphNodes = aggs.map(a => ({ name: a.name }));
+    const graphEdges = [];
+    const seenPairs = {};
+    aggs.forEach(agg => {
+      agg.attributes.forEach(a => {
+        const rm = a.type.match(/reference_to\((\w+)\)/);
+        const lm = a.type.match(/list_of\((\w+)\)/);
+        const target = rm ? rm[1] : (lm ? lm[1] : null);
+        if (!target || !aggs.find(x => x.name === target)) return;
+        const pk = agg.name + '|' + target;
+        if (!seenPairs[pk]) { seenPairs[pk] = true; graphEdges.push({ from: agg.name, to: target }); }
+      });
+    });
+    const positions = this._layoutGraph(graphNodes, graphEdges, hostWidth, Math.max(hostHeight, 400));
 
     this._cardEls = {};
     aggs.forEach((agg, i) => {
       const card = document.createElement('agg-card');
       card.data = agg;
       card.style.position = 'absolute';
-      card.style.left = ((i % cols) * (cardW + pad) + pad) + 'px';
-      card.style.top = (Math.floor(i / cols) * (cardH + pad) + pad) + 'px';
+      const p = positions[agg.name];
+      card.style.left = p.x + 'px';
+      card.style.top = p.y + 'px';
 
       // Drag
       card.addEventListener('mousedown', (e) => {
@@ -486,8 +499,12 @@ class DomainDiagram extends HTMLElement {
         e.preventDefault();
         const onMove = (e2) => {
           const cr = cardsEl.getBoundingClientRect();
-          card.style.left = (e2.clientX - cr.left - dx) + 'px';
-          card.style.top = (e2.clientY - cr.top - dy) + 'px';
+          let newX = e2.clientX - cr.left - dx;
+          let newY = e2.clientY - cr.top - dy;
+          newX = Math.max(0, Math.min(cr.width - 160, newX));
+          newY = Math.max(0, Math.min(cr.height - 80, newY));
+          card.style.left = newX + 'px';
+          card.style.top = newY + 'px';
           this._drawLines(svgEl, container);
         };
         const onUp = () => {
@@ -513,30 +530,42 @@ class DomainDiagram extends HTMLElement {
     svg.setAttribute('width', container.offsetWidth);
     svg.setAttribute('height', container.offsetHeight);
 
+    const pairMap = {};
     this._state.aggregates.forEach(agg => {
       agg.attributes.forEach(a => {
         const rm = a.type.match(/reference_to\((\w+)\)/);
         const lm = a.type.match(/list_of\((\w+)\)/);
         const target = rm ? rm[1] : (lm ? lm[1] : null);
         if (!target || !this._cardEls[agg.name] || !this._cardEls[target]) return;
+        const key = agg.name + '|' + target;
+        if (!pairMap[key]) pairMap[key] = { from: agg.name, to: target, isList: !!lm, names: [] };
+        pairMap[key].names.push(a.name.replace(/_id$/, ''));
+        if (lm) pairMap[key].isList = true;
+      });
+    });
 
-        const f = this._cardEls[agg.name].getBoundingClientRect();
-        const t = this._cardEls[target].getBoundingClientRect();
-        let x1 = f.left + f.width/2 - cr.left, y1 = f.top + f.height/2 - cr.top;
-        let x2 = t.left + t.width/2 - cr.left, y2 = t.top + t.height/2 - cr.top;
+    Object.values(pairMap).forEach(edge => {
+        const cardRect = (el) => { const inner = el.shadowRoot?.querySelector('.card'); return inner ? inner.getBoundingClientRect() : el.getBoundingClientRect(); };
+        const f = cardRect(this._cardEls[edge.from]);
+        const t = cardRect(this._cardEls[edge.to]);
+        const cx1 = f.left + f.width/2 - cr.left, cy1 = f.top + f.height/2 - cr.top;
+        const cx2 = t.left + t.width/2 - cr.left, cy2 = t.top + t.height/2 - cr.top;
+
+        const pad = 6;
+        const p1 = this._edgePoint(cx1, cy1, f.width/2 + pad, f.height/2 + pad, cx2, cy2);
+        const p2 = this._edgePoint(cx2, cy2, t.width/2 + pad, t.height/2 + pad, cx1, cy1);
+        let x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
         const angle = Math.atan2(y2-y1, x2-x1);
-        x1 += Math.cos(angle)*Math.min(f.width/2, 60);
-        y1 += Math.sin(angle)*Math.min(f.height/2, 30);
-        x2 -= Math.cos(angle)*Math.min(t.width/2, 60);
-        y2 -= Math.sin(angle)*Math.min(t.height/2, 30);
+        const color = '#56d4bc';
+        const lineColor = '#6e7681';
 
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1',x1); line.setAttribute('y1',y1);
         line.setAttribute('x2',x2); line.setAttribute('y2',y2);
-        line.setAttribute('stroke', lm ? COLORS.orange : COLORS.blue);
+        line.setAttribute('stroke', lineColor);
         line.setAttribute('stroke-width','1.5');
-        line.setAttribute('stroke-dasharray', lm ? '4,3' : 'none');
-        line.setAttribute('opacity','0.5');
+        line.setAttribute('stroke-dasharray', edge.isList ? '4,3' : 'none');
+        line.setAttribute('opacity','0.6');
         svg.appendChild(line);
 
         const al = 8, pa = Math.PI/6;
@@ -544,11 +573,98 @@ class DomainDiagram extends HTMLElement {
         arrow.setAttribute('points',
           `${x2},${y2} ${x2-Math.cos(angle-pa)*al},${y2-Math.sin(angle-pa)*al} ${x2-Math.cos(angle+pa)*al},${y2-Math.sin(angle+pa)*al}`
         );
-        arrow.setAttribute('fill', lm ? COLORS.orange : COLORS.blue);
-        arrow.setAttribute('opacity','0.5');
+        arrow.setAttribute('fill', lineColor);
+        arrow.setAttribute('opacity','0.6');
         svg.appendChild(arrow);
-      });
+
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        if (edge.names.length > 1) {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.style.cursor = 'pointer'; g.style.pointerEvents = 'all';
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', mx); text.setAttribute('y', my + 3);
+          text.setAttribute('text-anchor', 'middle'); text.setAttribute('font-size', '10');
+          text.setAttribute('font-weight', 'bold'); text.setAttribute('fill', color);
+          text.setAttribute('stroke', COLORS.bg); text.setAttribute('stroke-width', '3');
+          text.setAttribute('paint-order', 'stroke');
+          text.textContent = edge.names.length;
+          g.appendChild(text);
+          const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+          title.textContent = edge.names.join(', ');
+          g.appendChild(title);
+          svg.appendChild(g);
+        } else if (edge.names[0].toLowerCase() !== edge.to.toLowerCase()) {
+          const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          label.setAttribute('x', mx); label.setAttribute('y', my - 4);
+          label.setAttribute('text-anchor', 'middle'); label.setAttribute('font-size', '9');
+          label.setAttribute('fill', color); label.setAttribute('opacity', '0.7');
+          label.textContent = edge.names[0];
+          svg.appendChild(label);
+        }
     });
+  }
+
+  _layoutGraph(nodes, edges, width, height) {
+    const NW = 160, NH = 80, REPULSION = 20000, ATTRACT = 0.003, DAMP = 0.9, ITERS = 300;
+    const cx = width/2, cy = height/2, r = Math.min(width, height)/3;
+    const degree = {};
+    nodes.forEach(n => { degree[n.name] = 0; });
+    edges.forEach(e => { degree[e.from]++; degree[e.to]++; });
+    const pos = {}, vel = {};
+    nodes.forEach((n, i) => {
+      const a = (2 * Math.PI * i) / nodes.length;
+      pos[n.name] = { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+      vel[n.name] = { x: 0, y: 0 };
+    });
+    for (let iter = 0; iter < ITERS; iter++) {
+      const forces = {};
+      nodes.forEach(n => forces[n.name] = { x: 0, y: 0 });
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const na = nodes[i].name, nb = nodes[j].name;
+          let dx = pos[na].x - pos[nb].x, dy = pos[na].y - pos[nb].y;
+          const dist = Math.max(Math.sqrt(dx*dx + dy*dy), 20);
+          const f = REPULSION / (dist * dist), fx = (dx/dist)*f, fy = (dy/dist)*f;
+          forces[na].x += fx; forces[na].y += fy;
+          forces[nb].x -= fx; forces[nb].y -= fy;
+        }
+      }
+      edges.forEach(e => {
+        const dx = pos[e.to].x - pos[e.from].x, dy = pos[e.to].y - pos[e.from].y;
+        forces[e.from].x += dx * ATTRACT; forces[e.from].y += dy * ATTRACT;
+        forces[e.to].x -= dx * ATTRACT; forces[e.to].y -= dy * ATTRACT;
+      });
+      nodes.forEach(n => {
+        const centerPull = 0.0005 + degree[n.name] * 0.001;
+        forces[n.name].x += (cx - pos[n.name].x) * centerPull;
+        forces[n.name].y += (cy - pos[n.name].y) * centerPull;
+        vel[n.name].x = (vel[n.name].x + forces[n.name].x) * DAMP;
+        vel[n.name].y = (vel[n.name].y + forces[n.name].y) * DAMP;
+        pos[n.name].x += vel[n.name].x; pos[n.name].y += vel[n.name].y;
+        pos[n.name].x = Math.max(NW/2, Math.min(width - NW/2, pos[n.name].x));
+        pos[n.name].y = Math.max(NH/2, Math.min(height - NH/2, pos[n.name].y));
+      });
+    }
+    const result = {};
+    nodes.forEach(n => { result[n.name] = { x: Math.round(pos[n.name].x - NW/2), y: Math.round(pos[n.name].y - NH/2) }; });
+    return result;
+  }
+
+  // Calculate the point where a line from (cx,cy) to (tx,ty) exits a rectangle centered at (cx,cy) with half-sizes (hw,hh)
+  _edgePoint(cx, cy, hw, hh, tx, ty) {
+    const dx = tx - cx, dy = ty - cy;
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    const absDx = Math.abs(dx), absDy = Math.abs(dy);
+    // Which edge does the line hit?
+    if (absDx * hh > absDy * hw) {
+      // Hits left or right edge
+      const sign = dx > 0 ? 1 : -1;
+      return { x: cx + sign * hw, y: cy + dy * hw / absDx };
+    } else {
+      // Hits top or bottom edge
+      const sign = dy > 0 ? 1 : -1;
+      return { x: cx + dx * hh / absDy, y: cy + sign * hh };
+    }
   }
 
   _esc(s) { const d = document.createElement('span'); d.textContent = s; return d.innerHTML; }

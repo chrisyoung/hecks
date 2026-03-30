@@ -50,7 +50,26 @@ module Hecks
       # @param options [Hash] additional options passed to Attribute.new
       #   (e.g. +default:+, +optional:+, +enum:+)
       # @return [void]
-      def attribute(name, type = String, **options)
+      def attribute(name_or_type = nil, type = nil, **options)
+        # Support: attribute reference_to("Order")
+        #          attribute reference_to("Order"), :custom_name
+        if name_or_type.is_a?(Hash) && (name_or_type.key?(:reference) || name_or_type.key?(:list))
+          ref_type = name_or_type
+          if type.is_a?(Symbol) || type.is_a?(String)
+            name = type.to_sym
+          else
+            ref_name = ref_type[:reference] || ref_type[:list]
+            name = ref_name.to_s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                                  .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
+            name = ref_type[:reference] ? :"#{name}_id" : name.to_sym
+          end
+          type = ref_type
+        elsif type.nil?
+          name = name_or_type
+          type = String
+        else
+          name = name_or_type
+        end
         type = resolve_type(type)
         list = type.is_a?(Hash) && type[:list]
         ref = type.is_a?(Hash) && type[:reference]

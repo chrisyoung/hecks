@@ -46,13 +46,15 @@ module Hecks
         example_cmd = first_agg&.commands&.first
         if first_agg && example_cmd
           agg_name = first_agg.name
-          cmd_snake = domain_snake_name(example_cmd.name)
           puts "Entering play mode"
           puts ""
-          puts "  #{agg_name}.#{cmd_snake}(...)            # run a command"
-          puts "  #{agg_name}.all / #{agg_name}.find(id)   # query"
-          puts "  events / history / reset!"
-          puts "  sketch!                                 # back to sketch mode"
+          puts "  #{agg_name}.create(...)   # run a command"
+          puts "  #{agg_name}.all           # list all"
+          puts "  #{agg_name}.find(id)      # find by id"
+          puts "  events                    # event log"
+          puts "  history                   # numbered timeline"
+          puts "  reset!                    # clear all data"
+          puts "  sketch!                   # back to sketch mode"
         else
           puts "Entering play mode"
           puts ""

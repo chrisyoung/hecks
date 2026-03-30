@@ -1,6 +1,6 @@
 Hecks.domain "Operations" do
   aggregate "Deployment" do
-    attribute :model_id, String
+    attribute :model_id, reference_to("AiModel")
     attribute :environment, String
     attribute :endpoint, String
     attribute :purpose, String
@@ -30,7 +30,7 @@ Hecks.domain "Operations" do
     end
 
     command "PlanDeployment" do
-      attribute :model_id, String
+      attribute :model_id, reference_to("AiModel")
       attribute :environment, String
       attribute :endpoint, String
       attribute :purpose, String
@@ -47,7 +47,7 @@ Hecks.domain "Operations" do
   end
 
   aggregate "Incident" do
-    attribute :model_id, String
+    attribute :model_id, reference_to("AiModel")
     attribute :severity, String
     attribute :category, String
     attribute :description, String
@@ -79,7 +79,7 @@ Hecks.domain "Operations" do
     end
 
     command "ReportIncident" do
-      attribute :model_id, String
+      attribute :model_id, reference_to("AiModel")
       attribute :severity, String
       attribute :category, String
       attribute :description, String
@@ -106,7 +106,7 @@ Hecks.domain "Operations" do
   end
 
   aggregate "Monitoring" do
-    attribute :model_id, String
+    attribute :model_id, reference_to("AiModel")
     attribute :deployment_id, String
     attribute :metric_name, String
     attribute :value, Float
@@ -134,7 +134,7 @@ Hecks.domain "Operations" do
     end
 
     command "RecordMetric" do
-      attribute :model_id, String
+      attribute :model_id, reference_to("AiModel")
       attribute :deployment_id, String
       attribute :metric_name, String
       attribute :value, Float

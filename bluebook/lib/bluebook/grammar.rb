@@ -24,6 +24,7 @@ module BlueBook
       remove_subscriber remove_value_object remove_entity
       validation lifecycle policy query scope entity value_object
       transition specification
+      create new all find count
     ].freeze
 
     TYPE_MAP = {
@@ -49,10 +50,20 @@ module BlueBook
         return { target: target, method: nil, args: [], kwargs: {} }
       end
 
-      method_name, _, arg_str = rest.partition(/\s+/)
-      method_name = method_name.strip
+      # Handle parens: create_gunslinger(name: "x") or create_gunslinger()
+      if rest =~ /\A(\w+[!?]?)\((.*)\)\s*\z/m
+        method_name = $1
+        arg_str = $2
+      else
+        method_name, _, arg_str = rest.partition(/\s+/)
+        method_name = method_name.strip
+      end
 
-      unless HANDLE_METHODS.include?(method_name)
+      blocked = %w[send class eval instance_eval instance_variable_get instance_variable_set
+                   const_get const_set method system exec fork spawn require load
+                   open read write delete unlink chmod chown public_send __send__
+                   define_method remove_method undef_method boot configure]
+      unless HANDLE_METHODS.include?(method_name) || (method_name.match?(/\A[a-z][a-z0-9_]*[!?]?\z/) && !blocked.include?(method_name))
         return { error: "Unknown method: #{target}.#{method_name}" }
       end
 
