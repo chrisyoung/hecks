@@ -41,6 +41,7 @@ module Hecks
       Structure = DomainModel::Structure
 
       include AttributeCollector
+      include Heksagons::PortDSL if defined?(Heksagons::PortDSL)
 
       # Initialize a new domain builder with the given domain name.
       #
@@ -295,6 +296,10 @@ module Hecks
           glossary_rules: @glossary_rules, modules: @modules
         )
         classify_references(domain)
+        if domain.respond_to?(:driving_ports=)
+          domain.driving_ports = @driving_ports || []
+          domain.driven_ports = @driven_ports || []
+        end
         domain
       end
 

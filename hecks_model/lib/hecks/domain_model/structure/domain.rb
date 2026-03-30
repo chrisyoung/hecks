@@ -21,6 +21,8 @@ module Hecks
     #   domain.visualize   # prints Mermaid diagrams (structure + behavior)
     #
     class Domain
+      include Heksagons::DomainMixin if defined?(Heksagons::DomainMixin)
+
       # @return [String] the human-readable domain name (e.g., "Pizzas", "Accounting")
       attr_reader :name
 
@@ -50,6 +52,7 @@ module Hecks
 
       # @return [Array<Hash>] actors (roles) that interact with this domain
       attr_reader :actors
+
 
       # @return [Boolean] true if this domain is a shared kernel
       attr_reader :shared_kernel
@@ -94,8 +97,8 @@ module Hecks
       #
       # @return [Domain] a new Domain instance
       def initialize(name:, aggregates: [], policies: [], services: [], views: [],
-                     workflows: [], actors: [], custom_verbs: [], tenancy: nil,
-                     event_subscribers: [], shared_kernel: false, uses_kernels: [],
+                     workflows: [], actors: [], custom_verbs: [],
+                     tenancy: nil, event_subscribers: [], shared_kernel: false, uses_kernels: [],
                      context_relationships: [], anti_corruption_layers: [],
                      published_events: [], sagas: [], glossary_rules: [], modules: [])
         @name = name

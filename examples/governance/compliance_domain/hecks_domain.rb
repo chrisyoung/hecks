@@ -1,6 +1,12 @@
 Hecks.domain "Compliance" do
   uses_kernel "Identity"
 
+  driving_port :http, description: "REST API"
+  driving_port :events, description: "Cross-domain event bus"
+
+  driven_port :persistence, [:find, :save, :delete, :all]
+  driven_port :notifications, [:send_email], description: "Policy change alerts"
+
   actor "governance_board", description: "Policy oversight committee"
   actor "reviewer", description: "Compliance reviewer"
   actor "admin", description: "System administrator"

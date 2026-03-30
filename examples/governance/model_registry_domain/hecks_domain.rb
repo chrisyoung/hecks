@@ -1,6 +1,13 @@
 Hecks.domain "ModelRegistry" do
   uses_kernel "Identity"
 
+  driving_port :http, description: "REST API"
+  driving_port :mcp, description: "AI tool interface"
+  driving_port :events, description: "Cross-domain event bus"
+
+  driven_port :persistence, [:find, :save, :delete, :all]
+  driven_port :notifications, [:send_email, :send_webhook], description: "Model status alerts"
+
   actor "governance_board", description: "Model approval authority"
   actor "data_steward", description: "Data usage governance"
   actor "admin", description: "System administrator"

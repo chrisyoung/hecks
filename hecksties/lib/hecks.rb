@@ -11,6 +11,7 @@ require_relative "hecks/autoloads"
 require "hecks_modules"
 
 # Default modules — loaded with require "hecks"
+require "heksagons"
 require "bluebook"
 require "hecks_contracts"
 require "hecks_templating"
