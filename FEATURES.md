@@ -237,6 +237,14 @@
 - Persistent command history across sessions (`~/.hecks_history`)
 - `Hecks::TestHelper` for spec setup and constant cleanup
 
+## Vertical Slice Architecture (hecks_features)
+- Extract vertical slices from domain reactive chains: command → event → policy → downstream command
+- `domain.slices` returns `VerticalSlice` objects with entry command, steps, aggregates, cycle detection
+- `domain.slices_diagram` generates Mermaid flowchart with each slice as a labeled subgraph
+- Cross-aggregate detection: `slice.cross_aggregate?` when a slice spans multiple aggregates
+- Leaky slice validation: warns when aggregate-scoped policies trigger commands on other aggregates
+- Slice introspection: `commands`, `events`, `policies`, `depth` on each slice
+
 ## Validation & DDD Rules
 - No duplicate aggregate names
 - References must target aggregate roots
