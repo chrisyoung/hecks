@@ -1,6 +1,6 @@
 Hecks.domain "Operations" do
   aggregate "Deployment" do
-    reference_to "AiModel", as: :model
+    reference_to "ModelRegistry::AiModel", as: :model
     attribute :environment, String
     attribute :endpoint, String
     attribute :purpose, String
@@ -47,11 +47,11 @@ Hecks.domain "Operations" do
   end
 
   aggregate "Incident" do
-    reference_to "AiModel", as: :model
+    reference_to "ModelRegistry::AiModel", as: :model
     attribute :severity, String
     attribute :category, String
     attribute :description, String
-    reference_to "Stakeholder", as: :reported_by
+    reference_to "Identity::Stakeholder", as: :reported_by
     attribute :reported_at, DateTime
     attribute :resolved_at, DateTime
     attribute :resolution, String
@@ -106,7 +106,7 @@ Hecks.domain "Operations" do
   end
 
   aggregate "Monitoring" do
-    reference_to "AiModel", as: :model
+    reference_to "ModelRegistry::AiModel", as: :model
     reference_to "Deployment"
     attribute :metric_name, String
     attribute :value, Float

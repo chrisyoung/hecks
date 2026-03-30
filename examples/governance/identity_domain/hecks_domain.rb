@@ -1,4 +1,6 @@
 Hecks.domain "Identity" do
+  actor "admin", description: "System administrator"
+
   aggregate "Stakeholder" do
     attribute :name, String
     attribute :email, String
