@@ -48,8 +48,6 @@ module Hecks
       lines.join("\n")
     end
 
-    private
-
     # Build lookup tables and trace all reactive flows from entry-point commands.
     #
     # @return [Array<Hash>] array of flow hashes with :name, :steps, :cyclic keys
@@ -58,6 +56,8 @@ module Hecks
       entry_commands = find_entry_commands
       entry_commands.map { |cmd_key| trace_from(cmd_key) }.compact
     end
+
+    private
 
     # Build indexes mapping event names to policies and command names to aggregates.
     #
