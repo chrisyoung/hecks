@@ -19,7 +19,7 @@ module Hecks
     class WebRunner
       VIEWS_DIR = File.join(__dir__, "web_runner", "views")
 
-      attr_reader :domain_path, :domain_paths, :domain_groups
+      attr_reader :domain_path, :domain_paths, :domain_groups, :loaded_domains
 
       def initialize(name: nil, port: 4567, domain: nil, domains: nil)
         @port        = port
@@ -27,6 +27,7 @@ module Hecks
         @domain_paths = domains
         @workshop_name = name
         @domain_groups = {}
+        @loaded_domains = []
         @runner = ConsoleRunner.new(name: name)
         if domains
           ws = load_multi_domain(domains, name)
@@ -37,11 +38,12 @@ module Hecks
           @runner.instance_variable_set(:@workshop, @runner.setup_workshop)
         end
         @evaluator  = Evaluator.new(@runner, web_runner: self)
-        @serializer = StateSerializer.new(workshop, domain_groups: @domain_groups)
+        @serializer = StateSerializer.new(workshop, domain_groups: @domain_groups, domains: @loaded_domains)
       end
 
       def reload_domain!
         @domain_groups = {}
+        @loaded_domains = []
         if @domain_paths
           @runner.instance_variable_set(:@workshop, load_multi_domain(@domain_paths, @workshop_name))
         elsif @domain_path
@@ -50,7 +52,7 @@ module Hecks
           name = workshop.name
           @runner.instance_variable_set(:@workshop, Hecks::Workshop.new(name))
         end
-        @serializer = StateSerializer.new(workshop, domain_groups: @domain_groups)
+        @serializer = StateSerializer.new(workshop, domain_groups: @domain_groups, domains: @loaded_domains)
         puts "Reset to #{@domain_paths ? 'loaded domains' : @domain_path ? 'loaded domain' : 'empty workshop'}"
       end
 
@@ -73,13 +75,16 @@ module Hecks
 
       def handle(req, res)
         case [req.request_method, req.path]
-        when ["GET",  BASE]                then serve_console(res)
-        when ["POST", "#{BASE}/eval"]      then serve_eval(req, res)
-        when ["GET",  "#{BASE}/state"]     then serve_state(res)
-        when ["GET",  "#{BASE}/js/components.js"] then serve_js(res, "js/components.js")
+        when ["GET",  BASE]           then serve_console(res)
+        when ["POST", "#{BASE}/eval"] then serve_eval(req, res)
+        when ["GET",  "#{BASE}/state"] then serve_state(res)
         else
-          res.status = 404
-          res.body = "Not found"
+          if req.request_method == "GET" && req.path.start_with?("#{BASE}/js/") && req.path.end_with?(".js")
+            serve_js(res, req.path.sub("#{BASE}/", ""))
+          else
+            res.status = 404
+            res.body = "Not found"
+          end
         end
       end
 
@@ -126,6 +131,7 @@ module Hecks
       def load_domain_file(path)
         Kernel.load(File.expand_path(path))
         domain = Hecks.last_domain
+        @loaded_domains << domain
         ws = Hecks::Workshop.new(domain.name)
         domain.aggregates.each do |agg|
           ws.aggregate_builders[agg.name] =
@@ -141,6 +147,7 @@ module Hecks
         paths.each do |path|
           Kernel.load(File.expand_path(path))
           domain = Hecks.last_domain
+          @loaded_domains << domain
           domain.aggregates.each do |agg|
             ws.aggregate_builders[agg.name] =
               Hecks::DSL::AggregateRebuilder.from_aggregate(agg)

@@ -96,8 +96,8 @@ RSpec.describe "Validation Rules" do
     end
   end
 
-  describe "References::NoValueObjectReferences" do
-    it "rejects reference attributes in value objects" do
+  describe "value objects can reference aggregates" do
+    it "allows reference attributes in value objects" do
       domain = Hecks.domain("Validation") do
         aggregate("Pizza") do
           attribute :name, String
@@ -107,7 +107,7 @@ RSpec.describe "Validation Rules" do
         aggregate("Order") { attribute :qty, Integer; command("PlaceOrder") { attribute :qty, Integer } }
       end
       valid, _ = validate(domain)
-      expect(valid).to be false
+      expect(valid).to be true
     end
   end
 

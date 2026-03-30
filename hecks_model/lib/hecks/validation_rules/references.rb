@@ -9,7 +9,6 @@ module Hecks
     # - +ValidReferences+ -- references must target existing aggregate roots (not value objects or entities)
     # - +NoBidirectionalReferences+ -- no mutual A->B and B->A references between aggregates
     # - +NoSelfReferences+ -- aggregates cannot reference themselves
-    # - +NoValueObjectReferences+ -- value objects cannot contain reference_to attributes
     #
     # All rules are autoloaded and executed as part of +Hecks.validate+.
     #
@@ -17,7 +16,6 @@ module Hecks
       autoload :ValidReferences,           "hecks/validation_rules/references/valid_references"
       autoload :NoBidirectionalReferences, "hecks/validation_rules/references/no_bidirectional_references"
       autoload :NoSelfReferences,          "hecks/validation_rules/references/no_self_references"
-      autoload :NoValueObjectReferences,   "hecks/validation_rules/references/no_value_object_references"
       autoload :NoImplicitForeignKeys,    "hecks/validation_rules/references/no_implicit_foreign_keys"
     end
   end
