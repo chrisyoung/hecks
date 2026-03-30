@@ -146,4 +146,61 @@ RSpec.describe Hecks::DSL::DomainBuilder do
       expect(domain.source_path).to eq("/tmp/test.rb")
     end
   end
+
+  describe "compositions" do
+    it "stores composes declarations on the aggregate" do
+      domain = Hecks.domain("Shop") do
+        aggregate("Pizza") do
+          composes "Topping"
+          composes "Sauce", as: :base_sauce
+          attribute :name, String
+          command("CreatePizza") { attribute :name, String }
+        end
+      end
+      comps = domain.aggregates.first.compositions
+      expect(comps.length).to eq(2)
+      expect(comps[0]).to eq({ name: :topping, type: "Topping" })
+      expect(comps[1]).to eq({ name: :base_sauce, type: "Sauce" })
+    end
+  end
+
+  describe "domain-level actors" do
+    it "stores actors on the domain" do
+      domain = Hecks.domain("Gov") do
+        actor "governance_board"
+        actor "admin", description: "System administrator"
+        aggregate("Policy") { attribute :name, String; command("CreatePolicy") { attribute :name, String } }
+      end
+      expect(domain.actors.length).to eq(2)
+      expect(domain.actors[0]).to eq({ name: "governance_board", description: nil })
+      expect(domain.actors[1]).to eq({ name: "admin", description: "System administrator" })
+    end
+  end
+
+  describe "explicit domain events" do
+    it "includes explicit events alongside inferred ones" do
+      domain = Hecks.domain("Gov") do
+        aggregate("Policy") do
+          attribute :name, String
+          event("PolicyExpired") { attribute :policy_id, String }
+          command("CreatePolicy") { attribute :name, String }
+        end
+      end
+      events = domain.aggregates.first.events.map(&:name)
+      expect(events).to include("CreatedPolicy")
+      expect(events).to include("PolicyExpired")
+    end
+
+    it "explicit event overrides inferred event with same name" do
+      domain = Hecks.domain("Gov") do
+        aggregate("Policy") do
+          attribute :name, String
+          event("CreatedPolicy") { attribute :custom_field, String }
+          command("CreatePolicy") { attribute :name, String }
+        end
+      end
+      event = domain.aggregates.first.events.find { |e| e.name == "CreatedPolicy" }
+      expect(event.attributes.map(&:name)).to include(:custom_field)
+    end
+  end
 end

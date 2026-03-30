@@ -1,3 +1,4 @@
+require_relative "event_builder"
 require_relative "aggregate_builder/behavior_methods"
 require_relative "aggregate_builder/constraint_methods"
 require_relative "aggregate_builder/query_methods"
@@ -49,7 +50,8 @@ module Hecks
 
       attr_reader :attributes, :commands, :value_objects, :entities,
                   :policies, :validations, :invariants, :scopes, :ports,
-                  :queries, :subscribers, :indexes, :specifications, :references
+                  :queries, :subscribers, :indexes, :specifications,
+                  :references, :compositions
       # Writer for lifecycle — used by AggregateHandle to update lifecycle
       # without reaching into instance variables. Reader is the DSL method
       # in BehaviorMethods; use current_lifecycle to read.
@@ -75,6 +77,8 @@ module Hecks
         @indexes = []
         @specifications = []
         @references = []
+        @compositions = []
+        @explicit_events = []
         @lifecycle = nil
         @versioned = false
         @attachable = false
@@ -117,6 +121,31 @@ module Hecks
 
       def ref(type, **opts) = reference_to(type, **opts)
 
+      # Declare a composition — this aggregate owns instances of the given type.
+      # The persistence adapter handles cascade deletes.
+      #
+      #   composes "Topping"
+      #   composes "OrderItem", as: :items
+      #
+      def composes(type, as: nil)
+        name = as || type.to_s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                              .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase.to_sym
+        @compositions << { name: name, type: type.to_s }
+      end
+
+      # Declare an explicit domain event (not inferred from a command).
+      # Use for time-based, external, or computed events.
+      #
+      #   event "PolicyExpired" do
+      #     attribute :policy_id, String
+      #   end
+      #
+      def event(name, &block)
+        builder = EventBuilder.new(name)
+        builder.instance_eval(&block) if block
+        @explicit_events << builder.build
+      end
+
       # Define a nested value object within this aggregate.
       #
       # @param name [String] the value object type name
@@ -145,7 +174,7 @@ module Hecks
       #
       # @return [DomainModel::Structure::Aggregate]
       def build
-        events = infer_events
+        events = merge_events(infer_events, @explicit_events)
 
         Structure::Aggregate.new(
           name: @name, attributes: @attributes,
@@ -156,11 +185,19 @@ module Hecks
           subscribers: @subscribers, indexes: @indexes,
           specifications: @specifications, lifecycle: @lifecycle,
           versioned: @versioned, attachable: @attachable,
-          metadata: @metadata, references: @references
+          metadata: @metadata, references: @references,
+          compositions: @compositions
         )
       end
 
       private
+
+      def merge_events(inferred, explicit)
+        by_name = {}
+        inferred.each { |e| by_name[e.name] = e }
+        explicit.each { |e| by_name[e.name] = e }
+        by_name.values
+      end
 
       def infer_events
         aggregate_id_attr = Structure::Attribute.new(name: :aggregate_id, type: String)

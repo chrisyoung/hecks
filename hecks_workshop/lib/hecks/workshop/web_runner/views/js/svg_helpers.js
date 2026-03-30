@@ -39,6 +39,22 @@ export function svgText(svg, x, y, text, color, size, weight) {
   return t;
 }
 
+// Draw a labeled edge with line, arrow, and optional label.
+export function drawEdge(svg, pts, color, dash, opacity, names, bg) {
+  const { x1, y1, x2, y2, angle } = pts;
+  svgLine(svg, x1, y1, x2, y2, color, dash, opacity);
+  svgArrow(svg, x2, y2, angle, color, opacity);
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  if (names.length > 1) {
+    const text = svgText(svg, mx, my + 3, names.length, color, 10, 'bold');
+    text.setAttribute('stroke', bg); text.setAttribute('stroke-width', '3'); text.setAttribute('paint-order', 'stroke');
+    const title = document.createElementNS(NS, 'title');
+    title.textContent = names.join(', '); text.appendChild(title);
+  } else if (names[0] && names[0].toLowerCase() !== (pts.toName || '').toLowerCase()) {
+    svgText(svg, mx, my - 4, names[0], color, 9);
+  }
+}
+
 export function svgPath(svg, d, stroke, opts = {}) {
   const path = document.createElementNS(NS, 'path');
   path.setAttribute('d', d);

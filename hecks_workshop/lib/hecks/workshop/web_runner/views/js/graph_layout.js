@@ -65,6 +65,36 @@ export class PortSpreader {
   }
 }
 
+// Collect all relationship pairs from aggregate data for line drawing.
+export function collectPairs(aggs, cardEls) {
+  const pairMap = {};
+  aggs.forEach(agg => {
+    agg.attributes.forEach(a => {
+      const rm = a.type.match(/reference_to\((\w+)\)/), lm = a.type.match(/list_of\((\w+)\)/);
+      const target = rm ? rm[1] : (lm ? lm[1] : null);
+      if (!target || !cardEls[agg.name] || !cardEls[target]) return;
+      const key = agg.name + '|' + target;
+      if (!pairMap[key]) pairMap[key] = { from: agg.name, to: target, isList: !!lm, isComposition: false, names: [] };
+      pairMap[key].names.push(a.name.replace(/_id$/, ''));
+      if (lm) pairMap[key].isList = true;
+    });
+    (agg.references_to || []).forEach(r => {
+      if (!cardEls[agg.name] || !cardEls[r.type]) return;
+      const key = agg.name + '|' + r.type;
+      if (!pairMap[key]) pairMap[key] = { from: agg.name, to: r.type, isList: false, isComposition: false, names: [] };
+      pairMap[key].names.push(r.name);
+    });
+    (agg.compositions || []).forEach(c => {
+      if (!cardEls[agg.name] || !cardEls[c.type]) return;
+      const key = agg.name + '|' + c.type;
+      if (!pairMap[key]) pairMap[key] = { from: agg.name, to: c.type, isList: false, isComposition: true, names: [] };
+      pairMap[key].names.push(c.name);
+      pairMap[key].isComposition = true;
+    });
+  });
+  return Object.values(pairMap);
+}
+
 export function edgePoint(cx, cy, hw, hh, tx, ty) {
   const dx = tx-cx, dy = ty-cy;
   if (dx === 0 && dy === 0) return { x: cx, y: cy };

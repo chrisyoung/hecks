@@ -2,8 +2,8 @@
 // Force-directed layout with draggable cards, SVG lines, policy flows, services.
 // Keyboard: press 0 to reset layout when input is not focused.
 import { COLORS, BASE_STYLES, escHtml } from './shared.js';
-import { layoutGraph, edgePoint, PortSpreader } from './graph_layout.js';
-import { svgLine, svgArrow, svgText, svgPath } from './svg_helpers.js';
+import { layoutGraph, edgePoint, PortSpreader, collectPairs } from './graph_layout.js';
+import { svgLine, svgArrow, svgText, svgPath, drawEdge } from './svg_helpers.js';
 
 class DomainDiagram extends HTMLElement {
   constructor() { super(); this.attachShadow({ mode: 'open' }); this._state = null; this._cardEls = {}; this._filter = 'all'; }
@@ -114,6 +114,11 @@ class DomainDiagram extends HTMLElement {
         const pk = agg.name + '|' + r.type;
         if (!seen[pk]) { seen[pk] = true; edges.push({ from: agg.name, to: r.type }); }
       });
+      (agg.compositions || []).forEach(c => {
+        if (!aggs.find(x => x.name === c.type)) return;
+        const pk = agg.name + '|' + c.type;
+        if (!seen[pk]) { seen[pk] = true; edges.push({ from: agg.name, to: c.type }); }
+      });
     });
     return { nodes, edges };
   }
@@ -158,6 +163,12 @@ class DomainDiagram extends HTMLElement {
           this._ports.count(r.type);
         }
       });
+      (agg.compositions || []).forEach(c => {
+        if (this._cardEls[agg.name] && this._cardEls[c.type]) {
+          this._ports.count(agg.name);
+          this._ports.count(c.type);
+        }
+      });
     });
     (this._state.policy_flows || []).forEach(f => {
       this._ports.count(f.from);
@@ -168,41 +179,11 @@ class DomainDiagram extends HTMLElement {
   }
 
   _drawRefLines(svg) {
-    const pairMap = {};
-    this._state.aggregates.forEach(agg => {
-      // Attribute-based references (reference_to / list_of)
-      agg.attributes.forEach(a => {
-        const rm = a.type.match(/reference_to\((\w+)\)/), lm = a.type.match(/list_of\((\w+)\)/);
-        const target = rm ? rm[1] : (lm ? lm[1] : null);
-        if (!target || !this._cardEls[agg.name] || !this._cardEls[target]) return;
-        const key = agg.name + '|' + target;
-        if (!pairMap[key]) pairMap[key] = { from: agg.name, to: target, isList: !!lm, names: [] };
-        pairMap[key].names.push(a.name.replace(/_id$/, ''));
-        if (lm) pairMap[key].isList = true;
-      });
-      // First-class references (reference_to as relationship)
-      (agg.references_to || []).forEach(r => {
-        if (!this._cardEls[agg.name] || !this._cardEls[r.type]) return;
-        const key = agg.name + '|' + r.type;
-        if (!pairMap[key]) pairMap[key] = { from: agg.name, to: r.type, isList: false, names: [] };
-        pairMap[key].names.push(r.name);
-      });
-    });
-
-    Object.values(pairMap).forEach(edge => {
+    collectPairs(this._state.aggregates, this._cardEls).forEach(edge => {
       const pts = this._edgePair(edge.from, edge.to); if (!pts) return;
-      const { x1, y1, x2, y2, angle } = pts;
-      svgLine(svg, x1, y1, x2, y2, COLORS.orange, edge.isList ? '4,3' : 'none', 0.5);
-      svgArrow(svg, x2, y2, angle, COLORS.orange, 0.5);
-      const mx = (x1+x2)/2, my = (y1+y2)/2;
-      if (edge.names.length > 1) {
-        const text = svgText(svg, mx, my+3, edge.names.length, COLORS.orange, 10, 'bold');
-        text.setAttribute('stroke', COLORS.bg); text.setAttribute('stroke-width', '3'); text.setAttribute('paint-order', 'stroke');
-        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-        title.textContent = edge.names.join(', '); text.appendChild(title);
-      } else if (edge.names[0].toLowerCase() !== edge.to.toLowerCase()) {
-        svgText(svg, mx, my-4, edge.names[0], COLORS.orange, 9);
-      }
+      pts.toName = edge.to;
+      const dash = edge.isComposition ? 'none' : (edge.isList ? '4,3' : '6,3');
+      drawEdge(svg, pts, COLORS.orange, dash, 0.5, edge.names, COLORS.bg);
     });
   }
 
