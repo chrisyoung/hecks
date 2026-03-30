@@ -24,9 +24,9 @@ RSpec.describe "Validator DDD rules" do
     end
   end
 
-  describe "value objects must not contain references" do
-    it "rejects value objects with reference_to" do
-      domain = Hecks.domain "Bad" do
+  describe "value objects can contain references" do
+    it "allows value objects with reference_to" do
+      domain = Hecks.domain "Refs" do
         aggregate "Pizza" do
           attribute :name, String
 
@@ -40,9 +40,8 @@ RSpec.describe "Validator DDD rules" do
         end
       end
 
-      valid, errors = validate(domain)
-      expect(valid).to be false
-      expect(errors).to include(/Value object Topping.*contains a reference/)
+      valid, _errors = validate(domain)
+      expect(valid).to be true
     end
   end
 

@@ -46,7 +46,7 @@ Hecks.domain "Pizzas" do
     attribute :status, String, default: "pending"
 
     value_object "OrderItem" do
-      attribute :pizza_id, String
+      attribute :pizza_id, reference_to("Pizza")
       attribute :quantity, Integer
 
       invariant "quantity must be positive" do
