@@ -73,10 +73,12 @@ class DomainDiagram extends HTMLElement {
       cardsEl.appendChild(node);
     });
 
-    // Auto zoom-to-fit
-    const allX = Object.values(positions).map(p => p.x), allY = Object.values(positions).map(p => p.y);
-    const contentW = Math.max(...allX) - Math.min(...allX) + 200, contentH = Math.max(...allY) - Math.min(...allY) + 120;
-    let zoom = Math.min(1, W / contentW, H / contentH);
+    const fitZoom = (pos) => {
+      const xs = Object.values(pos).map(p => p.x), ys = Object.values(pos).map(p => p.y);
+      const cw = Math.max(...xs) - Math.min(...xs) + 200, ch = Math.max(...ys) - Math.min(...ys) + 120;
+      return Math.min(1, W / cw, H / ch);
+    };
+    let zoom = fitZoom(positions);
     const applyZoom = () => { container.style.transform = `scale(${zoom})`; };
     container.addEventListener('wheel', (e) => {
       if (!e.altKey) return; e.preventDefault();
@@ -86,9 +88,9 @@ class DomainDiagram extends HTMLElement {
     this._keyHandler = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (e.key === '0') {
-        zoom = 1; applyZoom();
         const np = layoutGraph(graphNodes, graphEdges, W, H);
         aggs.forEach(a => { const c = this._cardEls[a.name]; if (c) { c.style.left = np[a.name].x+'px'; c.style.top = np[a.name].y+'px'; }});
+        zoom = fitZoom(np); applyZoom();
         this._drawLines(svgEl, container);
       }
     };
