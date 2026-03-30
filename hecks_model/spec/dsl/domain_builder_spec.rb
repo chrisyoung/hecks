@@ -177,6 +177,47 @@ RSpec.describe Hecks::DSL::DomainBuilder do
     end
   end
 
+  describe "reference classification" do
+    it "classifies local entity/VO references as composition" do
+      domain = Hecks.domain("Shop") do
+        aggregate("Order") do
+          attribute :name, String
+          entity("LineItem") { attribute :qty, Integer }
+          reference_to "LineItem"
+          command("CreateOrder") { attribute :name, String }
+        end
+      end
+      ref = domain.aggregates.first.references.find { |r| r[:type] == "LineItem" }
+      expect(ref[:kind]).to eq(:composition)
+    end
+
+    it "classifies aggregate root references as aggregation" do
+      domain = Hecks.domain("Shop") do
+        aggregate("Order") do
+          attribute :name, String
+          reference_to "Customer"
+          command("CreateOrder") { attribute :name, String }
+        end
+        aggregate("Customer") { attribute :name, String; command("CreateCustomer") { attribute :name, String } }
+      end
+      ref = domain.aggregates.first.references.find { |r| r[:type] == "Customer" }
+      expect(ref[:kind]).to eq(:aggregation)
+    end
+
+    it "classifies :: paths as cross-context" do
+      domain = Hecks.domain("Shop") do
+        aggregate("Order") do
+          attribute :name, String
+          reference_to "Billing::Invoice"
+          command("CreateOrder") { attribute :name, String }
+        end
+      end
+      ref = domain.aggregates.first.references.find { |r| r[:type] == "Invoice" }
+      expect(ref[:kind]).to eq(:cross_context)
+      expect(ref[:domain]).to eq("Billing")
+    end
+  end
+
   describe "explicit domain events" do
     it "includes explicit events alongside inferred ones" do
       domain = Hecks.domain("Gov") do

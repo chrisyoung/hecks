@@ -98,24 +98,22 @@ module Hecks
         @attachable = true
       end
 
-      # Declare a relationship to another aggregate root.
-      #
-      # Standalone form (domain relationship — adapter creates FK):
-      #   reference_to "Order"
-      #   reference_to "Order", as: :placed_order
-      #
-      # Type wrapper form (for use inside attribute):
-      #   attribute :order_id, reference_to("Order")
-      #
-      # Standalone: declares a domain relationship (adapter creates FK).
-      #   reference_to "Order"
-      #   reference_to "Stakeholder", as: :reviewer
+      # Declare a relationship to another type.
+      # The kind (composition/aggregation/cross-context) is inferred after build:
+      #   reference_to "LineItem"              — entity/VO in current agg → composition
+      #   reference_to "Order"                 — aggregate root → aggregation
+      #   reference_to "Billing::Invoice"      — cross-domain aggregate → cross-context
+      #   reference_to "Stakeholder", as: :reviewer  — named role
       #
       def reference_to(type, as: nil)
         @references ||= []
-        name = as || type.to_s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-                              .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase.to_sym
-        @references << { name: name, type: type.to_s }
+        type_str = type.to_s
+        parts = type_str.split("::")
+        target = parts.last
+        domain = parts.length > 1 ? parts[0..-2].join("::") : nil
+        name = as || target.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                           .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase.to_sym
+        @references << { name: name, type: target, domain: domain, kind: nil }
         { reference: type }
       end
 
