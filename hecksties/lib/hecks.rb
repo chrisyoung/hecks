@@ -11,6 +11,7 @@ require_relative "hecks/autoloads"
 require "hecks_modules"
 
 # Default modules — loaded with require "hecks"
+require "bluebook"
 require "hecks_contracts"
 require "hecks_templating"
 require "hecks/domain/inspector"
@@ -47,6 +48,7 @@ module Hecks
   extend AdapterRegistryMethods
   extend ValidationRegistryMethods
   extend DumpFormatRegistryMethods
+  extend GrammarRegistryMethods
 
   def self.configure(&block)
     @configuration = Configuration.new
