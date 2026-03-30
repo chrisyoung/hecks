@@ -28,3 +28,7 @@ HECKS_README.md
 doc/
 .claude/settings.local.json
 .claude/worktrees/
+.mcp.json
+.playwright-mcp/
+bad_domain/
+screenshots/

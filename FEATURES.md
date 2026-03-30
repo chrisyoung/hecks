@@ -346,6 +346,16 @@
 - Stdout fallback when ActionCable is not available (plain Ruby apps)
 - Custom channels via `HecksLive::Channel` subclass with `subscribe_to`
 
+## Module Structure (HEC-370)
+- `bluebook/` — grammar, IR nodes (DomainModel), DSL builders, validators, compiler, generators, visualizer, event storm parser
+- `hecksties/` — core kernel: registries, errors, autoloads, utilities, version
+- `hecks_templating/` — naming helpers + data contracts (type, view, event, migration, UI label)
+- `hecks_runtime/` — command bus, ports, middleware, extensions, boot
+- `hecks_features/` — vertical slice extraction, leaky slice detection, slice diagrams
+- Standalone: heksagons, hecks_workshop, hecks_cli, hecks_static, hecks_on_the_go, hecks_persist, hecks_watchers
+- Meta-gem loader (`lib/hecks.rb`) adds all sub-gem `lib/` directories to `$LOAD_PATH`
+- No Ruby namespace changes — only gem directory ownership changed during consolidation
+
 ## Packaging
 - Core, ActiveModel, real-time, and persistence ship as separate packages
 - `hecks_on_rails` bundles everything for Rails apps
