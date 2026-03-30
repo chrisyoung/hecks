@@ -57,6 +57,13 @@ module Hecks
             if method == "reset!" && @web_runner && !@runner.instance_variable_get(:@workshop).play?
               return @web_runner.reload_domain!
             end
+            if method == "diagram"
+              ws = @runner.instance_variable_get(:@workshop)
+              serializer = Hecks::Workshop::WebRunner::StateSerializer.new(ws)
+              state = serializer.serialize
+              puts state[:mermaid]
+              return nil
+            end
             return @runner.send(method)
           end
 
