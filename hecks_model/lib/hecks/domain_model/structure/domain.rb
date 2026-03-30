@@ -54,17 +54,6 @@ module Hecks
       attr_reader :actors
 
 
-      # @return [Boolean] true if this domain is a shared kernel
-      attr_reader :shared_kernel
-
-      # @return [Array<String>] names of shared kernels this domain depends on
-      attr_reader :uses_kernels
-
-      # @return [Array<Hash>] anti-corruption layer definitions
-      attr_reader :anti_corruption_layers
-
-      # @return [Array<Hash>] versioned event contracts for cross-context communication
-      attr_reader :published_events
 
       # @return [Array<Hash>] saga/process manager definitions
       attr_reader :sagas
@@ -98,9 +87,8 @@ module Hecks
       # @return [Domain] a new Domain instance
       def initialize(name:, aggregates: [], policies: [], services: [], views: [],
                      workflows: [], actors: [], custom_verbs: [],
-                     tenancy: nil, event_subscribers: [], shared_kernel: false, uses_kernels: [],
-                     context_relationships: [], anti_corruption_layers: [],
-                     published_events: [], sagas: [], glossary_rules: [], modules: [])
+                     tenancy: nil, event_subscribers: [],
+                     sagas: [], glossary_rules: [], modules: [])
         @name = name
         @aggregates = aggregates
         @policies = policies
@@ -108,11 +96,6 @@ module Hecks
         @views = views
         @workflows = workflows
         @actors = actors
-        @shared_kernel = shared_kernel
-        @uses_kernels = uses_kernels
-        @context_relationships = context_relationships
-        @anti_corruption_layers = anti_corruption_layers
-        @published_events = published_events
         @sagas = sagas
         @glossary_rules = glossary_rules
         @modules = modules

@@ -41,7 +41,8 @@ module Hecks
       Structure = DomainModel::Structure
 
       include AttributeCollector
-      include Heksagons::PortDSL if defined?(Heksagons::PortDSL)
+      include Heksagons::ExtensionsDSL if defined?(Heksagons::ExtensionsDSL)
+      include Heksagons::StrategicDSL if defined?(Heksagons::StrategicDSL)
 
       # Initialize a new domain builder with the given domain name.
       #
@@ -57,11 +58,6 @@ module Hecks
         @workflows = []
         @attributes = []
         @actors = []
-        @shared_kernel = false
-        @uses_kernels = []
-        @context_relationships = []
-        @anti_corruption_layers = []
-        @published_events = []
         @sagas = []
         @glossary_rules = []
         @modules = []
@@ -73,33 +69,6 @@ module Hecks
         @actors << { name: name.to_s, description: description }
       end
 
-      def shared_kernel
-        @shared_kernel = true
-      end
-
-      def uses_kernel(name)
-        @uses_kernels << name.to_s
-      end
-
-      # Anti-corruption layer for cross-domain translation.
-      #   anti_corruption_layer "Billing" do
-      #     translate "Invoice", billing_id: :invoice_number
-      #   end
-      def anti_corruption_layer(domain_name, &block)
-        acl = { domain: domain_name.to_s, translations: [] }
-        AclBuilder.new(acl).instance_eval(&block) if block
-        @anti_corruption_layers << acl
-      end
-
-      # Versioned event contract for cross-context communication.
-      #   published_event "ModelRegistered", version: 1 do
-      #     attribute :model_id, String
-      #   end
-      def published_event(name, version: 1, &block)
-        builder = Hecks::DSL::EventBuilder.new(name)
-        builder.instance_eval(&block) if block
-        @published_events << { name: name, version: version, event: builder.build }
-      end
 
       # Saga for long-running cross-aggregate coordination.
       #   saga "ModelOnboarding" do
@@ -289,16 +258,16 @@ module Hecks
           services: @services, views: @views, workflows: @workflows,
           actors: @actors, tenancy: @tenancy,
           event_subscribers: @event_subscribers,
-          shared_kernel: @shared_kernel, uses_kernels: @uses_kernels,
-          context_relationships: @context_relationships,
-          anti_corruption_layers: @anti_corruption_layers,
-          published_events: @published_events, sagas: @sagas,
-          glossary_rules: @glossary_rules, modules: @modules
+          sagas: @sagas, glossary_rules: @glossary_rules, modules: @modules
         )
         classify_references(domain)
         if domain.respond_to?(:driving_ports=)
           domain.driving_ports = @driving_ports || []
           domain.driven_ports = @driven_ports || []
+          domain.shared_kernel = @shared_kernel || false
+          domain.uses_kernels = @uses_kernels || []
+          domain.anti_corruption_layers = @anti_corruption_layers || []
+          domain.published_events = @published_events || []
         end
         domain
       end
