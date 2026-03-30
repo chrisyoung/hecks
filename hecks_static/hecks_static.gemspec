@@ -14,5 +14,5 @@ Gem::Specification.new do |spec|
   spec.files         = Dir["lib/**/*"]
 
   spec.add_dependency "hecksties", Hecks::VERSION
-  spec.add_dependency "hecks_domain", Hecks::VERSION
+  spec.add_dependency "bluebook", Hecks::VERSION
 end

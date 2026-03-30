@@ -11,5 +11,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.required_ruby_version = ">= 3.0"
   spec.add_dependency "hecksties", Hecks::VERSION
-  spec.add_dependency "hecks_model", Hecks::VERSION
+  spec.add_dependency "bluebook", Hecks::VERSION
 end

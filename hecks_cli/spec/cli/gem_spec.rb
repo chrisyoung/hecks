@@ -23,7 +23,7 @@ RSpec.describe Hecks::GemBuilder do
 
   describe "COMPONENTS" do
     it "discovers all component gems with gemspecs" do
-      expect(described_class::COMPONENTS).to include("hecksties", "hecks_model", "hecks_runtime")
+      expect(described_class::COMPONENTS).to include("hecksties", "bluebook", "hecks_runtime")
       expect(described_class::COMPONENTS).not_to include("examples")
     end
   end
@@ -91,7 +91,7 @@ RSpec.describe Hecks::GemBuilder do
     it "skips components without a gemspec" do
       Dir.mktmpdir do |dir|
         setup_fake_project(dir)
-        FileUtils.rm(File.join(dir, "hecks_model", "hecks_model.gemspec"))
+        FileUtils.rm(File.join(dir, "bluebook", "bluebook.gemspec"))
         builder = described_class.new(dir, output: output)
         built = []
         allow(builder).to receive(:system) do |cmd|
@@ -99,9 +99,9 @@ RSpec.describe Hecks::GemBuilder do
           true
         end
         builder.build
-        expect(built).not_to include("gem build hecks_model.gemspec")
+        expect(built).not_to include("gem build bluebook.gemspec")
         expect(built).to include("gem build hecksties.gemspec")
-        skipped = messages.find { |m, _| m.include?("Skipping hecks_model") }
+        skipped = messages.find { |m, _| m.include?("Skipping bluebook") }
         expect(skipped).not_to be_nil
       end
     end

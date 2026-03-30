@@ -1,10 +1,15 @@
+require_relative "../hecksties/lib/hecks/version"
+
 Gem::Specification.new do |s|
   s.name        = "bluebook"
-  s.version     = "2026.03.29.1"
-  s.summary     = "Domain command language for Hecks"
-  s.description = "The BlueBook grammar — a safe, eval-free command language for domain modeling. Named for Evans' DDD Blue Book and Smalltalk's Blue Book."
+  s.version     = Hecks::VERSION
+  s.summary     = "Domain command language, model types, DSL builders, and code generators for Hecks"
+  s.description = "The BlueBook — grammar, IR nodes, validators, compiler, and visualizer for domain modeling"
   s.authors     = ["Chris Young"]
   s.license     = "MIT"
+  s.homepage    = "https://github.com/chrisyoung/hecks"
   s.files       = Dir["lib/**/*.rb"]
   s.require_paths = ["lib"]
+  s.required_ruby_version = ">= 3.0"
+  s.add_dependency "hecksties", Hecks::VERSION
 end
