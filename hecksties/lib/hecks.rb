@@ -8,12 +8,23 @@ require_relative "hecks/errors"
 require_relative "hecks/autoloads"
 
 # Module infrastructure — DSL, registries, discovery
-require "hecks_modules"
+require_relative "hecks/registry"
+require_relative "hecks/set_registry"
+require_relative "hecks/module_dsl"
+require_relative "hecks/core_extensions"
+require_relative "hecks/registries/extension_registry"
+require_relative "hecks/registries/domain_registry"
+require_relative "hecks/registries/cross_domain"
+require_relative "hecks/registries/thread_context"
+require_relative "hecks/registries/target_registry"
+require_relative "hecks/registries/adapter_registry"
+require_relative "hecks/registries/validation_registry"
+require_relative "hecks/registries/dump_format_registry"
+require_relative "hecks/registries/grammar_registry"
 
 # Default modules — loaded with require "hecks"
 require "heksagons"
 require "bluebook"
-require "hecks_contracts"
 require "hecks_templating"
 require "hecks/domain/inspector"
 require "hecks/domain/builder_methods"
@@ -29,7 +40,6 @@ require "hecks/workshop"
 # Top-level entry point. Modules load lazily — require only what you use.
 #
 #   require "hecks"                  # core DSL + registries
-#   require "hecks_contracts"        # data contracts
 #   require "hecks_multidomain"      # multi-domain boot + filtered bus
 #   require "hecks_explorer"         # web explorer + HTTP server
 #   require "hecks_ai"               # MCP server + AI tools
@@ -89,8 +99,6 @@ module Hecks
 end
 
 # Sub-gems load lazily — only when required
-# require "hecks_contracts"    # loads contracts + registers them
-# require "hecks_templating"   # loads naming helpers
 # require "hecks_multidomain"  # loads multi-domain support
 # require "hecks_explorer"     # loads web explorer
 # require "hecks_ai"           # loads MCP server
