@@ -113,12 +113,12 @@ class DomainDiagram extends HTMLElement {
   _makeDraggable(card, cardsEl, svgEl, container) {
     card.addEventListener('mousedown', (e) => {
       if (e.composedPath().some(el => el.classList && (el.classList.contains('dot') || el.classList.contains('ref')))) return;
-      const r = card.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+      const startLeft = parseFloat(card.style.left) || 0, startTop = parseFloat(card.style.top) || 0;
+      const dx = e.clientX, dy = e.clientY;
       card.style.zIndex = '20'; card.style.cursor = 'grabbing'; e.preventDefault();
       const onMove = (e2) => {
-        const cr = cardsEl.getBoundingClientRect();
-        card.style.left = Math.max(0, e2.clientX - cr.left - dx) + 'px';
-        card.style.top = Math.max(0, e2.clientY - cr.top - dy) + 'px';
+        card.style.left = Math.max(0, startLeft + (e2.clientX - dx)) + 'px';
+        card.style.top = Math.max(0, startTop + (e2.clientY - dy)) + 'px';
         this._drawLines(svgEl, container);
       };
       const onUp = () => { card.style.zIndex = ''; card.style.cursor = ''; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
@@ -129,14 +129,18 @@ class DomainDiagram extends HTMLElement {
 
   _drawLines(svg, container) {
     svg.innerHTML = '';
-    const cr = container.getBoundingClientRect();
-    svg.setAttribute('width', container.offsetWidth);
-    svg.setAttribute('height', container.offsetHeight);
-    if (this._filter === 'all' || this._filter === 'references') this._drawRefLines(svg, cr);
-    if (this._filter === 'all' || this._filter === 'policies') this._drawPolicyFlows(svg, cr);
+    let maxW = container.offsetWidth, maxH = container.offsetHeight;
+    Object.values(this._cardEls).forEach(c => {
+      maxW = Math.max(maxW, (parseFloat(c.style.left)||0) + c.offsetWidth + 10);
+      maxH = Math.max(maxH, (parseFloat(c.style.top)||0) + c.offsetHeight + 10);
+    });
+    svg.setAttribute('width', maxW);
+    svg.setAttribute('height', maxH);
+    if (this._filter === 'all' || this._filter === 'references') this._drawRefLines(svg);
+    if (this._filter === 'all' || this._filter === 'policies') this._drawPolicyFlows(svg);
   }
 
-  _drawRefLines(svg, cr) {
+  _drawRefLines(svg) {
     const pairMap = {};
     this._state.aggregates.forEach(agg => {
       agg.attributes.forEach(a => {
@@ -151,7 +155,7 @@ class DomainDiagram extends HTMLElement {
     });
 
     Object.values(pairMap).forEach(edge => {
-      const pts = this._edgePair(edge.from, edge.to, cr); if (!pts) return;
+      const pts = this._edgePair(edge.from, edge.to); if (!pts) return;
       const { x1, y1, x2, y2, angle } = pts;
       this._svgLine(svg, x1, y1, x2, y2, COLORS.orange, edge.isList ? '4,3' : 'none', 0.5);
       this._svgArrow(svg, x2, y2, angle, COLORS.orange, 0.5);
@@ -167,29 +171,31 @@ class DomainDiagram extends HTMLElement {
     });
   }
 
-  _drawPolicyFlows(svg, cr) {
+  _drawPolicyFlows(svg) {
     (this._state.policy_flows || []).forEach(flow => {
-      const pts = this._edgePair(flow.from, flow.to, cr); if (!pts) return;
-      const mx = (pts.x1+pts.x2)/2, my = (pts.y1+pts.y2)/2 - 20;
+      const pts = this._edgePair(flow.from, flow.to); if (!pts) return;
+      const mx = (pts.x1+pts.x2)/2, my = (pts.y1+pts.y2)/2 - 30;
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', `M${pts.x1},${pts.y1} Q${mx},${my} ${pts.x2},${pts.y2}`);
       path.setAttribute('stroke', COLORS.red); path.setAttribute('fill', 'none');
-      path.setAttribute('stroke-width', '1.8'); path.setAttribute('stroke-dasharray', '6,3');
-      path.setAttribute('opacity', '0.8');
+      path.setAttribute('stroke-width', '1.8'); path.setAttribute('stroke-dasharray', '6,3'); path.setAttribute('opacity', '0.8');
       svg.appendChild(path);
+      this._svgArrow(svg, pts.x2, pts.y2, pts.angle, COLORS.red, 0.8);
       this._svgText(svg, mx, my-4, flow.event || flow.policy, COLORS.red, 8);
     });
   }
 
-  _edgePair(fromName, toName, cr) {
+  _edgePair(fromName, toName) {
     const fEl = this._cardEls[fromName], tEl = this._cardEls[toName];
     if (!fEl || !tEl) return null;
-    const rect = (el) => { const inner = el.shadowRoot?.querySelector('.card'); return inner ? inner.getBoundingClientRect() : el.getBoundingClientRect(); };
-    const f = rect(fEl), t = rect(tEl), pad = 6;
-    const cx1 = f.left+f.width/2-cr.left, cy1 = f.top+f.height/2-cr.top;
-    const cx2 = t.left+t.width/2-cr.left, cy2 = t.top+t.height/2-cr.top;
-    const p1 = edgePoint(cx1, cy1, f.width/2+pad, f.height/2+pad, cx2, cy2);
-    const p2 = edgePoint(cx2, cy2, t.width/2+pad, t.height/2+pad, cx1, cy1);
+    const cardBox = (el) => {
+      const x = parseFloat(el.style.left)||0, y = parseFloat(el.style.top)||0;
+      const w = el.offsetWidth, h = el.offsetHeight;
+      return { cx: x+w/2, cy: y+h/2, hw: w/2, hh: h/2 };
+    };
+    const f = cardBox(fEl), t = cardBox(tEl), pad = 4;
+    const p1 = edgePoint(f.cx, f.cy, f.hw+pad, f.hh+pad, t.cx, t.cy);
+    const p2 = edgePoint(t.cx, t.cy, t.hw+pad, t.hh+pad, f.cx, f.cy);
     return { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, angle: Math.atan2(p2.y-p1.y, p2.x-p1.x) };
   }
 
