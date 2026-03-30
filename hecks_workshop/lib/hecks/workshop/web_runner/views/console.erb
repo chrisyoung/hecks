@@ -4,18 +4,6 @@
   <meta charset="utf-8">
   <title>Hecks Workshop</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: {
-      primaryColor: '#161b22', primaryTextColor: '#c9d1d9', primaryBorderColor: '#30363d',
-      lineColor: '#58a6ff', secondaryColor: '#0d1117', tertiaryColor: '#161b22',
-      edgeLabelBackground: '#0d1117', fontSize: '12px'
-    }});
-    window.mermaidRender = async function(id, def) {
-      var { svg } = await mermaid.render(id, def);
-      return svg;
-    };
-  </script>
   <script>
     tailwind.config = {
       theme: {
@@ -23,34 +11,37 @@
           colors: {
             gh: { bg: '#0d1117', panel: '#161b22', border: '#30363d', muted: '#484f58', text: '#c9d1d9',
                   blue: '#58a6ff', green: '#7ee787', orange: '#f0883e', purple: '#d2a8ff',
-                  red: '#f85149', yellow: '#d29922', cyan: '#79c0ff', badge: '#238636', playBadge: '#8957e5',
-                  blueprint: '#0a1628', inputGreen: '#2ea04370' }
+                  red: '#f85149', yellow: '#d29922', cyan: '#79c0ff', badge: '#238636', playBadge: '#8957e5' }
           },
           fontFamily: { mono: ['"SF Mono"', '"Fira Code"', 'monospace'] }
         }
       }
     }
   </script>
+  <script src="/js/components.js"></script>
   <style>
     #terminal.sketch-grid { background-color: #0a1628; background-image: linear-gradient(rgba(65,130,234,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(65,130,234,0.15) 1px, transparent 1px); background-size: 24px 24px; }
     .hint-fade { opacity: 0 !important; }
     #cmd-input::placeholder { color: #2ea04370; font-size: 11px; transition: color 0.3s; }
+    #autocomplete .ac-item { padding: 4px 10px; font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; color: #c9d1d9; cursor: pointer; }
+    #autocomplete .ac-item.active, #autocomplete .ac-item:hover { background: #30363d; color: #7ee787; }
+    #autocomplete .ac-type { color: #484f58; margin-left: 8px; }
   </style>
 </head>
 <body class="flex h-screen bg-gh-bg text-gh-text font-sans m-0 p-0">
 
-  <!-- Left Sidebar: Domain Tree -->
+  <!-- Left Sidebar -->
   <div id="domain-tree" class="w-56 bg-gh-panel border-r border-gh-border p-3 overflow-y-auto text-[13px]">
     <h3 class="text-gh-blue text-[11px] uppercase tracking-wider mb-2">Domain</h3>
-    <div class="text-gh-muted italic">No aggregates yet</div>
   </div>
 
-  <!-- Center: Terminal -->
+  <!-- Center -->
   <div class="flex-1 flex flex-col">
     <div class="bg-gh-panel border-b border-gh-border px-4 py-2 flex items-center justify-between">
       <span id="domain-title" class="text-gh-blue font-semibold text-sm">Hecks Workshop</span>
       <span id="mode-badge" class="bg-gh-badge text-white text-[11px] px-3 py-1 rounded-full cursor-pointer hover:opacity-80 transition-opacity select-none">sketch</span>
     </div>
+    <div id="error-banner-slot"></div>
     <div id="terminal" class="flex-1 overflow-y-auto px-4 py-3 font-mono text-[13px] leading-relaxed transition-all duration-500"></div>
     <div class="flex border-t border-gh-border bg-gh-bg relative">
       <div id="autocomplete" class="absolute bottom-full left-8 bg-[#1e1e1e] border border-gh-border rounded max-h-44 overflow-y-auto hidden z-10 min-w-[200px]"></div>
@@ -58,66 +49,52 @@
       <span class="text-gh-muted py-2.5 pl-4 font-mono text-[13px]">&gt;&nbsp;</span>
       <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false" placeholder=""
              class="flex-1 bg-transparent border-none text-gh-green font-mono text-[13px] py-2.5 px-2 outline-none transition-opacity duration-300">
-      <a id="try-link" class="hidden"></a>
     </div>
   </div>
 
-  <!-- Right Sidebar: Active Aggregate + Events -->
+  <!-- Right Sidebar -->
   <div id="events-panel" class="w-64 bg-gh-panel border-l border-gh-border p-3 overflow-y-auto text-xs">
-    <div id="active-agg" class="mb-3 border-b border-gh-border pb-2.5"></div>
-    <h3 class="text-gh-blue text-[11px] uppercase tracking-wider mb-2">Events</h3>
+    <agg-inspector id="inspector"></agg-inspector>
+    <h3 class="text-gh-blue text-[11px] uppercase tracking-wider mb-2 mt-3">Events</h3>
     <div class="text-gh-muted italic" id="events-empty">No events yet</div>
     <div id="events-list"></div>
   </div>
 
   <script>
+    // ─── State ───
+    var lastState = null, activeAggName = null;
     var openAggs = {};
     var cmdHistory = JSON.parse(localStorage.getItem('hecks_cmdHistory') || '[]');
-    var histIdx = -1, terminal = document.getElementById('terminal');
+    var histIdx = -1;
+    var terminal = document.getElementById('terminal');
     var input = document.getElementById('cmd-input');
-    document.getElementById('mode-badge').addEventListener('click', function() {
-      var cmd = lastState && lastState.mode === 'play' ? 'sketch!' : 'play!';
-      appendCmd(cmd);
-      fetch('/eval', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: cmd })
-      }).then(function(r) { return r.json(); }).then(function(data) {
-        if (data.output) appendOutput(data.output, cmd);
-        if (data.error) {
-          appendError(data.error);
-          showToast(data.error);
-        } else {
-        }
-        if (data.state) { lastState = data.state; updateState(data.state); buildCompletions(data.state); }
-        detectActiveAgg(cmd);
-        renderActiveAgg();
-        terminal.scrollTop = terminal.scrollHeight;
-      });
-    });
+    var lastCmd = null, undoRemoves = {};
 
     function saveCmdHistory() { localStorage.setItem('hecks_cmdHistory', JSON.stringify(cmdHistory.slice(0, 100))); }
+    function esc(s) { var d = document.createElement('span'); d.textContent = s; return d.innerHTML; }
 
+    // ─── Mode toggle ───
+    document.getElementById('mode-badge').addEventListener('click', function() {
+      var cmd = lastState && lastState.mode === 'play' ? 'sketch!' : 'play!';
+      runCommand(cmd);
+    });
 
+    // ─── Input handling ───
     input.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         var cmd = input.value.trim();
         if (!cmd) { nextHint(); return; }
         cmdHistory.unshift(cmd); histIdx = -1; saveCmdHistory(); hideStopHint(); tabStops = [];
-        if (cmd.charAt(0) === '/') { cmd = cmd.substring(1); }
-        if (cmd === 'play') { cmd = 'play!'; }
-        if (cmd === 'sketch') { cmd = 'sketch!'; }
-        if (cmd === 'reset') { cmd = 'reset!'; }
-        lastCmd = cmd;
-        appendCmd(cmd);
+        if (cmd.charAt(0) === '/') cmd = cmd.substring(1);
+        if (cmd === 'play') cmd = 'play!';
+        if (cmd === 'sketch') cmd = 'sketch!';
+        if (cmd === 'reset') cmd = 'reset!';
         input.value = '';
-        evalCmd(cmd);
+        runCommand(cmd);
       } else if (e.key === 'Tab' && tabStops.length > 0 && acItems.length === 0) {
-        e.preventDefault();
-        selectNextStop();
+        e.preventDefault(); selectNextStop();
       } else if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        terminal.innerHTML = '';
+        e.preventDefault(); terminal.innerHTML = '';
         if (lastState) renderDomainOverview();
       } else if (e.key === 'ArrowUp' && acItems.length === 0) {
         e.preventDefault();
@@ -129,6 +106,28 @@
       }
     });
 
+    // ─── Command execution ───
+    function runCommand(cmd) {
+      lastCmd = cmd;
+      appendCmd(cmd);
+      fetch('/eval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: cmd })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.output) appendOutput(data.output, cmd);
+        if (data.error) { appendError(data.error); showBanner(data.error); }
+        if (data.state) { lastState = data.state; updateState(data.state); buildCompletions(data.state); }
+        detectActiveAgg(cmd);
+        renderInspector();
+        terminal.scrollTop = terminal.scrollHeight;
+        hideAc(); nextHint();
+      })
+      .catch(function(err) { appendError('Network error: ' + err.message); });
+    }
+
     function appendCmd(cmd) {
       var d = document.createElement('div');
       d.className = 'text-gh-green';
@@ -136,171 +135,23 @@
       terminal.appendChild(d);
     }
 
-    var lastCmd = null;
-    var undoRemoves = {};
-
-    // Shared aggregate component
-    function renderAggComponent(container, agg, opts) {
-      opts = opts || {};
-      var removable = opts.removable !== false;
-      var inline = opts.inline || false;
-      var startCollapsed = opts.collapsed || false;
-      var expandSection = opts.expandSection || null;
-
-      if (opts.showName !== false) {
-        var title = document.createElement('div');
-        title.className = 'text-gh-orange font-semibold whitespace-pre-wrap';
-        title.textContent = agg.name;
-        container.appendChild(title);
-      }
-
-      var sections = [
-        { key: 'attributes', label: 'attributes', color: 'gh-green', items: agg.attributes.filter(function(a) { return !a.type.match(/reference_to|list_of/); }), render: function(a) {
-          return esc(a.name) + ' <span class="text-gh-muted">' + esc(a.type) + '</span>';
-        }, removeCmd: function(a) { return agg.name + '.remove :' + a.name; }, restoreCmd: function(a) { return agg.name + '.attr :' + a.name + ', ' + a.type; } },
-        { key: 'references', label: 'references', color: 'gh-orange', items: agg.attributes.filter(function(a) { return a.type.match(/reference_to|list_of/); }), render: function(a) {
-          var refMatch = a.type.match(/reference_to\((\w+)\)/);
-          var listMatch = a.type.match(/list_of\((\w+)\)/);
-          var target = refMatch ? refMatch[1] : listMatch[1];
-          var label = a.name.replace(/_id$/, '');
-          var icon = listMatch ? '[' + target + ']' : target;
-          return '<span class="cursor-pointer hover:underline" data-nav-agg="' + esc(target) + '">' + esc(label) + ' → ' + esc(icon) + '</span>';
-        }, removeCmd: function(a) { return agg.name + '.remove :' + a.name; }, restoreCmd: function(a) { return agg.name + '.attr :' + a.name + ', ' + a.type; } },
-        { key: 'commands', label: 'commands', color: 'gh-blue', items: agg.commands, render: function(c) { return esc(c); }, removeCmd: function(c) { return agg.name + '.remove_command "' + c + '"'; } },
-        { key: 'events', label: 'events', color: 'gh-purple', items: agg.events, render: function(e) { return esc(e); }, removeCmd: function(e) { return agg.name + '.remove_event "' + e + '"'; } },
-        { key: 'value_objects', label: 'value objects', color: 'gh-orange', items: agg.value_objects, render: function(v) { return esc(v); }, removeCmd: function(v) { return agg.name + '.remove_value_object "' + v + '"'; } },
-        { key: 'entities', label: 'entities', color: 'gh-orange', items: agg.entities, render: function(e) { return esc(e); }, removeCmd: function(e) { return agg.name + '.remove_entity "' + e + '"'; } },
-        { key: 'policies', label: 'policies', color: 'gh-red', items: agg.policies, render: function(p) { return esc(p); }, removeCmd: function(p) { return agg.name + '.remove_policy "' + p + '"'; } },
-        { key: 'queries', label: 'queries', color: 'gh-cyan', items: agg.queries, render: function(q) { return esc(q); }, removeCmd: function(q) { return agg.name + '.remove_query "' + q + '"'; } },
-        { key: 'specifications', label: 'specs', color: 'gh-yellow', items: agg.specifications, render: function(s) { return esc(s); }, removeCmd: function(s) { return agg.name + '.remove_specification "' + s + '"'; } }
-      ];
-
-      sections.forEach(function(sec) {
-        if (!sec.items || !sec.items.length) return;
-        var header = document.createElement('div');
-        header.className = 'text-' + sec.color + ' text-[10px] uppercase tracking-wide mt-2.5 mb-0.5 pl-2 border-l-2 border-' + sec.color + ' cursor-pointer select-none flex items-center gap-1';
-        var chevron = document.createElement('span');
-        chevron.className = 'text-[8px] transition-transform duration-200' + (startCollapsed ? '' : ' rotate-90');
-        chevron.textContent = '\u25B6';
-        header.appendChild(chevron);
-        header.appendChild(document.createTextNode(' ' + sec.label));
-        container.appendChild(header);
-
-        var itemsDiv = document.createElement('div');
-        itemsDiv.className = 'ml-2.5';
-        if (startCollapsed) itemsDiv.style.display = 'none';
-        sec.items.forEach(function(item) {
-          var row = document.createElement('div');
-          row.className = 'text-gh-text text-xs leading-7 w-full group';
-          var removeCmd = sec.removeCmd(item);
-          var restoreCmd = sec.restoreCmd ? sec.restoreCmd(item) : null;
-          row.dataset.remove = removeCmd;
-          if (restoreCmd) row.dataset.restore = restoreCmd;
-          row.innerHTML = '  ' + sec.render(item);
-          if (removable) {
-            var x = document.createElement('span');
-            x.className = 'text-gh-red cursor-pointer text-[11px] ml-1 opacity-0 group-hover:opacity-100 transition-opacity';
-            x.textContent = '\u00d7';
-            x.addEventListener('click', function(e) {
-              e.stopPropagation();
-              if (row.classList.contains('line-through')) return;
-              if (restoreCmd) undoRemoves[removeCmd] = restoreCmd;
-              row.classList.add('line-through', 'opacity-50');
-              var undo = document.createElement('span');
-              undo.className = 'text-gh-blue cursor-pointer text-[11px] ml-1.5 no-underline';
-              undo.textContent = '(undo)';
-              undo.addEventListener('click', function(e2) {
-                e2.stopPropagation();
-                if (restoreCmd) { appendCmd(restoreCmd); evalCmd(restoreCmd); }
-              });
-              row.appendChild(undo);
-              appendCmd(removeCmd); evalCmd(removeCmd);
-              setTimeout(function() { row.style.opacity = '0'; }, 3000);
-              setTimeout(function() { row.remove(); }, 4500);
-            });
-            row.appendChild(x);
-          }
-          itemsDiv.appendChild(row);
-        });
-        container.appendChild(itemsDiv);
-
-        header.addEventListener('click', function() {
-          var isOpen = itemsDiv.style.display !== 'none';
-          itemsDiv.style.display = isOpen ? 'none' : '';
-          chevron.classList.toggle('rotate-90', !isOpen);
-        });
-      });
-      // Wire up reference links
-      container.querySelectorAll('[data-nav-agg]').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-          e.stopPropagation();
-          var name = link.dataset.navAgg;
-          activeAggName = name;
-          renderActiveAgg();
-          appendCmd(name);
-          evalCmd(name);
-        });
-      });
-    }
-
     function appendOutput(text, cmd) {
       if (!text) return;
-      // Diagram command — render Mermaid
-      if (cmd === 'diagram' && window.mermaidRender) {
-        var diagramDiv = document.createElement('div');
-        diagramDiv.className = 'mb-4 overflow-x-auto';
-        window.mermaidRender('cmd-' + Date.now(), text.trim()).then(function(svg) {
-          diagramDiv.innerHTML = svg;
-        }).catch(function() { diagramDiv.textContent = text; });
-        terminal.appendChild(diagramDiv);
-        return;
-      }
       var isDescribe = cmd && (cmd.match(/\.?describe$/) || cmd === 'status' || cmd.match(/^[A-Z]\w*$/));
       if (isDescribe && lastState) {
         var m = cmd.match(/^(\w+)\.describe$/) || cmd.match(/^([A-Z]\w*)$/);
         var target = m ? m[1] : null;
         if (target) {
           var agg = lastState.aggregates.find(function(a) { return a.name === target; });
-          if (agg) {
-            renderAggComponent(terminal, agg, { inline: true, removable: true });
-            return;
-          }
+          if (agg) { renderAggInTerminal(agg); return; }
         }
       }
-      var lines = text.split('\n');
-      lines.forEach(function(line) {
+      text.split('\n').forEach(function(line) {
         var d = document.createElement('div');
-        if (line.indexOf('WARNING') > -1 || line.indexOf('!!') > -1) {
-          d.className = 'text-gh-yellow whitespace-pre-wrap';
-          d.textContent = line;
-          addUndoLink(d, lastCmd);
-        } else {
-          d.className = 'text-gh-text whitespace-pre-wrap';
-          d.textContent = line;
-        }
+        d.className = line.match(/WARNING|!!/) ? 'text-gh-yellow whitespace-pre-wrap' : 'text-gh-text whitespace-pre-wrap';
+        d.textContent = line;
         terminal.appendChild(d);
       });
-    }
-
-    function addUndoLink(el, cmd) {
-      var undo = document.createElement('span');
-      undo.className = 'text-gh-red cursor-pointer text-[11px] ml-2 opacity-0 hover:opacity-100';
-      undo.textContent = '\u00d7';
-      undo.addEventListener('click', function() {
-        var undoCmd = undoFor(cmd);
-        if (undoCmd) { appendCmd(undoCmd); evalCmd(undoCmd); }
-      });
-      el.appendChild(undo);
-      el.addEventListener('mouseenter', function() { undo.style.opacity = '1'; });
-      el.addEventListener('mouseleave', function() { undo.style.opacity = '0'; });
-    }
-
-    function undoFor(cmd) {
-      var attrMatch = cmd.match(/^(\w+)\.attr\s+:(\w+)/);
-      if (attrMatch) return attrMatch[1] + '.remove :' + attrMatch[2];
-      var implicitMatch = cmd.match(/^(\w+)\.(\w+)\s+(String|Integer|Float|TrueClass|Date|DateTime|JSON|reference_to|list_of)/);
-      if (implicitMatch) return implicitMatch[1] + '.remove :' + implicitMatch[2];
-      return null;
     }
 
     function appendError(text) {
@@ -311,318 +162,44 @@
       terminal.appendChild(d);
     }
 
-    function esc(s) { var d = document.createElement('span'); d.textContent = s; return d.innerHTML; }
+    function renderAggInTerminal(agg) {
+      var card = document.createElement('agg-card');
+      card.data = agg;
+      terminal.appendChild(card);
+    }
 
-    function showToast(msg) {
-      var existing = document.getElementById('error-banner');
-      if (existing) existing.remove();
+    // ─── Banner ───
+    function showBanner(msg) {
+      var old = document.getElementById('error-banner');
+      if (old) old.remove();
       var banner = document.createElement('div');
       banner.id = 'error-banner';
       banner.className = 'bg-gh-red/90 text-white text-xs px-4 py-2 text-center';
       banner.style.transition = 'opacity 0.8s';
-      banner.textContent = msg;
-      var topbar = document.querySelector('.bg-gh-panel.border-b');
-      topbar.parentNode.insertBefore(banner, topbar.nextSibling);
+      banner.textContent = msg.length > 120 ? msg.substring(0, 120) + '...' : msg;
+      document.getElementById('error-banner-slot').appendChild(banner);
       setTimeout(function() { banner.style.opacity = '0'; }, 3000);
       setTimeout(function() { banner.remove(); }, 3800);
     }
 
-    function evalCmd(cmd) {
-      fetch('/eval', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: cmd })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.output) {
-          appendOutput(data.output, cmd);
-          var removeMatch = cmd.match(/^(\w+)\.remove\s+:(\w+)/);
-          if (removeMatch && !data.error) {
-            var restoreCmd = undoRemoves[cmd];
-            if (restoreCmd) {
-              var d = document.createElement('div');
-              d.className = 'text-gh-text';
-              var link = document.createElement('span');
-              link.className = 'text-gh-blue cursor-pointer text-xs ml-2 underline';
-              link.textContent = 'undo';
-              link.addEventListener('click', function() {
-                appendCmd(restoreCmd); evalCmd(restoreCmd);
-                d.remove();
-              });
-              d.appendChild(link);
-              terminal.appendChild(d);
-            }
-          }
-        }
-        if (data.error) {
-          var lastCmdEl = terminal.querySelector('div:last-of-type');
-          if (lastCmdEl) lastCmdEl.classList.add('!text-gh-red');
-          appendError(data.error);
-          showToast(data.error);
-        }
-        if (data.state) { lastState = data.state; updateState(data.state); buildCompletions(data.state); }
-        detectActiveAgg(cmd);
-        renderActiveAgg();
-        terminal.scrollTop = terminal.scrollHeight;
-        hideAc();
-        nextHint();
-      })
-      .catch(function(err) { appendError('Network error: ' + err.message); });
-    }
-
-    function updateState(state) {
-      var badge = document.getElementById('mode-badge');
-      badge.textContent = state.mode;
-      badge.className = state.mode === 'play'
-        ? 'bg-gh-playBadge text-white text-[11px] px-3 py-1 rounded-full cursor-pointer hover:opacity-80 transition-opacity select-none'
-        : 'bg-gh-badge text-white text-[11px] px-3 py-1 rounded-full cursor-pointer hover:opacity-80 transition-opacity select-none';
-
-      document.getElementById('domain-title').textContent = (state.domain_name || 'Hecks') + ' Workshop';
-      if (state.mode === 'sketch') { terminal.classList.add('sketch-grid'); } else { terminal.classList.remove('sketch-grid'); }
-
-      // Domain tree
-      var tree = document.getElementById('domain-tree');
-      var html = '<h3 class="text-gh-blue text-[11px] uppercase tracking-wider mb-2">Domain</h3>';
-      if (state.aggregates.length === 0) {
-        html += '<div class="text-gh-muted italic">No aggregates yet</div>';
-      } else {
-        state.aggregates.forEach(function(agg) {
-          var isOpen = openAggs[agg.name];
-          html += '<div class="text-gh-orange font-semibold my-1 cursor-pointer group' + (isOpen ? ' open' : '') + '" data-agg="' + esc(agg.name) + '">';
-          html += '<span class="text-[8px] text-gh-muted inline-block transition-transform duration-200 mr-1' + (isOpen ? ' rotate-90' : '') + '">&#9654;</span>';
-          html += esc(agg.name) + '</div>';
-          html += '<div class="ml-3 text-[11px] leading-snug' + (isOpen ? '' : ' hidden') + '" data-agg-detail="' + esc(agg.name) + '">';
-          var treeSections = [
-            { items: agg.attributes.filter(function(a) { return !a.type.match(/reference_to|list_of/); }), label: 'attributes', color: 'gh-green', render: function(a) {
-              return esc(a.name) + ' <span class="text-gh-muted">' + esc(a.type) + '</span>';
-            } },
-            { items: agg.attributes.filter(function(a) { return a.type.match(/reference_to|list_of/); }), label: 'references', color: 'gh-orange', render: function(a) {
-              var refMatch = a.type.match(/reference_to\((\w+)\)/);
-              var listMatch = a.type.match(/list_of\((\w+)\)/);
-              var target = refMatch ? refMatch[1] : listMatch[1];
-              var label = a.name.replace(/_id$/, '');
-              var icon = listMatch ? '[' + target + ']' : target;
-              return '<span class="cursor-pointer hover:underline" data-nav-agg="' + esc(target) + '">' + esc(label) + ' → ' + esc(icon) + '</span>';
-            } },
-            { items: agg.commands, label: 'commands', color: 'gh-blue', render: function(c) { return esc(c); } },
-            { items: agg.events, label: 'events', color: 'gh-purple', render: function(e) { return esc(e); } },
-            { items: agg.value_objects, label: 'value objects', color: 'gh-orange', render: function(v) { return esc(v); } },
-            { items: agg.entities, label: 'entities', color: 'gh-orange', render: function(e) { return esc(e); } },
-            { items: agg.policies, label: 'policies', color: 'gh-red', render: function(p) { return esc(p); } },
-            { items: agg.queries, label: 'queries', color: 'gh-cyan', render: function(q) { return esc(q); } },
-            { items: agg.specifications, label: 'specs', color: 'gh-yellow', render: function(s) { return esc(s); } }
-          ];
-          treeSections.forEach(function(sec) {
-            if (!sec.items || !sec.items.length) return;
-            html += '<div class="text-' + sec.color + ' text-[9px] uppercase tracking-wide mt-1.5 pl-1.5 border-l-2 border-' + sec.color + ' cursor-pointer select-none" data-tree-sec>';
-            html += '<span class="chevron text-[7px] inline-block transition-transform duration-200 mr-0.5">&#9654;</span> ' + sec.label + '</div>';
-            html += '<div class="ml-2.5 text-gh-text hidden">';
-            sec.items.forEach(function(item) {
-              html += '<div class="text-gh-text">' + sec.render(item) + '</div>';
-            });
-            html += '</div>';
-          });
-          html += '</div>';
-        });
-      }
-      tree.innerHTML = html;
-      tree.querySelectorAll('[data-tree-sec]').forEach(function(sec) {
-        sec.addEventListener('click', function(e) {
-          e.stopPropagation();
-          var items = sec.nextElementSibling;
-          var isOpen = items.style.display !== 'none' && !items.classList.contains('hidden');
-          if (items.classList.contains('hidden')) { items.classList.remove('hidden'); isOpen = false; }
-          items.style.display = isOpen ? 'none' : '';
-          sec.querySelector('.chevron').classList.toggle('rotate-90', !isOpen);
-        });
-      });
-      tree.querySelectorAll('[data-nav-agg]').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-          e.stopPropagation();
-          var name = link.dataset.navAgg;
-          activeAggName = name;
-          renderActiveAgg();
-          appendCmd(name);
-          evalCmd(name);
-        });
-      });
-      tree.querySelectorAll('[data-agg]').forEach(function(el) {
-        el.addEventListener('click', function() {
-          var name = el.dataset.agg;
-          openAggs[name] = !openAggs[name];
-          el.classList.toggle('open');
-          el.querySelector('span').classList.toggle('rotate-90');
-          var detail = tree.querySelector('[data-agg-detail="' + name + '"]');
-          if (detail) detail.classList.toggle('hidden');
-        });
-      });
-
-      // Events
-      var list = document.getElementById('events-list');
-      var empty = document.getElementById('events-empty');
-      if (state.events.length === 0) {
-        empty.style.display = ''; list.innerHTML = '';
-      } else {
-        empty.style.display = 'none';
-        list.innerHTML = state.events.slice().reverse().map(function(ev) {
-          return '<div class="bg-gh-bg border border-gh-border rounded p-1.5 mb-1.5"><div class="text-gh-purple font-semibold">' + esc(ev.type) +
-            '</div><div class="text-gh-muted text-[11px]">' + esc(ev.occurred_at || '') + '</div></div>';
-        }).join('');
-      }
-    }
-
-    // Autocomplete
-    var acBox = document.getElementById('autocomplete');
-    var acItems = [], acIdx = -1;
-    var completions = [];
-
-    function buildCompletions(state) {
-      completions = [];
-      typeOptions.forEach(function(t) {
-        if (t === 'reference_to("")') return;
-        completions.push({ text: t, type: 'type' });
-      });
-      completions = completions.concat([
-        { text: 'describe', type: 'workshop' }, { text: 'diagram', type: 'workshop' }, { text: 'browse', type: 'workshop' },
-        { text: 'validate', type: 'workshop' }, { text: 'preview', type: 'workshop' },
-        { text: 'play!', type: 'mode' }, { text: 'sketch!', type: 'mode' },
-        { text: 'events', type: 'play' }, { text: 'history', type: 'play' },
-        { text: 'reset!', type: 'play' }, { text: 'save', type: 'workshop' }
-      ]);
-      var aggNames = state.aggregates.map(function(a) { return a.name; });
-      aggNames.forEach(function(n) {
-        completions.push({ text: 'reference_to("' + n + '")', type: 'reference' });
-        completions.push({ text: 'list_of("' + n + '")', type: 'collection' });
-      });
-      state.aggregates.forEach(function(a) {
-        completions.push({ text: a.name, type: 'aggregate' });
-        completions.push({ text: a.name + '.describe', type: 'method' });
-        completions.push({ text: a.name + '.preview', type: 'method' });
-        completions.push({ text: a.name + '.attributes', type: 'method' });
-        completions.push({ text: a.name + '.commands', type: 'method' });
-        completions.push({ text: a.name + '.remove :name', type: 'remove', stops: [':name'] });
-        a.commands.forEach(function(c) { completions.push({ text: c, type: 'command' }); });
-        completions.push({ text: a.name + '.attr :name, String', type: 'add attribute', stops: [':name', 'String'] });
-        completions.push({ text: a.name + '.command :name', type: 'add command', stops: [':name'] });
-        completions.push({ text: a.name + '.lifecycle :status, default: "draft"', type: 'add lifecycle', stops: [':status', 'draft'] });
-        completions.push({ text: a.name + '.validation :name, presence: true', type: 'add validation', stops: [':name'] });
-      });
-    }
-
-    input.addEventListener('input', function() {
-      var val = input.value;
-      if (!val) { hideAc(); return; }
-      var pos = input.selectionStart;
-      var before = val.substring(0, pos);
-      var wordMatch = before.match(/[\s,]([^\s,]*)$/);
-      var word = wordMatch ? wordMatch[1] : before;
-      if (!word) { hideAc(); return; }
-      var lower = word.toLowerCase();
-      acItems = completions.filter(function(c) {
-        var cl = c.text.toLowerCase();
-        return (cl.indexOf(lower) === 0 || cl.indexOf(lower) > 0) && cl !== lower;
-      });
-      acItems.sort(function(a, b) {
-        var al = a.text.toLowerCase(), bl = b.text.toLowerCase();
-        return (al.indexOf(lower) === 0 ? 0 : 1) - (bl.indexOf(lower) === 0 ? 0 : 1) || al.localeCompare(bl);
-      });
-      acItems = acItems.slice(0, 10);
-      if (acItems.length === 0) { hideAc(); return; }
-      acIdx = -1; acWordStart = pos - word.length;
-      renderAc();
-    });
-    var acWordStart = 0;
-
-    function renderAc() {
-      acBox.innerHTML = acItems.map(function(c, i) {
-        var cls = i === acIdx ? 'px-2.5 py-1 font-mono text-xs cursor-pointer bg-gh-border text-gh-green' : 'px-2.5 py-1 font-mono text-xs text-gh-text cursor-pointer hover:bg-gh-border';
-        return '<div class="' + cls + '" data-idx="' + i + '">' + esc(c.text) + '<span class="text-gh-muted ml-2">' + c.type + '</span></div>';
-      }).join('');
-      acBox.classList.remove('hidden');
-      acBox.style.display = 'block';
-      acBox.querySelectorAll('[data-idx]').forEach(function(el) {
-        el.addEventListener('mousedown', function(e) { e.preventDefault(); applyAc(parseInt(el.dataset.idx)); });
-      });
-    }
-
-    function hideAc() { acBox.style.display = 'none'; acItems = []; acIdx = -1; }
-
-    var tabStops = [], tabStopIdx = -1;
-
-    function applyAc(idx) {
-      var item = acItems[idx];
-      var before = input.value.substring(0, acWordStart);
-      var after = input.value.substring(input.selectionStart);
-      input.value = before + item.text + after;
-      input.setSelectionRange(before.length + item.text.length, before.length + item.text.length);
-      hideAc(); input.focus();
-      if (item.stops && item.stops.length > 0) { tabStops = item.stops; tabStopIdx = -1; selectNextStop(); }
-      else { tabStops = []; tabStopIdx = -1; }
-    }
-
-    var typeOptions = ['String', 'Integer', 'Float', 'TrueClass', 'Date', 'DateTime', 'JSON', 'list_of("")', 'reference_to("")'];
-    var typeHints = { 'String': typeOptions.join(' | ') };
-    var stopHints = { ':name': 'field name', ':status': 'field name', 'draft': 'default value' };
-
-    function selectNextStop() {
-      tabStopIdx++;
-      if (tabStopIdx >= tabStops.length) { tabStops = []; tabStopIdx = -1; hideStopHint(); return; }
-      var stop = tabStops[tabStopIdx];
-      var pos = input.value.indexOf(stop, tabStopIdx === 0 ? 0 : input.selectionStart);
-      if (pos > -1) {
-        var selStart = stop.charAt(0) === ':' ? pos + 1 : pos;
-        input.setSelectionRange(selStart, pos + stop.length);
-        input.scrollLeft = 0;
-        showStopHint(stop);
-      }
-    }
-
-    function showStopHint(stop) {
-      var hint = typeHints[stop] || stopHints[stop] || '';
-      if (!hint) { hideStopHint(); return; }
-      var el = document.getElementById('stop-hint');
-      el.textContent = hint;
-      el.classList.remove('hidden'); el.style.display = 'block';
-    }
-
-    function hideStopHint() {
-      var el = document.getElementById('stop-hint');
-      el.classList.add('hidden'); el.style.display = 'none';
-    }
-
-    input.addEventListener('keydown', function(e) {
-      if (acItems.length > 0) {
-        if (e.key === 'ArrowDown') { e.preventDefault(); acIdx = Math.min(acIdx + 1, acItems.length - 1); renderAc(); return; }
-        if (e.key === 'ArrowUp' && acIdx >= 0) { e.preventDefault(); acIdx--; renderAc(); return; }
-        if (e.key === 'Tab' && input.value.indexOf('""') === -1) { e.preventDefault(); e.stopImmediatePropagation(); applyAc(acIdx >= 0 ? acIdx : 0); return; }
-        if (e.key === 'Enter' && acIdx >= 0 && input.value.indexOf('""') === -1) { e.preventDefault(); e.stopImmediatePropagation(); applyAc(acIdx); return; }
-        if (e.key === 'Escape') { e.preventDefault(); hideAc(); return; }
-      }
-    }, true);
-
-    // Active aggregate
-    var activeAggName = null;
-    var lastState = null;
-
+    // ─── Active aggregate / Inspector ───
     function detectActiveAgg(cmd) {
       if (!cmd || !lastState) return;
       var m = cmd.match(/^(\w+)\./) || cmd.match(/^([A-Z]\w*)$/);
       if (m) {
-        var name = m[1];
-        if (lastState.aggregates.find(function(a) { return a.name === name; })) { activeAggName = name; }
+        var found = lastState.aggregates.find(function(a) { return a.name === m[1]; });
+        if (found) activeAggName = m[1];
       }
     }
 
-    function renderActiveAgg() {
-      var el = document.getElementById('active-agg');
-      if (!activeAggName || !lastState) { el.innerHTML = ''; return; }
+    function renderInspector() {
+      var inspector = document.getElementById('inspector');
+      if (!activeAggName || !lastState) { inspector.data = null; return; }
       var agg = lastState.aggregates.find(function(a) { return a.name === activeAggName; });
-      if (!agg) { el.innerHTML = ''; return; }
-      el.innerHTML = '<h3 class="text-gh-orange text-[11px] uppercase tracking-wider mb-1.5">' + esc(agg.name) + '</h3>';
-      renderAggComponent(el, agg, { showName: false, removable: true, collapsed: true });
+      inspector.data = agg || null;
     }
 
+    // ─── Domain overview diagram ───
     function renderDomainOverview() {
       if (!lastState || !lastState.aggregates.length) return;
 
@@ -631,147 +208,55 @@
       header.textContent = (lastState.domain_name || 'Domain') + ' Domain';
       terminal.appendChild(header);
 
-      // Container with relative positioning for SVG lines
       var container = document.createElement('div');
       container.className = 'relative mb-4';
-      container.style.minHeight = '200px';
+      var totalRows = Math.ceil(lastState.aggregates.length / Math.max(2, Math.floor((terminal.offsetWidth - 40) / 190)));
+      container.style.minHeight = (totalRows * 110 + 60) + 'px';
 
-      // SVG overlay for connection lines
       var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', 'absolute inset-0 w-full h-full pointer-events-none');
       svg.style.zIndex = '0';
       container.appendChild(svg);
 
-      // Absolute positioned cards — draggable
       var grid = document.createElement('div');
       grid.className = 'relative';
       grid.style.zIndex = '1';
-      grid.style.minHeight = '400px';
 
       var cardEls = {};
-      lastState.aggregates.forEach(function(agg, aggIdx) {
-        var card = document.createElement('div');
-        card.className = 'bg-gh-panel border border-gh-border rounded p-2 text-[11px] min-w-[120px] max-w-[180px] relative absolute cursor-grab active:cursor-grabbing select-none';
-        // Initial layout: flow in rows
-        var cols = Math.min(4, lastState.aggregates.length);
-        var col = aggIdx % cols;
-        var row = Math.floor(aggIdx / cols);
-        card.style.left = (col * 200 + 10) + 'px';
-        card.style.top = (row * 80 + 10) + 'px';
-        card.dataset.aggCard = agg.name;
+      var termWidth = terminal.offsetWidth - 40;
+      var cardW = 160, cardH = 80, pad = 30;
+      var cols = Math.max(2, Math.floor(termWidth / (cardW + pad)));
 
-        // Name
-        var nameEl = document.createElement('div');
-        nameEl.className = 'text-gh-orange font-semibold text-xs mb-1 cursor-pointer hover:underline';
-        nameEl.textContent = agg.name;
-        nameEl.addEventListener('click', function() {
-          activeAggName = agg.name;
-          renderActiveAgg();
-        });
-        card.appendChild(nameEl);
+      lastState.aggregates.forEach(function(agg, i) {
+        var card = document.createElement('agg-card');
+        card.data = agg;
+        card.style.position = 'absolute';
+        var col = i % cols;
+        var row = Math.floor(i / cols);
+        card.style.left = (col * (cardW + pad) + pad) + 'px';
+        card.style.top = (row * (cardH + pad) + pad) + 'px';
 
-        // Dot tabs with counts
-        var tabs = document.createElement('div');
-        tabs.className = 'flex gap-1.5 mt-1';
-        var detail = document.createElement('div');
-        detail.className = 'absolute left-0 right-0 bg-gh-panel border border-gh-border border-t-0 rounded-b p-2 z-10 shadow-lg -mt-px';
-        detail.style.display = 'none';
-        var tabDefs = [
-          { key: 'attributes', color: '#7ee787', items: agg.attributes.filter(function(a) { return !a.type.match(/reference_to|list_of/); }),
-            render: function(i) { return esc(i.name) + ' <span class="text-gh-muted">' + esc(i.type) + '</span>'; } },
-          { key: 'references', color: '#f0883e', items: agg.attributes.filter(function(a) { return a.type.match(/reference_to|list_of/); }),
-            render: function(i) { var m = i.type.match(/(?:reference_to|list_of)\((\w+)\)/); var t = m ? m[1] : '';
-              return '<span class="cursor-pointer hover:underline" data-nav-agg="' + esc(t) + '">' + esc(i.name.replace(/_id$/, '')) + ' → ' + esc(t) + '</span>'; } },
-          { key: 'commands', color: '#58a6ff', items: agg.commands, render: function(c) { return esc(c); } },
-          { key: 'events', color: '#d2a8ff', items: agg.events, render: function(e) { return esc(e); } },
-          { key: 'policies', color: '#f85149', items: agg.policies, render: function(p) { return esc(p); } },
-          { key: 'queries', color: '#79c0ff', items: agg.queries, render: function(q) { return esc(q); } },
-          { key: 'specifications', color: '#d29922', items: agg.specifications, render: function(s) { return esc(s); } }
-        ];
-        var allDots = [];
-        tabDefs.forEach(function(td) {
-          if (!td.items.length) return;
-          var dot = document.createElement('span');
-          dot.className = 'inline-flex items-center justify-center w-4 h-4 rounded-full text-[8px] font-bold cursor-pointer transition-all hover:scale-125';
-          dot.style.backgroundColor = td.color;
-          dot.style.color = '#0d1117';
-          dot.textContent = td.items.length;
-          dot.title = td.key;
-          allDots.push(dot);
-          dot.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (detail.dataset.active === td.key) {
-              detail.innerHTML = ''; detail.dataset.active = '';
-              detail.style.display = 'none';
-              card.classList.remove('rounded-b-none');
-              allDots.forEach(function(d) { d.style.opacity = '1'; });
-              return;
-            }
-            detail.innerHTML = ''; detail.dataset.active = td.key;
-            detail.style.display = 'block';
-            card.classList.add('rounded-b-none');
-            allDots.forEach(function(d) { d.style.opacity = '0.3'; });
-            dot.style.opacity = '1';
-            var close = document.createElement('div');
-            close.className = 'text-gh-muted text-[10px] cursor-pointer hover:text-gh-text mt-1 text-right';
-            close.textContent = '\u25B2';
-            close.addEventListener('click', function(e3) {
-              e3.stopPropagation();
-              detail.innerHTML = ''; detail.dataset.active = '';
-              detail.style.display = 'none';
-              card.classList.remove('rounded-b-none');
-              allDots.forEach(function(d) { d.style.opacity = '1'; });
-            });
-            detail.appendChild(close);
-            td.items.forEach(function(item) {
-              var row = document.createElement('div');
-              row.className = 'text-[10px] leading-5 text-gh-text';
-              row.innerHTML = td.render(item);
-              detail.appendChild(row);
-            });
-            detail.querySelectorAll('[data-nav-agg]').forEach(function(link) {
-              link.addEventListener('click', function(e2) {
-                e2.stopPropagation();
-                activeAggName = link.dataset.navAgg;
-                renderActiveAgg();
-              });
-            });
-          });
-          tabs.appendChild(dot);
-        });
-        card.addEventListener('mouseenter', function() {
-          activeAggName = agg.name;
-          renderActiveAgg();
-        });
-        card.addEventListener('click', function(e) {
-          if (e.target.closest('[data-nav-agg]')) return;
-          if (detail.dataset.active) {
-            detail.innerHTML = ''; detail.dataset.active = '';
-            detail.style.display = 'none';
-            card.classList.remove('rounded-b-none');
-            allDots.forEach(function(d) { d.style.opacity = '1'; });
-          }
-        });
-        // Drag support
-        var dragging = false, dragX, dragY;
-        nameEl.addEventListener('mousedown', function(e) {
-          if (e.target.closest('[data-nav-agg]')) return;
+        // Drag
+        var dragging = false, dx, dy;
+        card.addEventListener('mousedown', function(e) {
+          if (e.target.closest('.dot') || e.target.closest('.ref') || e.target.closest('.collapse')) return;
           dragging = true;
-          var cardRect = card.getBoundingClientRect();
-          dragX = e.clientX - cardRect.left + grid.scrollLeft;
-          dragY = e.clientY - cardRect.top + grid.scrollTop;
+          var r = card.getBoundingClientRect();
+          dx = e.clientX - r.left;
+          dy = e.clientY - r.top;
           card.style.zIndex = '20';
+          card.style.cursor = 'grabbing';
           e.preventDefault();
-
           function onMove(e2) {
-            var gridRect = grid.getBoundingClientRect();
-            card.style.left = (e2.clientX - gridRect.left - dragX + grid.scrollLeft) + 'px';
-            card.style.top = (e2.clientY - gridRect.top - dragY + grid.scrollTop) + 'px';
+            var gr = grid.getBoundingClientRect();
+            card.style.left = (e2.clientX - gr.left - dx) + 'px';
+            card.style.top = (e2.clientY - gr.top - dy) + 'px';
             redrawLines();
           }
           function onUp() {
             dragging = false;
             card.style.zIndex = '';
+            card.style.cursor = '';
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
           }
@@ -779,8 +264,18 @@
           document.addEventListener('mouseup', onUp);
         });
 
-        card.appendChild(tabs);
-        card.appendChild(detail);
+        // Hover → inspector
+        card.addEventListener('card-hover', function(e) {
+          activeAggName = e.detail.name;
+          renderInspector();
+        });
+
+        // Navigate
+        card.addEventListener('item-navigate', function(e) {
+          activeAggName = e.detail.target;
+          renderInspector();
+        });
+
         grid.appendChild(card);
         cardEls[agg.name] = card;
       });
@@ -790,52 +285,35 @@
 
       function redrawLines() {
         svg.innerHTML = '';
-        var containerRect = container.getBoundingClientRect();
+        var cr = container.getBoundingClientRect();
         svg.setAttribute('width', container.offsetWidth);
         svg.setAttribute('height', container.offsetHeight);
-
         lastState.aggregates.forEach(function(agg) {
           agg.attributes.forEach(function(a) {
-            var refMatch = a.type.match(/reference_to\((\w+)\)/);
-            var listMatch = a.type.match(/list_of\((\w+)\)/);
-            var target = refMatch ? refMatch[1] : (listMatch ? listMatch[1] : null);
+            var rm = a.type.match(/reference_to\((\w+)\)/);
+            var lm = a.type.match(/list_of\((\w+)\)/);
+            var target = rm ? rm[1] : (lm ? lm[1] : null);
             if (!target || !cardEls[agg.name] || !cardEls[target]) return;
-
-            var fromEl = cardEls[agg.name];
-            var toEl = cardEls[target];
-            var fromRect = fromEl.getBoundingClientRect();
-            var toRect = toEl.getBoundingClientRect();
-
-            var x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
-            var y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
-            var x2 = toRect.left + toRect.width / 2 - containerRect.left;
-            var y2 = toRect.top + toRect.height / 2 - containerRect.top;
-
-            var angle = Math.atan2(y2 - y1, x2 - x1);
-            x1 += Math.cos(angle) * Math.min(fromRect.width / 2, 60);
-            y1 += Math.sin(angle) * Math.min(fromRect.height / 2, 30);
-            x2 -= Math.cos(angle) * Math.min(toRect.width / 2, 60);
-            y2 -= Math.sin(angle) * Math.min(toRect.height / 2, 30);
-
-            var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-            line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-            line.setAttribute('stroke', listMatch ? '#f0883e' : '#58a6ff');
-            line.setAttribute('stroke-width', '1.5');
-            line.setAttribute('stroke-dasharray', listMatch ? '4,3' : 'none');
-            line.setAttribute('opacity', '0.5');
+            var f = cardEls[agg.name].getBoundingClientRect();
+            var t = cardEls[target].getBoundingClientRect();
+            var x1 = f.left + f.width/2 - cr.left, y1 = f.top + f.height/2 - cr.top;
+            var x2 = t.left + t.width/2 - cr.left, y2 = t.top + t.height/2 - cr.top;
+            var angle = Math.atan2(y2-y1, x2-x1);
+            x1 += Math.cos(angle)*Math.min(f.width/2,60); y1 += Math.sin(angle)*Math.min(f.height/2,30);
+            x2 -= Math.cos(angle)*Math.min(t.width/2,60); y2 -= Math.sin(angle)*Math.min(t.height/2,30);
+            var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+            line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+            line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+            line.setAttribute('stroke', lm ? '#f0883e' : '#58a6ff');
+            line.setAttribute('stroke-width','1.5');
+            line.setAttribute('stroke-dasharray', lm ? '4,3' : 'none');
+            line.setAttribute('opacity','0.5');
             svg.appendChild(line);
-
-            var arrowLen = 8;
-            var perpAngle = Math.PI / 6;
-            var arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-            arrow.setAttribute('points',
-              x2 + ',' + y2 + ' ' +
-              (x2 - Math.cos(angle - perpAngle) * arrowLen) + ',' + (y2 - Math.sin(angle - perpAngle) * arrowLen) + ' ' +
-              (x2 - Math.cos(angle + perpAngle) * arrowLen) + ',' + (y2 - Math.sin(angle + perpAngle) * arrowLen)
-            );
-            arrow.setAttribute('fill', listMatch ? '#f0883e' : '#58a6ff');
-            arrow.setAttribute('opacity', '0.5');
+            var al = 8, pa = Math.PI/6;
+            var arrow = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+            arrow.setAttribute('points', x2+','+y2+' '+(x2-Math.cos(angle-pa)*al)+','+(y2-Math.sin(angle-pa)*al)+' '+(x2-Math.cos(angle+pa)*al)+','+(y2-Math.sin(angle+pa)*al));
+            arrow.setAttribute('fill', lm ? '#f0883e' : '#58a6ff');
+            arrow.setAttribute('opacity','0.5');
             svg.appendChild(arrow);
           });
         });
@@ -843,49 +321,184 @@
       requestAnimationFrame(redrawLines);
     }
 
-    // Initial load
-    fetch('/state').then(function(r) { return r.json(); }).then(function(state) {
-      lastState = state;
-      updateState(state);
-      buildCompletions(state);
-      buildHints(state);
-      renderDomainOverview();
+    // ─── Left sidebar ───
+    function updateState(state) {
+      var badge = document.getElementById('mode-badge');
+      badge.textContent = state.mode;
+      badge.className = state.mode === 'play'
+        ? 'bg-gh-playBadge text-white text-[11px] px-3 py-1 rounded-full cursor-pointer hover:opacity-80 transition-opacity select-none'
+        : 'bg-gh-badge text-white text-[11px] px-3 py-1 rounded-full cursor-pointer hover:opacity-80 transition-opacity select-none';
+
+      document.getElementById('domain-title').textContent = (state.domain_name || 'Hecks') + ' Workshop';
+      if (state.mode === 'sketch') terminal.classList.add('sketch-grid'); else terminal.classList.remove('sketch-grid');
+
+      // Sidebar
+      var tree = document.getElementById('domain-tree');
+      tree.innerHTML = '<h3 class="text-gh-blue text-[11px] uppercase tracking-wider mb-2">Domain</h3>';
+      if (!state.aggregates.length) {
+        tree.innerHTML += '<div class="text-gh-muted italic">No aggregates yet</div>';
+        return;
+      }
+      state.aggregates.forEach(function(agg) {
+        var card = document.createElement('agg-card');
+        card.data = agg;
+        card.style.position = 'relative';
+        card.style.marginBottom = '4px';
+        card.addEventListener('card-hover', function(e) { activeAggName = e.detail.name; renderInspector(); });
+        card.addEventListener('card-select', function(e) { activeAggName = e.detail.name; renderInspector(); });
+        card.addEventListener('item-navigate', function(e) { activeAggName = e.detail.target; renderInspector(); runCommand(e.detail.target); });
+        tree.appendChild(card);
+      });
+
+      // Events
+      var list = document.getElementById('events-list');
+      var empty = document.getElementById('events-empty');
+      if (state.events.length === 0) { empty.style.display = ''; list.innerHTML = ''; }
+      else {
+        empty.style.display = 'none';
+        list.innerHTML = state.events.slice().reverse().map(function(ev) {
+          return '<div class="bg-gh-bg border border-gh-border rounded p-1.5 mb-1.5"><div class="text-gh-purple font-semibold">' + esc(ev.type) +
+            '</div><div class="text-gh-muted text-[11px]">' + esc(ev.occurred_at || '') + '</div></div>';
+        }).join('');
+      }
+    }
+
+    // ─── Global event listeners for web components ───
+    document.addEventListener('item-navigate', function(e) {
+      activeAggName = e.detail.target;
+      renderInspector();
+      runCommand(e.detail.target);
     });
 
-    // Hints
+    document.addEventListener('item-remove', function(e) {
+      var cmd = activeAggName + '.remove :' + e.detail.name;
+      runCommand(cmd);
+    });
+
+    document.addEventListener('item-undo', function(e) {
+      var restoreCmd = undoRemoves[activeAggName + '.remove :' + e.detail.name];
+      if (restoreCmd) runCommand(restoreCmd);
+    });
+
+    // ─── Autocomplete ───
+    var acBox = document.getElementById('autocomplete');
+    var acItems = [], acIdx = -1, acWordStart = 0;
+    var completions = [];
+    var typeOptions = ['String','Integer','Float','TrueClass','Date','DateTime','JSON','list_of("")','reference_to("")'];
+    var typeHints = { 'String': typeOptions.join(' | ') };
+    var stopHints = { ':name': 'field name', ':status': 'field name', 'draft': 'default value' };
+    var tabStops = [], tabStopIdx = -1;
+
+    function buildCompletions(state) {
+      completions = [];
+      typeOptions.forEach(function(t) { if (t !== 'reference_to("")') completions.push({ text: t, type: 'type' }); });
+      completions = completions.concat([
+        {text:'describe',type:'workshop'},{text:'diagram',type:'workshop'},{text:'browse',type:'workshop'},
+        {text:'validate',type:'workshop'},{text:'preview',type:'workshop'},{text:'play!',type:'mode'},
+        {text:'sketch!',type:'mode'},{text:'events',type:'play'},{text:'history',type:'play'},
+        {text:'reset!',type:'play'},{text:'save',type:'workshop'}
+      ]);
+      state.aggregates.forEach(function(a) {
+        completions.push({text:'reference_to("'+a.name+'")',type:'reference'});
+        completions.push({text:'list_of("'+a.name+'")',type:'collection'});
+        completions.push({text:a.name,type:'aggregate'});
+        completions.push({text:a.name+'.describe',type:'method'});
+        completions.push({text:a.name+'.preview',type:'method'});
+        completions.push({text:a.name+'.attributes',type:'method'});
+        completions.push({text:a.name+'.commands',type:'method'});
+        completions.push({text:a.name+'.remove :name',type:'remove',stops:[':name']});
+        a.commands.forEach(function(c) { completions.push({text:c,type:'command'}); });
+        completions.push({text:a.name+'.attr :name, String',type:'add attribute',stops:[':name','String']});
+        completions.push({text:a.name+'.command :name',type:'add command',stops:[':name']});
+        completions.push({text:a.name+'.lifecycle :status, default: "draft"',type:'add lifecycle',stops:[':status','draft']});
+        completions.push({text:a.name+'.validation :name, presence: true',type:'add validation',stops:[':name']});
+      });
+    }
+
+    input.addEventListener('input', function() {
+      var val = input.value;
+      if (!val) { hideAc(); return; }
+      var pos = input.selectionStart, before = val.substring(0, pos);
+      var wm = before.match(/[\s,]([^\s,]*)$/);
+      var word = wm ? wm[1] : before;
+      if (!word) { hideAc(); return; }
+      var lower = word.toLowerCase();
+      acItems = completions.filter(function(c) { var cl = c.text.toLowerCase(); return (cl.indexOf(lower) === 0 || cl.indexOf(lower) > 0) && cl !== lower; });
+      acItems.sort(function(a,b) { var al=a.text.toLowerCase(),bl=b.text.toLowerCase(); return (al.indexOf(lower)===0?0:1)-(bl.indexOf(lower)===0?0:1)||al.localeCompare(bl); });
+      acItems = acItems.slice(0,10);
+      if (!acItems.length) { hideAc(); return; }
+      acIdx = -1; acWordStart = pos - word.length; renderAc();
+    });
+
+    function renderAc() {
+      acBox.innerHTML = acItems.map(function(c,i) {
+        var cls = i===acIdx ? 'ac-item active' : 'ac-item';
+        return '<div class="'+cls+'" data-idx="'+i+'">'+esc(c.text)+'<span class="ac-type">'+c.type+'</span></div>';
+      }).join('');
+      acBox.style.display = 'block';
+      acBox.querySelectorAll('[data-idx]').forEach(function(el) {
+        el.addEventListener('mousedown', function(e) { e.preventDefault(); applyAc(parseInt(el.dataset.idx)); });
+      });
+    }
+    function hideAc() { acBox.style.display = 'none'; acItems = []; acIdx = -1; }
+
+    function applyAc(idx) {
+      var item = acItems[idx];
+      var before = input.value.substring(0, acWordStart), after = input.value.substring(input.selectionStart);
+      input.value = before + item.text + after;
+      input.setSelectionRange(before.length+item.text.length, before.length+item.text.length);
+      hideAc(); input.focus();
+      if (item.stops && item.stops.length) { tabStops = item.stops; tabStopIdx = -1; selectNextStop(); }
+      else { tabStops = []; tabStopIdx = -1; }
+    }
+
+    function selectNextStop() {
+      tabStopIdx++;
+      if (tabStopIdx >= tabStops.length) { tabStops = []; tabStopIdx = -1; hideStopHint(); return; }
+      var stop = tabStops[tabStopIdx];
+      var pos = input.value.indexOf(stop, tabStopIdx === 0 ? 0 : input.selectionStart);
+      if (pos > -1) {
+        var s = stop.charAt(0) === ':' ? pos+1 : pos;
+        input.setSelectionRange(s, pos+stop.length); input.scrollLeft = 0;
+        showStopHint(stop);
+      }
+    }
+    function showStopHint(stop) {
+      var hint = typeHints[stop] || stopHints[stop] || '';
+      if (!hint) { hideStopHint(); return; }
+      var el = document.getElementById('stop-hint');
+      el.textContent = hint; el.classList.remove('hidden'); el.style.display = 'block';
+    }
+    function hideStopHint() { var el = document.getElementById('stop-hint'); el.classList.add('hidden'); el.style.display = 'none'; }
+
+    input.addEventListener('keydown', function(e) {
+      if (acItems.length > 0) {
+        if (e.key === 'ArrowDown') { e.preventDefault(); acIdx = Math.min(acIdx+1, acItems.length-1); renderAc(); return; }
+        if (e.key === 'ArrowUp' && acIdx >= 0) { e.preventDefault(); acIdx--; renderAc(); return; }
+        if (e.key === 'Tab' && input.value.indexOf('""') === -1) { e.preventDefault(); e.stopImmediatePropagation(); applyAc(acIdx >= 0 ? acIdx : 0); return; }
+        if (e.key === 'Enter' && acIdx >= 0 && input.value.indexOf('""') === -1) { e.preventDefault(); e.stopImmediatePropagation(); applyAc(acIdx); return; }
+        if (e.key === 'Escape') { e.preventDefault(); hideAc(); return; }
+      }
+    }, true);
+
+    // ─── Hints ───
     var hints = ['describe', 'browse', 'validate', 'play!'];
-    var hintIdx = 0;
+    var hintIdx = 0, currentHintCmd = '';
+
     function buildHints(state) {
       var aggs = state.aggregates;
       if (aggs.length > 0) {
-        var first = aggs[0];
-        hints = [
-          first.name + '.describe  # inspect', 'browse  # domain tree',
-          'play!  # enter play mode', 'describe  # full summary', 'validate  # check rules'
-        ];
+        hints = [aggs[0].name+'.describe  # inspect','browse  # domain tree','play!  # enter play mode','describe  # full summary','validate  # check rules'];
         aggs.forEach(function(a) {
           a.commands.forEach(function(cmd) {
-            var attrs = a.attributes.map(function(at) { return at.name + ': ""'; }).join(', ');
-            hints.push(a.name + '.' + cmd.toLowerCase().replace(a.name.toLowerCase(), '') + '(' + attrs + ')  # command');
+            var attrs = a.attributes.map(function(at) { return at.name+': ""'; }).join(', ');
+            hints.push(a.name+'.'+cmd.toLowerCase().replace(a.name.toLowerCase(),'')+' ('+attrs+')  # command');
           });
-          hints.push(a.name + '.describe  # aggregate');
+          hints.push(a.name+'.describe  # aggregate');
         });
       }
       nextHint();
     }
-    var tryLink = document.getElementById('try-link');
-    var currentHintCmd = '';
-
-    tryLink.addEventListener('click', function() {
-      if (!currentHintCmd) return;
-      if (currentHintCmd.indexOf('""') > -1) {
-        input.value = currentHintCmd; input.focus();
-        var fq = currentHintCmd.indexOf('""');
-        input.setSelectionRange(fq + 1, fq + 1);
-      } else {
-        appendCmd(currentHintCmd); evalCmd(currentHintCmd); input.focus();
-      }
-    });
 
     function nextHint() {
       input.classList.add('hint-fade');
@@ -897,6 +510,15 @@
         input.classList.remove('hint-fade');
       }, 300);
     }
+
+    // ─── Init ───
+    fetch('/state').then(function(r) { return r.json(); }).then(function(state) {
+      lastState = state;
+      updateState(state);
+      buildCompletions(state);
+      buildHints(state);
+      renderDomainOverview();
+    });
   </script>
 </body>
 </html>

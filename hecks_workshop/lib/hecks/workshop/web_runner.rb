@@ -65,6 +65,7 @@ module Hecks
         when ["GET",  "/"]      then serve_console(res)
         when ["POST", "/eval"]  then serve_eval(req, res)
         when ["GET",  "/state"] then serve_state(res)
+        when ["GET",  "/js/components.js"] then serve_js(res, "js/components.js")
         else
           res.status = 404
           res.body = "Not found"
@@ -97,6 +98,13 @@ module Hecks
         state  = @serializer.serialize
         res.content_type = "application/json"
         res.body = JSON.generate(output: result[:output], error: result[:error], state: state)
+      end
+
+      def serve_js(res, path)
+        file = File.join(VIEWS_DIR, path)
+        res.content_type = "application/javascript"
+        res["Cache-Control"] = "no-cache, no-store"
+        res.body = File.read(file)
       end
 
       def serve_state(res)
