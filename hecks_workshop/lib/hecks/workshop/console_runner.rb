@@ -30,6 +30,9 @@ module Hecks
       end
     end
 
+    def list_of(type) = { list: type }
+    def reference_to(type) = { reference: type }
+
     def aggregate(name, &block)
       is_new = !@workshop.aggregate_builders.key?(domain_constant_name(name))
       handle = @workshop.aggregate(name, &block)
@@ -96,6 +99,17 @@ module Hecks
       launch_irb
     end
 
+    # Public so WebRunner can reuse session setup without launching IRB
+    def setup_workshop
+      setup_session
+    end
+
+    # Returns a binding in ConsoleRunner's method context so constant
+    # lookup resolves hoisted constants on this class.
+    def eval_binding
+      binding
+    end
+
     private
 
     def launch_irb
@@ -146,7 +160,7 @@ module Hecks
       if File.exist?("hecks_domain.rb")
         Kernel.load("hecks_domain.rb")
         domain = Hecks.last_domain
-        workshop = Session.new(domain.name)
+        workshop = Hecks.workshop(domain.name)
         domain.aggregates.each do |agg|
           workshop.aggregate_builders[agg.name] =
             DSL::AggregateRebuilder.from_aggregate(agg)

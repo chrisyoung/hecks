@@ -1,0 +1,60 @@
+# Web Console
+
+A browser-based REPL for the Hecks Workshop. Same features as the terminal console, but with a visual domain tree and live event log.
+
+## Usage
+
+```bash
+hecks web_console Pizzas
+# => Hecks Web Console: http://localhost:4567
+```
+
+Open `http://localhost:4567` in your browser. You'll see three panels:
+
+- **Left sidebar** — Domain tree showing aggregates, attributes, commands, events
+- **Center** — Terminal-like REPL input and output
+- **Right sidebar** — Event log (populated in play mode)
+
+## Options
+
+```bash
+hecks web_console Pizzas --port 3000
+```
+
+## Example Session
+
+Type commands in the input field at the bottom of the terminal:
+
+```
+> Pizza
+Pizza aggregate created
+
+> Pizza.name String
+name attribute added to Pizza
+
+> Pizza.create
+CreatePizza command added
+
+> validate
+Valid (1 aggregates, 1 commands, 1 events)
+
+> play!
+Entering play mode...
+
+> Pizza.create(name: "Margherita")
+Command: CreatePizza
+  Event: CreatedPizza
+
+> events
+1. CreatedPizza at 2026-03-29 14:32:10 UTC
+
+> sketch!
+Back to sketch mode
+```
+
+The domain tree and event log update automatically after each command.
+
+## Keyboard Shortcuts
+
+- **Enter** — Submit command
+- **Up/Down** — Navigate command history

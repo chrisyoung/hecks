@@ -59,8 +59,10 @@ module Hecks
           lines << "  Commands:"
           agg.commands.each_with_index do |cmd, i|
             event = agg.events[i]
-            attrs = cmd.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")
-            lines << "    #{cmd.name} (#{attrs}) -> #{event&.name}"
+            lines << "    #{cmd.name} -> #{event&.name}"
+            cmd.attributes.each do |a|
+              lines << "      #{a.name}: #{Hecks::Utils.type_label(a)}"
+            end
           end
         end
 

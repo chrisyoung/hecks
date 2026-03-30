@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hecks Workshop</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; height: 100vh; background: #0d1117; color: #c9d1d9; }
+    .sidebar { width: 220px; background: #161b22; border-right: 1px solid #30363d; padding: 12px; overflow-y: auto; font-size: 13px; }
+    .sidebar h3 { color: #58a6ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .sidebar .section { margin-bottom: 16px; }
+    .agg-name { color: #f0883e; font-weight: 600; margin: 6px 0 2px; cursor: pointer; }
+    .agg-name:before { content: '\25B8  '; font-size: 10px; color: #484f58; }
+    .agg-name.open:before { content: '\25BE  '; }
+    .agg-detail { color: #8b949e; margin-left: 12px; font-size: 11px; line-height: 1.5; display: none; }
+    .agg-detail.open { display: block; }
+    .agg-detail span { color: #c9d1d9; }
+    .agg-detail .tree-section { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; padding-left: 6px; border-left: 2px solid; cursor: pointer; user-select: none; }
+    .agg-detail .tree-section:before { content: '\25BE  '; }
+    .agg-detail .tree-section.collapsed:before { content: '\25B8  '; }
+    .agg-detail .tree-items { margin-left: 10px; color: #c9d1d9; }
+    .agg-detail .tree-item { color: #c9d1d9; }
+    .center { flex: 1; display: flex; flex-direction: column; }
+    .topbar { background: #161b22; border-bottom: 1px solid #30363d; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .topbar .title { color: #58a6ff; font-weight: 600; font-size: 14px; }
+    .mode-badge { background: #238636; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .mode-badge.play { background: #8957e5; }
+    #terminal { flex: 1; overflow-y: auto; padding: 12px 16px; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; line-height: 1.6; transition: background 0.5s; }
+    #terminal.sketch-grid { background-color: #0a1628; background-image: linear-gradient(rgba(65,130,234,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(65,130,234,0.15) 1px, transparent 1px); background-size: 24px 24px; }
+    .cmd-line { color: #7ee787; }
+    .cmd-line.cmd-error { color: #f85149; }
+    .cmd-line .prompt { color: #484f58; }
+    .output-line { color: #c9d1d9; white-space: pre-wrap; }
+    .desc-header { cursor: pointer; user-select: none; color: #58a6ff; }
+    .desc-header:before { content: '\25BE  '; font-size: 10px; display: inline; }
+    .desc-header.collapsed:before { content: '\25B8  '; }
+    .desc-child.hidden { display: none; }
+    .error-line { color: #f85149; white-space: pre-wrap; }
+    .warning-line { color: #d29922; white-space: pre-wrap; }
+    .undo-link { color: #f85149; cursor: pointer; font-size: 11px; margin-left: 8px; text-decoration: none; opacity: 0; }
+    .output-line:hover .undo-link, .warning-line:hover .undo-link { opacity: 1; }
+    .undo-restore { color: #58a6ff; cursor: pointer; font-size: 12px; margin-left: 8px; text-decoration: underline; }
+    .input-row { display: flex; border-top: 1px solid #30363d; background: #0d1117; }
+    .input-row .prompt { color: #484f58; padding: 10px 0 10px 16px; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; }
+    #cmd-input { flex: 1; background: transparent; border: none; color: #7ee787; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; padding: 10px 8px; outline: none; transition: opacity 0.3s; }
+    #cmd-input.hint-fade { opacity: 0; }
+    #cmd-input::placeholder { transition: color 0.3s; color: #2ea04370; font-size: 11px; }
+    #try-link { color: #484f58; font-size: 12px; padding: 10px 12px 10px 0; cursor: pointer; font-family: -apple-system, sans-serif; text-decoration: none; transition: color 0.3s; }
+    #try-link:hover { color: #58a6ff; }
+    #try-link.hidden { display: none; }
+    #autocomplete { position: absolute; bottom: 100%; left: 30px; background: #1e1e1e; border: 1px solid #30363d; border-radius: 4px; max-height: 180px; overflow-y: auto; display: none; z-index: 10; min-width: 200px; }
+    #autocomplete .ac-item { padding: 4px 10px; font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; color: #c9d1d9; cursor: pointer; }
+    #autocomplete .ac-item.active { background: #30363d; color: #7ee787; }
+    #autocomplete .ac-item:hover { background: #30363d; }
+    #autocomplete .ac-type { color: #484f58; margin-left: 8px; }
+    .input-row { position: relative; }
+    #stop-hint { display: none; position: absolute; bottom: 100%; right: 12px; background: #1e1e1e; border: 1px solid #30363d; border-radius: 4px; padding: 4px 10px; font-family: "SF Mono", "Fira Code", monospace; font-size: 11px; color: #8b949e; white-space: nowrap; }
+    .events-panel { width: 260px; background: #161b22; border-left: 1px solid #30363d; padding: 12px; overflow-y: auto; font-size: 12px; }
+    .events-panel h3 { color: #58a6ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .event-item { background: #0d1117; border: 1px solid #30363d; border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; }
+    .event-type { color: #d2a8ff; font-weight: 600; }
+    .event-time { color: #484f58; font-size: 11px; }
+    .empty { color: #484f58; font-style: italic; }
+    #active-agg { margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+    #active-agg h3 { color: #f0883e; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    #active-agg .agg-attr { color: #c9d1d9; font-size: 12px; line-height: 1.8; display: inline-block; width: 100%; }
+    #active-agg .agg-attr .attr-type { color: #8b949e; }
+    #active-agg .agg-attr .agg-x { color: #f85149; cursor: pointer; font-size: 11px; margin-left: 4px; opacity: 0; }
+    #active-agg .agg-attr:hover .agg-x { opacity: 1; }
+    #active-agg .agg-attr.deleted { color: #484f58; text-decoration: line-through; opacity: 0.5; transition: opacity 1.5s; }
+    #active-agg .agg-attr.deleted .agg-x { display: none; }
+    #active-agg .agg-attr.deleted .attr-type { color: #484f58; }
+    #active-agg .agg-undo { color: #58a6ff; cursor: pointer; font-size: 11px; margin-left: 6px; }
+    #active-agg .agg-attr.faded { opacity: 0; }
+    #active-agg .agg-section { font-size: 10px; text-transform: uppercase; margin-top: 10px; margin-bottom: 3px; letter-spacing: 0.5px; padding-left: 8px; border-left: 2px solid; cursor: pointer; user-select: none; }
+    #active-agg .agg-section:before { content: '\25BE  '; }
+    #active-agg .agg-section.collapsed:before { content: '\25B8  '; }
+    #active-agg .agg-section.collapsed + .agg-items { display: none; }
+    #active-agg .agg-section.sec-attributes { color: #7ee787; border-color: #7ee787; }
+    #active-agg .agg-section.sec-commands { color: #58a6ff; border-color: #58a6ff; }
+    #active-agg .agg-section.sec-events { color: #d2a8ff; border-color: #d2a8ff; }
+    #active-agg .agg-section.sec-value-objects { color: #f0883e; border-color: #f0883e; }
+    #active-agg .agg-section.sec-entities { color: #f0883e; border-color: #f0883e; }
+    #active-agg .agg-section.sec-policies { color: #f85149; border-color: #f85149; }
+    #active-agg .agg-section.sec-queries { color: #79c0ff; border-color: #79c0ff; }
+    #active-agg .agg-section.sec-specifications { color: #d29922; border-color: #d29922; }
+  </style>
+</head>
+<body>
+  <div class="sidebar" id="domain-tree">
+    <h3>Domain</h3>
+    <div class="empty">No aggregates yet</div>
+  </div>
+  <div class="center">
+    <div class="topbar">
+      <span class="title" id="domain-title">Hecks Workshop</span>
+      <span class="mode-badge" id="mode-badge">sketch</span>
+    </div>
+    <div id="terminal"></div>
+    <div class="input-row">
+      <div id="autocomplete"></div>
+      <div id="stop-hint"></div>
+      <span class="prompt">&gt;&nbsp;</span>
+      <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false" placeholder="">
+      <a id="try-link" style="display:none"></a>
+    </div>
+  </div>
+  <div class="events-panel" id="events-panel">
+    <div id="active-agg"></div>
+    <h3>Events</h3>
+    <div class="empty" id="events-empty">No events yet</div>
+    <div id="events-list"></div>
+  </div>
+
+  <script>
+    var openAggs = {};
+    var cmdHistory = JSON.parse(localStorage.getItem('hecks_cmdHistory') || '[]');
+    var histIdx = -1, terminal = document.getElementById('terminal');
+    var input = document.getElementById('cmd-input');
+    function saveCmdHistory() { localStorage.setItem('hecks_cmdHistory', JSON.stringify(cmdHistory.slice(0, 100))); }
+
+    input.addEventListener('click', function() {
+      if (!input.value && currentHintCmd) { tryLink.click(); }
+    });
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        var cmd = input.value.trim();
+        if (!cmd) { nextHint(); return; }
+        cmdHistory.unshift(cmd); histIdx = -1; saveCmdHistory(); hideStopHint(); tabStops = [];
+        // Slash command shortcuts
+        if (cmd.charAt(0) === '/') { cmd = cmd.substring(1); }
+        if (cmd === 'play') { cmd = 'play!'; }
+        if (cmd === 'sketch') { cmd = 'sketch!'; }
+        if (cmd === 'reset') { cmd = 'reset!'; }
+        lastCmd = cmd;
+        appendCmd(cmd);
+        input.value = '';
+        evalCmd(cmd);
+      } else if (e.key === 'Tab' && tabStops.length > 0 && acItems.length === 0) {
+        e.preventDefault();
+        selectNextStop();
+      } else if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        terminal.innerHTML = '';
+      } else if (e.key === 'ArrowUp' && acItems.length === 0) {
+        e.preventDefault();
+        if (histIdx < cmdHistory.length - 1) { histIdx++; input.value = cmdHistory[histIdx]; input.setSelectionRange(input.value.length, input.value.length); }
+      } else if (e.key === 'ArrowDown' && acItems.length === 0) {
+        e.preventDefault();
+        if (histIdx > 0) { histIdx--; input.value = cmdHistory[histIdx]; input.setSelectionRange(input.value.length, input.value.length); }
+        else { histIdx = -1; input.value = ''; }
+      }
+    });
+
+    function appendCmd(cmd) {
+      var d = document.createElement('div');
+      d.className = 'cmd-line';
+      d.innerHTML = '<span class="prompt">&gt; </span>' + esc(cmd);
+      terminal.appendChild(d);
+    }
+
+    var lastCmd = null;
+    var undoRemoves = {};
+
+    // Shared aggregate component — used in terminal, left sidebar, and right panel
+    function renderAggComponent(container, agg, opts) {
+      opts = opts || {};
+      var removable = opts.removable !== false;
+      var inline = opts.inline || false;
+      var startCollapsed = opts.collapsed || false;
+
+      if (opts.showName !== false) {
+        var title = document.createElement('div');
+        title.className = 'output-line';
+        title.style.color = '#f0883e';
+        title.style.fontWeight = '600';
+        title.textContent = agg.name;
+        container.appendChild(title);
+      }
+
+      var sections = [
+        { key: 'attributes', label: 'attributes', color: '#7ee787', items: agg.attributes, render: function(a) { return esc(a.name) + ' <span class="attr-type">' + esc(a.type) + '</span>'; }, removeCmd: function(a) { return agg.name + '.remove :' + a.name; }, restoreCmd: function(a) { return agg.name + '.attr :' + a.name + ', ' + a.type; } },
+        { key: 'commands', label: 'commands', color: '#58a6ff', items: agg.commands, render: function(c) { return esc(c); }, removeCmd: function(c) { return agg.name + '.remove_command "' + c + '"'; } },
+        { key: 'events', label: 'events', color: '#d2a8ff', items: agg.events, render: function(e) { return esc(e); }, removeCmd: function(e) { return agg.name + '.remove_event "' + e + '"'; } },
+        { key: 'value_objects', label: 'value objects', color: '#f0883e', items: agg.value_objects, render: function(v) { return esc(v); }, removeCmd: function(v) { return agg.name + '.remove_value_object "' + v + '"'; } },
+        { key: 'entities', label: 'entities', color: '#f0883e', items: agg.entities, render: function(e) { return esc(e); }, removeCmd: function(e) { return agg.name + '.remove_entity "' + e + '"'; } },
+        { key: 'policies', label: 'policies', color: '#f85149', items: agg.policies, render: function(p) { return esc(p); }, removeCmd: function(p) { return agg.name + '.remove_policy "' + p + '"'; } },
+        { key: 'queries', label: 'queries', color: '#79c0ff', items: agg.queries, render: function(q) { return esc(q); }, removeCmd: function(q) { return agg.name + '.remove_query "' + q + '"'; } },
+        { key: 'specifications', label: 'specs', color: '#d29922', items: agg.specifications, render: function(s) { return esc(s); }, removeCmd: function(s) { return agg.name + '.remove_specification "' + s + '"'; } }
+      ];
+
+      sections.forEach(function(sec) {
+        if (!sec.items || !sec.items.length) return;
+        var header = document.createElement('div');
+        var baseClass = inline ? 'desc-header' : 'agg-section sec-' + sec.key.replace('_', '-');
+        header.className = baseClass + (startCollapsed ? ' collapsed' : '');
+        header.style.color = sec.color;
+        if (!inline) header.style.borderColor = sec.color;
+        header.innerHTML = '<span class="chevron">' + (startCollapsed ? '&#9656;' : '&#9662;') + '</span> ' + esc(sec.label);
+        container.appendChild(header);
+
+        var itemsDiv = document.createElement('div');
+        itemsDiv.className = inline ? '' : 'agg-items';
+        if (startCollapsed) itemsDiv.style.display = 'none';
+        sec.items.forEach(function(item) {
+          var row = document.createElement('div');
+          row.className = inline ? 'output-line desc-child' : 'agg-attr';
+          var removeCmd = sec.removeCmd(item);
+          var restoreCmd = sec.restoreCmd ? sec.restoreCmd(item) : null;
+          row.dataset.remove = removeCmd;
+          if (restoreCmd) row.dataset.restore = restoreCmd;
+          row.innerHTML = '  ' + sec.render(item);
+          if (removable) {
+            var x = document.createElement('span');
+            x.className = 'agg-x';
+            x.textContent = '\u00d7';
+            x.addEventListener('click', function(e) {
+              e.stopPropagation();
+              if (row.classList.contains('deleted')) return;
+              if (restoreCmd) undoRemoves[removeCmd] = restoreCmd;
+              row.classList.add('deleted');
+              var undo = document.createElement('span');
+              undo.className = 'agg-undo';
+              undo.textContent = '(undo)';
+              undo.addEventListener('click', function(e2) {
+                e2.stopPropagation();
+                if (restoreCmd) { appendCmd(restoreCmd); evalCmd(restoreCmd); }
+              });
+              row.appendChild(undo);
+              appendCmd(removeCmd); evalCmd(removeCmd);
+              setTimeout(function() { row.classList.add('faded'); }, 3000);
+              setTimeout(function() { row.remove(); }, 4500);
+            });
+            row.appendChild(x);
+          }
+          itemsDiv.appendChild(row);
+        });
+        container.appendChild(itemsDiv);
+
+        header.addEventListener('click', function() {
+          header.classList.toggle('collapsed');
+          var isCollapsed = header.classList.contains('collapsed');
+          itemsDiv.style.display = isCollapsed ? 'none' : '';
+          header.querySelector('.chevron').innerHTML = isCollapsed ? '&#9656;' : '&#9662;';
+        });
+      });
+    }
+
+    function appendOutput(text, cmd) {
+      if (!text) return;
+      // Check if this is a describe — render as component if we have state data
+      var isDescribe = cmd && (cmd.match(/\.?describe$/) || cmd === 'status' || cmd.match(/^[A-Z]\w*$/));
+      if (isDescribe && lastState) {
+        var m = cmd.match(/^(\w+)\.describe$/) || cmd.match(/^([A-Z]\w*)$/);
+        var target = m ? m[1] : null;
+        if (target) {
+          var agg = lastState.aggregates.find(function(a) { return a.name === target; });
+          if (agg) {
+            renderAggComponent(terminal, agg, { inline: true, removable: true });
+            return;
+          }
+        }
+      }
+      // Fallback: render as plain text
+      var lines = text.split('\n');
+      lines.forEach(function(line) {
+        var d = document.createElement('div');
+        if (line.indexOf('WARNING') > -1 || line.indexOf('!!') > -1) {
+          d.className = 'warning-line';
+          d.textContent = line;
+          addUndoLink(d, lastCmd);
+        } else {
+          d.className = 'output-line';
+          d.textContent = line;
+        }
+        terminal.appendChild(d);
+      });
+    }
+
+    function addUndoLink(el, cmd) {
+      var undo = document.createElement('span');
+      undo.className = 'undo-link';
+      undo.textContent = '\u00d7';
+      undo.addEventListener('click', function() {
+        var undoCmd = undoFor(cmd);
+        if (undoCmd) { appendCmd(undoCmd); evalCmd(undoCmd); }
+      });
+      el.appendChild(undo);
+    }
+
+    function addRemoveLink(el, line, aggName) {
+      // Match attribute lines like "    name: String"
+      var attrMatch = line.match(/^\s{4}(\w+):\s*(.+)$/);
+      if (attrMatch && !line.match(/^\s{6}/) && !line.match(/:\s*(presence|uniqueness)/)) {
+        var removeCmd = aggName + '.remove :' + attrMatch[1];
+        var restoreCmd = aggName + '.attr :' + attrMatch[1] + ', ' + attrMatch[2];
+        undoRemoves[removeCmd] = restoreCmd;
+        appendActionLink(el, 'remove', removeCmd);
+        return;
+      }
+      // Match command lines like "    CreatePizza -> CreatedPizza"
+      var cmdMatch = line.match(/^\s{4}(\w+)\s*->/);
+      if (cmdMatch) {
+        appendActionLink(el, 'remove', aggName + '.remove_command "' + cmdMatch[1] + '"');
+        return;
+      }
+      // Match validation lines like "    name: presence"
+      var valMatch = line.match(/^\s{4}(\w+):\s*(presence|uniqueness)/);
+      if (valMatch) {
+        appendActionLink(el, 'remove', aggName + '.remove_validation :' + valMatch[1]);
+      }
+    }
+
+    function appendActionLink(el, label, cmd) {
+      var link = document.createElement('span');
+      link.className = 'undo-link';
+      link.textContent = '\u00d7';
+      link.addEventListener('click', function() {
+        appendCmd(cmd); evalCmd(cmd);
+      });
+      el.appendChild(link);
+    }
+
+    function undoFor(cmd) {
+      // Gunslinger.attr :foo, String → Gunslinger.remove :foo
+      var attrMatch = cmd.match(/^(\w+)\.attr\s+:(\w+)/);
+      if (attrMatch) return attrMatch[1] + '.remove :' + attrMatch[2];
+      // Gunslinger.name String (implicit) → Gunslinger.remove :name
+      var implicitMatch = cmd.match(/^(\w+)\.(\w+)\s+(String|Integer|Float|TrueClass|Date|DateTime|JSON|reference_to|list_of)/);
+      if (implicitMatch) return implicitMatch[1] + '.remove :' + implicitMatch[2];
+      return null;
+    }
+
+    function appendError(text) {
+      if (!text) return;
+      var d = document.createElement('div');
+      d.className = 'error-line';
+      d.textContent = text;
+      terminal.appendChild(d);
+    }
+
+    function esc(s) { var d = document.createElement('span'); d.textContent = s; return d.innerHTML; }
+
+    function evalCmd(cmd) {
+      fetch('/eval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: cmd })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.output) {
+          appendOutput(data.output, cmd);
+          // If this was a remove, add undo to restore
+          var removeMatch = cmd.match(/^(\w+)\.remove\s+:(\w+)/);
+          if (removeMatch && !data.error) {
+            var restoreCmd = undoRemoves[cmd];
+            if (restoreCmd) {
+              var d = document.createElement('div');
+              d.className = 'output-line';
+              var link = document.createElement('span');
+              link.className = 'undo-restore';
+              link.textContent = 'undo';
+              link.addEventListener('click', function() {
+                appendCmd(restoreCmd); evalCmd(restoreCmd);
+                d.remove();
+              });
+              d.appendChild(link);
+              terminal.appendChild(d);
+            }
+          }
+        }
+        if (data.error) {
+          // Mark the command line red
+          var lastCmd = terminal.querySelector('.cmd-line:last-of-type');
+          if (lastCmd) lastCmd.classList.add('cmd-error');
+          appendError(data.error);
+        }
+        if (data.state) { lastState = data.state; updateState(data.state); buildCompletions(data.state); }
+        detectActiveAgg(cmd);
+        renderActiveAgg();
+        terminal.scrollTop = terminal.scrollHeight;
+        hideAc();
+        nextHint();
+      })
+      .catch(function(err) { appendError('Network error: ' + err.message); });
+    }
+
+    function updateState(state) {
+      // Mode badge
+      var badge = document.getElementById('mode-badge');
+      badge.textContent = state.mode;
+      badge.className = 'mode-badge' + (state.mode === 'play' ? ' play' : '');
+
+      // Domain title + grid
+      document.getElementById('domain-title').textContent = (state.domain_name || 'Hecks') + ' Workshop';
+      if (state.mode === 'sketch') { terminal.classList.add('sketch-grid'); } else { terminal.classList.remove('sketch-grid'); }
+
+      // Domain tree
+      var tree = document.getElementById('domain-tree');
+      var html = '<h3>Domain</h3>';
+      if (state.aggregates.length === 0) {
+        html += '<div class="empty">No aggregates yet</div>';
+      } else {
+        state.aggregates.forEach(function(agg) {
+          var isOpen = openAggs[agg.name] ? ' open' : '';
+          html += '<div class="agg-name' + isOpen + '" data-agg="' + esc(agg.name) + '">' + esc(agg.name) + '</div>';
+          html += '<div class="agg-detail' + isOpen + '" data-agg-detail="' + esc(agg.name) + '">';
+          var treeSections = [
+            { items: agg.attributes, label: 'attributes', color: '#7ee787', render: function(a) { return esc(a.name) + ' <span style="color:#8b949e">' + esc(a.type) + '</span>'; } },
+            { items: agg.commands, label: 'commands', color: '#58a6ff', render: function(c) { return esc(c); } },
+            { items: agg.events, label: 'events', color: '#d2a8ff', render: function(e) { return esc(e); } },
+            { items: agg.value_objects, label: 'value objects', color: '#f0883e', render: function(v) { return esc(v); } },
+            { items: agg.entities, label: 'entities', color: '#f0883e', render: function(e) { return esc(e); } },
+            { items: agg.policies, label: 'policies', color: '#f85149', render: function(p) { return esc(p); } },
+            { items: agg.queries, label: 'queries', color: '#79c0ff', render: function(q) { return esc(q); } },
+            { items: agg.specifications, label: 'specs', color: '#d29922', render: function(s) { return esc(s); } }
+          ];
+          treeSections.forEach(function(sec) {
+            if (!sec.items || !sec.items.length) return;
+            html += '<div class="tree-section collapsed" style="color:' + sec.color + ';border-color:' + sec.color + '" data-tree-sec>' + sec.label + '</div>';
+            html += '<div class="tree-items" style="display:none">';
+            sec.items.forEach(function(item) {
+              html += '<div class="tree-item">' + sec.render(item) + '</div>';
+            });
+            html += '</div>';
+          });
+          html += '</div>';
+        });
+      }
+      tree.innerHTML = html;
+      tree.querySelectorAll('[data-tree-sec]').forEach(function(sec) {
+        sec.addEventListener('click', function(e) {
+          e.stopPropagation();
+          sec.classList.toggle('collapsed');
+          var items = sec.nextElementSibling;
+          if (items) items.style.display = sec.classList.contains('collapsed') ? 'none' : '';
+        });
+      });
+      tree.querySelectorAll('.agg-name').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var name = el.dataset.agg;
+          openAggs[name] = !openAggs[name];
+          el.classList.toggle('open');
+          var detail = tree.querySelector('[data-agg-detail="' + name + '"]');
+          if (detail) detail.classList.toggle('open');
+        });
+      });
+
+      // Events panel
+      var list = document.getElementById('events-list');
+      var empty = document.getElementById('events-empty');
+      if (state.events.length === 0) {
+        empty.style.display = ''; list.innerHTML = '';
+      } else {
+        empty.style.display = 'none';
+        list.innerHTML = state.events.slice().reverse().map(function(ev) {
+          return '<div class="event-item"><div class="event-type">' + esc(ev.type) +
+            '</div><div class="event-time">' + esc(ev.occurred_at || '') + '</div></div>';
+        }).join('');
+      }
+    }
+
+    // Autocomplete
+    var acBox = document.getElementById('autocomplete');
+    var acItems = [], acIdx = -1;
+    var completions = [];
+
+    function buildCompletions(state) {
+      completions = [];
+      typeOptions.forEach(function(t) {
+        if (t === 'reference_to("")') return; // handled per-aggregate below
+        completions.push({ text: t, type: 'type' });
+      });
+      completions = completions.concat([
+        { text: 'describe', type: 'workshop' },
+        { text: 'browse', type: 'workshop' },
+        { text: 'validate', type: 'workshop' },
+        { text: 'preview', type: 'workshop' },
+        { text: 'play!', type: 'mode' },
+        { text: 'sketch!', type: 'mode' },
+        { text: 'events', type: 'play' },
+        { text: 'history', type: 'play' },
+        { text: 'reset!', type: 'play' },
+        { text: 'save', type: 'workshop' }
+      ]);
+      var aggNames = state.aggregates.map(function(a) { return a.name; });
+      aggNames.forEach(function(n) {
+        completions.push({ text: 'reference_to("' + n + '")', type: 'reference' });
+        completions.push({ text: 'list_of("' + n + '")', type: 'collection' });
+      });
+      state.aggregates.forEach(function(a) {
+        completions.push({ text: a.name, type: 'aggregate' });
+        completions.push({ text: a.name + '.describe', type: 'method' });
+        completions.push({ text: a.name + '.preview', type: 'method' });
+        completions.push({ text: a.name + '.attributes', type: 'method' });
+        completions.push({ text: a.name + '.commands', type: 'method' });
+        completions.push({ text: a.name + '.remove :name', type: 'remove', stops: [':name'] });
+        a.commands.forEach(function(c) { completions.push({ text: c, type: 'command' }); });
+        completions.push({ text: a.name + '.attr :name, String', type: 'add attribute', stops: [':name', 'String'] });
+        completions.push({ text: a.name + '.command :name', type: 'add command', stops: [':name'] });
+        completions.push({ text: a.name + '.lifecycle :status, default: "draft"', type: 'add lifecycle', stops: [':status', 'draft'] });
+        completions.push({ text: a.name + '.validation :name, presence: true', type: 'add validation', stops: [':name'] });
+      });
+    }
+
+    input.addEventListener('input', function() {
+      var val = input.value;
+      if (!val) { hideAc(); return; }
+      var pos = input.selectionStart;
+      var before = val.substring(0, pos);
+      // Match from start, or after space/comma
+      var wordMatch = before.match(/[\s,]([^\s,]*)$/);
+      var word = wordMatch ? wordMatch[1] : before;
+      if (!word) { hideAc(); return; }
+      var lower = word.toLowerCase();
+      acItems = completions.filter(function(c) {
+        var cl = c.text.toLowerCase();
+        // Prefix match or contains match
+        return (cl.indexOf(lower) === 0 || cl.indexOf(lower) > 0) && cl !== lower;
+      });
+      // Sort: prefix matches first, then contains
+      acItems.sort(function(a, b) {
+        var al = a.text.toLowerCase(), bl = b.text.toLowerCase();
+        var ap = al.indexOf(lower) === 0 ? 0 : 1;
+        var bp = bl.indexOf(lower) === 0 ? 0 : 1;
+        return ap - bp || al.localeCompare(bl);
+      });
+      acItems = acItems.slice(0, 10);
+      if (acItems.length === 0) { hideAc(); return; }
+      acIdx = -1;
+      acWordStart = pos - word.length;
+      renderAc();
+    });
+    var acWordStart = 0;
+
+    function renderAc() {
+      acBox.innerHTML = acItems.map(function(c, i) {
+        var cls = i === acIdx ? 'ac-item active' : 'ac-item';
+        return '<div class="' + cls + '" data-idx="' + i + '">' + esc(c.text) + '<span class="ac-type">' + c.type + '</span></div>';
+      }).join('');
+      acBox.style.display = 'block';
+      acBox.querySelectorAll('.ac-item').forEach(function(el) {
+        el.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          applyAc(parseInt(el.dataset.idx));
+        });
+      });
+    }
+
+    function hideAc() { acBox.style.display = 'none'; acItems = []; acIdx = -1; }
+
+    var tabStops = [];
+    var tabStopIdx = -1;
+
+    function applyAc(idx) {
+      var item = acItems[idx];
+      var before = input.value.substring(0, acWordStart);
+      var after = input.value.substring(input.selectionStart);
+      input.value = before + item.text + after;
+      var newPos = before.length + item.text.length;
+      input.setSelectionRange(newPos, newPos);
+      hideAc();
+      input.focus();
+      if (item.stops && item.stops.length > 0) {
+        tabStops = item.stops;
+        tabStopIdx = -1;
+        selectNextStop();
+      } else {
+        tabStops = [];
+        tabStopIdx = -1;
+      }
+    }
+
+    var typeOptions = ['String', 'Integer', 'Float', 'TrueClass', 'Date', 'DateTime', 'JSON', 'list_of("")', 'reference_to("")'];
+    var typeHints = { 'String': typeOptions.join(' | ') };
+    var stopHints = { ':name': 'field name', ':status': 'field name', 'draft': 'default value' };
+
+    function selectNextStop() {
+      tabStopIdx++;
+      if (tabStopIdx >= tabStops.length) { tabStops = []; tabStopIdx = -1; hideStopHint(); return; }
+      var stop = tabStops[tabStopIdx];
+      var pos = input.value.indexOf(stop, tabStopIdx === 0 ? 0 : input.selectionStart);
+      if (pos > -1) {
+        var selStart = stop.charAt(0) === ':' ? pos + 1 : pos;
+        input.setSelectionRange(selStart, pos + stop.length);
+        input.scrollLeft = 0;
+        showStopHint(stop);
+      }
+    }
+
+    function showStopHint(stop) {
+      var hint = typeHints[stop] || stopHints[stop] || '';
+      if (!hint) { hideStopHint(); return; }
+      var el = document.getElementById('stop-hint');
+      el.textContent = hint;
+      el.style.display = 'block';
+    }
+
+    function hideStopHint() {
+      document.getElementById('stop-hint').style.display = 'none';
+    }
+
+    // Override Tab to also complete, and Escape to dismiss
+    var origKeydown = input.onkeydown;
+    input.addEventListener('keydown', function(e) {
+      if (acItems.length > 0) {
+        if (e.key === 'ArrowDown') { e.preventDefault(); acIdx = Math.min(acIdx + 1, acItems.length - 1); renderAc(); return; }
+        if (e.key === 'ArrowUp' && acIdx >= 0) { e.preventDefault(); acIdx--; renderAc(); return; }
+        if (e.key === 'Tab' && input.value.indexOf('""') === -1) { e.preventDefault(); e.stopImmediatePropagation(); applyAc(acIdx >= 0 ? acIdx : 0); return; }
+        if (e.key === 'Enter' && acIdx >= 0 && input.value.indexOf('""') === -1) { e.preventDefault(); e.stopImmediatePropagation(); applyAc(acIdx); return; }
+        if (e.key === 'Escape') { e.preventDefault(); hideAc(); return; }
+      }
+    }, true);
+
+    // Active aggregate panel
+    var activeAggName = null;
+    var lastState = null;
+
+    function detectActiveAgg(cmd) {
+      if (!cmd || !lastState) return;
+      var m = cmd.match(/^(\w+)\./) || cmd.match(/^([A-Z]\w*)$/);
+      if (m) {
+        var name = m[1];
+        var found = lastState.aggregates.find(function(a) { return a.name === name; });
+        if (found) { activeAggName = name; }
+      }
+    }
+
+    var sectionColors = {
+      attributes: '#7ee787', commands: '#58a6ff', events: '#d2a8ff',
+      value_objects: '#f0883e', entities: '#f0883e', policies: '#f85149',
+      queries: '#79c0ff', specifications: '#d29922'
+    };
+
+    function renderActiveAgg() {
+      var el = document.getElementById('active-agg');
+      if (!activeAggName || !lastState) { el.innerHTML = ''; return; }
+      var agg = lastState.aggregates.find(function(a) { return a.name === activeAggName; });
+      if (!agg) { el.innerHTML = ''; return; }
+      el.innerHTML = '<h3>' + esc(agg.name) + '</h3>';
+      renderAggComponent(el, agg, { showName: false, removable: true, collapsed: true });
+    }
+
+    // Load initial state
+    fetch('/state').then(function(r) { return r.json(); }).then(function(state) {
+      lastState = state;
+      updateState(state);
+      buildCompletions(state);
+      buildHints(state);
+    });
+
+    // Rotating placeholder hints based on the domain
+    var hints = ['describe', 'browse', 'validate', 'play!'];
+    var hintIdx = 0;
+    function buildHints(state) {
+      var aggs = state.aggregates;
+      if (aggs.length > 0) {
+        var first = aggs[0];
+        hints = [
+          first.name + '.describe  # inspect',
+          'browse  # domain tree',
+          'play!  # enter play mode',
+          'describe  # full summary',
+          'validate  # check rules'
+        ];
+        aggs.forEach(function(a) {
+          a.commands.forEach(function(cmd) {
+            var attrs = a.attributes.map(function(at) { return at.name + ': ""'; }).join(', ');
+            hints.push(a.name + '.' + cmd.toLowerCase().replace(a.name.toLowerCase(), '') + '(' + attrs + ')  # command');
+          });
+          hints.push(a.name + '.describe  # aggregate');
+        });
+      }
+      nextHint();
+    }
+    var tryLink = document.getElementById('try-link');
+    var currentHintCmd = '';
+
+    tryLink.addEventListener('click', function() {
+      if (!currentHintCmd) return;
+      if (currentHintCmd.indexOf('""') > -1) {
+        // Has params — fill the input, cursor between first empty quotes
+        input.value = currentHintCmd;
+        input.focus();
+        var firstQuote = currentHintCmd.indexOf('""');
+        input.setSelectionRange(firstQuote + 1, firstQuote + 1);
+      } else {
+        // No params — run immediately
+        appendCmd(currentHintCmd);
+        evalCmd(currentHintCmd);
+        input.focus();
+      }
+    });
+
+    function nextHint() {
+      input.classList.add('hint-fade');
+      tryLink.classList.add('hidden');
+      setTimeout(function() {
+        var raw = hints[hintIdx % hints.length];
+        currentHintCmd = raw.split('  #')[0].trim();
+        input.placeholder = raw + '   (try it)';
+        hintIdx++;
+        input.classList.remove('hint-fade');
+        tryLink.classList.remove('hidden');
+      }, 300);
+    }
+  </script>
+</body>
+</html>

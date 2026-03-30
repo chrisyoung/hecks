@@ -21,3 +21,4 @@
 # CLI dependencies (Thor) isolated from the core framework.
 #
 require_relative "hecks_cli/cli"
+require_relative "hecks_cli/import"

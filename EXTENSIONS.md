@@ -41,7 +41,7 @@ end
 |-----------|-------|-------------|
 | **web_explorer** | `extend :http` | Interactive web UI with forms, lifecycle badges, event logs. [Source](hecks_runtime/lib/hecks/extensions/web_explorer.rb) |
 | **serve** | `hecks serve` | WEBrick HTTP server for generated static apps. [README](hecks_cli/README.md) |
-| **mcp** | `hecks mcp` | MCP server for AI-driven domain modeling. [Source](hecks_workbench/lib/hecks/extensions/ai.rb) |
+| **mcp** | `hecks mcp` | MCP server for AI-driven domain modeling. [Source](hecks_workshop/lib/hecks/extensions/ai.rb) |
 
 ## Cross-Domain
 
