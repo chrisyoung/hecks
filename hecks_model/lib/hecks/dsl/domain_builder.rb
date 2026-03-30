@@ -215,12 +215,34 @@ module Hecks
       #
       # @return [DomainModel::Structure::Domain] the fully built domain IR object
       def build
-        Structure::Domain.new(
+        domain = Structure::Domain.new(
           name: @name, aggregates: @aggregates, policies: @policies,
           services: @services, views: @views, workflows: @workflows,
           actors: @actors, tenancy: @tenancy,
           event_subscribers: @event_subscribers
         )
+        classify_references(domain)
+        domain
+      end
+
+      private
+
+      def classify_references(domain)
+        agg_names = domain.aggregates.map(&:name)
+        domain.aggregates.each do |agg|
+          local_types = agg.value_objects.map(&:name) + agg.entities.map(&:name)
+          (agg.references || []).each do |ref|
+            ref[:kind] = if ref[:domain]
+                           :cross_context
+                         elsif local_types.include?(ref[:type])
+                           :composition
+                         elsif agg_names.include?(ref[:type])
+                           :aggregation
+                         else
+                           :aggregation
+                         end
+          end
+        end
       end
     end
   end
