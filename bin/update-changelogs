@@ -2,7 +2,7 @@
 # Checks which components have uncommitted changes and reminds
 # the developer to update the relevant CHANGELOGs and READMEs.
 
-COMPONENTS = %w[hecksties hecks_model hecks_domain hecks_runtime hecks_workbench hecks_cli hecks_persist hecks_on_rails].freeze
+COMPONENTS = %w[hecksties hecks_model hecks_domain hecks_runtime hecks_workshop hecks_cli hecks_persist hecks_on_rails].freeze
 
 changed = `git diff --cached --name-only`.split("\n")
 touched = COMPONENTS.select { |c| changed.any? { |f| f.start_with?("#{c}/lib/") } }

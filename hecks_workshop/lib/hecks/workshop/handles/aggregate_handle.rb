@@ -49,15 +49,19 @@ module Hecks
       self
     end
 
-    def remove(name)
-      attrs = @builder.attributes
-      removed = attrs.reject! { |a| a.name == name.to_sym }
-      if removed
-        puts "#{name} attribute removed from #{@name}"
-      else
-        puts "no attribute #{name} on #{@name}"
+    { remove: :attributes, remove_command: :commands, remove_event: :events,
+      remove_policy: :policies, remove_validation: :validations,
+      remove_query: :queries, remove_scope: :scopes,
+      remove_specification: :specifications, remove_subscriber: :subscribers,
+      remove_value_object: :value_objects, remove_entity: :entities }.each do |method, collection|
+      define_method(method) do |name|
+        list = @builder.send(collection)
+        key = collection == :attributes ? name.to_sym : name.to_s
+        removed = list.reject! { |item| (item.respond_to?(:name) ? item.name : item.field) == key }
+        label = collection.to_s.chomp("s").tr("_", " ")
+        puts removed ? "#{name} #{label} removed from #{@name}" : "no #{label} #{name} on #{@name}"
+        self
       end
-      self
     end
 
     def value_object(name, &block)
