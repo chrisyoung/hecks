@@ -53,6 +53,18 @@ export function layoutGraph(nodes, edges, width, height) {
   return result;
 }
 
+// Spreads multiple arrow endpoints along a card edge so they don't overlap.
+export class PortSpreader {
+  constructor() { this._count = {}; this._used = {}; }
+  count(name) { this._count[name] = (this._count[name]||0) + 1; }
+  nudge(name, px, py, angle) {
+    this._used[name] = (this._used[name]||0) + 1;
+    const idx = this._used[name]-1, total = this._count[name]||1;
+    const off = (idx-(total-1)/2)*8, perp = angle+Math.PI/2;
+    return { x: px+Math.cos(perp)*off, y: py+Math.sin(perp)*off };
+  }
+}
+
 export function edgePoint(cx, cy, hw, hh, tx, ty) {
   const dx = tx-cx, dy = ty-cy;
   if (dx === 0 && dy === 0) return { x: cx, y: cy };
