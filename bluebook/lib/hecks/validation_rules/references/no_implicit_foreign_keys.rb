@@ -37,7 +37,7 @@ module Hecks
               # Skip reserved attributes
               next if Hecks::Utils::RESERVED_AGGREGATE_ATTRS.include?(attr.name.to_s)
               # Skip IDs whose prefix doesn't match any aggregate name
-              prefix = attr.name.to_s.sub(/_id$/, "")
+              prefix = HecksTemplating::Names.domain_referenced_name(attr.name)
               next unless agg_snakes.any? { |name| name == prefix || name.end_with?("_#{prefix}") }
 
               issues << "#{agg.name}.#{attr.name} looks like a foreign key but is declared as String. " \

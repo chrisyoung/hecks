@@ -166,7 +166,7 @@ module Hecks
     # @param name [String] e.g. "IssueLoan"
     # @return [String] e.g. "Loan Issuance"
     def humanize_command(name)
-      name.gsub(/([A-Z])/, ' \1').strip
+      Hecks::Utils.humanize(name)
     end
 
     # Format a single flow as plain English text.
