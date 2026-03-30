@@ -4,6 +4,7 @@
 import './shared.js';
 import './section_panel.js';
 import './graph_layout.js';
+import './svg_helpers.js';
 import './filter_bar.js';
 import { buildSections } from './agg_card.js';
 import './domain_diagram.js';

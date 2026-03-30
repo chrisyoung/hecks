@@ -2,7 +2,8 @@
 // Force-directed layout with draggable cards, SVG lines, policy flows, services.
 // Keyboard: press 0 to reset layout when input is not focused.
 import { COLORS, BASE_STYLES, escHtml } from './shared.js';
-import { layoutGraph, edgePoint } from './graph_layout.js';
+import { layoutGraph, edgePoint, PortSpreader } from './graph_layout.js';
+import { svgLine, svgArrow, svgText, svgPath } from './svg_helpers.js';
 
 class DomainDiagram extends HTMLElement {
   constructor() { super(); this.attachShadow({ mode: 'open' }); this._state = null; this._cardEls = {}; this._filter = 'all'; }
@@ -134,8 +135,21 @@ class DomainDiagram extends HTMLElement {
       maxW = Math.max(maxW, (parseFloat(c.style.left)||0) + c.offsetWidth + 10);
       maxH = Math.max(maxH, (parseFloat(c.style.top)||0) + c.offsetHeight + 10);
     });
-    svg.setAttribute('width', maxW);
-    svg.setAttribute('height', maxH);
+    svg.setAttribute('width', maxW); svg.setAttribute('height', maxH);
+    this._ports = new PortSpreader();
+    this._state.aggregates.forEach(agg => {
+      agg.attributes.forEach(a => {
+        const m = a.type.match(/(?:reference_to|list_of)\((\w+)\)/);
+        if (m && this._cardEls[agg.name] && this._cardEls[m[1]]) {
+          this._ports.count(agg.name);
+          this._ports.count(m[1]);
+        }
+      });
+    });
+    (this._state.policy_flows || []).forEach(f => {
+      this._ports.count(f.from);
+      this._ports.count(f.to);
+    });
     if (this._filter === 'all' || this._filter === 'references') this._drawRefLines(svg);
     if (this._filter === 'all' || this._filter === 'policies') this._drawPolicyFlows(svg);
   }
@@ -157,16 +171,16 @@ class DomainDiagram extends HTMLElement {
     Object.values(pairMap).forEach(edge => {
       const pts = this._edgePair(edge.from, edge.to); if (!pts) return;
       const { x1, y1, x2, y2, angle } = pts;
-      this._svgLine(svg, x1, y1, x2, y2, COLORS.orange, edge.isList ? '4,3' : 'none', 0.5);
-      this._svgArrow(svg, x2, y2, angle, COLORS.orange, 0.5);
+      svgLine(svg, x1, y1, x2, y2, COLORS.orange, edge.isList ? '4,3' : 'none', 0.5);
+      svgArrow(svg, x2, y2, angle, COLORS.orange, 0.5);
       const mx = (x1+x2)/2, my = (y1+y2)/2;
       if (edge.names.length > 1) {
-        const text = this._svgText(svg, mx, my+3, edge.names.length, COLORS.orange, 10, 'bold');
+        const text = svgText(svg, mx, my+3, edge.names.length, COLORS.orange, 10, 'bold');
         text.setAttribute('stroke', COLORS.bg); text.setAttribute('stroke-width', '3'); text.setAttribute('paint-order', 'stroke');
         const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
         title.textContent = edge.names.join(', '); text.appendChild(title);
       } else if (edge.names[0].toLowerCase() !== edge.to.toLowerCase()) {
-        this._svgText(svg, mx, my-4, edge.names[0], COLORS.orange, 9);
+        svgText(svg, mx, my-4, edge.names[0], COLORS.orange, 9);
       }
     });
   }
@@ -175,51 +189,26 @@ class DomainDiagram extends HTMLElement {
     (this._state.policy_flows || []).forEach(flow => {
       const pts = this._edgePair(flow.from, flow.to); if (!pts) return;
       const mx = (pts.x1+pts.x2)/2, my = (pts.y1+pts.y2)/2 - 30;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', `M${pts.x1},${pts.y1} Q${mx},${my} ${pts.x2},${pts.y2}`);
-      path.setAttribute('stroke', COLORS.red); path.setAttribute('fill', 'none');
-      path.setAttribute('stroke-width', '1.8'); path.setAttribute('stroke-dasharray', '6,3'); path.setAttribute('opacity', '0.8');
-      svg.appendChild(path);
-      this._svgArrow(svg, pts.x2, pts.y2, pts.angle, COLORS.red, 0.8);
-      this._svgText(svg, mx, my-4, flow.event || flow.policy, COLORS.red, 8);
+      svgPath(svg, `M${pts.x1},${pts.y1} Q${mx},${my} ${pts.x2},${pts.y2}`, COLORS.red, { width: '1.8', dash: '6,3', opacity: 0.8 });
+      svgArrow(svg, pts.x2, pts.y2, pts.angle, COLORS.red, 0.8);
+      svgText(svg, mx, my-4, flow.event || flow.policy, COLORS.red, 8);
     });
   }
 
   _edgePair(fromName, toName) {
     const fEl = this._cardEls[fromName], tEl = this._cardEls[toName];
     if (!fEl || !tEl) return null;
-    const cardBox = (el) => {
-      const x = parseFloat(el.style.left)||0, y = parseFloat(el.style.top)||0;
-      const w = el.offsetWidth, h = el.offsetHeight;
-      return { cx: x+w/2, cy: y+h/2, hw: w/2, hh: h/2 };
+    const box = (el) => {
+      const x = parseFloat(el.style.left) || 0, y = parseFloat(el.style.top) || 0;
+      return { cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, hw: el.offsetWidth / 2, hh: el.offsetHeight / 2 };
     };
-    const f = cardBox(fEl), t = cardBox(tEl), pad = 4;
+    const f = box(fEl), t = box(tEl), pad = 4;
     const p1 = edgePoint(f.cx, f.cy, f.hw+pad, f.hh+pad, t.cx, t.cy);
     const p2 = edgePoint(t.cx, t.cy, t.hw+pad, t.hh+pad, f.cx, f.cy);
-    return { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, angle: Math.atan2(p2.y-p1.y, p2.x-p1.x) };
-  }
-
-  _svgLine(svg, x1, y1, x2, y2, color, dash, opacity) {
-    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x2); l.setAttribute('y2',y2);
-    l.setAttribute('stroke', color); l.setAttribute('stroke-width','1.5'); l.setAttribute('stroke-dasharray', dash); l.setAttribute('opacity', opacity || 0.6);
-    svg.appendChild(l); return l;
-  }
-
-  _svgArrow(svg, x, y, angle, color, opacity) {
-    const al = 8, pa = Math.PI/6;
-    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    arrow.setAttribute('points', `${x},${y} ${x-Math.cos(angle-pa)*al},${y-Math.sin(angle-pa)*al} ${x-Math.cos(angle+pa)*al},${y-Math.sin(angle+pa)*al}`);
-    arrow.setAttribute('fill', color); arrow.setAttribute('opacity', opacity || 0.6);
-    svg.appendChild(arrow);
-  }
-
-  _svgText(svg, x, y, text, color, size, weight) {
-    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('font-size', size); t.setAttribute('fill', color); t.setAttribute('opacity', '0.7');
-    if (weight) t.setAttribute('font-weight', weight);
-    t.textContent = text; svg.appendChild(t); return t;
+    const angle = Math.atan2(p2.y-p1.y, p2.x-p1.x);
+    const np1 = this._ports.nudge(fromName, p1.x, p1.y, angle);
+    const np2 = this._ports.nudge(toName, p2.x, p2.y, angle);
+    return { x1: np1.x, y1: np1.y, x2: np2.x, y2: np2.y, angle };
   }
 
 }
