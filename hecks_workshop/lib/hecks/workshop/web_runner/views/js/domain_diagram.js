@@ -114,11 +114,6 @@ class DomainDiagram extends HTMLElement {
         const pk = agg.name + '|' + r.type;
         if (!seen[pk]) { seen[pk] = true; edges.push({ from: agg.name, to: r.type }); }
       });
-      (agg.compositions || []).forEach(c => {
-        if (!aggs.find(x => x.name === c.type)) return;
-        const pk = agg.name + '|' + c.type;
-        if (!seen[pk]) { seen[pk] = true; edges.push({ from: agg.name, to: c.type }); }
-      });
     });
     return { nodes, edges };
   }
@@ -161,12 +156,6 @@ class DomainDiagram extends HTMLElement {
         if (this._cardEls[agg.name] && this._cardEls[r.type]) {
           this._ports.count(agg.name);
           this._ports.count(r.type);
-        }
-      });
-      (agg.compositions || []).forEach(c => {
-        if (this._cardEls[agg.name] && this._cardEls[c.type]) {
-          this._ports.count(agg.name);
-          this._ports.count(c.type);
         }
       });
     });

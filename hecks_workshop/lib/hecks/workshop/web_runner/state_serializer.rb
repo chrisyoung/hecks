@@ -55,7 +55,6 @@ module Hecks
               references_to:  (agg.references || []).map { |r|
                 { name: r[:name], type: r[:type], kind: r[:kind]&.to_s, domain: r[:domain] }
               },
-              compositions:   (agg.compositions || []).map { |c| { name: c[:name], type: c[:type] } },
               lifecycle:      serialize_lifecycle(agg),
               subscribers:    serialize_subscribers(agg)
             }

@@ -147,23 +147,6 @@ RSpec.describe Hecks::DSL::DomainBuilder do
     end
   end
 
-  describe "compositions" do
-    it "stores composes declarations on the aggregate" do
-      domain = Hecks.domain("Shop") do
-        aggregate("Pizza") do
-          composes "Topping"
-          composes "Sauce", as: :base_sauce
-          attribute :name, String
-          command("CreatePizza") { attribute :name, String }
-        end
-      end
-      comps = domain.aggregates.first.compositions
-      expect(comps.length).to eq(2)
-      expect(comps[0]).to eq({ name: :topping, type: "Topping" })
-      expect(comps[1]).to eq({ name: :base_sauce, type: "Sauce" })
-    end
-  end
-
   describe "domain-level actors" do
     it "stores actors on the domain" do
       domain = Hecks.domain("Gov") do
