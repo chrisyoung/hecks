@@ -6,7 +6,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy::Events::CreatedPolicy do
           name: "example",
           description: "example",
           category: "example",
-          framework_id: "example",
+          framework_id: "ref-id-123",
           effective_date: Date.today,
           review_date: Date.today,
           requirements: [],
@@ -38,7 +38,7 @@ RSpec.describe ComplianceDomain::GovernancePolicy::Events::CreatedPolicy do
   end
 
   it "carries framework_id" do
-    expect(event.framework_id).to eq("example")
+    expect(event.framework_id).to eq("ref-id-123")
   end
 
   it "carries effective_date" do

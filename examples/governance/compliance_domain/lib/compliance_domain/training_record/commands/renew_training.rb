@@ -6,16 +6,16 @@ module ComplianceDomain
         emits "RenewedTraining"
 
         attr_reader :training_record_id
-        attr_reader :certification_id
+        attr_reader :certification
         attr_reader :expires_at
 
         def initialize(
           training_record_id: nil,
-          certification_id: nil,
+          certification: nil,
           expires_at: nil
         )
           @training_record_id = training_record_id
-          @certification_id = certification_id
+          @certification = certification
           @expires_at = expires_at
         end
 
@@ -23,19 +23,19 @@ module ComplianceDomain
           existing = repository.find(training_record_id)
           if existing
             unless existing.status == "completed"
-              raise Hecks::Error, "Cannot RenewTraining: status must be 'completed', got '#{existing.status}'"
+              raise ComplianceDomain::Error, "Cannot RenewTraining: status must be 'completed', got '#{existing.status}'"
             end
             TrainingRecord.new(
               id: existing.id,
               stakeholder_id: existing.stakeholder_id,
               policy_id: existing.policy_id,
               expires_at: expires_at,
-              certification_id: certification_id,
+              certification: certification,
               completed_at: Time.now.to_s,
               status: "completed"
             )
           else
-            raise Hecks::Error, "TrainingRecord not found: #{training_record_id}"
+            raise ComplianceDomain::Error, "TrainingRecord not found: #{training_record_id}"
           end
         end
       end

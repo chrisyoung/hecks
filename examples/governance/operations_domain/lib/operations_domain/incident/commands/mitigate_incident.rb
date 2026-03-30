@@ -15,7 +15,7 @@ module OperationsDomain
           existing = repository.find(incident_id)
           if existing
             unless existing.status == "investigating"
-              raise Hecks::Error, "Cannot MitigateIncident: status must be 'investigating', got '#{existing.status}'"
+              raise OperationsDomain::Error, "Cannot MitigateIncident: status must be 'investigating', got '#{existing.status}'"
             end
             Incident.new(
               id: existing.id,
@@ -31,7 +31,7 @@ module OperationsDomain
               status: "mitigating"
             )
           else
-            raise Hecks::Error, "Incident not found: #{incident_id}"
+            raise OperationsDomain::Error, "Incident not found: #{incident_id}"
           end
         end
       end

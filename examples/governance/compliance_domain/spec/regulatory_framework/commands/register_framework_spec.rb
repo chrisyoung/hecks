@@ -32,4 +32,30 @@ RSpec.describe ComplianceDomain::RegulatoryFramework::Commands::RegisterFramewor
       expect(described_class.event_name).to eq("RegisteredFramework")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "persists the aggregate" do
+      result = RegulatoryFramework.register(
+          name: "example",
+          jurisdiction: "example",
+          version: "example",
+          authority: "example"
+        )
+      expect(result).not_to be_nil
+      expect(RegulatoryFramework.find(result.id)).not_to be_nil
+    end
+
+    it "emits RegisteredFramework to the event log" do
+      RegulatoryFramework.register(
+          name: "example",
+          jurisdiction: "example",
+          version: "example",
+          authority: "example"
+        )
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("RegisteredFramework")
+    end
+  end
 end

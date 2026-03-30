@@ -6,7 +6,7 @@ RSpec.describe IdentityDomain::AuditLog::Events::RecordedEntry do
           entity_type: "example",
           entity_id: "example",
           action: "example",
-          actor_id: "example",
+          actor_id: "ref-id-123",
           details: "example",
           timestamp: DateTime.now
         ) }
@@ -36,7 +36,7 @@ RSpec.describe IdentityDomain::AuditLog::Events::RecordedEntry do
   end
 
   it "carries actor_id" do
-    expect(event.actor_id).to eq("example")
+    expect(event.actor_id).to eq("ref-id-123")
   end
 
   it "carries details" do

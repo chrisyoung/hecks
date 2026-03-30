@@ -1,42 +1,12 @@
 Hecks.domain "ModelRegistry" do
-  uses_kernel "Identity"
-
-  driving_port :http, description: "REST API"
-  driving_port :mcp, description: "AI tool interface"
-  driving_port :events, description: "Cross-domain event bus"
-
-  driven_port :persistence, [:find, :save, :delete, :all]
-  driven_port :notifications, [:send_email, :send_webhook], description: "Model status alerts"
-
-  actor "governance_board", description: "Model approval authority"
-  actor "data_steward", description: "Data usage governance"
-  actor "admin", description: "System administrator"
-
-  published_event "ModelRegistered", version: 1 do
-    attribute :model_id, String
-    attribute :name, String
-    attribute :version, String
-  end
-
-  published_event "ModelSuspended", version: 1 do
-    attribute :model_id, String
-    attribute :reason, String
-  end
-
-  service "ModelOnboardingService" do
-    coordinates "AiModel", "Vendor"
-    attribute :name, String
-    attribute :vendor_name, String
-  end
-
   aggregate "AiModel" do
     attribute :name, String
     attribute :version, String
-    reference_to "Vendor"
+    attribute :provider_id, reference_to("Vendor")
     attribute :description, String
     attribute :risk_level, String
     attribute :registered_at, DateTime
-    reference_to "AiModel", as: :parent_model
+    attribute :parent_model_id, String
     attribute :derivation_type, String
     attribute :capabilities, list_of("Capability")
     attribute :intended_uses, list_of("IntendedUse")
@@ -56,19 +26,23 @@ Hecks.domain "ModelRegistry" do
 
     validation :version, {:presence=>true}
 
-    query "ByProvider" do
+    scope :approved, status: "approved"
+
+    scope :suspended, status: "suspended"
+
+    query "by_provider" do
       where(provider_id: provider_id)
     end
 
-    query "ByRiskLevel" do
+    query "by_risk_level" do
       where(risk_level: level)
     end
 
-    query "ByStatus" do
+    query "by_status" do
       where(status: status)
     end
 
-    query "ByParent" do
+    query "by_parent" do
       where(parent_model_id: parent_id)
     end
 
@@ -86,30 +60,31 @@ Hecks.domain "ModelRegistry" do
     command "DeriveModel" do
       attribute :name, String
       attribute :version, String
-      attribute :parent_model_id, reference_to("AiModel")
+      attribute :parent_model_id, String
       attribute :derivation_type, String
       attribute :description, String
     end
 
     command "ClassifyRisk" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       attribute :risk_level, String
     end
 
     command "ApproveModel" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       actor "governance_board"
       actor "admin"
     end
 
     command "SuspendModel" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
+      external "NotificationGateway"
       actor "governance_board"
       actor "admin"
     end
 
     command "RetireModel" do
-      attribute :model_id, reference_to("AiModel")
+      attribute :model_id, String
       actor "governance_board"
       actor "admin"
     end
@@ -127,7 +102,12 @@ Hecks.domain "ModelRegistry" do
     policy "SuspendOnCriticalIncident" do
       on "ReportedIncident"
       trigger "SuspendModel"
-      condition { |event|  }
+      async true
+      condition { |event| async true }
+    end
+
+    on_event "SuspendedModel" do |event|
+      # Side-effect: notify vendor when their model is suspended
     end
   end
 
@@ -142,11 +122,11 @@ Hecks.domain "ModelRegistry" do
 
     validation :name, {:presence=>true}
 
-    query "ByRiskTier" do
+    query "by_risk_tier" do
       where(risk_tier: tier)
     end
 
-    query "Active" do
+    query "active" do
       where(status: "approved")
     end
 
@@ -157,7 +137,7 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "ApproveVendor" do
-      attribute reference_to("Vendor")
+      attribute :vendor_id, String
       attribute :assessment_date, Date
       attribute :next_review_date, Date
       actor "governance_board"
@@ -165,14 +145,14 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "SuspendVendor" do
-      attribute reference_to("Vendor")
+      attribute :vendor_id, String
       actor "governance_board"
       actor "admin"
     end
   end
 
   aggregate "DataUsageAgreement" do
-    reference_to "AiModel", as: :model
+    attribute :model_id, reference_to("AiModel")
     attribute :data_source, String
     attribute :purpose, String
     attribute :consent_type, String
@@ -194,11 +174,11 @@ Hecks.domain "ModelRegistry" do
       !expiration_date || !effective_date || expiration_date.to_s >= effective_date.to_s
     end
 
-    query "ByModel" do
+    query "by_model" do
       where(model_id: model_id)
     end
 
-    query "Active" do
+    query "active" do
       where(status: "active")
     end
 
@@ -216,7 +196,7 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "ActivateAgreement" do
-      attribute reference_to("DataUsageAgreement")
+      attribute :agreement_id, String
       attribute :effective_date, Date
       attribute :expiration_date, Date
       actor "data_steward"
@@ -224,16 +204,23 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "RevokeAgreement" do
-      attribute reference_to("DataUsageAgreement")
+      attribute :agreement_id, String
       actor "data_steward"
       actor "admin"
     end
 
     command "RenewAgreement" do
-      attribute reference_to("DataUsageAgreement")
+      attribute :agreement_id, String
       attribute :expiration_date, Date
       actor "data_steward"
       actor "admin"
     end
+  end
+
+  policy "AutoApproveLowRisk" do
+    on "ClassifiedRisk"
+    trigger "ApproveModel"
+    map model_id: :model_id
+    condition { |event|  }
   end
 end

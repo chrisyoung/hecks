@@ -7,7 +7,7 @@ RSpec.describe ModelRegistryDomain::AiModel::Events::ClassifiedRisk do
           risk_level: "example",
           name: "example",
           version: "example",
-          provider_id: "example",
+          provider_id: "ref-id-123",
           description: "example",
           registered_at: DateTime.now,
           parent_model_id: "example",
@@ -46,7 +46,7 @@ RSpec.describe ModelRegistryDomain::AiModel::Events::ClassifiedRisk do
   end
 
   it "carries provider_id" do
-    expect(event.provider_id).to eq("example")
+    expect(event.provider_id).to eq("ref-id-123")
   end
 
   it "carries description" do

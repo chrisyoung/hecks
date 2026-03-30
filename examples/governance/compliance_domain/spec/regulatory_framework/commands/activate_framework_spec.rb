@@ -19,4 +19,20 @@ RSpec.describe ComplianceDomain::RegulatoryFramework::Commands::ActivateFramewor
       expect(described_class.event_name).to eq("ActivatedFramework")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits ActivatedFramework" do
+      agg = RegulatoryFramework.register(
+          name: "example",
+          jurisdiction: "example",
+          version: "example",
+          authority: "example"
+        )
+      RegulatoryFramework.activate(framework_id: "example", effective_date: Date.today)
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("ActivatedFramework")
+    end
+  end
 end

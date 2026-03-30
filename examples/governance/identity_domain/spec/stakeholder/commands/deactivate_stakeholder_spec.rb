@@ -15,4 +15,20 @@ RSpec.describe IdentityDomain::Stakeholder::Commands::DeactivateStakeholder do
       expect(described_class.event_name).to eq("DeactivatedStakeholder")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits DeactivatedStakeholder" do
+      agg = Stakeholder.register(
+          name: "example",
+          email: "example",
+          role: "example",
+          team: "example"
+        )
+      Stakeholder.deactivate(stakeholder_id: "example")
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("DeactivatedStakeholder")
+    end
+  end
 end

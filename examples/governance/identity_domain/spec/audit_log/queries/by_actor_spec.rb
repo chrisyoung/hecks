@@ -1,0 +1,10 @@
+require "spec_helper"
+
+RSpec.describe "AuditLog.by_actor" do
+  before { @app = Hecks.load(domain, force: true) }
+
+  it "returns an Array" do
+    results = AuditLog.by_actor("example")
+    expect(results).to be_an(Array)
+  end
+end

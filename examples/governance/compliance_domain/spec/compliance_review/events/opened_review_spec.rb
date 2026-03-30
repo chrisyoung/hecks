@@ -4,7 +4,7 @@ RSpec.describe ComplianceDomain::ComplianceReview::Events::OpenedReview do
   subject(:event) { described_class.new(
           aggregate_id: "example",
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: "example",
           outcome: "approved",
           notes: "example",
@@ -30,7 +30,7 @@ RSpec.describe ComplianceDomain::ComplianceReview::Events::OpenedReview do
   end
 
   it "carries policy_id" do
-    expect(event.policy_id).to eq("example")
+    expect(event.policy_id).to eq("ref-id-123")
   end
 
   it "carries reviewer_id" do

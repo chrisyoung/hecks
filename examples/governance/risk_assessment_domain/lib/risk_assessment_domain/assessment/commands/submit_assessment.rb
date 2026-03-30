@@ -5,6 +5,8 @@ module RiskAssessmentDomain
         include Hecks::Command
         emits "SubmittedAssessment"
 
+        # precondition: Must have at least one finding
+
         attr_reader :assessment_id
         attr_reader :risk_level
         attr_reader :bias_score
@@ -32,7 +34,7 @@ module RiskAssessmentDomain
           existing = repository.find(assessment_id)
           if existing
             unless existing.status == "pending"
-              raise Hecks::Error, "Cannot SubmitAssessment: status must be 'pending', got '#{existing.status}'"
+              raise RiskAssessmentDomain::Error, "Cannot SubmitAssessment: status must be 'pending', got '#{existing.status}'"
             end
             Assessment.new(
               id: existing.id,
@@ -49,7 +51,7 @@ module RiskAssessmentDomain
               status: "submitted"
             )
           else
-            raise Hecks::Error, "Assessment not found: #{assessment_id}"
+            raise RiskAssessmentDomain::Error, "Assessment not found: #{assessment_id}"
           end
         end
       end

@@ -1,7 +1,12 @@
 require "securerandom"
 
 module RiskAssessmentDomain
-  class ValidationError < StandardError; end
+  class ValidationError < StandardError
+    attr_reader :field, :rule
+    def initialize(message = nil, field: nil, rule: nil)
+      @field = field; @rule = rule; super(message)
+    end
+  end
   class InvariantError < StandardError; end
 
   autoload :Assessment, "risk_assessment_domain/assessment/assessment"

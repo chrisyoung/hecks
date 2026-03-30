@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module ComplianceDomain
   class RegulatoryFramework
@@ -23,8 +23,8 @@ module ComplianceDomain
     private
 
     def validate!
-      raise ValidationError, "name can't be blank" if name.nil? || (name.respond_to?(:empty?) && name.empty?)
-      raise ValidationError, "jurisdiction can't be blank" if jurisdiction.nil? || (jurisdiction.respond_to?(:empty?) && jurisdiction.empty?)
+      raise ValidationError.new("name can't be blank", field: :name, rule: :presence) if name.nil? || (name.respond_to?(:empty?) && name.empty?)
+      raise ValidationError.new("jurisdiction can't be blank", field: :jurisdiction, rule: :presence) if jurisdiction.nil? || (jurisdiction.respond_to?(:empty?) && jurisdiction.empty?)
     end
   end
 end

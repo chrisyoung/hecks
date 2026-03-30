@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe ModelRegistryDomain::DataUsageAgreement::Events::CreatedAgreement do
   subject(:event) { described_class.new(
           aggregate_id: "example",
-          model_id: "example",
+          model_id: "ref-id-123",
           data_source: "example",
           purpose: "example",
           consent_type: "example",
@@ -26,7 +26,7 @@ RSpec.describe ModelRegistryDomain::DataUsageAgreement::Events::CreatedAgreement
   end
 
   it "carries model_id" do
-    expect(event.model_id).to eq("example")
+    expect(event.model_id).to eq("ref-id-123")
   end
 
   it "carries data_source" do

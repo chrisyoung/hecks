@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module IdentityDomain
   class AuditLog
@@ -14,8 +14,8 @@ module IdentityDomain
     private
 
     def validate!
-      raise ValidationError, "entity_type can't be blank" if entity_type.nil? || (entity_type.respond_to?(:empty?) && entity_type.empty?)
-      raise ValidationError, "action can't be blank" if action.nil? || (action.respond_to?(:empty?) && action.empty?)
+      raise ValidationError.new("entity_type can't be blank", field: :entity_type, rule: :presence) if entity_type.nil? || (entity_type.respond_to?(:empty?) && entity_type.empty?)
+      raise ValidationError.new("action can't be blank", field: :action, rule: :presence) if action.nil? || (action.respond_to?(:empty?) && action.empty?)
     end
   end
 end

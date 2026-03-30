@@ -15,7 +15,7 @@ module OperationsDomain
           existing = repository.find(incident_id)
           if existing
             unless existing.status == "resolved"
-              raise Hecks::Error, "Cannot CloseIncident: status must be 'resolved', got '#{existing.status}'"
+              raise OperationsDomain::Error, "Cannot CloseIncident: status must be 'resolved', got '#{existing.status}'"
             end
             Incident.new(
               id: existing.id,
@@ -31,7 +31,7 @@ module OperationsDomain
               status: "closed"
             )
           else
-            raise Hecks::Error, "Incident not found: #{incident_id}"
+            raise OperationsDomain::Error, "Incident not found: #{incident_id}"
           end
         end
       end

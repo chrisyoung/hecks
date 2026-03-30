@@ -25,7 +25,7 @@ module OperationsDomain
               threshold: threshold
             )
           else
-            raise Hecks::Error, "Monitoring not found: #{monitoring_id}"
+            raise OperationsDomain::Error, "Monitoring not found: #{monitoring_id}"
           end
         end
       end

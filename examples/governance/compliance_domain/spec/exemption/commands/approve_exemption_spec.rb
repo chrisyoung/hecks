@@ -27,4 +27,20 @@ RSpec.describe ComplianceDomain::Exemption::Commands::ApproveExemption do
       expect(described_class.event_name).to eq("ApprovedExemption")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "updates the aggregate and emits ApprovedExemption" do
+      agg = Exemption.request(
+          model_id: "example",
+          policy_id: "ref-id-123",
+          requirement: "example",
+          reason: "example"
+        )
+      Exemption.approve(exemption_id: "example", approved_by_id: "example", expires_at: Date.today)
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("ApprovedExemption")
+    end
+  end
 end

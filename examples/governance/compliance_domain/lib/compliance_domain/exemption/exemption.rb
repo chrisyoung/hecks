@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module ComplianceDomain
   class Exemption
@@ -24,8 +24,8 @@ module ComplianceDomain
     private
 
     def validate!
-      raise ValidationError, "model_id can't be blank" if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
-      raise ValidationError, "policy_id can't be blank" if policy_id.nil? || (policy_id.respond_to?(:empty?) && policy_id.empty?)
+      raise ValidationError.new("model_id can't be blank", field: :model_id, rule: :presence) if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
+      raise ValidationError.new("policy_id can't be blank", field: :policy_id, rule: :presence) if policy_id.nil? || (policy_id.respond_to?(:empty?) && policy_id.empty?)
     end
   end
 end

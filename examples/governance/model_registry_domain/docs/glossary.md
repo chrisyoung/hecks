@@ -4,7 +4,7 @@
 
 An AiModel has a name (String).
 An AiModel has a version (String).
-An AiModel has a provider_id (String).
+An AiModel belongs to a Vendor.
 An AiModel has a description (String).
 An AiModel has a risk_level (String).
 An AiModel has a registered_at (DateTime).
@@ -25,15 +25,15 @@ You can classify an AiModel with model id and risk level. When this happens, a R
 You can approve an AiModel with model id. When this happens, a Model is approved. (command)
 You can suspend an AiModel with model id. When this happens, a Model is suspended. (command)
 You can retire an AiModel with model id. When this happens, a Model is retired. (command)
-You can look up AiModels by by provider. (query)
-You can look up AiModels by by risk level. (query)
-You can look up AiModels by by status. (query)
-You can look up AiModels by by parent. (query)
+You can look up AiModels by by_provider. (query)
+You can look up AiModels by by_risk_level. (query)
+You can look up AiModels by by_status. (query)
+You can look up AiModels by by_parent. (query)
 An AiModel must have a name. (validation)
 An AiModel must have a version. (validation)
 When an Assessment is submitted, the system will classify Risk. (policy)
 When a Review is rejected, the system will suspend Model. (policy)
-When an Incident is reported, the system will suspend Model. (policy)
+When an Incident is reported, the system will suspend Model (asynchronously). (policy)
 
 ## Vendor
 
@@ -47,13 +47,13 @@ A Vendor has a status (String).
 You can register a Vendor with name, contact email, and risk tier. When this happens, a Vendor is registered. (command)
 You can approve a Vendor with vendor id, assessment date, and next review date. When this happens, a Vendor is approved. (command)
 You can suspend a Vendor with vendor id. When this happens, a Vendor is suspended. (command)
-You can look up Vendors by by risk tier. (query)
+You can look up Vendors by by_risk_tier. (query)
 You can look up Vendors by active. (query)
 A Vendor must have a name. (validation)
 
 ## DataUsageAgreement
 
-A DataUsageAgreement has a model_id (String).
+A DataUsageAgreement belongs to an AiModel.
 A DataUsageAgreement has a data_source (String).
 A DataUsageAgreement has a purpose (String).
 A DataUsageAgreement has a consent_type (String).
@@ -68,9 +68,17 @@ You can create a DataUsageAgreement with model id, data source, purpose, and con
 You can activate a DataUsageAgreement with agreement id, effective date, and expiration date. When this happens, an Agreement is activated. (command)
 You can revoke a DataUsageAgreement with agreement id. When this happens, an Agreement is revoked. (command)
 You can renew a DataUsageAgreement with agreement id and expiration date. When this happens, an Agreement is renewed. (command)
-You can look up DataUsageAgreements by by model. (query)
+You can look up DataUsageAgreements by by_model. (query)
 You can look up DataUsageAgreements by active. (query)
 A DataUsageAgreement must have a data_source. (validation)
 A DataUsageAgreement must have a purpose. (validation)
 expiration must be after effective date. (invariant)
 
+## Domain Policies
+
+When a Risk is classified, the system will approve Model. (policy)
+
+## Relationships
+
+An AiModel references a Vendor.
+A DataUsageAgreement references an AiModel.

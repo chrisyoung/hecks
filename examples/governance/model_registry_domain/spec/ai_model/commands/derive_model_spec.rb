@@ -37,4 +37,32 @@ RSpec.describe ModelRegistryDomain::AiModel::Commands::DeriveModel do
       expect(described_class.event_name).to eq("DerivedModel")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "persists the aggregate" do
+      result = AiModel.derive(
+          name: "example",
+          version: "example",
+          parent_model_id: "example",
+          derivation_type: "example",
+          description: "example"
+        )
+      expect(result).not_to be_nil
+      expect(AiModel.find(result.id)).not_to be_nil
+    end
+
+    it "emits DerivedModel to the event log" do
+      AiModel.derive(
+          name: "example",
+          version: "example",
+          parent_model_id: "example",
+          derivation_type: "example",
+          description: "example"
+        )
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("DerivedModel")
+    end
+  end
 end

@@ -53,7 +53,7 @@ module Hecks
           def find_workflow_command(workflow)
             return nil if workflow.steps.empty?
             first_step = workflow.steps.first
-            cmd_name = first_step[:command] || first_step["command"]
+            cmd_name = first_step.respond_to?(:command) ? first_step.command : (first_step[:command] || first_step["command"])
             return nil unless cmd_name
 
             @domain.aggregates.each do |agg|

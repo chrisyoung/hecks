@@ -4,7 +4,7 @@ RSpec.describe ComplianceDomain::Exemption::Events::RequestedExemption do
   subject(:event) { described_class.new(
           aggregate_id: "example",
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_by_id: "example",
@@ -31,7 +31,7 @@ RSpec.describe ComplianceDomain::Exemption::Events::RequestedExemption do
   end
 
   it "carries policy_id" do
-    expect(event.policy_id).to eq("example")
+    expect(event.policy_id).to eq("ref-id-123")
   end
 
   it "carries requirement" do

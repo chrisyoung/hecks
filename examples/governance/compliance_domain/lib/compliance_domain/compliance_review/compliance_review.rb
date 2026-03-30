@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module ComplianceDomain
   class ComplianceReview
@@ -27,8 +27,8 @@ module ComplianceDomain
     private
 
     def validate!
-      raise ValidationError, "model_id can't be blank" if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
-      raise ValidationError, "reviewer_id can't be blank" if reviewer_id.nil? || (reviewer_id.respond_to?(:empty?) && reviewer_id.empty?)
+      raise ValidationError.new("model_id can't be blank", field: :model_id, rule: :presence) if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
+      raise ValidationError.new("reviewer_id can't be blank", field: :reviewer_id, rule: :presence) if reviewer_id.nil? || (reviewer_id.respond_to?(:empty?) && reviewer_id.empty?)
       if outcome && !VALID_OUTCOME.include?(outcome)
         raise ValidationError, "outcome must be one of: #{VALID_OUTCOME.join(', ')}, got: #{outcome}"
       end

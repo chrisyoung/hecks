@@ -15,7 +15,7 @@ module ModelRegistryDomain
           existing = repository.find(model_id)
           if existing
             unless ["approved", "suspended"].include?(existing.status)
-              raise Hecks::Error, "Cannot RetireModel: status must be one of approved, suspended, got '#{existing.status}'"
+              raise ModelRegistryDomain::Error, "Cannot RetireModel: status must be one of approved, suspended, got '#{existing.status}'"
             end
             AiModel.new(
               id: existing.id,
@@ -32,7 +32,7 @@ module ModelRegistryDomain
               status: "retired"
             )
           else
-            raise Hecks::Error, "AiModel not found: #{model_id}"
+            raise ModelRegistryDomain::Error, "AiModel not found: #{model_id}"
           end
         end
       end

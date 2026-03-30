@@ -16,7 +16,7 @@ module ModelRegistryDomain
           existing = repository.find(model_id)
           if existing
             unless existing.status == "draft"
-              raise Hecks::Error, "Cannot ClassifyRisk: status must be 'draft', got '#{existing.status}'"
+              raise ModelRegistryDomain::Error, "Cannot ClassifyRisk: status must be 'draft', got '#{existing.status}'"
             end
             AiModel.new(
               id: existing.id,
@@ -33,7 +33,7 @@ module ModelRegistryDomain
               status: "classified"
             )
           else
-            raise Hecks::Error, "AiModel not found: #{model_id}"
+            raise ModelRegistryDomain::Error, "AiModel not found: #{model_id}"
           end
         end
       end

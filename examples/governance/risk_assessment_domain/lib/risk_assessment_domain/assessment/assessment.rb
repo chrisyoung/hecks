@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module RiskAssessmentDomain
   class Assessment
@@ -30,8 +30,8 @@ module RiskAssessmentDomain
     private
 
     def validate!
-      raise ValidationError, "model_id can't be blank" if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
-      raise ValidationError, "assessor_id can't be blank" if assessor_id.nil? || (assessor_id.respond_to?(:empty?) && assessor_id.empty?)
+      raise ValidationError.new("model_id can't be blank", field: :model_id, rule: :presence) if model_id.nil? || (model_id.respond_to?(:empty?) && model_id.empty?)
+      raise ValidationError.new("assessor_id can't be blank", field: :assessor_id, rule: :presence) if assessor_id.nil? || (assessor_id.respond_to?(:empty?) && assessor_id.empty?)
       if risk_level && !VALID_RISK_LEVEL.include?(risk_level)
         raise ValidationError, "risk_level must be one of: #{VALID_RISK_LEVEL.join(', ')}, got: #{risk_level}"
       end

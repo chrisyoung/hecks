@@ -37,4 +37,32 @@ RSpec.describe OperationsDomain::Deployment::Commands::PlanDeployment do
       expect(described_class.event_name).to eq("PlannedDeployment")
     end
   end
+
+  describe "execution" do
+    before { @app = Hecks.load(domain, force: true) }
+
+    it "persists the aggregate" do
+      result = Deployment.plan(
+          model_id: "example",
+          environment: "example",
+          endpoint: "example",
+          purpose: "example",
+          audience: "example"
+        )
+      expect(result).not_to be_nil
+      expect(Deployment.find(result.id)).not_to be_nil
+    end
+
+    it "emits PlannedDeployment to the event log" do
+      Deployment.plan(
+          model_id: "example",
+          environment: "example",
+          endpoint: "example",
+          purpose: "example",
+          audience: "example"
+        )
+      event_names = @app.events.map { |e| e.class.name.split("::").last }
+      expect(event_names).to include("PlannedDeployment")
+    end
+  end
 end

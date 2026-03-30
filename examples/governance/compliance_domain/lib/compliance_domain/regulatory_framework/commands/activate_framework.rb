@@ -16,7 +16,7 @@ module ComplianceDomain
           existing = repository.find(framework_id)
           if existing
             unless existing.status == "draft"
-              raise Hecks::Error, "Cannot ActivateFramework: status must be 'draft', got '#{existing.status}'"
+              raise ComplianceDomain::Error, "Cannot ActivateFramework: status must be 'draft', got '#{existing.status}'"
             end
             RegulatoryFramework.new(
               id: existing.id,
@@ -29,7 +29,7 @@ module ComplianceDomain
               status: "active"
             )
           else
-            raise Hecks::Error, "RegulatoryFramework not found: #{framework_id}"
+            raise ComplianceDomain::Error, "RegulatoryFramework not found: #{framework_id}"
           end
         end
       end

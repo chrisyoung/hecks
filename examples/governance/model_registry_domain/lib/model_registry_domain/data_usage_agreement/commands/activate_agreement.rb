@@ -23,7 +23,7 @@ module ModelRegistryDomain
           existing = repository.find(agreement_id)
           if existing
             unless existing.status == "draft"
-              raise Hecks::Error, "Cannot ActivateAgreement: status must be 'draft', got '#{existing.status}'"
+              raise ModelRegistryDomain::Error, "Cannot ActivateAgreement: status must be 'draft', got '#{existing.status}'"
             end
             DataUsageAgreement.new(
               id: existing.id,
@@ -37,7 +37,7 @@ module ModelRegistryDomain
               status: "active"
             )
           else
-            raise Hecks::Error, "DataUsageAgreement not found: #{agreement_id}"
+            raise ModelRegistryDomain::Error, "DataUsageAgreement not found: #{agreement_id}"
           end
         end
       end

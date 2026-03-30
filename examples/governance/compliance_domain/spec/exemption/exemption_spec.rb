@@ -4,7 +4,7 @@ RSpec.describe ComplianceDomain::Exemption do
   describe "creating a Exemption" do
     subject(:exemption) { described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_by_id: "example",
@@ -23,7 +23,7 @@ RSpec.describe ComplianceDomain::Exemption do
     end
 
     it "sets policy_id" do
-      expect(exemption.policy_id).to eq("example")
+      expect(exemption.policy_id).to eq("ref-id-123")
     end
 
     it "sets requirement" do
@@ -60,7 +60,7 @@ RSpec.describe ComplianceDomain::Exemption do
       expect {
         described_class.new(
           model_id: nil,
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_by_id: "example",
@@ -96,7 +96,7 @@ RSpec.describe ComplianceDomain::Exemption do
       id = SecureRandom.uuid
       a = described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_by_id: "example",
@@ -108,7 +108,7 @@ RSpec.describe ComplianceDomain::Exemption do
         )
       b = described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_by_id: "example",
@@ -124,7 +124,7 @@ RSpec.describe ComplianceDomain::Exemption do
     it "two Exemptions with different ids are not equal" do
       a = described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_by_id: "example",
@@ -135,7 +135,7 @@ RSpec.describe ComplianceDomain::Exemption do
         )
       b = described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           requirement: "example",
           reason: "example",
           approved_by_id: "example",

@@ -27,7 +27,7 @@ module ComplianceDomain
               status: existing.status
             )
           else
-            raise Hecks::Error, "GovernancePolicy not found: #{policy_id}"
+            raise ComplianceDomain::Error, "GovernancePolicy not found: #{policy_id}"
           end
         end
       end

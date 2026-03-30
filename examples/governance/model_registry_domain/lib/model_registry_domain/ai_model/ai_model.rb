@@ -1,4 +1,4 @@
-require 'hecks/model'
+require 'hecks/mixins/model'
 
 module ModelRegistryDomain
   class AiModel
@@ -33,8 +33,8 @@ module ModelRegistryDomain
     private
 
     def validate!
-      raise ValidationError, "name can't be blank" if name.nil? || (name.respond_to?(:empty?) && name.empty?)
-      raise ValidationError, "version can't be blank" if version.nil? || (version.respond_to?(:empty?) && version.empty?)
+      raise ValidationError.new("name can't be blank", field: :name, rule: :presence) if name.nil? || (name.respond_to?(:empty?) && name.empty?)
+      raise ValidationError.new("version can't be blank", field: :version, rule: :presence) if version.nil? || (version.respond_to?(:empty?) && version.empty?)
       if risk_level && !VALID_RISK_LEVEL.include?(risk_level)
         raise ValidationError, "risk_level must be one of: #{VALID_RISK_LEVEL.join(', ')}, got: #{risk_level}"
       end

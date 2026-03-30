@@ -16,7 +16,7 @@ module ModelRegistryDomain
           existing = repository.find(agreement_id)
           if existing
             unless ["active", "revoked"].include?(existing.status)
-              raise Hecks::Error, "Cannot RenewAgreement: status must be one of active, revoked, got '#{existing.status}'"
+              raise ModelRegistryDomain::Error, "Cannot RenewAgreement: status must be one of active, revoked, got '#{existing.status}'"
             end
             DataUsageAgreement.new(
               id: existing.id,
@@ -30,7 +30,7 @@ module ModelRegistryDomain
               status: "active"
             )
           else
-            raise Hecks::Error, "DataUsageAgreement not found: #{agreement_id}"
+            raise ModelRegistryDomain::Error, "DataUsageAgreement not found: #{agreement_id}"
           end
         end
       end

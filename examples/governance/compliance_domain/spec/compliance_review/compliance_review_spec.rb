@@ -4,7 +4,7 @@ RSpec.describe ComplianceDomain::ComplianceReview do
   describe "creating a ComplianceReview" do
     subject(:compliance_review) { described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: "example",
           outcome: "approved",
           notes: "example",
@@ -22,7 +22,7 @@ RSpec.describe ComplianceDomain::ComplianceReview do
     end
 
     it "sets policy_id" do
-      expect(compliance_review.policy_id).to eq("example")
+      expect(compliance_review.policy_id).to eq("ref-id-123")
     end
 
     it "sets reviewer_id" do
@@ -55,7 +55,7 @@ RSpec.describe ComplianceDomain::ComplianceReview do
       expect {
         described_class.new(
           model_id: nil,
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: "example",
           outcome: "approved",
           notes: "example",
@@ -72,7 +72,7 @@ RSpec.describe ComplianceDomain::ComplianceReview do
       expect {
         described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: nil,
           outcome: "approved",
           notes: "example",
@@ -89,7 +89,7 @@ RSpec.describe ComplianceDomain::ComplianceReview do
       id = SecureRandom.uuid
       a = described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: "example",
           outcome: "approved",
           notes: "example",
@@ -100,7 +100,7 @@ RSpec.describe ComplianceDomain::ComplianceReview do
         )
       b = described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: "example",
           outcome: "approved",
           notes: "example",
@@ -115,7 +115,7 @@ RSpec.describe ComplianceDomain::ComplianceReview do
     it "two ComplianceReviews with different ids are not equal" do
       a = described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: "example",
           outcome: "approved",
           notes: "example",
@@ -125,7 +125,7 @@ RSpec.describe ComplianceDomain::ComplianceReview do
         )
       b = described_class.new(
           model_id: "example",
-          policy_id: "example",
+          policy_id: "ref-id-123",
           reviewer_id: "example",
           outcome: "approved",
           notes: "example",

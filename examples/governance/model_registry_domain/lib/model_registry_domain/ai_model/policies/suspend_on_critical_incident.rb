@@ -4,7 +4,7 @@ module ModelRegistryDomain
       class SuspendOnCriticalIncident
         EVENT   = "ReportedIncident"
         TRIGGER = "SuspendModel"
-        ASYNC   = false
+        ASYNC   = true
         MAP     = {:model_id=>:model_id}.freeze
 
         def self.event   = EVENT

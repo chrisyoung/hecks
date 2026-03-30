@@ -231,7 +231,9 @@
           "type": "string"
         },
         "actor_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Stakeholder"
         },
         "details": {
           "type": "string"
@@ -265,7 +267,9 @@
           "type": "string"
         },
         "actor_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Stakeholder"
         },
         "details": {
           "type": "string"
@@ -299,7 +303,9 @@
           "type": "string"
         },
         "actor_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Stakeholder"
         },
         "details": {
           "type": "string"

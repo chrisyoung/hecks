@@ -15,7 +15,7 @@ module OperationsDomain
           existing = repository.find(deployment_id)
           if existing
             unless existing.status == "planned"
-              raise Hecks::Error, "Cannot DeployModel: status must be 'planned', got '#{existing.status}'"
+              raise OperationsDomain::Error, "Cannot DeployModel: status must be 'planned', got '#{existing.status}'"
             end
             Deployment.new(
               id: existing.id,
@@ -29,7 +29,7 @@ module OperationsDomain
               status: "deployed"
             )
           else
-            raise Hecks::Error, "Deployment not found: #{deployment_id}"
+            raise OperationsDomain::Error, "Deployment not found: #{deployment_id}"
           end
         end
       end

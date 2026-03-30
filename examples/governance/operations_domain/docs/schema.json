@@ -652,7 +652,9 @@
           "type": "string"
         },
         "deployment_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Deployment"
         },
         "metric_name": {
           "type": "string"
@@ -686,7 +688,9 @@
           "type": "string"
         },
         "deployment_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Deployment"
         },
         "metric_name": {
           "type": "string"
@@ -726,7 +730,9 @@
           "type": "string"
         },
         "deployment_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Deployment"
         },
         "metric_name": {
           "type": "string"
@@ -753,7 +759,9 @@
           "type": "string"
         },
         "deployment_id": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to Deployment"
         },
         "metric_name": {
           "type": "string"

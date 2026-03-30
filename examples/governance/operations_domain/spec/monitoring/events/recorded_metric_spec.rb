@@ -4,7 +4,7 @@ RSpec.describe OperationsDomain::Monitoring::Events::RecordedMetric do
   subject(:event) { described_class.new(
           aggregate_id: "example",
           model_id: "example",
-          deployment_id: "example",
+          deployment_id: "ref-id-123",
           metric_name: "example",
           value: 1.0,
           threshold: 1.0,
@@ -28,7 +28,7 @@ RSpec.describe OperationsDomain::Monitoring::Events::RecordedMetric do
   end
 
   it "carries deployment_id" do
-    expect(event.deployment_id).to eq("example")
+    expect(event.deployment_id).to eq("ref-id-123")
   end
 
   it "carries metric_name" do
