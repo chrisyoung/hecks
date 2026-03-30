@@ -1,7 +1,11 @@
 Hecks.domain "RiskAssessment" do
+  actor "assessor", description: "Risk assessment specialist"
+  actor "governance_board", description: "Final approval authority"
+  actor "admin", description: "System administrator"
+
   aggregate "Assessment" do
-    reference_to "AiModel", as: :model
-    reference_to "Stakeholder", as: :assessor
+    reference_to "ModelRegistry::AiModel", as: :model
+    reference_to "Identity::Stakeholder", as: :assessor
     attribute :risk_level, String
     attribute :bias_score, Float
     attribute :safety_score, Float

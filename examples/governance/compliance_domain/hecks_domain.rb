@@ -1,4 +1,8 @@
 Hecks.domain "Compliance" do
+  actor "governance_board", description: "Policy oversight committee"
+  actor "reviewer", description: "Compliance reviewer"
+  actor "admin", description: "System administrator"
+
   aggregate "GovernancePolicy" do
     attribute :name, String
     attribute :description, String
@@ -113,9 +117,9 @@ Hecks.domain "Compliance" do
   end
 
   aggregate "ComplianceReview" do
-    reference_to "AiModel", as: :model
+    reference_to "ModelRegistry::AiModel", as: :model
     reference_to "GovernancePolicy", as: :policy
-    reference_to "Stakeholder", as: :reviewer
+    reference_to "Identity::Stakeholder", as: :reviewer
     attribute :outcome, String
     attribute :notes, String
     attribute :completed_at, DateTime
@@ -175,7 +179,7 @@ Hecks.domain "Compliance" do
   end
 
   aggregate "Exemption" do
-    reference_to "AiModel", as: :model
+    reference_to "ModelRegistry::AiModel", as: :model
     reference_to "GovernancePolicy", as: :policy
     attribute :requirement, String
     attribute :reason, String
@@ -224,7 +228,7 @@ Hecks.domain "Compliance" do
   end
 
   aggregate "TrainingRecord" do
-    reference_to "Stakeholder"
+    reference_to "Identity::Stakeholder"
     reference_to "GovernancePolicy", as: :policy
     attribute :completed_at, DateTime
     attribute :expires_at, Date

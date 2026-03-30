@@ -1,4 +1,8 @@
 Hecks.domain "ModelRegistry" do
+  actor "governance_board", description: "Model approval authority"
+  actor "data_steward", description: "Data usage governance"
+  actor "admin", description: "System administrator"
+
   aggregate "AiModel" do
     attribute :name, String
     attribute :version, String
