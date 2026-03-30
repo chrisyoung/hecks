@@ -42,7 +42,7 @@ Hecks is a monorepo with multiple gem components:
 | `hecks_model` | Domain model types and DSL builders |
 | `hecks_domain` | Compiler, generators, inspectors |
 | `hecks_runtime` | Orchestration, ports, extensions |
-| `hecks_workbench` | Workbench (interactive domain modeling), MCP server, AI tools |
+| `hecks_workshop` | Workshop (interactive domain modeling), MCP server, AI tools |
 | `hecks_cli` | Thor CLI and HTTP server |
 | `hecks_persist` | SQL persistence via Sequel |
 | `hecks_watchers` | File watchers for development |

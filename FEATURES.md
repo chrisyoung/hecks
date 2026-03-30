@@ -209,6 +209,13 @@
 - Reference attributes: `Post.order_id reference_to("Order")`
 - Terse single-line feedback after every operation (e.g. "title attribute added to Post")
 
+### Web Console
+- Browser-based REPL via `hecks web_console [NAME]` — terminal-like interface at localhost:4567
+- Three-panel layout: domain tree sidebar, terminal center, event log sidebar
+- Same implicit syntax as IRB — commands evaluated in ConsoleRunner binding
+- Side panels auto-refresh after each command
+- Command history with Up/Down arrows
+
 ### Session Features
 - All session methods hoisted to top level in console
 - AggregateHandle short method names: `attr`, `command`, `validation`, etc.
@@ -276,6 +283,15 @@
 - Covers hash-style `[]`, `to_h`, `== Hash` on refactored value objects
 - Generated examples exclude this module — always use current API
 - `HecksDeprecations.registered` — introspect all registered deprecations
+
+### Rails Import (Reverse Engineering)
+- `hecks import rails /path/to/app` — extract domain from existing Rails app
+- `hecks import schema /path/to/schema.rb` — schema-only import
+- Parses db/schema.rb: tables → aggregates, columns → typed attributes, foreign keys → references
+- Parses app/models: validates → validations, enum → enum constraints, AASM → lifecycles
+- Auto-generates Create commands for each aggregate
+- Skips Rails internal tables (schema_migrations, active_storage_*, etc.)
+- Preview mode with `--preview` flag
 
 ## CLI Commands
 - `hecks new NAME` — scaffold a complete project

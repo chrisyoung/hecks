@@ -1,0 +1,140 @@
+Hecks.domain "Spaghetti" do
+  aggregate "Gunslinger" do
+    attribute :name, String
+    attribute :nickname, String
+    attribute :reputation, Integer
+    attribute :accuracy, Float
+    attribute :alive, TrueClass
+    attribute :wanted_level, Integer
+    attribute :kills, Integer
+    attribute :preferred_weapon, String
+    attribute :town_id, reference_to("Town")
+    validation :name, {:presence=>true}
+    validation :accuracy, {:presence=>true}
+
+    command "CreateGunslinger" do
+      attribute :name, String
+      attribute :nickname, String
+      attribute :reputation, Integer
+      attribute :accuracy, Float
+      attribute :alive, TrueClass
+      attribute :wanted_level, Integer
+      attribute :kills, Integer
+      attribute :preferred_weapon, String
+    end
+  end
+
+  aggregate "Duel" do
+    attribute :challenger_id, reference_to("Challenger")
+    attribute :opponent_id, reference_to("Opponent")
+    attribute :town_id, reference_to("Town")
+    attribute :winner_id, reference_to("Winner")
+    attribute :status, String
+    attribute :narration, String
+    attribute :dramatic_pause_seconds, Float
+    validation :dramatic_pause_seconds, {:presence=>true}
+
+    lifecycle :status, default: "scheduled" do
+      transition "BeginDuel" => "in_progress"
+      transition "FinishDuel" => "finished"
+      transition "CancelDuel" => "cancelled"
+    end
+
+    command "CreateDuel" do
+      attribute :status, String
+      attribute :narration, String
+      attribute :dramatic_pause_seconds, Float
+    end
+  end
+
+  aggregate "Town" do
+    attribute :name, String
+    attribute :population, Integer
+    attribute :lawlessness_rating, Float
+    attribute :has_sheriff, TrueClass
+    attribute :region, String
+    validation :name, {:presence=>true}
+    validation :population, {:presence=>true}
+
+    command "CreateTown" do
+      attribute :name, String
+      attribute :population, Integer
+      attribute :lawlessness_rating, Float
+      attribute :has_sheriff, TrueClass
+      attribute :region, String
+    end
+  end
+
+  aggregate "Bounty" do
+    attribute :type, String
+    attribute :gunslinger_id, reference_to("Gunslinger")
+    attribute :posted_by_id, reference_to("PostedBy")
+    attribute :amount, Integer
+    attribute :status, String, enum: ["active", "claimed", "expired", "cancelled"]
+    attribute :description, String
+    attribute :last_seen_location, String
+    validation :amount, {:presence=>true}
+
+    command "CreateBounty" do
+      attribute :type, String
+      attribute :amount, Integer
+      attribute :status, String
+      attribute :description, String
+      attribute :last_seen_location, String
+    end
+  end
+
+  aggregate "Saloon" do
+    attribute :name, String
+    attribute :town_id, reference_to("Town")
+    attribute :drink_prices, JSON
+    attribute :capacity, Integer
+    attribute :trouble_rating, Float
+    validation :name, {:presence=>true}
+
+    command "CreateSaloon" do
+      attribute :name, String
+      attribute :drink_prices, JSON
+      attribute :capacity, Integer
+      attribute :trouble_rating, Float
+    end
+  end
+
+  aggregate "Horse" do
+    attribute :name, String
+    attribute :breed, String
+    attribute :speed, Integer
+    attribute :alive, TrueClass
+    attribute :gunslinger_id, reference_to("Gunslinger")
+    attribute :town_id, reference_to("Town")
+    validation :name, {:presence=>true}
+
+    command "CreateHorse" do
+      attribute :name, String
+      attribute :breed, String
+      attribute :speed, Integer
+      attribute :alive, TrueClass
+    end
+  end
+
+  aggregate "Telegraph" do
+    attribute :sender, String
+    attribute :recipient, String
+    attribute :message, String
+    attribute :event_type, String
+    attribute :town_id, reference_to("Town")
+    attribute :sent_at, DateTime
+    attribute :read, TrueClass
+    validation :message, {:presence=>true}
+    validation :event_type, {:presence=>true}
+
+    command "CreateTelegraph" do
+      attribute :sender, String
+      attribute :recipient, String
+      attribute :message, String
+      attribute :event_type, String
+      attribute :sent_at, DateTime
+      attribute :read, TrueClass
+    end
+  end
+end
