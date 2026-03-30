@@ -89,7 +89,7 @@ class AggCard extends HTMLElement {
       <style>
         ${BASE_STYLES}
         :host { display: block; }
-        .card { background: ${COLORS.panel}e6; border: 1px solid ${COLORS.border}; border-radius: 6px; padding: 8px; min-width: 120px; max-width: 180px; backdrop-filter: blur(4px); position: relative; }
+        .card { background: ${COLORS.panel}e6; border: 1px solid ${COLORS.border}; border-radius: 6px; padding: 8px; min-width: 120px; backdrop-filter: blur(4px); position: relative; white-space: nowrap; }
         .name { color: ${COLORS.orange}; font-weight: 600; font-size: 11px; cursor: pointer; } .name:hover { text-decoration: underline; }
         .domain-tag { position:absolute;top:3px;right:6px;font-size:7px;color:${COLORS.cyan};opacity:0.9; }
         .badge { display: inline-block; font-size: 8px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
@@ -102,7 +102,7 @@ class AggCard extends HTMLElement {
         .dot.dim { opacity: 0.3; }
         .tooltip { display: none; position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
                    background: ${COLORS.bg}; border: 1px solid ${COLORS.border}; border-radius: 4px;
-                   padding: 2px 6px; font-size: 9px; white-space: nowrap; color: #fff;
+                   padding: 2px 6px; font-size: 9px; white-space: nowrap; color: #e0e0e0 !important;
                    font-weight: 600; pointer-events: none; z-index: 30; }
         .detail-header { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
         .detail-item { font-size: 10px; line-height: 1.6; color: ${COLORS.text}; }
