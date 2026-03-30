@@ -3,7 +3,7 @@ Hecks.domain "Compliance" do
     attribute :name, String
     attribute :description, String
     attribute :category, String
-    attribute :framework_id, String
+    attribute reference_to("RegulatoryFramework")
     attribute :effective_date, Date
     attribute :review_date, Date
     attribute :requirements, list_of("Requirement")

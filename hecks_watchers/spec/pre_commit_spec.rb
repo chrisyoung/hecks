@@ -9,19 +9,15 @@ RSpec.describe HecksWatchers::PreCommit do
   let(:file_size) { instance_double(HecksWatchers::FileSize) }
   let(:doc_reminder) { instance_double(HecksWatchers::DocReminder) }
   let(:spec_coverage) { instance_double(HecksWatchers::SpecCoverage) }
-  let(:autoloads) { instance_double(HecksWatchers::Autoloads) }
-
   before do
     allow(HecksWatchers::CrossRequire).to receive(:new).and_return(cross_require)
     allow(HecksWatchers::FileSize).to receive(:new).and_return(file_size)
     allow(HecksWatchers::DocReminder).to receive(:new).and_return(doc_reminder)
     allow(HecksWatchers::SpecCoverage).to receive(:new).and_return(spec_coverage)
-    allow(HecksWatchers::Autoloads).to receive(:new).and_return(autoloads)
 
     allow(file_size).to receive(:call).and_return([])
     allow(doc_reminder).to receive(:call).and_return([])
     allow(spec_coverage).to receive(:call).and_return([])
-    allow(autoloads).to receive(:call).and_return([])
   end
 
   context "when no blockers" do
@@ -36,7 +32,6 @@ RSpec.describe HecksWatchers::PreCommit do
       expect(file_size).to have_received(:call)
       expect(doc_reminder).to have_received(:call)
       expect(spec_coverage).to have_received(:call)
-      expect(autoloads).to have_received(:call)
     end
   end
 

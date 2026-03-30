@@ -11,8 +11,9 @@ module Hecks
       #   # => { mode: "sketch", domain_name: "Pizzas", aggregates: [...], events: [] }
       #
       class StateSerializer
-        def initialize(workshop)
+        def initialize(workshop, domain_groups: {})
           @workshop = workshop
+          @domain_groups = domain_groups
         end
 
         def serialize
@@ -21,6 +22,7 @@ module Hecks
             mode:        @workshop.play? ? "play" : "sketch",
             domain_name: @workshop.name,
             aggregates:  aggs,
+            policy_flows: build_policy_flows(aggs),
             events:      serialize_events,
             mermaid:     build_mermaid(aggs)
           }
@@ -33,25 +35,66 @@ module Hecks
             agg = builder.build
             {
               name:           agg.name,
-              attributes:     agg.attributes.map { |a|
-                type_str = if a.reference?
-                             "reference_to(#{a.type})"
-                           elsif a.list?
-                             "list_of(#{a.type})"
-                           else
-                             a.type.to_s
-                           end
-                { name: a.name, type: type_str }
+              domain:         @domain_groups[agg.name],
+              attributes:     serialize_attrs(agg),
+              commands:       agg.commands.map { |c|
+                { name: c.name, attributes: c.attributes.map { |a|
+                  { name: a.name, type: a.type.to_s }
+                }}
               },
-              commands:       agg.commands.map(&:name),
               events:         agg.events.map(&:name),
               value_objects:  agg.value_objects.map(&:name),
               entities:       agg.entities.map(&:name),
-              policies:       agg.policies.map(&:name),
+              policies:       agg.policies.map { |p|
+                { name: p.name, event: p.event_name, trigger: p.trigger_command }
+              },
               queries:        agg.queries.map(&:name),
               specifications: agg.specifications.map(&:name)
             }
           end
+        end
+
+        def serialize_attrs(agg)
+          attrs = agg.attributes.map { |a| format_attr(a) }
+          agg.value_objects.each do |vo|
+            vo.attributes.select(&:reference?).each { |a| attrs << format_attr(a) }
+          end
+          attrs
+        end
+
+        def format_attr(a)
+          type_str = if a.reference?
+                       "reference_to(#{a.type})"
+                     elsif a.list?
+                       "list_of(#{a.type})"
+                     else
+                       a.type.to_s
+                     end
+          { name: a.name, type: type_str }
+        end
+
+        def build_policy_flows(aggs)
+          # Build event→aggregate lookup: which aggregate produces which event?
+          event_source = {}
+          aggs.each do |agg|
+            agg[:events].each { |e| event_source[e] = agg[:name] }
+          end
+
+          flows = []
+          aggs.each do |agg|
+            next unless agg[:policies].is_a?(Array)
+            agg[:policies].each do |pol|
+              next unless pol.is_a?(Hash) && pol[:event]
+              source = event_source[pol[:event]]
+              next unless source && source != agg[:name]
+              flows << {
+                from: source, to: agg[:name],
+                event: pol[:event], trigger: pol[:trigger],
+                policy: pol[:name]
+              }
+            end
+          end
+          flows
         end
 
         def build_mermaid(aggs)
@@ -81,7 +124,23 @@ module Hecks
         def serialize_events
           return [] unless @workshop.play? && @workshop.playground
           @workshop.playground.events.map do |e|
-            { type: e.class.name.split("::").last, occurred_at: e.occurred_at&.to_s }
+            attrs = {}
+            e.class.instance_methods(false).each do |m|
+              next if %i[occurred_at aggregate_id].include?(m)
+              attrs[m] = e.send(m).inspect rescue nil
+            end
+            event_name = e.class.name.split("::").last
+            command_name = event_name
+              .sub(/\ACanceled/, "Cancel")
+              .sub(/\ACreated/, "Create")
+              .sub(/\AUpdated/, "Update")
+              .sub(/\ADeleted/, "Delete")
+              .sub(/\AAdded/, "Add")
+              .sub(/\ARemoved/, "Remove")
+              .sub(/\APlaced/, "Place")
+            { type: event_name, command: command_name, occurred_at: e.occurred_at&.to_s,
+              aggregate_id: e.respond_to?(:aggregate_id) ? e.aggregate_id : nil,
+              data: attrs }
           end
         end
       end

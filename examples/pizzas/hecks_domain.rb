@@ -58,7 +58,7 @@ Hecks.domain "Pizzas" do
 
     command "PlaceOrder" do
       attribute :customer_name, String
-      attribute :pizza_id, String
+      attribute :pizza_id, reference_to("Pizza")
       attribute :quantity, Integer
     end
 

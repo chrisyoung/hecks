@@ -1,4 +1,4 @@
-Hecks.domain "Spaghetti" do
+Hecks.domain "Spaghetti Western" do
   aggregate "Gunslinger" do
     attribute :name, String
     attribute :nickname, String

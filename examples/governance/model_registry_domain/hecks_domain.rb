@@ -2,11 +2,11 @@ Hecks.domain "ModelRegistry" do
   aggregate "AiModel" do
     attribute :name, String
     attribute :version, String
-    attribute :provider_id, String
+    attribute reference_to("Vendor")
     attribute :description, String
     attribute :risk_level, String
     attribute :registered_at, DateTime
-    attribute :parent_model_id, String
+    attribute :parent_model_id, reference_to("AiModel")
     attribute :derivation_type, String
     attribute :capabilities, list_of("Capability")
     attribute :intended_uses, list_of("IntendedUse")
@@ -49,37 +49,37 @@ Hecks.domain "ModelRegistry" do
     command "RegisterModel" do
       attribute :name, String
       attribute :version, String
-      attribute :provider_id, String
+      attribute :provider_id, reference_to("Vendor")
       attribute :description, String
     end
 
     command "DeriveModel" do
       attribute :name, String
       attribute :version, String
-      attribute :parent_model_id, String
+      attribute :parent_model_id, reference_to("AiModel")
       attribute :derivation_type, String
       attribute :description, String
     end
 
     command "ClassifyRisk" do
-      attribute :model_id, String
+      attribute :model_id, reference_to("AiModel")
       attribute :risk_level, String
     end
 
     command "ApproveModel" do
-      attribute :model_id, String
+      attribute :model_id, reference_to("AiModel")
       actor "governance_board"
       actor "admin"
     end
 
     command "SuspendModel" do
-      attribute :model_id, String
+      attribute :model_id, reference_to("AiModel")
       actor "governance_board"
       actor "admin"
     end
 
     command "RetireModel" do
-      attribute :model_id, String
+      attribute :model_id, reference_to("AiModel")
       actor "governance_board"
       actor "admin"
     end
@@ -142,7 +142,7 @@ Hecks.domain "ModelRegistry" do
   end
 
   aggregate "DataUsageAgreement" do
-    attribute :model_id, String
+    attribute :model_id, reference_to("AiModel")
     attribute :data_source, String
     attribute :purpose, String
     attribute :consent_type, String
@@ -177,7 +177,7 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "CreateAgreement" do
-      attribute :model_id, String
+      attribute :model_id, reference_to("AiModel")
       attribute :data_source, String
       attribute :purpose, String
       attribute :consent_type, String

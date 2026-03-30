@@ -58,10 +58,7 @@ module Hecks
               return @web_runner.reload_domain!
             end
             if method == "diagram"
-              ws = @runner.instance_variable_get(:@workshop)
-              serializer = Hecks::Workshop::WebRunner::StateSerializer.new(ws)
-              state = serializer.serialize
-              puts state[:mermaid]
+              puts "%%DIAGRAM%%"
               return nil
             end
             return @runner.send(method)
@@ -75,6 +72,18 @@ module Hecks
             else
               return @runner.aggregate(target)
             end
+          end
+
+          ws = @runner.instance_variable_get(:@workshop)
+
+          # .create / .new only work in play mode
+          if %w[create new].include?(method)
+            unless ws.play?
+              puts "#{target}.create is a play-mode command. Type play! first."
+              return nil
+            end
+            pascal = "Create#{target}"
+            return ws.playground.execute(pascal, **kwargs)
           end
 
           # Handle method

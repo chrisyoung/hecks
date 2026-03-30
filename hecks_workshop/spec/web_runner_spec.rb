@@ -42,7 +42,7 @@ RSpec.describe Hecks::Workshop::WebRunner::StateSerializer do
       end
       state = serializer.serialize
       agg = state[:aggregates].first
-      expect(agg[:commands]).to include("create")
+      expect(agg[:commands].map { |c| c[:name] }).to include("create")
       expect(agg[:events]).to include("created")
     end
   end
