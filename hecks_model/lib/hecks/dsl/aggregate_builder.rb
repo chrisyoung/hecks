@@ -51,7 +51,7 @@ module Hecks
       attr_reader :attributes, :commands, :value_objects, :entities,
                   :policies, :validations, :invariants, :scopes, :ports,
                   :queries, :subscribers, :indexes, :specifications,
-                  :references, :compositions
+                  :references
       # Writer for lifecycle — used by AggregateHandle to update lifecycle
       # without reaching into instance variables. Reader is the DSL method
       # in BehaviorMethods; use current_lifecycle to read.
@@ -77,7 +77,6 @@ module Hecks
         @indexes = []
         @specifications = []
         @references = []
-        @compositions = []
         @explicit_events = []
         @lifecycle = nil
         @versioned = false
@@ -118,18 +117,6 @@ module Hecks
       end
 
       def ref(type, **opts) = reference_to(type, **opts)
-
-      # Declare a composition — this aggregate owns instances of the given type.
-      # The persistence adapter handles cascade deletes.
-      #
-      #   composes "Topping"
-      #   composes "OrderItem", as: :items
-      #
-      def composes(type, as: nil)
-        name = as || type.to_s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-                              .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase.to_sym
-        @compositions << { name: name, type: type.to_s }
-      end
 
       # Declare an explicit domain event (not inferred from a command).
       # Use for time-based, external, or computed events.
@@ -183,8 +170,7 @@ module Hecks
           subscribers: @subscribers, indexes: @indexes,
           specifications: @specifications, lifecycle: @lifecycle,
           versioned: @versioned, attachable: @attachable,
-          metadata: @metadata, references: @references,
-          compositions: @compositions
+          metadata: @metadata, references: @references
         )
       end
 

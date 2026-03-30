@@ -69,8 +69,6 @@ module Hecks
       # @return [Array<Hash>] relationships to other aggregate roots ({ name:, type: })
       attr_reader :references
 
-      # @return [Array<Hash>] owned composition relationships ({ name:, type: })
-      attr_reader :compositions
 
       # @return [Lifecycle, nil] optional state machine definition with transitions tied to commands
       attr_reader :lifecycle
@@ -100,7 +98,7 @@ module Hecks
       def initialize(name:, attributes: [], value_objects: [], entities: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
                      scopes: [], ports: {}, queries: [], subscribers: [], indexes: [],
-                     specifications: [], references: [], compositions: [], lifecycle: nil, versioned: false,
+                     specifications: [], references: [], lifecycle: nil, versioned: false,
                      attachable: false, metadata: {}, origin_domain: nil)
         @name = Names.aggregate_name(name)
         @attributes = attributes
@@ -118,7 +116,6 @@ module Hecks
         @indexes = indexes
         @specifications = specifications
         @references = references
-        @compositions = compositions
         @lifecycle = lifecycle
         @versioned = versioned
         @attachable = attachable

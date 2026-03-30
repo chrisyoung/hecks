@@ -81,15 +81,10 @@ export function collectPairs(aggs, cardEls) {
     (agg.references_to || []).forEach(r => {
       if (!cardEls[agg.name] || !cardEls[r.type]) return;
       const key = agg.name + '|' + r.type;
-      if (!pairMap[key]) pairMap[key] = { from: agg.name, to: r.type, isList: false, isComposition: false, names: [] };
+      const isComp = r.kind === 'composition';
+      if (!pairMap[key]) pairMap[key] = { from: agg.name, to: r.type, isList: false, isComposition: isComp, names: [] };
       pairMap[key].names.push(r.name);
-    });
-    (agg.compositions || []).forEach(c => {
-      if (!cardEls[agg.name] || !cardEls[c.type]) return;
-      const key = agg.name + '|' + c.type;
-      if (!pairMap[key]) pairMap[key] = { from: agg.name, to: c.type, isList: false, isComposition: true, names: [] };
-      pairMap[key].names.push(c.name);
-      pairMap[key].isComposition = true;
+      if (isComp) pairMap[key].isComposition = true;
     });
   });
   return Object.values(pairMap);
