@@ -14,4 +14,15 @@ require_relative "bluebook/tokenizer"
 #
 module BlueBook
   VERSION = "2026.03.29.1"
+
+  def self.register!
+    Hecks.register_grammar(:bluebook) do |g|
+      g.parser = BlueBook::Grammar
+      g.builder = Hecks::DSL::DomainBuilder
+      g.entry_point = :domain
+      g.bare_commands = BlueBook::Grammar::BARE_COMMANDS
+      g.handle_methods = BlueBook::Grammar::HANDLE_METHODS
+      g.type_map = BlueBook::Grammar::TYPE_MAP
+    end
+  end
 end
