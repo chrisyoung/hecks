@@ -1,7 +1,25 @@
 Hecks.domain "Compliance" do
+  uses_kernel "Identity"
+
   actor "governance_board", description: "Policy oversight committee"
   actor "reviewer", description: "Compliance reviewer"
   actor "admin", description: "System administrator"
+
+  anti_corruption_layer "ModelRegistry" do
+    translate "AiModel", model_name: :name, model_version: :version
+  end
+
+  published_event "ReviewCompleted", version: 1 do
+    attribute :review_id, String
+    attribute :model_id, String
+    attribute :outcome, String
+  end
+
+  saga "ComplianceCheck" do
+    step "OpenReview", on_success: "ApproveReview", on_failure: "RejectReview"
+    step "RejectReview", on_success: "SuspendModel"
+    compensation "SuspendModel"
+  end
 
   aggregate "GovernancePolicy" do
     attribute :name, String

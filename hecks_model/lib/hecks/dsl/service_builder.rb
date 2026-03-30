@@ -37,7 +37,14 @@ module Hecks
       def initialize(name)
         @name = name
         @attributes = []
+        @coordinates = []
         @call_body = nil
+      end
+
+      # Declare which aggregates this service coordinates.
+      #   coordinates "Account", "Ledger"
+      def coordinates(*aggregates)
+        @coordinates = aggregates.map(&:to_s)
       end
 
       # Set the call body block that implements the service's orchestration logic.
@@ -59,6 +66,7 @@ module Hecks
         Behavior::Service.new(
           name: @name,
           attributes: @attributes,
+          coordinates: @coordinates,
           call_body: @call_body
         )
       end

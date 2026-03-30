@@ -66,11 +66,16 @@ module Hecks
       # @return [Array] specification objects for complex query/filter logic
       attr_reader :specifications
 
-      # @return [Array<Hash>] relationships to other aggregate roots ({ name:, type: })
+      # @return [Array<Hash>] relationships to other aggregate roots
       attr_reader :references
 
+      # @return [Array<Symbol>, nil] declared repository methods, nil for default
+      attr_reader :repository_methods
 
-      # @return [Lifecycle, nil] optional state machine definition with transitions tied to commands
+      # @return [Array<Hash>] factory declarations for complex construction
+      attr_reader :factories
+
+      # @return [Lifecycle, nil] optional state machine definition
       attr_reader :lifecycle
 
       # Creates a new Aggregate IR node.
@@ -98,7 +103,8 @@ module Hecks
       def initialize(name:, attributes: [], value_objects: [], entities: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
                      scopes: [], ports: {}, queries: [], subscribers: [], indexes: [],
-                     specifications: [], references: [], lifecycle: nil, versioned: false,
+                     specifications: [], references: [], repository_methods: nil,
+                     factories: [], lifecycle: nil, versioned: false,
                      attachable: false, metadata: {}, origin_domain: nil)
         @name = Names.aggregate_name(name)
         @attributes = attributes
@@ -116,6 +122,8 @@ module Hecks
         @indexes = indexes
         @specifications = specifications
         @references = references
+        @repository_methods = repository_methods
+        @factories = factories
         @lifecycle = lifecycle
         @versioned = versioned
         @attachable = attachable

@@ -1,5 +1,15 @@
 Hecks.domain "Identity" do
+  shared_kernel
   actor "admin", description: "System administrator"
+
+  glossary do
+    prefer "stakeholder", not: ["user", "person", "account"]
+  end
+
+  published_event "StakeholderDeactivated", version: 1 do
+    attribute :stakeholder_id, String
+    attribute :reason, String
+  end
 
   aggregate "Stakeholder" do
     attribute :name, String
