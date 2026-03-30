@@ -2,11 +2,11 @@ Hecks.domain "ModelRegistry" do
   aggregate "AiModel" do
     attribute :name, String
     attribute :version, String
-    attribute reference_to("Vendor")
+    reference_to "Vendor"
     attribute :description, String
     attribute :risk_level, String
     attribute :registered_at, DateTime
-    attribute :parent_model_id, reference_to("AiModel")
+    reference_to "AiModel", as: :parent_model
     attribute :derivation_type, String
     attribute :capabilities, list_of("Capability")
     attribute :intended_uses, list_of("IntendedUse")
@@ -127,7 +127,7 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "ApproveVendor" do
-      attribute :vendor_id, String
+      attribute reference_to("Vendor")
       attribute :assessment_date, Date
       attribute :next_review_date, Date
       actor "governance_board"
@@ -135,14 +135,14 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "SuspendVendor" do
-      attribute :vendor_id, String
+      attribute reference_to("Vendor")
       actor "governance_board"
       actor "admin"
     end
   end
 
   aggregate "DataUsageAgreement" do
-    attribute :model_id, reference_to("AiModel")
+    reference_to "AiModel", as: :model
     attribute :data_source, String
     attribute :purpose, String
     attribute :consent_type, String
@@ -186,7 +186,7 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "ActivateAgreement" do
-      attribute :agreement_id, String
+      attribute reference_to("DataUsageAgreement")
       attribute :effective_date, Date
       attribute :expiration_date, Date
       actor "data_steward"
@@ -194,13 +194,13 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "RevokeAgreement" do
-      attribute :agreement_id, String
+      attribute reference_to("DataUsageAgreement")
       actor "data_steward"
       actor "admin"
     end
 
     command "RenewAgreement" do
-      attribute :agreement_id, String
+      attribute reference_to("DataUsageAgreement")
       attribute :expiration_date, Date
       actor "data_steward"
       actor "admin"

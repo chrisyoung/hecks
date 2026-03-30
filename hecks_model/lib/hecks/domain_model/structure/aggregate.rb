@@ -66,6 +66,9 @@ module Hecks
       # @return [Array] specification objects for complex query/filter logic
       attr_reader :specifications
 
+      # @return [Array<Hash>] relationships to other aggregate roots ({ name:, type: })
+      attr_reader :references
+
       # @return [Lifecycle, nil] optional state machine definition with transitions tied to commands
       attr_reader :lifecycle
 
@@ -94,8 +97,8 @@ module Hecks
       def initialize(name:, attributes: [], value_objects: [], entities: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
                      scopes: [], ports: {}, queries: [], subscribers: [], indexes: [],
-                     specifications: [], lifecycle: nil, versioned: false, attachable: false,
-                     metadata: {}, origin_domain: nil)
+                     specifications: [], references: [], lifecycle: nil, versioned: false,
+                     attachable: false, metadata: {}, origin_domain: nil)
         @name = Names.aggregate_name(name)
         @attributes = attributes
         @value_objects = value_objects
@@ -111,6 +114,7 @@ module Hecks
         @subscribers = subscribers
         @indexes = indexes
         @specifications = specifications
+        @references = references
         @lifecycle = lifecycle
         @versioned = versioned
         @attachable = attachable

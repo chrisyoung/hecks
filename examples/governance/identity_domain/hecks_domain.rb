@@ -30,12 +30,12 @@ Hecks.domain "Identity" do
     end
 
     command "AssignRole" do
-      attribute :stakeholder_id, String
+      attribute :stakeholder_id, reference_to("Stakeholder")
       attribute :role, String
     end
 
     command "DeactivateStakeholder" do
-      attribute :stakeholder_id, String
+      attribute :stakeholder_id, reference_to("Stakeholder")
       actor "admin"
     end
   end
@@ -44,7 +44,7 @@ Hecks.domain "Identity" do
     attribute :entity_type, String
     attribute :entity_id, String
     attribute :action, String
-    attribute :actor_id, String
+    reference_to "Stakeholder", as: :actor
     attribute :details, String
     attribute :timestamp, DateTime
 
@@ -64,7 +64,7 @@ Hecks.domain "Identity" do
       attribute :entity_type, String
       attribute :entity_id, String
       attribute :action, String
-      attribute :actor_id, String
+      attribute :actor_id, reference_to("Stakeholder")
       attribute :details, String
     end
 

@@ -109,6 +109,11 @@ class DomainDiagram extends HTMLElement {
         const pk = agg.name + '|' + m[1];
         if (!seen[pk]) { seen[pk] = true; edges.push({ from: agg.name, to: m[1] }); }
       });
+      (agg.references_to || []).forEach(r => {
+        if (!aggs.find(x => x.name === r.type)) return;
+        const pk = agg.name + '|' + r.type;
+        if (!seen[pk]) { seen[pk] = true; edges.push({ from: agg.name, to: r.type }); }
+      });
     });
     return { nodes, edges };
   }
@@ -147,6 +152,12 @@ class DomainDiagram extends HTMLElement {
           this._ports.count(m[1]);
         }
       });
+      (agg.references_to || []).forEach(r => {
+        if (this._cardEls[agg.name] && this._cardEls[r.type]) {
+          this._ports.count(agg.name);
+          this._ports.count(r.type);
+        }
+      });
     });
     (this._state.policy_flows || []).forEach(f => {
       this._ports.count(f.from);
@@ -159,6 +170,7 @@ class DomainDiagram extends HTMLElement {
   _drawRefLines(svg) {
     const pairMap = {};
     this._state.aggregates.forEach(agg => {
+      // Attribute-based references (reference_to / list_of)
       agg.attributes.forEach(a => {
         const rm = a.type.match(/reference_to\((\w+)\)/), lm = a.type.match(/list_of\((\w+)\)/);
         const target = rm ? rm[1] : (lm ? lm[1] : null);
@@ -167,6 +179,13 @@ class DomainDiagram extends HTMLElement {
         if (!pairMap[key]) pairMap[key] = { from: agg.name, to: target, isList: !!lm, names: [] };
         pairMap[key].names.push(a.name.replace(/_id$/, ''));
         if (lm) pairMap[key].isList = true;
+      });
+      // First-class references (reference_to as relationship)
+      (agg.references_to || []).forEach(r => {
+        if (!this._cardEls[agg.name] || !this._cardEls[r.type]) return;
+        const key = agg.name + '|' + r.type;
+        if (!pairMap[key]) pairMap[key] = { from: agg.name, to: r.type, isList: false, names: [] };
+        pairMap[key].names.push(r.name);
       });
     });
 
