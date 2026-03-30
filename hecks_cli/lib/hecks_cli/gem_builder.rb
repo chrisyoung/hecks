@@ -46,23 +46,40 @@ module Hecks
     end
 
     # Builds and installs all component gems, then the meta-gem.
-    # Auto-increments the CalVer version before building.
+    # Builds all gems first, then installs in dependency order so each
+    # gem's dependencies are already installed when it's reached.
     #
     # @return [Boolean] true if all builds and installs succeeded
     def install
       bump_version!
-      COMPONENTS.each do |name|
-        next if skip_missing?(name)
-        return false unless install_component(name)
+      gem_files = {}
+      present = COMPONENTS.select { |n| !skip_missing?(n) }
+      present.each do |name|
+        gem_file = build_for_install(name)
+        return false unless gem_file
+        gem_files[name] = gem_file
       end
       @output.call("Building hecks meta-gem...", :green)
       Dir.chdir(root) do
         return build_failed("hecks") unless unbundled_system("gem build hecks.gemspec")
         gem_file = newest_gem("hecks")
-        return install_failed("hecks") unless gem_file && unbundled_system("gem install #{gem_file}")
-        File.delete(gem_file)
-        @output.call("Installed #{gem_file}", :green)
+        return build_failed("hecks") unless gem_file
+        gem_files["hecks"] = File.expand_path(gem_file)
       end
+      sorted = topo_sort(present)
+      @output.call("Installing in dependency order...", :green)
+      sorted.each do |name|
+        path = gem_files[name]
+        unless unbundled_system("gem install --local #{path}")
+          return install_failed(name)
+        end
+        File.delete(path)
+        @output.call("Installed #{File.basename(path)}", :green)
+      end
+      meta = gem_files["hecks"]
+      return install_failed("hecks") unless unbundled_system("gem install --local #{meta}")
+      File.delete(meta)
+      @output.call("Installed #{File.basename(meta)}", :green)
       true
     end
 
@@ -102,20 +119,41 @@ module Hecks
       true
     end
 
-    def install_component(name)
+    def build_for_install(name)
       @output.call("Building #{name}...", :green)
       Dir.chdir(component_dir(name)) do
-        return build_failed(name) unless unbundled_system("gem build #{name}.gemspec")
+        return nil unless unbundled_system("gem build #{name}.gemspec")
         gem_file = newest_gem(name)
-        return install_failed(name) unless gem_file && unbundled_system("gem install #{gem_file}")
-        File.delete(gem_file)
-        @output.call("Installed #{gem_file}", :green)
+        return nil unless gem_file
+        File.expand_path(gem_file)
       end
-      true
     end
 
     def newest_gem(name)
       Dir["#{name}-*.gem"].max_by { |f| File.mtime(f) }
+    end
+
+    def topo_sort(names)
+      set = names.to_set
+      deps = {}
+      names.each do |name|
+        spec = Gem::Specification.load(gemspec_path(name))
+        deps[name] = if spec
+                        spec.runtime_dependencies.map(&:name).select { |d| set.include?(d) }
+                      else
+                        []
+                      end
+      end
+      sorted = []
+      visited = {}
+      visit = ->(n) do
+        return if visited[n]
+        visited[n] = true
+        deps[n].each { |d| visit.call(d) }
+        sorted << n
+      end
+      names.each { |n| visit.call(n) }
+      sorted
     end
 
     def build_failed(name)
