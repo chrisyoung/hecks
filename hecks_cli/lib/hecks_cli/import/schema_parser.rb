@@ -88,7 +88,14 @@ module Hecks
           name = name.to_s
           if type == :references || type == :belongs_to
             @foreign_keys << "#{name}_id"
-            @columns << { name: "#{name}_id", type: :reference, target: name }
+            # Use to_table if provided (e.g. foreign_key: { to_table: :gunslingers })
+            fk = opts[:foreign_key]
+            target = if fk.is_a?(Hash) && fk[:to_table]
+                       fk[:to_table].to_s.sub(/s$/, "")
+                     else
+                       name
+                     end
+            @columns << { name: "#{name}_id", type: :reference, target: target }
           else
             col = { name: name, type: type }
             col[:enum] = opts[:enum] if opts[:enum]
