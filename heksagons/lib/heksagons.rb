@@ -14,7 +14,9 @@
 #     driven_port :persistence, [:find, :save, :delete, :all]
 #   end
 #
-require_relative "heksagons/port_dsl"
+require_relative "heksagons/extensions_dsl"
+require_relative "heksagons/strategic_dsl"
+require_relative "heksagons/acl_builder"
 require_relative "heksagons/domain_mixin"
 
 module Heksagons
