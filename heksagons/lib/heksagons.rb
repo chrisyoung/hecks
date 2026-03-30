@@ -17,8 +17,15 @@
 require_relative "heksagons/extensions_dsl"
 require_relative "heksagons/strategic_dsl"
 require_relative "heksagons/acl_builder"
+require_relative "heksagons/adapter_registry"
+require_relative "heksagons/contract_validator"
 require_relative "heksagons/domain_mixin"
 
 module Heksagons
+  extend AdapterRegistry
+
   VERSION = "0.1.0"
+
+  register_adapter :memory, for_port: :persistence,
+    implements: [:find, :all, :save, :delete, :count, :query]
 end
