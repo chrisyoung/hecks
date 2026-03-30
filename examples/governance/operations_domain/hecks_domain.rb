@@ -1,4 +1,27 @@
 Hecks.domain "Operations" do
+  uses_kernel "Identity"
+
+  anti_corruption_layer "ModelRegistry" do
+    translate "AiModel", model_name: :name
+  end
+
+  published_event "IncidentReported", version: 1 do
+    attribute :incident_id, String
+    attribute :model_id, String
+    attribute :severity, String
+  end
+
+  saga "IncidentResponse" do
+    step "ReportIncident", on_success: "InvestigateIncident"
+    step "InvestigateIncident", on_success: "MitigateIncident", on_failure: "EscalateIncident"
+    step "MitigateIncident", on_success: "ResolveIncident"
+    compensation "EscalateIncident"
+  end
+
+  service "IncidentResponseService" do
+    coordinates "Incident", "Deployment", "Monitoring"
+  end
+
   aggregate "Deployment" do
     reference_to "ModelRegistry::AiModel", as: :model
     attribute :environment, String

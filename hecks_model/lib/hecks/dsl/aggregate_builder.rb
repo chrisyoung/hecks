@@ -78,6 +78,8 @@ module Hecks
         @specifications = []
         @references = []
         @explicit_events = []
+        @repository_methods = nil
+        @factories = []
         @lifecycle = nil
         @versioned = false
         @attachable = false
@@ -117,6 +119,22 @@ module Hecks
       end
 
       def ref(type, **opts) = reference_to(type, **opts)
+
+      # Declare the repository interface for this aggregate.
+      #   repository :find, :all, :save, :delete
+      def repository(*methods)
+        @repository_methods = methods.map(&:to_sym)
+      end
+
+      # Declare a factory for complex aggregate construction.
+      #   factory "BuildFromCart" do
+      #     attribute :cart_id, String
+      #   end
+      def factory(name, &block)
+        builder = EventBuilder.new(name)  # reuse for attribute collection
+        builder.instance_eval(&block) if block
+        @factories << { name: name, attributes: builder.build.attributes }
+      end
 
       # Declare an explicit domain event (not inferred from a command).
       # Use for time-based, external, or computed events.
@@ -170,7 +188,9 @@ module Hecks
           subscribers: @subscribers, indexes: @indexes,
           specifications: @specifications, lifecycle: @lifecycle,
           versioned: @versioned, attachable: @attachable,
-          metadata: @metadata, references: @references
+          metadata: @metadata, references: @references,
+          repository_methods: @repository_methods,
+          factories: @factories
         )
       end
 

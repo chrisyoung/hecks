@@ -1,7 +1,26 @@
 Hecks.domain "ModelRegistry" do
+  uses_kernel "Identity"
+
   actor "governance_board", description: "Model approval authority"
   actor "data_steward", description: "Data usage governance"
   actor "admin", description: "System administrator"
+
+  published_event "ModelRegistered", version: 1 do
+    attribute :model_id, String
+    attribute :name, String
+    attribute :version, String
+  end
+
+  published_event "ModelSuspended", version: 1 do
+    attribute :model_id, String
+    attribute :reason, String
+  end
+
+  service "ModelOnboardingService" do
+    coordinates "AiModel", "Vendor"
+    attribute :name, String
+    attribute :vendor_name, String
+  end
 
   aggregate "AiModel" do
     attribute :name, String

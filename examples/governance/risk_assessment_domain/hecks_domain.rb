@@ -1,7 +1,20 @@
 Hecks.domain "RiskAssessment" do
+  uses_kernel "Identity"
+
   actor "assessor", description: "Risk assessment specialist"
   actor "governance_board", description: "Final approval authority"
   actor "admin", description: "System administrator"
+
+  anti_corruption_layer "ModelRegistry" do
+    translate "AiModel", model_name: :name, risk_tier: :risk_level
+  end
+
+  published_event "AssessmentSubmitted", version: 1 do
+    attribute :assessment_id, String
+    attribute :model_id, String
+    attribute :risk_level, String
+    attribute :overall_score, Float
+  end
 
   aggregate "Assessment" do
     reference_to "ModelRegistry::AiModel", as: :model

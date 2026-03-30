@@ -1,3 +1,6 @@
+require_relative "event_builder"
+require_relative "domain_builder/strategic_builders"
+
 module Hecks
   module DSL
 
@@ -53,17 +56,82 @@ module Hecks
         @workflows = []
         @attributes = []
         @actors = []
+        @shared_kernel = false
+        @uses_kernels = []
+        @context_relationships = []
+        @anti_corruption_layers = []
+        @published_events = []
+        @sagas = []
+        @glossary_rules = []
+        @modules = []
         @tenancy = nil
         @event_subscribers = []
       end
 
-      # Declare a domain-level actor (role that interacts with this context).
-      #
-      #   actor "governance_board"
-      #   actor "admin", description: "System administrator"
-      #
       def actor(name, description: nil)
         @actors << { name: name.to_s, description: description }
+      end
+
+      def shared_kernel
+        @shared_kernel = true
+      end
+
+      def uses_kernel(name)
+        @uses_kernels << name.to_s
+      end
+
+      # Anti-corruption layer for cross-domain translation.
+      #   anti_corruption_layer "Billing" do
+      #     translate "Invoice", billing_id: :invoice_number
+      #   end
+      def anti_corruption_layer(domain_name, &block)
+        acl = { domain: domain_name.to_s, translations: [] }
+        AclBuilder.new(acl).instance_eval(&block) if block
+        @anti_corruption_layers << acl
+      end
+
+      # Versioned event contract for cross-context communication.
+      #   published_event "ModelRegistered", version: 1 do
+      #     attribute :model_id, String
+      #   end
+      def published_event(name, version: 1, &block)
+        builder = Hecks::DSL::EventBuilder.new(name)
+        builder.instance_eval(&block) if block
+        @published_events << { name: name, version: version, event: builder.build }
+      end
+
+      # Saga for long-running cross-aggregate coordination.
+      #   saga "ModelOnboarding" do
+      #     step "RegisterModel", on_success: "ClassifyRisk"
+      #     compensation "SuspendModel"
+      #   end
+      def saga(name, &block)
+        s = { name: name, steps: [], compensations: [] }
+        SagaBuilder.new(s).instance_eval(&block) if block
+        @sagas << s
+      end
+
+      # Ubiquitous language enforcement.
+      #   glossary do
+      #     prefer "stakeholder", not: ["user", "person"]
+      #   end
+      def glossary(&block)
+        gb = GlossaryBuilder.new(@glossary_rules)
+        gb.instance_eval(&block) if block
+      end
+
+      # Logical sub-grouping within the domain.
+      #   domain_module "PolicyManagement" do
+      #     aggregate "GovernancePolicy" do ... end
+      #   end
+      def domain_module(name, &block)
+        mod = { name: name, aggregates: [] }
+        if block
+          sub = ModuleBuilder.new(name, self)
+          sub.instance_eval(&block)
+          mod[:aggregates] = sub.aggregate_names
+        end
+        @modules << mod
       end
 
       # Set the multi-tenancy strategy for this domain.
@@ -219,7 +287,12 @@ module Hecks
           name: @name, aggregates: @aggregates, policies: @policies,
           services: @services, views: @views, workflows: @workflows,
           actors: @actors, tenancy: @tenancy,
-          event_subscribers: @event_subscribers
+          event_subscribers: @event_subscribers,
+          shared_kernel: @shared_kernel, uses_kernels: @uses_kernels,
+          context_relationships: @context_relationships,
+          anti_corruption_layers: @anti_corruption_layers,
+          published_events: @published_events, sagas: @sagas,
+          glossary_rules: @glossary_rules, modules: @modules
         )
         classify_references(domain)
         domain

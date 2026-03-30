@@ -29,19 +29,12 @@ module Hecks
         #   required to invoke this service
         # @return [Proc, nil] the orchestration body that dispatches commands;
         #   nil if the service has no inline implementation
-        attr_reader :name, :attributes, :call_body
+        attr_reader :name, :attributes, :coordinates, :call_body
 
-        # Creates a new Service IR node.
-        #
-        # @param name [String] PascalCase service name (e.g. "TransferMoney")
-        # @param attributes [Array<Hecks::DomainModel::Structure::Attribute>] input
-        #   attributes for the service. Defaults to an empty array.
-        # @param call_body [Proc, nil] the orchestration logic block. Receives service
-        #   input and dispatches commands to aggregates. Defaults to nil.
-        # @return [Service]
-        def initialize(name:, attributes: [], call_body: nil)
+        def initialize(name:, attributes: [], coordinates: [], call_body: nil)
           @name = name
           @attributes = attributes
+          @coordinates = coordinates
           @call_body = call_body
         end
       end
