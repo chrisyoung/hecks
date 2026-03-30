@@ -136,19 +136,20 @@ RSpec.describe Hecks::GemBuilder do
       Dir.mktmpdir do |dir|
         setup_fake_project(dir)
         builder = described_class.new(dir, output: output)
-        call_count = 0
+        installs = []
         allow(builder).to receive(:system) do |cmd|
-          call_count += 1
           if cmd.start_with?("gem build")
             name = cmd[/gem build (\S+)\.gemspec/, 1]
-            FileUtils.touch(File.join(dir, name, "#{name}-0.1.0.gem"))
+            gem_dir = name == "hecks" ? dir : File.join(dir, name)
+            FileUtils.touch(File.join(gem_dir, "#{name}-0.1.0.gem"))
             true
           else
-            false
+            installs << cmd
+            false # first install fails
           end
         end
         builder.install
-        expect(call_count).to eq(2)
+        expect(installs.length).to eq(1)
       end
     end
   end
