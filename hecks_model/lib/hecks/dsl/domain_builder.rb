@@ -52,8 +52,18 @@ module Hecks
         @views = []
         @workflows = []
         @attributes = []
+        @actors = []
         @tenancy = nil
         @event_subscribers = []
+      end
+
+      # Declare a domain-level actor (role that interacts with this context).
+      #
+      #   actor "governance_board"
+      #   actor "admin", description: "System administrator"
+      #
+      def actor(name, description: nil)
+        @actors << { name: name.to_s, description: description }
       end
 
       # Set the multi-tenancy strategy for this domain.
@@ -208,7 +218,8 @@ module Hecks
         Structure::Domain.new(
           name: @name, aggregates: @aggregates, policies: @policies,
           services: @services, views: @views, workflows: @workflows,
-          tenancy: @tenancy, event_subscribers: @event_subscribers
+          actors: @actors, tenancy: @tenancy,
+          event_subscribers: @event_subscribers
         )
       end
     end

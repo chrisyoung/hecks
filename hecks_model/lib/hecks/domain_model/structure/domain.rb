@@ -48,6 +48,9 @@ module Hecks
       #   When set, the runtime scopes all repository operations to the current tenant.
       attr_reader :tenancy
 
+      # @return [Array<Hash>] actors (roles) that interact with this domain
+      attr_reader :actors
+
       # @return [Array] event subscriber registrations at the domain level
       attr_reader :event_subscribers
 
@@ -70,13 +73,15 @@ module Hecks
       #
       # @return [Domain] a new Domain instance
       def initialize(name:, aggregates: [], policies: [], services: [], views: [],
-                     workflows: [], custom_verbs: [], tenancy: nil, event_subscribers: [])
+                     workflows: [], actors: [], custom_verbs: [], tenancy: nil,
+                     event_subscribers: [])
         @name = name
         @aggregates = aggregates
         @policies = policies
         @services = services
         @views = views
         @workflows = workflows
+        @actors = actors
         @custom_verbs = custom_verbs
         @tenancy = tenancy
         @event_subscribers = event_subscribers
