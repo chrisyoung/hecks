@@ -25,10 +25,10 @@ Hecks.domain "Spaghetti" do
   end
 
   aggregate "Duel" do
-    attribute :challenger_id, reference_to("Challenger")
-    attribute :opponent_id, reference_to("Opponent")
+    attribute :challenger_id, reference_to("Gunslinger")
+    attribute :opponent_id, reference_to("Gunslinger")
     attribute :town_id, reference_to("Town")
-    attribute :winner_id, reference_to("Winner")
+    attribute :winner_id, reference_to("Gunslinger")
     attribute :status, String
     attribute :narration, String
     attribute :dramatic_pause_seconds, Float
@@ -68,7 +68,7 @@ Hecks.domain "Spaghetti" do
   aggregate "Bounty" do
     attribute :type, String
     attribute :gunslinger_id, reference_to("Gunslinger")
-    attribute :posted_by_id, reference_to("PostedBy")
+    attribute :posted_by_id, reference_to("Gunslinger")
     attribute :amount, Integer
     attribute :status, String, enum: ["active", "claimed", "expired", "cancelled"]
     attribute :description, String

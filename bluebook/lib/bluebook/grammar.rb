@@ -13,7 +13,7 @@ module BlueBook
   #
   module Grammar
     BARE_COMMANDS = %w[
-      describe browse validate preview status aggregates
+      describe browse validate preview status aggregates diagram
       play! sketch! reset! events history save to_dsl
     ].freeze
 
