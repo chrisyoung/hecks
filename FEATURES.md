@@ -16,6 +16,7 @@
 - Default attribute type is String when omitted
 - Define collection attributes with `list_of("Type")` syntax
 - Define cross-aggregate references with `reference_to("Aggregate")` — renders as dropdown in forms
+- Name-free reference shorthand: `attribute reference_to("Order")` auto-derives name as `order_id`
 - Enum constraints: `attribute :category, String, enum: %w[low medium high]` — validated at runtime, dropdown in UI
 
 ### Commands
@@ -211,10 +212,14 @@
 
 ### Web Console
 - Browser-based REPL via `hecks web_console [NAME]` — terminal-like interface at localhost:4567
+- Multi-domain support: load multiple domain files into a single web console with domain grouping
 - Three-panel layout: domain tree sidebar, terminal center, event log sidebar
+- Interactive domain diagram with aggregate nodes, reference arrows, and policy flow visualization
 - Same implicit syntax as IRB — commands evaluated in ConsoleRunner binding
+- Paren-style command syntax: `create_pizza(name: "Margherita")` alongside space-delimited
 - Side panels auto-refresh after each command
 - Command history with Up/Down arrows
+- Web Components (Shadow DOM) for diagram rendering with custom events
 
 ### Session Features
 - All session methods hoisted to top level in console
@@ -373,7 +378,7 @@
 
 ### Claude Code Integration
 - `hecks claude` starts background file watchers, then launches Claude Code with `--dangerously-skip-permissions`
-- `hecks_watchers` component: FileSize, CrossRequire, Autoloads, SpecCoverage, DocReminder, PreCommit, Runner, LogReader, Logger
+- `hecks_watchers` component: FileSize, CrossRequire, SpecCoverage, DocReminder, PreCommit, Runner, LogReader, Logger
 - Watchers poll every second: file-size (180-line warning), cross-component require_relative, autoload registration
 - `PreCommit` runner consolidates all watchers into a single pre-commit hook call (CrossRequire blocks, rest advisory)
 - `DocReminder` watcher checks staged files for missing FEATURES.md and CHANGELOG updates
@@ -546,4 +551,5 @@
 - Pizzas static Go: generated Go project with HTTP server, memory adapters, same domain
 - Rails pizza shop: full Turbo Streams app with admin, ordering, toppings, pricing, live events
 - Banking domain: 4 aggregates, cross-aggregate policies, specifications, entities, SQLite
+- Spaghetti Western: Rails-imported domain (gunslingers, duels, bounties, saloons) — demonstrates reverse-engineered DDD from ActiveRecord
 - Governance: 5 bounded contexts (compliance, model registry, operations, identity, risk assessment) — 930 lines of DSL exercising every concept

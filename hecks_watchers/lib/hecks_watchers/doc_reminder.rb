@@ -2,7 +2,8 @@ module HecksWatchers
   # HecksWatchers::DocReminder
   #
   # Reminds about doc updates when lib/ files are staged. Checks that
-  # FEATURES.md and component CHANGELOGs are updated alongside lib changes.
+  # FEATURES.md, INTO_THE_WEEDS.md, and component CHANGELOGs are updated
+  # alongside lib changes.
   #
   #   watcher = HecksWatchers::DocReminder.new(project_root: Dir.pwd)
   #   watcher.call   # prints reminders for missing doc updates
@@ -30,6 +31,7 @@ module HecksWatchers
 
       warnings = []
       warnings.concat(check_features(staged))
+      warnings.concat(check_into_the_weeds(staged, lib_changes))
       warnings.concat(check_changelogs(staged, lib_changes))
 
       unless warnings.empty?
@@ -57,6 +59,13 @@ module HecksWatchers
       return [] unless new_files.any? { |f| f.match?(%r{/lib/}) }
 
       ["  FEATURES.md — new lib files added but FEATURES.md not updated"]
+    end
+
+    def check_into_the_weeds(staged, lib_changes)
+      return [] if staged.include?("INTO_THE_WEEDS.md")
+      return [] if lib_changes.empty?
+
+      ["  INTO_THE_WEEDS.md — lib changes without INTO_THE_WEEDS.md update"]
     end
 
     def check_changelogs(staged, lib_changes)

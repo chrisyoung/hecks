@@ -53,14 +53,28 @@ module Hecks
         aggregate.value_objects.each do |vo|
           builder.value_object(vo.name) do
             vo.attributes.each do |attr|
-              attribute attr.name, attr.type
+              type = if attr.list?
+                       { list: attr.type }
+                     elsif attr.reference?
+                       { reference: attr.type }
+                     else
+                       attr.type
+                     end
+              attribute attr.name, type
             end
           end
         end
         aggregate.entities.each do |ent|
           builder.entity(ent.name) do
             ent.attributes.each do |attr|
-              attribute attr.name, attr.type
+              type = if attr.list?
+                       { list: attr.type }
+                     elsif attr.reference?
+                       { reference: attr.type }
+                     else
+                       attr.type
+                     end
+              attribute attr.name, type
             end
           end
         end

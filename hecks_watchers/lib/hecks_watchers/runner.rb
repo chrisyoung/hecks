@@ -63,7 +63,6 @@ module HecksWatchers
     def run_watchers
       FileSize.new(project_root: @project_root, logger: @logger).call
       CrossRequire.new(project_root: @project_root, logger: @logger).call
-      Autoloads.new(project_root: @project_root, logger: @logger).call
     end
   end
 end
