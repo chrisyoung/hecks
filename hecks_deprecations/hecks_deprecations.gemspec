@@ -14,5 +14,5 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = ">= 3.0"
 
-  spec.add_dependency "hecks", Hecks::VERSION
+  spec.add_dependency "hecksties", Hecks::VERSION
 end
