@@ -21,6 +21,14 @@ module Hecks
       @last_domain = domain
     end
 
+    def last_hecksagon
+      @last_hecksagon
+    end
+
+    def last_hecksagon=(hecksagon)
+      @last_hecksagon = hecksagon
+    end
+
     def load_strategy
       @load_strategy ||= :memory
     end

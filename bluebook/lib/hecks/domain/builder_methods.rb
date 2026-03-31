@@ -43,6 +43,21 @@ module Hecks
       result
     end
 
+    # Define hexagonal architecture wiring for a domain. Evaluates the given
+    # block inside a HecksagonBuilder, which collects gates, adapter config,
+    # extensions, and cross-domain subscriptions.
+    #
+    # @param name [String] the domain name this wiring applies to
+    # @param block [Proc] DSL block evaluated inside Hecksagon::DSL::HecksagonBuilder
+    # @return [Hecksagon::Structure::Hecksagon] the fully built Hecksagon IR object
+    def hecksagon(name, &block)
+      builder = Hecksagon::DSL::HecksagonBuilder.new(name)
+      builder.instance_eval(&block)
+      result = builder.build
+      Hecks.last_hecksagon = result
+      result
+    end
+
     # Create a new interactive session for the named domain. Sessions provide
     # a REPL-like environment for exploring aggregates, running commands, and
     # querying domain state.
