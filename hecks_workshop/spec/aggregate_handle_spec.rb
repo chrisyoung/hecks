@@ -395,8 +395,8 @@ RSpec.describe Hecks::Workshop::AggregateHandle do
     it "adds reference attributes via hash type" do
       workshop.aggregate("Order")
       pizza = workshop.aggregate("Pizza")
-      pizza.order_id({ reference: "Order" })
-      expect(pizza.attributes).to include(:order_id)
+      pizza.order({ reference: "Order" })
+      expect(pizza.attributes).to include(:order)
     end
   end
 end

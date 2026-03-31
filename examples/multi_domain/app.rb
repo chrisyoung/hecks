@@ -59,7 +59,7 @@ puts "Created: #{margherita.name} ($#{margherita.price})"
 
 puts "\n--- Placing an order ---"
 puts "Watch what happens across all three domains:"
-Order.place(pizza_id: margherita.id, quantity: 3)
+Order.place(pizza: margherita.id, quantity: 3)
 
 # 7. Check pizzas domain state
 puts "\n--- Pizzas domain ---"

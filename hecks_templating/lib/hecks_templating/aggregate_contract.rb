@@ -76,21 +76,19 @@ module HecksTemplating
       }.uniq
     end
 
-    # Find the self-referential ID attribute on a command.
-    # e.g., policy_id on GovernancePolicy's ActivatePolicy command.
+    # Find the self-referencing reference on a command.
+    # e.g., reference_to "GovernancePolicy" on ActivatePolicy command.
     #
     # @param cmd [Command] the command IR
     # @param agg_snake [String] underscore aggregate name
-    # @return [Attribute, nil] the self-ref attribute, or nil for create commands
+    # @return [Reference, nil] the self-ref reference, or nil for create commands
     def self.self_ref_attr(cmd, agg_snake)
-      suffixes = agg_suffixes(agg_snake)
-      cmd.attributes.find { |a|
-        a.name.to_s.end_with?("_id") &&
-          suffixes.any? { |s| a.name.to_s == "#{s}_id" }
-      }
+      (cmd.references || []).find do |ref|
+        Hecks::Utils.underscore(ref.type) == agg_snake
+      end
     end
 
-    # Is this a create command? (no self-ref ID attribute)
+    # Is this a create command? (no self-ref reference)
     def self.create_command?(cmd, agg_snake)
       self_ref_attr(cmd, agg_snake).nil?
     end
@@ -106,19 +104,20 @@ module HecksTemplating
       [creates, updates]
     end
 
-    # For an update command, returns user-visible attributes (excluding the self-ref ID).
-    #
-    # @param cmd [Command] the command IR
-    # @param agg_snake [String] underscore aggregate name
-    # @return [Array<Attribute>] user-visible attributes
+    # For an update command, returns user-visible attributes.
     def self.user_fields(cmd, agg_snake)
-      self_ref = self_ref_attr(cmd, agg_snake)
-      cmd.attributes.reject { |a| a == self_ref }
+      cmd.attributes
     end
 
-    # Is this a direct-action command? (update with no user-visible fields)
+    # For an update command, returns non-self references.
+    def self.user_refs(cmd, agg_snake)
+      self_ref = self_ref_attr(cmd, agg_snake)
+      (cmd.references || []).reject { |r| r == self_ref }
+    end
+
+    # Is this a direct-action command? (update with no user-visible fields or refs)
     def self.direct_action?(cmd, agg_snake)
-      !create_command?(cmd, agg_snake) && user_fields(cmd, agg_snake).empty?
+      !create_command?(cmd, agg_snake) && user_fields(cmd, agg_snake).empty? && user_refs(cmd, agg_snake).empty?
     end
 
     class << self

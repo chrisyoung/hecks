@@ -5,15 +5,15 @@ module PizzasDomain
         include Hecks::Command
         emits "PlacedOrder"
 
-        attr_reader :quantity, :pizza_id
+        attr_reader :quantity, :pizza
 
-        def initialize(quantity: nil, pizza_id: nil)
+        def initialize(quantity: nil, pizza: nil)
           @quantity = quantity
-          @pizza_id = pizza_id
+          @pizza = pizza
         end
 
         def call
-          Order.new(pizza_id: pizza_id, quantity: quantity)
+          Order.new(pizza: pizza, quantity: quantity)
         end
       end
     end

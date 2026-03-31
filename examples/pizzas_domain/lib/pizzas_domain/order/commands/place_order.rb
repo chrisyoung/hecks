@@ -6,23 +6,23 @@ module PizzasDomain
         emits "PlacedOrder"
 
         attr_reader :customer_name
-        attr_reader :pizza_id
+        attr_reader :pizza
         attr_reader :quantity
 
         def initialize(
           customer_name: nil,
-          pizza_id: nil,
+          pizza: nil,
           quantity: nil
         )
           @customer_name = customer_name
-          @pizza_id = pizza_id
+          @pizza = pizza
           @quantity = quantity
         end
 
         def call
           Order.new(
             customer_name: customer_name,
-            items: [OrderItem.new(pizza_id: pizza_id, quantity: quantity)],
+            items: [OrderItem.new(pizza: pizza, quantity: quantity)],
             status: "pending"
           )
         end

@@ -3,13 +3,13 @@ require "spec_helper"
 RSpec.describe PizzasDomain::Pizza::Commands::AddTopping do
   describe "attributes" do
     subject(:command) { described_class.new(
-          pizza_id: "ref-id-123",
+          pizza: "ref-id-123",
           name: "example",
           amount: 1
         ) }
 
-    it "has pizza_id" do
-      expect(command.pizza_id).to eq("ref-id-123")
+    it "has pizza" do
+      expect(command.pizza).to eq("ref-id-123")
     end
 
     it "has name" do
@@ -33,7 +33,7 @@ RSpec.describe PizzasDomain::Pizza::Commands::AddTopping do
 
     it "updates the aggregate and emits AddedTopping" do
       agg = Pizza.create(name: "example", description: "example")
-      Pizza.add_topping(pizza_id: "ref-id-123", name: "example", amount: 1)
+      Pizza.add_topping(pizza: "ref-id-123", name: "example", amount: 1)
       event_names = @app.events.map { |e| e.class.name.split("::").last }
       expect(event_names).to include("AddedTopping")
     end

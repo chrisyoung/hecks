@@ -2,14 +2,14 @@ require "spec_helper"
 
 RSpec.describe PizzasDomain::Order do
   describe "creating a Order" do
-    subject(:order) { described_class.new(pizza_id: "ref-id-123", quantity: 1) }
+    subject(:order) { described_class.new(pizza: "ref-id-123", quantity: 1) }
 
     it "assigns an id" do
       expect(order.id).not_to be_nil
     end
 
-    it "sets pizza_id" do
-      expect(order.pizza_id).to eq("ref-id-123")
+    it "sets pizza" do
+      expect(order.pizza).to eq("ref-id-123")
     end
 
     it "sets quantity" do
@@ -21,12 +21,12 @@ RSpec.describe PizzasDomain::Order do
     it "two Orders with the same id are equal" do
       id = SecureRandom.uuid
       a = described_class.new(
-          pizza_id: "ref-id-123",
+          pizza: "ref-id-123",
           quantity: 1,
           id: id
         )
       b = described_class.new(
-          pizza_id: "ref-id-123",
+          pizza: "ref-id-123",
           quantity: 1,
           id: id
         )
@@ -34,8 +34,8 @@ RSpec.describe PizzasDomain::Order do
     end
 
     it "two Orders with different ids are not equal" do
-      a = described_class.new(pizza_id: "ref-id-123", quantity: 1)
-      b = described_class.new(pizza_id: "ref-id-123", quantity: 1)
+      a = described_class.new(pizza: "ref-id-123", quantity: 1)
+      b = described_class.new(pizza: "ref-id-123", quantity: 1)
       expect(a).not_to eq(b)
     end
   end

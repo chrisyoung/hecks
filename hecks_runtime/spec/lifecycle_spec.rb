@@ -18,11 +18,11 @@ RSpec.describe "Lifecycle DSL" do
         end
 
         command "StartTicket" do
-          attribute :ticket_id, String
+          reference_to "Ticket"
         end
 
         command "CloseTicket" do
-          attribute :ticket_id, String
+          reference_to "Ticket"
         end
       end
     end
@@ -53,15 +53,15 @@ RSpec.describe "Lifecycle DSL" do
 
     it "transitions status on update commands" do
       ticket = Ticket.create(title: "Fix bug")
-      Ticket.start(ticket_id: ticket.id)
+      Ticket.start(ticket: ticket.id)
       updated = Ticket.find(ticket.id)
       expect(updated.status).to eq("in_progress")
     end
 
     it "transitions through multiple states" do
       ticket = Ticket.create(title: "Fix bug")
-      Ticket.start(ticket_id: ticket.id)
-      Ticket.close(ticket_id: ticket.id)
+      Ticket.start(ticket: ticket.id)
+      Ticket.close(ticket: ticket.id)
       final = Ticket.find(ticket.id)
       expect(final.status).to eq("closed")
     end

@@ -99,7 +99,7 @@ RSpec.describe "Demo Script Verification" do
         wb.play!
         mod = Object.const_get("PlayTransitionDomain")
         created = mod::Post.create(title: "Hello World")
-        published = mod::Post.publish(post_id: created.id)
+        published = mod::Post.publish(post: created.id)
         expect(published.status).to eq("published")
       end
 

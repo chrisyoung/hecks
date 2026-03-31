@@ -3,8 +3,8 @@ require "spec_helper"
 RSpec.describe ShippingDomain::Shipment::Events::ShippedShipment do
   subject(:event) { described_class.new(
           aggregate_id: "example",
-          shipment_id: "example",
-          pizza_id: "example",
+          shipment: "example",
+          pizza: "example",
           quantity: 1,
           status: "example"
         ) }
@@ -21,12 +21,12 @@ RSpec.describe ShippingDomain::Shipment::Events::ShippedShipment do
     expect(event.aggregate_id).to eq("example")
   end
 
-  it "carries shipment_id" do
-    expect(event.shipment_id).to eq("example")
+  it "carries shipment" do
+    expect(event.shipment).to eq("example")
   end
 
-  it "carries pizza_id" do
-    expect(event.pizza_id).to eq("example")
+  it "carries pizza" do
+    expect(event.pizza).to eq("example")
   end
 
   it "carries quantity" do

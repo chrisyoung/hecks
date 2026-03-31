@@ -85,9 +85,9 @@ module Hecks
             "          #{a.name}: row[:#{a.name}]"
           end
         end
-        # Reference columns are stored as _id but will be hydrated by ReferenceMethods
+        # Reference columns stored as _id in DB; pass raw ID into role attr for hydration
         (@aggregate.references || []).each do |ref|
-          attr_assigns << "          #{ref.name}_id: row[:#{ref.name}_id]"
+          attr_assigns << "          #{ref.name}: row[:#{ref.name}_id]"
         end
 
         lines = []

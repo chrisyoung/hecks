@@ -1,16 +1,16 @@
 Hecks.domain "Shipping" do
   aggregate "Shipment" do
-    attribute :pizza_id, String
+    attribute :pizza, String
     attribute :quantity, Integer
     attribute :status, String
 
     command "CreateShipment" do
-      attribute :pizza_id, String
+      attribute :pizza, String
       attribute :quantity, Integer
     end
 
     command "ShipShipment" do
-      attribute :shipment_id, String
+      attribute :shipment, String
     end
 
     query "ReadyToShip" do

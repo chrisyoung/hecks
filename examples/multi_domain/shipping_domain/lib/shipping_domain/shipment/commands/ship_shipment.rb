@@ -5,16 +5,16 @@ module ShippingDomain
         include Hecks::Command
         emits "ShippedShipment"
 
-        attr_reader :shipment_id
+        attr_reader :shipment
 
-        def initialize(shipment_id: nil)
-          @shipment_id = shipment_id
+        def initialize(shipment: nil)
+          @shipment = shipment
         end
 
         def call
-          existing = repository.find(shipment_id)
+          existing = repository.find(shipment)
           if existing
-            Shipment.new(id: existing.id, pizza_id: existing.pizza_id, quantity: existing.quantity, status: existing.status)
+            Shipment.new(id: existing.id, pizza: existing.pizza, quantity: existing.quantity, status: existing.status)
           else
             Shipment.new()
           end

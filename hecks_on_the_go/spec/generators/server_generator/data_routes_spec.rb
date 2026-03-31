@@ -7,7 +7,7 @@ RSpec.describe HecksOnTheGo::ServerGenerator do
       aggregate("Pizza", "Classic Italian pies") do
         attribute :name, String
         command("CreatePizza") { attribute :name, String }
-        command("UpdatePizza") { attribute :pizza_id, String; attribute :name, String }
+        command("UpdatePizza") { attribute :pizza, String; attribute :name, String }
       end
     end
   end

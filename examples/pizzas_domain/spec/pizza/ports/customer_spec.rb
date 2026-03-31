@@ -21,7 +21,7 @@ RSpec.describe "Pizza :customer port" do
 
   it "denies .add_topping" do
     expect { Pizza.add_topping(
-          pizza_id: "ref-id-123",
+          pizza: "ref-id-123",
           name: "example",
           amount: 1
         ) }.to raise_error(Hecks::PortAccessDenied)

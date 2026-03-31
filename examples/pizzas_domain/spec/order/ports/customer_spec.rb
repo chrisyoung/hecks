@@ -18,13 +18,13 @@ RSpec.describe "Order :customer port" do
   it "denies .place" do
     expect { Order.place(
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1
         ) }.to raise_error(Hecks::PortAccessDenied)
   end
 
   it "denies .cancel" do
-    expect { Order.cancel(order_id: "ref-id-123") }.to raise_error(Hecks::PortAccessDenied)
+    expect { Order.cancel(order: "ref-id-123") }.to raise_error(Hecks::PortAccessDenied)
   end
 
 end

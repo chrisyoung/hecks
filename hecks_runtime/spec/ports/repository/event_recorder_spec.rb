@@ -77,7 +77,7 @@ RSpec.describe Hecks::Persistence::EventRecorder do
 
     it "records events from non-Create commands" do
       pizza = PizzasDomain::Pizza.create(name: "Margherita", style: "Classic")
-      order = PizzasDomain::Order.place(pizza_id: pizza.id, quantity: 3)
+      order = PizzasDomain::Order.place(pizza: pizza.id, quantity: 3)
       events = PizzasDomain::Order.history(order.id)
       expect(events.size).to eq(1)
       expect(events.first[:event_type]).to eq("PlacedOrder")

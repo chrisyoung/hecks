@@ -2,12 +2,12 @@ module PizzasDomain
   class Order
     module Events
       class PlacedOrder
-        attr_reader :aggregate_id, :customer_name, :pizza_id, :quantity, :items, :status, :occurred_at
+        attr_reader :aggregate_id, :customer_name, :pizza, :quantity, :items, :status, :occurred_at
 
-        def initialize(aggregate_id: nil, customer_name: nil, pizza_id: nil, quantity: nil, items: nil, status: nil)
+        def initialize(aggregate_id: nil, customer_name: nil, pizza: nil, quantity: nil, items: nil, status: nil)
           @aggregate_id = aggregate_id
           @customer_name = customer_name
-          @pizza_id = pizza_id
+          @pizza = pizza
           @quantity = quantity
           @items = items
           @status = status

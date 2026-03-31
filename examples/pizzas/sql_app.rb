@@ -34,7 +34,7 @@ found.toppings.each { |t| puts "  - #{t.name} x#{t.amount}" }
 
 # Place an order
 puts "\nPlacing order..."
-Order.place(pizza_id: pizza.id, quantity: 5)
+Order.place(pizza: pizza, quantity: 5)
 
 # Query
 puts "\nAll pizzas:"

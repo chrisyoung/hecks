@@ -3,38 +3,35 @@ module Hecks
     # Hecks::Persistence::ReferenceMethods
     #
     # Binds reference resolution methods onto aggregate classes during application
-    # boot. For each reference declared on the aggregate, defines a getter that
-    # hydrates the referenced aggregate by looking up its stored ID, and a writer
-    # that accepts either an object or raw ID.
-    #
-    # The domain layer works with live objects — IDs are a persistence concern.
+    # boot. For each reference declared on the aggregate, defines a method that
+    # resolves the referenced aggregate. The domain works with role names (e.g.,
+    # `order.pizza`) — if the stored value is a String ID, it hydrates to the
+    # live object; if it's already an object, returns it directly.
     #
     # == Usage
     #
     #   ReferenceMethods.bind(PlayerClass, player_aggregate)
-    #   player = Player.find(1)
-    #   player.team       # => Team instance (hydrated from stored team_id)
+    #   player.team       # => Team instance (hydrated from stored ID or object)
     #
     module ReferenceMethods
       # Defines reference resolution methods on the given aggregate class.
-      #
-      # For each reference on the aggregate, defines a getter that resolves the
-      # referenced aggregate by calling find on the target class, and a writer
-      # that stores the reference.
       #
       # @param klass [Class] the aggregate class to augment
       # @param aggregate [Hecks::DomainModel::Structure::Aggregate] the domain model metadata
       # @return [void]
       def self.bind(klass, aggregate)
+        domain_mod = klass.name.split("::")[0..-2].inject(Object) { |m, c| m.const_get(c) }
+
         (aggregate.references || []).each do |ref|
           method_name = ref.name
-          id_column = :"#{ref.name}_id"
           ref_type = ref.type.to_s
+          mod = domain_mod
 
           klass.define_method(method_name) do
-            ref_id = instance_variable_get(:"@#{id_column}") || send(id_column) rescue nil
-            return nil unless ref_id
-            begin; Object.const_get(ref_type).find(ref_id); rescue NameError; nil; end
+            val = instance_variable_get(:"@#{method_name}")
+            return nil unless val
+            return val unless val.is_a?(String)
+            begin; mod.const_get(ref_type).find(val); rescue NameError; nil; end
           end
         end
       end

@@ -2,10 +2,10 @@ require "spec_helper"
 
 RSpec.describe ShippingDomain::Shipment::Commands::CreateShipment do
   describe "attributes" do
-    subject(:command) { described_class.new(pizza_id: "example", quantity: 1) }
+    subject(:command) { described_class.new(pizza: "example", quantity: 1) }
 
-    it "has pizza_id" do
-      expect(command.pizza_id).to eq("example")
+    it "has pizza" do
+      expect(command.pizza).to eq("example")
     end
 
     it "has quantity" do
@@ -24,13 +24,13 @@ RSpec.describe ShippingDomain::Shipment::Commands::CreateShipment do
     before { @app = Hecks.load(domain, force: true) }
 
     it "persists the aggregate" do
-      result = Shipment.create(pizza_id: "example", quantity: 1)
+      result = Shipment.create(pizza: "example", quantity: 1)
       expect(result).not_to be_nil
       expect(Shipment.find(result.id)).not_to be_nil
     end
 
     it "emits CreatedShipment to the event log" do
-      Shipment.create(pizza_id: "example", quantity: 1)
+      Shipment.create(pizza: "example", quantity: 1)
       event_names = @app.events.map { |e| e.class.name.split("::").last }
       expect(event_names).to include("CreatedShipment")
     end

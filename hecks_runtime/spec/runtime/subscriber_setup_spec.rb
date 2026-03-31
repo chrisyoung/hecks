@@ -16,10 +16,10 @@ RSpec.describe "Subscriber setup" do
       end
 
       aggregate "Order" do
-        attribute :pizza_id, Integer
+        attribute :pizza, Integer
 
         command "PlaceOrder" do
-          attribute :pizza_id, Integer
+          attribute :pizza, Integer
         end
 
         # Cross-aggregate: Order subscribes to Pizza's event
@@ -59,9 +59,9 @@ RSpec.describe "Subscriber setup" do
 
   it "does not fire subscriber for unrelated events" do
     app = Hecks.load(domain, force: true)
-    seed = SubscriberTestDomain::Order.new(id: 42, pizza_id: 42, quantity: 1)
+    seed = SubscriberTestDomain::Order.new(id: 42, pizza: 42, quantity: 1)
     seed.save
-    Order.place(pizza_id: 42)
+    Order.place(pizza: 42)
     pizza_subs = $subscriber_log.select { |l| l.start_with?("pizza:") }
     expect(pizza_subs).to be_empty
   end

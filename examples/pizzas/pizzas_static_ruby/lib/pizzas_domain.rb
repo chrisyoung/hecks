@@ -28,7 +28,7 @@ module PizzasDomain
 
   ROLES = ["admin", "customer"].freeze
   PORTS = {"admin"=>{"Pizza"=>["find", "all", "create_pizza", "add_topping"], "Order"=>["find", "all", "place_order", "cancel_order"]}, "customer"=>{"Pizza"=>["find", "all"], "Order"=>["find", "all", "place_order"]}}.freeze
-  VALIDATIONS = {"Pizza/create_pizza"=>{"name"=>{"presence"=>true}, "description"=>{"presence"=>true}}, "Pizza/add_topping"=>{"name"=>{"presence"=>true}, "amount"=>{"presence"=>true, "positive"=>true}}, "Order/place_order"=>{"customer_name"=>{"presence"=>true}, "pizza_id"=>{"presence"=>true}, "quantity"=>{"presence"=>true, "positive"=>true}}}.freeze
+  VALIDATIONS = {"Pizza/create_pizza"=>{"name"=>{"presence"=>true}, "description"=>{"presence"=>true}}, "Pizza/add_topping"=>{"name"=>{"presence"=>true}, "amount"=>{"presence"=>true, "positive"=>true}}, "Order/place_order"=>{"customer_name"=>{"presence"=>true}, "pizza"=>{"presence"=>true}, "quantity"=>{"presence"=>true, "positive"=>true}}}.freeze
 end
 
 require_relative "../boot"

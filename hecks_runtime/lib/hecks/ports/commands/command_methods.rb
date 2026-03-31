@@ -112,7 +112,7 @@ module Hecks
             items = items.select { |item| spec_instance.satisfied_by?(item) }
           end
           items.map do |item|
-            id_field = "#{agg_snake}_id"
+            id_field = agg_snake
             send(command_method, **{ id_field.to_sym => item.id })
           end
         end

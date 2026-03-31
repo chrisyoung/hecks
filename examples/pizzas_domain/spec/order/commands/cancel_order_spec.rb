@@ -2,10 +2,10 @@ require "spec_helper"
 
 RSpec.describe PizzasDomain::Order::Commands::CancelOrder do
   describe "attributes" do
-    subject(:command) { described_class.new(order_id: "ref-id-123") }
+    subject(:command) { described_class.new(order: "ref-id-123") }
 
-    it "has order_id" do
-      expect(command.order_id).to eq("ref-id-123")
+    it "has order" do
+      expect(command.order).to eq("ref-id-123")
     end
 
   end
@@ -22,10 +22,10 @@ RSpec.describe PizzasDomain::Order::Commands::CancelOrder do
     it "updates the aggregate and emits CanceledOrder" do
       agg = Order.place(
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1
         )
-      Order.cancel(order_id: "ref-id-123")
+      Order.cancel(order: "ref-id-123")
       event_names = @app.events.map { |e| e.class.name.split("::").last }
       expect(event_names).to include("CanceledOrder")
     end

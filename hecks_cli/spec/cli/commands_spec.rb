@@ -21,7 +21,7 @@ RSpec.describe "CLI commands" do
           end
 
           command "PaintWidget" do
-            attribute :widget_id, String
+            reference_to "Widget"
             attribute :color, String
           end
         end

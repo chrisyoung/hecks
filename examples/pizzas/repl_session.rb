@@ -30,16 +30,16 @@ end
 
 # Build the Order aggregate
 order = session.aggregate("Order")
-order.attr :pizza_id, order.reference_to("Pizza")
+order.attr :pizza, order.reference_to("Pizza")
 order.attr :quantity, Integer
 
 order.command "PlaceOrder" do
-  attribute :pizza_id, reference_to("Pizza")
+  attribute :pizza, reference_to("Pizza")
   attribute :quantity, Integer
 end
 
 order.command "ReserveStock" do
-  attribute :pizza_id, reference_to("Pizza")
+  attribute :pizza, reference_to("Pizza")
   attribute :quantity, Integer
 end
 
@@ -75,7 +75,7 @@ session.commands.each { |c| puts "  #{c}" }
 puts ""
 session.execute("CreatePizza", name: "Margherita", description: "Classic")
 puts ""
-session.execute("PlaceOrder", pizza_id: "pizza-123", quantity: 2)
+session.execute("PlaceOrder", pizza: "pizza-123", quantity: 2)
 
 puts "\n=== Event History ==="
 session.history
