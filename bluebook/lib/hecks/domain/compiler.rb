@@ -125,8 +125,8 @@ module Hecks
         raise Hecks::ValidationError, "Domain validation failed:\n#{errors.map { |e| "  - #{e}" }.join("\n")}"
       end
 
-      require "hecks_on_the_go"
-      generator = HecksOnTheGo::ProjectGenerator.new(domain, output_dir: output_dir)
+      require "go_hecks"
+      generator = GoHecks::ProjectGenerator.new(domain, output_dir: output_dir)
       root = generator.generate
       run_smoke_test(root, domain) if smoke_test
       root
