@@ -1,6 +1,6 @@
-module HecksFeatures
+module Hecks::Features
 
-  # HecksFeatures::LeakySliceDetection
+  # Hecks::Features::LeakySliceDetection
   #
   # Validation rule that warns when a vertical slice crosses aggregate
   # boundaries via an aggregate-scoped policy rather than a domain-level

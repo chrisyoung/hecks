@@ -1,6 +1,6 @@
-module HecksFeatures
+module Hecks::Features
 
-  # HecksFeatures::DomainMixin
+  # Hecks::Features::DomainMixin
   #
   # Adds vertical slice methods to Domain. Included automatically
   # when hecks_features is required.

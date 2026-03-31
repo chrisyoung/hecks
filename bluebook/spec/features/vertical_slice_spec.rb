@@ -1,7 +1,6 @@
 require "spec_helper"
-require "hecks_features"
 
-RSpec.describe HecksFeatures::SliceExtractor do
+RSpec.describe Hecks::Features::SliceExtractor do
   let(:domain) do
     Hecks.domain("Banking") do
       aggregate "Loan" do
@@ -101,7 +100,7 @@ RSpec.describe HecksFeatures::SliceExtractor do
   end
 end
 
-RSpec.describe HecksFeatures::VerticalSlice do
+RSpec.describe Hecks::Features::VerticalSlice do
   subject do
     described_class.new(
       name: "Test Slice",

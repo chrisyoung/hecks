@@ -1,7 +1,6 @@
 require "spec_helper"
-require "hecks_features"
 
-RSpec.describe HecksFeatures::SliceDiagram do
+RSpec.describe Hecks::Features::SliceDiagram do
   context "domain with reactive chains" do
     let(:domain) do
       Hecks.domain("Banking") do
@@ -85,7 +84,7 @@ RSpec.describe HecksFeatures::SliceDiagram do
 
     it "adds slices method to Domain" do
       expect(domain.slices).to be_an(Array)
-      expect(domain.slices.first).to be_a(HecksFeatures::VerticalSlice)
+      expect(domain.slices.first).to be_a(Hecks::Features::VerticalSlice)
     end
 
     it "adds slices_diagram method to Domain" do

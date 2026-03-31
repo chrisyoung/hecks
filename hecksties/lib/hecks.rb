@@ -100,6 +100,9 @@ module Hecks
   end
 end
 
+# Features (vertical slices) — loaded after Hecks module is fully defined
+require "hecks/features"
+
 # Sub-gems load lazily — only when required
 # require "hecks_multidomain"  # loads multi-domain support
 # require "hecks_explorer"     # loads web explorer

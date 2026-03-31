@@ -1,6 +1,6 @@
-module HecksFeatures
+module Hecks::Features
 
-  # HecksFeatures::VerticalSlice
+  # Hecks::Features::VerticalSlice
   #
   # A vertical slice groups everything triggered by a single entry-point
   # command: the command, its event, any policies it fires, and all
