@@ -10,11 +10,10 @@
 #     end
 #   end
 #
-require "hecks_templating" unless defined?(HecksTemplating)
 
 module Hecks
   class Generator
-    include HecksTemplating::NamingHelpers
+    include Hecks::Conventions::NamingHelpers
 
     def generate
       raise NotImplementedError, "#{self.class}#generate not implemented"

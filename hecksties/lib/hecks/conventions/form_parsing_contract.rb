@@ -1,15 +1,15 @@
-# = HecksTemplating::FormParsingContract
+# = Hecks::Conventions::FormParsingContract
 #
 # Maps Go type strings to HTML form specifications. Defines how each
 # type should be rendered in forms (input type), parsed from form
 # submissions (parse format), and what zero values to use. Consumed
 # by both Ruby and Go server generators for form handling.
 #
-#   HecksTemplating::FormParsingContract.input_type("int64")    # => "number"
-#   HecksTemplating::FormParsingContract.parse_format("int64")  # => "%d"
-#   HecksTemplating::FormParsingContract.spec("time.Time")      # => { input: "date", ... }
+#   Hecks::Conventions::FormParsingContract.input_type("int64")    # => "number"
+#   Hecks::Conventions::FormParsingContract.parse_format("int64")  # => "%d"
+#   Hecks::Conventions::FormParsingContract.spec("time.Time")      # => { input: "date", ... }
 #
-module HecksTemplating
+module Hecks::Conventions
   module FormParsingContract
     SPECS = {
       "int64"          => { input: "number", parse: :sscanf, fmt: "%d", step: false },

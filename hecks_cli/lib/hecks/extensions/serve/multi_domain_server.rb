@@ -3,8 +3,6 @@ require "json"
 require "tmpdir"
 require_relative "route_builder"
 require "hecks/extensions/web_explorer/renderer"
-require "hecks_templating/ui_label_contract"
-require "hecks_templating/display_contract"
 require_relative "multi_domain_ui_routes"
 
 module Hecks

@@ -1,17 +1,17 @@
-# = HecksTemplating::TypeContract
+# = Hecks::Conventions::TypeContract
 #
 # Registry-based type mapping. Targets register their own type maps.
 # Generators query by target name instead of hardcoded methods.
 #
-#   HecksTemplating::TypeContract.for(:go, "Integer")  # => "int64"
-#   HecksTemplating::TypeContract.for(:sql, "Integer") # => "INTEGER"
+#   Hecks::Conventions::TypeContract.for(:go, "Integer")  # => "int64"
+#   Hecks::Conventions::TypeContract.for(:sql, "Integer") # => "INTEGER"
 #
 #   # New targets register themselves:
-#   HecksTemplating::TypeContract.register_target(:java, {
+#   Hecks::Conventions::TypeContract.register_target(:java, {
 #     "String" => "String", "Integer" => "long", ...
 #   })
 #
-module HecksTemplating
+module Hecks::Conventions
   module TypeContract
     @targets = {}
     @defaults = {}
