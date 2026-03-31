@@ -106,14 +106,8 @@ module Hecks
 
       # Set the multi-tenancy strategy for this domain.
       #
-      # Configures how the runtime isolates data between tenants. The strategy
-      # is passed to the TenancySupport extension at boot time.
-      #
-      # @param strategy [Symbol, String] the tenancy strategy (e.g. :row, :schema)
-      # @return [void]
-      def tenancy(strategy)
-        @tenancy = strategy.to_sym
-      end
+      # Deprecated: tenancy moved to Hecksagon. Kept as no-op for compatibility.
+      def tenancy(_strategy); end
 
       # Define a domain service with the given name and optional configuration block.
       #

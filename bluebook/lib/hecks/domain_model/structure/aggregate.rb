@@ -51,8 +51,8 @@ module Hecks
       # @return [Array<Scope>] named query scopes for filtering collections of this aggregate
       attr_reader :scopes
 
-      # @return [Hash{Symbol => PortDefinition}] access-control ports mapping role names to allowed methods
-      attr_reader :ports
+      # @return [Hash] empty — ports moved to Hecksagon. Kept for generator compatibility.
+      def ports; {}; end
 
       # @return [Array<Behavior::Query>] named queries defined on this aggregate
       attr_reader :queries
@@ -68,9 +68,6 @@ module Hecks
 
       # @return [Array<Hash>] relationships to other aggregate roots
       attr_reader :references
-
-      # @return [Array<Symbol>, nil] declared repository methods, nil for default
-      attr_reader :repository_methods
 
       # @return [Array<Hash>] factory declarations for complex construction
       attr_reader :factories
@@ -102,8 +99,8 @@ module Hecks
       # @return [Aggregate] a new Aggregate instance
       def initialize(name:, attributes: [], value_objects: [], entities: [], commands: [],
                      events: [], policies: [], validations: [], invariants: [],
-                     scopes: [], ports: {}, queries: [], subscribers: [], indexes: [],
-                     specifications: [], references: [], repository_methods: nil,
+                     scopes: [], queries: [], subscribers: [], indexes: [],
+                     specifications: [], references: [],
                      factories: [], lifecycle: nil, versioned: false,
                      attachable: false, metadata: {}, origin_domain: nil)
         @name = Names.aggregate_name(name)
@@ -116,13 +113,11 @@ module Hecks
         @validations = validations
         @invariants = invariants
         @scopes = scopes
-        @ports = ports
         @queries = queries
         @subscribers = subscribers
         @indexes = indexes
         @specifications = specifications
         @references = references
-        @repository_methods = repository_methods
         @factories = factories
         @lifecycle = lifecycle
         @versioned = versioned
