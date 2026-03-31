@@ -193,6 +193,11 @@ module Hecks
       # @return [void]
       # @raise [RuntimeError] if the extension is not registered
       def extend(name, **kwargs)
+        # Auto-discover extensions if registry is empty
+        if Hecks.extension_registry.empty?
+          require "hecks/runtime/load_extensions"
+          Hecks::LoadExtensions.require_all
+        end
         hook = Hecks.extension_registry[name.to_sym]
         raise "Unknown extension: #{name}. Available: #{Hecks.extension_registry.keys.join(', ')}" unless hook
         # Set connection config on the module so the hook can read it

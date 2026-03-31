@@ -41,7 +41,9 @@ Hecks.describe_extension(:tenancy,
 # @param runtime [Hecks::Runtime] the runtime instance whose adapters will be
 #   wrapped with tenant-scoped proxies
 Hecks.register_extension(:tenancy) do |domain_mod, domain, runtime|
-  next unless domain.tenancy
+  tenancy = domain.respond_to?(:tenancy) && domain.tenancy
+  tenancy ||= Hecks.last_hecksagon&.tenancy
+  next unless tenancy
 
   domain.aggregates.each do |agg|
     repo = runtime[agg.name]

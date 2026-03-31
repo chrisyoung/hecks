@@ -154,7 +154,7 @@ RSpec.describe "Demo Script Verification" do
     end
   end
 
-  describe "Act 4: Extend", skip: "extension discovery paths need updating after consolidation" do
+  describe "Act 4: Extend" do
     it "registers extensions without error" do
       wb = Hecks::Workshop.new("ExtendDemo")
       post = wb.aggregate("Post")
