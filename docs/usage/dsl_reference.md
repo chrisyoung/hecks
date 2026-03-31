@@ -521,23 +521,9 @@ end
 
 ---
 
-## Port
+## Access Control (Gates)
 
-Ports are role-based access control for aggregates. They restrict which operations a given role can perform. When a port is active, any attempt to call a disallowed method raises an error.
-
-This is how you enforce authorization at the domain level — not in middleware or controllers, but as part of the aggregate's contract.
-
-```ruby
-port :admin do
-  allow :find, :all, :create_pizza, :update_pizza, :delete
-end
-
-port :guest, [:find, :all]
-
-port :customer do
-  allow :find, :all, :place_order
-end
-```
+Access control is an infrastructure concern, not a domain concept. Gates (formerly "ports") are declared in the [Hecksagon](hecksagon_reference.md), not the Bluebook. See the Hecksagon DSL Reference for gate syntax.
 
 ---
 

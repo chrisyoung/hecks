@@ -34,6 +34,7 @@ module HecksWatchers
       warnings.concat(check_into_the_weeds(staged, lib_changes))
       warnings.concat(check_changelogs(staged, lib_changes))
       warnings.concat(check_dsl_reference(staged, lib_changes))
+      warnings.concat(check_hecksagon_reference(staged, lib_changes))
 
       unless warnings.empty?
         @logger.log "\n📝 Doc reminders:"
@@ -75,6 +76,14 @@ module HecksWatchers
       return [] if dsl_files.empty?
 
       ["  docs/usage/dsl_reference.md — DSL builder changes without reference doc update"]
+    end
+
+    def check_hecksagon_reference(staged, lib_changes)
+      return [] if staged.include?("docs/usage/hecksagon_reference.md")
+      hex_files = lib_changes.select { |f| f.match?(%r{hecksagon/lib/}) }
+      return [] if hex_files.empty?
+
+      ["  docs/usage/hecksagon_reference.md — Hecksagon changes without reference doc update"]
     end
 
     def check_changelogs(staged, lib_changes)
