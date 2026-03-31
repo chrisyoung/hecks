@@ -6,7 +6,9 @@ Complete reference for the Bluebook domain definition language.
 
 ## Domain
 
-Entry point for defining a domain. Everything lives inside a `Hecks.domain` block.
+A domain is a bounded context — a self-contained area of your business with its own language, rules, and data. In DDD, you split a system into domains to keep each part focused and decoupled. A pizza shop has a "Pizzas" domain; a bank has "Accounts", "Loans", and "Transfers" domains. Each domain compiles independently into its own gem, runtime, and persistence layer.
+
+Everything in Hecks lives inside a `Hecks.domain` block:
 
 ```ruby
 Hecks.domain "Pizzas" do
@@ -18,9 +20,10 @@ end
 
 ### Domain-level methods
 
+At the domain level you can declare aggregates, cross-aggregate policies, services, read models, workflows, actors, tenancy, and glossary rules:
+
 ```ruby
 Hecks.domain "Banking" do
-  # Aggregates
   aggregate "Account" do ... end
 
   # Cross-aggregate reactive policies
@@ -108,8 +111,9 @@ end
 
 ## Aggregate
 
-The core building block. Groups attributes, references, commands, value objects,
-entities, queries, policies, and lifecycle.
+An aggregate is a cluster of domain objects treated as a single unit for data changes. It has a root entity (the aggregate itself), owns its value objects and entities, and enforces its own invariants. Every write goes through a command on the aggregate — you never modify child objects directly.
+
+Aggregates are the consistency boundary: everything inside one is guaranteed to be consistent after each command. References between aggregates are loose — they point to each other by identity, not by containment.
 
 ```ruby
 aggregate "Pizza" do
@@ -160,7 +164,7 @@ aggregate "Pizza" do
   end
 
   # Lifecycle (state machine)
-  lifecycle :status, default: "draft" do
+  attribute :status, String, default: "draft" do
     transition "PublishPizza" => "published", from: "draft"
     transition "ArchivePizza" => "archived", from: ["draft", "published"]
   end
@@ -223,7 +227,7 @@ end
 
 ### Implicit syntax
 
-Inside an aggregate block:
+Inside an aggregate block, you can use shorthand — bare names with types become attributes, PascalCase with blocks become value objects, and snake_case with blocks become commands:
 
 ```ruby
 aggregate "Pizza" do
@@ -246,8 +250,9 @@ end
 
 ## Command
 
-Declares an intent to change aggregate state. Each command automatically
-infers a corresponding domain event (CreatePizza -> CreatedPizza).
+A command is an intent to change state — "create this pizza", "place this order", "cancel this subscription". Commands are the only way to modify aggregates. Each command automatically infers a domain event by converting the verb to past tense (CreatePizza -> CreatedPizza).
+
+A command that includes a self-referencing `reference_to` (pointing to its own aggregate) is an **update** command — the runtime finds the existing aggregate by ID and applies the changes. A command without a self-reference is a **create** command — the runtime constructs a new aggregate.
 
 ```ruby
 command "PlaceOrder" do
@@ -323,8 +328,9 @@ end
 
 ## Reference
 
-Declares a relationship to another aggregate. The domain layer holds
-live object references -- IDs are purely a persistence concern.
+In DDD, aggregates don't contain each other — they reference each other. A reference says "this Order knows about a Pizza" without the Order owning the Pizza. The domain layer works with live objects, never with foreign key IDs. The persistence layer handles the ID conversion transparently.
+
+Use `reference_to` when one aggregate needs to know about another. If you need multiple references to the same type (e.g., home_team and away_team both pointing to Team), use the `role:` option.
 
 ```ruby
 aggregate "Order" do
@@ -357,6 +363,8 @@ Reference kinds (inferred automatically after build):
 ---
 
 ## Types
+
+Hecks supports Ruby's built-in types plus collection and custom type references. Attributes are the data fields on aggregates, value objects, entities, commands, and events.
 
 ### Built-in types
 
@@ -402,7 +410,9 @@ attribute :email, String, pii: true              # PII flag
 
 ## Lifecycle
 
-State machine bound to an attribute. Declare as a block on the attribute:
+A lifecycle is a state machine on a single attribute. It declares which commands trigger which state transitions, and optionally constrains which source states are valid. The runtime enforces these transitions — if you try to publish a post that's already archived, it raises an error.
+
+Declare as a block on the attribute itself (the `default:` becomes the initial state):
 
 ```ruby
 attribute :status, String, default: "draft" do
@@ -422,9 +432,7 @@ lifecycle :status, default: "draft" do
 end
 ```
 
-The `from:` constraint is optional. Without it, the transition is allowed
-from any state. With it, the runtime raises an error if the current state
-doesn't match.
+The `from:` constraint is optional. Without it, the transition is allowed from any state. With it, the runtime raises an error if the current state doesn't match.
 
 State predicates are generated automatically:
 
@@ -437,8 +445,9 @@ post.published?  # => false
 
 ## Policy
 
-Reactive policies listen for domain events and trigger commands in response.
-Guard policies validate commands before execution.
+Policies are the domain's reaction system. A reactive policy listens for a domain event and automatically triggers another command — "when an order is placed, create an invoice." This is how you coordinate between aggregates without coupling them directly.
+
+Guard policies are pre-checks that run before a command executes — "only admins can delete posts."
 
 ### Reactive policy
 
@@ -448,7 +457,7 @@ policy "NotifyChef" do
   on "PlacedOrder"
   trigger "PrepareIngredients"
   async true
-  map pizza_id: :pizza_id, quantity: :servings
+  map pizza: :pizza, quantity: :servings
   defaults priority: "normal"
   condition { |event| event.quantity > 5 }
 end
@@ -457,7 +466,7 @@ end
 policy "CreateInvoice" do
   on "PlacedOrder"
   trigger "GenerateInvoice"
-  map order_id: :reference_id
+  map order: :reference
 end
 ```
 
@@ -474,6 +483,10 @@ Referenced from commands with `guarded_by "MustBeAdmin"`.
 ---
 
 ## Validation and Invariants
+
+Validations are field-level checks (is this field present? is it the right type? is it unique?). Invariants are aggregate-level business rules that must always hold true — they're checked after every state change.
+
+The difference: validations check individual fields in isolation, invariants check relationships between fields or complex business logic.
 
 ### Validations (field-level)
 
@@ -510,7 +523,9 @@ end
 
 ## Port
 
-Access control per role. Restricts which operations are allowed.
+Ports are role-based access control for aggregates. They restrict which operations a given role can perform. When a port is active, any attempt to call a disallowed method raises an error.
+
+This is how you enforce authorization at the domain level — not in middleware or controllers, but as part of the aggregate's contract.
 
 ```ruby
 port :admin do
@@ -527,6 +542,10 @@ end
 ---
 
 ## Query and Scope
+
+Queries and scopes give you named, reusable ways to find aggregates. Queries are custom logic blocks that can accept parameters. Scopes are simpler — either static condition hashes or parameterized lambdas.
+
+Both are wired as class methods on the aggregate at runtime: `Pizza.by_description("Classic")` or `Pizza.classics_scope`.
 
 ### Queries (custom logic)
 
@@ -553,6 +572,8 @@ scope :by_price, ->(min) { { price: Hecks::Querying::Operators::Gte.new(min) } }
 
 ### Indexes
 
+Indexes declare which fields should be indexed in the database for query performance:
+
 ```ruby
 index :email, unique: true
 index :name, :status           # composite index
@@ -562,7 +583,9 @@ index :name, :status           # composite index
 
 ## Specification
 
-Reusable predicates for filtering or workflow branching.
+A specification is a named boolean predicate — "is this loan high risk?", "is this invoice overdue?" Specifications are reusable: you can use them to filter collections, branch in workflows, or validate conditions.
+
+They're the DDD way to extract complex conditional logic into a named, testable object.
 
 ```ruby
 specification "HighRisk" do |loan|
@@ -589,6 +612,8 @@ end
 
 ## Booting
 
+Hecks compiles your domain definition into a running application. `boot` loads the domain from a directory, validates it, generates Ruby classes, and wires everything together. `load` does the same from an in-memory domain object.
+
 ### Standalone app
 
 ```ruby
@@ -611,20 +636,19 @@ end
 
 ### Running commands
 
+Commands become class methods on the aggregate. References accept either a live object or a raw ID string at the boundary:
+
 ```ruby
 pizza = Pizza.create(name: "Margherita", description: "Classic")
 order = Order.place(pizza: pizza, customer_name: "Alice", quantity: 3)
+
+# Or with a raw ID at the boundary:
+Order.place(pizza: "some-uuid", quantity: 3)
+
 Pizza.find(pizza.id)
 Pizza.all
 Pizza.count
 Pizza.by_description("Classic")
-```
-
-References accept either a live object or a raw ID string at the boundary:
-
-```ruby
-Order.place(pizza: pizza_object, quantity: 3)   # pass object
-Order.place(pizza: "some-uuid", quantity: 3)    # pass ID string
 ```
 
 ### Events
