@@ -15,5 +15,4 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "hecksties", Hecks::VERSION
   spec.add_dependency "bluebook", Hecks::VERSION
-  spec.add_dependency "hecks_runtime", Hecks::VERSION
 end
