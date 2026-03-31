@@ -4,7 +4,6 @@ require "hecks/extensions/tenancy"
 RSpec.describe "HecksTenancy" do
   let(:domain) do
     Hecks.domain "TenantTest" do
-      tenancy :column
       aggregate "Widget" do
         attribute :name, String
         command "CreateWidget" do
@@ -15,14 +14,17 @@ RSpec.describe "HecksTenancy" do
   end
 
   before do
+    Hecks.hecksagon("TenantTest") { tenancy :column }
     @app = Hecks.load(domain)
-    # Manually trigger tenancy connection hook
     Hecks.extension_registry[:tenancy]&.call(
       Object.const_get("TenantTestDomain"), domain, @app
     )
   end
 
-  after { Hecks.tenant = nil }
+  after do
+    Hecks.tenant = nil
+    Hecks.last_hecksagon = nil
+  end
 
   describe "Hecksagon DSL" do
     it "stores tenancy strategy on hecksagon" do
@@ -36,8 +38,7 @@ RSpec.describe "HecksTenancy" do
     end
   end
 
-  # Tenant isolation requires Hecksagon wiring (Phase 3 of HEC-390)
-  describe "tenant isolation", skip: "requires Hecksagon runtime wiring (HEC-390 Phase 3)" do
+  describe "tenant isolation" do
     it "isolates data between tenants" do
       Hecks.tenant = "acme"
       Widget.create(name: "Rocket")
@@ -71,7 +72,7 @@ RSpec.describe "HecksTenancy" do
     end
   end
 
-  describe "Hecks.with_tenant", skip: "requires Hecksagon runtime wiring (HEC-390 Phase 3)" do
+  describe "Hecks.with_tenant" do
     it "scopes operations to the given tenant" do
       Hecks.with_tenant("acme") { Widget.create(name: "Scoped") }
       Hecks.with_tenant("beta") { expect(Widget.all).to be_empty }
