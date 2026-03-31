@@ -22,24 +22,24 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = ">= 3.0"
 
-  spec.add_development_dependency "bluebook", Hecks::VERSION
-  spec.add_development_dependency "hecks_ai", Hecks::VERSION
-  spec.add_development_dependency "hecks_cli", Hecks::VERSION
-  spec.add_development_dependency "hecks_deprecations", Hecks::VERSION
-  spec.add_development_dependency "hecks_explorer", Hecks::VERSION
-  spec.add_development_dependency "hecks_features", Hecks::VERSION
-  spec.add_development_dependency "hecks_multidomain", Hecks::VERSION
-  spec.add_development_dependency "hecks_on_rails", Hecks::VERSION
-  spec.add_development_dependency "hecks_on_the_go", Hecks::VERSION
-  spec.add_development_dependency "hecks_persist", Hecks::VERSION
-  spec.add_development_dependency "hecks_runtime", Hecks::VERSION
-  spec.add_development_dependency "hecks_smoke", Hecks::VERSION
-  spec.add_development_dependency "hecks_static", Hecks::VERSION
-  spec.add_development_dependency "hecks_stats", Hecks::VERSION
-  spec.add_development_dependency "hecks_templating", Hecks::VERSION
-  spec.add_development_dependency "hecks_watcher_agent", Hecks::VERSION
-  spec.add_development_dependency "hecks_watchers", Hecks::VERSION
-  spec.add_development_dependency "hecks_workshop", Hecks::VERSION
-  spec.add_development_dependency "hecksties", Hecks::VERSION
-  spec.add_development_dependency "heksagons", Hecks::VERSION
+  spec.add_dependency "bluebook", Hecks::VERSION
+  spec.add_dependency "hecks_ai", Hecks::VERSION
+  spec.add_dependency "hecks_cli", Hecks::VERSION
+  spec.add_dependency "hecks_deprecations", Hecks::VERSION
+  spec.add_dependency "hecks_explorer", Hecks::VERSION
+  spec.add_dependency "hecks_features", Hecks::VERSION
+  spec.add_dependency "hecks_multidomain", Hecks::VERSION
+  spec.add_dependency "hecks_on_rails", Hecks::VERSION
+  spec.add_dependency "hecks_on_the_go", Hecks::VERSION
+  spec.add_dependency "hecks_persist", Hecks::VERSION
+  spec.add_dependency "hecks_runtime", Hecks::VERSION
+  spec.add_dependency "hecks_smoke", Hecks::VERSION
+  spec.add_dependency "hecks_static", Hecks::VERSION
+  spec.add_dependency "hecks_stats", Hecks::VERSION
+  spec.add_dependency "hecks_templating", Hecks::VERSION
+  spec.add_dependency "hecks_watcher_agent", Hecks::VERSION
+  spec.add_dependency "hecks_watchers", Hecks::VERSION
+  spec.add_dependency "hecks_workshop", Hecks::VERSION
+  spec.add_dependency "hecksties", Hecks::VERSION
+  spec.add_dependency "heksagons", Hecks::VERSION
 end
