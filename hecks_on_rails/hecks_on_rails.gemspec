@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.files         = Dir["lib/**/*", "README.md", "CHANGELOG.md"]
   spec.require_paths = ["lib"]
   spec.required_ruby_version = ">= 3.0"
-  spec.add_dependency "hecks"
+  spec.add_dependency "hecksties", Hecks::VERSION
   # These will be added once the gems are published:
   # spec.add_dependency "active_hecks"
   # spec.add_dependency "hecks_live"
