@@ -33,6 +33,7 @@ module HecksWatchers
       warnings.concat(check_features(staged))
       warnings.concat(check_into_the_weeds(staged, lib_changes))
       warnings.concat(check_changelogs(staged, lib_changes))
+      warnings.concat(check_dsl_reference(staged, lib_changes))
 
       unless warnings.empty?
         @logger.log "\n📝 Doc reminders:"
@@ -66,6 +67,14 @@ module HecksWatchers
       return [] if lib_changes.empty?
 
       ["  INTO_THE_WEEDS.md — lib changes without INTO_THE_WEEDS.md update"]
+    end
+
+    def check_dsl_reference(staged, lib_changes)
+      return [] if staged.include?("docs/usage/dsl_reference.md")
+      dsl_files = lib_changes.select { |f| f.match?(%r{bluebook/lib/hecks/dsl/}) }
+      return [] if dsl_files.empty?
+
+      ["  docs/usage/dsl_reference.md — DSL builder changes without reference doc update"]
     end
 
     def check_changelogs(staged, lib_changes)
