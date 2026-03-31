@@ -1,7 +1,6 @@
 require "spec_helper"
-require "hecks_features"
 
-RSpec.describe HecksFeatures::LeakySliceDetection do
+RSpec.describe Hecks::Features::LeakySliceDetection do
   context "aggregate-scoped policy triggers command on another aggregate" do
     let(:domain) do
       Hecks.domain("Leaky") do

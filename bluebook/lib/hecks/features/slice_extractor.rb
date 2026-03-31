@@ -1,6 +1,6 @@
-module HecksFeatures
+module Hecks::Features
 
-  # HecksFeatures::SliceExtractor
+  # Hecks::Features::SliceExtractor
   #
   # Extracts vertical slices from a domain by tracing reactive chains
   # through FlowGenerator. Each flow becomes a VerticalSlice with its

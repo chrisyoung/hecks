@@ -1,6 +1,6 @@
-module HecksFeatures
+module Hecks::Features
 
-  # HecksFeatures::SliceDiagram
+  # Hecks::Features::SliceDiagram
   #
   # Generates a Mermaid flowchart where each vertical slice is a labeled
   # subgraph. Commands are rectangles, events are stadium shapes, and

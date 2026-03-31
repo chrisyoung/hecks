@@ -2,7 +2,7 @@ source "https://rubygems.org"
 
 gemspec
 
-%w[hecksties hecks_runtime hecks_multidomain hecks_workshop hecks_cli hecks_persist hecks_on_rails hecks_static go_hecks hecks_explorer hecks_ai hecks_watcher_agent hecks_features bluebook hecksagon].each do |component|
+%w[hecksties hecks_runtime hecks_multidomain hecks_workshop hecks_cli hecks_persist hecks_on_rails hecks_explorer hecks_ai hecks_watchers hecks_watcher_agent bluebook hecksagon].each do |component|
   gemspec path: component if File.exist?("#{component}/#{component}.gemspec")
 end
 
