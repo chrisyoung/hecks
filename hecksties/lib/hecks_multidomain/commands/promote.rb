@@ -26,7 +26,7 @@ Hecks::CLI.register_command(:promote, "Extract an aggregate into its own domain"
   updated = Hecks::DomainModel::Structure::Domain.new(
     name: domain.name, aggregates: remaining, custom_verbs: domain.custom_verbs
   )
-  source_file = find_domain_file || "hecks_domain.rb"
+  source_file = find_domain_file || "Bluebook"
   File.write(source_file, Hecks::DslSerializer.new(updated).serialize)
   say "#{agg_name} removed from #{domain.name} (#{source_file} updated)", :green
 end

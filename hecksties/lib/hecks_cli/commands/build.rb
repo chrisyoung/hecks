@@ -9,7 +9,7 @@ Hecks::CLI.register_command(:build, "Generate the domain gem",
 
   domain = resolve_domain_option
   unless domain
-    say "Error: must be run from a directory containing hecks_domain.rb", :red
+    say "Error: must be run from a directory containing Bluebook", :red
     raise SystemExit.new(1)
   end
   validator = Hecks::Validator.new(domain)

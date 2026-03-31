@@ -13,7 +13,7 @@ module Hecks
     #   workshop.validate
     #   workshop.preview("Pizza")
     #   workshop.build(version: "1.0.0")
-    #   workshop.save("hecks_domain.rb")
+    #   workshop.save("Bluebook")
     #
     module BuildActions
       # Validate the current domain definition.
@@ -81,9 +81,9 @@ module Hecks
       # Serializes the domain to a Ruby file that can be loaded later
       # to reconstruct the same domain definition.
       #
-      # @param path [String] file path to write to (default: "hecks_domain.rb")
+      # @param path [String] file path to write to (default: "Bluebook")
       # @return [String] the path that was written
-      def save(path = "hecks_domain.rb")
+      def save(path = "Bluebook")
         File.write(path, to_dsl)
         puts "Saved to #{path}"
         path

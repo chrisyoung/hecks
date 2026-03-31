@@ -4,7 +4,7 @@ Hecks::CLI.register_command(:regenerate_examples, "Regenerate all example output
 
   Dir.chdir(pizzas) do
     say "Loading pizzas domain...", :green
-    Kernel.load("hecks_domain.rb")
+    Kernel.load("Bluebook")
     domain = Hecks.last_domain
 
     say "Building domain gem...", :green

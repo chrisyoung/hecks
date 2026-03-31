@@ -2,7 +2,7 @@
 # Hecks::Boot
 #
 # Loads a domain from a directory, validates, builds, and wires a Runtime.
-# Single domain: expects hecks_domain.rb. Multi-domain: expects hecks_domains/.
+# Single domain: expects Bluebook. Multi-domain: expects hecks_domains/.
 #
 #   app = Hecks.boot(__dir__)
 #   app = Hecks.boot(__dir__, adapter: :sqlite)
@@ -11,7 +11,7 @@ module Hecks
   module Boot
     include HecksTemplating::NamingHelpers
 
-    # @param dir [String] directory containing hecks_domain.rb or hecks_domains/
+    # @param dir [String] directory containing Bluebook or hecks_domains/
     # @param adapter [Symbol, Hash] persistence adapter (:memory, :sqlite, etc.)
     # @yield optional block on domain module for declaring connections
     # @return [Hecks::Runtime, Array<Hecks::Runtime>]
@@ -43,8 +43,8 @@ module Hecks
     end
 
     def load_single_domain(dir)
-      domain_file = File.join(dir, "hecks_domain.rb")
-      raise Hecks::DomainLoadError, "No hecks_domain.rb or domains/ found in #{dir}" unless File.exist?(domain_file)
+      domain_file = File.join(dir, "Bluebook")
+      raise Hecks::DomainLoadError, "No Bluebook found in #{dir}" unless File.exist?(domain_file)
 
       Kernel.load(domain_file)
       domain = Hecks.last_domain

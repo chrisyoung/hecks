@@ -15,9 +15,9 @@ module Hecks
   # - {{smalltalk}} -- generates Smalltalk-inspired features section
   # - {{validation_rules}} -- generates validation rules table from source
   # - {{cli_commands}} -- generates CLI commands table from source
-  # - {{domain_summary}} -- generates aggregate summary table from hecks_domain.rb
-  # - {{domain_dsl}} -- includes raw hecks_domain.rb in a code block
-  # - {{domain_policies}} -- generates policy table from hecks_domain.rb
+  # - {{domain_summary}} -- generates aggregate summary table from Bluebook
+  # - {{domain_dsl}} -- includes raw Bluebook in a code block
+  # - {{domain_policies}} -- generates policy table from Bluebook
   #
   #   ReadmeGenerator.new(project_root).generate
   #
@@ -173,14 +173,14 @@ module Hecks
       sections.join("\n\n")
     end
 
-    # Load the domain from hecks_domain.rb in the project root. Caches the
+    # Load the domain from Bluebook in the project root. Caches the
     # result across multiple tag evaluations within the same generate call.
     #
     # @return [Hecks::DomainModel::Domain, nil] the loaded domain, or nil
-    #   if hecks_domain.rb does not exist
+    #   if Bluebook does not exist
     def load_domain
       @_domain ||= begin
-        path = File.join(@root, "hecks_domain.rb")
+        path = File.join(@root, "Bluebook")
         return nil unless File.exist?(path)
         Kernel.load(path)
         Hecks.last_domain
@@ -193,7 +193,7 @@ module Hecks
     # @return [String] markdown table, or a TODO comment if no domain found
     def domain_summary
       domain = load_domain
-      return "<!-- no hecks_domain.rb found -->" unless domain
+      return "<!-- no Bluebook found -->" unless domain
 
       rows = domain.aggregates.map do |agg|
         cmds = agg.commands.map(&:name).join(", ")
@@ -205,12 +205,12 @@ module Hecks
       "#{header}\n#{rows.join("\n")}"
     end
 
-    # Include the raw hecks_domain.rb DSL source in a code block.
+    # Include the raw Bluebook DSL source in a code block.
     #
     # @return [String] markdown code block, or a TODO comment if no domain found
     def domain_dsl
-      path = File.join(@root, "hecks_domain.rb")
-      return "<!-- no hecks_domain.rb found -->" unless File.exist?(path)
+      path = File.join(@root, "Bluebook")
+      return "<!-- no Bluebook found -->" unless File.exist?(path)
 
       "```ruby\n#{File.read(path).strip}\n```"
     end
@@ -220,7 +220,7 @@ module Hecks
     # @return [String] markdown table, "*None*", or a TODO comment
     def domain_policies
       domain = load_domain
-      return "<!-- no hecks_domain.rb found -->" unless domain
+      return "<!-- no Bluebook found -->" unless domain
       return "*None*" if domain.policies.empty?
 
       rows = domain.policies.map do |p|

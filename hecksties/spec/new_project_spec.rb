@@ -14,7 +14,7 @@ RSpec.describe "hecks new CLI command" do
       cli = Hecks::CLI.new
       cli.invoke(:new_project, ["my_app"])
 
-      expect(File.exist?("my_app/hecks_domain.rb")).to be true
+      expect(File.exist?("my_app/Bluebook")).to be true
       expect(File.exist?("my_app/app.rb")).to be true
       expect(File.exist?("my_app/Gemfile")).to be true
       expect(File.exist?("my_app/spec/spec_helper.rb")).to be true
@@ -28,7 +28,7 @@ RSpec.describe "hecks new CLI command" do
       cli = Hecks::CLI.new
       cli.invoke(:new_project, ["my_cool_app"])
 
-      content = File.read("my_cool_app/hecks_domain.rb")
+      content = File.read("my_cool_app/Bluebook")
       expect(content).to include('"MyCoolApp"')
     end
   end
@@ -51,8 +51,8 @@ RSpec.describe "hecks new CLI command" do
       cli.invoke(:new_project, ["bootable"])
     end
 
-    domain_content = File.read(File.join(tmpdir, "bootable/hecks_domain.rb"))
-    domain = eval(domain_content, TOPLEVEL_BINDING, "bootable/hecks_domain.rb", 1)
+    domain_content = File.read(File.join(tmpdir, "bootable/Bluebook"))
+    domain = eval(domain_content, TOPLEVEL_BINDING, "bootable/Bluebook", 1)
     valid, errors = Hecks.validate(domain)
     expect(valid).to be true
   end

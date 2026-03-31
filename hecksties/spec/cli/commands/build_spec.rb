@@ -4,10 +4,10 @@ require "hecks_cli"
 RSpec.describe "hecks domain build" do
   before { allow($stdout).to receive(:puts) }
 
-  it "builds a domain gem from hecks_domain.rb" do
+  it "builds a domain gem from Bluebook" do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "verbs.txt"), "Create\n")
-      File.write(File.join(dir, "hecks_domain.rb"), <<~RUBY)
+      File.write(File.join(dir, "Bluebook"), <<~RUBY)
         Hecks.domain "Test" do
           aggregate "Widget" do
             attribute :name, String

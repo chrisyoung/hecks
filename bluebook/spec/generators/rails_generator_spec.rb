@@ -56,9 +56,9 @@ RSpec.describe Hecks::Generators::RailsGenerator do
     let(:gemfile) { File.read(File.join(app_root, "Gemfile")) }
 
     before do
-      # Simulate a domain loaded from examples/pizzas/hecks_domain.rb
+      # Simulate a domain loaded from examples/pizzas/Bluebook
       project_root = File.expand_path("../../../..", __dir__)
-      domain.source_path = File.join(project_root, "examples", "pizzas", "hecks_domain.rb")
+      domain.source_path = File.join(project_root, "examples", "pizzas", "Bluebook")
       generator.generate(output_dir: tmpdir)
     end
 

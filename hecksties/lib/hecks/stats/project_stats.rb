@@ -3,7 +3,7 @@ module Hecks::Stats
   # Hecks::Stats::ProjectStats
   #
   # Collects metrics across all domains in a project directory.
-  # Finds *_domain/hecks_domain.rb files, loads each, and aggregates stats.
+  # Finds *_domain/Bluebook files, loads each, and aggregates stats.
   #
   #   stats = ProjectStats.new("/path/to/project")
   #   puts stats.summary
@@ -82,7 +82,7 @@ module Hecks::Stats
     private
 
     def find_domain_files
-      Dir[File.join(@root, "**/hecks_domain.rb")].sort
+      Dir[File.join(@root, "**/Bluebook")].sort
     end
 
     def aggregate_references(domain_data)

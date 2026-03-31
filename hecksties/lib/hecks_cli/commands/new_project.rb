@@ -64,7 +64,7 @@ Hecks::CLI.register_command(:new_project, "Create a new Hecks project",
 
   FileUtils.mkdir_p(File.join(dir, "spec"))
 
-  write_or_diff(File.join(dir, "hecks_domain.rb"), domain_template(pascal))
+  write_or_diff(File.join(dir, "Bluebook"), domain_template(pascal))
   write_or_diff(File.join(dir, "app.rb"), app_template.call)
   write_or_diff(File.join(dir, "Gemfile"), gemfile_template.call)
   write_or_diff(File.join(dir, "spec", "spec_helper.rb"), spec_helper_template.call)
@@ -72,7 +72,7 @@ Hecks::CLI.register_command(:new_project, "Create a new Hecks project",
   write_or_diff(File.join(dir, ".rspec"), rspec_template.call)
 
   say "Created #{dir}/", :green
-  say "  hecks_domain.rb"
+  say "  Bluebook"
   say "  app.rb"
   say "  Gemfile"
   say "  spec/spec_helper.rb"

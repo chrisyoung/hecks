@@ -5,10 +5,10 @@ Hecks::CLI.register_command(:context_map, "Show DDD context map of bounded conte
       Dir[File.join(domains_dir, "*.rb")].sort.map do |path|
         eval(File.read(path), nil, path, 1)
       end
-    elsif File.exist?(File.join(Dir.pwd, "hecks_domain.rb"))
-      [load_domain_file(File.join(Dir.pwd, "hecks_domain.rb"))]
+    elsif File.exist?(File.join(Dir.pwd, "Bluebook"))
+      [load_domain_file(File.join(Dir.pwd, "Bluebook"))]
     else
-      say "No domains/ directory or hecks_domain.rb found", :red
+      say "No domains/ directory or Bluebook found", :red
       []
     end
   end

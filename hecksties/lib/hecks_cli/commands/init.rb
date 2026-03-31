@@ -5,7 +5,7 @@ Hecks::CLI.register_command(:init, "Initialize a Hecks domain in the current dir
   args: ["NAME"]
 ) do |name = nil|
   name ||= File.basename(Dir.pwd).split(/[_\-\s]/).map(&:capitalize).join
-  write_or_diff("hecks_domain.rb", domain_template(name))
+  write_or_diff("Bluebook", domain_template(name))
   write_or_diff("verbs.txt", "# Add custom action verbs here (one per line)\n# WordNet handles most English verbs automatically\n")
   write_or_diff(".hecks_version", "")
   say "Initialized Hecks domain: #{name}", :green

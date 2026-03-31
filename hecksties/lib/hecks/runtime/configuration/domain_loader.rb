@@ -2,7 +2,7 @@
 # Hecks::Configuration::DomainLoader
 #
 # Loads domain definitions from installed gems or local paths.
-# Gem loading requires the gem and reads hecks_domain.rb from it.
+# Gem loading requires the gem and reads Bluebook from it.
 # Path loading builds the domain gem on the fly before loading.
 #
 #   domain "pizzas_domain"                  # from gem
@@ -16,7 +16,7 @@ module Hecks
     # and its +lib/+ directory is added to +$LOAD_PATH+.
     #
     # Both loading strategies:
-    # 1. Locate and evaluate the +hecks_domain.rb+ file to get the domain IR
+    # 1. Locate and evaluate the +Bluebook+ file to get the domain IR
     # 2. Set +source_path+ on the domain object for later reference
     # 3. Return a +[domain_obj, domain_module]+ tuple
     module DomainLoader
@@ -34,7 +34,7 @@ module Hecks
 
       # Loads a domain from a local filesystem path. Resolves the path relative
       # to Rails root (if Rails is defined) or the current working directory.
-      # Evaluates +hecks_domain.rb+, builds the gem via +Hecks.build+, adds the
+      # Evaluates +Bluebook+, builds the gem via +Hecks.build+, adds the
       # generated +lib/+ to +$LOAD_PATH+, and requires all generated files.
       #
       # @param d [Hash] domain entry with :gem_name and :path keys
@@ -46,7 +46,7 @@ module Hecks
                  File.expand_path(d[:path])
                end
 
-        domain_file = File.join(base, "hecks_domain.rb")
+        domain_file = File.join(base, "Bluebook")
         Kernel.load(domain_file)
         domain_obj = Hecks.last_domain
         domain_obj.source_path = domain_file
@@ -61,7 +61,7 @@ module Hecks
       end
 
       # Loads a domain from an installed RubyGem. Optionally pins the gem version,
-      # then requires it and locates the gem's +hecks_domain.rb+ for IR loading.
+      # then requires it and locates the gem's +Bluebook+ for IR loading.
       # Falls back to Rails root or current directory if the gem spec is not found.
       #
       # @param d [Hash] domain entry with :gem_name and optional :version keys
@@ -78,7 +78,7 @@ module Hecks
                      File.join(Dir.pwd, d[:gem_name])
                    end
 
-        domain_file = File.join(gem_path, "hecks_domain.rb")
+        domain_file = File.join(gem_path, "Bluebook")
         Kernel.load(domain_file)
         domain_obj = Hecks.last_domain
         domain_obj.source_path = domain_file

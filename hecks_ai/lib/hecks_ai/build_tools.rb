@@ -43,7 +43,7 @@ module Hecks
           input_schema: { type: "object", properties: { path: { type: "string" } } }
         ) do |args|
           ctx.ensure_session!
-          ctx.capture_output { ctx.workshop.save(args["path"] || "hecks_domain.rb") }
+          ctx.capture_output { ctx.workshop.save(args["path"] || "Bluebook") }
         end
 
         server.define_tool(

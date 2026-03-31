@@ -19,7 +19,7 @@ RSpec.describe "hecks domain diff" do
       Hecks::Migrations::DomainSnapshot.save(old_domain, path: snapshot_path)
 
       # Write a "new" domain with an added aggregate
-      File.write(File.join(dir, "hecks_domain.rb"), <<~RUBY)
+      File.write(File.join(dir, "Bluebook"), <<~RUBY)
         Hecks.domain "Test" do
           aggregate "Widget" do
             attribute :name, String
@@ -66,7 +66,7 @@ RSpec.describe "hecks domain diff" do
       snapshot_path = File.join(dir, ".hecks_domain_snapshot.rb")
       Hecks::Migrations::DomainSnapshot.save(old_domain, path: snapshot_path)
 
-      File.write(File.join(dir, "hecks_domain.rb"), <<~RUBY)
+      File.write(File.join(dir, "Bluebook"), <<~RUBY)
         Hecks.domain "Test" do
           aggregate "Widget" do
             attribute :name, String
