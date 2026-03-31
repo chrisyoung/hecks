@@ -1,6 +1,6 @@
-module Heksagons
+module Hecksagon
 
-  # Heksagons::StrategicDSL
+  # Hecksagon::StrategicDSL
   #
   # Mixin for domain builders. Adds strategic hexagonal patterns:
   # shared kernels, anti-corruption layers, published events.
@@ -34,7 +34,7 @@ module Heksagons
     def anti_corruption_layer(domain_name, &block)
       init_strategic
       acl = { domain: domain_name.to_s, translations: [] }
-      Heksagons::AclBuilder.new(acl).instance_eval(&block) if block
+      Hecksagon::AclBuilder.new(acl).instance_eval(&block) if block
       @anti_corruption_layers << acl
     end
 

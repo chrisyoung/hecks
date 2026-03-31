@@ -60,12 +60,12 @@
       "description": "Order action",
       "params": [
         {
-          "name": "pizza_id",
-          "type": "String"
-        },
-        {
           "name": "quantity",
           "type": "Integer"
+        },
+        {
+          "name": "pizza",
+          "type": "String"
         }
       ]
     },

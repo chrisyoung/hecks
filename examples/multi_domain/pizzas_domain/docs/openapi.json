@@ -235,9 +235,6 @@
           "id": {
             "type": "string"
           },
-          "pizza_id": {
-            "type": "string"
-          },
           "quantity": {
             "type": "integer"
           },

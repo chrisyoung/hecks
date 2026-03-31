@@ -16,12 +16,12 @@ Hecks.domain "Pizzas" do
   end
 
   aggregate "Order" do
-    attribute :pizza, reference_to("Pizza")
     attribute :quantity, Integer
+    reference_to "Pizza"
 
     command "PlaceOrder" do
-      attribute :pizza, reference_to("Pizza")
       attribute :quantity, Integer
+      reference_to "Pizza"
     end
   end
 end

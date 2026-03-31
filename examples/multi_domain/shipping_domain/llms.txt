@@ -5,13 +5,13 @@
 ### Aggregate: Shipment
 
 **Attributes:**
-- `pizza_id`: String
+- `pizza`: String
 - `quantity`: Integer
 - `status`: String
 
 **Commands:**
-- `CreateShipment(pizza_id: String, quantity: Integer)` -> CreatedShipment
-- `ShipShipment(shipment_id: String)` -> ShippedShipment
+- `CreateShipment(pizza: String, quantity: Integer)` -> CreatedShipment
+- `ShipShipment(shipment: String)` -> ShippedShipment
 
 **Queries:**
 - ReadyToShip
@@ -28,7 +28,7 @@ require "shipping_domain"
 app = Hecks.boot(__dir__)
 
 # Run a command
-app.shipment.create_shipment(pizza_id: ..., quantity: ...)
+app.shipment.create_shipment(pizza: ..., quantity: ...)
 
 # Query the repository
 app.shipment[1]  # find by id

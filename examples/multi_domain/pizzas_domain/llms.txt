@@ -18,11 +18,10 @@
 ### Aggregate: Order
 
 **Attributes:**
-- `pizza_id`: reference_to(Pizza)
 - `quantity`: Integer
 
 **Commands:**
-- `PlaceOrder(pizza_id: reference_to(Pizza), quantity: Integer)` -> PlacedOrder
+- `PlaceOrder(quantity: Integer)` -> PlacedOrder
 
 ## Usage Examples
 

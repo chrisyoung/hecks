@@ -26,4 +26,12 @@ module Hecksagon
     autoload :Hecksagon,      "hecksagon/structure/hecksagon"
     autoload :GateDefinition, "hecksagon/structure/gate_definition"
   end
+
+  # Legacy heksagons functionality (merged from heksagons/ gem)
+  autoload :StrategicDSL,     "hecksagon/strategic_dsl"
+  autoload :DomainMixin,      "hecksagon/domain_mixin"
+  autoload :ExtensionsDSL,    "hecksagon/extensions_dsl"
+  autoload :AclBuilder,       "hecksagon/acl_builder"
+  autoload :AdapterRegistry,  "hecksagon/adapter_registry"
+  autoload :ContractValidator, "hecksagon/contract_validator"
 end

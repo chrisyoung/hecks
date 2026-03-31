@@ -89,13 +89,13 @@
           "type": "string",
           "format": "uuid"
         },
-        "pizza_id": {
+        "quantity": {
+          "type": "integer"
+        },
+        "pizza": {
           "type": "string",
           "format": "uuid",
           "description": "Reference to Pizza"
-        },
-        "quantity": {
-          "type": "integer"
         },
         "created_at": {
           "type": "string",
@@ -113,18 +113,18 @@
     "PlaceOrder": {
       "type": "object",
       "properties": {
-        "pizza_id": {
+        "quantity": {
+          "type": "integer"
+        },
+        "pizza": {
           "type": "string",
           "format": "uuid",
           "description": "Reference to Pizza"
-        },
-        "quantity": {
-          "type": "integer"
         }
       },
       "required": [
-        "pizza_id",
-        "quantity"
+        "quantity",
+        "pizza"
       ]
     },
     "PlacedOrder": {
@@ -136,11 +136,6 @@
         },
         "aggregate_id": {
           "type": "string"
-        },
-        "pizza_id": {
-          "type": "string",
-          "format": "uuid",
-          "description": "Reference to Pizza"
         },
         "quantity": {
           "type": "integer"

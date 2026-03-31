@@ -1,6 +1,6 @@
-module Heksagons
+module Hecksagon
 
-  # Heksagons::DomainMixin
+  # Hecksagon::DomainMixin
   #
   # Extends Domain IR objects with hexagonal accessors.
   # Applied automatically when heksagons is loaded.

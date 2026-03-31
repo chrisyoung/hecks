@@ -10,9 +10,8 @@ You can look up Pizzas by classics. (query)
 
 ## Order
 
-An Order belongs to a Pizza.
 An Order has a quantity (Integer).
-You can place an Order with pizza id and quantity. When this happens, an Order is placed. (command)
+You can place an Order with quantity. When this happens, an Order is placed. (command)
 
 ## Relationships
 
