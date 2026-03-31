@@ -1,11 +1,7 @@
 require "spec_helper"
 
 RSpec.describe PizzasDomain::Order::Events::PlacedOrder do
-  subject(:event) { described_class.new(
-          aggregate_id: "example",
-          pizza: "ref-id-123",
-          quantity: 1
-        ) }
+  subject(:event) { described_class.new(aggregate_id: "example", quantity: 1) }
 
   it "is frozen" do
     expect(event).to be_frozen
@@ -17,10 +13,6 @@ RSpec.describe PizzasDomain::Order::Events::PlacedOrder do
 
   it "carries aggregate_id" do
     expect(event.aggregate_id).to eq("example")
-  end
-
-  it "carries pizza" do
-    expect(event.pizza).to eq("ref-id-123")
   end
 
   it "carries quantity" do

@@ -1,6 +1,6 @@
-module HecksStats
+module Hecks::Stats
 
-  # HecksStats::DomainStats
+  # Hecks::Stats::DomainStats
   #
   # Collects metrics for a single Hecks domain.
   #

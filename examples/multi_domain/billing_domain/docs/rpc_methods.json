@@ -7,7 +7,7 @@
       "description": "Invoice action",
       "params": [
         {
-          "name": "pizza_id",
+          "name": "pizza",
           "type": "String"
         },
         {

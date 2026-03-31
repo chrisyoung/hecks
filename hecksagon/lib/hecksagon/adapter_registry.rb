@@ -1,15 +1,15 @@
-module Heksagons
+module Hecksagon
 
-  # Heksagons::AdapterRegistry
+  # Hecksagon::AdapterRegistry
   #
   # Formalizes adapter registration. Adapters implement driven ports.
   #
-  #   Heksagons.register_adapter(:sqlite, for: :persistence) do |config|
+  #   Hecksagon.register_adapter(:sqlite, for: :persistence) do |config|
   #     # wiring logic
   #   end
   #
-  #   Heksagons.adapters_for(:persistence)  # => [:memory, :sqlite]
-  #   Heksagons.adapter(:sqlite)            # => { port: :persistence, hook: Proc }
+  #   Hecksagon.adapters_for(:persistence)  # => [:memory, :sqlite]
+  #   Hecksagon.adapter(:sqlite)            # => { port: :persistence, hook: Proc }
   #
   module AdapterRegistry
     def adapter_registry

@@ -1,6 +1,6 @@
-module HecksStats
+module Hecks::Stats
 
-  # HecksStats::ProjectStats
+  # Hecks::Stats::ProjectStats
   #
   # Collects metrics across all domains in a project directory.
   # Finds *_domain/hecks_domain.rb files, loads each, and aggregates stats.

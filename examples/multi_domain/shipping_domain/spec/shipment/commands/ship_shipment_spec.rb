@@ -4,7 +4,7 @@ RSpec.describe ShippingDomain::Shipment::Commands::ShipShipment do
   describe "attributes" do
     subject(:command) { described_class.new(shipment: "example") }
 
-    it "has shipment_id" do
+    it "has shipment" do
       expect(command.shipment).to eq("example")
     end
 
@@ -19,8 +19,13 @@ RSpec.describe ShippingDomain::Shipment::Commands::ShipShipment do
   describe "execution" do
     before { @app = Hecks.load(domain, force: true) }
 
-    it "updates the aggregate and emits ShippedShipment" do
-      agg = Shipment.create(pizza: "example", quantity: 1)
+    it "persists the aggregate" do
+      result = Shipment.ship(shipment: "example")
+      expect(result).not_to be_nil
+      expect(Shipment.find(result.id)).not_to be_nil
+    end
+
+    it "emits ShippedShipment to the event log" do
       Shipment.ship(shipment: "example")
       event_names = @app.events.map { |e| e.class.name.split("::").last }
       expect(event_names).to include("ShippedShipment")

@@ -1,6 +1,6 @@
-module Heksagons
+module Hecksagon
 
-  # Heksagons::ContractValidator
+  # Hecksagon::ContractValidator
   #
   # Validates that adapters satisfy their driven port contracts.
   # Called at boot time to catch wiring errors early.
@@ -15,14 +15,14 @@ module Heksagons
       return errors unless domain.respond_to?(:driven_ports) && domain.driven_ports
 
       domain.driven_ports.each do |port|
-        adapters = Heksagons.adapters_for(port[:name])
+        adapters = Hecksagon.adapters_for(port[:name])
         if adapters.empty?
           errors << "Port :#{port[:name]} has no adapter registered"
           next
         end
 
         adapters.each do |adapter_name|
-          adapter = Heksagons.adapter(adapter_name)
+          adapter = Hecksagon.adapter(adapter_name)
           missing = port[:methods] - adapter[:implements]
           missing.each do |method|
             errors << "Adapter :#{adapter_name} missing method :#{method} for port :#{port[:name]}"

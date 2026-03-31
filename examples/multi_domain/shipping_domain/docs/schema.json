@@ -10,7 +10,7 @@
           "type": "string",
           "format": "uuid"
         },
-        "pizza_id": {
+        "pizza": {
           "type": "string"
         },
         "quantity": {
@@ -35,7 +35,7 @@
     "CreateShipment": {
       "type": "object",
       "properties": {
-        "pizza_id": {
+        "pizza": {
           "type": "string"
         },
         "quantity": {
@@ -43,19 +43,19 @@
         }
       },
       "required": [
-        "pizza_id",
+        "pizza",
         "quantity"
       ]
     },
     "ShipShipment": {
       "type": "object",
       "properties": {
-        "shipment_id": {
+        "shipment": {
           "type": "string"
         }
       },
       "required": [
-        "shipment_id"
+        "shipment"
       ]
     },
     "CreatedShipment": {
@@ -68,7 +68,7 @@
         "aggregate_id": {
           "type": "string"
         },
-        "pizza_id": {
+        "pizza": {
           "type": "string"
         },
         "quantity": {
@@ -89,10 +89,10 @@
         "aggregate_id": {
           "type": "string"
         },
-        "shipment_id": {
+        "shipment": {
           "type": "string"
         },
-        "pizza_id": {
+        "pizza": {
           "type": "string"
         },
         "quantity": {

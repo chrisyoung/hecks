@@ -1,6 +1,6 @@
-module Heksagons
+module Hecksagon
 
-  # Heksagons::ExtensionsDSL
+  # Hecksagon::ExtensionsDSL
   #
   # Mixin for domain builders. Declares how the domain connects to
   # the outside world — inbound interfaces and outbound dependencies.

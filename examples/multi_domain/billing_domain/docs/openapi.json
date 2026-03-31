@@ -33,7 +33,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "pizza_id": {
+                  "pizza": {
                     "type": "string"
                   },
                   "quantity": {
@@ -142,7 +142,7 @@
           "id": {
             "type": "string"
           },
-          "pizza_id": {
+          "pizza": {
             "type": "string"
           },
           "quantity": {

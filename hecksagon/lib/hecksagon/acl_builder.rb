@@ -1,6 +1,6 @@
-module Heksagons
+module Hecksagon
 
-  # Heksagons::AclBuilder
+  # Hecksagon::AclBuilder
   #
   # Collects translations for an anti-corruption layer.
   #

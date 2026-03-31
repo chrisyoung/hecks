@@ -5,12 +5,12 @@
 ### Aggregate: Invoice
 
 **Attributes:**
-- `pizza_id`: String
+- `pizza`: String
 - `quantity`: Integer
 - `status`: String
 
 **Commands:**
-- `CreateInvoice(pizza_id: String, quantity: Integer)` -> CreatedInvoice
+- `CreateInvoice(pizza: String, quantity: Integer)` -> CreatedInvoice
 
 **Queries:**
 - Pending
@@ -27,7 +27,7 @@ require "billing_domain"
 app = Hecks.boot(__dir__)
 
 # Run a command
-app.invoice.create_invoice(pizza_id: ..., quantity: ...)
+app.invoice.create_invoice(pizza: ..., quantity: ...)
 
 # Query the repository
 app.invoice[1]  # find by id

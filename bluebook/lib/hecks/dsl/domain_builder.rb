@@ -41,8 +41,8 @@ module Hecks
       Structure = DomainModel::Structure
 
       include AttributeCollector
-      include Heksagons::ExtensionsDSL if defined?(Heksagons::ExtensionsDSL)
-      include Heksagons::StrategicDSL if defined?(Heksagons::StrategicDSL)
+      include Hecksagon::ExtensionsDSL if defined?(Hecksagon::ExtensionsDSL)
+      include Hecksagon::StrategicDSL if defined?(Hecksagon::StrategicDSL)
 
       # Initialize a new domain builder with the given domain name.
       #

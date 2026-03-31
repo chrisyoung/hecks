@@ -21,7 +21,7 @@ module Hecks
     #   domain.visualize   # prints Mermaid diagrams (structure + behavior)
     #
     class Domain
-      include Heksagons::DomainMixin if defined?(Heksagons::DomainMixin)
+      include Hecksagon::DomainMixin if defined?(Hecksagon::DomainMixin)
 
       # @return [String] the human-readable domain name (e.g., "Pizzas", "Accounting")
       attr_reader :name

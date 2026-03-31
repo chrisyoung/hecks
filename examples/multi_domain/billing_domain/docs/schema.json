@@ -10,7 +10,7 @@
           "type": "string",
           "format": "uuid"
         },
-        "pizza_id": {
+        "pizza": {
           "type": "string"
         },
         "quantity": {
@@ -35,7 +35,7 @@
     "CreateInvoice": {
       "type": "object",
       "properties": {
-        "pizza_id": {
+        "pizza": {
           "type": "string"
         },
         "quantity": {
@@ -43,7 +43,7 @@
         }
       },
       "required": [
-        "pizza_id",
+        "pizza",
         "quantity"
       ]
     },
@@ -57,7 +57,7 @@
         "aggregate_id": {
           "type": "string"
         },
-        "pizza_id": {
+        "pizza": {
           "type": "string"
         },
         "quantity": {
