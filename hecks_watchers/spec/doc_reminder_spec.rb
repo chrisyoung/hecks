@@ -32,6 +32,21 @@ RSpec.describe HecksWatchers::DocReminder do
     end
   end
 
+  context "when DSL builder files staged without reference doc" do
+    let(:staged) { ["bluebook/lib/hecks/dsl/aggregate_builder.rb"] }
+
+    before do
+      allow(Dir).to receive(:chdir).and_yield
+      allow(subject).to receive(:`).with("git diff --cached --diff-filter=A --name-only")
+        .and_return("")
+    end
+
+    it "warns about dsl_reference.md" do
+      result = subject.call
+      expect(result.any? { |w| w.include?("dsl_reference.md") }).to be true
+    end
+  end
+
   context "when lib files staged without CHANGELOG" do
     let(:staged) { ["hecks_cli/lib/hecks/cli/existing.rb"] }
 
