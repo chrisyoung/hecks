@@ -1,15 +1,15 @@
-# = HecksTemplating::EventContract
+# = Hecks::Conventions::EventContract
 #
 # Formalizes the event interface and cross-domain source tagging
 # convention. Used by event generators (Go, Ruby) to validate that
 # generated event structs match the domain IR, and by FilteredEventBus
 # for source tagging.
 #
-#   HecksTemplating::EventContract::SOURCE_ATTR       # => :@_source_domain
-#   HecksTemplating::EventContract.validate(event_ir, [:name, :description])
+#   Hecks::Conventions::EventContract::SOURCE_ATTR       # => :@_source_domain
+#   Hecks::Conventions::EventContract.validate(event_ir, [:name, :description])
 #   # => { missing: [], extra: [], valid: true }
 #
-module HecksTemplating
+module Hecks::Conventions
   module EventContract
     # Every generated event must respond to these methods.
     INTERFACE = %i[event_name occurred_at].freeze

@@ -1,14 +1,14 @@
-# = HecksTemplating::MigrationContract
+# = Hecks::Conventions::MigrationContract
 #
 # Validates round-trip serialization fidelity for domain snapshots.
 # Compares an original domain IR against a restored one to catch
 # properties lost during DslSerializer serialize → deserialize.
 #
-#   result = HecksTemplating::MigrationContract.diff(original_domain, restored_domain)
+#   result = Hecks::Conventions::MigrationContract.diff(original_domain, restored_domain)
 #   result[:valid]   # => true
 #   result[:issues]  # => []
 #
-module HecksTemplating
+module Hecks::Conventions
   module MigrationContract
     # Attribute properties that must survive round-trip serialization.
     ATTRIBUTE_PROPS = %i[name type list?].freeze

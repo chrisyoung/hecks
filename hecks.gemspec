@@ -33,7 +33,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "hecks_persist", Hecks::VERSION
   spec.add_dependency "hecks_runtime", Hecks::VERSION
   spec.add_dependency "hecks_static", Hecks::VERSION
-  spec.add_dependency "hecks_templating", Hecks::VERSION
   spec.add_dependency "hecks_watcher_agent", Hecks::VERSION
   spec.add_dependency "hecks_watchers", Hecks::VERSION
   spec.add_dependency "hecks_workshop", Hecks::VERSION

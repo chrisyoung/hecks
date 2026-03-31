@@ -5,6 +5,7 @@ require "ostruct"
 JSON::Validator.use_multi_json = false if defined?(JSON::Validator)
 
 require_relative "hecks/errors"
+require_relative "hecks/conventions"
 require_relative "hecks/autoloads"
 
 # Module infrastructure — DSL, registries, discovery
@@ -24,7 +25,6 @@ require_relative "hecks/registries/grammar_registry"
 
 # Default modules — loaded with require "hecks"
 require "bluebook"
-require "hecks_templating"
 require "hecksagon"
 require_relative "hecks/deprecations"
 require_relative "hecks/stats"

@@ -1,14 +1,14 @@
-# = HecksTemplating::Names
+# = Hecks::Conventions::Names
 #
 # Single source of truth for all naming conventions in Hecks.
 # Include in any class/module for bare method calls:
 #
-#   include HecksTemplating::Names
+#   include Hecks::Conventions::Names
 #   domain_module_name("Pizzas")     # => "PizzasDomain"
 #   domain_aggregate_slug("Pizza")   # => "pizzas"
 #   domain_command_method("CreatePizza", "Pizza") # => :create
 #
-module HecksTemplating
+module Hecks::Conventions
 
     module Names
       module_function

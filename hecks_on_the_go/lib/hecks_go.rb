@@ -12,7 +12,6 @@
 #   # Or via CLI:
 #   hecks build --target go
 #
-require "hecks_templating"
 require_relative "hecks_on_the_go/go_utils"
 require_relative "hecks_on_the_go/generators/aggregate_generator"
 require_relative "hecks_on_the_go/generators/value_object_generator"
