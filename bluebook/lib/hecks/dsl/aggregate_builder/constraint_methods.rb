@@ -1,6 +1,6 @@
 # Hecks::DSL::AggregateBuilder::ConstraintMethods
 #
-# Validation, invariant, and port DSL methods extracted from AggregateBuilder.
+# Validation and invariant DSL methods extracted from AggregateBuilder.
 #
 module Hecks
   module DSL
@@ -24,20 +24,8 @@ module Hecks
           @invariants << DomainModel::Structure::Invariant.new(message: message, block: block)
         end
 
-        # Define an access port restricting allowed operations for a role.
-        #
-        # @param name [Symbol] the role name (e.g. :guest, :admin)
-        # @param methods [Array<Symbol>, nil] shorthand list of allowed methods
-        # @yield block evaluated in PortBuilder context
-        # @return [void]
-        def port(name, methods = nil, &block)
-          port_builder = PortBuilder.new(name)
-          if methods
-            methods.each { |m| port_builder.allow(m) }
-          end
-          port_builder.instance_eval(&block) if block
-          @ports[name] = port_builder.build
-        end
+        # Deprecated: ports moved to Hecksagon as gates. Kept as no-op for compatibility.
+        def port(_name, _methods = nil, &_block); end
       end
     end
   end

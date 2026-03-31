@@ -49,7 +49,7 @@ module Hecks
       end
 
       attr_reader :attributes, :commands, :value_objects, :entities,
-                  :policies, :validations, :invariants, :scopes, :ports,
+                  :policies, :validations, :invariants, :scopes,
                   :queries, :subscribers, :indexes, :specifications,
                   :references
       # Writer for lifecycle — used by AggregateHandle to update lifecycle
@@ -71,14 +71,12 @@ module Hecks
         @validations = []
         @invariants = []
         @scopes = []
-        @ports = {}
         @queries = []
         @subscribers = []
         @indexes = []
         @specifications = []
         @references = []
         @explicit_events = []
-        @repository_methods = nil
         @factories = []
         @lifecycle = nil
         @versioned = false
@@ -119,12 +117,6 @@ module Hecks
       end
 
       def ref(type, **opts) = reference_to(type, **opts)
-
-      # Declare the repository interface for this aggregate.
-      #   repository :find, :all, :save, :delete
-      def repository(*methods)
-        @repository_methods = methods.map(&:to_sym)
-      end
 
       # Declare a factory for complex aggregate construction.
       #   factory "BuildFromCart" do
@@ -182,12 +174,11 @@ module Hecks
           value_objects: @value_objects, entities: @entities,
           commands: @commands, events: events, policies: @policies,
           validations: @validations, invariants: @invariants,
-          scopes: @scopes, ports: @ports, queries: @queries,
+          scopes: @scopes, queries: @queries,
           subscribers: @subscribers, indexes: @indexes,
           specifications: @specifications, lifecycle: @lifecycle,
           versioned: @versioned, attachable: @attachable,
           metadata: @metadata, references: @references,
-          repository_methods: @repository_methods,
           factories: @factories
         )
       end

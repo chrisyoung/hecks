@@ -6,6 +6,7 @@ RSpec.describe "Port Authorization" do
       aggregate "Pizza" do
         attribute :name, String
 
+        # port declarations are now no-ops in Bluebook — gates live in Hecksagon
         port :guest do
           allow :find, :all, :where, :first, :last, :count
         end
@@ -22,17 +23,28 @@ RSpec.describe "Port Authorization" do
     end
   end
 
-  describe "DSL" do
-    it "defines ports on the aggregate" do
-      agg = domain.aggregates.first
-      expect(agg.ports).to be_a(Hash)
-      expect(agg.ports.keys).to contain_exactly(:guest, :admin)
+  let(:hecksagon) do
+    Hecks.hecksagon "PortTest" do
+      gate "Pizza", :guest do
+        allow :find, :all, :where, :first, :last, :count
+      end
+
+      gate "Pizza", :admin do
+        allow :find, :all, :where, :first, :last, :count
+        allow :create, :update, :destroy, :save
+      end
+    end
+  end
+
+  describe "Hecksagon DSL" do
+    it "defines gates on the hecksagon" do
+      expect(hecksagon.gates.size).to eq(2)
+      expect(hecksagon.gates.map(&:role)).to contain_exactly(:guest, :admin)
     end
 
-    it "stores allowed methods on each port" do
-      agg = domain.aggregates.first
-      guest = agg.ports[:guest]
-      expect(guest).to be_a(Hecks::DomainModel::Structure::PortDefinition)
+    it "stores allowed methods on each gate" do
+      guest = hecksagon.gate_for("Pizza", :guest)
+      expect(guest).to be_a(Hecksagon::Structure::GateDefinition)
       expect(guest.allowed_methods).to include(:find, :all, :where)
       expect(guest.allowed_methods).not_to include(:create, :destroy)
     end
@@ -50,85 +62,24 @@ RSpec.describe "Port Authorization" do
     end
   end
 
-  describe "Application with :admin port" do
-    let!(:app) { Hecks.load(domain, port: :admin) }
+  # Gate enforcement via Hecksagon will be wired in Phase 3 of HEC-390.
+  # These tests verify the Hecksagon IR is correct; runtime enforcement
+  # will be added when GateEnforcer replaces PortEnforcer.
 
-    it "allows read methods" do
-      expect { PortTestDomain::Pizza.all }.not_to raise_error
-      expect { PortTestDomain::Pizza.count }.not_to raise_error
-      expect { PortTestDomain::Pizza.first }.not_to raise_error
-      expect { PortTestDomain::Pizza.last }.not_to raise_error
-      # where is opt-in via AdHocQueries.bind
+  describe "GateDefinition#allows?" do
+    it "returns true for allowed methods" do
+      gate = Hecksagon::Structure::GateDefinition.new(aggregate: "Pizza", role: :test, allowed_methods: [:find, :all])
+      expect(gate.allows?(:find)).to be true
+      expect(gate.allows?("all")).to be true
     end
 
-    it "allows write methods" do
-      pizza = PortTestDomain::Pizza.create(name: "Pepperoni")
-      expect(pizza.name).to eq("Pepperoni")
-    end
-
-    it "allows instance save" do
-      pizza = PortTestDomain::Pizza.create(name: "Hawaiian")
-      expect { pizza.save }.not_to raise_error
-    end
-
-    it "allows instance update" do
-      pizza = PortTestDomain::Pizza.create(name: "Veggie")
-      expect { pizza.update(name: "SuperVeggie") }.not_to raise_error
-    end
-
-    it "allows instance destroy" do
-      pizza = PortTestDomain::Pizza.create(name: "Temp")
-      expect { pizza.destroy }.not_to raise_error
+    it "returns false for disallowed methods" do
+      gate = Hecksagon::Structure::GateDefinition.new(aggregate: "Pizza", role: :test, allowed_methods: [:find])
+      expect(gate.allows?(:create)).to be false
     end
   end
 
-  describe "Application with :guest port" do
-    let!(:app) { Hecks.load(domain, port: :guest) }
-
-    it "allows read methods" do
-      expect { PortTestDomain::Pizza.all }.not_to raise_error
-      expect { PortTestDomain::Pizza.count }.not_to raise_error
-      expect { PortTestDomain::Pizza.first }.not_to raise_error
-      expect { PortTestDomain::Pizza.last }.not_to raise_error
-      # where is opt-in via AdHocQueries.bind
-    end
-
-    it "raises PortAccessDenied for create" do
-      expect { PortTestDomain::Pizza.create(name: "Nope") }.to raise_error(
-        Hecks::PortAccessDenied, /Pizza\.create.*:guest/
-      )
-    end
-
-    it "raises PortAccessDenied for instance save" do
-      # Build an instance manually (without going through create)
-      instance = PortTestDomain::Pizza.new(name: "Sneaky")
-      expect { instance.save }.to raise_error(
-        Hecks::PortAccessDenied, /Pizza#save.*:guest/
-      )
-    end
-
-    it "raises PortAccessDenied for instance destroy" do
-      instance = PortTestDomain::Pizza.new(name: "Sneaky")
-      expect { instance.destroy }.to raise_error(
-        Hecks::PortAccessDenied, /Pizza#destroy.*:guest/
-      )
-    end
-
-    it "raises PortAccessDenied for instance update" do
-      instance = PortTestDomain::Pizza.new(name: "Sneaky")
-      expect { instance.update(name: "Nope") }.to raise_error(
-        Hecks::PortAccessDenied, /Pizza#update.*:guest/
-      )
-    end
-
-    it "raises PortAccessDenied for delete" do
-      expect { PortTestDomain::Pizza.delete("some-id") }.to raise_error(
-        Hecks::PortAccessDenied, /Pizza\.delete.*:guest/
-      )
-    end
-  end
-
-  describe "PortDefinition#allows?" do
+  describe "PortDefinition#allows? (legacy)" do
     it "returns true for allowed methods" do
       port = Hecks::DomainModel::Structure::PortDefinition.new(name: :test, allowed_methods: [:find, :all])
       expect(port.allows?(:find)).to be true
