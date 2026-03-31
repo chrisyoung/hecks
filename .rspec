@@ -1,6 +1,6 @@
 --format documentation
 --color
--I hecks_spec
+-I hecksties
 -I hecksties/watchers/lib
 --require spec_helper
---pattern {hecksties,hecksties/watchers,bluebook,hecksagon,hecks_runtime,hecks_multidomain,hecks_workshop,hecks_cli,hecks_persist,hecks_ai,hecks_spec}/spec/**/*_spec.rb
+--pattern {hecksties,hecksties/watchers,bluebook,hecksagon,hecks_workshop,hecks_ai}/spec/**/*_spec.rb

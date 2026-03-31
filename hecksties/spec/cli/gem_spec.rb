@@ -23,7 +23,7 @@ RSpec.describe Hecks::GemBuilder do
 
   describe "COMPONENTS" do
     it "discovers all component gems with gemspecs" do
-      expect(described_class::COMPONENTS).to include("hecksties", "bluebook", "hecks_runtime")
+      expect(described_class::COMPONENTS).to include("hecksties", "bluebook")
       expect(described_class::COMPONENTS).not_to include("examples")
     end
   end

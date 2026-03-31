@@ -2,7 +2,7 @@ require "hecks"
 require "hecks_multidomain"
 require "hecks_ai"
 require "tmpdir"
-require_relative "../hecksties/support/shared_boot"
+require_relative "support/shared_boot"
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
