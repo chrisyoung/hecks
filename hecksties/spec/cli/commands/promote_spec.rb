@@ -6,7 +6,7 @@ RSpec.describe "hecks domain promote" do
 
   it "extracts an aggregate into a standalone domain file" do
     Dir.mktmpdir do |dir|
-      File.write(File.join(dir, "Bluebook"), <<~RUBY)
+      File.write(File.join(dir, "PizzasBluebook"), <<~RUBY)
         Hecks.domain "Blog" do
           aggregate "Post" do
             attribute :title, String
@@ -34,7 +34,7 @@ RSpec.describe "hecks domain promote" do
         expect(new_content).to include("body")
 
         # Original domain updated without Comment
-        original = File.read(File.join(dir, "Bluebook"))
+        original = File.read(File.join(dir, "PizzasBluebook"))
         expect(original).to include("Post")
         expect(original).not_to include("Comment")
       end

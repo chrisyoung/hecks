@@ -10,7 +10,7 @@ RSpec.describe "Hecks.boot" do
   end
 
   it "loads a domain and returns a Runtime" do
-    File.write(File.join(tmpdir, "Bluebook"), <<~RUBY)
+    File.write(File.join(tmpdir, "PizzasBluebook"), <<~RUBY)
       Hecks.domain "BootTest" do
         aggregate "Widget" do
           attribute :name, String
@@ -29,11 +29,11 @@ RSpec.describe "Hecks.boot" do
   it "raises when Bluebook is missing" do
     expect {
       Hecks.boot(tmpdir)
-    }.to raise_error(Hecks::DomainLoadError, /No Bluebook found/)
+    }.to raise_error(Hecks::DomainLoadError, /No \*Bluebook files found/)
   end
 
   it "raises on invalid domains" do
-    File.write(File.join(tmpdir, "Bluebook"), <<~RUBY)
+    File.write(File.join(tmpdir, "PizzasBluebook"), <<~RUBY)
       Hecks.domain "BadBoot" do
         aggregate "Order" do
           reference_to "Widget"

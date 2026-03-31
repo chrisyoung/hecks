@@ -19,7 +19,7 @@ Hecks.domain "Banking" do
   end
 
   aggregate "Account" do
-    attribute :customer_id, reference_to("Customer")
+    reference_to "Customer"
     attribute :balance, Float
     attribute :account_type, String
     attribute :daily_limit, Float
@@ -61,8 +61,8 @@ Hecks.domain "Banking" do
   end
 
   aggregate "Transfer" do
-    attribute :from_account_id, reference_to("Account")
-    attribute :to_account_id, reference_to("Account")
+    reference_to "Account"
+    reference_to "Account"
     attribute :amount, Float
     attribute :status, String
     attribute :memo, String
@@ -86,8 +86,8 @@ Hecks.domain "Banking" do
   end
 
   aggregate "Loan" do
-    attribute :customer_id, reference_to("Customer")
-    attribute :account_id, reference_to("Account")
+    reference_to "Customer"
+    reference_to "Account"
     attribute :principal, Float
     attribute :rate, Float
     attribute :term_months, Integer

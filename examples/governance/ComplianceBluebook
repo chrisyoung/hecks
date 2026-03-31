@@ -3,7 +3,7 @@ Hecks.domain "Compliance" do
     attribute :name, String
     attribute :description, String
     attribute :category, String
-    attribute :framework_id, reference_to("RegulatoryFramework")
+    reference_to "RegulatoryFramework"
     attribute :effective_date, Date
     attribute :review_date, Date
     attribute :requirements, list_of("Requirement")
@@ -39,7 +39,7 @@ Hecks.domain "Compliance" do
       attribute :name, String
       attribute :description, String
       attribute :category, String
-      attribute :framework_id, reference_to("RegulatoryFramework")
+      reference_to "RegulatoryFramework"
       actor "governance_board"
       actor "admin"
     end
@@ -118,7 +118,7 @@ Hecks.domain "Compliance" do
 
   aggregate "ComplianceReview" do
     attribute :model_id, String
-    attribute :policy_id, reference_to("GovernancePolicy")
+    reference_to "GovernancePolicy"
     attribute :reviewer_id, String
     attribute :outcome, String
     attribute :notes, String
@@ -152,7 +152,7 @@ Hecks.domain "Compliance" do
 
     command "OpenReview" do
       attribute :model_id, String
-      attribute :policy_id, reference_to("GovernancePolicy")
+      reference_to "GovernancePolicy"
       attribute :reviewer_id, String
       actor "reviewer"
       actor "admin"
@@ -188,7 +188,7 @@ Hecks.domain "Compliance" do
 
   aggregate "Exemption" do
     attribute :model_id, String
-    attribute :policy_id, reference_to("GovernancePolicy")
+    reference_to "GovernancePolicy"
     attribute :requirement, String
     attribute :reason, String
     attribute :approved_by_id, String
@@ -215,7 +215,7 @@ Hecks.domain "Compliance" do
 
     command "RequestExemption" do
       attribute :model_id, String
-      attribute :policy_id, reference_to("GovernancePolicy")
+      reference_to "GovernancePolicy"
       attribute :requirement, String
       attribute :reason, String
     end
@@ -237,7 +237,7 @@ Hecks.domain "Compliance" do
 
   aggregate "TrainingRecord" do
     attribute :stakeholder_id, String
-    attribute :policy_id, reference_to("GovernancePolicy")
+    reference_to "GovernancePolicy"
     attribute :completed_at, DateTime
     attribute :expires_at, Date
     attribute :certification, String
@@ -269,7 +269,7 @@ Hecks.domain "Compliance" do
 
     command "AssignTraining" do
       attribute :stakeholder_id, String
-      attribute :policy_id, reference_to("GovernancePolicy")
+      reference_to "GovernancePolicy"
     end
 
     command "CompleteTraining" do

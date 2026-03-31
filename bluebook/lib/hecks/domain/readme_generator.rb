@@ -180,7 +180,7 @@ module Hecks
     #   if Bluebook does not exist
     def load_domain
       @_domain ||= begin
-        path = File.join(@root, "Bluebook")
+        path = Dir[File.join(@root, "*Bluebook")].first
         return nil unless File.exist?(path)
         Kernel.load(path)
         Hecks.last_domain
@@ -209,7 +209,7 @@ module Hecks
     #
     # @return [String] markdown code block, or a TODO comment if no domain found
     def domain_dsl
-      path = File.join(@root, "Bluebook")
+      path = Dir[File.join(@root, "*Bluebook")].first
       return "<!-- no Bluebook found -->" unless File.exist?(path)
 
       "```ruby\n#{File.read(path).strip}\n```"

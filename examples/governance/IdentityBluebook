@@ -48,7 +48,7 @@ Hecks.domain "Identity" do
     attribute :entity_type, String
     attribute :entity_id, String
     attribute :action, String
-    attribute :actor_id, reference_to("Stakeholder")
+    reference_to "Stakeholder"
     attribute :details, String
     attribute :timestamp, DateTime
 
@@ -68,7 +68,7 @@ Hecks.domain "Identity" do
       attribute :entity_type, String
       attribute :entity_id, String
       attribute :action, String
-      attribute :actor_id, reference_to("Stakeholder")
+      reference_to "Stakeholder"
       attribute :details, String
     end
 

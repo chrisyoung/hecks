@@ -1,0 +1,4 @@
+Hecks.hecksagon "MultiDomain" do
+  # Billing and Shipping react to Pizzas domain events
+  subscribe "Pizzas"
+end

@@ -49,7 +49,7 @@ class GemGenerator < Hecks::Generator
 
   def generate_domain_rb(root)
     serializer = Hecks::DslSerializer.new(@domain)
-    File.write(File.join(root, "Bluebook"), serializer.serialize)
+    File.write(Dir[File.join(root, "*Bluebook")].first, serializer.serialize)
   end
 
   def generate_gemspec(root, gem_name, mod)

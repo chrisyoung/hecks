@@ -121,7 +121,7 @@ Hecks.domain "Operations" do
 
   aggregate "Monitoring" do
     attribute :model_id, String
-    attribute :deployment_id, reference_to("Deployment")
+    reference_to "Deployment"
     attribute :metric_name, String
     attribute :value, Float
     attribute :threshold, Float
@@ -149,7 +149,7 @@ Hecks.domain "Operations" do
 
     command "RecordMetric" do
       attribute :model_id, String
-      attribute :deployment_id, reference_to("Deployment")
+      reference_to "Deployment"
       attribute :metric_name, String
       attribute :value, Float
       attribute :threshold, Float

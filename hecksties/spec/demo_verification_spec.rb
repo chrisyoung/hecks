@@ -49,7 +49,7 @@ RSpec.describe "Demo Script Verification" do
           post.attr :title, String
           post.command("CreatePost") { attribute :title, String }
 
-          path = File.join(dir, "Bluebook")
+          path = File.join(dir, "PizzasBluebook")
           workshop.save(path)
           expect(File.exist?(path)).to be true
           content = File.read(path)

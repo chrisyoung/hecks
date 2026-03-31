@@ -1,20 +1,18 @@
 require "spec_helper"
-require "tmpdir"
 require "fileutils"
+require "tmpdir"
+require "hecks_cli"
 
 RSpec.describe "hecks new CLI command" do
   let(:tmpdir) { Dir.mktmpdir("hecks-new-") }
-
-  after do
-    FileUtils.rm_rf(tmpdir)
-  end
+  after { FileUtils.rm_rf(tmpdir) }
 
   it "generates project files" do
     Dir.chdir(tmpdir) do
       cli = Hecks::CLI.new
       cli.invoke(:new_project, ["my_app"])
 
-      expect(File.exist?("my_app/Bluebook")).to be true
+      expect(Dir["my_app/*Bluebook"].any?).to be true
       expect(File.exist?("my_app/app.rb")).to be true
       expect(File.exist?("my_app/Gemfile")).to be true
       expect(File.exist?("my_app/spec/spec_helper.rb")).to be true
@@ -28,7 +26,8 @@ RSpec.describe "hecks new CLI command" do
       cli = Hecks::CLI.new
       cli.invoke(:new_project, ["my_cool_app"])
 
-      content = File.read("my_cool_app/Bluebook")
+      bluebook = Dir["my_cool_app/*Bluebook"].first
+      content = File.read(bluebook)
       expect(content).to include('"MyCoolApp"')
     end
   end
@@ -40,7 +39,6 @@ RSpec.describe "hecks new CLI command" do
       expect {
         cli.invoke(:new_project, ["existing"])
       }.not_to raise_error
-      # Should not create files inside existing directory
       expect(File.exist?("existing/app.rb")).to be false
     end
   end
@@ -51,9 +49,10 @@ RSpec.describe "hecks new CLI command" do
       cli.invoke(:new_project, ["bootable"])
     end
 
-    domain_content = File.read(File.join(tmpdir, "bootable/Bluebook"))
-    domain = eval(domain_content, TOPLEVEL_BINDING, "bootable/Bluebook", 1)
+    bluebook = Dir[File.join(tmpdir, "bootable/*Bluebook")].first
+    domain_content = File.read(bluebook)
+    domain = eval(domain_content, TOPLEVEL_BINDING, bluebook, 1)
     valid, errors = Hecks.validate(domain)
-    expect(valid).to be true
+    expect(valid).to be(true), "Generated domain is invalid: #{errors.join(', ')}"
   end
 end

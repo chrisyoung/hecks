@@ -7,7 +7,7 @@ RSpec.describe "hecks domain build" do
   it "builds a domain gem from Bluebook" do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "verbs.txt"), "Create\n")
-      File.write(File.join(dir, "Bluebook"), <<~RUBY)
+      File.write(File.join(dir, "PizzasBluebook"), <<~RUBY)
         Hecks.domain "Test" do
           aggregate "Widget" do
             attribute :name, String
