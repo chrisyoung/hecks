@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "hecks_features", Hecks::VERSION
   spec.add_dependency "hecks_multidomain", Hecks::VERSION
   spec.add_dependency "hecks_on_rails", Hecks::VERSION
-  spec.add_dependency "hecks_on_the_go", Hecks::VERSION
+  spec.add_dependency "go_hecks", Hecks::VERSION
   spec.add_dependency "hecks_persist", Hecks::VERSION
   spec.add_dependency "hecks_runtime", Hecks::VERSION
   spec.add_dependency "hecks_static", Hecks::VERSION
