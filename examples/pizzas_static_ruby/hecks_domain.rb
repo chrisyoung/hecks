@@ -27,7 +27,7 @@ Hecks.domain "Pizzas" do
     end
 
     command "AddTopping" do
-      attribute :pizza_id, reference_to("Pizza")
+      attribute :pizza, reference_to("Pizza")
       attribute :name, String
       attribute :amount, Integer
     end
@@ -39,7 +39,7 @@ Hecks.domain "Pizzas" do
     attribute :status, String
 
     value_object "OrderItem" do
-      attribute :pizza_id, String
+      attribute :pizza, String
       attribute :quantity, Integer
 
       invariant "quantity must be positive" do
@@ -55,12 +55,12 @@ Hecks.domain "Pizzas" do
 
     command "PlaceOrder" do
       attribute :customer_name, String
-      attribute :pizza_id, String
+      attribute :pizza, String
       attribute :quantity, Integer
     end
 
     command "CancelOrder" do
-      attribute :order_id, reference_to("Order")
+      attribute :order, reference_to("Order")
     end
   end
 end

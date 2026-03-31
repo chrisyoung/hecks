@@ -5,14 +5,14 @@ module PizzasDomain
         include Hecks::Command
         emits "CanceledOrder"
 
-        attr_reader :order_id
+        attr_reader :order
 
-        def initialize(order_id: nil)
-          @order_id = order_id
+        def initialize(order: nil)
+          @order = order
         end
 
         def call
-          existing = repository.find(order_id)
+          existing = repository.find(order)
           if existing
             Order.new(
               id: existing.id,
@@ -21,7 +21,7 @@ module PizzasDomain
               status: "cancelled"
             )
           else
-            raise PizzasDomain::Error, "Order not found: #{order_id}"
+            raise PizzasDomain::Error, "Order not found: #{order}"
           end
         end
       end

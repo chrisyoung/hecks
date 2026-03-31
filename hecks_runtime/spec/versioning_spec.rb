@@ -15,7 +15,7 @@ RSpec.describe "Aggregate versioning (HEC-164)" do
         end
 
         command "UpdateDocument" do
-          attribute :document_id, String
+          reference_to "Document"
           attribute :title, String
           attribute :content, String
         end
@@ -31,7 +31,7 @@ RSpec.describe "Aggregate versioning (HEC-164)" do
 
   it "snapshots state before each update" do
     document = Document.create(title: "Draft", content: "Hello")
-    Document.update(document_id: document.id, title: "Final", content: "World")
+    Document.update(document: document.id, title: "Final", content: "World")
 
     versions = Document.versions(document.id)
     expect(versions.size).to eq(1)
@@ -41,8 +41,8 @@ RSpec.describe "Aggregate versioning (HEC-164)" do
 
   it "tracks multiple versions" do
     document = Document.create(title: "V1", content: "First")
-    Document.update(document_id: document.id, title: "V2", content: "Second")
-    Document.update(document_id: document.id, title: "V3", content: "Third")
+    Document.update(document: document.id, title: "V2", content: "Second")
+    Document.update(document: document.id, title: "V3", content: "Third")
 
     versions = Document.versions(document.id)
     expect(versions.size).to eq(2)
@@ -54,7 +54,7 @@ RSpec.describe "Aggregate versioning (HEC-164)" do
 
   it "retrieves a specific version" do
     document = Document.create(title: "Original", content: "Content")
-    Document.update(document_id: document.id, title: "Changed", content: "New content")
+    Document.update(document: document.id, title: "Changed", content: "New content")
 
     snapshot = Document.at_version(document.id, 1)
     expect(snapshot[:title]).to eq("Original")

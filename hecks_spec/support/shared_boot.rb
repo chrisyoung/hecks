@@ -67,7 +67,7 @@ module BootedDomains
         end
 
         command "CancelOrder" do
-          reference_to "Pizza"
+          reference_to "Order"
         end
 
         command "ReserveStock" do

@@ -6,7 +6,7 @@ RSpec.describe "Order lifecycle" do
   it "starts in 'pending' state" do
     agg = Order.place(
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1
         )
     expect(agg.status).to eq("pending")
@@ -15,10 +15,10 @@ RSpec.describe "Order lifecycle" do
   it "CancelOrder transitions to 'cancelled'" do
     agg = Order.place(
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1
         )
-    Order.cancel(order_id: agg.id)
+    Order.cancel(order: agg.id)
     updated = Order.find(agg.id)
     expect(updated.status).to eq("cancelled")
     event_names = @app.events.map { |e| e.class.name.split("::").last }
@@ -28,7 +28,7 @@ RSpec.describe "Order lifecycle" do
   it "generates status predicates" do
     agg = Order.place(
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1
         )
     expect(agg.pending?).to be true

@@ -60,7 +60,7 @@ module HecksOnTheGo
               lines << "\t\tfor _, item := range #{ref_safe.downcase}s {"
               lines << "\t\t\t#{ref_safe.downcase}Opts = append(#{ref_safe.downcase}Opts, FormOption{Value: item.ID, Label: fmt.Sprintf(\"%v\", item.#{display}), Selected: item.ID == r.URL.Query().Get(\"id\")})"
               lines << "\t\t}"
-              lines << "\t\tfields = append(fields, FormField{Type: \"select\", Name: \"#{ref.name}_id\", Label: \"#{label}\", Required: true, Options: #{ref_safe.downcase}Opts})"
+              lines << "\t\tfields = append(fields, FormField{Type: \"select\", Name: \"#{ref.name}\", Label: \"#{label}\", Required: true, Options: #{ref_safe.downcase}Opts})"
             end
 
             lines << "\t\trenderer.Render(w, \"form\", \"#{cmd.name}\", FormData{"

@@ -18,7 +18,7 @@ RSpec.describe "Bulk Operations" do
         end
 
         command "RetireWidget" do
-          attribute :widget_id, String
+          reference_to "Widget"
           attribute :status, String
         end
       end

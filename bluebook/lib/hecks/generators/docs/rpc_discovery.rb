@@ -51,7 +51,7 @@ module Hecks
               name: cmd.name,
               description: "#{agg.name} action",
               params: cmd.attributes.map { |a| { name: a.name.to_s, type: a.ruby_type } } +
-                       (cmd.references || []).map { |r| { name: "#{r.name}_id", type: "String" } }
+                       (cmd.references || []).map { |r| { name: r.name.to_s, type: "String" } }
             }
           end
           agg.queries.each do |query|

@@ -1,10 +1,10 @@
 module PizzasDomain
   class Order
     class OrderItem
-      attr_reader :pizza_id, :quantity
+      attr_reader :pizza, :quantity
 
-      def initialize(pizza_id:, quantity:)
-        @pizza_id = pizza_id
+      def initialize(pizza:, quantity:)
+        @pizza = pizza
         @quantity = quantity
         check_invariants!
         freeze
@@ -12,13 +12,13 @@ module PizzasDomain
 
       def ==(other)
         other.is_a?(self.class) &&
-          pizza_id == other.pizza_id &&
+          pizza == other.pizza &&
           quantity == other.quantity
       end
       alias eql? ==
 
       def hash
-        [self.class, pizza_id, quantity].hash
+        [self.class, pizza, quantity].hash
       end
 
       private

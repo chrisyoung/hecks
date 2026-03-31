@@ -52,7 +52,7 @@ RSpec.describe Hecks::HTTP::RpcDiscovery do
 
     it "marks reference params as String type" do
       place = methods.find { |m| m[:name] == "PlaceOrder" }
-      pizza_param = place[:params].find { |p| p[:name] == "pizza_id" }
+      pizza_param = place[:params].find { |p| p[:name] == "pizza" }
       expect(pizza_param[:type]).to eq("String")
     end
   end

@@ -39,9 +39,9 @@ module Hecks
           @builder.lifecycle = builder.build
           cmd_name = mapping.keys.first
           target = mapping.values.first
-          id_name = "#{Hecks::Utils.underscore(@name)}_id"
+          agg_name = @name
           unless @builder.commands.any? { |c| c.name == cmd_name }
-            command(cmd_name) { attribute id_name.to_sym, reference_to(@name) }
+            command(cmd_name) { reference_to agg_name }
           end
           puts "#{cmd_name} transition added -> #{target}"
           self

@@ -2,11 +2,11 @@ module PizzasDomain
   class Pizza
     module Events
       class AddedTopping
-        attr_reader :aggregate_id, :pizza_id, :name, :amount, :description, :toppings, :occurred_at
+        attr_reader :aggregate_id, :pizza, :name, :amount, :description, :toppings, :occurred_at
 
-        def initialize(aggregate_id: nil, pizza_id: nil, name: nil, amount: nil, description: nil, toppings: nil)
+        def initialize(aggregate_id: nil, pizza: nil, name: nil, amount: nil, description: nil, toppings: nil)
           @aggregate_id = aggregate_id
-          @pizza_id = pizza_id
+          @pizza = pizza
           @name = name
           @amount = amount
           @description = description

@@ -4,7 +4,7 @@ module BillingDomain
   class Invoice
     include Hecks::Model
 
-    attribute :pizza_id
+    attribute :pizza
     attribute :quantity
     attribute :status
   end

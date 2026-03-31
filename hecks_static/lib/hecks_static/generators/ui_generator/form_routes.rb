@@ -26,7 +26,7 @@ module HecksStatic
             ref_agg = @domain.aggregates.find { |ra| ra.name == ref.type }
             next unless ref_agg
             display = HecksTemplating::DisplayContract.reference_display_field(ref_agg)
-            field_descriptors << { type: :select, name: "#{ref.name}_id", ref: domain_constant_name(ref_agg.name),
+            field_descriptors << { type: :select, name: ref.name.to_s, ref: domain_constant_name(ref_agg.name),
               label: humanize(ref.name.to_s), required: true, display: display }
           end
 

@@ -133,13 +133,8 @@ module Hecks
 
           def update_command?(cmd, aggregate)
             agg_snake = domain_snake_name(aggregate.name)
-            suffixes = agg_snake.split("_").each_index.map { |i|
-              agg_snake.split("_").drop(i).join("_")
-            }.uniq
-
-            cmd.attributes.any? { |a|
-              a.name.to_s.end_with?("_id") &&
-                suffixes.any? { |s| a.name.to_s == "#{s}_id" }
+            (cmd.references || []).any? { |ref|
+              Hecks::Utils.underscore(ref.type) == agg_snake
             }
           end
 
@@ -149,22 +144,20 @@ module Hecks
 
           def find_self_ref_attr(cmd, aggregate)
             agg_snake = domain_snake_name(aggregate.name)
-            suffixes = agg_snake.split("_").each_index.map { |i|
-              agg_snake.split("_").drop(i).join("_")
-            }.uniq
-
-            cmd.attributes.find { |a|
-              a.name.to_s.end_with?("_id") &&
-                suffixes.any? { |s| a.name.to_s == "#{s}_id" }
+            (cmd.references || []).find { |ref|
+              Hecks::Utils.underscore(ref.type) == agg_snake
             }
           end
 
-          def update_args(cmd, self_ref_attr)
+          def update_args(cmd, self_ref)
             parts = cmd.attributes.map do |attr|
-              if self_ref_attr && attr.name == self_ref_attr.name
-                "#{attr.name}: agg.id"
+              "#{attr.name}: #{example_value(attr)}"
+            end
+            (cmd.references || []).each do |ref|
+              if self_ref && ref == self_ref
+                parts << "#{ref.name}: agg.id"
               else
-                "#{attr.name}: #{example_value(attr)}"
+                parts << "#{ref.name}: \"ref-id-123\""
               end
             end
             parts.join(", ")

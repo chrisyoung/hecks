@@ -273,7 +273,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
         aggregate("Part") { reference_to "Widget"; command("CreatePart") { reference_to "Widget" } }
       end
       schema = Hecks::HTTP::JsonSchemaGenerator.new(domain).generate
-      ref_prop = schema[:definitions]["Part"][:properties][:widget_id]
+      ref_prop = schema[:definitions]["Part"][:properties][:widget]
       expect(ref_prop[:type]).to eq("string")
       expect(ref_prop[:format]).to eq("uuid")
       expect(ref_prop[:description]).to include("Widget")

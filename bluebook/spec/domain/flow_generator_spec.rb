@@ -135,7 +135,7 @@ RSpec.describe Hecks::FlowGenerator do
           end
 
           command "ConfirmOrder" do
-            attribute :order_id, String
+            attribute :order, String
           end
 
           policy "AutoConfirm" do

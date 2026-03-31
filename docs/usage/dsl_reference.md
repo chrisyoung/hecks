@@ -605,10 +605,18 @@ end
 
 ```ruby
 pizza = Pizza.create(name: "Margherita", description: "Classic")
+order = Order.place(pizza: pizza, customer_name: "Alice", quantity: 3)
 Pizza.find(pizza.id)
 Pizza.all
 Pizza.count
 Pizza.by_description("Classic")
+```
+
+References accept either a live object or a raw ID string at the boundary:
+
+```ruby
+Order.place(pizza: pizza_object, quantity: 3)   # pass object
+Order.place(pizza: "some-uuid", quantity: 3)    # pass ID string
 ```
 
 ### Events

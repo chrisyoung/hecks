@@ -100,7 +100,7 @@ module Hecks
             return nil unless vo
             vo_attr_names = vo.attributes.map { |a| a.name.to_s }
             # Only reject self-referencing _id, not cross-aggregate refs that are VO data
-            self_id = @self_id_attr&.name&.to_s
+            self_id = @self_ref&.name&.to_s
             cmd_attr_names = @command.attributes.reject { |a| a.name.to_s == self_id }.map { |a| a.name.to_s }
             matching = vo_attr_names & cmd_attr_names
             matching.size >= vo_attr_names.size ? [vo, matching] : nil
@@ -147,7 +147,7 @@ module Hecks
               end
             end
             (@command.references || []).each do |ref|
-              args << "#{ref.name}_id: #{ref.name}_id"
+              args << "#{ref.name}: #{ref.name}"
             end
             inject_sets(args)
             inject_lifecycle_status(args)
@@ -174,7 +174,7 @@ module Hecks
               end
             end
             (@command.references || []).each do |ref|
-              parts << "#{ref.name}_id: #{ref.name}_id"
+              parts << "#{ref.name}: #{ref.name}"
             end
             inject_sets(parts)
             inject_lifecycle_status(parts)

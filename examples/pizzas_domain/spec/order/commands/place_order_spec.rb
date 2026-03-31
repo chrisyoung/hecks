@@ -4,7 +4,7 @@ RSpec.describe PizzasDomain::Order::Commands::PlaceOrder do
   describe "attributes" do
     subject(:command) { described_class.new(
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1
         ) }
 
@@ -12,8 +12,8 @@ RSpec.describe PizzasDomain::Order::Commands::PlaceOrder do
       expect(command.customer_name).to eq("example")
     end
 
-    it "has pizza_id" do
-      expect(command.pizza_id).to eq("example")
+    it "has pizza" do
+      expect(command.pizza).to eq("example")
     end
 
     it "has quantity" do
@@ -34,7 +34,7 @@ RSpec.describe PizzasDomain::Order::Commands::PlaceOrder do
     it "persists the aggregate" do
       result = Order.place(
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1
         )
       expect(result).not_to be_nil
@@ -44,7 +44,7 @@ RSpec.describe PizzasDomain::Order::Commands::PlaceOrder do
     it "emits PlacedOrder to the event log" do
       Order.place(
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1
         )
       event_names = @app.events.map { |e| e.class.name.split("::").last }

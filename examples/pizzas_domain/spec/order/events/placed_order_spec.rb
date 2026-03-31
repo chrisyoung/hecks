@@ -4,7 +4,7 @@ RSpec.describe PizzasDomain::Order::Events::PlacedOrder do
   subject(:event) { described_class.new(
           aggregate_id: "example",
           customer_name: "example",
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1,
           items: [],
           status: "example"
@@ -26,8 +26,8 @@ RSpec.describe PizzasDomain::Order::Events::PlacedOrder do
     expect(event.customer_name).to eq("example")
   end
 
-  it "carries pizza_id" do
-    expect(event.pizza_id).to eq("example")
+  it "carries pizza" do
+    expect(event.pizza).to eq("example")
   end
 
   it "carries quantity" do

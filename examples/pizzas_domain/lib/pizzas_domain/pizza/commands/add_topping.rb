@@ -5,22 +5,22 @@ module PizzasDomain
         include Hecks::Command
         emits "AddedTopping"
 
-        attr_reader :pizza_id
+        attr_reader :pizza
         attr_reader :name
         attr_reader :amount
 
         def initialize(
-          pizza_id: nil,
+          pizza: nil,
           name: nil,
           amount: nil
         )
-          @pizza_id = pizza_id
+          @pizza = pizza
           @name = name
           @amount = amount
         end
 
         def call
-          existing = repository.find(pizza_id)
+          existing = repository.find(pizza)
           if existing
             Pizza.new(
               id: existing.id,
@@ -29,7 +29,7 @@ module PizzasDomain
               toppings: existing.toppings + [Topping.new(name: name, amount: amount)]
             )
           else
-            raise PizzasDomain::Error, "Pizza not found: #{pizza_id}"
+            raise PizzasDomain::Error, "Pizza not found: #{pizza}"
           end
         end
       end

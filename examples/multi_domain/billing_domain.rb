@@ -1,11 +1,11 @@
 Hecks.domain "Billing" do
   aggregate "Invoice" do
-    attribute :pizza_id, String
+    attribute :pizza, String
     attribute :quantity, Integer
     attribute :status, String
 
     command "CreateInvoice" do
-      attribute :pizza_id, String
+      attribute :pizza, String
       attribute :quantity, Integer
     end
 

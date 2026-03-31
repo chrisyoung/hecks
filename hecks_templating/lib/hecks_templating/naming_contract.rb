@@ -54,7 +54,7 @@ module HecksTemplating
         end
       end
 
-      # "post_id" → "post"
+      # "post" → "post"
       def domain_referenced_name(foreign_key)
         foreign_key.to_s.sub(/_id$/, "")
       end

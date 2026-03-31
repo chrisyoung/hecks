@@ -100,9 +100,9 @@ RSpec.describe "Hecks.boot with SQL adapter" do
 
     app = Hecks.boot(tmpdir, adapter: :sqlite)
     owner = Owner.create(name: "Acme")
-    product = Product.create(owner_id: owner.id, price: 9.99)
+    product = Product.create(owner: owner.id, price: 9.99)
     found = Product.find(product.id)
     expect(found.price).to eq(9.99)
-    expect(found.owner_id).to eq(owner.id)
+    expect(found.owner.id).to eq(owner.id)
   end
 end

@@ -67,7 +67,7 @@ RSpec.describe Hecks::HTTP::JsonSchemaGenerator do
     end
 
     it "maps reference attributes as uuid strings" do
-      ref = defs["Order"][:properties][:pizza_id]
+      ref = defs["Order"][:properties][:pizza]
       expect(ref[:type]).to eq("string")
       expect(ref[:format]).to eq("uuid")
       expect(ref[:description]).to include("Pizza")
@@ -103,8 +103,8 @@ RSpec.describe Hecks::HTTP::JsonSchemaGenerator do
 
     it "marks reference params as uuid" do
       place = defs["PlaceOrder"]
-      expect(place[:properties][:pizza_id][:format]).to eq("uuid")
-      expect(place[:required]).to contain_exactly("pizza_id", "quantity")
+      expect(place[:properties][:pizza][:format]).to eq("uuid")
+      expect(place[:required]).to contain_exactly("pizza", "quantity")
     end
   end
 

@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe PizzasDomain::Pizza::Events::AddedTopping do
   subject(:event) { described_class.new(
           aggregate_id: "example",
-          pizza_id: "ref-id-123",
+          pizza: "ref-id-123",
           name: "example",
           amount: 1,
           description: "example",
@@ -22,8 +22,8 @@ RSpec.describe PizzasDomain::Pizza::Events::AddedTopping do
     expect(event.aggregate_id).to eq("example")
   end
 
-  it "carries pizza_id" do
-    expect(event.pizza_id).to eq("ref-id-123")
+  it "carries pizza" do
+    expect(event.pizza).to eq("ref-id-123")
   end
 
   it "carries name" do

@@ -15,8 +15,8 @@ module Hecks
     # == Create vs. Update Detection
     #
     # A command is classified as an "update" if it has an attribute matching
-    # the aggregate's ID pattern (e.g., +pizza_id+ for a Pizza aggregate).
-    # The ID attribute is found by +find_self_id_attr+, which tries the full
+    # the aggregate's ID pattern (e.g., +pizza+ for a Pizza aggregate).
+    # The self-reference is found by +find_self_ref+, which checks
     # snake_case name first, then progressively shorter suffixes. If no ID
     # attribute is found, the command is classified as a "create".
     #
@@ -57,8 +57,8 @@ module Hecks
         @mixin_prefix = mixin_prefix
         @has_keyword_attrs = @command.attributes.any? { |a| Hecks::Utils.ruby_keyword?(a.name) }
         agg_snake = domain_snake_name(aggregate_name)
-        @self_id_attr = find_self_id_attr(agg_snake)
-        @is_create = @self_id_attr.nil?
+        @self_ref = find_self_ref(agg_snake)
+        @is_create = @self_ref.nil?
       end
 
       # Generates the full Ruby source code for the command class.
@@ -75,7 +75,7 @@ module Hecks
         lines.concat(condition_declarations)
         lines << ""
         attr_syms = @command.attributes.map { |a| ":#{a.name}" } +
-                    (@command.references || []).map { |r| ":#{r.name}_id" }
+                    (@command.references || []).map { |r| ":#{r.name}" }
         if attr_syms.size <= 2
           lines << "        attr_reader #{attr_syms.join(", ")}"
         else
@@ -133,7 +133,7 @@ module Hecks
             lines << "          @#{attr.name} = kwargs[:#{attr.name}]"
           end
           (@command.references || []).each do |ref|
-            lines << "          @#{ref.name}_id = kwargs[:#{ref.name}_id]"
+            lines << "          @#{ref.name} = kwargs[:#{ref.name}]"
           end
         else
           params = constructor_params
@@ -151,7 +151,7 @@ module Hecks
             lines << "          @#{attr.name} = #{attr.name}"
           end
           (@command.references || []).each do |ref|
-            lines << "          @#{ref.name}_id = #{ref.name}_id"
+            lines << "          @#{ref.name} = #{ref.name}"
           end
         end
         lines << "        end"
@@ -192,14 +192,16 @@ module Hecks
       # @return [Array<String>] lines of Ruby source for the find-and-update logic
       def update_body
         lines = []
-        id_attr = @self_id_attr
-        if id_attr
-          lines << "          existing = repository.find(#{id_attr.name})"
+        ref = @self_ref
+        if ref
+          lines << "          _ref_val = #{ref.name}"
+          lines << "          _lookup_id = _ref_val.respond_to?(:id) ? _ref_val.id : _ref_val"
+          lines << "          existing = repository.find(_lookup_id)"
           lines << "          if existing"
           lines.concat(lifecycle_guard_lines("            "))
           lines.concat(format_new_call("            ", update_constructor_args))
           lines << "          else"
-          lines << "            raise #{@domain_module}::Error, \"#{@aggregate_name} not found: \#{#{id_attr.name}}\""
+          lines << "            raise #{@domain_module}::Error, \"#{@aggregate_name} not found: \#{_lookup_id}\""
           lines << "          end"
         else
           lines.concat(format_new_call("          ", create_constructor_args))
@@ -235,25 +237,15 @@ module Hecks
       # @return [Array<String>] parameter strings with nil defaults (e.g., ["name: nil", "size: nil"])
       def constructor_params
         @command.attributes.map { |attr| "#{attr.name}: nil" } +
-        (@command.references || []).map { |ref| "#{ref.name}_id: nil" }
+        (@command.references || []).map { |ref| "#{ref.name}: nil" }
       end
 
-      # Find the command attribute that references this aggregate's own ID.
-      #
-      # Tries full name first (e.g., +regulatory_framework_id+), then progressively
-      # shorter suffix variants (e.g., +framework_id+). This determines whether the
-      # command is an update (ID attribute found) or a create (not found).
-      #
-      # @param agg_snake [String] the underscore-cased aggregate name (e.g., "regulatory_framework")
-      # @return [Hecks::DomainModel::Structure::Attribute, nil] the matching ID attribute, or nil
-      def find_self_id_attr(agg_snake)
-        parts = agg_snake.split("_")
-        parts.each_index do |i|
-          suffix = parts.drop(i).join("_") + "_id"
-          attr = @command.attributes.find { |a| a.name.to_s == suffix }
-          return attr if attr
+      # Find a self-referencing reference on this command.
+      # A self-ref is a reference whose target type matches the aggregate.
+      def find_self_ref(agg_snake)
+        (@command.references || []).find do |ref|
+          Hecks::Utils.underscore(ref.type) == agg_snake
         end
-        nil
       end
     end
     end

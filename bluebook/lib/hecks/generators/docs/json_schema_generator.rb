@@ -77,7 +77,7 @@ module Hecks
           end
         end
         (agg.references || []).each do |ref|
-          props[:"#{ref.name}_id"] = { type: "string", format: "uuid", description: "Reference to #{ref.type}" }
+          props[ref.name] = { type: "string", format: "uuid", description: "Reference to #{ref.type}" }
         end
         props[:created_at] = { type: "string", format: "date-time" }
         props[:updated_at] = { type: "string", format: "date-time" }
@@ -118,8 +118,8 @@ module Hecks
           required << attr.name.to_s
         end
         (cmd.references || []).each do |ref|
-          props[:"#{ref.name}_id"] = { type: "string", format: "uuid", description: "Reference to #{ref.type}" }
-          required << "#{ref.name}_id"
+          props[ref.name] = { type: "string", format: "uuid", description: "Reference to #{ref.type}" }
+          required << ref.name.to_s
         end
         { type: "object", properties: props, required: required }
       end

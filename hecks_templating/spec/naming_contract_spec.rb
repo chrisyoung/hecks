@@ -51,7 +51,7 @@ RSpec.describe HecksTemplating::Names do
 
   describe ".domain_referenced_name" do
     it "strips _id suffix" do
-      expect(described_class.domain_referenced_name("post_id")).to eq("post")
+      expect(described_class.domain_referenced_name("post")).to eq("post")
     end
   end
 

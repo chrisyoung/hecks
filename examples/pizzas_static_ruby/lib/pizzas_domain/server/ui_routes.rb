@@ -61,7 +61,7 @@ module PizzasDomain
           end
           html = renderer.render(:show, title: "Order — PizzasDomain", brand: brand, nav_items: nav,
             aggregate_name: "Order", back_href: "/orders",
-            id: obj.id, fields: [{ label: "Customer Name", value: obj.customer_name.to_s }, { label: "Items", type: :list, items: obj.items.map { |v| v.pizza_id.to_s + " — " + v.quantity.to_s } }, { label: "Status", value: obj.status.to_s }],
+            id: obj.id, fields: [{ label: "Customer Name", value: obj.customer_name.to_s }, { label: "Items", type: :list, items: obj.items.map { |v| v.pizza.to_s + " — " + v.quantity.to_s } }, { label: "Status", value: obj.status.to_s }],
             buttons: [{ label: "CancelOrder", href: "/orders/cancel_order/new?id=" + obj.id, allowed: PizzasDomain.role_allows?("Order", "cancel_order") }])
           res["Content-Type"] = "text/html"; res.body = html
         end
@@ -108,7 +108,7 @@ module PizzasDomain
               command_name: "AddTopping", action: "", error_message: "Role '" + PizzasDomain.current_role.to_s + "' cannot add_topping", fields: [])
             res["Content-Type"] = "text/html"; res.body = html; next
           end
-          fields = [{ type: :hidden, name: "pizza_id", value: req.query["id"] || "" }, { type: :input, name: "name", label: "Name", input_type: "text", step: false, required: true, value: "" }, { type: :input, name: "amount", label: "Amount", input_type: "number", step: false, required: true, value: "" }]
+          fields = [{ type: :hidden, name: "pizza", value: req.query["id"] || "" }, { type: :input, name: "name", label: "Name", input_type: "text", step: false, required: true, value: "" }, { type: :input, name: "amount", label: "Amount", input_type: "number", step: false, required: true, value: "" }]
           html = renderer.render(:form, title: "AddTopping — PizzasDomain", brand: brand, nav_items: nav,
             command_name: "AddTopping", action: "/pizzas/add_topping/submit", error_message: nil, fields: fields)
           res["Content-Type"] = "text/html"; res.body = html
@@ -120,10 +120,10 @@ module PizzasDomain
           end
           begin
             params = req.query
-            result = Pizza.add_topping(pizza_id: params["pizza_id"], name: params["name"], amount: params["amount"].to_i)
+            result = Pizza.add_topping(pizza: params["pizza"], name: params["name"], amount: params["amount"].to_i)
             res.set_redirect(WEBrick::HTTPStatus::SeeOther, "/pizzas/show?id=" + result.aggregate.id)
           rescue PizzasDomain::ValidationError => e
-            fields = [{ type: :hidden, name: "pizza_id", value: req.query["id"] || "" }, { type: :input, name: "name", label: "Name", input_type: "text", step: false, required: true, value: "" }, { type: :input, name: "amount", label: "Amount", input_type: "number", step: false, required: true, value: "" }]
+            fields = [{ type: :hidden, name: "pizza", value: req.query["id"] || "" }, { type: :input, name: "name", label: "Name", input_type: "text", step: false, required: true, value: "" }, { type: :input, name: "amount", label: "Amount", input_type: "number", step: false, required: true, value: "" }]
             fields.each { |f| f[:value] = params[f[:name]] || f[:value] if f[:type] != :hidden }
             fields.each { |f| f[:error] = e.message if e.respond_to?(:field) && e.field.to_s == f[:name] }
             html = renderer.render(:form, title: "AddTopping — PizzasDomain", brand: brand, nav_items: nav,
@@ -144,7 +144,7 @@ module PizzasDomain
               command_name: "PlaceOrder", action: "", error_message: "Role '" + PizzasDomain.current_role.to_s + "' cannot place_order", fields: [])
             res["Content-Type"] = "text/html"; res.body = html; next
           end
-          fields = [{ type: :input, name: "customer_name", label: "Customer Name", input_type: "text", step: false, required: true, value: "" }, { type: :select, name: "pizza_id", label: "Pizza", required: true, options: Pizza.all.map { |r| { value: r.id, label: r.name.to_s, selected: r.id == req.query["id"] } } }, { type: :input, name: "quantity", label: "Quantity", input_type: "number", step: false, required: true, value: "" }]
+          fields = [{ type: :input, name: "customer_name", label: "Customer Name", input_type: "text", step: false, required: true, value: "" }, { type: :select, name: "pizza", label: "Pizza", required: true, options: Pizza.all.map { |r| { value: r.id, label: r.name.to_s, selected: r.id == req.query["id"] } } }, { type: :input, name: "quantity", label: "Quantity", input_type: "number", step: false, required: true, value: "" }]
           html = renderer.render(:form, title: "PlaceOrder — PizzasDomain", brand: brand, nav_items: nav,
             command_name: "PlaceOrder", action: "/orders/place_order/submit", error_message: nil, fields: fields)
           res["Content-Type"] = "text/html"; res.body = html
@@ -156,10 +156,10 @@ module PizzasDomain
           end
           begin
             params = req.query
-            result = Order.place_order(customer_name: params["customer_name"], pizza_id: params["pizza_id"], quantity: params["quantity"].to_i)
+            result = Order.place_order(customer_name: params["customer_name"], pizza: params["pizza"], quantity: params["quantity"].to_i)
             res.set_redirect(WEBrick::HTTPStatus::SeeOther, "/orders/show?id=" + result.aggregate.id)
           rescue PizzasDomain::ValidationError => e
-            fields = [{ type: :input, name: "customer_name", label: "Customer Name", input_type: "text", step: false, required: true, value: "" }, { type: :select, name: "pizza_id", label: "Pizza", required: true, options: Pizza.all.map { |r| { value: r.id, label: r.name.to_s, selected: r.id == req.query["id"] } } }, { type: :input, name: "quantity", label: "Quantity", input_type: "number", step: false, required: true, value: "" }]
+            fields = [{ type: :input, name: "customer_name", label: "Customer Name", input_type: "text", step: false, required: true, value: "" }, { type: :select, name: "pizza", label: "Pizza", required: true, options: Pizza.all.map { |r| { value: r.id, label: r.name.to_s, selected: r.id == req.query["id"] } } }, { type: :input, name: "quantity", label: "Quantity", input_type: "number", step: false, required: true, value: "" }]
             fields.each { |f| f[:value] = params[f[:name]] || f[:value] if f[:type] != :hidden }
             fields.each { |f| f[:error] = e.message if e.respond_to?(:field) && e.field.to_s == f[:name] }
             html = renderer.render(:form, title: "PlaceOrder — PizzasDomain", brand: brand, nav_items: nav,
@@ -180,7 +180,7 @@ module PizzasDomain
               command_name: "CancelOrder", action: "", error_message: "Role '" + PizzasDomain.current_role.to_s + "' cannot cancel_order", fields: [])
             res["Content-Type"] = "text/html"; res.body = html; next
           end
-          fields = [{ type: :hidden, name: "order_id", value: req.query["id"] || "" }]
+          fields = [{ type: :hidden, name: "order", value: req.query["id"] || "" }]
           html = renderer.render(:form, title: "CancelOrder — PizzasDomain", brand: brand, nav_items: nav,
             command_name: "CancelOrder", action: "/orders/cancel_order/submit", error_message: nil, fields: fields)
           res["Content-Type"] = "text/html"; res.body = html
@@ -192,10 +192,10 @@ module PizzasDomain
           end
           begin
             params = req.query
-            result = Order.cancel_order(order_id: params["order_id"])
+            result = Order.cancel_order(order: params["order"])
             res.set_redirect(WEBrick::HTTPStatus::SeeOther, "/orders/show?id=" + result.aggregate.id)
           rescue PizzasDomain::ValidationError => e
-            fields = [{ type: :hidden, name: "order_id", value: req.query["id"] || "" }]
+            fields = [{ type: :hidden, name: "order", value: req.query["id"] || "" }]
             fields.each { |f| f[:value] = params[f[:name]] || f[:value] if f[:type] != :hidden }
             fields.each { |f| f[:error] = e.message if e.respond_to?(:field) && e.field.to_s == f[:name] }
             html = renderer.render(:form, title: "CancelOrder — PizzasDomain", brand: brand, nav_items: nav,

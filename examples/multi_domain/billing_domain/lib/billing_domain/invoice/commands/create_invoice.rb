@@ -5,15 +5,15 @@ module BillingDomain
         include Hecks::Command
         emits "CreatedInvoice"
 
-        attr_reader :pizza_id, :quantity
+        attr_reader :pizza, :quantity
 
-        def initialize(pizza_id: nil, quantity: nil)
-          @pizza_id = pizza_id
+        def initialize(pizza: nil, quantity: nil)
+          @pizza = pizza
           @quantity = quantity
         end
 
         def call
-          Invoice.new(pizza_id: pizza_id, quantity: quantity)
+          Invoice.new(pizza: pizza, quantity: quantity)
         end
       end
     end

@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe PizzasDomain::Order::Events::CanceledOrder do
   subject(:event) { described_class.new(
           aggregate_id: "example",
-          order_id: "ref-id-123",
+          order: "ref-id-123",
           customer_name: "example",
           items: [],
           status: "example"
@@ -21,8 +21,8 @@ RSpec.describe PizzasDomain::Order::Events::CanceledOrder do
     expect(event.aggregate_id).to eq("example")
   end
 
-  it "carries order_id" do
-    expect(event.order_id).to eq("ref-id-123")
+  it "carries order" do
+    expect(event.order).to eq("ref-id-123")
   end
 
   it "carries customer_name" do

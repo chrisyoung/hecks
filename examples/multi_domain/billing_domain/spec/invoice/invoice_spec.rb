@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe BillingDomain::Invoice do
   describe "creating a Invoice" do
     subject(:invoice) { described_class.new(
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1,
           status: "example"
         ) }
@@ -12,8 +12,8 @@ RSpec.describe BillingDomain::Invoice do
       expect(invoice.id).not_to be_nil
     end
 
-    it "sets pizza_id" do
-      expect(invoice.pizza_id).to eq("example")
+    it "sets pizza" do
+      expect(invoice.pizza).to eq("example")
     end
 
     it "sets quantity" do
@@ -29,13 +29,13 @@ RSpec.describe BillingDomain::Invoice do
     it "two Invoices with the same id are equal" do
       id = SecureRandom.uuid
       a = described_class.new(
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1,
           status: "example",
           id: id
         )
       b = described_class.new(
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1,
           status: "example",
           id: id
@@ -45,12 +45,12 @@ RSpec.describe BillingDomain::Invoice do
 
     it "two Invoices with different ids are not equal" do
       a = described_class.new(
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1,
           status: "example"
         )
       b = described_class.new(
-          pizza_id: "example",
+          pizza: "example",
           quantity: 1,
           status: "example"
         )
