@@ -49,7 +49,7 @@ module Hecks
       # @param options [Hash] additional options passed to Attribute.new
       #   (e.g. +default:+, +optional:+, +enum:+)
       # @return [void]
-      def attribute(name = nil, type = nil, **options)
+      def attribute(name = nil, type = nil, **options, &block)
         if name.nil?
           name = :unnamed
           type ||= String
@@ -66,6 +66,11 @@ module Hecks
           list: !!list,
           **options
         )
+
+        # Block on attribute declares lifecycle transitions on this field
+        if block && respond_to?(:lifecycle, true)
+          lifecycle(name, default: (options[:default] || "").to_s, &block)
+        end
       end
 
       # Create a list-type wrapper for use with +attribute+.
