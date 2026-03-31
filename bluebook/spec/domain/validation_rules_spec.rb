@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe "Validation Rules" do
   def validate(domain)
     v = Hecks::Validator.new(domain)
-    [v.valid?, v.errors]
+    [v.valid?, v.errors, v.warnings]
   end
 
   describe "Naming::CommandNaming" do
@@ -108,6 +108,30 @@ RSpec.describe "Validation Rules" do
       end
       valid, _ = validate(domain)
       expect(valid).to be true
+    end
+  end
+
+  describe "warns on attributes that look like foreign keys" do
+    it "warns when _id String attribute could be reference_to" do
+      domain = Hecks.domain("Validation") do
+        aggregate("Order") do
+          attribute :team_id, String
+          command("CreateOrder") { attribute :name, String }
+        end
+      end
+      _, _, warnings = validate(domain)
+      expect(warnings.any? { |w| w.include?("team_id") && w.include?("reference_to") }).to be true
+    end
+
+    it "does not warn on non-String _id attributes" do
+      domain = Hecks.domain("Validation") do
+        aggregate("Order") do
+          attribute :sort_id, Integer
+          command("CreateOrder") { attribute :name, String }
+        end
+      end
+      _, _, warnings = validate(domain)
+      expect(warnings.none? { |w| w.include?("sort_id") }).to be true
     end
   end
 
