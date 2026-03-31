@@ -82,7 +82,7 @@ module Hecks
       #
       # @return [Array<Hecks::DomainModel::Structure::Attribute>] scalar, non-reference attributes
       def queryable_attributes
-        @aggregate.attributes.reject { |a| a.list? || a.reference? }
+        @aggregate.attributes.reject(&:list?)
       end
     end
     end

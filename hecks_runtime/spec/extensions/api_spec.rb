@@ -30,9 +30,9 @@ RSpec.describe "Hecks top-level API" do
     it "returns [false, errors] for an invalid domain" do
       bad_domain = Hecks.domain "Bad" do
         aggregate "Order" do
-          attribute :widget_id, reference_to("Widget")
+          reference_to "Widget"
           command "PlaceOrder" do
-            attribute :widget_id, reference_to("Widget")
+            reference_to "Widget"
           end
         end
       end
@@ -57,9 +57,9 @@ RSpec.describe "Hecks top-level API" do
     it "raises on invalid domain" do
       bad_domain = Hecks.domain "Bad" do
         aggregate "Order" do
-          attribute :widget_id, reference_to("Widget")
+          reference_to "Widget"
           command "PlaceOrder" do
-            attribute :widget_id, reference_to("Widget")
+            reference_to "Widget"
           end
         end
       end

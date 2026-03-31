@@ -25,11 +25,11 @@ RSpec.describe Hecks::DomainVisualizer do
       end
 
       aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
 
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
 
@@ -69,7 +69,7 @@ RSpec.describe Hecks::DomainVisualizer do
     end
 
     it "shows cross-aggregate references" do
-      expect(mermaid).to include("Order --> Pizza : references")
+      expect(mermaid).to include("Order --> Pizza : pizza")
     end
   end
 

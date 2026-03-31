@@ -25,16 +25,16 @@ RSpec.describe Hecks::Workshop::Playground do
       end
 
       aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
 
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
 
         command "ReserveStock" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
 
@@ -95,7 +95,7 @@ RSpec.describe Hecks::Workshop::Playground do
     it "lists available commands with their signatures" do
       list = playground.commands
       expect(list).to include(/CreatePizza.*name.*CreatedPizza/)
-      expect(list).to include(/PlaceOrder.*pizza_id.*PlacedOrder/)
+      expect(list).to include(/PlaceOrder.*quantity.*PlacedOrder/)
     end
   end
 

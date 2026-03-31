@@ -76,6 +76,9 @@ module Hecks
             props[attr.name] = property(attr)
           end
         end
+        (agg.references || []).each do |ref|
+          props[:"#{ref.name}_id"] = { type: "string", format: "uuid", description: "Reference to #{ref.type}" }
+        end
         props[:created_at] = { type: "string", format: "date-time" }
         props[:updated_at] = { type: "string", format: "date-time" }
         { type: "object", properties: props, required: required }
@@ -113,6 +116,10 @@ module Hecks
         cmd.attributes.each do |attr|
           props[attr.name] = property(attr)
           required << attr.name.to_s
+        end
+        (cmd.references || []).each do |ref|
+          props[:"#{ref.name}_id"] = { type: "string", format: "uuid", description: "Reference to #{ref.type}" }
+          required << "#{ref.name}_id"
         end
         { type: "object", properties: props, required: required }
       end
@@ -156,8 +163,6 @@ module Hecks
       def property(attr)
         if attr.json?
           { type: ["object", "array"] }
-        elsif attr.reference?
-          { type: "string", format: "uuid", description: "Reference to #{attr.type}" }
         else
           { type: HecksTemplating::TypeContract.json(attr.ruby_type) }
         end

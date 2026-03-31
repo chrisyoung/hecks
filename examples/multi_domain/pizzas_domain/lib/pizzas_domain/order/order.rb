@@ -4,7 +4,7 @@ module PizzasDomain
   class Order
     include Hecks::Model
 
-    attribute :pizza_id
     attribute :quantity
+    attribute :pizza_id
   end
 end

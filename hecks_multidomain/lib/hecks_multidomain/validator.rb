@@ -1,6 +1,6 @@
 # Hecks::MultiDomain::Validator
 #
-# Rejects reference_to attributes that cross domain boundaries.
+# Rejects references that cross domain boundaries.
 # Cross-domain references must use plain String IDs, not reference_to.
 #
 #   Hecks::MultiDomain::Validator.validate_no_cross_domain_references(domains)
@@ -16,8 +16,8 @@ module Hecks
         domains.each do |domain|
           own_aggs = domain.aggregates.map(&:name)
           domain.aggregates.each do |agg|
-            agg.attributes.select(&:reference?).each do |attr|
-              ref_name = attr.type.to_s
+            (agg.references || []).each do |ref|
+              ref_name = ref.type.to_s
               next if own_aggs.include?(ref_name)
               owner = domains.find { |d| d.aggregates.any? { |a| a.name == ref_name } }
               if owner

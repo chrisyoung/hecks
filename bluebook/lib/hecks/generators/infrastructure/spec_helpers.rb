@@ -64,7 +64,6 @@ module Hecks
       # @return [String] a Ruby literal suitable for source code embedding
       def example_value(attr)
         return "[]" if attr.list?
-        return "\"ref-id-123\"" if attr.reference?
         return attr.enum.first.inspect if attr.enum&.any?
 
         case attr.type.to_s

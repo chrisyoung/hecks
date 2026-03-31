@@ -19,14 +19,15 @@ RSpec.describe Hecks::Workshop::CommandHandle do
       expect(cmd.attributes.map(&:name)).to include(:title)
     end
 
-    it "adds a reference attribute to the command" do
+    it "adds a reference to the command" do
+      workshop.aggregate("Order")
       handle = build_handle
-      handle.order_id({ reference: "Order" })
+      handle.reference_to "Order"
       domain = workshop.to_domain
-      cmd = domain.aggregates.first.commands.find { |c| c.name == "CreatePizza" }
-      attr = cmd.attributes.find { |a| a.name == :order_id }
-      expect(attr).not_to be_nil
-      expect(attr.reference?).to be true
+      pizza_agg = domain.aggregates.find { |a| a.name == "Pizza" }
+      cmd = pizza_agg.commands.find { |c| c.name == "CreatePizza" }
+      ref = cmd.references.find { |r| r.type == "Order" }
+      expect(ref).not_to be_nil
     end
 
     it "adds a list attribute to the command" do

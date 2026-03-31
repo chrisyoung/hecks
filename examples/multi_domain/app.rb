@@ -41,15 +41,15 @@ end
 
 # 5. Subscribe to events across all domains
 shared_bus.subscribe("PlacedOrder") do |event|
-  puts "  [event] PlacedOrder: pizza_id=#{event.pizza_id}, quantity=#{event.quantity}"
+  puts "  [event] PlacedOrder: quantity=#{event.quantity}"
 end
 
 shared_bus.subscribe("CreatedInvoice") do |event|
-  puts "  [event] CreatedInvoice: pizza_id=#{event.pizza_id}, quantity=#{event.quantity}"
+  puts "  [event] CreatedInvoice: quantity=#{event.quantity}"
 end
 
 shared_bus.subscribe("CreatedShipment") do |event|
-  puts "  [event] CreatedShipment: pizza_id=#{event.pizza_id}, quantity=#{event.quantity}"
+  puts "  [event] CreatedShipment: quantity=#{event.quantity}"
 end
 
 # 6. Create a pizza and place an order

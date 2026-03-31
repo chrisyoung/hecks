@@ -23,8 +23,6 @@ module Hecks
         a = an(agg_name)
         if attr.list?
           "#{a} has many #{pluralize(attr.type.to_s)}."
-        elsif attr.reference?
-          "#{a} belongs to #{an(attr.type.to_s, capitalize: false)}."
         else
           "#{a} has #{article(attr.name.to_s)} #{attr.name} (#{attr.type})."
         end
@@ -83,8 +81,8 @@ module Hecks
         lines = []
         refs = []
         @domain.aggregates.each do |agg|
-          agg.attributes.select(&:reference?).each do |attr|
-            refs << [agg.name, attr.type.to_s]
+          (agg.references || []).each do |ref|
+            refs << [agg.name, ref.type]
           end
         end
 

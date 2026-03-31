@@ -50,6 +50,12 @@ module Hecks
             lines << generate_create_join_table(change)
           when :remove_value_object
             lines << "DROP TABLE IF EXISTS #{join_table_name(change.aggregate, change.details[:name])};"
+          when :add_reference
+            ref = change.details[:reference]
+            lines << "ALTER TABLE #{table_name(change.aggregate)} ADD COLUMN #{reference_column_def(ref)};"
+          when :remove_reference
+            ref = change.details[:reference]
+            lines << "ALTER TABLE #{table_name(change.aggregate)} DROP COLUMN #{reference_column_name(ref)};"
           when :add_index
             lines << generate_add_index(change)
           when :remove_index
@@ -89,6 +95,9 @@ module Hecks
           next if attr.list?
           cols << "  #{column_def(attr, presence_fields, unique_fields)}"
         end
+        (change.details[:references] || []).each do |ref|
+          cols << "  #{reference_column_def(ref)}"
+        end
         cols << "  created_at DATETIME"
         cols << "  updated_at DATETIME"
         tables << "CREATE TABLE #{table_name(change.aggregate)} (\n#{cols.join(",\n")}\n);"
@@ -115,14 +124,20 @@ module Hecks
       # @return [String] the column definition (e.g., "name VARCHAR(255) NOT NULL")
       def column_def(attr, presence_fields = [], unique_fields = [])
         parts = [attr.name.to_s, sql_type(attr)]
-        if attr.reference?
-          ref_table = domain_aggregate_slug(domain_referenced_name(attr.type))
-          parts << "REFERENCES #{ref_table}(id) ON DELETE SET NULL"
-        end
         parts << "NOT NULL" if presence_fields.include?(attr.name.to_sym)
         parts << "UNIQUE" if unique_fields.include?(attr.name.to_sym)
         parts << "DEFAULT #{sql_literal(attr.default)}" unless attr.default.nil?
         parts.join(" ")
+      end
+
+      # Generates a column definition for a reference (foreign key).
+      #
+      # @param ref [DomainModel::Structure::Reference] the reference
+      # @return [String] the column definition (e.g., "team_id VARCHAR(36) REFERENCES teams(id)")
+      def reference_column_def(ref)
+        col = reference_column_name(ref)
+        ref_table = domain_aggregate_slug(ref.type)
+        "#{col} VARCHAR(36) REFERENCES #{ref_table}(id) ON DELETE SET NULL"
       end
 
       # Generates a CREATE TABLE for a value object's join table from a VO struct.
@@ -157,12 +172,8 @@ module Hecks
         d = change.details
         return nil if d[:list]
 
-        type = d[:reference] ? "VARCHAR(36)" : sql_type_for(d[:type])
+        type = sql_type_for(d[:type])
         parts = ["#{d[:name]} #{type}"]
-        if d[:reference]
-          ref_table = domain_aggregate_slug(domain_referenced_name(d[:type]))
-          parts << "REFERENCES #{ref_table}(id) ON DELETE SET NULL"
-        end
         parts << "NOT NULL" if d[:presence]
         parts << "UNIQUE" if d[:uniqueness]
         parts << "DEFAULT #{sql_literal(d[:default])}" if d[:default]
@@ -220,14 +231,13 @@ module Hecks
       # @param change [Migrations::Change] the :add_aggregate change
       # @return [String, nil] the CREATE INDEX statements, or nil if no references
       def generate_indexes_for_table(change)
-        return nil unless change.details[:attributes]
         agg_name = change.aggregate
-        # Auto-index reference columns
-        ref_attrs = change.details[:attributes].select(&:reference?)
-        return nil if ref_attrs.empty?
-        ref_attrs.map do |attr|
-          idx = index_name(agg_name, [attr.name])
-          "CREATE INDEX #{idx} ON #{table_name(agg_name)}(#{attr.name});"
+        refs = change.details[:references] || []
+        return nil if refs.empty?
+        refs.map do |ref|
+          col = reference_column_name(ref)
+          idx = index_name(agg_name, [col])
+          "CREATE INDEX #{idx} ON #{table_name(agg_name)}(#{col});"
         end.join("\n")
       end
 

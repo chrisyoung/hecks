@@ -131,8 +131,6 @@ module Hecks
     def type_label(attr)
       if attr.list?
         "list_of(#{attr.type})"
-      elsif attr.reference?
-        "reference_to(#{attr.type})"
       else
         attr.type.to_s
       end

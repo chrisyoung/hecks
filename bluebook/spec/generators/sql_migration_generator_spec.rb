@@ -20,12 +20,12 @@ RSpec.describe Hecks::Generators::SQL::SqlMigrationGenerator do
       end
 
       aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
         attribute :status, String
 
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
       end

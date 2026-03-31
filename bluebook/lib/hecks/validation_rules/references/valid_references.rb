@@ -28,8 +28,8 @@ module Hecks
         all_entity_names = @domain.aggregates.flat_map { |a| a.entities.map(&:name) }
 
         @domain.aggregates.each do |agg|
-          agg.attributes.select(&:reference?).each do |attr|
-            ref_name = attr.type.to_s
+          (agg.references || []).each do |ref|
+            ref_name = ref.type.to_s
 
             # Check if referencing a value object instead of an aggregate
             if all_vo_names.include?(ref_name) && !all_aggregate_names.include?(ref_name)

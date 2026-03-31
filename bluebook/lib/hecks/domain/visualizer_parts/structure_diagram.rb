@@ -66,23 +66,21 @@ module Hecks
       def attribute_label(attr)
         if attr.list?
           "+#{attr.type}[] #{attr.name}"
-        elsif attr.reference?
-          "+String #{attr.name}"
         else
           "+#{attr.type} #{attr.name}"
         end
       end
 
       # Add cross-aggregate reference arrows to the diagram. Scans all
-      # aggregates for reference-type attributes and draws a directed
+      # aggregates for declared references and draws a directed
       # association to the referenced aggregate.
       #
       # @param lines [Array<String>] the diagram lines array to append to
       # @return [void]
       def references(lines)
         @domain.aggregates.each do |agg|
-          agg.attributes.select(&:reference?).each do |attr|
-            lines << "    #{agg.name} --> #{attr.type} : references"
+          (agg.references || []).each do |ref|
+            lines << "    #{agg.name} --> #{ref.type} : #{ref.name}"
           end
         end
       end

@@ -128,10 +128,10 @@ RSpec.describe "SQL migration expansion" do
     it "adds ON DELETE SET NULL to reference columns" do
       domain = Hecks.domain "RefTest" do
         aggregate "Order" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
 
           command "PlaceOrder" do
-            attribute :pizza_id, reference_to("Pizza")
+            reference_to "Pizza"
           end
         end
       end

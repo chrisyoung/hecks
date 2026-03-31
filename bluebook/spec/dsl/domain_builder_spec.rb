@@ -117,11 +117,11 @@ RSpec.describe Hecks::DSL::DomainBuilder do
     it "supports reference_to" do
       domain = Hecks.domain("Types") do
         aggregate("Widget") { attribute :name, String; command("CreateWidget") { attribute :name, String } }
-        aggregate("Part") { attribute :widget_id, reference_to("Widget"); command("CreatePart") { attribute :widget_id, reference_to("Widget") } }
+        aggregate("Part") { reference_to "Widget"; command("CreatePart") { reference_to "Widget" } }
       end
-      attr = domain.aggregates.last.attributes.first
-      expect(attr.reference?).to be true
-      expect(attr.type.to_s).to eq("Widget")
+      ref = domain.aggregates.last.references.first
+      expect(ref).not_to be_nil
+      expect(ref.type).to eq("Widget")
     end
 
     it "supports list_of" do
@@ -170,8 +170,8 @@ RSpec.describe Hecks::DSL::DomainBuilder do
           command("CreateOrder") { attribute :name, String }
         end
       end
-      ref = domain.aggregates.first.references.find { |r| r[:type] == "LineItem" }
-      expect(ref[:kind]).to eq(:composition)
+      ref = domain.aggregates.first.references.find { |r| r.type == "LineItem" }
+      expect(ref.kind).to eq(:composition)
     end
 
     it "classifies aggregate root references as aggregation" do
@@ -183,8 +183,8 @@ RSpec.describe Hecks::DSL::DomainBuilder do
         end
         aggregate("Customer") { attribute :name, String; command("CreateCustomer") { attribute :name, String } }
       end
-      ref = domain.aggregates.first.references.find { |r| r[:type] == "Customer" }
-      expect(ref[:kind]).to eq(:aggregation)
+      ref = domain.aggregates.first.references.find { |r| r.type == "Customer" }
+      expect(ref.kind).to eq(:aggregation)
     end
 
     it "classifies :: paths as cross-context" do
@@ -195,9 +195,9 @@ RSpec.describe Hecks::DSL::DomainBuilder do
           command("CreateOrder") { attribute :name, String }
         end
       end
-      ref = domain.aggregates.first.references.find { |r| r[:type] == "Invoice" }
-      expect(ref[:kind]).to eq(:cross_context)
-      expect(ref[:domain]).to eq("Billing")
+      ref = domain.aggregates.first.references.find { |r| r.type == "Invoice" }
+      expect(ref.kind).to eq(:cross_context)
+      expect(ref.domain).to eq("Billing")
     end
   end
 

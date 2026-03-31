@@ -63,16 +63,14 @@ module Hecks
 
         def serialize_attrs(agg)
           attrs = agg.attributes.map { |a| format_attr(a) }
-          agg.value_objects.each do |vo|
-            vo.attributes.select(&:reference?).each { |a| attrs << format_attr(a) }
+          (agg.references || []).each do |ref|
+            attrs << { name: ref.name, type: "reference_to(#{ref.type})" }
           end
           attrs
         end
 
         def format_attr(a)
-          type_str = if a.reference?
-                       "reference_to(#{a.type})"
-                     elsif a.list?
+          type_str = if a.list?
                        "list_of(#{a.type})"
                      else
                        a.type.to_s

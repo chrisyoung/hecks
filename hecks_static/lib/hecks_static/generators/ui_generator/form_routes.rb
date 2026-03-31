@@ -20,8 +20,15 @@ module HecksStatic
           cmd_snake = domain_snake_name(cmd.name)
           self_id_attr = HecksTemplating::AggregateContract.self_ref_attr(cmd, agg_snake)
 
-          # Build field descriptors
+          # Build field descriptors (attributes + references)
           field_descriptors = cmd.attributes.map { |a| field_descriptor(a, agg, self_id_attr) }
+          (cmd.references || []).each do |ref|
+            ref_agg = @domain.aggregates.find { |ra| ra.name == ref.type }
+            next unless ref_agg
+            display = HecksTemplating::DisplayContract.reference_display_field(ref_agg)
+            field_descriptors << { type: :select, name: "#{ref.name}_id", ref: domain_constant_name(ref_agg.name),
+              label: humanize(ref.name.to_s), required: true, display: display }
+          end
 
           # Form GET
           lines << "        server.mount_proc \"/#{p}/#{cmd_snake}/new\" do |req, res|"
@@ -47,22 +54,6 @@ module HecksStatic
         agg_snake = domain_snake_name(agg.name)
         if attr == self_id_attr
           { type: :hidden, name: attr.name.to_s }
-        elsif attr.name.to_s.end_with?("_id")
-          # Find referenced aggregate: explicit reference_to or name convention
-          ref_agg = if attr.reference?
-            @domain.aggregates.find { |ra| ra.name == attr.type.to_s }
-          else
-            ref_name = attr.name.to_s.sub(/_id$/, "")
-            @domain.aggregates.find { |ra| domain_snake_name(ra.name) == ref_name }
-          end
-          if ref_agg
-            display = HecksTemplating::DisplayContract.reference_display_field(ref_agg)
-            { type: :select, name: attr.name.to_s, ref: domain_constant_name(ref_agg.name),
-              label: humanize(attr.name.to_s.sub(/_id$/, "")), required: required_field?(agg, attr.name),
-              display: display }
-          else
-            { type: :text, name: attr.name.to_s, label: humanize(attr.name), required: required_field?(agg, attr.name) }
-          end
         else
           # Check if the aggregate attribute has an enum
           agg_attr = agg.attributes.find { |aa| aa.name == attr.name }

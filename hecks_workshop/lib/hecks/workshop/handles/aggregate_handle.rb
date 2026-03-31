@@ -40,12 +40,16 @@ module Hecks
     def attr(name, type = String, **options)
       check_duplicate_attr!(name)
       @builder.attribute(name, type, **options)
-      if type.is_a?(Hash) && type[:reference]
-        puts "#{name} reference added to #{@name} -> #{type[:reference]}"
-        check_bidirectional(type[:reference])
-      else
-        puts "#{name} attribute added to #{@name}"
-      end
+      puts "#{name} attribute added to #{@name}"
+      self
+    end
+
+    def reference_to(type, role: nil)
+      @builder.reference_to(type, role: role)
+      role_name = role || type.to_s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                                   .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
+      puts "reference_to #{type} (as #{role_name}) added to #{@name}"
+      check_bidirectional(type)
       self
     end
 
@@ -101,7 +105,6 @@ module Hecks
     end
 
     def list_of(type) = { list: type }
-    def reference_to(type) = { reference: type }
 
     private
 
@@ -129,7 +132,7 @@ module Hecks
       domain = @workshop.to_domain
       target_agg = domain.aggregates.find { |a| a.name == target_name.to_s }
       return unless target_agg
-      back_refs = target_agg.attributes.select(&:reference?).map { |a| a.type.to_s }
+      back_refs = (target_agg.references || []).map { |r| r.type.to_s }
       if back_refs.include?(@name)
         puts "  !! WARNING: Bidirectional reference detected between #{@name} and #{target_name}."
         puts "     #{target_name} already references #{@name}. Aggregates should not reference"

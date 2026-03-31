@@ -31,7 +31,7 @@ RSpec.describe "Validator DDD rules" do
           attribute :name, String
 
           value_object "Topping" do
-            attribute :pizza_id, reference_to("Pizza")
+            reference_to "Pizza"
           end
 
           command "CreatePizza" do
@@ -88,7 +88,7 @@ RSpec.describe "Validator DDD rules" do
     it "rejects an aggregate that references itself" do
       domain = Hecks.domain "Bad" do
         aggregate "Pizza" do
-          attribute :parent_id, reference_to("Pizza")
+          reference_to "Pizza"
           command "CreatePizza" do
             attribute :name, String
           end
@@ -178,7 +178,7 @@ RSpec.describe "Validator DDD rules" do
       domain = Hecks.domain "Bad" do
         aggregate "Pizza" do
           attribute :name, String
-          attribute :topping_id, reference_to("Topping")
+          reference_to "Topping"
 
           value_object "Topping" do
             attribute :name, String

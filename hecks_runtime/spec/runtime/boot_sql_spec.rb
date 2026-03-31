@@ -88,10 +88,10 @@ RSpec.describe "Hecks.boot with SQL adapter" do
         end
 
         aggregate "Product" do
-          attribute :owner_id, reference_to("Owner")
+          reference_to "Owner"
           attribute :price, Float
           command "CreateProduct" do
-            attribute :owner_id, String
+            reference_to "Owner"
             attribute :price, Float
           end
         end

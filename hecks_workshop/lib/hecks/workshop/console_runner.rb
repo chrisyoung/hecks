@@ -31,7 +31,6 @@ module Hecks
     end
 
     def list_of(type) = { list: type }
-    def reference_to(type) = { reference: type }
 
     def aggregate(name, &block)
       is_new = !@workshop.aggregate_builders.key?(domain_constant_name(name))

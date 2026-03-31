@@ -29,6 +29,7 @@ module Hecks
     def serialize_aggregate(agg)
       lines = ["  aggregate \"#{agg.name}\" do"]
       lines.concat(serialize_attributes(agg.attributes, "    "))
+      lines.concat(serialize_references(agg.references, "    "))
       lines.concat(serialize_value_objects(agg.value_objects))
       lines.concat(serialize_entities(agg.entities))
       lines.concat(serialize_validations(agg.validations))
@@ -102,10 +103,20 @@ module Hecks
       end
     end
 
+    def serialize_references(refs, indent)
+      (refs || []).map do |ref|
+        role_opt = ref.name.to_s == ref.type.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                                           .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase ? "" : ", role: \"#{ref.name}\""
+        qualified = ref.domain ? "#{ref.domain}::#{ref.type}" : ref.type
+        "#{indent}reference_to \"#{qualified}\"#{role_opt}"
+      end
+    end
+
     def serialize_commands(commands)
       commands.flat_map do |cmd|
         lines = ["", "    command \"#{cmd.name}\" do"]
         lines.concat(serialize_attributes(cmd.attributes, "      "))
+        lines.concat(serialize_references(cmd.references, "      "))
         cmd.read_models.each { |rm| lines << "      read_model \"#{rm.name}\"" }
         cmd.external_systems.each { |ext| lines << "      external \"#{ext.name}\"" }
         cmd.actors.each { |act| lines << "      actor \"#{act.name}\"" }
@@ -150,8 +161,6 @@ module Hecks
     def dsl_type(attr)
       if attr.list?
         "list_of(\"#{attr.type}\")"
-      elsif attr.reference?
-        "reference_to(\"#{attr.type}\")"
       else
         attr.type.to_s
       end

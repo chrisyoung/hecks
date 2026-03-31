@@ -11,8 +11,6 @@ module HecksOnTheGo
     def go_type(attr)
       if attr.list?
         "[]#{pascal_case(attr.type.to_s)}"
-      elsif attr.reference?
-        "string" # UUID reference
       else
         HecksTemplating::TypeContract.go(attr.type)
       end

@@ -28,18 +28,18 @@ RSpec.describe "Demo Script Verification" do
       it "builds Comment with reference and commands" do
         workshop.aggregate("Post").attr :title, String
         comment = workshop.aggregate("Comment")
-        comment.attr :post_id, comment.reference_to("Post")
+        comment.reference_to("Post")
         comment.attr :author, String
         comment.attr :body, String
         comment.command("CreateComment") do
-          attribute :post_id, reference_to("Post")
+          reference_to "Post"
           attribute :author, String
           attribute :body, String
         end
 
         domain = workshop.to_domain
         agg = domain.aggregates.find { |a| a.name == "Comment" }
-        expect(agg.attributes.find { |a| a.name == :post_id }).to be_reference
+        expect(agg.references.find { |r| r.type == "Post" }).not_to be_nil
         expect(agg.commands.map(&:name)).to include("CreateComment")
       end
 

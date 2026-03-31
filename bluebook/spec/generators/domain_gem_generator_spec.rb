@@ -22,17 +22,17 @@ RSpec.describe Hecks::Generators::Infrastructure::DomainGemGenerator do
         end
 
         command "AddTopping" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :topping, String
         end
       end
 
       aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
 
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
 

@@ -34,7 +34,7 @@ module BootedDomains
         end
 
         command "AddTopping" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :topping, String
         end
 
@@ -55,23 +55,23 @@ module BootedDomains
       end
 
       aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
         attribute :status, String
 
         validation :quantity, presence: true
 
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
 
         command "CancelOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
         end
 
         command "ReserveStock" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
 

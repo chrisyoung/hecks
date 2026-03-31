@@ -67,7 +67,7 @@ RSpec.describe "Validation Rules" do
   describe "References::NoSelfReferences" do
     it "rejects aggregate referencing itself" do
       domain = Hecks.domain("Validation") do
-        aggregate("Thing") { attribute :thing_id, reference_to("Thing"); command("CreateThing") { attribute :name, String } }
+        aggregate("Thing") { reference_to "Thing"; command("CreateThing") { attribute :name, String } }
       end
       valid, errors = validate(domain)
       expect(valid).to be false
@@ -78,8 +78,8 @@ RSpec.describe "Validation Rules" do
   describe "References::NoBidirectionalReferences" do
     it "rejects A->B and B->A references" do
       domain = Hecks.domain("Validation") do
-        aggregate("Pizza") { attribute :order_id, reference_to("Order"); command("CreatePizza") { attribute :name, String } }
-        aggregate("Order") { attribute :pizza_id, reference_to("Pizza"); command("PlaceOrder") { attribute :pizza_id, reference_to("Pizza") } }
+        aggregate("Pizza") { reference_to "Order"; command("CreatePizza") { attribute :name, String } }
+        aggregate("Order") { reference_to "Pizza"; command("PlaceOrder") { reference_to "Pizza" } }
       end
       valid, errors = validate(domain)
       expect(valid).to be false
@@ -89,7 +89,7 @@ RSpec.describe "Validation Rules" do
     it "allows one-directional references" do
       domain = Hecks.domain("Validation") do
         aggregate("Pizza") { attribute :name, String; command("CreatePizza") { attribute :name, String } }
-        aggregate("Order") { attribute :pizza_id, reference_to("Pizza"); command("PlaceOrder") { attribute :pizza_id, reference_to("Pizza") } }
+        aggregate("Order") { reference_to "Pizza"; command("PlaceOrder") { reference_to "Pizza" } }
       end
       valid, _ = validate(domain)
       expect(valid).to be true
@@ -101,7 +101,7 @@ RSpec.describe "Validation Rules" do
       domain = Hecks.domain("Validation") do
         aggregate("Pizza") do
           attribute :name, String
-          value_object("Topping") { attribute :order_id, reference_to("Order") }
+          value_object("Topping") { reference_to "Order" }
           command("CreatePizza") { attribute :name, String }
         end
         aggregate("Order") { attribute :qty, Integer; command("PlaceOrder") { attribute :qty, Integer } }

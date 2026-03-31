@@ -86,7 +86,7 @@ module Hecks
       def assemble_attribute(col, enums)
         if col[:type] == :reference
           target = classify(col[:target])
-          "    attribute :#{col[:name]}, reference_to(\"#{target}\")"
+          "    reference_to \"#{target}\""
         elsif enums.key?(col[:name])
           values = enums[col[:name]].map(&:to_s)
           "    attribute :#{col[:name]}, String, enum: #{values.inspect}"

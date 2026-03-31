@@ -24,6 +24,9 @@ module Hecks
       # @return [Array<String>] lines of Ruby source code for the insert method
       def insert_lines
         col_hash = scalar_attributes.map { |a| a.json? ? "#{a.name}: JSON.generate(#{snake_name}.#{a.name} || nil)" : "#{a.name}: #{snake_name}.#{a.name}" }
+        (@aggregate.references || []).each do |ref|
+          col_hash << "#{ref.name}_id: (#{snake_name}.#{ref.name}.respond_to?(:id) ? #{snake_name}.#{ref.name}.id : #{snake_name}.#{ref.name})"
+        end
         col_hash << "id: #{snake_name}.id"
         col_hash << "created_at: #{snake_name}.created_at&.iso8601"
         col_hash << "updated_at: #{snake_name}.updated_at&.iso8601"
@@ -47,6 +50,9 @@ module Hecks
       # @return [Array<String>] lines of Ruby source code for the update method
       def update_lines
         col_hash = scalar_attributes.map { |a| a.json? ? "#{a.name}: JSON.generate(#{snake_name}.#{a.name} || nil)" : "#{a.name}: #{snake_name}.#{a.name}" }
+        (@aggregate.references || []).each do |ref|
+          col_hash << "#{ref.name}_id: (#{snake_name}.#{ref.name}.respond_to?(:id) ? #{snake_name}.#{ref.name}.id : #{snake_name}.#{ref.name})"
+        end
         col_hash << "created_at: #{snake_name}.created_at&.iso8601"
         col_hash << "updated_at: #{snake_name}.updated_at&.iso8601"
 
@@ -78,6 +84,10 @@ module Hecks
           else
             "          #{a.name}: row[:#{a.name}]"
           end
+        end
+        # Reference columns are stored as _id but will be hydrated by ReferenceMethods
+        (@aggregate.references || []).each do |ref|
+          attr_assigns << "          #{ref.name}_id: row[:#{ref.name}_id]"
         end
 
         lines = []

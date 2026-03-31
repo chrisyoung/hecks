@@ -36,9 +36,9 @@ RSpec.describe "Hecks.boot" do
     File.write(File.join(tmpdir, "hecks_domain.rb"), <<~RUBY)
       Hecks.domain "BadBoot" do
         aggregate "Order" do
-          attribute :widget_id, reference_to("Widget")
+          reference_to "Widget"
           command "PlaceOrder" do
-            attribute :widget_id, reference_to("Widget")
+            reference_to "Widget"
           end
         end
       end

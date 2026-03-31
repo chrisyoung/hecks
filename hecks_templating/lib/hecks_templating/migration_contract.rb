@@ -11,7 +11,7 @@
 module HecksTemplating
   module MigrationContract
     # Attribute properties that must survive round-trip serialization.
-    ATTRIBUTE_PROPS = %i[name type list? reference?].freeze
+    ATTRIBUTE_PROPS = %i[name type list?].freeze
 
     # Aggregate children whose counts must match after round-trip.
     AGGREGATE_CHILDREN = %i[
