@@ -12,9 +12,7 @@ Gem::Specification.new do |spec|
   spec.files         = [
     "README.md", "FEATURES.md", "hecks_logo.png",
     "lib/hecks.rb",
-    "bin/hecks", "bin/hecks_claude",
-    "bin/watch-all", "bin/watch-autoloads", "bin/watch-cli",
-    "bin/watch-cross-require", "bin/watch-file-size", "bin/watch-spec-coverage"
+    "bin/hecks", "bin/hecks_claude"
   ]
   spec.require_paths = ["lib"]
   spec.bindir        = "bin"
@@ -25,13 +23,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency "bluebook", Hecks::VERSION
   spec.add_dependency "hecks_ai", Hecks::VERSION
   spec.add_dependency "hecks_cli", Hecks::VERSION
-  spec.add_dependency "hecks_explorer", Hecks::VERSION
   spec.add_dependency "hecks_multidomain", Hecks::VERSION
   spec.add_dependency "hecks_on_rails", Hecks::VERSION
   spec.add_dependency "hecks_persist", Hecks::VERSION
   spec.add_dependency "hecks_runtime", Hecks::VERSION
-  spec.add_dependency "hecks_watcher_agent", Hecks::VERSION
-  spec.add_dependency "hecks_watchers", Hecks::VERSION
   spec.add_dependency "hecks_workshop", Hecks::VERSION
   spec.add_dependency "hecksagon", Hecks::VERSION
   spec.add_dependency "hecksties", Hecks::VERSION
