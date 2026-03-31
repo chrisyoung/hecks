@@ -15,8 +15,10 @@
 - Symbol type shorthand: `:string`, `:integer`, `:float`, `:boolean`, `:date`, `:datetime`
 - Default attribute type is String when omitted
 - Define collection attributes with `list_of("Type")` syntax
-- Define cross-aggregate references with `reference_to("Aggregate")` — renders as dropdown in forms
-- Name-free reference shorthand: `attribute reference_to("Order")` auto-derives name as `order_id`
+- Define cross-aggregate references with standalone `reference_to "Aggregate"` — first-class domain concept
+- Optional role naming: `reference_to "Team", role: "home_team"`
+- Cross-domain references: `reference_to "Billing::Invoice"`
+- References hold live objects in memory — IDs are purely a persistence concern
 - Enum constraints: `attribute :category, String, enum: %w[low medium high]` — validated at runtime, dropdown in UI
 
 ### Commands
