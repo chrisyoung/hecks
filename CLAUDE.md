@@ -2,6 +2,7 @@
 
 ## Rules
 
+- **No Co-Authored-By** — never add Co-Authored-By lines to commit messages
 - **No file over 200 lines of code** — doc comment headers don't count toward this limit; extract modules/classes by concern when approaching it
 - **Tests must run under 1 second** — enforced by pre-commit hook
 - **Every lib file has a doc comment header** — class name, purpose, usage example
