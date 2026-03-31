@@ -1,4 +1,5 @@
 require_relative "runtime/port_setup"
+require_relative "runtime/gate_enforcer"
 require_relative "runtime/repository_setup"
 require_relative "runtime/policy_setup"
 require_relative "runtime/subscriber_setup"
@@ -73,9 +74,10 @@ module Hecks
       # @param event_bus [Hecks::EventBus, nil] optional shared event bus; creates a new one if nil
       # @yield optional configuration block evaluated in the runtime's instance context
       # @return [Hecks::Runtime]
-      def initialize(domain, port: nil, event_bus: nil, &config)
+      def initialize(domain, port: nil, event_bus: nil, hecksagon: nil, &config)
         @domain = domain
         @port_name = port
+        @hecksagon = hecksagon || Hecks.last_hecksagon
         @mod_name = domain_module_name(domain.name)
         @mod = Object.const_get(@mod_name)
         @mod.extend(Hecks::DomainConnections) unless @mod.respond_to?(:connections)
