@@ -8,7 +8,7 @@ RSpec.describe "hecks domain validate" do
 
   it "reports valid domain with aggregate summary" do
     Dir.mktmpdir do |dir|
-      File.write(File.join(dir, "hecks_domain.rb"), <<~RUBY)
+      File.write(File.join(dir, "Bluebook"), <<~RUBY)
         Hecks.domain "Test" do
           aggregate "Widget" do
             attribute :name, String
@@ -28,7 +28,7 @@ RSpec.describe "hecks domain validate" do
 
   it "reports validation errors" do
     Dir.mktmpdir do |dir|
-      File.write(File.join(dir, "hecks_domain.rb"), <<~RUBY)
+      File.write(File.join(dir, "Bluebook"), <<~RUBY)
         Hecks.domain "Test" do
           aggregate "Widget" do
             attribute :name, String

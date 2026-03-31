@@ -9,7 +9,7 @@ module Hecks
     private
 
     def find_domain_file
-      path = File.join(Dir.pwd, "hecks_domain.rb")
+      path = File.join(Dir.pwd, "Bluebook")
       File.exist?(path) ? path : nil
     end
 
@@ -23,9 +23,9 @@ module Hecks
         else
           domains = find_installed_domains
           if domains.empty?
-            say "No hecks_domain.rb found and no --domain specified.", :red
+            say "No Bluebook found and no --domain specified.", :red
           else
-            say "No hecks_domain.rb found. Use --domain to specify one:", :red
+            say "No Bluebook found. Use --domain to specify one:", :red
             domains.each { |name, versions| say "  --domain #{name} (#{versions.map { |v| "v#{v}" }.join(", ")})", :yellow }
           end
           nil
@@ -39,13 +39,13 @@ module Hecks
         return nil unless file
         load_domain_file(file)
       elsif File.directory?(path_or_name)
-        file = File.join(path_or_name, "hecks_domain.rb")
+        file = File.join(path_or_name, "Bluebook")
         return nil unless File.exist?(file)
         load_domain_file(file)
       elsif File.exist?(path_or_name)
         load_domain_file(path_or_name)
       else
-        local = File.join(Dir.pwd, path_or_name, "hecks_domain.rb")
+        local = File.join(Dir.pwd, path_or_name, "Bluebook")
         File.exist?(local) ? load_domain_file(local) : nil
       end
     end
@@ -58,7 +58,7 @@ module Hecks
     end
 
     def find_installed_domains
-      ::Gem::Specification.select { |spec| File.exist?(File.join(spec.full_gem_path, "hecks_domain.rb")) }
+      ::Gem::Specification.select { |spec| File.exist?(File.join(spec.full_gem_path, "Bluebook")) }
         .group_by(&:name).map { |name, specs| [name, specs.map(&:version).sort.reverse] }
     end
 

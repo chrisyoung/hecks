@@ -29,7 +29,7 @@ module Hecks
       # - Declares the top-level domain module with +ValidationError+ and +InvariantError+
       # - Emits +autoload+ statements for every aggregate, port, adapter, workflow,
       #   view, and service
-      # - Appends an auto-boot block that loads the +hecks_domain.rb+ DSL file
+      # - Appends an auto-boot block that loads the +Bluebook+ DSL file
       #   and wires a +Hecks::Runtime+ when the gem is installed alongside Hecks
       # - Defines +.boot+ and +.runtime+ singleton methods on the domain module
       #
@@ -116,7 +116,7 @@ module Hecks
         lines << "#   hecks_ai      → MCP server for AI agents"
         lines << "# Remove a gem to unwire that extension. No code changes needed."
         lines << "if defined?(Hecks) && Gem.loaded_specs[\"#{gem_name}\"]"
-        lines << "  _hecks_domain_file = File.join(Gem.loaded_specs[\"#{gem_name}\"].full_gem_path, \"hecks_domain.rb\")"
+        lines << "  _hecks_domain_file = File.join(Gem.loaded_specs[\"#{gem_name}\"].full_gem_path, \"Bluebook\")"
         lines << "  if File.exist?(_hecks_domain_file)"
         lines << "    Kernel.load(_hecks_domain_file)"
         lines << "    #{mod}.instance_variable_set(:@_hecks_domain, Hecks.last_domain)"

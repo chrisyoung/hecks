@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 #
-# Working banking domain — structure in hecks_domain.rb, logic in generated files.
+# Working banking domain — structure in Bluebook, logic in generated files.
 #
 # Run from the hecks project root:
 #   ruby -Ilib examples/banking/app.rb

@@ -48,7 +48,7 @@ module Hecks
       # - In-memory adapter classes under +adapters/+
       # - Workflow, view, and service files
       # - RSpec specs for all aggregates, value objects, entities, commands, events
-      # - A +hecks_domain.rb+ file containing the serialized DSL
+      # - A +Bluebook+ file containing the serialized DSL
       #
       # @return [String] the absolute path to the generated gem root directory
       def generate

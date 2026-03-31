@@ -35,7 +35,7 @@ end
 #   hecks_ai      → MCP server for AI agents
 # Remove a gem to unwire that extension. No code changes needed.
 if defined?(Hecks) && Gem.loaded_specs["operations_domain"]
-  _hecks_domain_file = File.join(Gem.loaded_specs["operations_domain"].full_gem_path, "hecks_domain.rb")
+  _hecks_domain_file = File.join(Gem.loaded_specs["operations_domain"].full_gem_path, "Bluebook")
   if File.exist?(_hecks_domain_file)
     Kernel.load(_hecks_domain_file)
     OperationsDomain.instance_variable_set(:@_hecks_domain, Hecks.last_domain)

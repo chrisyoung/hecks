@@ -5,7 +5,7 @@
 # First generate the standalone gem:
 #   ruby -Ihecks_model/lib -Ihecks_domain/lib -Ihecks_runtime/lib -Ihecksties/lib -e "
 #     require 'hecks'
-#     domain = eval(File.read('examples/pizzas/hecks_domain.rb'), nil, 'hecks_domain.rb', 1)
+#     domain = eval(File.read('examples/pizzas/Bluebook'), nil, 'Bluebook', 1)
 #     Hecks.build_standalone(domain, output_dir: 'tmp')
 #   "
 #

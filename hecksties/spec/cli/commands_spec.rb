@@ -38,7 +38,7 @@ RSpec.describe "CLI commands" do
   end
 
   before do
-    File.write(File.join(tmpdir, "hecks_domain.rb"), domain_rb)
+    File.write(File.join(tmpdir, "Bluebook"), domain_rb)
     File.write(File.join(tmpdir, ".hecks_version"), "0.0.0")
   end
 
@@ -138,7 +138,7 @@ RSpec.describe "CLI commands" do
         content = File.read(File.join(tmpdir, "part_domain.rb"))
         expect(content).to include('Hecks.domain "Part"')
 
-        updated = File.read(File.join(tmpdir, "hecks_domain.rb"))
+        updated = File.read(File.join(tmpdir, "Bluebook"))
         expect(updated).not_to include('"Part"')
         expect(updated).to include("Widget")
       end
@@ -151,8 +151,8 @@ RSpec.describe "CLI commands" do
       FileUtils.mkdir_p(new_dir)
       Dir.chdir(new_dir) do
         out = run_cli("init", "Blog")
-        expect(out).to include("Created hecks_domain.rb")
-        expect(File.exist?(File.join(new_dir, "hecks_domain.rb"))).to be true
+        expect(out).to include("Created Bluebook")
+        expect(File.exist?(File.join(new_dir, "Bluebook"))).to be true
       end
     end
   end
@@ -179,7 +179,7 @@ RSpec.describe "CLI commands" do
     it "generates SQL migration" do
       mig_dir = File.join(tmpdir, "mig_test")
       FileUtils.mkdir_p(mig_dir)
-      FileUtils.cp(File.join(tmpdir, "hecks_domain.rb"), File.join(mig_dir, "hecks_domain.rb"))
+      FileUtils.cp(File.join(tmpdir, "Bluebook"), File.join(mig_dir, "Bluebook"))
       Dir.chdir(mig_dir) do
         out = run_cli("generate:migrations", "--domain", mig_dir)
         expect(out).to include("Generated")
@@ -214,7 +214,7 @@ RSpec.describe "CLI commands" do
     it "detects changes when snapshot exists" do
       Dir.chdir(tmpdir) do
         # Save a snapshot with just Widget (no Part)
-        Kernel.load(File.join(tmpdir, "hecks_domain.rb"))
+        Kernel.load(File.join(tmpdir, "Bluebook"))
         domain = Hecks.last_domain
         old_domain = Hecks::DomainModel::Structure::Domain.new(
           name: domain.name,

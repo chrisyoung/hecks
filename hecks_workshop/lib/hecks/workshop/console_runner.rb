@@ -156,8 +156,8 @@ module Hecks
         return workshop
       end
 
-      if File.exist?("hecks_domain.rb")
-        Kernel.load("hecks_domain.rb")
+      if File.exist?("Bluebook")
+        Kernel.load("Bluebook")
         domain = Hecks.last_domain
         workshop = Hecks.workshop(domain.name)
         domain.aggregates.each do |agg|

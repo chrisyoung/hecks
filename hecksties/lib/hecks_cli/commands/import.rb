@@ -3,7 +3,7 @@ require_relative "../import"
 Hecks::CLI.register_command(:import, "Import a Rails app as a Hecks domain",
   args: %w[SOURCE PATH],
   options: {
-    output: { type: :string, default: "hecks_domain.rb", desc: "Output file path", aliases: "-o" },
+    output: { type: :string, default: "Bluebook", desc: "Output file path", aliases: "-o" },
     preview: { type: :boolean, default: false, desc: "Preview without writing" },
     name: { type: :string, desc: "Domain name (default: inferred from directory)" }
   }
@@ -26,7 +26,7 @@ Hecks::CLI.register_command(:import, "Import a Rails app as a Hecks domain",
 
   puts dsl
   unless options[:preview]
-    output = options[:output] || "hecks_domain.rb"
+    output = options[:output] || "Bluebook"
     File.write(output, dsl)
     puts "\nWritten to #{output}"
   end
