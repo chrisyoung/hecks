@@ -43,8 +43,10 @@ module Hecks
     end
 
     def load_single_domain(dir)
+      # Look for *Bluebook files at root, then in bluebook/ subfolder
       bluebooks = Dir[File.join(dir, "*Bluebook")].sort
-      raise Hecks::DomainLoadError, "No *Bluebook files found in #{dir}" if bluebooks.empty?
+      bluebooks = Dir[File.join(dir, "bluebook", "*Bluebook")].sort if bluebooks.empty?
+      raise Hecks::DomainLoadError, "No *Bluebook files found in #{dir} or #{dir}/bluebook/" if bluebooks.empty?
 
       bluebooks.each { |f| Kernel.load(f) }
       domain = Hecks.last_domain
