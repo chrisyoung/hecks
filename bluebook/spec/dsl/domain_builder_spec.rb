@@ -129,6 +129,27 @@ RSpec.describe Hecks::DSL::DomainBuilder do
       attr = domain.aggregates.first.attributes.first
       expect(attr.list?).to be true
     end
+
+    it "supports lifecycle block on attribute" do
+      domain = Hecks.domain("Lifecycle") do
+        aggregate("Ticket") do
+          attribute :title, String
+          attribute :status, String, default: "open" do
+            transition "StartTicket" => "in_progress", from: "open"
+            transition "CloseTicket" => "closed", from: "in_progress"
+          end
+          command("CreateTicket") { attribute :title, String }
+          command("StartTicket") { reference_to "Ticket" }
+          command("CloseTicket") { reference_to "Ticket" }
+        end
+      end
+      agg = domain.aggregates.first
+      expect(agg.lifecycle).not_to be_nil
+      expect(agg.lifecycle.field).to eq(:status)
+      expect(agg.lifecycle.default).to eq("open")
+      expect(agg.lifecycle.target_for("StartTicket")).to eq("in_progress")
+      expect(agg.lifecycle.target_for("CloseTicket")).to eq("closed")
+    end
   end
 
   describe "domain metadata" do

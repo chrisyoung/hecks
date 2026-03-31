@@ -402,15 +402,23 @@ attribute :email, String, pii: true              # PII flag
 
 ## Lifecycle
 
-State machine bound to an attribute. Commands trigger transitions
-between states.
+State machine bound to an attribute. Declare as a block on the attribute:
+
+```ruby
+attribute :status, String, default: "draft" do
+  transition "SubmitForReview" => "pending"
+  transition "ApprovePost" => "published", from: "pending"
+  transition "RejectPost" => "rejected", from: "pending"
+  transition "ArchivePost" => "archived", from: ["published", "rejected"]
+end
+```
+
+Or as a separate declaration:
 
 ```ruby
 lifecycle :status, default: "draft" do
   transition "SubmitForReview" => "pending"
   transition "ApprovePost" => "published", from: "pending"
-  transition "RejectPost" => "rejected", from: "pending"
-  transition "ArchivePost" => "archived", from: ["published", "rejected"]
 end
 ```
 
