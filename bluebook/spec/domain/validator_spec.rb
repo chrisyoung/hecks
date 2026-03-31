@@ -42,10 +42,10 @@ RSpec.describe Hecks::Validator do
     let(:domain) do
       Hecks.domain "Bad" do
         aggregate "Order" do
-          attribute :widget_id, reference_to("Widget")
+          reference_to "Widget"
 
           command "PlaceOrder" do
-            attribute :widget_id, reference_to("Widget")
+            reference_to "Widget"
           end
         end
       end

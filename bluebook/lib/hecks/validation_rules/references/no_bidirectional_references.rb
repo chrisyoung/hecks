@@ -22,7 +22,7 @@ module Hecks
         result = []
         refs = {}
         @domain.aggregates.each do |agg|
-          targets = agg.attributes.select(&:reference?).map { |a| a.type.to_s }
+          targets = (agg.references || []).map { |r| r.type.to_s }
           refs[agg.name] = targets
         end
 

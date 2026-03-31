@@ -34,11 +34,11 @@ RSpec.describe Hecks::DomainGlossary do
       end
 
       aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
 
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
 
@@ -67,8 +67,8 @@ RSpec.describe Hecks::DomainGlossary do
     expect(text).to include("A Pizza has many Toppings.")
   end
 
-  it "describes reference attributes with belongs to" do
-    expect(text).to include("An Order belongs to a Pizza.")
+  it "describes references in relationships section" do
+    expect(text).to include("An Order references a Pizza.")
   end
 
   it "uses correct articles for vowel-starting names" do

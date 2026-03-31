@@ -49,6 +49,22 @@ module Hecks
         "#<#{@command_name} command on #{@aggregate_name}>"
       end
 
+      # Add a reference to the command.
+      def reference_to(type, role: nil)
+        cmd = find_command
+        return self unless cmd
+        type_str = type.to_s
+        parts = type_str.split("::")
+        target = parts.last
+        domain = parts.length > 1 ? parts[0..-2].join("::") : nil
+        name = (role || target.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                               .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase).to_sym
+        ref = DomainModel::Structure::Reference.new(name: name, type: target, domain: domain)
+        cmd.references << ref
+        puts "reference_to #{type} added to #{@command_name}"
+        self
+      end
+
       private
 
       # Add an attribute to the underlying command and print feedback.
@@ -57,20 +73,15 @@ module Hecks
         return self unless cmd
 
         list = type.is_a?(Hash) && type[:list]
-        ref = type.is_a?(Hash) && type[:reference]
         actual_type = type.is_a?(Hash) ? type.values.first : type
 
         attr = DomainModel::Structure::Attribute.new(
           name: name.to_sym, type: actual_type,
-          list: !!list, reference: !!ref, **kwargs
+          list: !!list, **kwargs
         )
         cmd.attributes << attr
         event_name = cmd.inferred_event_name
-        if ref
-          puts "#{name} reference added to #{@command_name} -> #{type[:reference]}"
-        else
-          puts "#{name} attribute added to #{@command_name} -> #{event_name}"
-        end
+        puts "#{name} attribute added to #{@command_name} -> #{event_name}"
         self
       end
 

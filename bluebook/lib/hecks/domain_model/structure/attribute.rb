@@ -5,8 +5,7 @@ module Hecks
     # Hecks::DomainModel::Structure::Attribute
     #
     # Represents a typed attribute on an aggregate, value object, command, or event.
-    # Supports scalar types (String, Integer), list types, and cross-aggregate
-    # references.
+    # Supports scalar types (String, Integer) and list types.
     #
     # The most granular building block in the DomainModel IR. Used by every builder
     # and every generator.
@@ -39,20 +38,17 @@ module Hecks
       #   to other aggregates or value objects.
       # @param default [Object, nil] optional default value for code generation.
       # @param list [Boolean] if true, this attribute holds a collection (Array) of the given type.
-      # @param reference [Boolean] if true, this attribute is a foreign-key reference to another
-      #   aggregate, stored as a String UUID.
       # @param pii [Boolean] if true, this attribute contains personally identifiable information
       #   and should be handled according to PII policies (encryption, masking, etc.).
       # @param enum [Array<String>, nil] optional list of allowed string values. When present,
       #   generated code will validate that the attribute value is one of these.
       #
       # @return [Attribute] a new Attribute instance
-      def initialize(name:, type:, default: nil, list: false, reference: false, pii: false, enum: nil)
+      def initialize(name:, type:, default: nil, list: false, pii: false, enum: nil)
         @name = name.to_sym
         @type = type
         @default = default
         @list = list
-        @reference = reference
         @pii = pii
         @enum = enum
       end
@@ -64,15 +60,6 @@ module Hecks
       # @return [Boolean] true if this is a list/collection attribute
       def list?
         @list
-      end
-
-      # Returns true if this attribute references another aggregate by id.
-      # Reference attributes store a String UUID pointing to the referenced
-      # aggregate's root entity. The +ruby_type+ for references is always "String".
-      #
-      # @return [Boolean] true if this is a cross-aggregate reference
-      def reference?
-        @reference
       end
 
       # Returns true if this attribute contains personally identifiable information.
@@ -100,9 +87,7 @@ module Hecks
       # @return [String] the Ruby type name suitable for generated source code
       #   (e.g., "String", "Integer", "Array", "JSON", "Address")
       def ruby_type
-        if reference?
-          "String"
-        elsif list?
+        if list?
           "Array"
         elsif json?
           "JSON"

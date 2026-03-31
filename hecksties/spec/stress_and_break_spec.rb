@@ -270,7 +270,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
     it "handles domain with references" do
       domain = Hecks.domain("RefSchema") do
         aggregate("Widget") { attribute :name, String; command("CreateWidget") { attribute :name, String } }
-        aggregate("Part") { attribute :widget_id, reference_to("Widget"); command("CreatePart") { attribute :widget_id, reference_to("Widget") } }
+        aggregate("Part") { reference_to "Widget"; command("CreatePart") { reference_to "Widget" } }
       end
       schema = Hecks::HTTP::JsonSchemaGenerator.new(domain).generate
       ref_prop = schema[:definitions]["Part"][:properties][:widget_id]
@@ -301,11 +301,11 @@ RSpec.describe "Exploratory: trying to break Hecks" do
         end
 
         aggregate "Order" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
 
           command "PlaceOrder" do
-            attribute :pizza_id, reference_to("Pizza")
+            reference_to "Pizza"
             attribute :quantity, Integer
           end
         end
@@ -317,7 +317,7 @@ RSpec.describe "Exploratory: trying to break Hecks" do
       expect(restored.aggregates.map(&:name)).to eq(["Pizza", "Order"])
       expect(restored.aggregates.first.value_objects.first.name).to eq("Topping")
       expect(restored.aggregates.first.validations.first.field).to eq(:name)
-      expect(restored.aggregates.last.attributes.first.reference?).to be true
+      expect(restored.aggregates.last.references.first).not_to be_nil
     end
   end
 end

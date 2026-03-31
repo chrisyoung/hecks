@@ -55,6 +55,7 @@ module Hecks
       autoload :Actor,          "hecks/domain_model/structure/actor"
       autoload :Lifecycle,        "hecks/domain_model/structure/lifecycle"
       autoload :StateTransition, "hecks/domain_model/structure/state_transition"
+      autoload :Reference,       "hecks/domain_model/structure/reference"
     end
   end
 end

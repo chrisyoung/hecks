@@ -5,20 +5,15 @@ module PizzasDomain
         include Hecks::Command
         emits "PlacedOrder"
 
-        attr_reader :pizza_id, :quantity
+        attr_reader :quantity, :pizza_id
 
-        def initialize(pizza_id: nil, quantity: nil)
-          @pizza_id = pizza_id
+        def initialize(quantity: nil, pizza_id: nil)
           @quantity = quantity
+          @pizza_id = pizza_id
         end
 
         def call
-          existing = repository.find(pizza_id)
-          if existing
-            Order.new(id: existing.id, pizza_id: pizza_id, quantity: quantity)
-          else
-            Order.new(pizza_id: pizza_id, quantity: quantity)
-          end
+          Order.new(pizza_id: pizza_id, quantity: quantity)
         end
       end
     end

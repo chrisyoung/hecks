@@ -72,6 +72,9 @@ module Hecks
         @user_attrs.each do |attr|
           lines << "    attribute #{attribute_declaration(attr)}"
         end
+        (@aggregate.references || []).each do |ref|
+          lines << "    attribute :#{ref.name}_id"
+        end
         if @aggregate.lifecycle
           lines << ""
           lines << "    # State predicates — see lifecycle.rb for full state machine"

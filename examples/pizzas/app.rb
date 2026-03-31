@@ -16,7 +16,7 @@ app.on("CreatedPizza") do |event|
 end
 
 app.on("PlacedOrder") do |event|
-  puts "  [event] PlacedOrder: pizza_id=#{event.pizza_id}, quantity=#{event.quantity}"
+  puts "  [event] PlacedOrder: quantity=#{event.quantity}"
 end
 
 # 7. Run commands using the short API
@@ -27,7 +27,7 @@ margherita = Pizza.create(name: "Margherita", description: "Classic")
 pepperoni = Pizza.create(name: "Pepperoni", description: "Spicy")
 
 puts "\nPlacing an order..."
-Order.place(pizza_id: margherita.id, quantity: 3, customer_name: "Alice")
+Order.place(pizza_id: margherita.id, customer_name: "Alice", quantity: 3)
 
 # 8. Use collection proxies for toppings
 puts "\n--- Collection proxies ---"

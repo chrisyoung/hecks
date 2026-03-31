@@ -54,7 +54,6 @@ module Hecks
       def self.serialize_attribute(attr)
         h = { name: attr.name.to_s, type: attr.ruby_type }
         h[:list] = true if attr.list?
-        h[:reference] = true if attr.reference?
         h[:pii] = true if attr.pii?
         h[:enum] = attr.enum if attr.enum
         h[:default] = attr.default unless attr.default.nil?

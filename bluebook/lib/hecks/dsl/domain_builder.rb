@@ -279,15 +279,15 @@ module Hecks
         domain.aggregates.each do |agg|
           local_types = agg.value_objects.map(&:name) + agg.entities.map(&:name)
           (agg.references || []).each do |ref|
-            ref[:kind] = if ref[:domain]
-                           :cross_context
-                         elsif local_types.include?(ref[:type])
-                           :composition
-                         elsif agg_names.include?(ref[:type])
-                           :aggregation
-                         else
-                           :aggregation
-                         end
+            ref.kind = if ref.domain
+                         :cross_context
+                       elsif local_types.include?(ref.type)
+                         :composition
+                       elsif agg_names.include?(ref.type)
+                         :aggregation
+                       else
+                         :aggregation
+                       end
           end
         end
       end

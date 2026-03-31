@@ -74,7 +74,8 @@ module Hecks
         lines << "        emits \"#{@event.name}\"" if @event
         lines.concat(condition_declarations)
         lines << ""
-        attr_syms = @command.attributes.map { |a| ":#{a.name}" }
+        attr_syms = @command.attributes.map { |a| ":#{a.name}" } +
+                    (@command.references || []).map { |r| ":#{r.name}_id" }
         if attr_syms.size <= 2
           lines << "        attr_reader #{attr_syms.join(", ")}"
         else
@@ -131,6 +132,9 @@ module Hecks
           @command.attributes.each do |attr|
             lines << "          @#{attr.name} = kwargs[:#{attr.name}]"
           end
+          (@command.references || []).each do |ref|
+            lines << "          @#{ref.name}_id = kwargs[:#{ref.name}_id]"
+          end
         else
           params = constructor_params
           if params.size <= 2
@@ -145,6 +149,9 @@ module Hecks
           end
           @command.attributes.each do |attr|
             lines << "          @#{attr.name} = #{attr.name}"
+          end
+          (@command.references || []).each do |ref|
+            lines << "          @#{ref.name}_id = #{ref.name}_id"
           end
         end
         lines << "        end"
@@ -227,7 +234,8 @@ module Hecks
       #
       # @return [Array<String>] parameter strings with nil defaults (e.g., ["name: nil", "size: nil"])
       def constructor_params
-        @command.attributes.map { |attr| "#{attr.name}: nil" }
+        @command.attributes.map { |attr| "#{attr.name}: nil" } +
+        (@command.references || []).map { |ref| "#{ref.name}_id: nil" }
       end
 
       # Find the command attribute that references this aggregate's own ID.

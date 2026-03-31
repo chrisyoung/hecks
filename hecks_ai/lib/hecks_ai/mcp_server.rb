@@ -86,10 +86,19 @@ module Hecks
       when "String" then String
       when "Integer" then Integer
       when "Float" then Float
-      when /^reference_to\((.+)\)$/ then { reference: $1.delete('"') }
       when /^list_of\((.+)\)$/ then { list: $1.delete('"') }
       else String
       end
+    end
+
+    # Returns true if the type string is a reference_to declaration.
+    def reference_type?(type_str)
+      type_str.to_s =~ /^reference_to\(/
+    end
+
+    # Extracts the target type from a reference_to string.
+    def reference_target(type_str)
+      type_str.to_s[/^reference_to\(["']?(.+?)["']?\)$/, 1]
     end
 
     # Captures stdout during the execution of the given block and returns

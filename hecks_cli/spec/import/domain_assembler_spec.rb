@@ -62,7 +62,7 @@ RSpec.describe Hecks::Import::DomainAssembler do
   end
 
   it "converts foreign keys to references" do
-    expect(dsl).to include('attribute :author_id, reference_to("Author")')
+    expect(dsl).to include('reference_to "Author"')
   end
 
   it "includes validations from model data" do

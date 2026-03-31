@@ -36,6 +36,7 @@ module Hecks
         {
           name: agg.name,
           attributes: agg.attributes.map { |a| serialize_attribute(a) },
+          references: (agg.references || []).map { |r| { name: r.name.to_s, type: r.type, role: r.name.to_s } },
           commands: agg.commands.each_with_index.map { |cmd, i| serialize_command(cmd, agg.events[i]) },
           queries: agg.queries.map { |q| { name: q.name } },
           specifications: agg.specifications.map { |s| { name: s.name } },
@@ -54,7 +55,6 @@ module Hecks
       def self.serialize_attribute(attr)
         h = { name: attr.name.to_s, type: attr.ruby_type }
         h[:list] = true if attr.list?
-        h[:reference] = true if attr.reference?
         h[:pii] = true if attr.pii?
         h[:enum] = attr.enum if attr.enum
         h[:default] = attr.default unless attr.default.nil?

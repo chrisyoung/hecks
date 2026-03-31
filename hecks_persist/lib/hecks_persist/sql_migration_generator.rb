@@ -70,8 +70,14 @@ module Hecks
           lines << "  #{attr.name} #{sql_type(attr)},"
         end
 
+        (agg.references || []).each do |ref|
+          ref_table = table_name(ref.type)
+          lines << "  #{ref.name}_id VARCHAR(36) REFERENCES #{ref_table}(id) ON DELETE SET NULL,"
+        end
+
         # Fix trailing comma on last line before id
-        lines[1] = lines[1] + "," if agg.attributes.any? { |a| !a.list? }
+        has_cols = agg.attributes.any? { |a| !a.list? } || (agg.references || []).any?
+        lines[1] = lines[1] + "," if has_cols
 
         # Remove trailing comma from last attribute
         lines[-1] = lines[-1].chomp(",")
@@ -139,8 +145,6 @@ module Hecks
       # @param attr [DomainModel::Structure::Attribute] the attribute
       # @return [String] the SQL type (e.g., "VARCHAR(255)", "INTEGER")
       def sql_type(attr)
-        return "VARCHAR(36)" if attr.reference?
-
         case attr.type.to_s
         when "String"  then "VARCHAR(255)"
         when "Integer" then "INTEGER"

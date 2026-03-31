@@ -23,19 +23,19 @@ RSpec.describe "SQL adapter integration" do
         end
 
         command "UpdatePizza" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :name, String
           attribute :description, String
         end
       end
 
       aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
         attribute :status, String
 
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
       end

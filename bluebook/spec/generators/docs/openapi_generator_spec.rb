@@ -14,7 +14,7 @@ RSpec.describe Hecks::HTTP::OpenapiGenerator do
         end
 
         command "UpdatePizza" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :name, String
         end
 

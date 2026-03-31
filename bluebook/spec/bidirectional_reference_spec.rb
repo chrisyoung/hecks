@@ -5,16 +5,16 @@ RSpec.describe "Bidirectional reference detection" do
     it "rejects bidirectional references" do
       domain = Hecks.domain "Bad" do
         aggregate "Pizza" do
-          attribute :order_id, reference_to("Order")
+          reference_to "Order"
           command "CreatePizza" do
             attribute :name, String
           end
         end
 
         aggregate "Order" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           command "PlaceOrder" do
-            attribute :pizza_id, reference_to("Pizza")
+            reference_to "Pizza"
           end
         end
       end
@@ -36,9 +36,9 @@ RSpec.describe "Bidirectional reference detection" do
         end
 
         aggregate "Order" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           command "PlaceOrder" do
-            attribute :pizza_id, reference_to("Pizza")
+            reference_to "Pizza"
           end
         end
       end
@@ -50,16 +50,16 @@ RSpec.describe "Bidirectional reference detection" do
     it "reports only one error per bidirectional pair" do
       domain = Hecks.domain "Bad" do
         aggregate "Pizza" do
-          attribute :order_id, reference_to("Order")
+          reference_to "Order"
           command "CreatePizza" do
             attribute :name, String
           end
         end
 
         aggregate "Order" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           command "PlaceOrder" do
-            attribute :pizza_id, reference_to("Pizza")
+            reference_to "Pizza"
           end
         end
       end
@@ -81,13 +81,13 @@ RSpec.describe "Bidirectional reference detection" do
       pizza.attr :name, String
 
       order = session.aggregate("Order")
-      order.attr :pizza_id, order.reference_to("Pizza")
+      order.reference_to("Pizza")
 
       # Now adding a back-reference from Pizza to Order should warn
       output = []
       allow($stdout).to receive(:puts) { |msg| output << msg }
 
-      pizza.attr :order_id, pizza.reference_to("Order")
+      pizza.reference_to("Order")
 
       warning = output.find { |msg| msg.to_s.include?("Bidirectional") }
       expect(warning).not_to be_nil
@@ -102,7 +102,7 @@ RSpec.describe "Bidirectional reference detection" do
       allow($stdout).to receive(:puts) { |msg| output << msg }
 
       order = session.aggregate("Order")
-      order.attr :pizza_id, order.reference_to("Pizza")
+      order.reference_to("Pizza")
 
       warning = output.find { |msg| msg.to_s.include?("Bidirectional") }
       expect(warning).to be_nil

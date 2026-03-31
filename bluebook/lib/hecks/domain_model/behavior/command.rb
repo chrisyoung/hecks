@@ -27,7 +27,7 @@ module Hecks
       # @return [Hash{Symbol => Object}] attribute defaults to set on the aggregate after execution
       # @return [Array<Condition>] preconditions checked before command execution
       # @return [Array<Condition>] postconditions checked after command execution
-      attr_reader :name, :attributes, :handler, :guard_name, :read_models,
+      attr_reader :name, :attributes, :references, :handler, :guard_name, :read_models,
                   :external_systems, :actors, :call_body, :sets,
                   :preconditions, :postconditions
 
@@ -45,11 +45,12 @@ module Hecks
       # @param preconditions [Array<Condition>] conditions that must hold before execution
       # @param postconditions [Array<Condition>] conditions that must hold after execution
       # @return [Command]
-      def initialize(name:, attributes: [], handler: nil, guard_name: nil,
+      def initialize(name:, attributes: [], references: [], handler: nil, guard_name: nil,
                      read_models: [], external_systems: [], actors: [],
                      call_body: nil, sets: {}, preconditions: [], postconditions: [])
         @name = Names.command_name(name)
         @attributes = attributes
+        @references = references
         @handler = handler
         @guard_name = guard_name
         @read_models = read_models

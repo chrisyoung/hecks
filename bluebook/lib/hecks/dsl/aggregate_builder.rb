@@ -101,21 +101,21 @@ module Hecks
 
       # Declare a relationship to another type.
       # The kind (composition/aggregation/cross-context) is inferred after build:
-      #   reference_to "LineItem"              — entity/VO in current agg → composition
-      #   reference_to "Order"                 — aggregate root → aggregation
-      #   reference_to "Billing::Invoice"      — cross-domain aggregate → cross-context
-      #   reference_to "Stakeholder", as: :reviewer  — named role
+      #   reference_to "LineItem"                        — entity/VO → composition
+      #   reference_to "Order"                           — aggregate root → aggregation
+      #   reference_to "Billing::Invoice"                — cross-domain → cross-context
+      #   reference_to "Team", role: "home_team"         — named role
       #
-      def reference_to(type, as: nil)
-        @references ||= []
+      def reference_to(type, role: nil)
         type_str = type.to_s
         parts = type_str.split("::")
         target = parts.last
         domain = parts.length > 1 ? parts[0..-2].join("::") : nil
-        name = as || target.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-                           .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase.to_sym
-        @references << { name: name, type: target, domain: domain, kind: nil }
-        { reference: type }
+        name = (role || target.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                               .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase).to_sym
+        @references << DomainModel::Structure::Reference.new(
+          name: name, type: target, domain: domain
+        )
       end
 
       def ref(type, **opts) = reference_to(type, **opts)
@@ -171,8 +171,6 @@ module Hecks
         @entities << builder.build
       end
 
-      def ref(name) = reference_to(name)
-
       # Build the Aggregate IR object, inferring events from commands.
       #
       # @return [DomainModel::Structure::Aggregate]
@@ -211,9 +209,15 @@ module Hecks
             next if event_attrs.any? { |a| a.name == agg_attr.name }
             event_attrs << agg_attr
           end
+          event_refs = command.references.dup
+          @references.each do |agg_ref|
+            next if event_refs.any? { |r| r.name == agg_ref.name }
+            event_refs << agg_ref
+          end
           Behavior::DomainEvent.new(
             name: command.inferred_event_name,
-            attributes: event_attrs
+            attributes: event_attrs,
+            references: event_refs
           )
         end
       end

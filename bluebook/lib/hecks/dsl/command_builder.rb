@@ -45,6 +45,7 @@ module Hecks
       def initialize(name)
         @name = name
         @attributes = []
+        @references = []
         @handler = nil
         @call_body = nil
         @guard_name = nil
@@ -166,16 +167,30 @@ module Hecks
         @postconditions << Behavior::Condition.new(message: message, block: block)
       end
 
-      # Build and return the DomainModel::Behavior::Command IR object.
+      # Declare a reference to another aggregate.
       #
-      # Assembles all collected facets into an immutable Command intermediate
-      # representation.
-      #
+      # @param type [String] the target aggregate name (e.g. "Team")
+      # @param role [String, nil] optional role name, defaults to downcased type
+      # @return [void]
+      def reference_to(type, role: nil)
+        type_str = type.to_s
+        parts = type_str.split("::")
+        target = parts.last
+        domain = parts.length > 1 ? parts[0..-2].join("::") : nil
+        name = (role || target.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                               .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase).to_sym
+        @references << DomainModel::Structure::Reference.new(
+          name: name, type: target, domain: domain
+        )
+      end
+
+      def ref(type, **opts) = reference_to(type, **opts)
+
       # Implicit DSL support: `name Type` inside a command block → attribute
       def method_missing(name, *args, **kwargs, &block)
         if args.first.is_a?(Class) || (args.first.is_a?(String) && args.first =~ /\A[A-Z]/)
           attribute(name, args.first, **kwargs)
-        elsif args.first.is_a?(Hash) && (args.first[:reference] || args.first[:list])
+        elsif args.first.is_a?(Hash) && args.first[:list]
           attribute(name, args.first, **kwargs)
         else
           super
@@ -189,7 +204,8 @@ module Hecks
       # @return [DomainModel::Behavior::Command] the fully built command IR object
       def build
         Behavior::Command.new(
-          name: @name, attributes: @attributes, handler: @handler, guard_name: @guard_name,
+          name: @name, attributes: @attributes, references: @references,
+          handler: @handler, guard_name: @guard_name,
           read_models: @read_models, external_systems: @external_systems, actors: @actors,
           call_body: @call_body, sets: @sets,
           preconditions: @preconditions, postconditions: @postconditions

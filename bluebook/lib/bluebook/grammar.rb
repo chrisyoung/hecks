@@ -82,8 +82,6 @@ module BlueBook
           args << $1.to_sym
         when /\A"(.*)"\z/
           args << $1
-        when /\Areference_to\("(.+)"\)\z/
-          args << { reference: $1 }
         when /\Alist_of\("(.+)"\)\z/
           args << { list: $1 }
         when /\A(\w+):\s*"(.*)"\z/

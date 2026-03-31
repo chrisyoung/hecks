@@ -82,9 +82,9 @@ RSpec.describe Hecks::Workshop do
 
     it "returns false for an invalid domain" do
       workshop.aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
         end
       end
 
@@ -123,16 +123,16 @@ RSpec.describe Hecks::Workshop do
       end
 
       workshop.aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
       end
 
       expect { workshop.describe }.to output(
-        /Pizzas Domain.*Pizza.*Attributes:.*name.*Order.*Attributes:.*pizza_id.*reference_to/m
+        /Pizzas Domain.*Pizza.*Attributes:.*name.*Order.*Attributes:.*quantity.*References:.*pizza.*Pizza/m
       ).to_stdout
     end
   end
@@ -344,9 +344,9 @@ RSpec.describe Hecks::Workshop do
     it "refuses play mode for invalid domains" do
       bad_workshop = described_class.new("Bad")
       bad_workshop.aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
         end
       end
 

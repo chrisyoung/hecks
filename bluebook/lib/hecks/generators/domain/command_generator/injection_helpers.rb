@@ -146,6 +146,9 @@ module Hecks
                 parts << "#{a.name}: [#{vo_class}.new(name: #{append.name})]"
               end
             end
+            (@command.references || []).each do |ref|
+              args << "#{ref.name}_id: #{ref.name}_id"
+            end
             inject_sets(args)
             inject_lifecycle_status(args)
             args
@@ -169,6 +172,9 @@ module Hecks
               else
                 parts << "#{a.name}: existing.#{a.name}"
               end
+            end
+            (@command.references || []).each do |ref|
+              parts << "#{ref.name}_id: #{ref.name}_id"
             end
             inject_sets(parts)
             inject_lifecycle_status(parts)

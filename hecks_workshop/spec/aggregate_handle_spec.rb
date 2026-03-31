@@ -38,12 +38,13 @@ RSpec.describe Hecks::Workshop::AggregateHandle do
     it "supports reference_to" do
       workshop.aggregate("Pizza")
       order = workshop.aggregate("Order")
-      order.attr :pizza_id, order.reference_to("Pizza")
+      order.reference_to("Pizza")
 
       domain = workshop.to_domain
       order_agg = domain.aggregates.find { |a| a.name == "Order" }
-      attr = order_agg.attributes.first
-      expect(attr).to be_reference
+      ref = order_agg.references.first
+      expect(ref).not_to be_nil
+      expect(ref.type).to eq("Pizza")
     end
 
     it "returns self for chaining" do

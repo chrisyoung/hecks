@@ -41,6 +41,11 @@ module Hecks
             lines << "    Attributes: #{attrs}"
           end
 
+          unless (agg.references || []).empty?
+            refs = agg.references.map { |r| "#{r.name} (#{r.type})" }.join(", ")
+            lines << "    References: #{refs}"
+          end
+
           unless agg.value_objects.empty?
             agg.value_objects.each do |vo|
               vo_attrs = vo.attributes.map { |a| "#{a.name}: #{Hecks::Utils.type_label(a)}" }.join(", ")

@@ -114,9 +114,11 @@ module Hecks
         return if db.table_exists?(tbl)
 
         cols = agg.attributes.reject(&:list?).map { |a| [a.name, sequel_type(a)] }
+        ref_cols = (agg.references || []).map { |r| [:"#{r.name}_id", String] }
         db.create_table(tbl) do
           String :id, primary_key: true, size: 36
           cols.each { |name, type| column name, type }
+          ref_cols.each { |name, type| column name, type }
           String :created_at
           String :updated_at
         end
@@ -169,13 +171,9 @@ module Hecks
 
       # Maps a domain attribute to a Sequel column type.
       #
-      # Reference attributes are stored as String (UUID foreign keys).
-      # Other types are looked up in TYPE_MAP, defaulting to String.
-      #
       # @param attr [DomainModel::Structure::Attribute] the attribute
       # @return [Class, Symbol] the Sequel column type
       def sequel_type(attr)
-        return String if attr.reference?
         TYPE_MAP.fetch(attr.type.to_s, String)
       end
 

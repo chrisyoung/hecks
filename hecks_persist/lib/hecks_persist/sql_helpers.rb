@@ -38,14 +38,18 @@ module Hecks
 
         # Maps a domain attribute to its SQL column type.
         #
-        # Reference attributes are mapped to VARCHAR(36) for UUID foreign keys.
-        # Other types are mapped via sql_type_for.
-        #
         # @param attr [DomainModel::Structure::Attribute] the attribute
         # @return [String] the SQL type (e.g., "VARCHAR(255)", "INTEGER")
         def sql_type(attr)
-          return "VARCHAR(36)" if attr.reference?
           sql_type_for(attr.type)
+        end
+
+        # Returns the SQL column name for a reference (role_id).
+        #
+        # @param ref [DomainModel::Structure::Reference] the reference
+        # @return [String] the column name (e.g., "team_id")
+        def reference_column_name(ref)
+          "#{ref.name}_id"
         end
 
         # Maps a Ruby type name to its SQL column type.

@@ -14,16 +14,16 @@ RSpec.describe Hecks::Runtime do
       end
 
       aggregate "Order" do
-        attribute :pizza_id, reference_to("Pizza")
+        reference_to "Pizza"
         attribute :quantity, Integer
 
         command "PlaceOrder" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
           attribute :quantity, Integer
         end
 
         command "NotifyChef" do
-          attribute :pizza_id, reference_to("Pizza")
+          reference_to "Pizza"
         end
 
         policy "NotifyKitchen" do

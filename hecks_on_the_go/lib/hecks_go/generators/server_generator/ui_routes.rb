@@ -27,20 +27,6 @@ module HecksOnTheGo
             cmd.attributes.each do |a|
               if a == self_id
                 lines << "\t\t\t{Type: \"hidden\", Name: \"#{a.name}\", Value: r.URL.Query().Get(\"id\")},"
-              elsif a.name.to_s.end_with?("_id")
-                # Find referenced aggregate: explicit reference_to or name convention
-                ref_agg = if a.reference?
-                  @domain.aggregates.find { |ra| ra.name == a.type.to_s }
-                else
-                  ref_name = a.name.to_s.sub(/_id$/, "")
-                  @domain.aggregates.find { |ra| GoUtils.snake_case(ra.name) == ref_name }
-                end
-                if ref_agg
-                  lines << "\t\t\t// #{ref_agg.name} dropdown built dynamically below"
-                else
-                  label = HecksTemplating::UILabelContract.label(a.name)
-                  lines << "\t\t\t{Type: \"input\", Name: \"#{a.name}\", Label: \"#{label}\", InputType: \"text\", Required: true},"
-                end
               else
                 agg_attr = agg.attributes.find { |aa| aa.name == a.name }
                 enum_values = agg_attr&.enum
@@ -56,28 +42,25 @@ module HecksOnTheGo
                 end
               end
             end
+            # Reference dropdowns (placeholders, built dynamically below)
+            (cmd.references || []).each do |ref|
+              lines << "\t\t\t// #{ref.type} dropdown built dynamically below"
+            end
             lines << "\t\t}"
 
-            # Build dropdowns for ref fields
-            cmd.attributes.each do |a|
-              next if a == self_id
-              next unless a.name.to_s.end_with?("_id")
-              ref_agg = if a.reference?
-                @domain.aggregates.find { |ra| ra.name == a.type.to_s }
-              else
-                ref_name = a.name.to_s.sub(/_id$/, "")
-                @domain.aggregates.find { |ra| GoUtils.snake_case(ra.name) == ref_name }
-              end
+            # Build dropdowns for reference fields
+            (cmd.references || []).each do |ref|
+              ref_agg = @domain.aggregates.find { |ra| ra.name == ref.type }
               next unless ref_agg
               ref_safe = ref_agg.name
               display = HecksTemplating::DisplayContract.go_reference_display_field(ref_agg)
-              label = HecksTemplating::UILabelContract.label(a.name.to_s.sub(/_id$/, ""))
+              label = HecksTemplating::UILabelContract.label(ref.name.to_s)
               lines << "\t\t#{ref_safe.downcase}s, _ := app.#{ref_safe}Repo.All()"
               lines << "\t\tvar #{ref_safe.downcase}Opts []FormOption"
               lines << "\t\tfor _, item := range #{ref_safe.downcase}s {"
               lines << "\t\t\t#{ref_safe.downcase}Opts = append(#{ref_safe.downcase}Opts, FormOption{Value: item.ID, Label: fmt.Sprintf(\"%v\", item.#{display}), Selected: item.ID == r.URL.Query().Get(\"id\")})"
               lines << "\t\t}"
-              lines << "\t\tfields = append(fields, FormField{Type: \"select\", Name: \"#{a.name}\", Label: \"#{label}\", Required: true, Options: #{ref_safe.downcase}Opts})"
+              lines << "\t\tfields = append(fields, FormField{Type: \"select\", Name: \"#{ref.name}_id\", Label: \"#{label}\", Required: true, Options: #{ref_safe.downcase}Opts})"
             end
 
             lines << "\t\trenderer.Render(w, \"form\", \"#{cmd.name}\", FormData{"

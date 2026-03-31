@@ -42,7 +42,11 @@ module Hecks
           ctx.capture_output do
             handle = ctx.workshop.aggregate(args["name"])
             (args["attributes"] || []).each do |attr|
-              handle.attr(attr["name"].to_sym, ctx.resolve_type(attr["type"]))
+              if ctx.reference_type?(attr["type"])
+                handle.reference_to(ctx.reference_target(attr["type"]))
+              else
+                handle.attr(attr["name"].to_sym, ctx.resolve_type(attr["type"]))
+              end
             end
           end
         end
@@ -63,7 +67,12 @@ module Hecks
           ctx.ensure_session!
           ctx.capture_output do
             handle = ctx.workshop.aggregate(args["aggregate"])
-            handle.attr(args["name"].to_sym, ctx.resolve_type(args["type"] || "String"))
+            type_str = args["type"] || "String"
+            if ctx.reference_type?(type_str)
+              handle.reference_to(ctx.reference_target(type_str))
+            else
+              handle.attr(args["name"].to_sym, ctx.resolve_type(type_str))
+            end
           end
         end
 
@@ -84,9 +93,13 @@ module Hecks
           ctx.capture_output do
             handle = ctx.workshop.aggregate(args["aggregate"])
             attrs = args["attributes"] || []
-            resolved = attrs.map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
+            plain_attrs = attrs.reject { |a| ctx.reference_type?(a["type"]) }
+            ref_attrs = attrs.select { |a| ctx.reference_type?(a["type"]) }
+            resolved = plain_attrs.map { |a| [a["name"].to_sym, ctx.resolve_type(a["type"])] }
+            ref_targets = ref_attrs.map { |a| ctx.reference_target(a["type"]) }
             handle.command(args["name"]) do
               resolved.each { |name, type| attribute name, type }
+              ref_targets.each { |target| reference_to target }
             end
           end
         end

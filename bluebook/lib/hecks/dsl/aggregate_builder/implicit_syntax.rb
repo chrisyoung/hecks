@@ -34,7 +34,7 @@ module Hecks
           return false unless arg
           arg.is_a?(Class) ||
             (arg.is_a?(String) && arg =~ /\A[A-Z]/) ||
-            (arg.respond_to?(:key?) && (arg.key?(:list) || arg.key?(:reference)))
+            (arg.respond_to?(:key?) && arg.key?(:list))
         end
 
         def infer_command_name(snake)

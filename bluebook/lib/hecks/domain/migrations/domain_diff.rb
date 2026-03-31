@@ -71,11 +71,12 @@ module Hecks
             kind: :add_aggregate,
             context: nil,
             aggregate: new_agg.name,
-            details: { attributes: new_agg.attributes, value_objects: new_agg.value_objects, validations: new_agg.validations }
+            details: { attributes: new_agg.attributes, references: new_agg.references, value_objects: new_agg.value_objects, validations: new_agg.validations }
           )
         else
           # Structural diffs
           result.concat(diff_attributes(old_agg, new_agg))
+          result.concat(diff_references(old_agg, new_agg))
           result.concat(diff_value_objects(old_agg, new_agg))
           result.concat(diff_entities(old_agg, new_agg))
           result.concat(diff_indexes(old_agg, new_agg))
@@ -128,7 +129,7 @@ module Hecks
           kind: :add_attribute,
           context: nil,
           aggregate: new_agg.name,
-          details: { name: attr.name, type: attr.type, list: attr.list?, reference: attr.reference?,
+          details: { name: attr.name, type: attr.type, list: attr.list?,
                      default: attr.default, presence: validation&.presence?, uniqueness: validation&.uniqueness? }
         )
       end
@@ -207,6 +208,41 @@ module Hecks
           aggregate: new_agg.name,
           details: { name: name }
         )
+      end
+
+      changes
+    end
+
+    # Diff references between old and new versions of the same aggregate.
+    #
+    # @param old_agg [Hecks::DomainModel::Aggregate] the previous aggregate version
+    # @param new_agg [Hecks::DomainModel::Aggregate] the current aggregate version
+    # @return [Array<Change>] reference-level changes
+    def diff_references(old_agg, new_agg)
+      changes = []
+      old_refs = (old_agg.references || []).map(&:name)
+      new_refs = (new_agg.references || []).map(&:name)
+
+      (new_agg.references || []).each do |ref|
+        unless old_refs.include?(ref.name)
+          changes << Change.new(
+            kind: :add_reference,
+            context: nil,
+            aggregate: new_agg.name,
+            details: { reference: ref }
+          )
+        end
+      end
+
+      (old_agg.references || []).each do |ref|
+        unless new_refs.include?(ref.name)
+          changes << Change.new(
+            kind: :remove_reference,
+            context: nil,
+            aggregate: new_agg.name,
+            details: { reference: ref }
+          )
+        end
       end
 
       changes

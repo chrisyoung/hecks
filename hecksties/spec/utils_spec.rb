@@ -26,9 +26,9 @@ RSpec.describe Hecks::Utils do
       expect(described_class.type_label(attr)).to eq("list_of(Item)")
     end
 
-    it "returns reference_to for references" do
-      attr = Hecks::DomainModel::Structure::Attribute.new(name: :order_id, type: "Order", reference: true)
-      expect(described_class.type_label(attr)).to eq("reference_to(Order)")
+    it "returns the type for plain attributes" do
+      attr = Hecks::DomainModel::Structure::Attribute.new(name: :name, type: String)
+      expect(described_class.type_label(attr)).to eq("String")
     end
   end
 

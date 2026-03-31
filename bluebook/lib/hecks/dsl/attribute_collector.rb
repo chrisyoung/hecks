@@ -6,18 +6,17 @@ module Hecks
     # Hecks::DSL::AttributeCollector
     #
     # Shared mixin for DSL builders that collect attributes. Provides the
-    # `attribute`, `list_of`, and `reference_to` DSL methods. Included by
-    # AggregateBuilder, CommandBuilder, ValueObjectBuilder, and DomainBuilder.
+    # `attribute` and `list_of` DSL methods. Included by AggregateBuilder,
+    # CommandBuilder, ValueObjectBuilder, and DomainBuilder.
     #
     #   attribute :name, String
     #   attribute :toppings, list_of("Topping")
-    #   attribute :order, reference_to("Order")
     #
     # Mixin that provides attribute declaration DSL methods to builders.
     #
-    # Any builder class that includes this module gains the +attribute+,
-    # +list_of+, and +reference_to+ methods, plus automatic type resolution
-    # from symbols/strings to Ruby classes via +TYPE_MAP+.
+    # Any builder class that includes this module gains the +attribute+ and
+    # +list_of+ methods, plus automatic type resolution from symbols/strings
+    # to Ruby classes via +TYPE_MAP+.
     #
     # Including classes must initialize an +@attributes+ instance variable
     # (typically an empty Array) before these methods are called.
@@ -41,45 +40,30 @@ module Hecks
       # Declare an attribute on the current builder.
       #
       # The type can be a Ruby class (String, Integer), a symbol shorthand
-      # (:string, :int), a string ("String"), or a wrapper hash from +list_of+
-      # or +reference_to+. Additional keyword options (e.g. +default:+,
-      # +optional:+, +enum:+) are passed through to the Attribute constructor.
+      # (:string, :int), a string ("String"), or a wrapper hash from +list_of+.
+      # Additional keyword options (e.g. +default:+, +optional:+, +enum:+) are
+      # passed through to the Attribute constructor.
       #
       # @param name [Symbol] the attribute name
       # @param type [Class, Symbol, String, Hash] the attribute type or type wrapper
       # @param options [Hash] additional options passed to Attribute.new
       #   (e.g. +default:+, +optional:+, +enum:+)
       # @return [void]
-      def attribute(name_or_type = nil, type = nil, **options)
-        # Support: attribute reference_to("Order")
-        #          attribute reference_to("Order"), :custom_name
-        if name_or_type.is_a?(Hash) && (name_or_type.key?(:reference) || name_or_type.key?(:list))
-          ref_type = name_or_type
-          if type.is_a?(Symbol) || type.is_a?(String)
-            name = type.to_sym
-          else
-            ref_name = ref_type[:reference] || ref_type[:list]
-            name = ref_name.to_s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-                                  .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
-            name = ref_type[:reference] ? :"#{name}_id" : name.to_sym
-          end
-          type = ref_type
+      def attribute(name = nil, type = nil, **options)
+        if name.nil?
+          name = :unnamed
+          type ||= String
         elsif type.nil?
-          name = name_or_type
           type = String
-        else
-          name = name_or_type
         end
         type = resolve_type(type)
         list = type.is_a?(Hash) && type[:list]
-        ref = type.is_a?(Hash) && type[:reference]
         actual_type = type.is_a?(Hash) ? type.values.first : type
 
         @attributes << DomainModel::Structure::Attribute.new(
           name: name,
           type: actual_type,
           list: !!list,
-          reference: !!ref,
           **options
         )
       end
@@ -96,22 +80,6 @@ module Hecks
       def list_of(type)
         { list: type }
       end
-
-      # Create a reference-type wrapper for use with +attribute+.
-      #
-      # Returns a hash that +attribute+ recognizes as a cross-aggregate reference.
-      #
-      # @param type [Class, String] the referenced aggregate or entity type
-      # @return [Hash{Symbol => Class|String}] a wrapper hash with key +:reference+
-      #
-      # @example
-      #   attribute :order, reference_to("Order")
-      def reference_to(type)
-        { reference: type }
-      end
-
-      # Alias for reference_to, used in the implicit DSL.
-      def ref(type) = reference_to(type)
 
       private
 
