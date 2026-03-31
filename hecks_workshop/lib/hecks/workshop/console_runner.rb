@@ -157,7 +157,7 @@ module Hecks
       end
 
       if File.exist?("Bluebook")
-        Kernel.load("Bluebook")
+        Dir["*Bluebook"].each { |f| Kernel.load(f) }
         domain = Hecks.last_domain
         workshop = Hecks.workshop(domain.name)
         domain.aggregates.each do |agg|

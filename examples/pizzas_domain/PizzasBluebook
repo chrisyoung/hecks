@@ -27,7 +27,7 @@ Hecks.domain "Pizzas" do
     end
 
     command "AddTopping" do
-      attribute :pizza, reference_to("Pizza")
+      reference_to "Pizza"
       attribute :name, String
       attribute :amount, Integer
     end
@@ -60,7 +60,7 @@ Hecks.domain "Pizzas" do
     end
 
     command "CancelOrder" do
-      attribute :order, reference_to("Order")
+      reference_to "Order"
     end
   end
 end

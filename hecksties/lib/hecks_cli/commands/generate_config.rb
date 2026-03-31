@@ -23,7 +23,7 @@ Hecks::CLI.register_command(:generate_config, "Generate config reflecting curren
       return files.map { |f| load_domain_file(f) } if files.any?
     end
 
-    subdirs = Dir[File.join(Dir.pwd, "*_domain", "Bluebook")].sort
+    subdirs = Dir[File.join(Dir.pwd, "*_domain", "*Bluebook")].sort
     return subdirs.map { |f| load_domain_file(f) } if subdirs.any?
 
     say "No Bluebook, hecks_domains/, or *_domain/ found.", :red

@@ -12,7 +12,7 @@ RSpec.describe "Hecks.boot with connections" do
   end
 
   it "supports extend :memory in boot block" do
-    File.write(File.join(tmpdir, "Bluebook"), <<~RUBY)
+    File.write(File.join(tmpdir, "PizzasBluebook"), <<~RUBY)
       Hecks.domain "ConnTest" do
         aggregate "Item" do
           attribute :name, String
@@ -33,7 +33,7 @@ RSpec.describe "Hecks.boot with connections" do
   end
 
   it "supports extend with outbound handler in boot block" do
-    File.write(File.join(tmpdir, "Bluebook"), <<~RUBY)
+    File.write(File.join(tmpdir, "PizzasBluebook"), <<~RUBY)
       Hecks.domain "ConnTest" do
         aggregate "Item" do
           attribute :name, String
@@ -56,7 +56,7 @@ RSpec.describe "Hecks.boot with connections" do
   end
 
   it "backward compat: adapter: keyword still works" do
-    File.write(File.join(tmpdir, "Bluebook"), <<~RUBY)
+    File.write(File.join(tmpdir, "PizzasBluebook"), <<~RUBY)
       Hecks.domain "ConnTest" do
         aggregate "Item" do
           attribute :name, String

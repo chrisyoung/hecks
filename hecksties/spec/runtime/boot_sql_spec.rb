@@ -11,7 +11,7 @@ RSpec.describe "Hecks.boot with SQL adapter" do
   end
 
   def write_domain(dir, content)
-    File.write(File.join(dir, "Bluebook"), content)
+    File.write(File.join(dir, "PizzasBluebook"), content)
   end
 
   it "boots with :sqlite and returns a Runtime" do

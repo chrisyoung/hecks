@@ -9,7 +9,7 @@ module Hecks
     private
 
     def find_domain_file
-      path = File.join(Dir.pwd, "Bluebook")
+      path = Dir[File.join(Dir.pwd, "*Bluebook")].first
       File.exist?(path) ? path : nil
     end
 
@@ -39,7 +39,7 @@ module Hecks
         return nil unless file
         load_domain_file(file)
       elsif File.directory?(path_or_name)
-        file = File.join(path_or_name, "Bluebook")
+        file = Dir[File.join(path_or_name, "*Bluebook")].first
         return nil unless File.exist?(file)
         load_domain_file(file)
       elsif File.exist?(path_or_name)
@@ -58,7 +58,7 @@ module Hecks
     end
 
     def find_installed_domains
-      ::Gem::Specification.select { |spec| File.exist?(File.join(spec.full_gem_path, "Bluebook")) }
+      ::Gem::Specification.select { |spec| Dir[File.join(spec.full_gem_path, "*Bluebook")].any? }
         .group_by(&:name).map { |name, specs| [name, specs.map(&:version).sort.reverse] }
     end
 

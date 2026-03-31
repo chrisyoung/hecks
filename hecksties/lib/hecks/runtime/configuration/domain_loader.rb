@@ -46,7 +46,7 @@ module Hecks
                  File.expand_path(d[:path])
                end
 
-        domain_file = File.join(base, "Bluebook")
+        domain_file = Dir[File.join(base, "*Bluebook")].first
         Kernel.load(domain_file)
         domain_obj = Hecks.last_domain
         domain_obj.source_path = domain_file
@@ -78,7 +78,7 @@ module Hecks
                      File.join(Dir.pwd, d[:gem_name])
                    end
 
-        domain_file = File.join(gem_path, "Bluebook")
+        domain_file = Dir[File.join(gem_path, "*Bluebook")].first
         Kernel.load(domain_file)
         domain_obj = Hecks.last_domain
         domain_obj.source_path = domain_file

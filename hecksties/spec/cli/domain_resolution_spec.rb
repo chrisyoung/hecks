@@ -16,7 +16,7 @@ RSpec.describe "CLI domain resolution" do
 
     it "resolves from a directory with Bluebook" do
       Dir.mktmpdir do |dir|
-        File.write(File.join(dir, "Bluebook"), 'Hecks.domain("Test") { aggregate("Thing") { attribute :name, String; command("CreateThing") { attribute :name, String } } }')
+        File.write(File.join(dir, "PizzasBluebook"), 'Hecks.domain("Test") { aggregate("Thing") { attribute :name, String; command("CreateThing") { attribute :name, String } } }')
         domain = cli.send(:resolve_domain, dir)
         expect(domain.name).to eq("Test")
       end

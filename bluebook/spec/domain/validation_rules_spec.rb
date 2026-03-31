@@ -39,10 +39,10 @@ RSpec.describe "Validation Rules" do
     it "reads custom verbs from verbs.txt when source_path is set" do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, "verbs.txt"), "Yeet\n")
-        File.write(File.join(dir, "Bluebook"), 'Hecks.domain("Validation") { aggregate("Widget") { attribute :name, String; command("YeetThing") { attribute :name, String } } }')
-        domain_file = File.join(dir, "Bluebook")
+        File.write(File.join(dir, "PizzasBluebook"), 'Hecks.domain("Validation") { aggregate("Widget") { attribute :name, String; command("YeetThing") { attribute :name, String } } }')
+        domain_file = File.join(dir, "PizzasBluebook")
         domain = eval(File.read(domain_file), nil, domain_file, 1)
-        domain.source_path = File.join(dir, "Bluebook")
+        domain.source_path = File.join(dir, "PizzasBluebook")
         valid, _ = validate(domain)
         expect(valid).to be true
       end

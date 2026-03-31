@@ -2,7 +2,7 @@ Hecks.domain "ModelRegistry" do
   aggregate "AiModel" do
     attribute :name, String
     attribute :version, String
-    attribute :provider_id, reference_to("Vendor")
+    reference_to "Vendor"
     attribute :description, String
     attribute :risk_level, String
     attribute :registered_at, DateTime
@@ -53,7 +53,7 @@ Hecks.domain "ModelRegistry" do
     command "RegisterModel" do
       attribute :name, String
       attribute :version, String
-      attribute :provider_id, reference_to("Vendor")
+      reference_to "Vendor"
       attribute :description, String
     end
 
@@ -152,7 +152,7 @@ Hecks.domain "ModelRegistry" do
   end
 
   aggregate "DataUsageAgreement" do
-    attribute :model_id, reference_to("AiModel")
+    reference_to "AiModel"
     attribute :data_source, String
     attribute :purpose, String
     attribute :consent_type, String
@@ -187,7 +187,7 @@ Hecks.domain "ModelRegistry" do
     end
 
     command "CreateAgreement" do
-      attribute :model_id, reference_to("AiModel")
+      reference_to "AiModel"
       attribute :data_source, String
       attribute :purpose, String
       attribute :consent_type, String

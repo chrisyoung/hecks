@@ -99,7 +99,7 @@ Hecks::CLI.register_command(:generate_sinatra, "Scaffold a Sinatra app from a do
       require "#{d.gem_name}"
 
       # Load the domain
-      domain_file = File.join(Gem.loaded_specs["#{d.gem_name}"]&.full_gem_path || "../#{d.gem_name}", "Bluebook")
+      domain_file = Dir[File.join(Gem.loaded_specs["#{d.gem_name}"]&.full_gem_path || "../#{d.gem_name}", "*Bluebook")].first
       DOMAIN = eval(File.read(domain_file), TOPLEVEL_BINDING, domain_file)
 
       # Boot with memory adapters (swap to SQL for production)
