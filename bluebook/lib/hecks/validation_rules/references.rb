@@ -16,6 +16,7 @@ module Hecks
       autoload :ValidReferences,           "hecks/validation_rules/references/valid_references"
       autoload :NoBidirectionalReferences, "hecks/validation_rules/references/no_bidirectional_references"
       autoload :NoSelfReferences,          "hecks/validation_rules/references/no_self_references"
+      autoload :NoForeignKeyAttributes,  "hecks/validation_rules/references/no_foreign_key_attributes"
     end
   end
 end
