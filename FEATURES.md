@@ -292,6 +292,15 @@
 - Implicit foreign key detection: warns when `_id String` should be `reference_to("Aggregate")`
 - Validator collects non-blocking warnings alongside blocking errors
 
+## Domain Interface Versioning
+- `hecks version_tag <version>` — snapshot current domain DSL to `db/hecks_versions/<version>.rb` with metadata header
+- `hecks version_log` — list all tagged versions newest-first with date and one-line change summary
+- `hecks diff --v1 <v1> --v2 <v2>` — diff two tagged version snapshots with breaking change classification
+- `hecks diff --v1 <v1>` — diff a tagged version against the working domain file
+- `hecks diff` — diff working domain against latest tagged version (falls back to build snapshot)
+- Breaking change classification: removed commands, removed attributes, removed aggregates marked as BREAKING
+- Non-breaking changes: added commands, added attributes, added queries, added scopes
+
 ## Migrations & Schema Evolution
 - `DomainDiff` detects added/removed aggregates, attributes, VOs, entities, indexes, commands, policies, validations, invariants, queries, scopes, subscribers, specifications
 - SQL migration strategy generates Sequel-compatible files
@@ -427,6 +436,14 @@
 - `add_lifecycle` and `add_transition` tools for state machine building via MCP
 - `add_attribute` tool for adding individual attributes to existing aggregates
 - All tool output uses `capture_output` to show the same terse feedback as the REPL
+
+### Command Bus Port (HTTP Adapter Boundary)
+- `Hecks::HTTP::CommandBusPort` — explicit port between HTTP routes and the domain
+- Mutations route through the `CommandBus` middleware pipeline via `port.dispatch`
+- Reads validate against a safety whitelist (blocks `eval`, `system`, `exec`, `send`, etc.)
+- Port-level middleware fires before the command bus — `port.use(:name) { |cmd, attrs, next_fn| ... }`
+- Port middleware can short-circuit requests without reaching the domain
+- `DomainServer` and `RpcServer` both use the port for all dispatch
 
 ### Self-Discoverable HTTP API
 - `GET /_openapi` returns the OpenAPI 3.0 spec as JSON
