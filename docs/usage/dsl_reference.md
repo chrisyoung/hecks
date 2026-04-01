@@ -339,9 +339,10 @@ aggregate "Pizza" do
     area / 43560.0
   end
 
-  # Versioning and attachments
+  # Versioning, attachments, and CRUD control
   versioned
   attachable
+  no_crud           # disables write CRUD (create, update, destroy); reads remain
 end
 ```
 
