@@ -4,7 +4,7 @@ require_relative "workshop/play_mode"
 require_relative "workshop/presenter"
 require_relative "workshop/handles/aggregate_handle"
 require_relative "workshop/system_browser"
-require_relative "workshop/console_runner"
+require_relative "workshop/workshop_runner"
 require_relative "workshop/playground"
 require_relative "workshop/web_runner"
 

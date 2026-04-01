@@ -1,16 +1,16 @@
-require_relative "console_runner/constant_hoister"
+require_relative "workshop_runner/constant_hoister"
 
 module Hecks
   class Workshop
-    # Hecks::Workshop::ConsoleRunner
+    # Hecks::Workshop::WorkshopRunner
     #
     # Interactive IRB workshop for domain modeling. Delegates workshop
     # methods and hoists constants so users can type `Pizza.title String`
     # directly in the REPL.
     #
-    #   ConsoleRunner.new(name: "Pizzas").run
+    #   WorkshopRunner.new(name: "Pizzas").run
     #
-    class ConsoleRunner
+    class WorkshopRunner
       include HecksTemplating::NamingHelpers
       include ConstantHoister
 
@@ -103,7 +103,7 @@ module Hecks
       setup_session
     end
 
-    # Returns a binding in ConsoleRunner's method context so constant
+    # Returns a binding in WorkshopRunner's method context so constant
     # lookup resolves hoisted constants on this class.
     def eval_binding
       binding

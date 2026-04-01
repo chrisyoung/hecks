@@ -13,6 +13,6 @@ Hecks::CLI.register_command(:init, "Initialize a Hecks domain in the current dir
   say "  verbs.txt   — add custom action verbs (optional)"
   say ""
   say "Next steps:"
-  say "  hecks domain console   # edit interactively"
+  say "  hecks domain workshop   # edit interactively"
   say "  hecks domain build     # generate the domain gem"
 end

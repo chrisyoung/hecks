@@ -2,7 +2,7 @@ require "spec_helper"
 
 RSpec.describe Hecks::Workshop::WebRunner::CommandParser do
   let(:runner) do
-    r = Hecks::Workshop::ConsoleRunner.new(name: "TestDomain")
+    r = Hecks::Workshop::WorkshopRunner.new(name: "TestDomain")
     r.instance_variable_set(:@workshop, r.setup_workshop)
     r
   end

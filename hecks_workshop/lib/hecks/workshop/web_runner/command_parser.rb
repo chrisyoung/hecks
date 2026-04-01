@@ -6,8 +6,8 @@ module Hecks
     class WebRunner
       # Hecks::Workshop::WebRunner::CommandParser
       #
-      # Safe command dispatcher for the web console. Uses BlueBook::Grammar
-      # to parse input, then dispatches to ConsoleRunner or AggregateHandle
+      # Safe command dispatcher for the web workshop. Uses BlueBook::Grammar
+      # to parse input, then dispatches to WorkshopRunner or AggregateHandle
       # methods. No eval — only whitelisted commands execute.
       #
       #   CommandParser.new(runner).execute("Pizza.attr :name, String")

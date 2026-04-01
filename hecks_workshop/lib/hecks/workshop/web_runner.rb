@@ -14,7 +14,7 @@ module Hecks
     # language — no eval, no arbitrary code execution.
     #
     #   WebRunner.new(name: "Pizzas").run
-    #   # => opens http://localhost:4567 with the web console
+    #   # => opens http://localhost:4567 with the web workshop
     #
     class WebRunner
       VIEWS_DIR = File.join(__dir__, "web_runner", "views")
@@ -28,7 +28,7 @@ module Hecks
         @workshop_name = name
         @domain_groups = {}
         @loaded_domains = []
-        @runner = ConsoleRunner.new(name: name)
+        @runner = WorkshopRunner.new(name: name)
         if domains
           ws = load_multi_domain(domains, name)
           @runner.instance_variable_set(:@workshop, ws)
@@ -63,7 +63,7 @@ module Hecks
                                           AccessLog: [])
         server.mount_proc("/") { |req, res| handle(req, res) }
         trap("INT") { server.shutdown }
-        puts "Hecks Web Console: http://localhost:#{@port}#{BASE}"
+        puts "Hecks Web Workshop: http://localhost:#{@port}#{BASE}"
         server.start
       end
 

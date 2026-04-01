@@ -1,12 +1,12 @@
-# Hecks::Workshop::ConsoleRunner::ConstantHoister
+# Hecks::Workshop::WorkshopRunner::ConstantHoister
 #
-# Manages hoisting and cleanup of constants on ConsoleRunner.
+# Manages hoisting and cleanup of constants on WorkshopRunner.
 # Aggregate handles and domain module constants are hoisted so
 # users can type `Pizza` instead of `PizzasDomain::Pizza` in the REPL.
 #
 module Hecks
   class Workshop
-    class ConsoleRunner
+    class WorkshopRunner
       module ConstantHoister
         def hoist_aggregate(const_name, handle)
           @hoisted_handle_constants ||= []
