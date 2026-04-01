@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Hecks::Workshop::ConsoleRunner do
+RSpec.describe Hecks::Workshop::WorkshopRunner do
   let(:runner) { described_class.new }
 
   before do

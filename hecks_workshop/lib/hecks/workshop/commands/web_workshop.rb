@@ -1,4 +1,4 @@
-Hecks::CLI.register_command(:web_console, "Start the browser-based workshop",
+Hecks::CLI.register_command(:web_workshop, "Start the browser-based workshop",
   args: ["NAME"],
   options: {
     gate: { type: :numeric, default: 4567, desc: "Server port" },

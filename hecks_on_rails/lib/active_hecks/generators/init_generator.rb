@@ -69,7 +69,7 @@ module ActiveHecks
         The domain is defined in a standalone Hecks project. To modify it:
 
         1. Go to the Hecks project where `domain.rb` lives
-        2. Run `hecks domain console` to edit interactively
+        2. Run `hecks domain workshop` to edit interactively
         3. Run `hecks domain build` to generate a new version of the gem
         4. Update the gem version in this app's Gemfile
         5. `bundle update #{@gem_name}`
