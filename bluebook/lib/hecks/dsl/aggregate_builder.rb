@@ -197,11 +197,14 @@ module Hecks
           commands: @commands, events: events, policies: @policies,
           validations: @validations, invariants: @invariants,
           scopes: @scopes, queries: @queries,
-          subscribers: @subscribers, indexes: @indexes,
+          subscribers: @subscribers,
+          persistence_metadata: Structure::PersistenceMetadata.new(
+            indexes: @indexes, identity_fields: @identity_fields
+          ),
           specifications: @specifications, computed_attributes: @computed_attributes,
           lifecycle: @lifecycle, versioned: @versioned, attachable: @attachable,
           metadata: @metadata, references: @references,
-          factories: @factories, identity_fields: @identity_fields
+          factories: @factories
         )
       end
 

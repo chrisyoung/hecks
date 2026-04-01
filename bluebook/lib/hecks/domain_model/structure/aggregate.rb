@@ -60,8 +60,8 @@ module Hecks
       # @return [Array] event subscribers registered for this aggregate's events
       attr_reader :subscribers
 
-      # @return [Array] database index definitions for this aggregate's persisted fields
-      attr_reader :indexes
+      # @return [PersistenceMetadata] persistence-specific metadata (indexes, identity fields)
+      attr_reader :persistence_metadata
 
       # @return [Array] specification objects for complex query/filter logic
       attr_reader :specifications
@@ -78,8 +78,17 @@ module Hecks
       # @return [Lifecycle, nil] optional state machine definition
       attr_reader :lifecycle
 
+      # Delegates to persistence_metadata for backward compatibility.
+      # @return [Array] database index definitions
+      def indexes
+        persistence_metadata.indexes
+      end
+
+      # Delegates to persistence_metadata for backward compatibility.
       # @return [Array<Symbol>, nil] natural key fields for secondary identity lookup
-      attr_reader :identity_fields
+      def identity_fields
+        persistence_metadata.identity_fields
+      end
 
       # Creates a new Aggregate IR node.
       #
@@ -96,7 +105,8 @@ module Hecks
       # @param ports [Hash{Symbol => GateDefinition}] access-control port definitions
       # @param queries [Array<Behavior::Query>] named queries
       # @param subscribers [Array] event subscriber registrations
-      # @param indexes [Array] database index definitions
+      # @param persistence_metadata [PersistenceMetadata] persistence config (indexes, identity)
+      # @param indexes [Array] deprecated — pass via persistence_metadata instead
       # @param specifications [Array] specification objects for complex filtering
       # @param lifecycle [Lifecycle, nil] optional state machine definition
       # @param versioned [Boolean] whether this aggregate tracks version history
@@ -110,7 +120,7 @@ module Hecks
                      factories: [], computed_attributes: [],
                      lifecycle: nil, versioned: false,
                      attachable: false, metadata: {}, origin_domain: nil,
-                     identity_fields: nil)
+                     identity_fields: nil, persistence_metadata: nil)
         @name = Names.aggregate_name(name)
         @attributes = attributes
         @value_objects = value_objects
@@ -123,7 +133,10 @@ module Hecks
         @scopes = scopes
         @queries = queries
         @subscribers = subscribers
-        @indexes = indexes
+        @persistence_metadata = persistence_metadata || PersistenceMetadata.new(
+          indexes: indexes,
+          identity_fields: identity_fields
+        )
         @specifications = specifications
         @references = references
         @factories = factories
@@ -133,7 +146,6 @@ module Hecks
         @attachable = attachable
         @metadata = metadata
         @origin_domain = origin_domain
-        @identity_fields = identity_fields
       end
 
       attr_reader :metadata, :origin_domain

@@ -55,6 +55,7 @@
 - Define specifications as reusable composable predicates (`satisfied_by?`, `and`, `or`, `not`)
 - Define per-attribute validations (presence, uniqueness, length, format, custom)
 - Define indexes on aggregates with `index :field` and `index :field, unique: true`
+- `PersistenceMetadata` struct groups indexes and identity fields — accessible via `aggregate.persistence_metadata`
 - Define aggregate-level and value-object-level invariants as block constraints
 
 ### Domain Services
