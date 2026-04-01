@@ -35,4 +35,27 @@ RSpec.describe Hecks::DslSerializer do
     expect(restored.name).to eq("RoundTrip")
     expect(restored.aggregates.first.name).to eq("Thing")
   end
+
+  it "emits version kwarg when domain has a version" do
+    domain = Hecks.domain "Versioned", version: "2.1.0" do
+      aggregate "Widget" do
+        attribute :name, String
+      end
+    end
+
+    source = described_class.new(domain).serialize
+    expect(source).to include('Hecks.domain "Versioned", version: "2.1.0"')
+  end
+
+  it "omits version kwarg when domain has no version" do
+    domain = Hecks.domain "Plain" do
+      aggregate "Widget" do
+        attribute :name, String
+      end
+    end
+
+    source = described_class.new(domain).serialize
+    expect(source).to include('Hecks.domain "Plain" do')
+    expect(source).not_to include("version:")
+  end
 end

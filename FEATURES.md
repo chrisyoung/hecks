@@ -313,6 +313,10 @@
 - `hecks diff` — diff working domain against latest tagged version (falls back to build snapshot)
 - Breaking change classification: removed commands, removed attributes, removed aggregates marked as BREAKING
 - Non-breaking changes: added commands, added attributes, added queries, added scopes
+- `hecks version_pin CONSUMER --version X` — pin a consumer to a tagged version; stored in `db/hecks_versions/.pins.yml`
+- `hecks version_pins` — list all consumer version pins
+- Programmatic API: `DomainVersioning.pin`, `.pinned_version`, `.all_pins`
+- Version round-trip: `DslSerializer` emits `version:` kwarg when domain has a version set
 
 ## Migrations & Schema Evolution
 - `DomainDiff` detects added/removed aggregates, attributes, VOs, entities, indexes, commands, policies, validations, invariants, queries, scopes, subscribers, specifications

@@ -8,11 +8,13 @@
 #   versions = Hecks::DomainVersioning.log(base_dir: Dir.pwd)
 #   domain   = Hecks::DomainVersioning.load_version("2.1.0", base_dir: Dir.pwd)
 #
+require "yaml"
 require_relative "domain_versioning/breaking_classifier"
 
 module Hecks
   module DomainVersioning
     VERSIONS_DIR = "db/hecks_versions"
+    PINS_FILE    = ".pins.yml"
 
     # Tag the current domain as a named version snapshot.
     #
@@ -76,6 +78,40 @@ module Hecks
       entries.first&.fetch(:version)
     end
 
+    # Pin a consumer to a specific version.
+    #
+    # @param consumer_name [String] the consumer identifier (e.g. "billing-service")
+    # @param version [String] the version to pin to
+    # @param base_dir [String] project root directory
+    # @return [String] path to the pins file
+    # @raise [ArgumentError] if the version does not exist
+    def self.pin(consumer_name, version, base_dir: Dir.pwd)
+      unless exists?(version, base_dir: base_dir)
+        raise ArgumentError, "Version #{version} does not exist. Tag it first with `hecks version_tag #{version}`."
+      end
+
+      pins = load_pins(base_dir: base_dir)
+      pins[consumer_name] = version
+      write_pins(pins, base_dir: base_dir)
+    end
+
+    # Look up the pinned version for a consumer.
+    #
+    # @param consumer_name [String] the consumer identifier
+    # @param base_dir [String] project root directory
+    # @return [String, nil] the pinned version, or nil if not pinned
+    def self.pinned_version(consumer_name, base_dir: Dir.pwd)
+      load_pins(base_dir: base_dir)[consumer_name]
+    end
+
+    # List all consumer pins.
+    #
+    # @param base_dir [String] project root directory
+    # @return [Hash{String => String}] consumer_name => version mapping
+    def self.all_pins(base_dir: Dir.pwd)
+      load_pins(base_dir: base_dir)
+    end
+
     # Parse metadata header from a snapshot file.
     #
     # @param path [String] file path
@@ -89,6 +125,29 @@ module Hecks
         tagged_at = $1 if line =~ /^# tagged_at:\s*(.+)/
       end
       { version: version, tagged_at: tagged_at }
+    end
+
+    # Load pins from YAML file.
+    #
+    # @param base_dir [String] project root directory
+    # @return [Hash{String => String}]
+    def self.load_pins(base_dir: Dir.pwd)
+      path = File.join(base_dir, VERSIONS_DIR, PINS_FILE)
+      return {} unless File.exist?(path)
+      YAML.safe_load(File.read(path)) || {}
+    end
+
+    # Write pins to YAML file.
+    #
+    # @param pins [Hash{String => String}]
+    # @param base_dir [String] project root directory
+    # @return [String] path to the written file
+    def self.write_pins(pins, base_dir: Dir.pwd)
+      dir = File.join(base_dir, VERSIONS_DIR)
+      FileUtils.mkdir_p(dir)
+      path = File.join(dir, PINS_FILE)
+      File.write(path, YAML.dump(pins))
+      path
     end
   end
 end

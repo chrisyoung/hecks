@@ -78,3 +78,53 @@ A change is **non-breaking** if:
 - A command is added
 - An attribute is added
 - A query, scope, or specification is added
+
+## Pin a consumer to a version
+
+Lock a downstream consumer to a specific tagged version:
+
+```bash
+hecks version_pin billing-service --version 1.0.0
+# Pinned billing-service to v1.0.0
+```
+
+Pins are stored in `db/hecks_versions/.pins.yml`:
+
+```yaml
+---
+billing-service: "1.0.0"
+frontend-app: "2.1.0"
+```
+
+## List all pins
+
+```bash
+hecks version_pins
+# billing-service  v1.0.0
+# frontend-app     v2.1.0
+```
+
+## Programmatic API
+
+```ruby
+# Pin a consumer
+Hecks::DomainVersioning.pin("billing-service", "1.0.0", base_dir: Dir.pwd)
+
+# Look up a pin
+Hecks::DomainVersioning.pinned_version("billing-service", base_dir: Dir.pwd)
+# => "1.0.0"
+
+# List all pins
+Hecks::DomainVersioning.all_pins(base_dir: Dir.pwd)
+# => { "billing-service" => "1.0.0", "frontend-app" => "2.1.0" }
+```
+
+## Version round-trip in snapshots
+
+When a domain declares `version:`, the serializer preserves it in snapshot files:
+
+```ruby
+Hecks.domain "Banking", version: "2.1.0" do
+  # ...
+end
+```

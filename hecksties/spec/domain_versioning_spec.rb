@@ -116,6 +116,49 @@ RSpec.describe Hecks::DomainVersioning do
       expect(described_class.latest_version(base_dir: base_dir)).to eq("2.0.0")
     end
   end
+
+  describe ".pin" do
+    before { described_class.tag("1.0.0", domain_v1, base_dir: base_dir) }
+
+    it "writes a pin for a consumer" do
+      described_class.pin("billing-service", "1.0.0", base_dir: base_dir)
+      expect(described_class.pinned_version("billing-service", base_dir: base_dir)).to eq("1.0.0")
+    end
+
+    it "overwrites an existing pin" do
+      described_class.tag("2.0.0", domain_v2, base_dir: base_dir)
+      described_class.pin("billing-service", "1.0.0", base_dir: base_dir)
+      described_class.pin("billing-service", "2.0.0", base_dir: base_dir)
+      expect(described_class.pinned_version("billing-service", base_dir: base_dir)).to eq("2.0.0")
+    end
+
+    it "raises ArgumentError for nonexistent version" do
+      expect {
+        described_class.pin("billing-service", "9.9.9", base_dir: base_dir)
+      }.to raise_error(ArgumentError, /does not exist/)
+    end
+  end
+
+  describe ".pinned_version" do
+    it "returns nil when no pin exists" do
+      expect(described_class.pinned_version("unknown", base_dir: base_dir)).to be_nil
+    end
+  end
+
+  describe ".all_pins" do
+    it "returns empty hash when no pins exist" do
+      expect(described_class.all_pins(base_dir: base_dir)).to eq({})
+    end
+
+    it "lists all pinned consumers" do
+      described_class.tag("1.0.0", domain_v1, base_dir: base_dir)
+      described_class.tag("2.0.0", domain_v2, base_dir: base_dir)
+      described_class.pin("billing", "1.0.0", base_dir: base_dir)
+      described_class.pin("frontend", "2.0.0", base_dir: base_dir)
+      pins = described_class.all_pins(base_dir: base_dir)
+      expect(pins).to eq({ "billing" => "1.0.0", "frontend" => "2.0.0" })
+    end
+  end
 end
 
 RSpec.describe Hecks::DomainVersioning::BreakingClassifier do
