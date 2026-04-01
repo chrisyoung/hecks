@@ -150,6 +150,26 @@ RSpec.describe Hecks::DSL::DomainBuilder do
       expect(agg.lifecycle.target_for("StartTicket")).to eq("in_progress")
       expect(agg.lifecycle.target_for("CloseTicket")).to eq("closed")
     end
+
+    it "supports identity for composed natural keys" do
+      domain = Hecks.domain("Identity") do
+        aggregate("TeamCycle") do
+          attribute :team, String
+          attribute :start_date, Date
+          identity :team, :start_date
+          command("CreateTeamCycle") { attribute :team, String; attribute :start_date, Date }
+        end
+      end
+      agg = domain.aggregates.first
+      expect(agg.identity_fields).to eq([:team, :start_date])
+    end
+
+    it "identity_fields defaults to nil" do
+      domain = Hecks.domain("NoIdentity") do
+        aggregate("Thing") { attribute :name, String; command("CreateThing") { attribute :name, String } }
+      end
+      expect(domain.aggregates.first.identity_fields).to be_nil
+    end
   end
 
   describe "domain metadata" do

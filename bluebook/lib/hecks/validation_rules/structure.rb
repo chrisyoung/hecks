@@ -18,6 +18,7 @@ module Hecks
       autoload :CommandsHaveAttributes, "hecks/validation_rules/structure/commands_have_attributes"
       autoload :ValidPolicyEvents,      "hecks/validation_rules/structure/valid_policy_events"
       autoload :ValidPolicyTriggers,    "hecks/validation_rules/structure/valid_policy_triggers"
+      autoload :NoPiiInIdentity,        "hecks/validation_rules/structure/no_pii_in_identity"
     end
   end
 end

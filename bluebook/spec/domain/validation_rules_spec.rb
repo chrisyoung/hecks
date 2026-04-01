@@ -135,6 +135,35 @@ RSpec.describe "Validation Rules" do
     end
   end
 
+  describe "no PII in identity" do
+    it "rejects PII attributes in composed identity" do
+      domain = Hecks.domain("Validation") do
+        aggregate("User") do
+          attribute :email, String, pii: true
+          attribute :org, String
+          identity :email, :org
+          command("CreateUser") { attribute :email, String; attribute :org, String }
+        end
+      end
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors.any? { |e| e.include?("PII") && e.include?("email") }).to be true
+    end
+
+    it "allows non-PII attributes in identity" do
+      domain = Hecks.domain("Validation") do
+        aggregate("TeamCycle") do
+          attribute :team, String
+          attribute :start_date, Date
+          identity :team, :start_date
+          command("CreateTeamCycle") { attribute :team, String }
+        end
+      end
+      valid, _ = validate(domain)
+      expect(valid).to be true
+    end
+  end
+
   describe "Structure::AggregatesHaveCommands" do
     it "rejects aggregate without commands" do
       domain = Hecks.domain("Validation") { aggregate("Thing") { attribute :name, String } }
