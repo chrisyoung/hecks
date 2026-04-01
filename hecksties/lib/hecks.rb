@@ -28,12 +28,6 @@ require "bluebook"
 require "hecksagon"
 require_relative "hecks/deprecations"
 require_relative "hecks/stats"
-require "hecks/domain/inspector"
-require "hecks/domain/builder_methods"
-require "hecks/domain/compiler"
-require "hecks/domain/in_memory_loader"
-require "hecks/domain/event_storm_importer"
-require "hecks/domain/visualizer_methods"
 require "hecks/runtime/boot"
 require "hecks/workshop"
 
@@ -74,6 +68,16 @@ module Hecks
     @configuration
   end
 
+  # Load a domain from an IR object and return a booted Runtime. No filesystem
+  # required -- uses InMemoryLoader to generate and eval source in memory.
+  #
+  #   runtime = Hecks.load(domain)
+  #   runtime = Hecks.load(domain, event_bus: my_bus)
+  #
+  # @param domain [Hecks::DomainModel::Structure::Domain] the domain IR
+  # @param force [Boolean] reload even if already cached (default false)
+  # @param opts [Hash] extra options forwarded to Runtime (e.g. event_bus:)
+  # @return [Hecks::Runtime] a fully wired runtime with memory adapters
   def self.load(domain, force: false, **opts, &config)
     load_domain(domain, force: force)
     Runtime.new(domain, **opts, &config)

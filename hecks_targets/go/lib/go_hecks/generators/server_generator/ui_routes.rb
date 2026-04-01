@@ -21,11 +21,12 @@ module GoHecks
           agg.commands.each do |cmd|
             cmd_snake = GoUtils.snake_case(cmd.name)
 
-            lines << "\tmux.HandleFunc(\"GET /#{plural}/#{cmd_snake}/new\", func(w http.ResponseWriter, r *http.Request) {"
+            lines << "\tmux.HandleFunc(\"GET #{HecksTemplating::RouteContract.form_path(plural, cmd_snake)}\", func(w http.ResponseWriter, r *http.Request) {"
             lines.concat(build_form_fields_go(cmd, agg, agg_snake, value_source: :query))
+
             lines << "\t\trenderer.Render(w, \"form\", \"#{cmd.name}\", FormData{"
             lines << "\t\t\tCommandName: \"#{HecksTemplating::UILabelContract.label(cmd.name)}\","
-            lines << "\t\t\tAction: \"/#{plural}/#{cmd_snake}\","
+            lines << "\t\t\tAction: \"#{HecksTemplating::RouteContract.submit_path(plural, cmd_snake)}\","
             lines << "\t\t\tFields: fields,"
             lines << "\t\t})"
             lines << "\t})"
