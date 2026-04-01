@@ -32,3 +32,7 @@ doc/
 .playwright-mcp/
 bad_domain/
 screenshots/
+.agents/
+skills-lock.json
+skills/*/
+!skills/hecks-navigator/
