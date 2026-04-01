@@ -88,6 +88,11 @@
 - `:privacy` — PII attributes must be `visible: false`; PII aggregate commands need actors
 - `:security` — command actors must be declared at domain level
 - **Mother Earth Report** — `hecks validate` shows a per-goal PASS/FAIL summary with violations listed
+- **Custom World Goals** — `Hecks.define_goal(:name) { validate { |domain| [...] } }` to define user goals that compose extensions
+  - `requires_extension :audit` declares extension dependencies
+  - Custom goals activate via the same `world_goals :name` DSL keyword
+  - Idempotent: redefining a goal replaces the previous definition
+  - Appears in Mother Earth Report alongside built-in goals
 
 ### Access Control & Ports
 - Define access-control ports that whitelist allowed methods per consumer

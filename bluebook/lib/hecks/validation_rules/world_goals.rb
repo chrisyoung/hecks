@@ -19,6 +19,7 @@ module Hecks
       autoload :Consent,      "hecks/validation_rules/world_goals/consent"
       autoload :Privacy,      "hecks/validation_rules/world_goals/privacy"
       autoload :Security,     "hecks/validation_rules/world_goals/security"
+      autoload :GoalBuilder,  "hecks/validation_rules/world_goals/goal_builder"
     end
   end
 end

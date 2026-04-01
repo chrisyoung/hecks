@@ -20,6 +20,10 @@ module Hecks
       @items << coerced unless @items.include?(coerced)
     end
 
+    def deregister(item)
+      @items.delete(item)
+    end
+
     def include?(item)
       coerced = item.respond_to?(:to_sym) ? item.to_sym : item
       @items.include?(coerced)

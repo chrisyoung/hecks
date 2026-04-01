@@ -90,8 +90,8 @@ Hecks.domain "Banking" do
   actor "Customer"
   actor "Admin", description: "System administrator"
 
-  # World goals (opt-in ethical validation)
-  world_goals :transparency, :consent, :privacy, :security
+  # World goals (opt-in ethical validation — built-in and custom)
+  world_goals :transparency, :consent, :privacy, :security, :audit_trail
 
   # Multi-tenancy
   tenancy :row

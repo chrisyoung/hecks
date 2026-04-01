@@ -91,7 +91,7 @@ module Hecks
     end
 
     def goal_failing?(goal)
-      label = goal.to_s.capitalize
+      label = goal.to_s.split("_").map(&:capitalize).join(" ")
       @world_goals_errors.any? { |e| e.start_with?("#{label}:") }
     end
   end
