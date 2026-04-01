@@ -2,22 +2,20 @@ require "spec_helper"
 require "hecks_ai/governance_guard"
 require "hecks_ai/governance_tools"
 
-RSpec.describe Hecks::MCP::GovernanceGuard do
-  let(:ctx) { double("ctx", workshop: workshop) }
-  let(:guard) { described_class.new(ctx) }
-
+RSpec.describe Hecks::GovernanceGuard do
   describe "#check" do
     context "when no world goals are declared" do
-      let(:workshop) do
+      let(:domain) do
         ws = Hecks.workshop("Shop")
         ws.aggregate("Product") do
           attribute :name, String
           command("CreateProduct") { attribute :name, String }
         end
-        ws
+        ws.to_domain
       end
 
       it "allows all commands" do
+        guard = described_class.new(domain)
         result = guard.check("CreateProduct")
         expect(result[:allowed]).to be true
         expect(result[:violations]).to be_empty
@@ -26,17 +24,18 @@ RSpec.describe Hecks::MCP::GovernanceGuard do
     end
 
     context "when transparency goal is declared and command emits no events" do
-      let(:workshop) do
+      let(:domain) do
         ws = Hecks.workshop("Clinic")
         ws.aggregate("Record") do
           attribute :title, String
           command("DeleteRecord") { attribute :id, String; emits [] }
         end
         ws.world_goals(:transparency)
-        ws
+        ws.to_domain
       end
 
       it "refuses the command with a transparency violation" do
+        guard = described_class.new(domain)
         result = guard.check("DeleteRecord")
         expect(result[:allowed]).to be false
         expect(result[:violations].first).to include("Transparency")
@@ -45,17 +44,18 @@ RSpec.describe Hecks::MCP::GovernanceGuard do
     end
 
     context "when consent goal is declared and user-like aggregate has no actor" do
-      let(:workshop) do
+      let(:domain) do
         ws = Hecks.workshop("Health")
         ws.aggregate("Patient") do
           attribute :name, String
           command("UpdatePatient") { attribute :name, String }
         end
         ws.world_goals(:consent)
-        ws
+        ws.to_domain
       end
 
       it "refuses the command with a consent violation" do
+        guard = described_class.new(domain)
         result = guard.check("UpdatePatient")
         expect(result[:allowed]).to be false
         expect(result[:violations].first).to include("Consent")
@@ -63,17 +63,18 @@ RSpec.describe Hecks::MCP::GovernanceGuard do
     end
 
     context "when goals are met" do
-      let(:workshop) do
+      let(:domain) do
         ws = Hecks.workshop("Health")
         ws.aggregate("Patient") do
           attribute :name, String
           command("UpdatePatient") { attribute :name, String; actor "Doctor" }
         end
         ws.world_goals(:consent)
-        ws
+        ws.to_domain
       end
 
       it "allows the command" do
+        guard = described_class.new(domain)
         result = guard.check("UpdatePatient")
         expect(result[:allowed]).to be true
         expect(result[:violations]).to be_empty

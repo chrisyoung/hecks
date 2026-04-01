@@ -1,18 +1,55 @@
 # AI Governance
 
-When a domain declares `world_goals`, the MCP server enforces governance rules
-on AI actions. Commands that violate declared goals are refused with a structured
+When a domain declares `world_goals`, Hecks enforces governance rules on command
+execution. Commands that violate declared goals are refused with a structured
 explanation before they execute.
+
+Governance is a general-purpose layer -- it works from any entry point: CLI,
+HTTP, REPL, or MCP. The `GovernanceGuard` accepts a domain object directly,
+so any code that has access to a domain can enforce governance.
 
 ## How It Works
 
 1. The domain declares goals: `world_goals :transparency, :consent, :privacy`
-2. An AI agent calls `execute_command` via MCP
-3. `GovernanceGuard` runs the domain validator and checks for world-goals violations
+2. Any entry point creates a guard: `Hecks::GovernanceGuard.new(domain)`
+3. The guard runs the domain validator and checks for world-goals violations
 4. If violations exist for the specific command, execution is refused with details
 5. If no violations, the command proceeds normally
 
+## Programmatic Usage
+
+```ruby
+# From a workshop (REPL, scripts, tests)
+ws = Hecks.workshop("Healthcare")
+ws.aggregate("Patient") do
+  attribute :name, String
+  command("UpdatePatient") { attribute :name, String }
+end
+ws.world_goals(:consent, :privacy)
+
+domain = ws.to_domain
+guard  = Hecks::GovernanceGuard.new(domain)
+result = guard.check("UpdatePatient")
+
+result[:allowed]    # => false
+result[:violations] # => ["Consent: Patient#UpdatePatient ..."]
+result[:goals]      # => [:consent, :privacy]
+```
+
+```ruby
+# From a booted app (CLI, HTTP, Rails)
+domain = Hecks.boot(__dir__)
+guard  = Hecks::GovernanceGuard.new(domain)
+result = guard.check("TransferFunds")
+
+unless result[:allowed]
+  puts "Blocked: #{result[:violations].join(', ')}"
+end
+```
+
 ## MCP Tools
+
+The MCP server wraps the guard in two convenience tools for AI agents.
 
 ### `explain_governance`
 
@@ -68,22 +105,6 @@ If violations are found, it returns a refusal instead of executing:
   "violations": ["Transparency: Record#DeleteRecord emits no events."],
   "goals": ["transparency"]
 }
-```
-
-## Workshop API
-
-Set world goals on a workshop-built domain:
-
-```ruby
-ws = Hecks.workshop("Healthcare")
-ws.aggregate("Patient") do
-  attribute :name, String
-  command("UpdatePatient") { attribute :name, String; actor "Doctor" }
-end
-ws.world_goals(:consent, :privacy)
-
-domain = ws.to_domain
-domain.world_goals  # => [:consent, :privacy]
 ```
 
 ## Available Goals

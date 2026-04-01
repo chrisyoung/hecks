@@ -482,8 +482,9 @@
 - All tool output uses `capture_output` to show the same terse feedback as the REPL
 
 ### AI Governance
+- `Hecks::GovernanceGuard` — general-purpose governance layer, accepts a domain object directly, usable from CLI, HTTP, REPL, or MCP
+- `GovernanceGuard#check(command_name)` filters world-goals validation errors to the specific command being executed
 - `execute_command` MCP tool checks world goals before executing — refuses with structured violations if a command violates declared goals
-- `GovernanceGuard` middleware filters world-goals validation errors to the specific command being executed
 - `explain_governance` MCP tool lists active world goals and their constraints so AI agents can self-orient
 - `check_governance` MCP tool pre-checks a command against governance rules without executing it
 - `Workshop#world_goals` sets governance goals from the workshop (workshop-built domains now carry world goals)

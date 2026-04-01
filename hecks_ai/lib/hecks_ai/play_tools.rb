@@ -51,7 +51,8 @@ module Hecks
           }
         ) do |args|
           ctx.ensure_session!
-          guard = GovernanceGuard.new(ctx)
+          domain = ctx.workshop.to_domain
+          guard = Hecks::GovernanceGuard.new(domain)
           result = guard.check(args["command"])
 
           unless result[:allowed]
