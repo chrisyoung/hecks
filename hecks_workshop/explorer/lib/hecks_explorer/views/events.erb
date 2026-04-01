@@ -1,0 +1,23 @@
+<h1>Events (<%= events.size %>)</h1>
+<% if events.empty? %>
+  <p style="color:#666">No domain events defined.</p>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th>Aggregate</th>
+        <th>Attributes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% events.each do |evt| %>
+        <tr>
+          <td class="mono"><%= h(evt[:name]) %></td>
+          <td><a href="<%= evt[:aggregate_href] %>"><%= h(evt[:aggregate]) %></a></td>
+          <td class="mono"><%= h(evt[:attributes]) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

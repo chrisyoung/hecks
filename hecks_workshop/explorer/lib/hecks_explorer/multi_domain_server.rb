@@ -84,6 +84,7 @@ module Hecks
             }
           end
         end
+        items << { label: "Events", href: "/events", group: "System" }
         items << { label: "Config", href: "/config", group: "System" }
         items
       end
@@ -95,6 +96,8 @@ module Hecks
         path = req.path
         if path == "/"
           serve_home(res)
+        elsif path == "/events"
+          serve_events(res)
         elsif path == "/config"
           serve_config(res)
         else
@@ -145,6 +148,26 @@ module Hecks
           title: "Config — #{@brand}", brand: @brand, nav_items: @nav,
           aggregates: summaries, policies: policies, roles: roles,
           current_role: "admin", adapter: "memory", events: [])
+        res["Content-Type"] = "text/html"
+        res.body = html
+      end
+
+      def serve_events(res)
+        events = @entries.flat_map do |e|
+          ir = e[:ir]
+          ir.domain.aggregates.flat_map do |agg|
+            p = plural(agg)
+            agg.events.map do |evt|
+              attrs = evt.attributes.map(&:name).join(", ")
+              { name: evt.name, aggregate: agg.name,
+                aggregate_href: "/#{e[:slug]}/#{p}",
+                attributes: attrs.empty? ? "(none)" : attrs }
+            end
+          end
+        end
+        html = @renderer.render(:events,
+          title: "Events — #{@brand}", brand: @brand, nav_items: @nav,
+          events: events)
         res["Content-Type"] = "text/html"
         res.body = html
       end

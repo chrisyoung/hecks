@@ -1,6 +1,7 @@
 require_relative "ui_generator/form_routes"
 require_relative "ui_generator/config_routes"
 require_relative "ui_generator/show_route"
+require_relative "ui_generator/events_route"
 
 module HecksStatic
 # HecksStatic::UIGenerator
@@ -12,6 +13,7 @@ class UIGenerator < Hecks::Generator
   include FormRoutes
   include ConfigRoutes
   include ShowRoute
+  include EventsRoute
 
   def initialize(domain)
     @domain = domain
@@ -36,6 +38,7 @@ class UIGenerator < Hecks::Generator
     @domain.aggregates.each { |agg| lines.concat(index_route(agg, mod)) }
     @domain.aggregates.each { |agg| lines.concat(show_route(agg, mod)) }
     @domain.aggregates.each { |agg| lines.concat(new_routes(agg, mod)) }
+    lines.concat(events_route(mod))
     lines.concat(config_route(mod))
     lines.concat(reboot_route(mod))
     lines << "      end"
@@ -54,6 +57,7 @@ class UIGenerator < Hecks::Generator
     @domain.aggregates.each do |agg|
       items << { label: HecksTemplating::UILabelContract.plural_label(agg.name), href: "/#{plural(agg)}" }
     end
+    items << { label: "Events", href: "/events" }
     items << { label: "Config", href: "/config" }
     items
   end

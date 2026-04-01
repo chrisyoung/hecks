@@ -647,7 +647,7 @@
 ### Domain UI as an Extension
 - ERB templates for browsing aggregates, executing commands, viewing events
 - Templates shared between Ruby static and Go targets
-- Views: layout, home, index, show, form, config
+- Views: layout, home, index, show, form, events, config
 - Renderer class with layout wrapping and HTML escaping
 - Registers with runtime, auto-wires when loaded
 
@@ -656,6 +656,7 @@
 - Runtime CRUD operations (find, all, create, delete) isolated behind `RuntimeBridge`
 - No `Object.const_get`, `respond_to?`, or `instance_variable_get` in the UI layer
 - Same IR structs consumed by Ruby, Go, and Rails generators now also drive the Web Explorer
+- Events view (`/events`) lists all domain events from the IR, grouped by aggregate with attribute details
 
 ## Implicit DSL (HEC-229)
 

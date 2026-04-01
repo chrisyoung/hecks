@@ -102,6 +102,15 @@ module Hecks
         HecksTemplating::DisplayContract.available_roles(@domain)
       end
 
+      def domain_events
+        @domain.aggregates.flat_map do |agg|
+          agg.events.map do |evt|
+            attrs = evt.attributes.map(&:name).join(", ")
+            { name: evt.name, aggregate: agg.name, attributes: attrs.empty? ? "(none)" : attrs }
+          end
+        end
+      end
+
       private
 
       def humanize(name)
