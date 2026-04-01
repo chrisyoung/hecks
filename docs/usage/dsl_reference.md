@@ -406,6 +406,22 @@ attribute :role, String, enum: ["admin", "user"] # constrained values
 attribute :email, String, pii: true              # PII flag
 ```
 
+### Identity (natural key)
+
+Aggregates always have a UUID as their canonical ID. You can additionally declare a natural key composed from attributes for human-meaningful lookups and deduplication. PII attributes cannot be part of the identity.
+
+```ruby
+aggregate "TeamCycle" do
+  attribute :team, String
+  attribute :start_date, Date
+
+  identity :team, :start_date
+end
+
+# TeamCycle.find(uuid)                                    # always works
+# TeamCycle.find_by_identity(team: "Alpha", start_date: Date.today)  # natural key
+```
+
 ---
 
 ## Lifecycle

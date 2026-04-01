@@ -75,6 +75,9 @@ module Hecks
       # @return [Lifecycle, nil] optional state machine definition
       attr_reader :lifecycle
 
+      # @return [Array<Symbol>, nil] natural key fields for secondary identity lookup
+      attr_reader :identity_fields
+
       # Creates a new Aggregate IR node.
       #
       # @param name [String] PascalCase name of the aggregate (e.g., "Pizza")
@@ -102,7 +105,8 @@ module Hecks
                      scopes: [], queries: [], subscribers: [], indexes: [],
                      specifications: [], references: [],
                      factories: [], lifecycle: nil, versioned: false,
-                     attachable: false, metadata: {}, origin_domain: nil)
+                     attachable: false, metadata: {}, origin_domain: nil,
+                     identity_fields: nil)
         @name = Names.aggregate_name(name)
         @attributes = attributes
         @value_objects = value_objects
@@ -124,6 +128,7 @@ module Hecks
         @attachable = attachable
         @metadata = metadata
         @origin_domain = origin_domain
+        @identity_fields = identity_fields
       end
 
       attr_reader :metadata, :origin_domain

@@ -81,6 +81,7 @@ module Hecks
         @lifecycle = nil
         @versioned = false
         @attachable = false
+        @identity_fields = nil
         @metadata = {}
         @facet_data = {}
         self.class.facet_registry.each do |facet_name, setup|
@@ -95,6 +96,15 @@ module Hecks
 
       def attachable
         @attachable = true
+      end
+
+      # Declare a natural key composed from attributes.
+      # The UUID always exists — this adds a secondary lookup key.
+      #
+      #   identity :team, :start_date
+      #
+      def identity(*fields)
+        @identity_fields = fields.map(&:to_sym)
       end
 
       # Declare a relationship to another type.
@@ -179,7 +189,7 @@ module Hecks
           specifications: @specifications, lifecycle: @lifecycle,
           versioned: @versioned, attachable: @attachable,
           metadata: @metadata, references: @references,
-          factories: @factories
+          factories: @factories, identity_fields: @identity_fields
         )
       end
 
