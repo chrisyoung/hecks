@@ -3,11 +3,7 @@
 # Thor-based CLI with grouped commands. Each sub-gem registers
 # commands via Hecks::CLI.register_command with a group label.
 #
-begin
-  require "thor"
-rescue LoadError
-  raise LoadError, "The hecks CLI requires thor. Add gem 'thor' to your Gemfile."
-end
+require "thor"
 require "fileutils"
 require_relative "conflict_handler"
 require_relative "domain_helpers"

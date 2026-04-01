@@ -364,6 +364,7 @@
 
 ## Gem Architecture
 - Core `hecks` gem has zero runtime dependencies
+- CLI is its own gem (`hecks_cli`) with an explicit Thor dependency
 - Each extension is a top-level gem candidate at `lib/`
 - `require "hecks"` gives you the core; each extension is a separate require
 - Flattened namespace: `Hecks::Runtime`, not `Hecks::Services::Runtime`

@@ -22,6 +22,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "bluebook", Hecks::VERSION
   spec.add_dependency "hecks_ai", Hecks::VERSION
+  spec.add_dependency "hecks_cli", Hecks::VERSION
   spec.add_dependency "hecks_workshop", Hecks::VERSION
   spec.add_dependency "hecksagon", Hecks::VERSION
   spec.add_dependency "hecksties", Hecks::VERSION
