@@ -13,11 +13,15 @@ require "active_support/core_ext/string/inflections"
 module Hecks::Conventions
   module UILabelContract
     # Convert any name (snake_case or PascalCase) to a display label.
+    # Strips trailing "_id" from reference attribute names so that
+    # "pizza_id" renders as "Pizza" rather than "Pizza Id".
     def self.label(name)
       s = name.to_s
       s = s.gsub(/([A-Z]+)([A-Z][a-z])/, '\1 \2')
            .gsub(/([a-z\d])([A-Z])/, '\1 \2')
-      s.split(/[_ ]+/).map(&:capitalize).join(" ")
+      result = s.split(/[_ ]+/).map(&:capitalize).join(" ")
+      result = result.sub(/ Id$/, "") if name.to_s.end_with?("_id")
+      result
     end
 
     # Humanized plural label for an aggregate or entity name.

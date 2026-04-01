@@ -29,7 +29,9 @@ module GoHecks
         ac = HecksTemplating::AggregateContract
         dc = HecksTemplating::DisplayContract
 
-        cols = attrs.map { |a| "{Label: \"#{HecksTemplating::UILabelContract.label(a.name)}\"}" }
+        refs = agg.references || []
+        ref_cols = refs.map { |r| "{Label: \"#{dc.reference_column_label(r)}\"}" }
+        cols = attrs.map { |a| "{Label: \"#{HecksTemplating::UILabelContract.label(a.name)}\"}" } + ref_cols
         create_cmds, update_cmds = ac.partition_commands(agg)
 
         btns = create_cmds.map { |c|
@@ -47,6 +49,11 @@ module GoHecks
         }
 
         cell_exprs = attrs.map { |a| dc.cell_expression(a, "obj", lang: :go) }
+        ref_cell_exprs = refs.map { |r|
+          field = GoUtils.pascal_case(dc.strip_id_suffix(r.name))
+          "fmt.Sprintf(\"%v\", obj.#{field})"
+        }
+        cell_exprs = cell_exprs + ref_cell_exprs
         desc = agg.description || ""
 
         lines = []
@@ -146,6 +153,12 @@ module GoHecks
             else
               lines << "\t\t\t{Label: \"#{label}\", Value: fmt.Sprintf(\"%v\", obj.#{field})},"
             end
+          end
+          # Reference fields
+          (agg.references || []).each do |ref|
+            label = dc.reference_column_label(ref)
+            field = GoUtils.pascal_case(dc.strip_id_suffix(ref.name))
+            lines << "\t\t\t{Label: \"#{label}\", Value: fmt.Sprintf(\"%v\", obj.#{field})},"
           end
           lines << "\t\t}"
 

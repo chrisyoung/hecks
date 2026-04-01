@@ -125,6 +125,26 @@ module Hecks::Conventions
       UILabelContract.label(domain_name.sub(/Domain$/, ""))
     end
 
+    # Returns the column header label for a reference on an aggregate.
+    # Uses the reference type name (e.g., "Pizza") rather than the raw
+    # field name (e.g., "pizza_id"), so index/show views show "Pizza"
+    # not "Pizza Id".
+    #
+    # @param ref [Reference] a reference IR object (responds to .type)
+    # @return [String] humanized label, e.g. "Pizza"
+    def self.reference_column_label(ref)
+      UILabelContract.label(ref.type)
+    end
+
+    # Strip "_id" suffix from a name string.
+    # "pizza_id" → "pizza", "order" → "order"
+    #
+    # @param name [String, Symbol]
+    # @return [String]
+    def self.strip_id_suffix(name)
+      name.to_s.sub(/_id$/, "")
+    end
+
     # Go field name helper — PascalCase.
     GoFieldName = ->(name) { Hecks::Utils.sanitize_constant(name) }
   end

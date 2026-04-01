@@ -52,6 +52,10 @@ module GoHecks
       @user_attrs.each do |attr|
         lines << "\t#{GoUtils.pascal_case(attr.name)} #{GoUtils.go_type(attr)} `json:\"#{GoUtils.json_tag(attr.name)}\"`"
       end
+      (@agg.references || []).each do |ref|
+        field = GoUtils.pascal_case(ref.name.to_s)
+        lines << "\t#{field} string `json:\"#{GoUtils.json_tag(ref.name)}\"`"
+      end
       lines << "}"
       lines << ""
       lines
