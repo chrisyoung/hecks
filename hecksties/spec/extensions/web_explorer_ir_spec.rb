@@ -1,6 +1,7 @@
 require "spec_helper"
 require "hecks/extensions/web_explorer/ir_introspector"
 require "hecks/extensions/web_explorer/runtime_bridge"
+require "hecks/extensions/web_explorer/renderer"
 
 RSpec.describe "Web Explorer IR introspection" do
   let(:domain) { BootedDomains.pizzas }
@@ -74,6 +75,27 @@ RSpec.describe "Web Explorer IR introspection" do
       expect(ref.name).to eq("Pizza")
     end
 
+    it "excludes hidden attributes from user_attributes" do
+      attr_class = Hecks::DomainModel::Structure::Attribute
+      hidden = attr_class.new(name: :secret, type: String, visible: false)
+      visible = attr_class.new(name: :label, type: String)
+      agg = double("agg", attributes: [hidden, visible])
+      result = ir.user_attributes(agg)
+      expect(result.map(&:name)).to eq([:label])
+      expect(result.map(&:name)).not_to include(:secret)
+    end
+
+    it "excludes hidden attributes from columns_for" do
+      attr_class = Hecks::DomainModel::Structure::Attribute
+      hidden = attr_class.new(name: :token, type: String, visible: false)
+      visible = attr_class.new(name: :title, type: String)
+      agg = double("agg", attributes: [hidden, visible], computed_attributes: [])
+      cols = ir.columns_for(agg)
+      labels = cols.map { |c| c[:label] }
+      expect(labels).to include("Title")
+      expect(labels).not_to include("Token")
+    end
+
     it "returns policy labels from the IR" do
       labels = ir.policy_labels
       expect(labels).to include("PlacedOrder \u2192 ReserveIngredients")
@@ -91,6 +113,15 @@ RSpec.describe "Web Explorer IR introspection" do
       expect(data[:name]).to eq("Pizzas")
       expect(data[:command_names]).to include("Create Pizza")
       expect(data[:attributes]).to be_a(Integer)
+    end
+  end
+
+  describe Hecks::WebExplorer::Renderer do
+    let(:views_dir) { File.expand_path("../../lib/hecks/extensions/web_explorer/views", __dir__) }
+    let(:renderer) { Hecks::WebExplorer::Renderer.new(views_dir) }
+
+    it "escapes HTML special characters via h()" do
+      expect(renderer.h("<script>alert(1)</script>")).to eq("&lt;script&gt;alert(1)&lt;/script&gt;")
     end
   end
 
