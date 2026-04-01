@@ -79,8 +79,8 @@ RSpec.describe "Error handling" do
       expect(Hecks::DomainLoadError.ancestors).to include(Hecks::Error)
     end
 
-    it "PortAccessDenied is a Hecks::Error" do
-      expect(Hecks::PortAccessDenied.ancestors).to include(Hecks::Error)
+    it "GateAccessDenied is a Hecks::Error" do
+      expect(Hecks::GateAccessDenied.ancestors).to include(Hecks::Error)
     end
   end
 end

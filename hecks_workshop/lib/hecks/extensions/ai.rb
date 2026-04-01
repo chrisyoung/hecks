@@ -19,7 +19,7 @@
 #
 Hecks.describe_extension(:mcp,
   description: "MCP server for AI-assisted domain modeling",
-  config: { port: { default: 8080, desc: "MCP server port" } },
+  config: { gate: { default: 8080, desc: "MCP server port" } },
   wires_to: :domain)
 
 # Registers the +:mcp+ extension. When activated on a domain module, it defines

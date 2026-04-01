@@ -17,7 +17,7 @@ module Hecks
     #     commands: [Command.new(name: "CreatePizza", attributes: [...])],
     #     events: [DomainEvent.new(name: "CreatedPizza", attributes: [...])],
     #     scopes: [Scope.new(name: :active, conditions: { status: "active" })],
-    #     ports: { guest: PortDefinition.new(name: :guest, allowed_methods: [:find]) }
+    #     ports: { guest: GateDefinition.new(name: :guest, allowed_methods: [:find]) }
     #   )
     #
     class Aggregate
@@ -87,7 +87,7 @@ module Hecks
       # @param validations [Array<Validation>] attribute-level validation rules
       # @param invariants [Array<Invariant>] aggregate-level business rules
       # @param scopes [Array<Scope>] named query scopes
-      # @param ports [Hash{Symbol => PortDefinition}] access-control port definitions
+      # @param ports [Hash{Symbol => GateDefinition}] access-control port definitions
       # @param queries [Array<Behavior::Query>] named queries
       # @param subscribers [Array] event subscriber registrations
       # @param indexes [Array] database index definitions

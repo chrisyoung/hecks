@@ -36,13 +36,13 @@ module GoHecks
 
         func (e *GuardRejected) Error() string { return e.Message }
 
-        type PortAccessDenied struct {
+        type GateAccessDenied struct {
         \tRole    string `json:"role"`
         \tAction  string `json:"action"`
         \tMessage string `json:"message"`
         }
 
-        func (e *PortAccessDenied) Error() string { return e.Message }
+        func (e *GateAccessDenied) Error() string { return e.Message }
       GO
     end
   end

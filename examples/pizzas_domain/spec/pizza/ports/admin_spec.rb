@@ -1,7 +1,7 @@
 require "spec_helper"
 
 RSpec.describe "Pizza :admin port" do
-  before { @app = Hecks.load(domain, port: :admin, force: true) }
+  before { @app = Hecks.load(domain, gate: :admin, force: true) }
 
   it "allows .find" do
     expect { Pizza.find("nonexistent") }.not_to raise_error
@@ -12,11 +12,11 @@ RSpec.describe "Pizza :admin port" do
   end
 
   it "denies .count" do
-    expect { Pizza.count }.to raise_error(Hecks::PortAccessDenied)
+    expect { Pizza.count }.to raise_error(Hecks::GateAccessDenied)
   end
 
   it "denies .create" do
-    expect { Pizza.create(name: "example", description: "example") }.to raise_error(Hecks::PortAccessDenied)
+    expect { Pizza.create(name: "example", description: "example") }.to raise_error(Hecks::GateAccessDenied)
   end
 
 end

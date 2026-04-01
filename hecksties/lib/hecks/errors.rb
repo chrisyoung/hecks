@@ -187,7 +187,7 @@ module Hecks
 
   # Raised when code attempts to access a port (command, query, repository)
   # that is not exposed or not permitted for the current context.
-  class PortAccessDenied < Error; end
+  class GateAccessDenied < Error; end
 
   # Raised when an operation requires authentication but no actor is set
   # (i.e., +Hecks.actor+ is nil).

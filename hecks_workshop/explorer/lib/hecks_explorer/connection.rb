@@ -26,7 +26,7 @@ module Hecks
       # @param port [Integer] the TCP port to listen on (default: 9292)
       # @return [HttpConnection] a new connection ready to start
       def initialize(domain, runtime, port: 9292)
-        @server = HTTP::DomainServer.new(domain, port: port)
+        @server = HTTP::DomainServer.new(domain, gate: port)
       end
 
       # Start the WEBrick HTTP server and begin handling requests.

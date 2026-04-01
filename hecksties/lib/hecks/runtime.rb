@@ -74,9 +74,9 @@ module Hecks
       # @param event_bus [Hecks::EventBus, nil] optional shared event bus; creates a new one if nil
       # @yield optional configuration block evaluated in the runtime's instance context
       # @return [Hecks::Runtime]
-      def initialize(domain, port: nil, event_bus: nil, hecksagon: nil, &config)
+      def initialize(domain, gate: nil, event_bus: nil, hecksagon: nil, &config)
         @domain = domain
-        @port_name = port
+        @gate_name = gate
         @hecksagon = hecksagon || Hecks.last_hecksagon
         @mod_name = domain_module_name(domain.name)
         @mod = Object.const_get(@mod_name)

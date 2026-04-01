@@ -9,7 +9,7 @@ module Hecksagon
   #   end
   #
   #   Hecksagon.adapters_for(:persistence)  # => [:memory, :sqlite]
-  #   Hecksagon.adapter(:sqlite)            # => { port: :persistence, hook: Proc }
+  #   Hecksagon.adapter(:sqlite)            # => { gate: :persistence, hook: Proc }
   #
   module AdapterRegistry
     def adapter_registry
@@ -19,7 +19,7 @@ module Hecksagon
     def register_adapter(name, for_port: nil, implements: [], &hook)
       adapter_registry[name.to_sym] = {
         name: name.to_sym,
-        port: for_port&.to_sym,
+        gate: for_port&.to_sym,
         implements: implements.map(&:to_sym),
         hook: hook
       }

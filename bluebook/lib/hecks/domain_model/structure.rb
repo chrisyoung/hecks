@@ -22,7 +22,7 @@ module Hecks
     #       Structure::Validation      # attribute-level validation rule (presence, type, uniqueness)
     #       Structure::Invariant       # business rule that must always hold true
     #       Structure::Scope           # named query scope with static or callable conditions
-    #       Structure::PortDefinition  # access-control port defining allowed methods per role
+    #       Structure::GateDefinition  # access-control port defining allowed methods per role
     #       Structure::Lifecycle       # state machine definition with transitions tied to commands
     #     Structure::ReadModel         # data view needed before issuing a command (Event Storming artifact)
     #     Structure::ExternalSystem    # third-party system outside the domain boundary
@@ -49,7 +49,7 @@ module Hecks
       autoload :Validation,     "hecks/domain_model/structure/validation"
       autoload :Invariant,      "hecks/domain_model/structure/invariant"
       autoload :Scope,          "hecks/domain_model/structure/scope"
-      autoload :PortDefinition, "hecks/domain_model/structure/port_definition"
+      # GateDefinition lives in hecksagon
       autoload :ReadModel,      "hecks/domain_model/structure/read_model"
       autoload :ExternalSystem, "hecks/domain_model/structure/external_system"
       autoload :Actor,          "hecks/domain_model/structure/actor"
