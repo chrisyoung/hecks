@@ -20,6 +20,7 @@
 - Cross-domain references: `reference_to "Billing::Invoice"`
 - References hold live objects in memory — IDs are purely a persistence concern
 - Enum constraints: `attribute :category, String, enum: %w[low medium high]` — validated at runtime, dropdown in UI
+- Computed attributes: `computed :lot_size do; area / 43560.0; end` — derived values not stored in the database, shown in UI with "(computed)" hint
 
 ### Commands
 - Define commands with attributes, handlers, guards, read models, actors, and external system docs
@@ -477,6 +478,7 @@
 - Lifecycle badge on show pages — purple status badge with transition hint map
 - Direct-action buttons — commands with no user fields POST immediately (no empty form)
 - `reference_to` fields render as dropdowns populated from the referenced aggregate
+- Reference columns (`_id` attrs) show entity name instead of raw UUID, with short-ID fallback
 - Enum fields render as `<select>` dropdowns with valid values
 - Humanized labels everywhere — PascalCase split + ActiveSupport pluralization via UILabelContract
 - Nav sidebar grouped by origin domain in multi-domain servers
@@ -552,6 +554,7 @@
   - Resets server data before and after each run via `POST /_reset`
 - Form submission: accepts both JSON and form-urlencoded, redirects on success
 - Config page with roles, adapter, policies, aggregate counts, ports
+- Config page domain wiring diagrams: Mermaid structure, behavior, and flow diagrams generated at compile time
 - All DSL concepts generate Go code: lifecycle (state constants, predicates, transition validation, default on create, from-constraints on update), queries (prefixed to avoid collisions), specifications (with predicate translation), policies
 - Go aggregate `Validate()` enforces enum constraints from AggregateContract
 - Go commands set lifecycle default status on create, enforce from-constraints and set target on update
