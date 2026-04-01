@@ -104,11 +104,18 @@ module Hecks
 
     def serialize_specifications(specs)
       specs.flat_map do |spec|
-        params = spec.block&.parameters&.map { |_, n| n.to_s } || []
-        param_str = params.empty? ? "|object|" : "|#{params.join(", ")}|"
-        ["", "    specification \"#{spec.name}\" do #{param_str}",
-         "      #{Hecks::Utils.block_source(spec.block)}",
-         "    end"]
+        if spec.block
+          params = spec.block.parameters.map { |_, n| n.to_s }
+          param_str = params.empty? ? "|object|" : "|#{params.join(", ")}|"
+          ["", "    specification \"#{spec.name}\" do #{param_str}",
+           "      #{Hecks::Utils.block_source(spec.block)}",
+           "    end"]
+        else
+          lines = ["", "    specification \"#{spec.name}\" do"]
+          lines << "      description \"#{spec.description}\"" if spec.description
+          lines << "    end"
+          lines
+        end
       end
     end
 

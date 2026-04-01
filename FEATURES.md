@@ -53,6 +53,7 @@
 
 ### Specifications & Validation
 - Define specifications as reusable composable predicates (`satisfied_by?`, `and`, `or`, `not`)
+- Specification `description` keyword: human-readable rule description propagated to generated code comments and llms.txt
 - Define per-attribute validations (presence, uniqueness, length, format, custom)
 - Define indexes on aggregates with `index :field` and `index :field, unique: true`
 - Define aggregate-level and value-object-level invariants as block constraints

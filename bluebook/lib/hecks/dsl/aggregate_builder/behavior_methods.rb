@@ -63,11 +63,26 @@ module Hecks
 
         # Define a reusable specification predicate.
         #
+        # Supports two forms:
+        # 1. Predicate block (arity > 0): receives an aggregate, returns boolean
+        #      specification("HighValue") { |order| order.total > 1000 }
+        #
+        # 2. Builder block (arity == 0): uses description DSL
+        #      specification("HighValue") do
+        #        description "Orders over $1000"
+        #      end
+        #
         # @param name [Symbol, String] the specification name
-        # @yield block that receives an aggregate instance and returns true/false
+        # @yield predicate block or builder block
         # @return [void]
         def specification(name, &block)
-          @specifications << DomainModel::Behavior::Specification.new(name: name, block: block)
+          if block && block.arity > 0
+            @specifications << DomainModel::Behavior::Specification.new(name: name, block: block)
+          else
+            builder = SpecificationBuilder.new(name)
+            builder.instance_eval(&block) if block
+            @specifications << builder.build
+          end
         end
 
         private

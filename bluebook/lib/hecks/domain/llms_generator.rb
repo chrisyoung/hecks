@@ -120,7 +120,10 @@ module Hecks
     def describe_specifications(agg)
       return [] if agg.specifications.empty?
       lines = ["### Specifications", ""]
-      agg.specifications.each { |s| lines << "- #{s.name}" }
+      agg.specifications.each do |s|
+        desc = s.description ? " -- #{s.description}" : ""
+        lines << "- #{s.name}#{desc}"
+      end
       lines << ""
       lines
     end

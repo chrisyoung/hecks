@@ -145,6 +145,50 @@ RSpec.describe "Specifications" do
       expect(agg.specifications.size).to eq(2)
       expect(agg.specifications.map(&:name)).to eq(["LowBalance", "HighBalance"])
     end
+
+    it "supports description-only specifications" do
+      domain = Hecks.domain "TestSpecsDesc" do
+        aggregate "Order" do
+          attribute :total, Integer
+          attribute :status, String
+
+          specification "HighValue" do
+            description "Orders over $1000"
+          end
+
+          specification "Pending" do
+            description "Orders awaiting fulfillment"
+          end
+        end
+      end
+
+      agg = domain.aggregates.first
+      expect(agg.specifications.size).to eq(2)
+      spec = agg.specifications.first
+      expect(spec.name).to eq("HighValue")
+      expect(spec.description).to eq("Orders over $1000")
+      expect(spec.block).to be_nil
+
+      pending_spec = agg.specifications.last
+      expect(pending_spec.name).to eq("Pending")
+      expect(pending_spec.description).to eq("Orders awaiting fulfillment")
+    end
+
+    it "supports specifications with no block" do
+      domain = Hecks.domain "TestSpecsNoBlock" do
+        aggregate "Order" do
+          attribute :total, Integer
+
+          specification "HighValue"
+        end
+      end
+
+      agg = domain.aggregates.first
+      expect(agg.specifications.size).to eq(1)
+      expect(agg.specifications.first.name).to eq("HighValue")
+      expect(agg.specifications.first.description).to be_nil
+      expect(agg.specifications.first.block).to be_nil
+    end
   end
 
   describe "SpecificationGenerator" do
@@ -163,10 +207,25 @@ RSpec.describe "Specifications" do
       expect(code).to include("class HighRisk")
       expect(code).to include("def satisfied_by?(loan)")
     end
+
+    it "generates a description comment when present" do
+      spec = Hecks::DomainModel::Behavior::Specification.new(
+        name: "HighValue",
+        description: "Orders over $1000"
+      )
+      gen = Hecks::Generators::Domain::SpecificationGenerator.new(
+        spec, domain_module: "OrdersDomain", aggregate_name: "Order"
+      )
+      code = gen.generate
+      expect(code).to include("# Orders over $1000")
+      expect(code).to include("class HighValue")
+      expect(code).to include("def satisfied_by?(object)")
+      expect(code).to include("NotImplementedError")
+    end
   end
 
   describe "DslSerializer" do
-    it "serializes specifications" do
+    it "serializes specifications with blocks" do
       domain = Hecks.domain "TestSerial" do
         aggregate "Loan" do
           attribute :principal, Float
@@ -179,6 +238,22 @@ RSpec.describe "Specifications" do
 
       serialized = Hecks::DslSerializer.new(domain).serialize
       expect(serialized).to include('specification "HighRisk"')
+    end
+
+    it "serializes specifications with descriptions" do
+      domain = Hecks.domain "TestSerialDesc" do
+        aggregate "Order" do
+          attribute :total, Integer
+
+          specification "HighValue" do
+            description "Orders over $1000"
+          end
+        end
+      end
+
+      serialized = Hecks::DslSerializer.new(domain).serialize
+      expect(serialized).to include('specification "HighValue"')
+      expect(serialized).to include('description "Orders over $1000"')
     end
   end
 

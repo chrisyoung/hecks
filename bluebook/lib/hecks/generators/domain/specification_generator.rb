@@ -40,6 +40,7 @@ module Hecks
       #
       # Produces a class nested under +Aggregate::Specifications+ with a
       # +satisfied_by?+ method whose parameters and body come from the DSL block.
+      # When a description is present, it appears as a class-level comment.
       #
       # @return [String] the generated Ruby source code, newline-terminated
       def generate
@@ -47,10 +48,21 @@ module Hecks
         lines << "module #{@domain_module}"
         lines << "  class #{@aggregate_name}"
         lines << "    module Specifications"
+        if @specification.description
+          lines << "      # #{@specification.description}"
+        end
         lines << "      class #{@specification.name}"
-        lines << "        def satisfied_by?#{call_params}"
-        lines << "          #{call_body}"
-        lines << "        end"
+        lines << "        include #{@mixin_prefix}::Runtime::Specification" if @mixin_prefix != "Hecks"
+        lines << "        include Hecks::Specification" if @mixin_prefix == "Hecks"
+        if @specification.block
+          lines << "        def satisfied_by?#{call_params}"
+          lines << "          #{call_body}"
+          lines << "        end"
+        else
+          lines << "        def satisfied_by?(object)"
+          lines << "          raise NotImplementedError, \"#{@specification.name}#satisfied_by? must be implemented\""
+          lines << "        end"
+        end
         lines << "      end"
         lines << "    end"
         lines << "  end"
