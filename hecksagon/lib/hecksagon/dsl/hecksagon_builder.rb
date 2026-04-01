@@ -12,7 +12,7 @@ module Hecksagon
     #   hex = builder.build
     #
     class HecksagonBuilder
-      def initialize(name)
+      def initialize(name = nil)
         @name = name
         @gates = []
         @adapter = nil

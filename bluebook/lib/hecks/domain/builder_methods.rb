@@ -47,11 +47,10 @@ module Hecks
     # block inside a HecksagonBuilder, which collects gates, adapter config,
     # extensions, and cross-domain subscriptions.
     #
-    # @param name [String] the domain name this wiring applies to
     # @param block [Proc] DSL block evaluated inside Hecksagon::DSL::HecksagonBuilder
     # @return [Hecksagon::Structure::Hecksagon] the fully built Hecksagon IR object
-    def hecksagon(name, &block)
-      builder = Hecksagon::DSL::HecksagonBuilder.new(name)
+    def hecksagon(&block)
+      builder = Hecksagon::DSL::HecksagonBuilder.new
       builder.instance_eval(&block)
       result = builder.build
       Hecks.last_hecksagon = result

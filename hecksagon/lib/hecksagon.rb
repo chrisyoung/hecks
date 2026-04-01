@@ -9,7 +9,7 @@
 # and is loaded during boot to wire the domain into its runtime
 # infrastructure.
 #
-#   Hecks.hecksagon "Pizzas" do
+#   Hecks.hecksagon do
 #     adapter :sqlite, database: "pizzas.db"
 #     gate "Pizza", :admin do
 #       allow :find, :all, :create_pizza

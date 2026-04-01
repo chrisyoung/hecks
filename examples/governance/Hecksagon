@@ -1,4 +1,4 @@
-Hecks.hecksagon "Governance" do
+Hecks.hecksagon do
   # Cross-domain event subscriptions
   # Identity listens to ModelRegistry and Operations events for audit logging
   subscribe "ModelRegistry"
