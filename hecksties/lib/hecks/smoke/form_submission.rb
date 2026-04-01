@@ -40,14 +40,15 @@ module HecksTemplating
 
         # Field count check — catch empty or broken forms
         if agg_snake
-          expected = HecksTemplating::AggregateContract.user_fields(cmd, agg_snake)
-          if fields.size < expected.size
+          ac = HecksTemplating::AggregateContract
+          expected_count = cmd.attributes.size + ac.user_refs(cmd, agg_snake).size
+          if fields.size < expected_count
             results << Result.new(
               status: :fail,
               method: "GET",
               path: form_path,
               http_code: 200,
-              error: "#{label} form has #{fields.size} fields, expected #{expected.size} (#{expected.map(&:name).join(", ")})"
+              error: "#{label} form has #{fields.size} fields, expected at least #{expected_count}"
             )
             return results
           end
