@@ -9,7 +9,7 @@ Complete reference for the hexagonal architecture wiring DSL. The Hecksagon decl
 The Hecksagon is the hexagonal architecture layer. While the Bluebook defines *what* your domain is (aggregates, commands, events, policies), the Hecksagon defines *how* it connects to the outside world (who can access what, where data is stored, which extensions are active).
 
 ```ruby
-Hecks.hecksagon "Pizzas" do
+Hecks.hecksagon do
   adapter :sqlite, database: "pizzas.db"
 
   gate "Pizza", :admin do
@@ -133,7 +133,7 @@ Hecks.domain "Pizzas" do
 end
 
 # Define infrastructure
-Hecks.hecksagon "Pizzas" do
+Hecks.hecksagon do
   adapter :sqlite, database: "pizzas.db"
   gate "Pizza", :admin do
     allow :find, :all, :create_pizza

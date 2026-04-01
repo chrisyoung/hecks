@@ -24,7 +24,7 @@ RSpec.describe "Port Authorization" do
   end
 
   let(:hecksagon) do
-    Hecks.hecksagon "PortTest" do
+    Hecks.hecksagon do
       gate "Pizza", :guest do
         allow :find, :all, :where, :first, :last, :count
       end

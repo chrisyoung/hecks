@@ -1,4 +1,4 @@
-Hecks.hecksagon "Pizzas" do
+Hecks.hecksagon do
   gate "Pizza", :admin do
     allow :find, :all, :create_pizza, :add_topping
   end

@@ -14,7 +14,7 @@ RSpec.describe "HecksTenancy" do
   end
 
   before do
-    Hecks.hecksagon("TenantTest") { tenancy :column }
+    Hecks.hecksagon { tenancy :column }
     @app = Hecks.load(domain)
     Hecks.extension_registry[:tenancy]&.call(
       Object.const_get("TenantTestDomain"), domain, @app
@@ -28,12 +28,12 @@ RSpec.describe "HecksTenancy" do
 
   describe "Hecksagon DSL" do
     it "stores tenancy strategy on hecksagon" do
-      hex = Hecks.hecksagon("TenantTest") { tenancy :column }
+      hex = Hecks.hecksagon { tenancy :column }
       expect(hex.tenancy).to eq(:column)
     end
 
     it "defaults to nil when not declared" do
-      hex = Hecks.hecksagon("NoTenant") {}
+      hex = Hecks.hecksagon {}
       expect(hex.tenancy).to be_nil
     end
   end
