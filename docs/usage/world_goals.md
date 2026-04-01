@@ -3,11 +3,13 @@
 Declare ethical and governance aspirations for your domain. Each goal activates
 validation rules that check your model for alignment.
 
+**Goals:** Mandatory (errors) — transparency, consent, privacy, security. Advisory (warnings) — equity, sustainability.
+
 ## DSL
 
 ```ruby
 Hecks.domain "Healthcare" do
-  world_goals :transparency, :consent, :privacy, :security
+  world_goals :transparency, :consent, :privacy, :security, :equity, :sustainability
 
   actor "Doctor"
   actor "Admin"
@@ -15,6 +17,11 @@ Hecks.domain "Healthcare" do
   aggregate "Patient" do
     attribute :name, String
     attribute :ssn, String, pii: true, visible: false
+    attribute :copay, Float
+
+    invariant "copay must be reasonable" do
+      # copay >= 5 && copay <= 200
+    end
 
     command "CreatePatient" do
       attribute :name, String
@@ -25,6 +32,12 @@ Hecks.domain "Healthcare" do
     command "UpdateRecord" do
       attribute :notes, String
       actor "Doctor"
+    end
+
+    command "DischargePatient" do
+      # Cleanup command for sustainability goal
+      attribute :discharge_reason, String
+      actor "Admin"
     end
   end
 end
@@ -56,11 +69,29 @@ an actor for audit trails.
 Command-level actors must be declared at the domain level with `actor "Name"`.
 This prevents dangling or misspelled role references.
 
-## Mother Earth Report
+### `:equity` (Advisory)
 
+Pricing or rate attributes (those containing "price", "cost", "fee", "rate", "charge",
+"amount", "margin", "discount", or "markup") should be documented with invariants or
+policies to make pricing logic explicit and reviewable.
+
+**Warning:** Aggregate has pricing attributes but no documented invariants or policies.
+
+### `:sustainability` (Advisory)
+
+Aggregates with creation commands (Create, Add, Register, Allocate, Open, Start, Spawn)
+should have matching cleanup commands (Delete, Archive, Deactivate, Close, Expire, Retire)
+to complete the resource lifecycle and avoid abandoned resources.
+
+**Warning:** Aggregate has creation commands but no corresponding cleanup commands.
+
+## Example Validation Output
+## Mother Earth Report
 When world goals are declared, `hecks validate` prints a **Mother Earth Report**
 after the standard validation output. Each declared goal gets a PASS/FAIL status,
 and any violations are listed.
+
+### Mandatory Goals (Errors)
 
 ```
 $ hecks validate
@@ -107,6 +138,13 @@ validator.valid?
 report = validator.mother_earth_report
 # => { goals_declared: [:transparency], violations: [...],
 #      passing_goals: [], failing_goals: [:transparency] }
+```
+
+### Advisory Goals (Warnings)
+
+```
+Equity: Service has pricing attributes (price, cost) but no documented invariant or policy explaining how pricing works.
+Sustainability: Session has creation commands (CreateSession) but no corresponding cleanup, archive, or delete commands.
 ```
 
 ## No Goals, No Rules

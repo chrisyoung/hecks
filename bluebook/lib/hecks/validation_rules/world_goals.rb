@@ -5,12 +5,15 @@ module Hecks
     #
     # Validation rules activated by the +world_goals+ DSL keyword. Each rule
     # checks a specific ethical or governance concern (transparency, consent,
-    # privacy, security) and only fires when its goal is declared on the domain.
+    # privacy, security, equity, sustainability) and only fires when its goal
+    # is declared on the domain.
     #
     # Rules are autoloaded and self-register via +Hecks.register_validation_rule+.
+    # Mandatory goals (transparency, consent, privacy, security) return errors
+    # when violated. Advisory goals (equity, sustainability) return warnings.
     #
     #   Hecks.domain "Health" do
-    #     world_goals :transparency, :consent, :privacy, :security
+    #     world_goals :transparency, :consent, :privacy, :security, :equity, :sustainability
     #     # ... aggregates ...
     #   end
     #
@@ -19,6 +22,8 @@ module Hecks
       autoload :Consent,      "hecks/validation_rules/world_goals/consent"
       autoload :Privacy,      "hecks/validation_rules/world_goals/privacy"
       autoload :Security,     "hecks/validation_rules/world_goals/security"
+      autoload :Equity,       "hecks/validation_rules/world_goals/equity"
+      autoload :Sustainability, "hecks/validation_rules/world_goals/sustainability"
     end
   end
 end

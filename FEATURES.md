@@ -82,11 +82,15 @@
 - Glossary `generate` produces a "Ubiquitous Language" section with definitions and avoid lists
 
 ### World Goals
-- `world_goals :transparency, :consent, :privacy, :security` — opt-in ethical validation rules
-- `:transparency` — commands must emit events (no silent mutations)
-- `:consent` — user-like aggregate commands must declare actors
-- `:privacy` — PII attributes must be `visible: false`; PII aggregate commands need actors
-- `:security` — command actors must be declared at domain level
+- `world_goals :transparency, :consent, :privacy, :security, :equity, :sustainability` — opt-in ethical validation rules
+- **Mandatory goals** (errors):
+  - `:transparency` — commands must emit events (no silent mutations)
+  - `:consent` — user-like aggregate commands must declare actors
+  - `:privacy` — PII attributes must be `visible: false`; PII aggregate commands need actors
+  - `:security` — command actors must be declared at domain level
+- **Advisory goals** (warnings):
+  - `:equity` — pricing/rate attributes should be documented with invariants or policies
+  - `:sustainability` — creation commands should have matching cleanup/archive/delete commands
 - **Mother Earth Report** — `hecks validate` shows a per-goal PASS/FAIL summary with violations listed
 
 ### Access Control & Ports
