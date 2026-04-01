@@ -2,11 +2,12 @@ require_relative "../import"
 
 # Hecks CLI — extract command
 #
-# Auto-detects a project's type (Rails with schema, or models-only)
-# and generates a Hecks domain DSL file from the source.
+# Auto-detects a project's type and generates a Hecks domain DSL file.
+# Supports Rails apps (schema.rb), Rails models-only, and any Ruby
+# project (POROs, Structs, Data.define classes).
 #
 #   hecks extract /path/to/rails/app
-#   hecks extract /path/to/app --preview --name Blog
+#   hecks extract /path/to/ruby/gem --preview --name Billing
 #
 Hecks::CLI.register_command(:extract, "Extract a domain from an existing project",
   args: %w[PATH],
@@ -26,6 +27,16 @@ Hecks::CLI.register_command(:extract, "Extract a domain from an existing project
     puts "Error: #{path} is not a directory"
     next
   end
+
+  project_type = if Hecks::Import.rails_project?(path)
+                   "Rails (schema.rb + models)"
+                 elsif Hecks::Import.rails_models?(path)
+                   "Rails (models only)"
+                 else
+                   "Ruby project"
+                 end
+  puts "Detected: #{project_type}"
+  puts ""
 
   dsl = Hecks::Import.from_directory(path, domain_name: options[:name])
   puts dsl

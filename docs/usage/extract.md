@@ -17,10 +17,11 @@ hecks extract /path/to/app --output MyDomain --name Blog
 
 ## How It Works
 
-The extractor checks the given directory for `db/schema.rb`:
+The extractor checks the given directory and auto-detects the project type:
 
-- **With schema.rb**: Uses the full Rails import pipeline (SchemaParser + ModelParser + DomainAssembler). Column types, foreign keys, validations, enums, and state machines are all captured.
-- **Without schema.rb**: Falls back to model-only extraction (ModelParser + ModelOnlyAssembler). Derives structure from `belongs_to`, `has_many`, validations, enums, and AASM state machines.
+- **Rails with schema.rb**: Uses the full Rails import pipeline (SchemaParser + ModelParser + DomainAssembler). Column types, foreign keys, validations, enums, and state machines are all captured.
+- **Rails models only (no schema.rb)**: Falls back to model-only extraction (ModelParser + ModelOnlyAssembler). Derives structure from `belongs_to`, `has_many`, validations, enums, and AASM state machines.
+- **Any Ruby project**: Uses RubyParser to scan `*.rb` files and extract classes, Structs, Data.define classes, module nesting, and attr_accessor/attr_reader declarations. No Rails dependency required.
 
 ## Options
 
@@ -85,11 +86,46 @@ Hecks.domain "Ordering" do
 end
 ```
 
+### Any Ruby project (POROs, Structs, Data classes)
+
+```bash
+$ hecks extract ~/Projects/billing-lib --preview --name Billing
+
+Detected: Ruby project
+
+Hecks.domain "Billing" do
+  aggregate "Billing" do
+    attribute :total, String
+    attribute :currency, String
+
+    value_object "LineItem" do
+      attribute :description, String
+      attribute :price, String
+    end
+
+    command "CreateBilling" do
+      attribute :total, String
+      attribute :currency, String
+    end
+  end
+end
+```
+
+Supports:
+- Plain classes with `attr_accessor` / `attr_reader`
+- `Struct.new(:x, :y)` subclasses
+- `Data.define(:x, :y)` subclasses
+- Module nesting (grouped into aggregates)
+- Nested classes (become value objects)
+
 ## Programmatic API
 
 ```ruby
 # Auto-detect project type
 dsl = Hecks::Import.from_directory("/path/to/app", domain_name: "Blog")
+
+# Ruby project extraction (any Ruby, not just Rails)
+dsl = Hecks::Import.from_ruby("/path/to/lib", domain_name: "Billing")
 
 # Model-only extraction
 dsl = Hecks::Import.from_models("/path/to/models", domain_name: "Blog")
