@@ -51,16 +51,8 @@ module Hecks
 
           # Find the first create command (no self-ref id attribute).
           def find_create_command(aggregate)
-            agg_snake = domain_snake_name(aggregate.name)
-            suffixes = agg_snake.split("_").each_index.map { |i|
-              agg_snake.split("_").drop(i).join("_")
-            }.uniq
-
             aggregate.commands.find do |cmd|
-              cmd.attributes.none? { |a|
-                a.name.to_s.end_with?("_id") &&
-                  suffixes.any? { |s| a.name.to_s == "#{s}_id" }
-              }
+              cmd.attributes.none? { |a| self_referencing_attribute?(a, aggregate) }
             end
           end
 

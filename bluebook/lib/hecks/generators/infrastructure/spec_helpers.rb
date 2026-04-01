@@ -21,6 +21,27 @@ module Hecks
       # @param class_path [String] the relative class path within the domain module
       #   (e.g. +"Pizza::Commands::CreatePizza"+)
       # @return [String] the fully qualified name (e.g. +"PizzasDomain::Pizza::Commands::CreatePizza"+)
+      # Returns true if an attribute is a self-referencing ID (points to the same aggregate).
+      # Self-referencing attributes are identified by comparing the attribute's name
+      # against the aggregate's name suffixes. For example, an attribute named
+      # +pizza_id+ on the Pizza aggregate is a self-reference.
+      #
+      # Used to distinguish create commands (no self-ref) from update commands (with self-ref).
+      #
+      # @param attribute [Attribute] the attribute to check
+      # @param aggregate [Aggregate] the aggregate containing the attribute
+      # @return [Boolean] true if this attribute references the same aggregate
+      def self_referencing_attribute?(attribute, aggregate)
+        return false unless attribute.reference_attribute?
+
+        agg_snake = domain_snake_name(aggregate.name)
+        suffixes = agg_snake.split("_").each_index.map { |i|
+          agg_snake.split("_").drop(i).join("_")
+        }.uniq
+
+        suffixes.any? { |s| attribute.name.to_s == "#{s}_id" }
+      end
+
       def full_class_name(class_path)
         mod = domain_module_name(@domain.name)
         "#{mod}::#{class_path}"

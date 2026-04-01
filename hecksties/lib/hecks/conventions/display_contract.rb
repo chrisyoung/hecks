@@ -17,7 +17,7 @@ module Hecks::Conventions
     # @param attr [Attribute] the attribute to check
     # @return [Boolean]
     def self.reference_attr?(attr)
-      attr.name.to_s.end_with?("_id") && attr.type == String && !attr.list?
+      attr.reference_attribute?
     end
 
     # Column/field label for a reference attribute — strips "_id" and humanizes.

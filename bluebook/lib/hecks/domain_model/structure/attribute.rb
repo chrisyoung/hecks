@@ -96,6 +96,23 @@ module Hecks
         type == JSON
       end
 
+      # Returns true if this attribute is a foreign-key reference to another aggregate.
+      # References are attributes that end with _id and have type String.
+      # This is used to distinguish between regular string attributes and cross-aggregate
+      # references in UI rendering, spec generation, and query handling.
+      #
+      #   attr = Attribute.new(name: :user_id, type: String)
+      #   attr.reference_attribute?  # => true
+      #
+      #   attr = Attribute.new(name: :user_id, type: Integer)
+      #   attr.reference_attribute?  # => false
+      #
+      # @return [Boolean] true if this is a reference attribute
+      def reference_attribute?
+        name.to_s.end_with?("_id") && type == String && !list?
+      end
+
+
       # Returns the Ruby type name as a string for code generation.
       # Handles special cases: references become "String" (UUID), lists become
       # "Array", JSON stays "JSON", and all other types use their +to_s+ representation.

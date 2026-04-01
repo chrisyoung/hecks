@@ -86,16 +86,8 @@ module Hecks
           private
 
           def find_create_cmd(aggregate)
-            agg_snake = domain_snake_name(aggregate.name)
-            suffixes = agg_snake.split("_").each_index.map { |i|
-              agg_snake.split("_").drop(i).join("_")
-            }.uniq
-
             aggregate.commands.find do |cmd|
-              cmd.attributes.none? { |a|
-                a.name.to_s.end_with?("_id") &&
-                  suffixes.any? { |s| a.name.to_s == "#{s}_id" }
-              }
+              cmd.attributes.none? { |a| self_referencing_attribute?(a, aggregate) }
             end
           end
 
@@ -114,15 +106,7 @@ module Hecks
           end
 
           def update_args(cmd, agg)
-            agg_snake = domain_snake_name(agg.name)
-            suffixes = agg_snake.split("_").each_index.map { |i|
-              agg_snake.split("_").drop(i).join("_")
-            }.uniq
-
-            self_ref = cmd.attributes.find { |a|
-              a.name.to_s.end_with?("_id") &&
-                suffixes.any? { |s| a.name.to_s == "#{s}_id" }
-            }
+            self_ref = cmd.attributes.find { |a| self_referencing_attribute?(a, agg) }
 
             cmd.attributes.map { |attr|
               if self_ref && attr.name == self_ref.name

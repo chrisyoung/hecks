@@ -68,7 +68,7 @@ Hecks::CLI.register_command(:context_map, "Show DDD context map of bounded conte
     doms.each do |d|
       d.aggregates.each do |agg|
         agg.attributes.each do |attr|
-          next unless attr.name.to_s.end_with?("_id")
+          next unless attr.reference_attribute?
           all_agg_to_domain.each do |agg_name, owner_domain|
             next if owner_domain == d.name
             snake = domain_snake_name(agg_name)
