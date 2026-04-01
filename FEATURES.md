@@ -382,6 +382,7 @@
 - `hecks inspect` — show full domain definition including business logic (attributes, lifecycle, commands, policies, invariants, etc.)
 - `hecks dump` — show glossary, visualizer, and DSL output
 - `hecks migrations` — schema migration management
+- `hecks interview` — conversational onboarding that walks through domain definition interactively (name, aggregates, attributes, commands) and writes a Bluebook file
 - `hecks docs update` — sync doc headers and READMEs
 - All commands accept `--domain` flag consistently
 
