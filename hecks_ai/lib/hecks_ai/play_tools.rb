@@ -51,6 +51,18 @@ module Hecks
           }
         ) do |args|
           ctx.ensure_session!
+          guard = GovernanceGuard.new(ctx)
+          result = guard.check(args["command"])
+
+          unless result[:allowed]
+            next JSON.generate({
+              refused: true,
+              command: args["command"],
+              violations: result[:violations],
+              goals: result[:goals]
+            })
+          end
+
           ctx.workshop.play! unless ctx.workshop.play?
           attrs = (args["attrs"] || {}).transform_keys(&:to_sym)
           ctx.capture_output { ctx.workshop.execute(args["command"], **attrs) }

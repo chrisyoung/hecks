@@ -18,6 +18,8 @@ module Hecks
     autoload :TypeResolver,     "hecks_ai/type_resolver"
     autoload :LlmClient,        "hecks_ai/llm_client"
     autoload :DomainBuilder,    "hecks_ai/domain_builder"
+    autoload :GovernanceGuard,  "hecks_ai/governance_guard"
+    autoload :GovernanceTools,  "hecks_ai/governance_tools"
 
     module Prompts
       autoload :DomainGeneration, "hecks_ai/prompts/domain_generation"

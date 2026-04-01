@@ -60,6 +60,7 @@ module Hecks
       @aggregate_builders = {}
       @handles = {}
       @custom_verbs = []
+      @world_goals = []
       @active_hecks = false
       @mode = :sketch
       @playground = nil
@@ -119,7 +120,10 @@ module Hecks
     # @return [DomainModel::Structure::Domain] the fully assembled domain object
     def to_domain
       aggregates = @aggregate_builders.values.map(&:build)
-      DomainModel::Structure::Domain.new(name: @name, aggregates: aggregates, custom_verbs: @custom_verbs)
+      DomainModel::Structure::Domain.new(
+        name: @name, aggregates: aggregates,
+        custom_verbs: @custom_verbs, world_goals: @world_goals
+      )
     end
 
     # Compile the domain and activate ActiveHecks (Rails persistence layer).
@@ -148,6 +152,19 @@ module Hecks
     # @return [Boolean] true if +active_hecks!+ has been called
     def active_hecks?
       @active_hecks
+    end
+
+    # Declare world goals for this domain.
+    #
+    # World goals activate governance validation rules that check the domain
+    # model for ethical/governance alignment (transparency, consent, privacy,
+    # security).
+    #
+    # @param goals [Array<Symbol>] goal names to activate
+    # @return [Workshop] self, for chaining
+    def world_goals(*goals)
+      @world_goals = goals.flatten.map(&:to_sym)
+      self
     end
 
     # Register a custom verb for use in command naming.

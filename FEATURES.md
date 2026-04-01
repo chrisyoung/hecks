@@ -481,6 +481,14 @@
 - `add_attribute` tool for adding individual attributes to existing aggregates
 - All tool output uses `capture_output` to show the same terse feedback as the REPL
 
+### AI Governance
+- `execute_command` MCP tool checks world goals before executing — refuses with structured violations if a command violates declared goals
+- `GovernanceGuard` middleware filters world-goals validation errors to the specific command being executed
+- `explain_governance` MCP tool lists active world goals and their constraints so AI agents can self-orient
+- `check_governance` MCP tool pre-checks a command against governance rules without executing it
+- `Workshop#world_goals` sets governance goals from the workshop (workshop-built domains now carry world goals)
+- Refusal response includes `refused: true`, the command name, violations array, and active goals
+
 ### Command Bus Port (HTTP Adapter Boundary)
 - `Hecks::HTTP::CommandBusPort` — explicit port between HTTP routes and the domain
 - Mutations route through the `CommandBus` middleware pipeline via `port.dispatch`
