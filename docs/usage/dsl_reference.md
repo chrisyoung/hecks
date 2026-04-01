@@ -116,6 +116,12 @@ Hecks.domain "Banking" do
     aggregate "GovernancePolicy" do ... end
   end
 
+  # Bubble context — named sub-boundary grouping existing aggregates
+  bubble_context "Fulfillment" do
+    aggregate "Order"
+    aggregate "Shipment"
+  end
+
   # Domain-level event subscriber
   on_event "CreatedPizza" do |event|
     puts event.name
