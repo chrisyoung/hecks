@@ -84,6 +84,8 @@
 ### Application Service Extensions
 - `hecks_auth` — actor-based authentication & authorization
 - `hecks_tenancy` — multi-tenant isolation (`Hecks.tenant = "acme"`)
+- Row-level authorization — `owned_by :field` on gates restricts `find`/`all`/`delete` to the current user; `tenancy: :row` isolates by `Hecks.tenant`
+- `Hecks.current_user` / `Hecks.with_user(user) { }` — thread-local current user context for ownership enforcement
 - `hecks_audit` — audit trail of every command execution
 - `hecks_logging` — structured stdout logging with duration
 - `hecks_rate_limit` — sliding window rate limiting per actor
