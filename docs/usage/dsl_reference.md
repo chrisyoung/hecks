@@ -302,6 +302,11 @@ aggregate "Pizza" do
     pizza.price > 20
   end
 
+  # Specification with description (declarative)
+  specification "Premium" do
+    description "Pizzas with artisan ingredients"
+  end
+
   # Policies (reactive: event -> trigger)
   policy "NotifyKitchen" do
     on "CreatedPizza"
@@ -757,6 +762,10 @@ index :name, :status           # composite index
 
 A specification is a named boolean predicate — "is this loan high risk?", "is this invoice overdue?" Use them to filter collections, branch in workflows, or validate conditions. They extract complex conditional logic into named, testable objects.
 
+Two forms are supported:
+
+### Predicate form (executable block)
+
 ```ruby
 specification "HighRisk" do |loan|
   loan.principal > 50_000
@@ -766,6 +775,20 @@ specification "Overdue" do |invoice|
   invoice.due_date < Date.today && invoice.status == "unpaid"
 end
 ```
+
+### Declarative form (with description)
+
+```ruby
+specification "HighValue" do
+  description "Orders over $1000"
+end
+
+specification "Pending" do
+  description "Orders awaiting fulfillment"
+end
+```
+
+The `description` appears as a comment in generated code and in llms.txt output.
 
 Used in workflows:
 
