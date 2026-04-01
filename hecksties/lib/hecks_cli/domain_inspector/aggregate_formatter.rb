@@ -200,8 +200,8 @@ module Hecks
           return [] if @agg.references.empty?
           lines = ["  References:"]
           @agg.references.each do |ref|
-            target = ref.respond_to?(:target) ? ref.target : ref.to_s
-            lines << "    -> #{target}"
+            kind = ref.respond_to?(:kind) && ref.kind ? " (#{ref.kind})" : ""
+            lines << "    -> #{ref.type}#{kind}"
           end
           lines << ""
         end
