@@ -52,8 +52,9 @@ module Hecks
     # @param event [Object] the domain event to publish
     # @return [void]
     def publish(event)
-      event.instance_variable_set(HecksTemplating::EventContract::SOURCE_ATTR, @domain_gem_name)
-      @inner.publish(event)
+      tagged = event.frozen? ? event.dup : event
+      tagged.instance_variable_set(HecksTemplating::EventContract::SOURCE_ATTR, @domain_gem_name)
+      @inner.publish(tagged)
     end
 
     # Registers a filtered handler for a specific event type.

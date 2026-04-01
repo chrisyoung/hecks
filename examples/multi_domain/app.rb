@@ -2,44 +2,22 @@
 #
 # Example: Multiple domains sharing an event bus
 #
-# Three separate domain gems — pizzas, billing, shipping — each with their
-# own things and actions. When an order is placed in pizzas, billing creates
-# an invoice and shipping creates a shipment automatically via reactions.
+# Three separate domains — pizzas, billing, shipping — each with their
+# own aggregates and commands. When an order is placed in pizzas, billing
+# creates an invoice and shipping creates a shipment via reactive policies.
 #
 # Run from the hecks project root:
 #   ruby -Ilib examples/multi_domain/app.rb
 
 require "hecks"
 
-# 1. Load each domain
-domains = %w[pizzas billing shipping].map do |name|
-  path = File.join(__dir__, "#{name}_domain.rb")
-  eval(File.read(path), nil, path, 1)
-end
+# Boot all domains from bluebook/ subfolder with shared event bus
+apps = Hecks.boot(__dir__)
 
-# 2. Validate all domains
-domains.each do |domain|
-  valid, errors = Hecks.validate(domain)
-  puts "#{domain.name} valid: #{valid}"
-  errors.each { |e| puts "  - #{e}" } unless valid
-end
+# Access the shared inner bus for cross-domain event observation
+shared_bus = Hecks.shared_event_bus
 
-# 3. Build all gems
-domains.each do |domain|
-  output = Hecks.build(domain, output_dir: __dir__)
-  lib_path = File.join(output, "lib")
-  $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-  require domain.gem_name
-end
-
-# 4. Boot with shared event bus
-shared_bus = Hecks::EventBus.new
-
-apps = domains.map do |domain|
-  Hecks::Runtime.new(domain, event_bus: shared_bus)
-end
-
-# 5. Subscribe to events across all domains
+# Subscribe to events across all domains
 shared_bus.subscribe("PlacedOrder") do |event|
   puts "  [event] PlacedOrder: quantity=#{event.quantity}"
 end
@@ -52,7 +30,7 @@ shared_bus.subscribe("CreatedShipment") do |event|
   puts "  [event] CreatedShipment: quantity=#{event.quantity}"
 end
 
-# 6. Create a pizza and place an order
+# Create a pizza and place an order
 puts "\n--- Creating a pizza ---"
 margherita = Pizza.create(name: "Margherita", style: "Classic", price: 12.0)
 puts "Created: #{margherita.name} ($#{margherita.price})"
@@ -61,12 +39,12 @@ puts "\n--- Placing an order ---"
 puts "Watch what happens across all three domains:"
 Order.place(pizza: margherita.id, quantity: 3)
 
-# 7. Check pizzas domain state
+# Check pizzas domain state
 puts "\n--- Pizzas domain ---"
 puts "Pizzas: #{Pizza.count}"
 puts "Orders: #{Order.count}"
 
-# 8. Show the shared event history — events flow across all domains
+# Show the shared event history — events flow across all domains
 puts "\n--- Shared event history ---"
 shared_bus.events.each_with_index do |event, i|
   name = event.class.name.split("::").last

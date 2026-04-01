@@ -110,6 +110,8 @@
 - `app.events` — event history
 - `app.async { }` — register async handler for policies and subscribers
 - `app.use { }` — register command bus middleware
+- `Hecks.boot(__dir__)` auto-detects multi-domain when `bluebook/` has multiple Bluebook files
+- `Hecks.shared_event_bus` — access the shared cross-domain event bus after multi-domain boot
 
 ## Code Generation
 

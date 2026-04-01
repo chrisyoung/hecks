@@ -11,6 +11,9 @@ module Hecks
   module Boot
     include HecksTemplating::NamingHelpers
 
+    # @return [Hecks::EventBus, nil] the shared bus from the last multi-domain boot
+    attr_reader :shared_event_bus
+
     # @param dir [String] directory containing Bluebook or hecks_domains/
     # @param adapter [Symbol, Hash] persistence adapter (:memory, :sqlite, etc.)
     # @yield optional block on domain module for declaring connections
@@ -20,7 +23,10 @@ module Hecks
       LoadExtensions.require_auto
 
       multi_dir = find_domains_dir(dir)
-      return boot_multi(dir, multi_dir, adapter: adapter, &block) if multi_dir
+      if multi_dir
+        require "hecks_multidomain"
+        return boot_multi(dir, multi_dir, adapter: adapter, &block)
+      end
 
       domain, mod = load_single_domain(dir)
       mod.instance_eval(&block) if block
@@ -39,7 +45,14 @@ module Hecks
 
     def find_domains_dir(dir)
       candidates = [File.join(dir, "hecks_domains"), File.join(dir, "domains")]
-      candidates.find { |d| File.directory?(d) }
+      found = candidates.find { |d| File.directory?(d) }
+      return found if found
+
+      # bluebook/ subfolder with multiple Bluebook files = multi-domain
+      bluebook_dir = File.join(dir, "bluebook")
+      return bluebook_dir if File.directory?(bluebook_dir) && Dir[File.join(bluebook_dir, "*Bluebook")].size > 1
+
+      nil
     end
 
     def load_single_domain(dir)
@@ -92,8 +105,10 @@ module Hecks
     end
 
     def boot_multi(dir, domains_dir, adapter: :memory, &block)
-      domain_files = Dir[File.join(domains_dir, "*.rb")].sort
-      raise Hecks::DomainLoadError, "No .rb files in #{domains_dir}" if domain_files.empty?
+      # Support both *.rb (legacy) and *Bluebook files
+      domain_files = Dir[File.join(domains_dir, "*Bluebook")].sort
+      domain_files = Dir[File.join(domains_dir, "*.rb")].sort if domain_files.empty?
+      raise Hecks::DomainLoadError, "No Bluebook or .rb files in #{domains_dir}" if domain_files.empty?
 
       domains = domain_files.map { |path| eval(File.read(path), nil, path, 1) }
       Hecks::MultiDomain::Validator.validate_no_cross_domain_references(domains)
