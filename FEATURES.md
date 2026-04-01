@@ -232,6 +232,7 @@
 ### Sketch & Play
 - Interactive session for incremental domain building (`Hecks.session`)
 - `sketch!` / `play!` toggling — switch between modeling and execution modes
+- `reload!` — re-read the domain DSL and reboot the playground without leaving play mode; clears events and data
 - Dynamic REPL prompt: `hecks(scratch sketch)`, `hecks(banking play)`
 
 ### Named Constants & System Browser
