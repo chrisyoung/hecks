@@ -110,6 +110,13 @@ Hecks.domain "Banking" do
     compensation "RefundPayment"
   end
 
+  # Bounded context boundaries
+  bubble_context "Fulfillment" do
+    aggregate "Order"
+    aggregate "Shipment"
+    description "Handles order fulfillment and shipping"
+  end
+
   # Logical grouping
   domain_module "PolicyManagement" do
     aggregate "GovernancePolicy" do ... end
