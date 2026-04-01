@@ -73,6 +73,7 @@
 - `hecks_postgres` — PostgreSQL persistence
 - `hecks_mysql` — MySQL persistence
 - `hecks_cqrs` — named persistence connections for read/write separation
+- `hecks_mongodb` — MongoDB document persistence via the mongo Ruby driver
 
 ### Server Extensions
 - `hecks_serve` registers `:http` — adds `CatsDomain.serve(port: 9292)`
@@ -381,6 +382,10 @@
 - Covers attributes with types, commands with parameters, validation rules, invariants, reactive chains
 
 ### MCP Server
+- MCP-compatible runtime boots domains from IR without gem building — no disk I/O, no tmpdir, no `Hecks.build`
+- `Hecks.load(domain)` is the public API for booting a Runtime from an IR object in memory
+- `execute_command` MCP tool auto-enters play mode if not already active — removes a round-trip
+- `Workshop#execute` delegates to the playground and auto-enters play mode when needed
 - `hecks mcp` exposes all domain commands, queries, and repository operations as typed MCP tools
 - `describe_domain` tool returns the entire domain model as structured JSON in one call
 - Tool descriptions include parameter constraints, example values, return shapes, and guard conditions
