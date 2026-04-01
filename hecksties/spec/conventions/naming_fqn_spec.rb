@@ -24,6 +24,29 @@ RSpec.describe "Hecks::Conventions::Names FQN builders" do
     end
   end
 
+  describe ".aggregate_module_from_command" do
+    it "extracts aggregate module path from command class name" do
+      expect(names.aggregate_module_from_command("CatsDomain::Cat::Commands::Adopt"))
+        .to eq("CatsDomain::Cat")
+    end
+
+    it "handles deeply nested module paths" do
+      expect(names.aggregate_module_from_command("A::B::Commands::C"))
+        .to eq("A::B")
+    end
+  end
+
+  describe ".resolve_command_const" do
+    it "resolves the command class from a domain module" do
+      stub_const("TestDomain::Cat::Commands::Adopt", Class.new)
+      mod = Object.const_get("TestDomain")
+
+      expect(names.resolve_command_const(mod, "Cat", "Adopt"))
+        .to eq(TestDomain::Cat::Commands::Adopt)
+    end
+
+  end
+
   describe ".actor_roles_for" do
     it "builds actor map from domain aggregates" do
       actor = double(:actor, name: "Admin")

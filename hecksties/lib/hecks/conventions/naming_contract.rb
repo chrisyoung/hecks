@@ -94,6 +94,20 @@ module Hecks::Conventions
         map
       end
 
+      # "PizzasDomain::Pizza::Commands::CreatePizza" → "PizzasDomain::Pizza"
+      # Extracts the aggregate module path from a fully-qualified command class name.
+      def aggregate_module_from_command(command_class_name)
+        command_class_name.split("::")[0..-3].join("::")
+      end
+
+      # Resolves the command class constant from a domain module.
+      #
+      #   Names.resolve_command_const(PizzasDomain, "Pizza", "CreatePizza")
+      #   # => PizzasDomain::Pizza::Commands::CreatePizza
+      def resolve_command_const(mod, agg_name, cmd_name)
+        mod.const_get("#{agg_name}::Commands::#{cmd_name}")
+      end
+
       # ("Blog", "Post") → "/blog/posts"
       def domain_route_path(domain_name, aggregate_name)
         "/#{domain_slug(domain_name)}/#{domain_aggregate_slug(aggregate_name)}"

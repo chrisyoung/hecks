@@ -65,6 +65,14 @@ module Hecks::Conventions
       Hecks::Conventions::Names.actor_roles_for(domain, domain_mod)
     end
 
+    def aggregate_module_from_command(command_class_name)
+      Hecks::Conventions::Names.aggregate_module_from_command(command_class_name)
+    end
+
+    def resolve_command_const(mod, agg_name, cmd_name)
+      Hecks::Conventions::Names.resolve_command_const(mod, agg_name, cmd_name)
+    end
+
     def domain_route_path(domain_name, aggregate_name)
       Hecks::Conventions::Names.domain_route_path(domain_name, aggregate_name)
     end
