@@ -71,6 +71,38 @@ RSpec.describe GoHecks::ServerGenerator do
     end
   end
 
+  describe "cross-aggregate command buttons on show page" do
+    let(:domain) do
+      Hecks.domain("Shop") do
+        aggregate("Product", "A product") do
+          attribute :name, String
+          command("CreateProduct") { attribute :name, String }
+        end
+        aggregate("Review", "A review") do
+          attribute :body, String
+          attribute :product_id, String
+          command("CreateReview") { attribute :body, String; attribute :product_id, String }
+        end
+      end
+    end
+
+    let(:server) { GoHecks::ServerGenerator.new(domain, module_path: "shop") }
+    let(:output) { server.generate }
+
+    it "renders cross-aggregate button on Product show page for CreateReview" do
+      expect(output).to include('buttons = append(buttons, ProductButton{Label: "Create Review", Href: "/reviews/create_review/new?id=" + obj.ID, Allowed: true})')
+    end
+
+    it "does not render CreateReview as cross-aggregate on Review show page" do
+      # CreateReview belongs to Review aggregate — it's same-aggregate, not cross
+      lines = output.lines
+      review_show_start = lines.index { |l| l.include?('GET /reviews/show') }
+      review_show_end = lines[review_show_start..].index { |l| l.include?("})") }
+      review_show_block = lines[review_show_start..(review_show_start + review_show_end)].join
+      expect(review_show_block).not_to include("append(buttons, ReviewButton")
+    end
+  end
+
   describe "nav items" do
     it "does not include duplicate Home entry" do
       expect(output.scan('"Home"').size).to eq(0)

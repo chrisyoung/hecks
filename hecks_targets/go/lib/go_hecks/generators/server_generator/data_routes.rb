@@ -176,6 +176,19 @@ module GoHecks
             lines << "\t\tvar buttons []#{safe}Button"
           end
 
+          # Cross-aggregate command buttons
+          @domain.aggregates.each do |other|
+            next if other.name == agg.name
+            other_plural = GoUtils.snake_case(other.name) + "s"
+            other.commands.each do |cmd|
+              snake = GoUtils.snake_case(agg.name)
+              next unless cmd.attributes.any? { |a| a.name.to_s == "#{snake}_id" }
+              cm = GoUtils.snake_case(cmd.name)
+              label = HecksTemplating::UILabelContract.label(cmd.name)
+              lines << "\t\tbuttons = append(buttons, #{safe}Button{Label: \"#{label}\", Href: \"/#{other_plural}/#{cm}/new?id=\" + obj.ID, Allowed: true})"
+            end
+          end
+
           lines << "\t\trenderer.Render(w, \"show\", \"#{safe}\", #{safe}ShowData{AggregateName: \"#{safe}\", BackHref: \"/#{plural}\", Id: obj.ID, Fields: fields, Buttons: buttons})"
           lines << "\t})"
           lines << ""
