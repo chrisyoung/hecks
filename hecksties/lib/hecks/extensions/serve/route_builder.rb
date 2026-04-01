@@ -26,6 +26,7 @@ module Hecks
         @domain = domain
         @mod = mod
         @port = port
+        @whitelist = Hecks::Conventions::DispatchContract.build_whitelist(domain)
       end
 
       # Build and return an array of route hashes for all aggregates.
@@ -77,6 +78,8 @@ module Hecks
 
         create_cmd = agg.commands.find { |c| c.name.start_with?("Create") }
         if create_cmd
+          m = derive_method(create_cmd.name, agg.name)
+          Hecks::Conventions::DispatchContract.validate!(@whitelist, agg.name, m)
           routes << { method: "POST", path: "/#{slug}", handler: ->(req) {
             if port
               serialize(port.dispatch(create_cmd.name, **parse_body(req)))
@@ -122,6 +125,7 @@ module Hecks
         port = @port
         agg.queries.map do |query|
           qn = domain_snake_name(query.name)
+          Hecks::Conventions::DispatchContract.validate!(@whitelist, agg.name, qn.to_sym)
           params = query.block.parameters
           { method: "GET", path: "/#{slug}/#{qn}", handler: ->(req) {
             args = params.map { |_, n| req.params[n.to_s] }
