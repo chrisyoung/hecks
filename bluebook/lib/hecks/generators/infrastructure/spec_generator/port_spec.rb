@@ -1,7 +1,7 @@
 # Hecks::Generators::Infrastructure::SpecGenerator::PortSpec
 #
 # Generates RSpec specs for aggregate port definitions. Tests that
-# allowed methods work and denied methods raise PortAccessDenied.
+# allowed methods work and denied methods raise GateAccessDenied.
 # Mixed into SpecGenerator.
 #
 #   gen.generate_port_spec(port_name, port_def, aggregate)
@@ -15,7 +15,7 @@ module Hecks
           # Generates an RSpec spec for a port on an aggregate.
           #
           # @param port_name [Symbol] the port name (e.g., :admin, :guest)
-          # @param port_def [Hecks::DomainModel::Structure::PortDefinition]
+          # @param port_def [Hecks::DomainModel::Structure::GateDefinition]
           # @param aggregate [Hecks::DomainModel::Structure::Aggregate]
           # @return [String] the complete RSpec file content
           def generate_port_spec(port_name, port_def, aggregate)
@@ -26,7 +26,7 @@ module Hecks
             lines << "require \"spec_helper\""
             lines << ""
             lines << "RSpec.describe \"#{safe_agg} :#{port_name} port\" do"
-            lines << "  before { @app = Hecks.load(domain, port: :#{port_name}, force: true) }"
+            lines << "  before { @app = Hecks.load(domain, gate: :#{port_name}, force: true) }"
             lines << ""
 
             # Test allowed methods
@@ -45,7 +45,7 @@ module Hecks
             # Test denied methods
             denied.each do |method|
               lines << "  it \"denies .#{method}\" do"
-              lines << "    expect { #{safe_agg}.#{method}#{method == :find ? '("test")' : ''} }.to raise_error(Hecks::PortAccessDenied)"
+              lines << "    expect { #{safe_agg}.#{method}#{method == :find ? '("test")' : ''} }.to raise_error(Hecks::GateAccessDenied)"
               lines << "  end"
               lines << ""
             end
@@ -56,7 +56,7 @@ module Hecks
               cmd_method = derive_port_method(cmd, aggregate)
               unless allowed.include?(cmd_method.to_sym)
                 lines << "  it \"denies .#{cmd_method}\" do"
-                lines << "    expect { #{safe_agg}.#{cmd_method}(#{example_args(cmd)}) }.to raise_error(Hecks::PortAccessDenied)"
+                lines << "    expect { #{safe_agg}.#{cmd_method}(#{example_args(cmd)}) }.to raise_error(Hecks::GateAccessDenied)"
                 lines << "  end"
                 lines << ""
               end

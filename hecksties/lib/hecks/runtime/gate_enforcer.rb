@@ -5,7 +5,7 @@ module Hecks
   # Applies gate-based access restrictions to an aggregate class.
   # Gates are defined in the Hecksagon (infrastructure wiring), not in
   # the domain DSL. For each method not allowed by the gate, redefines
-  # it to raise Hecks::PortAccessDenied.
+  # it to raise Hecks::GateAccessDenied.
   #
   # When no gate is specified, all methods remain accessible.
   #
@@ -51,7 +51,7 @@ module Hecks
           next if gate_def.allows?(m)
           next unless agg_class.respond_to?(m)
           agg_class.define_singleton_method(m) do |*args, **kwargs|
-            raise Hecks::PortAccessDenied,
+            raise Hecks::GateAccessDenied,
                   "#{agg_name}.#{m} is not allowed through the :#{gate_name} gate"
           end
         end
@@ -64,7 +64,7 @@ module Hecks
         INSTANCE_METHODS.each do |m|
           next if gate_def.allows?(m)
           agg_class.define_method(m) do |*args, **kwargs|
-            raise Hecks::PortAccessDenied,
+            raise Hecks::GateAccessDenied,
                   "#{agg_name}##{m} is not allowed through the :#{gate_name} gate"
           end
         end

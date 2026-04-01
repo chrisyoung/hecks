@@ -131,7 +131,7 @@ module Hecks
         require "hecks_sockets"
         handler = HecksSockets::WebsocketHandler.new(@domain, @app)
         bus = @app.event_bus
-        ws = HecksSockets::WebsocketServer.new(handler, bus, port: @live_port)
+        ws = HecksSockets::WebsocketServer.new(handler, bus, gate: @live_port)
         ws.start_async
       rescue LoadError
         warn "[hecks] hecks_sockets gem not found — skipping WebSocket server"

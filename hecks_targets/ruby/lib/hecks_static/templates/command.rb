@@ -111,7 +111,7 @@ module __DOMAIN_MODULE__
         agg_name = parts[-3]
         action = parts[-1].gsub(/([A-Z])/) { "_" + $1.downcase }.sub(/^_/, "")
         unless domain_mod.role_allows?(agg_name, action)
-          raise domain_mod::PortAccessDenied,
+          raise domain_mod::GateAccessDenied,
             "Role '#{domain_mod.current_role}' cannot #{action} on #{agg_name}"
         end
       end

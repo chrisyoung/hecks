@@ -2,7 +2,7 @@ Hecks::CLI.register_command(:serve, "Serve a domain as HTTP (default) or JSON-RP
   options: {
     domain:    { type: :string,  desc: "Domain gem name or path" },
     version:   { type: :string,  desc: "Domain version" },
-    port:      { type: :numeric, default: 9292, desc: "HTTP port" },
+    gate:      { type: :numeric, default: 9292, desc: "HTTP port" },
     rpc:       { type: :boolean, default: false, desc: "JSON-RPC" },
     live:      { type: :boolean, default: false, desc: "WebSocket server" },
     live_port: { type: :numeric, default: 9293, desc: "WebSocket port" },
@@ -23,9 +23,9 @@ Hecks::CLI.register_command(:serve, "Serve a domain as HTTP (default) or JSON-RP
     result = Hecks.boot(dir)
     if result.is_a?(Array)
       domains = result.map(&:domain)
-      Hecks::HTTP::MultiDomainServer.new(domains, result, port: port).run
+      Hecks::HTTP::MultiDomainServer.new(domains, result, gate: port).run
     else
-      Hecks::HTTP::DomainServer.new(result.domain, port: port).run
+      Hecks::HTTP::DomainServer.new(result.domain, gate: port).run
     end
   end
 
@@ -53,10 +53,10 @@ Hecks::CLI.register_command(:serve, "Serve a domain as HTTP (default) or JSON-RP
       serve_static.call(domain, options[:port])
     elsif options[:rpc]
       require "hecks_serve"
-      Hecks::HTTP::RpcServer.new(domain, port: options[:port]).run
+      Hecks::HTTP::RpcServer.new(domain, gate: options[:port]).run
     else
       require "hecks_serve"
-      server = Hecks::HTTP::DomainServer.new(domain, port: options[:port],
+      server = Hecks::HTTP::DomainServer.new(domain, gate: options[:port],
         live: options[:live], live_port: options[:live_port])
       server.run
     end

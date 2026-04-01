@@ -12,7 +12,7 @@ Hecks::CLI.register_command(:serve_docs, "Serve API documentation (Swagger UI)",
   options: {
     domain:  { type: :string,  desc: "Domain gem name or path" },
     version: { type: :string,  desc: "Domain version" },
-    port:    { type: :numeric, default: 9393, desc: "Port" }
+    gate:    { type: :numeric, default: 9393, desc: "Port" }
   }
 ) do
   domain = resolve_domain_option

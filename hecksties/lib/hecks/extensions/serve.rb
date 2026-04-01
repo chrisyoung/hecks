@@ -21,7 +21,7 @@
 #
 Hecks.describe_extension(:http,
   description: "REST and JSON-RPC server with OpenAPI docs",
-  config: { port: { default: 9292, desc: "HTTP port" }, rpc: { default: false, desc: "Enable JSON-RPC mode" } },
+  config: { gate: { default: 9292, desc: "HTTP port" }, rpc: { default: false, desc: "Enable JSON-RPC mode" } },
   wires_to: :command_bus)
 
 # Register the HTTP extension. Adds a +.serve+ method to the domain module
@@ -32,7 +32,7 @@ Hecks.describe_extension(:http,
 # @param _runtime [Hecks::Runtime] the runtime instance (unused)
 Hecks.register_extension(:http) do |domain_mod, domain, _runtime|
   domain_mod.define_singleton_method(:serve) do |port: 9292|
-    Hecks::HTTP::DomainServer.new(domain, port: port).run
+    Hecks::HTTP::DomainServer.new(domain, gate: port).run
   end
 end
 

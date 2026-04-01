@@ -80,5 +80,5 @@ module PizzasDomain
     end
   end
 
-  class PortAccessDenied < Error; end
+  class GateAccessDenied < Error; end
 end

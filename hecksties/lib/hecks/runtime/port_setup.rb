@@ -64,7 +64,7 @@ module Hecks
         Versioning.bind(agg_class, repo) if agg.versioned?
         AttachmentMethods.bind(agg_class) if agg.attachable?
         wire_query_objects(agg, agg_class)
-        GateEnforcer.new(gate_name: @port_name, hecksagon: @hecksagon).enforce!(agg, agg_class)
+        GateEnforcer.new(gate_name: @gate_name, hecksagon: @hecksagon).enforce!(agg, agg_class)
       end
 
       # Builds a default values hash for the aggregate's attributes.

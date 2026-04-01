@@ -64,7 +64,7 @@ RSpec.describe "Port Authorization" do
 
   # Gate enforcement via Hecksagon will be wired in Phase 3 of HEC-390.
   # These tests verify the Hecksagon IR is correct; runtime enforcement
-  # will be added when GateEnforcer replaces PortEnforcer.
+  # will be added when GateEnforcer replaces GateEnforcer.
 
   describe "GateDefinition#allows?" do
     it "returns true for allowed methods" do
@@ -79,16 +79,16 @@ RSpec.describe "Port Authorization" do
     end
   end
 
-  describe "PortDefinition#allows? (legacy)" do
+  describe "GateDefinition#allows?" do
     it "returns true for allowed methods" do
-      port = Hecks::DomainModel::Structure::PortDefinition.new(name: :test, allowed_methods: [:find, :all])
-      expect(port.allows?(:find)).to be true
-      expect(port.allows?("all")).to be true
+      gate = Hecksagon::Structure::GateDefinition.new(aggregate: "Pizza", role: :test, allowed_methods: [:find, :all])
+      expect(gate.allows?(:find)).to be true
+      expect(gate.allows?("all")).to be true
     end
 
     it "returns false for disallowed methods" do
-      port = Hecks::DomainModel::Structure::PortDefinition.new(name: :test, allowed_methods: [:find])
-      expect(port.allows?(:create)).to be false
+      gate = Hecksagon::Structure::GateDefinition.new(aggregate: "Pizza", role: :test, allowed_methods: [:find])
+      expect(gate.allows?(:create)).to be false
     end
   end
 end

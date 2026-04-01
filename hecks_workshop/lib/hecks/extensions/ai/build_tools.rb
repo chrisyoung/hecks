@@ -49,13 +49,13 @@ module Hecks
         server.define_tool(
           name: "serve_domain",
           description: "Serve the domain as HTTP REST API with SSE events",
-          input_schema: { type: "object", properties: { port: { type: "integer", description: "Port (default 9292)" } } }
+          input_schema: { type: "object", properties: { gate: { type: "integer", description: "Port (default 9292)" } } }
         ) do |args|
           ctx.ensure_session!
           domain = ctx.workshop.send(:to_domain)
           require "hecks_serve"
           port = args["port"] || 9292
-          Thread.new { Hecks::HTTP::DomainServer.new(domain, port: port).run }
+          Thread.new { Hecks::HTTP::DomainServer.new(domain, gate: port).run }
           "Serving domain on http://localhost:#{port}"
         end
 

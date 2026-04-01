@@ -80,5 +80,5 @@ module __DOMAIN_MODULE__
     end
   end
 
-  class PortAccessDenied < Error; end
+  class GateAccessDenied < Error; end
 end

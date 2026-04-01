@@ -92,7 +92,7 @@ module Hecks
     autoload :CommandBuilder,     "hecks/dsl/command_builder"
     autoload :PolicyBuilder,       "hecks/dsl/policy_builder"
     autoload :AggregateRebuilder,  "hecks/dsl/aggregate_rebuilder"
-    autoload :PortBuilder,         "hecks/dsl/port_builder"
+    # GateBuilder lives in hecksagon, not bluebook DSL
     autoload :ServiceBuilder,      "hecks/dsl/service_builder"
     autoload :LifecycleBuilder,    "hecks/dsl/lifecycle_builder"
     autoload :ReadModelBuilder,    "hecks/dsl/read_model_builder"
@@ -141,7 +141,7 @@ module Hecks
   autoload :EventBus,          "hecks/ports/event_bus/event_bus"
   # FilteredEventBus, CrossDomainQuery, CrossDomainView → hecks_multidomain
   autoload :Queue,             "hecks/ports/queue"
-  autoload :PortEnforcer,      "hecks/runtime/port_enforcer"
+  autoload :GateEnforcer,      "hecks/runtime/gate_enforcer"
   autoload :Persistence,       "hecks/ports/repository"
   autoload :Querying,          "hecks/ports/queries"
   autoload :Commands,          "hecks/ports/commands"
