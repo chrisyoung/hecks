@@ -85,6 +85,13 @@
 - `:privacy` — PII attributes must be `visible: false`; PII aggregate commands need actors
 - `:security` — command actors must be declared at domain level
 
+### Bubble Contexts
+- `bubble_context "Fulfillment" { aggregate "Order"; aggregate "Shipment" }` — bounded context boundaries within a domain
+- Groups related aggregates into logical sub-boundaries for documentation and visualization
+- Optional `description` for human-readable context purpose
+- Validates that referenced aggregates exist in the domain
+- Lightweight alternative to splitting into separate domains; candidates for future extraction
+
 ### Access Control & Ports
 - Define access-control ports that whitelist allowed methods per consumer
 - Import domains from event storm formats (Markdown and YAML)

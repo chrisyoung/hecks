@@ -63,6 +63,7 @@ module Hecks
         @sagas = []
         @glossary_rules = []
         @modules = []
+        @bubble_contexts = []
         @tenancy = nil
         @event_subscribers = []
         @world_goals = []
@@ -111,6 +112,28 @@ module Hecks
         @glossary_strict = strict
         gb = GlossaryBuilder.new(@glossary_rules)
         gb.instance_eval(&block) if block
+      end
+
+      # Define a bubble context — a bounded context boundary within the domain.
+      #
+      # Bubble contexts group related aggregates together, marking logical
+      # sub-boundaries. They serve as documentation, visualization boundaries,
+      # and candidates for future domain extraction.
+      #
+      # @param name [String] the context name (e.g. "Fulfillment", "Billing")
+      # @yield block evaluated in the context of BubbleContextBuilder
+      # @return [void]
+      #
+      # @example
+      #   bubble_context "Fulfillment" do
+      #     aggregate "Order"
+      #     aggregate "Shipment"
+      #     description "Handles order fulfillment and shipping"
+      #   end
+      def bubble_context(name, &block)
+        builder = BubbleContextBuilder.new(name)
+        builder.instance_eval(&block) if block
+        @bubble_contexts << builder.build
       end
 
       # Logical sub-grouping within the domain.
@@ -277,8 +300,10 @@ module Hecks
           event_subscribers: @event_subscribers,
           sagas: @sagas, glossary_rules: @glossary_rules, modules: @modules,
           glossary_strict: @glossary_strict || false,
-          world_goals: @world_goals
+          world_goals: @world_goals,
+          bubble_contexts: @bubble_contexts
         )
+        validate_bubble_contexts(domain)
         classify_references(domain)
         if domain.respond_to?(:driving_ports=)
           domain.driving_ports = @driving_ports || []
@@ -292,6 +317,18 @@ module Hecks
       end
 
       private
+
+      def validate_bubble_contexts(domain)
+        agg_names = domain.aggregates.map(&:name)
+        domain.bubble_contexts.each do |ctx|
+          ctx.aggregate_names.each do |agg_name|
+            unless agg_names.include?(agg_name)
+              raise Hecks::ValidationError,
+                    "Bubble context '#{ctx.name}' references unknown aggregate '#{agg_name}'"
+            end
+          end
+        end
+      end
 
       def classify_references(domain)
         agg_names = domain.aggregates.map(&:name)
