@@ -47,6 +47,32 @@ RSpec.describe Hecks::Conventions::DispatchContract do
         expect(allowed).to respond_to(:include?)
       end
     end
+
+    context "when auto_crud is false" do
+      let(:no_crud_domain) do
+        Hecks.domain "ReadOnly" do
+          aggregate "AuditLog" do
+            no_crud
+            attribute :message, String
+            command("CreateAuditLog") { attribute :message, String }
+          end
+        end
+      end
+
+      let(:no_crud_whitelist) { described_class.build_whitelist(no_crud_domain) }
+
+      it "includes read builtins" do
+        described_class::CRUD_READ_BUILTINS.each do |m|
+          expect(no_crud_whitelist["AuditLog"]).to include(m)
+        end
+      end
+
+      it "excludes write builtins from the builtin set" do
+        # :create is still present because CreateAuditLog command derives it,
+        # but :update is excluded since there's no UpdateAuditLog command
+        expect(no_crud_whitelist["AuditLog"]).not_to include(:update)
+      end
+    end
   end
 
   describe ".validate!" do

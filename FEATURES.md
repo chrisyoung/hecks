@@ -10,6 +10,7 @@
 - Define entities within aggregates — sub-objects with identity (UUID), mutable, not frozen
 - Multi-domain support with shared event bus across domains
 - Domain version pinning and local path loading in configuration
+- Opt-in CRUD: `no_crud` on an aggregate disables write methods (create, update, destroy) while keeping reads (find, all, count) — gates HTTP DELETE routes, RPC methods, and OpenAPI paths
 
 ### Attributes & Types
 - Define typed attributes with String, Integer, Float, Boolean, JSON, Date, DateTime, etc.

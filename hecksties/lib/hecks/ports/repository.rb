@@ -47,8 +47,8 @@ module Hecks
       # @param repo [Object] the repository adapter instance (memory or SQL) that
       #   handles actual storage operations (save, find, delete, all)
       # @return [void]
-      def self.bind(klass, aggregate, repo)
-        RepositoryMethods.bind(klass, repo)
+      def self.bind(klass, aggregate, repo, crud: true)
+        RepositoryMethods.bind(klass, repo, crud: crud)
         CollectionMethods.bind(klass, aggregate, repo)
         ReferenceMethods.bind(klass, aggregate)
       end

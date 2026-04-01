@@ -62,7 +62,9 @@ module Hecks
           methods << { name: "#{agg.name}.find", description: "Find #{agg.name} by ID", params: [{ name: "id", type: "string" }] }
           methods << { name: "#{agg.name}.all", description: "List all #{agg.name}s", params: [] }
           methods << { name: "#{agg.name}.count", description: "Count #{agg.name}s", params: [] }
-          methods << { name: "#{agg.name}.delete", description: "Delete #{agg.name}", params: [{ name: "id", type: "string" }] }
+          if agg.auto_crud?
+            methods << { name: "#{agg.name}.delete", description: "Delete #{agg.name}", params: [{ name: "id", type: "string" }] }
+          end
         end
         methods
       end

@@ -12,8 +12,14 @@
 #
 module Hecks::Conventions
   module DispatchContract
-    # Standard CRUD methods present on every generated aggregate class.
-    CRUD_BUILTINS = %i[all find delete count update create].freeze
+    # Read CRUD methods present on every aggregate class.
+    CRUD_READ_BUILTINS = %i[all find delete count].freeze
+
+    # Write CRUD methods only present when auto_crud is enabled.
+    CRUD_WRITE_BUILTINS = %i[update create].freeze
+
+    # All CRUD builtins combined (backward compat).
+    CRUD_BUILTINS = (CRUD_READ_BUILTINS + CRUD_WRITE_BUILTINS).freeze
 
     # Raised when a dispatch target is not in the whitelist.
     class DispatchNotAllowed < SecurityError
@@ -31,7 +37,8 @@ module Hecks::Conventions
     # @return [Hash{String => Set<Symbol>}] allowed methods per aggregate
     def self.build_whitelist(domain)
       domain.aggregates.each_with_object({}) do |agg, wl|
-        allowed = Set.new(CRUD_BUILTINS)
+        builtins = agg.auto_crud? ? CRUD_BUILTINS : CRUD_READ_BUILTINS
+        allowed = Set.new(builtins)
         agg.commands.each do |cmd|
           allowed << Hecks::Conventions::CommandContract.method_name(cmd.name, agg.name)
         end

@@ -100,15 +100,17 @@ module Hecks
           }}
         end
 
-        routes << { method: "DELETE", path: "/#{slug}/:id", handler: ->(req) {
-          id = req.path.split("/").last
-          if port
-            port.read(klass, agg.name, :delete, id)
-          else
-            klass.delete(id)
-          end
-          { deleted: id }
-        }}
+        if agg.auto_crud?
+          routes << { method: "DELETE", path: "/#{slug}/:id", handler: ->(req) {
+            id = req.path.split("/").last
+            if port
+              port.read(klass, agg.name, :delete, id)
+            else
+              klass.delete(id)
+            end
+            { deleted: id }
+          }}
+        end
         routes
       end
 

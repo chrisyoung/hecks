@@ -34,4 +34,15 @@ RSpec.describe Hecks::DomainModel::Structure::Aggregate do
       expect(aggregate.commands.map(&:name)).to eq(["CreatePizza"])
     end
   end
+
+  describe "#auto_crud?" do
+    it "defaults to true" do
+      expect(aggregate.auto_crud?).to be true
+    end
+
+    it "can be set to false" do
+      no_crud_agg = described_class.new(name: "AuditLog", auto_crud: false)
+      expect(no_crud_agg.auto_crud?).to be false
+    end
+  end
 end

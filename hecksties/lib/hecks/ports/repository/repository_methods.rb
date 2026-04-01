@@ -39,10 +39,10 @@ module Hecks
       # @param repo [Object] the repository adapter instance that handles
       #   save, find, delete, all, and count operations
       # @return [void]
-      def self.bind(klass, repo)
+      def self.bind(klass, repo, crud: true)
         klass.instance_variable_set(:@__hecks_repo__, repo)
-        bind_class_methods(klass, repo)
-        bind_instance_methods(klass, repo)
+        bind_class_methods(klass, repo, crud: crud)
+        bind_instance_methods(klass, repo, crud: crud)
       end
 
       # Defines class-level CRUD methods on the aggregate class.
@@ -50,13 +50,15 @@ module Hecks
       # @param klass [Class] the aggregate class to augment
       # @param repo [Object] the repository adapter instance
       # @return [void]
-      def self.bind_class_methods(klass, repo)
+      def self.bind_class_methods(klass, repo, crud: true)
         klass.define_singleton_method(:find) { |id| repo.find(id) }
         klass.define_singleton_method(:all) { repo.all }
         klass.define_singleton_method(:count) { repo.count }
         klass.define_singleton_method(:delete) { |id| repo.delete(id) }
         klass.define_singleton_method(:first) { all.first }
         klass.define_singleton_method(:last) { all.last }
+
+        return unless crud
 
         klass.define_singleton_method(:create) do |**attrs|
           constructor_attrs = {}
@@ -73,7 +75,7 @@ module Hecks
       # @param klass [Class] the aggregate class to augment
       # @param repo [Object] the repository adapter instance
       # @return [void]
-      def self.bind_instance_methods(klass, repo)
+      def self.bind_instance_methods(klass, repo, crud: true)
         klass.define_method(:destroyed?) { !!@__destroyed__ }
 
         klass.define_method(:save) do
@@ -81,6 +83,8 @@ module Hecks
           repo.save(self)
           self
         end
+
+        return unless crud
 
         klass.define_method(:destroy) do
           repo.delete(id)

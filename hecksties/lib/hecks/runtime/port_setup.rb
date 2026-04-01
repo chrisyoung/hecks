@@ -57,7 +57,7 @@ module Hecks
         repo = ownership_scoped_repo(agg, @repositories[agg.name])
         defaults = build_defaults(agg)
 
-        Persistence.bind(agg_class, agg, repo)
+        Persistence.bind(agg_class, agg, repo, crud: agg.auto_crud?)
         Commands.bind(agg_class, agg, @command_bus, repo, defaults)
         Querying.bind(agg_class, agg)
         Introspection.bind(agg_class, agg)

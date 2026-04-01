@@ -101,6 +101,8 @@ module Hecks
       # @param lifecycle [Lifecycle, nil] optional state machine definition
       # @param versioned [Boolean] whether this aggregate tracks version history
       # @param attachable [Boolean] whether this aggregate supports file attachments
+      # @param auto_crud [Boolean] whether write CRUD methods (create, update, destroy)
+      #   are auto-generated. Read methods (find, all, count) are always available.
       #
       # @return [Aggregate] a new Aggregate instance
       def initialize(name:, attributes: [], value_objects: [], entities: [], commands: [],
@@ -109,7 +111,7 @@ module Hecks
                      specifications: [], references: [],
                      factories: [], computed_attributes: [],
                      lifecycle: nil, versioned: false,
-                     attachable: false, metadata: {}, origin_domain: nil,
+                     attachable: false, auto_crud: true, metadata: {}, origin_domain: nil,
                      identity_fields: nil)
         @name = Names.aggregate_name(name)
         @attributes = attributes
@@ -131,6 +133,7 @@ module Hecks
         @lifecycle = lifecycle
         @versioned = versioned
         @attachable = attachable
+        @auto_crud = auto_crud
         @metadata = metadata
         @origin_domain = origin_domain
         @identity_fields = identity_fields
@@ -158,6 +161,15 @@ module Hecks
       # @return [Boolean] true if file attachment support is enabled
       def attachable?
         @attachable
+      end
+
+      # Returns true if write CRUD methods (create, update, destroy) are
+      # auto-generated. Read methods (find, all, count) are always available
+      # regardless of this flag.
+      #
+      # @return [Boolean] true if auto CRUD is enabled (default)
+      def auto_crud?
+        @auto_crud
       end
 
     end

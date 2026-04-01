@@ -206,6 +206,7 @@ module Hecks
         }
         @methods["#{name}.all"] = ->(_) { port.read(klass, name, :all).map { |r| serialize(r) } }
         @methods["#{name}.count"] = ->(_) { port.read(klass, name, :count) }
+        return unless agg.auto_crud?
         @methods["#{name}.delete"] = ->(p) { port.read(klass, name, :delete, p["id"]); { deleted: p["id"] } }
       end
 

@@ -289,6 +289,26 @@ RSpec.describe Hecks::DSL::DomainBuilder do
     end
   end
 
+  describe "no_crud" do
+    it "sets auto_crud? to false on the aggregate" do
+      domain = Hecks.domain("ReadOnly") do
+        aggregate("AuditLog") do
+          no_crud
+          attribute :message, String
+          command("CreateAuditLog") { attribute :message, String }
+        end
+      end
+      expect(domain.aggregates.first.auto_crud?).to be false
+    end
+
+    it "defaults auto_crud? to true when no_crud is not called" do
+      domain = Hecks.domain("Normal") do
+        aggregate("Widget") { attribute :name, String; command("CreateWidget") { attribute :name, String } }
+      end
+      expect(domain.aggregates.first.auto_crud?).to be true
+    end
+  end
+
   describe "explicit domain events" do
     it "includes explicit events alongside inferred ones" do
       domain = Hecks.domain("Gov") do

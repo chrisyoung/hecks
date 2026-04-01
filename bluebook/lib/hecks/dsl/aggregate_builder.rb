@@ -82,6 +82,7 @@ module Hecks
         @lifecycle = nil
         @versioned = false
         @attachable = false
+        @auto_crud = true
         @identity_fields = nil
         @metadata = {}
         @facet_data = {}
@@ -97,6 +98,18 @@ module Hecks
 
       def attachable
         @attachable = true
+      end
+
+      # Opt out of automatic write CRUD methods (create, update, destroy).
+      # Read methods (find, all, count) remain available.
+      #
+      #   aggregate "AuditLog" do
+      #     no_crud
+      #     attribute :message, String
+      #   end
+      #
+      def no_crud
+        @auto_crud = false
       end
 
       # Declare a computed (derived) attribute. The block body becomes a
@@ -199,7 +212,7 @@ module Hecks
           scopes: @scopes, queries: @queries,
           subscribers: @subscribers, indexes: @indexes,
           specifications: @specifications, computed_attributes: @computed_attributes,
-          lifecycle: @lifecycle, versioned: @versioned, attachable: @attachable,
+          lifecycle: @lifecycle, versioned: @versioned, attachable: @attachable, auto_crud: @auto_crud,
           metadata: @metadata, references: @references,
           factories: @factories, identity_fields: @identity_fields
         )

@@ -44,11 +44,12 @@ module Hecks
             post: post_path(agg, slug)
           }.compact
 
-          paths["/#{slug}/{id}"] = {
+          id_ops = {
             get: { summary: "Find #{name} by ID", parameters: [id_param], responses: ok_object(name) },
-            patch: patch_path(agg),
-            delete: { summary: "Delete #{name}", parameters: [id_param], responses: ok_message }
-          }.compact
+            patch: patch_path(agg)
+          }
+          id_ops[:delete] = { summary: "Delete #{name}", parameters: [id_param], responses: ok_message } if agg.auto_crud?
+          paths["/#{slug}/{id}"] = id_ops.compact
 
           paths
         end
