@@ -66,6 +66,7 @@ module Hecks
         @tenancy = nil
         @event_subscribers = []
         @world_goals = []
+        @bubble_contexts = []
       end
 
       # Declare world goals that this domain aspires to uphold.
@@ -125,6 +126,20 @@ module Hecks
           mod[:aggregates] = sub.aggregate_names
         end
         @modules << mod
+      end
+
+      # Define a bubble context — a named sub-boundary grouping existing
+      # aggregates under a clean domain interface. Acts as an anti-corruption
+      # layer within the domain.
+      #
+      #   bubble_context "Fulfillment" do
+      #     aggregate "Order"
+      #     aggregate "Shipment"
+      #   end
+      def bubble_context(name, &block)
+        builder = BubbleContextBuilder.new(name)
+        builder.instance_eval(&block) if block
+        @bubble_contexts << builder.build
       end
 
       # Set the multi-tenancy strategy for this domain.
@@ -277,7 +292,8 @@ module Hecks
           event_subscribers: @event_subscribers,
           sagas: @sagas, glossary_rules: @glossary_rules, modules: @modules,
           glossary_strict: @glossary_strict || false,
-          world_goals: @world_goals
+          world_goals: @world_goals,
+          bubble_contexts: @bubble_contexts
         )
         classify_references(domain)
         if domain.respond_to?(:driving_ports=)

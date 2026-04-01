@@ -67,6 +67,9 @@ module Hecks
       # @return [Array<Hash>] logical module groupings within this domain
       attr_reader :modules
 
+      # @return [Array<BubbleContext>] named sub-boundaries grouping aggregates
+      attr_reader :bubble_contexts
+
       # @return [Array<Symbol>] declared world goals for this domain
       #   (e.g. :transparency, :consent, :privacy, :security)
       attr_reader :world_goals
@@ -102,7 +105,7 @@ module Hecks
                      workflows: [], actors: [], custom_verbs: [],
                      tenancy: nil, event_subscribers: [],
                      sagas: [], glossary_rules: [], modules: [], glossary_strict: false,
-                     version: nil, world_goals: [])
+                     version: nil, world_goals: [], bubble_contexts: [])
         validate_version!(version)
         @name = name
         @version = version
@@ -120,6 +123,7 @@ module Hecks
         @tenancy = tenancy
         @event_subscribers = event_subscribers
         @world_goals = world_goals.map(&:to_sym)
+        @bubble_contexts = bubble_contexts
       end
 
       # Returns the sanitized Ruby constant name for this domain.

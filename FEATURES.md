@@ -81,6 +81,14 @@
 - `prefer` accepts optional `definition:` kwarg to document preferred terms inline
 - Glossary `generate` produces a "Ubiquitous Language" section with definitions and avoid lists
 
+### Bubble Contexts
+- `bubble_context "Fulfillment" { aggregate "Order"; aggregate "Shipment" }` — named sub-boundary grouping existing aggregates
+- Acts as an anti-corruption layer within a domain, presenting a simplified view of a subset
+- Aggregates are referenced by name; an aggregate can appear in multiple bubble contexts
+- Stored as `BubbleContext` IR nodes on `domain.bubble_contexts`
+- Round-trips through `DslSerializer` for lossless serialization
+- Web Explorer exposes `bubble_contexts` and `bubble_context_for(aggregate_name)` via IRIntrospector
+
 ### World Goals
 - `world_goals :transparency, :consent, :privacy, :security` — opt-in ethical validation rules
 - `:transparency` — commands must emit events (no silent mutations)

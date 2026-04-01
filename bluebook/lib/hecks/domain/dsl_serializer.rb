@@ -20,6 +20,7 @@ module Hecks
         lines.concat(serialize_aggregate(agg))
       end
       @domain.policies.each { |pol| lines.concat(serialize_domain_policy(pol)) }
+      @domain.bubble_contexts.each { |bc| lines.concat(serialize_bubble_context(bc)) }
       lines << "end"
       lines.join("\n") + "\n"
     end
@@ -167,6 +168,13 @@ module Hecks
         lines << "    map #{mapping}"
       end
       lines << "    condition { |event| #{Hecks::Utils.block_source(pol.condition)} }" if pol.condition
+      lines << "  end"
+      lines
+    end
+
+    def serialize_bubble_context(bc)
+      lines = ["", "  bubble_context \"#{bc.name}\" do"]
+      bc.aggregate_names.each { |name| lines << "    aggregate \"#{name}\"" }
       lines << "  end"
       lines
     end

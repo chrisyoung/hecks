@@ -108,6 +108,14 @@ module Hecks
         HecksTemplating::DisplayContract.available_roles(@domain)
       end
 
+      def bubble_contexts
+        @domain.bubble_contexts
+      end
+
+      def bubble_context_for(aggregate_name)
+        @domain.bubble_contexts.find { |bc| bc.aggregate_names.include?(aggregate_name) }
+      end
+
       def diagram_data
         viz = Hecks::DomainVisualizer.new(@domain)
         flow = Hecks::FlowGenerator.new(@domain)

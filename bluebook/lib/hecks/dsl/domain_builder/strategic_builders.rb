@@ -146,6 +146,34 @@ module Hecks
         end
       end
 
+      # Hecks::DSL::DomainBuilder::BubbleContextBuilder
+      #
+      # Collects aggregate names that belong to a bubble context.
+      # Aggregates are referenced by name (not defined here).
+      #
+      #   bubble_context "Fulfillment" do
+      #     aggregate "Order"
+      #     aggregate "Shipment"
+      #   end
+      #
+      class BubbleContextBuilder
+        def initialize(name)
+          @name = name
+          @aggregate_names = []
+        end
+
+        def aggregate(name)
+          @aggregate_names << name.to_s
+        end
+
+        def build
+          DomainModel::Structure::BubbleContext.new(
+            name: @name,
+            aggregate_names: @aggregate_names
+          )
+        end
+      end
+
     end
   end
 end
