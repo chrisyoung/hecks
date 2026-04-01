@@ -353,6 +353,7 @@
   - `--type behavior` — flowchart of command-to-event flows and policy chains
   - `--type flows` — sequenceDiagram of reactive chain flows
   - `--type slices` — slice flowchart with subgraph per vertical slice
+  - `--type ports` — hexagonal port diagram showing driving/driven adapters around the domain
   - `--browser` — self-contained HTML with Mermaid CDN opened in browser
   - `--output <file>` — write Mermaid markdown to a file
 - Domain glossary with English descriptions
