@@ -22,6 +22,8 @@ require_relative "hecks/registries/adapter_registry"
 require_relative "hecks/registries/validation_registry"
 require_relative "hecks/registries/dump_format_registry"
 require_relative "hecks/registries/grammar_registry"
+require_relative "hecks/custom_concerns"
+require_relative "hecks/registries/concern_registry"
 
 # Default modules — loaded with require "hecks"
 require "bluebook"
@@ -57,6 +59,7 @@ module Hecks
   extend ValidationRegistryMethods
   extend DumpFormatRegistryMethods
   extend GrammarRegistryMethods
+  extend ConcernRegistryMethods
 
   def self.configure(&block)
     @configuration = Configuration.new

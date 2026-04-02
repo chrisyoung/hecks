@@ -92,6 +92,18 @@
 - **GovernanceGuard** — general-purpose governance checker (`Hecks::GovernanceGuard.new(domain).check`) returns `Result` with `passed?`, `violations`, `suggestions`; works from CLI (`--governance`), MCP (`governance_check` tool), REPL, or any entry point
 - GovernanceGuard falls back to rule-based checks when no LLM API key is present; enriches suggestions via AI when available
 
+### Custom Concerns
+- `Hecks.concern :name { }` — define user-defined governance rules that compose extensions
+- `concerns :transparency, :hipaa_compliance` — declare both world and custom concerns on a domain
+- Custom concerns have a name, description, required extensions, and validation rules
+- `requires_extension :pii` — declare extensions that must be enabled for the concern
+- `rule "description" { |aggregate| ... }` — define validation rules that check each aggregate
+- `Hecks.custom_concerns` — access the global registry of all custom concerns
+- `Hecks.find_concern(:name)` — look up a registered custom concern
+- GovernanceGuard evaluates custom concern rules alongside world concerns
+- `hecks validate` reports custom concern violations in the validation output
+- `hecks concerns` — CLI command lists all active concerns (world + custom) with status
+
 ### Access Control & Ports
 - Define access-control ports that whitelist allowed methods per consumer
 - Import domains from event storm formats (Markdown and YAML)

@@ -29,19 +29,26 @@ module Hecks
       @api_key = api_key || ENV["ANTHROPIC_API_KEY"]
     end
 
-    # Run governance checks against all declared world concerns.
+    # Run governance checks against all declared concerns (world + custom).
     # Returns a Result with violations and suggestions.
     #
     # @return [Hecks::GovernanceGuard::Result]
     def check
-      concerns = @domain.world_concerns & SUPPORTED_CONCERNS
-      return Result.new if concerns.empty?
+      world = @domain.world_concerns & SUPPORTED_CONCERNS
+      custom_names = @domain.respond_to?(:custom_concerns) ? @domain.custom_concerns : []
+      return Result.new if world.empty? && custom_names.empty?
 
       all_violations = []
       all_suggestions = []
 
-      concerns.each do |concern|
+      world.each do |concern|
         violations, suggestions = run_concern_check(concern)
+        all_violations.concat(violations)
+        all_suggestions.concat(suggestions)
+      end
+
+      custom_names.each do |name|
+        violations, suggestions = run_custom_concern_check(name)
         all_violations.concat(violations)
         all_suggestions.concat(suggestions)
       end
@@ -55,6 +62,35 @@ module Hecks
     end
 
     private
+
+    def run_custom_concern_check(name)
+      concern = Hecks.find_concern(name)
+      return [[], []] unless concern
+
+      violations = []
+      suggestions = []
+
+      # Check required extensions are declared (hecksagon level)
+      concern.required_extensions.each do |ext|
+        unless Hecks.extension_registry.key?(ext)
+          suggestions << "Concern :#{name} requires extension :#{ext} -- ensure it is enabled"
+        end
+      end
+
+      # Run each rule against every aggregate
+      @domain.aggregates.each do |agg|
+        concern.rules.each do |rule|
+          unless rule.passes?(agg)
+            violations << {
+              concern: name,
+              message: "#{agg.name}: #{rule.name}"
+            }
+          end
+        end
+      end
+
+      [violations, suggestions]
+    end
 
     def run_concern_check(concern)
       case concern

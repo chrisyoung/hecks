@@ -67,6 +67,7 @@ module Hecks
         @tenancy = nil
         @event_subscribers = []
         @world_concerns = []
+        @custom_concerns = []
       end
 
       # Declare world concerns that this domain aspires to uphold.
@@ -79,6 +80,27 @@ module Hecks
       # @return [void]
       def world_concerns(*concerns)
         @world_concerns.concat(concerns.map(&:to_sym))
+      end
+
+      # Declare concerns (world + custom) that this domain aspires to uphold.
+      # World concerns (:transparency, :consent, :privacy, :security) activate
+      # built-in validation rules. Custom concerns (registered via Hecks.concern)
+      # activate user-defined governance checks and extension requirements.
+      #
+      #   concerns :transparency, :privacy, :hipaa_compliance
+      #
+      # @param names [Array<Symbol>] one or more concern names
+      # @return [void]
+      def concerns(*names)
+        syms = names.map(&:to_sym)
+        world = Hecks::GovernanceGuard::SUPPORTED_CONCERNS rescue %i[transparency consent privacy security]
+        syms.each do |name|
+          if world.include?(name)
+            @world_concerns << name unless @world_concerns.include?(name)
+          else
+            @custom_concerns << name unless @custom_concerns.include?(name)
+          end
+        end
       end
 
       def actor(name, description: nil)
@@ -282,6 +304,7 @@ module Hecks
           sagas: @sagas, glossary_rules: @glossary_rules, modules: @modules,
           glossary_strict: @glossary_strict || false,
           world_concerns: @world_concerns,
+          custom_concerns: @custom_concerns,
           description: @description
         )
         classify_references(domain)
