@@ -17,6 +17,9 @@ module Hecks
         remove_command
         remove_value_object
         remove_entity
+        remove_query
+        remove_scope
+        remove_finder
       ].freeze
 
       NON_BREAKING_KINDS = %i[

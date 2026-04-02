@@ -108,6 +108,12 @@
 - Auto-implemented as `find_by_<name>(value)` on memory adapter repositories
 - `FinderMethods.bind(aggregate, repo)` — bind finders onto any repository
 
+### Versioned API Contracts
+- `hecks contract_check --save` — serialize domain API surface to `api_contract.json`
+- `hecks contract_check` — compare current domain against saved baseline, show added/removed aggregates, attributes, commands
+- `ApiContract.serialize(domain)` / `ApiContract.diff(old, new)` — programmatic contract comparison
+- BreakingClassifier extended with `remove_query`, `remove_scope`, `remove_finder` as breaking changes
+
 ### Contract Testing
 - `Hecks::ContractTesting.install!` — register shared RSpec examples for repository contract verification
 - `it_behaves_like "a Hecks repository"` — verify CRUD, query, count, clear on any adapter
