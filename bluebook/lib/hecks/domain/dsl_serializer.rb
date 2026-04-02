@@ -116,8 +116,7 @@ module Hecks
       (refs || []).map do |ref|
         role_opt = ref.name.to_s == ref.type.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
                                            .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase ? "" : ", role: \"#{ref.name}\""
-        qualified = ref.domain ? "#{ref.domain}::#{ref.type}" : ref.type
-        "#{indent}reference_to \"#{qualified}\"#{role_opt}"
+        "#{indent}reference_to \"#{ref.qualified_path}\"#{role_opt}"
       end
     end
 

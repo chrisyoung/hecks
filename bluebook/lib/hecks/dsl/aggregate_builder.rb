@@ -112,18 +112,19 @@ module Hecks
       # The kind (composition/aggregation/cross-context) is inferred after build:
       #   reference_to "LineItem"                        — entity/VO → composition
       #   reference_to "Order"                           — aggregate root → aggregation
-      #   reference_to "Billing::Invoice"                — cross-domain → cross-context
+      #   reference_to "Pizza::Topping"                  — aggregate::entity → composition
+      #   reference_to "Billing::Invoice"                — domain::aggregate → cross-context
+      #   reference_to "Ordering::Pizza::Topping"        — domain::agg::entity → cross-context
       #   reference_to "Team", role: "home_team"         — named role
       #
       def reference_to(type, role: nil)
         type_str = type.to_s
         parts = type_str.split("::")
-        target = parts.last
-        domain = parts.length > 1 ? parts[0..-2].join("::") : nil
-        name = (role || target.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+        parsed = ReferencePathParser.parse(parts)
+        name = (role || parsed[:type].gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
                                .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase).to_sym
         @references << DomainModel::Structure::Reference.new(
-          name: name, type: target, domain: domain
+          name: name, segments: parts, **parsed
         )
       end
 

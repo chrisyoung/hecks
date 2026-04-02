@@ -298,20 +298,57 @@ module Hecks
 
       def classify_references(domain)
         agg_names = domain.aggregates.map(&:name)
+        agg_by_name = domain.aggregates.each_with_object({}) { |a, h| h[a.name] = a }
         domain.aggregates.each do |agg|
           local_types = agg.value_objects.map(&:name) + agg.entities.map(&:name)
           (agg.references || []).each do |ref|
-            ref.kind = if ref.domain
-                         :cross_context
-                       elsif local_types.include?(ref.type)
-                         :composition
-                       elsif agg_names.include?(ref.type)
-                         :aggregation
-                       else
-                         :aggregation
-                       end
+            ref.kind = classify_single_reference(ref, agg, local_types, agg_names, agg_by_name)
           end
         end
+      end
+
+      def classify_single_reference(ref, agg, local_types, agg_names, agg_by_name)
+        return :cross_context if ref.domain
+
+        if ref.aggregate
+          resolve_two_segment(ref, agg, agg_names, agg_by_name)
+        elsif local_types.include?(ref.type)
+          :composition
+        elsif agg_names.include?(ref.type)
+          :aggregation
+        else
+          :aggregation
+        end
+      end
+
+      # Two-segment path: if the first segment is a known aggregate in this
+      # domain, treat as Aggregate::Entity. Otherwise it is Domain::Aggregate
+      # (cross-context) -- reclassify the reference fields accordingly.
+      def resolve_two_segment(ref, current_agg, agg_names, agg_by_name)
+        if agg_names.include?(ref.aggregate)
+          resolve_intra_domain_qualified(ref, current_agg, agg_by_name)
+        else
+          reclassify_as_cross_context(ref)
+          :cross_context
+        end
+      end
+
+      def resolve_intra_domain_qualified(ref, current_agg, agg_by_name)
+        target_agg = agg_by_name[ref.aggregate]
+        target_types = target_agg.value_objects.map(&:name) +
+                       target_agg.entities.map(&:name)
+        if target_types.include?(ref.type)
+          ref.aggregate == current_agg.name ? :composition : :aggregation
+        else
+          :aggregation
+        end
+      end
+
+      # Reclassify a 2-segment ref from aggregate::type to domain::type.
+      # Mutates the ref's internal fields to reflect cross-context semantics.
+      def reclassify_as_cross_context(ref)
+        ref.instance_variable_set(:@domain, ref.aggregate)
+        ref.instance_variable_set(:@aggregate, nil)
       end
     end
   end

@@ -137,10 +137,9 @@ module Hecks
         kwargs = call_kwargs(node)
         type_str = args.first.to_s
         parts = type_str.split("::")
-        target = parts.last
-        domain = parts.length > 1 ? parts[0..-2].join("::") : nil
-        { type: target, domain: domain, role: kwargs[:role],
-          validate: kwargs.fetch(:validate, true) }
+        parsed = Hecks::DSL::ReferencePathParser.parse(parts)
+        { segments: parts, role: kwargs[:role],
+          validate: kwargs.fetch(:validate, true) }.merge(parsed)
       end
 
       def extract_query(node)

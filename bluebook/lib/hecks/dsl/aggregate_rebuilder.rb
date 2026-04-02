@@ -23,7 +23,7 @@ module Hecks
           builder.attribute(attr.name, type)
         end
         aggregate.references.each do |ref|
-          qualified = ref.domain ? "#{ref.domain}::#{ref.type}" : ref.type
+          qualified = ref.qualified_path
           builder.reference_to(qualified, role: ref.name.to_s)
         end
         aggregate.value_objects.each do |vo|
@@ -49,7 +49,7 @@ module Hecks
               attribute attr.name, type
             end
             cmd.references.each do |ref|
-              qualified = ref.domain ? "#{ref.domain}::#{ref.type}" : ref.type
+              qualified = ref.qualified_path
               reference_to(qualified, role: ref.name.to_s)
             end
           end

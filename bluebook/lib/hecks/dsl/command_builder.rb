@@ -195,12 +195,11 @@ module Hecks
       def reference_to(type, role: nil, validate: true)
         type_str = type.to_s
         parts = type_str.split("::")
-        target = parts.last
-        domain = parts.length > 1 ? parts[0..-2].join("::") : nil
-        name = (role || target.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+        parsed = ReferencePathParser.parse(parts)
+        name = (role || parsed[:type].gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
                                .gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase).to_sym
         @references << DomainModel::Structure::Reference.new(
-          name: name, type: target, domain: domain, validate: validate
+          name: name, segments: parts, validate: validate, **parsed
         )
       end
 

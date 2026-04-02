@@ -19,6 +19,7 @@
 - Define collection attributes with `list_of("Type")` syntax
 - Define cross-aggregate references with standalone `reference_to "Aggregate"` — first-class domain concept
 - Optional role naming: `reference_to "Team", role: "home_team"`
+- Qualified reference paths with 1, 2, or 3 segments: `reference_to "Topping"` (local), `reference_to "Pizza::Topping"` (aggregate::entity), `reference_to "Ordering::Pizza::Topping"` (domain::aggregate::entity) — auto-classifies as composition, aggregation, or cross-context based on path resolution
 - Cross-domain qualified references: `reference_to "Billing::Invoice"` — exempt from compile-time validation, verified at boot (target domain must be loaded), IDOR reference validation resolves from foreign domain module
 - References hold live objects in memory — IDs are purely a persistence concern
 - Enum constraints: `attribute :category, String, enum: %w[low medium high]` — validated at runtime, dropdown in UI
