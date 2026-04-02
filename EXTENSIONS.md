@@ -53,6 +53,7 @@ Boot fires driven extensions first so driving adapters see the fully wired runti
 | **logging** | `extend :logging` | driven | experimental | Command execution timing and logging. [Source](hecks_runtime/lib/hecks/extensions/logging.rb) |
 | **rate_limit** | `extend :rate_limit` | driven | experimental | Per-command rate limiting. [Source](hecks_runtime/lib/hecks/extensions/rate_limit.rb) |
 | **retry** | `extend :retry` | driven | experimental | Exponential backoff for transient errors. [Source](hecks_runtime/lib/hecks/extensions/retry.rb) |
+| **policy_tracing** | `extend :policy_tracing` | driven | experimental | Policy execution tracing with timing and condition data. [Source](hecksties/lib/hecks/extensions/policy_tracing.rb) |
 
 ## Infrastructure (driving)
 
