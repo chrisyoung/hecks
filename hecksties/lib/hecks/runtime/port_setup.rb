@@ -55,6 +55,7 @@ module Hecks
       def wire_aggregate(agg)
         agg_class = @mod.const_get(domain_constant_name(agg.name))
         repo = ownership_scoped_repo(agg, @repositories[agg.name])
+        repo = encrypting_repo(agg, repo, agg_class)
         defaults = build_defaults(agg)
 
         Persistence.bind(agg_class, agg, repo)
@@ -92,6 +93,35 @@ module Hecks
         else
           repo
         end
+      end
+
+      # Wraps the repository with an EncryptingRepository when the aggregate
+      # has attributes tagged with +encrypted: true+.
+      #
+      # @param agg [Hecks::DomainModel::Aggregate] the aggregate definition
+      # @param repo [Object] the inner repository instance
+      # @param agg_class [Class] the runtime aggregate class
+      # @return [Object] the repo, possibly wrapped with encryption
+      def encrypting_repo(agg, repo, agg_class)
+        encrypted_fields = agg.attributes.select(&:encrypted?)
+        return repo if encrypted_fields.empty?
+
+        require "hecks/adapters/encrypting_repository"
+        require "hecks/adapters/test_encryptor"
+
+        encryptor = if Hecks.encryption_key
+                      require "hecks/adapters/aes_encryptor"
+                      Hecks::Adapters::AesEncryptor.new(Hecks.encryption_key)
+                    else
+                      Hecks::Adapters::TestEncryptor.new
+                    end
+
+        Hecks::Adapters::EncryptingRepository.new(
+          repo,
+          aggregate: agg,
+          encryptor: encryptor,
+          aggregate_class: agg_class
+        )
       end
 
       # Builds a default values hash for the aggregate's attributes.

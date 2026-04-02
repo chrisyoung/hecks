@@ -537,6 +537,7 @@ attribute :name, String                          # required, no default
 attribute :status, String, default: "draft"      # with default
 attribute :role, String, enum: ["admin", "user"] # constrained values
 attribute :email, String, pii: true              # PII flag
+attribute :ssn, String, encrypted: true          # encrypted at rest
 ```
 
 ### Identity (natural key)

@@ -67,6 +67,21 @@ module Hecksagon
         @tenancy = strategy.to_sym
       end
 
+      # Expand a world concern into hecksagon-level configuration.
+      # The :privacy concern enables the :pii extension and the :encrypted
+      # attribute tag support (wires EncryptingRepository for aggregates
+      # with encrypted fields).
+      #
+      # @param concern [Symbol] the concern name (e.g., :privacy)
+      # @return [void]
+      def concern(concern)
+        case concern.to_sym
+        when :privacy
+          extension(:pii) unless @extensions.any? { |e| e[:name] == :pii }
+          extension(:encrypted) unless @extensions.any? { |e| e[:name] == :encrypted }
+        end
+      end
+
       # Build and return the Hecksagon IR object.
       #
       # @return [Hecksagon::Structure::Hecksagon]

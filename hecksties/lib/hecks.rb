@@ -58,6 +58,16 @@ module Hecks
   extend DumpFormatRegistryMethods
   extend GrammarRegistryMethods
 
+  # 32-byte encryption key for attribute-level encryption at rest.
+  # When nil (default), the TestEncryptor (Base64) is used.
+  # Set to a 32-byte binary string to enable AES-256-GCM encryption.
+  #
+  #   Hecks.encryption_key = OpenSSL::Random.random_bytes(32)
+  #
+  class << self
+    attr_accessor :encryption_key
+  end
+
   def self.configure(&block)
     @configuration = Configuration.new
     @configuration.instance_eval(&block)

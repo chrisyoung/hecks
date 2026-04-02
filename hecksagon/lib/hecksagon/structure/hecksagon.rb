@@ -39,6 +39,19 @@ module Hecksagon
       def gate_for(aggregate_name, role)
         @gates.find { |g| g.aggregate == aggregate_name.to_s && g.role == role.to_sym }
       end
+
+      # Returns encrypted attribute names for a given aggregate, queried from
+      # the domain IR. Returns an empty array if the domain is not set or the
+      # aggregate has no encrypted attributes.
+      #
+      # @param aggregate_name [String] the aggregate name
+      # @param domain [Hecks::DomainModel::Structure::Domain] the domain IR
+      # @return [Array<Symbol>] names of encrypted attributes
+      def encrypted_attributes(aggregate_name, domain:)
+        agg = domain.aggregates.find { |a| a.name == aggregate_name.to_s }
+        return [] unless agg
+        agg.attributes.select(&:encrypted?).map(&:name)
+      end
     end
   end
 end

@@ -24,6 +24,7 @@
 - References hold live objects in memory — IDs are purely a persistence concern
 - Enum constraints: `attribute :category, String, enum: %w[low medium high]` — validated at runtime, dropdown in UI
 - Computed attributes: `computed :lot_size do; area / 43560.0; end` — derived values not stored in the database, shown in UI with "(computed)" hint, visible in `hecks inspect`, and available as MCP `add_computed` tool
+- Encrypted attributes: `attribute :ssn, String, encrypted: true` — transparently encrypted at rest via EncryptingRepository decorator; AES-256-GCM in production, reversible Base64 in tests; nil values pass through unencrypted
 
 ### Commands
 - Define commands with attributes, handlers, guards, read models, actors, and external system docs

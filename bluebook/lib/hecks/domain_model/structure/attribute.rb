@@ -40,6 +40,8 @@ module Hecks
       # @param list [Boolean] if true, this attribute holds a collection (Array) of the given type.
       # @param pii [Boolean] if true, this attribute contains personally identifiable information
       #   and should be handled according to PII policies (encryption, masking, etc.).
+      # @param encrypted [Boolean] if true, this attribute is encrypted at rest in the repository.
+      #   The EncryptingRepository decorator handles transparent encrypt/decrypt on save and find.
       # @param enum [Array<String>, nil] optional list of allowed string values. When present,
       #   generated code will validate that the attribute value is one of these.
       # @param visible [Boolean] if false, this attribute is hidden from the web explorer
@@ -47,12 +49,13 @@ module Hecks
       #   like passwords, tokens, or raw foreign keys that should not be displayed to users.
       #
       # @return [Attribute] a new Attribute instance
-      def initialize(name:, type:, default: nil, list: false, pii: false, enum: nil, visible: true)
+      def initialize(name:, type:, default: nil, list: false, pii: false, encrypted: false, enum: nil, visible: true)
         @name = name.to_sym
         @type = type
         @default = default
         @list = list
         @pii = pii
+        @encrypted = encrypted
         @enum = enum
         @visible = visible
       end
@@ -73,6 +76,15 @@ module Hecks
       # @return [Boolean] true if this attribute holds PII data
       def pii?
         @pii
+      end
+
+      # Returns true if this attribute is encrypted at rest.
+      # Encrypted attributes are transparently encrypted on save and decrypted
+      # on find by the EncryptingRepository decorator.
+      #
+      # @return [Boolean] true if this attribute is encrypted at rest
+      def encrypted?
+        @encrypted
       end
 
       # Returns true if this attribute should appear in the web explorer
