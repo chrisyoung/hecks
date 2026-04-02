@@ -8,6 +8,7 @@ require_relative "command_bus_port"
 require_relative "csrf_helpers"
 require_relative "../auth/screen_routes"
 require_relative "domain_watcher"
+require_relative "sse_handler"
 
 module Hecks
   module HTTP
@@ -138,6 +139,11 @@ module Hecks
           return
         end
 
+        if req.path == "/_live"
+          @lock.synchronize { @sse_handler }.stream(res)
+          return
+        end
+
         app, domain, routes = @lock.synchronize { [@app, @domain, @routes] }
 
         if req.path == "/events"
@@ -259,6 +265,8 @@ module Hecks
         @app = Runtime.new(@domain)
         bus_port = CommandBusPort.new(command_bus: @app.command_bus)
         @routes = RouteBuilder.new(@domain, @mod, port: bus_port).build
+        @sse_handler = SSEHandler.new
+        @sse_handler.subscribe(@app.event_bus)
       end
 
       # Check if a route pattern matches a request path.

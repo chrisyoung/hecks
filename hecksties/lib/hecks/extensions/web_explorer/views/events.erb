@@ -1,0 +1,27 @@
+<h1>Events (<%= event_count %>)</h1>
+<% if events.empty? %>
+  <p style="color:#666">No events have been published yet. Execute a command to see events appear here.</p>
+<% else %>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Occurred At</th>
+      <th>Payload</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% events.each do |event| %>
+      <tr>
+        <td><span class="badge"><%= h(event[:type]) %></span></td>
+        <td class="mono"><%= h(event[:occurred_at]) %></td>
+        <td class="mono" style="font-size:0.8rem;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          <% event[:payload].each do |k, v| %>
+            <strong><%= h(k) %></strong>=<%= h(v.to_s.slice(0, 60)) %><%= "; " unless k == event[:payload].keys.last %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>

@@ -6,6 +6,8 @@ require "hecks/extensions/serve/cors_headers"
 require "hecks/extensions/web_explorer/renderer"
 require "hecks/extensions/web_explorer/ir_introspector"
 require "hecks/extensions/web_explorer/runtime_bridge"
+require "hecks/extensions/web_explorer/event_introspector"
+require "hecks/extensions/serve/sse_handler"
 require_relative "multi_domain_ui_routes"
 
 module Hecks
@@ -60,13 +62,16 @@ module Hecks
           ir = Hecks::WebExplorer::IRIntrospector.new(domain)
           bridge = Hecks::WebExplorer::RuntimeBridge.new(mod)
           routes = RouteBuilder.new(domain, mod).build
-          @entries << { ir: ir, bridge: bridge, runtime: runtime, slug: slug, routes: routes }
+          event_ir = Hecks::WebExplorer::EventIntrospector.new(runtime.event_bus)
+          @entries << { ir: ir, bridge: bridge, runtime: runtime, slug: slug, routes: routes, event_ir: event_ir }
         end
 
         require "hecks/extensions/web_explorer"
         explorer_file = $LOADED_FEATURES.find { |f| f.include?("web_explorer.rb") && f.include?("extensions") }
         views_dir = File.join(File.dirname(explorer_file), "web_explorer/views")
         @renderer = Hecks::WebExplorer::Renderer.new(views_dir)
+        @sse_handler = Hecks::HTTP::SSEHandler.new
+        @runtimes.each { |rt| @sse_handler.subscribe(rt.event_bus) }
         @nav = build_nav
         @brand = @domains.map(&:name).join(" + ")
       end
@@ -84,6 +89,7 @@ module Hecks
             }
           end
         end
+        items << { label: "Events", href: "/events", group: "System" }
         items << { label: "Config", href: "/config", group: "System" }
         items
       end
@@ -93,8 +99,13 @@ module Hecks
         return if req.request_method == "OPTIONS"
 
         path = req.path
-        if path == "/"
+        if path == "/_live"
+          @sse_handler.stream(res)
+          return
+        elsif path == "/"
           serve_home(res)
+        elsif path == "/events"
+          serve_events(res, @entries.map { |e| e[:event_ir] })
         elsif path == "/config"
           serve_config(res)
         else

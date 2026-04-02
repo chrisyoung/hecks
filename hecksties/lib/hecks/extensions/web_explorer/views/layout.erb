@@ -107,6 +107,33 @@
       }
     });
   </script>
+  <script>
+    var HecksLiveEvents = (function() {
+      var source = null, handlers = [], indicator = null;
+      function connect() {
+        source = new EventSource('/_live');
+        source.onmessage = function(e) {
+          var data = JSON.parse(e.data);
+          handlers.forEach(function(fn) { fn(data); });
+          flash(data.type);
+        };
+        source.onerror = function() { setTimeout(connect, 3000); };
+      }
+      function flash(type) {
+        if (!indicator) {
+          indicator = document.createElement('div');
+          indicator.style.cssText = 'position:fixed;bottom:1rem;right:1rem;background:#4361ee;color:#fff;padding:0.5rem 1rem;border-radius:4px;font-size:0.85rem;opacity:0;transition:opacity 0.3s;z-index:9999';
+          document.body.appendChild(indicator);
+        }
+        indicator.textContent = type;
+        indicator.style.opacity = '1';
+        setTimeout(function() { indicator.style.opacity = '0'; }, 2000);
+      }
+      function on(fn) { handlers.push(fn); }
+      connect();
+      return { on: on };
+    })();
+  </script>
   <script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'; mermaid.initialize({startOnLoad: true});</script>
 </body>
 </html>
