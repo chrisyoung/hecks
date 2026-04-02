@@ -83,6 +83,10 @@ module Hecks
       #   an infrastructure decision made outside the domain IR.
       attr_reader :identity_fields
 
+      # @return [Hash{String => Proc}] event applier blocks for reconstituting
+      #   aggregate state from events. Keyed by event type name.
+      attr_reader :appliers
+
       # Creates a new Aggregate IR node.
       #
       # @param name [String] PascalCase name of the aggregate (e.g., "Pizza")
@@ -108,7 +112,7 @@ module Hecks
                      specifications: [], references: [],
                      factories: [], computed_attributes: [],
                      lifecycle: nil, metadata: {}, origin_domain: nil,
-                     identity_fields: nil)
+                     identity_fields: nil, appliers: {})
         @name = Names.aggregate_name(name)
         @attributes = attributes
         @value_objects = value_objects
@@ -129,6 +133,7 @@ module Hecks
         @metadata = metadata
         @origin_domain = origin_domain
         @identity_fields = identity_fields
+        @appliers = appliers
       end
 
       attr_reader :metadata, :origin_domain

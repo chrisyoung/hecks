@@ -61,6 +61,7 @@ module Hecks
         Commands.bind(agg_class, agg, @command_bus, repo, defaults)
         Querying.bind(agg_class, agg)
         Introspection.bind(agg_class, agg)
+        wire_appliers(agg_class, agg)
         Versioning.bind(agg_class, repo) if runtime_option?(agg.name, :versioned)
         AttachmentMethods.bind(agg_class) if runtime_option?(agg.name, :attachable)
         wire_query_objects(agg, agg_class)
@@ -114,6 +115,19 @@ module Hecks
       # @return [Boolean]
       def runtime_option?(aggregate_name, option)
         (@runtime_options || {}).dig(aggregate_name.to_s, option) || false
+      end
+
+      # Registers apply blocks from the aggregate IR onto the aggregate class.
+      # These are used by the snapshots extension for reconstitution.
+      #
+      # @param agg_class [Class] the aggregate class
+      # @param agg [Hecks::DomainModel::Structure::Aggregate] the aggregate definition
+      # @return [void]
+      def wire_appliers(agg_class, agg)
+        return unless agg.respond_to?(:appliers) && agg.appliers&.any?
+        appliers = agg_class.instance_variable_get(:@__hecks_appliers__) || {}
+        agg.appliers.each { |event_name, block| appliers[event_name.to_s] = block }
+        agg_class.instance_variable_set(:@__hecks_appliers__, appliers)
       end
 
       # Wires DSL-defined query objects as class methods on the aggregate class.

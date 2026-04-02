@@ -82,6 +82,7 @@ module Hecks
         @identity_fields = nil
         @metadata = {}
         @facet_data = {}
+        @appliers = {}
         self.class.facet_registry.each do |facet_name, setup|
           @facet_data[facet_name] = []
           setup.call(self.class) unless self.class.method_defined?(facet_name)
@@ -190,7 +191,8 @@ module Hecks
           specifications: @specifications, computed_attributes: @computed_attributes,
           lifecycle: @lifecycle,
           metadata: @metadata, references: @references,
-          factories: @factories, identity_fields: @identity_fields
+          factories: @factories, identity_fields: @identity_fields,
+          appliers: @appliers
         )
       end
 

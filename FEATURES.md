@@ -635,6 +635,15 @@
 - Provides `validate_params` method and `validation_rules` on domain module
 - Wires into command bus as middleware
 
+### hecks_snapshots
+- Aggregate snapshot extension for event-sourced reconstitution
+- `MemorySnapshotStore` port: `save_snapshot(type, id, version:, state:)` and `load_snapshot(type, id)`
+- Auto-snapshot after N events per aggregate stream (configurable threshold, default 100)
+- DSL `apply` blocks on aggregates for event-driven reconstitution: `apply "CreatedPizza" do |agg, data| ... end`
+- `Reconstitution.reconstitute(klass, id, snapshot_store:, event_recorder:)` rebuilds from snapshot + filtered events
+- `app.extend(:snapshots, threshold: 50)` to wire at runtime
+- `Hecks.snapshot_store` accessor for the active store
+
 ## Go Domain Generation (hecks_go)
 
 ### Go Output from Same DSL

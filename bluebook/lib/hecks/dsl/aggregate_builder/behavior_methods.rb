@@ -70,6 +70,18 @@ module Hecks
           @specifications << DomainModel::Behavior::Specification.new(name: name, block: block)
         end
 
+        # Register an apply block for reconstituting aggregate state from an event.
+        # Used by the snapshots extension to rebuild aggregates from event history.
+        #
+        # @param event_name [String] the event type name (e.g. "CreatedPizza")
+        # @yield [aggregate, event_data] receives current aggregate (or nil) and event data hash
+        # @yieldreturn [Object] the new/updated aggregate instance
+        # @return [void]
+        def apply(event_name, &block)
+          @appliers ||= {}
+          @appliers[event_name.to_s] = block
+        end
+
         private
 
         def generate_subscriber_name(event_name)
