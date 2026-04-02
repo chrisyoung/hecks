@@ -113,6 +113,7 @@
 - `it_behaves_like "a Hecks repository"` — verify CRUD, query, count, clear on any adapter
 
 ### Persistence Extensions
+- `hecks_redis_store` — experimental Redis-backed persistence via GET/SET/DEL/SCAN, `extend(:redis_store, client: Redis.new)`
 - `hecks_sqlite` — SQLite persistence, auto-wires when in Gemfile
 - `hecks_postgres` — PostgreSQL persistence
 - `hecks_mysql` — MySQL persistence
