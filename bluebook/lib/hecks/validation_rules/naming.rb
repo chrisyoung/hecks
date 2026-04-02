@@ -13,17 +13,23 @@ module Hecks
     # - +ComputedNameCollisions+ -- computed attribute names must not collide with regular attribute names
     # - +GlossaryTermViolations+ -- warns (or errors in strict mode) when names use banned glossary terms
     # - +SafeIdentifierNames+ -- rejects dangerous characters that could cause injection in generated Go/Ruby code
+    # - +IntentionRevealingNames+ -- warns on generic terms (Data, Manager, Handler, etc.)
+    # - +EventNaming+ -- warns when event names are not past tense
+    # - +AttributeNaming+ -- warns on _data/_info suffixes, redundant prefixes, type prefixes
     #
     # All rules are autoloaded and executed as part of +Hecks.validate+.
     #
     module Naming
-      autoload :CommandNaming,          "hecks/validation_rules/naming/command_naming"
-      autoload :NameCollisions,         "hecks/validation_rules/naming/name_collisions"
-      autoload :UniqueAggregateNames,   "hecks/validation_rules/naming/unique_aggregate_names"
-      autoload :ReservedNames,          "hecks/validation_rules/naming/reserved_names"
-      autoload :ComputedNameCollisions, "hecks/validation_rules/naming/computed_name_collisions"
-      autoload :GlossaryTermViolations, "hecks/validation_rules/naming/glossary_term_violations"
-      autoload :SafeIdentifierNames,    "hecks/validation_rules/naming/safe_identifier_names"
+      autoload :CommandNaming,           "hecks/validation_rules/naming/command_naming"
+      autoload :NameCollisions,          "hecks/validation_rules/naming/name_collisions"
+      autoload :UniqueAggregateNames,    "hecks/validation_rules/naming/unique_aggregate_names"
+      autoload :ReservedNames,           "hecks/validation_rules/naming/reserved_names"
+      autoload :ComputedNameCollisions,  "hecks/validation_rules/naming/computed_name_collisions"
+      autoload :GlossaryTermViolations,  "hecks/validation_rules/naming/glossary_term_violations"
+      autoload :SafeIdentifierNames,     "hecks/validation_rules/naming/safe_identifier_names"
+      autoload :IntentionRevealingNames, "hecks/validation_rules/naming/intention_revealing_names"
+      autoload :EventNaming,             "hecks/validation_rules/naming/event_naming"
+      autoload :AttributeNaming,         "hecks/validation_rules/naming/attribute_naming"
     end
   end
 end

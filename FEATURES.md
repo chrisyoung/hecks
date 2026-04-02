@@ -333,6 +333,9 @@
 - Every validation error includes a structured `hint` field with a fix suggestion -- rendered as colored "Fix:" lines in the CLI, included in `ValidationError` exception messages, and accessible via `error.hint` / `error.to_h`
 - Implicit foreign key detection: warns when `_id String` should be `reference_to("Aggregate")`
 - Validator collects non-blocking warnings alongside blocking errors
+- Intention-revealing name analysis: warns on generic terms (Data, Info, Manager, Handler, Processor, etc.) in aggregate/VO/entity names
+- Event naming analysis: warns when domain event names are not past tense (e.g. `BakePizza` should be `BakedPizza`)
+- Attribute naming analysis: warns on vague suffixes (`_data`, `_info`), redundant aggregate prefixes (`pizza_name` on Pizza), and Hungarian-style type prefixes (`str_name`)
 
 ## Domain Interface Versioning
 - `hecks version_tag <version>` — snapshot current domain DSL to `db/hecks_versions/<version>.rb` with metadata header
