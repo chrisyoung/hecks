@@ -1,4 +1,5 @@
 require_relative "workshop_runner/constant_hoister"
+require_relative "natural_language_interpreter"
 
 module Hecks
   class Workshop
@@ -43,6 +44,11 @@ module Hecks
 
     def extend(name, **kwargs)
       @workshop.extend(name, **kwargs)
+    end
+
+    def say(text)
+      @interpreter ||= NaturalLanguageInterpreter.new(self)
+      @interpreter.interpret(text)
     end
 
     def play!
@@ -211,6 +217,8 @@ module Hecks
       puts "  Post.create.title String         # add attribute to command"
       puts "  Post.lifecycle :status, default: \"draft\""
       puts "  Post.transition \"PublishPost\" => \"published\""
+      puts ""
+      puts "  say \"add a name to Pizza\"         # natural language editing"
       puts ""
       puts "  play! / sketch!                  # switch modes"
       puts "  reload!                          # re-read DSL, reboot playground"

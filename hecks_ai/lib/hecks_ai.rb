@@ -22,6 +22,7 @@ module Hecks
     module Prompts
       autoload :DomainGeneration, "hecks_ai/prompts/domain_generation"
       autoload :DomainToolSchema, "hecks_ai/prompts/domain_tool_schema"
+      autoload :DomainEdit,      "hecks_ai/prompts/domain_edit"
     end
   end
 end

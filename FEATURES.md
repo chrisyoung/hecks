@@ -269,6 +269,14 @@
 - Reference attributes: `Post.order_id reference_to("Order")`
 - Terse single-line feedback after every operation (e.g. "title attribute added to Post")
 
+### Natural Language DSL
+- `say "add a name attribute to Pizza"` — natural language domain editing in the REPL
+- LLM interprets requests into DSL operations (add_attribute, add_command, etc.)
+- Shows planned operations before applying: transparent interpretation
+- Conversation-scoped: maintains context across multiple `say` calls in a session
+- Graceful degradation: prints helpful message when ANTHROPIC_API_KEY is not set
+- DomainEdit prompt includes current domain state for context-aware suggestions
+
 ### Console Tour
 - Guided walkthrough via `hecks tour` — 15-step tour of sketch, play, and build
 - Also available inside the console: `tour`
