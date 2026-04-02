@@ -25,6 +25,19 @@ module Hecks
         def query(name, &block)
           @queries << DomainModel::Behavior::Query.new(name: name, block: block)
         end
+
+        # Define a custom finder on this aggregate's repository.
+        #
+        # A finder declares a named lookup method with typed parameters.
+        # The memory adapter auto-generates an equality-match implementation;
+        # custom adapters get a NotImplementedError stub in the port module.
+        #
+        # @param name [Symbol] the finder method name (e.g., :by_email)
+        # @param params [Array<Symbol>] attribute names to match against
+        # @return [void]
+        def finder(name, *params)
+          @finders << DomainModel::Structure::Finder.new(name: name, params: params.map(&:to_sym))
+        end
       end
     end
   end

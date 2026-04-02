@@ -53,12 +53,33 @@ module Hecks
         lines << "      def delete(id)"
         lines << "        raise NotImplementedError, \"\#{self.class}#delete not implemented\""
         lines << "      end"
+        lines.concat(finder_stub_lines(6))
         lines << "    end"
         lines << "  end"
         lines << "end"
         lines.join("\n") + "\n"
       end
 
+      private
+
+      # Generates NotImplementedError stub lines for each finder.
+      #
+      # @param indent [Integer] number of leading spaces for indentation
+      # @return [Array<String>] the lines for all finder stubs
+      def finder_stub_lines(indent)
+        return [] if @aggregate.finders.empty?
+
+        pad = " " * indent
+        lines = []
+        @aggregate.finders.each do |finder|
+          param_list = finder.params.join(", ")
+          lines << ""
+          lines << "#{pad}def #{finder.name}(#{param_list})"
+          lines << "#{pad}  raise NotImplementedError, \"\#{self.class}##{finder.name} not implemented\""
+          lines << "#{pad}end"
+        end
+        lines
+      end
     end
     end
   end

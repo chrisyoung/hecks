@@ -71,6 +71,7 @@ module Hecks
         lines << "      end"
         lines << ""
         lines.concat(query_lines(6))
+        lines.concat(finder_lines(6))
         lines << ""
         lines << "      def clear"
         lines << "        @store.clear"
@@ -89,6 +90,28 @@ module Hecks
       # @return [Array<String>] the lines of the +query+ method
       def operator_module
         @mixin_prefix == "Hecks" ? "Hecks::Querying::Operators" : "#{@mixin_prefix}::Runtime::Operators"
+      end
+
+      # Generates finder method implementations for the memory adapter.
+      #
+      # Each finder filters @store.values by equality on the declared params.
+      #
+      # @param indent [Integer] number of leading spaces for indentation
+      # @return [Array<String>] the lines for all finder methods
+      def finder_lines(indent)
+        return [] if @aggregate.finders.empty?
+
+        pad = " " * indent
+        lines = []
+        @aggregate.finders.each do |finder|
+          param_list = finder.params.join(", ")
+          lines << ""
+          lines << "#{pad}def #{finder.name}(#{param_list})"
+          conditions = finder.params.map { |p| "obj.#{p} == #{p}" }.join(" && ")
+          lines << "#{pad}  @store.values.select { |obj| #{conditions} }"
+          lines << "#{pad}end"
+        end
+        lines
       end
 
       def query_lines(indent)

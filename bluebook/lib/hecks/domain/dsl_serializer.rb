@@ -35,6 +35,7 @@ module Hecks
       lines.concat(serialize_validations(agg.validations))
       lines.concat(serialize_invariants(agg.invariants, "    "))
       lines.concat(serialize_scopes(agg.scopes))
+      lines.concat(serialize_finders(agg.finders))
       lines.concat(serialize_computed_attributes(agg.computed_attributes))
       lines.concat(serialize_queries(agg.queries))
       lines.concat(serialize_specifications(agg.specifications))
@@ -84,6 +85,13 @@ module Hecks
         formatted = s.conditions.map { |k, v| "#{k}: #{v.inspect}" }.join(", ")
         ["", "    scope :#{s.name}, #{formatted}"]
       end
+    end
+
+    def serialize_finders(finders)
+      (finders || []).map do |f|
+        param_list = f.params.map { |p| ":#{p}" }.join(", ")
+        ["", "    finder :#{f.name}, #{param_list}"]
+      end.flatten
     end
 
     def serialize_queries(queries)

@@ -51,6 +51,7 @@
 ### Queries & Scopes
 - Define named queries with `where`, `order`, `limit`, `offset` chainable DSL
 - Define named scopes as hash conditions or lambda predicates
+- Custom finders: `finder :by_email, :email` — named repository lookup methods with auto-generated memory adapter implementations and port stubs for custom adapters
 
 ### Specifications & Validation
 - Define specifications as reusable composable predicates (`satisfied_by?`, `and`, `or`, `not`)

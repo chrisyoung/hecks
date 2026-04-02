@@ -69,6 +69,9 @@ module Hecks
         aggregate.specifications.each do |spec|
           builder.specification(spec.name, &spec.block)
         end
+        (aggregate.finders || []).each do |f|
+          builder.finder(f.name, *f.params)
+        end
         builder
       end
     end

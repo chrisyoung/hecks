@@ -72,6 +72,9 @@ module Hecks
       # @return [Array<ComputedAttribute>] derived attributes computed from other attributes
       attr_reader :computed_attributes
 
+      # @return [Array<Finder>] custom named finders for repository lookups
+      attr_reader :finders
+
       # @return [Lifecycle, nil] optional state machine definition
       attr_reader :lifecycle
 
@@ -108,7 +111,7 @@ module Hecks
                      specifications: [], references: [],
                      factories: [], computed_attributes: [],
                      lifecycle: nil, metadata: {}, origin_domain: nil,
-                     identity_fields: nil)
+                     identity_fields: nil, finders: [])
         @name = Names.aggregate_name(name)
         @attributes = attributes
         @value_objects = value_objects
@@ -129,6 +132,7 @@ module Hecks
         @metadata = metadata
         @origin_domain = origin_domain
         @identity_fields = identity_fields
+        @finders = finders
       end
 
       attr_reader :metadata, :origin_domain

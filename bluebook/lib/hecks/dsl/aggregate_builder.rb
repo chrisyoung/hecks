@@ -51,7 +51,7 @@ module Hecks
       attr_reader :attributes, :commands, :value_objects, :entities,
                   :policies, :validations, :invariants, :scopes,
                   :queries, :subscribers, :specifications,
-                  :references
+                  :references, :finders
       # Writer for lifecycle — used by AggregateHandle to update lifecycle
       # without reaching into instance variables. Reader is the DSL method
       # in BehaviorMethods; use current_lifecycle to read.
@@ -75,6 +75,7 @@ module Hecks
         @subscribers = []
         @specifications = []
         @references = []
+        @finders = []
         @explicit_events = []
         @factories = []
         @computed_attributes = []
@@ -190,7 +191,8 @@ module Hecks
           specifications: @specifications, computed_attributes: @computed_attributes,
           lifecycle: @lifecycle,
           metadata: @metadata, references: @references,
-          factories: @factories, identity_fields: @identity_fields
+          factories: @factories, identity_fields: @identity_fields,
+          finders: @finders
         )
       end
 

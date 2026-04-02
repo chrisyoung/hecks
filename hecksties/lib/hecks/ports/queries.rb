@@ -31,6 +31,7 @@ module Hecks
       autoload :AdHocQueries,  "hecks/ports/queries/ad_hoc_queries"
       autoload :ScopeMethods,  "hecks/ports/queries/scope_methods"
       autoload :Operators,     "hecks/ports/queries/operators"
+      autoload :FinderMethods, "hecks/ports/queries/finder_methods"
 
       # Wires named scopes from the aggregate definition onto the class.
       #
@@ -43,6 +44,7 @@ module Hecks
       # @return [void]
       def self.bind(klass, aggregate)
         ScopeMethods.bind(klass, aggregate)
+        FinderMethods.bind(klass, aggregate)
       end
   end
 end
