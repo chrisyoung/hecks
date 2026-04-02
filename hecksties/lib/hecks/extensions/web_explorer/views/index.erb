@@ -9,6 +9,27 @@
 <% if defined?(description) && description && !description.empty? %>
   <p style="color:#666;margin:-1rem 0 1.5rem"><%= description %></p>
 <% end %>
+<% if defined?(filterable_attributes) && filterable_attributes.any? %>
+<form method="get" style="margin-bottom:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:end">
+  <input type="text" name="q" placeholder="Search..." value="<%= h(search_query) %>" style="padding:0.4rem;border:1px solid #ccc;border-radius:4px">
+  <% filterable_attributes.each do |attr| %>
+    <% if attr.enum %>
+      <select name="filter[<%= attr.name %>]" style="padding:0.4rem;border:1px solid #ccc;border-radius:4px">
+        <option value="">All <%= h(attr.name) %></option>
+        <% attr.enum.each do |opt| %>
+          <option value="<%= h(opt) %>"<%= ' selected' if active_filters[attr.name] == opt %>><%= h(opt) %></option>
+        <% end %>
+      </select>
+    <% else %>
+      <input type="text" name="filter[<%= attr.name %>]" placeholder="<%= h(attr.name) %>" value="<%= h(active_filters[attr.name].to_s) %>" style="padding:0.4rem;border:1px solid #ccc;border-radius:4px;width:120px">
+    <% end %>
+  <% end %>
+  <button type="submit" class="btn">Filter</button>
+  <% if search_query != "" || active_filters.any? %>
+    <a href="?" class="btn btn-faded">Clear</a>
+  <% end %>
+</form>
+<% end %>
 <table>
   <thead>
     <tr>

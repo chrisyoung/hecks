@@ -209,5 +209,48 @@ RSpec.describe "Web Explorer IR introspection" do
       expect(bridge).to respond_to(:find_by_id)
       expect(bridge).not_to respond_to(:klass_for)
     end
+
+    it "filters records by attribute via search_and_filter" do
+      bridge.execute_command("Widget", :create, { label: "Alpha" })
+      bridge.execute_command("Widget", :create, { label: "Beta" })
+      results = bridge.search_and_filter("Widget", filters: { label: "Alpha" }, attributes: [:label])
+      expect(results.size).to eq(1)
+      expect(results.first.label.to_s).to eq("Alpha")
+    end
+
+    it "searches records by substring via search_and_filter" do
+      bridge.execute_command("Widget", :create, { label: "Searchable" })
+      bridge.execute_command("Widget", :create, { label: "Hidden" })
+      results = bridge.search_and_filter("Widget", query: "search", attributes: [:label])
+      labels = results.map { |r| r.label.to_s }
+      expect(labels).to include("Searchable")
+      expect(labels).not_to include("Hidden")
+    end
+
+    it "combines filter and search in search_and_filter" do
+      bridge.execute_command("Widget", :create, { label: "FooBar" })
+      bridge.execute_command("Widget", :create, { label: "FooBaz" })
+      bridge.execute_command("Widget", :create, { label: "Other" })
+      results = bridge.search_and_filter("Widget", filters: { label: "FooBar" }, query: "foo", attributes: [:label])
+      expect(results.size).to eq(1)
+      expect(results.first.label.to_s).to eq("FooBar")
+    end
+
+    it "returns all records when no filters or query given" do
+      bridge.execute_command("Widget", :create, { label: "All1" })
+      bridge.execute_command("Widget", :create, { label: "All2" })
+      results = bridge.search_and_filter("Widget", attributes: [:label])
+      expect(results.size).to be >= 2
+    end
+  end
+
+  describe "IRIntrospector#filterable_attributes" do
+    it "returns attributes suitable for filtering" do
+      agg = ir.find_aggregate("Pizza")
+      filterable = ir.filterable_attributes(agg)
+      names = filterable.map(&:name)
+      expect(names).to include(:name, :style)
+      expect(names).not_to include(:id)
+    end
   end
 end

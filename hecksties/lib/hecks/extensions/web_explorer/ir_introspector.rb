@@ -44,6 +44,10 @@ module Hecks
         agg.computed_attributes || []
       end
 
+      def filterable_attributes(agg)
+        user_attributes(agg).select { |a| a.enum || a.type == String }
+      end
+
       def columns_for(agg)
         dc = HecksTemplating::DisplayContract
         cols = user_attributes(agg).map { |a|

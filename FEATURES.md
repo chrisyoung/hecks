@@ -721,6 +721,14 @@
 - No `Object.const_get`, `respond_to?`, or `instance_variable_get` in the UI layer
 - Same IR structs consumed by Ruby, Go, and Rails generators now also drive the Web Explorer
 
+### Search and Filter (HEC-261)
+- Full-text search via `q=` parameter — case-insensitive substring match across all visible attributes
+- Attribute filtering via `filter[attr]=value` convention — uses `klass.where()` when available, falls back to in-memory matching
+- `IRIntrospector#filterable_attributes` returns String and enum attributes suitable for filtering
+- `RuntimeBridge#search_and_filter` combines filter and search in a single call
+- Search/filter UI auto-generated in index pages with dropdowns for enum attributes and text inputs for strings
+- Active filters preserved in pagination links via query string
+
 ## Implicit DSL (HEC-229)
 
 ### Infer Domain Concepts from Structure

@@ -45,25 +45,21 @@ module Hecks
         def serve_index(req, res, ir, bridge, agg, safe, p, prefix)
           token = ensure_csrf_cookie(req, res)
           user_attrs = ir.user_attributes(agg)
-          items = bridge.find_all(agg.name).map do |obj|
-            cells = user_attrs.map { |a|
-              if ir.reference_attr?(a)
-                ref_agg = ir.find_referenced_aggregate(a)
-                bridge.resolve_reference_display(obj, a, ref_agg&.name)
-              else
-                bridge.read_attribute(obj, a.name)
-              end
-            }
-            id = bridge.read_id(obj)
-            { id: id, short_id: id[0..7], show_href: "#{prefix}/#{p}/show?id=#{id}", cells: cells }
+          search_query = req.query["q"]
+          filters = extract_filters(req.query, ir.filterable_attributes(agg))
+          searchable_names = user_attrs.map(&:name)
+
+          objects = if filters.any? || (search_query && !search_query.strip.empty?)
+            bridge.search_and_filter(agg.name, filters: filters, query: search_query, attributes: searchable_names)
+          else
+            bridge.find_all(agg.name)
           end
-          ir.computed_attributes(agg).each do |ca|
-            items.each do |item|
-              obj = bridge.find_by_id(agg.name, item[:id])
-              item[:cells] << bridge.evaluate_computed(obj, ca.block) if obj
-            end
-          end
+
+          items = build_index_items(objects, user_attrs, ir, bridge, agg, prefix, p)
+          append_computed_cells(items, ir, bridge, agg)
+          filter_params = build_filter_query_string(filters, search_query)
           columns = ir.columns_for(agg)
+          filterable = ir.filterable_attributes(agg)
           create_cmds = ir.create_commands(agg)
           buttons = create_cmds.map do |c|
             cm = domain_snake_name(c.name)
@@ -72,7 +68,9 @@ module Hecks
           html = @renderer.render(:index,
             title: "#{safe}s — #{@brand}", brand: @brand, nav_items: @nav,
             aggregate_name: safe, items: items, columns: columns,
-            buttons: buttons, row_actions: [], csrf_token: token)
+            buttons: buttons, row_actions: [], csrf_token: token,
+            search_query: search_query || "", active_filters: filters,
+            filterable_attributes: filterable, filter_params: filter_params)
           res["Content-Type"] = "text/html"
           res.body = html
         end
@@ -152,6 +150,46 @@ module Hecks
           cookie_val = read_csrf_cookie(req)
           form_val = req.query[Hecks::Conventions::CsrfContract::FIELD_NAME]
           Hecks::Conventions::CsrfContract.valid?(cookie_val, form_val)
+        end
+
+        def extract_filters(query_params, filterable_attrs)
+          allowed = filterable_attrs.map { |a| a.name.to_s }
+          query_params.each_with_object({}) do |(key, val), h|
+            next unless key.start_with?("filter[") && key.end_with?("]")
+            attr_name = key[7..-2]
+            h[attr_name.to_sym] = val if allowed.include?(attr_name) && !val.to_s.strip.empty?
+          end
+        end
+
+        def build_index_items(objects, user_attrs, ir, bridge, agg, prefix, p)
+          objects.map do |obj|
+            cells = user_attrs.map { |a|
+              if ir.reference_attr?(a)
+                ref_agg = ir.find_referenced_aggregate(a)
+                bridge.resolve_reference_display(obj, a, ref_agg&.name)
+              else
+                bridge.read_attribute(obj, a.name)
+              end
+            }
+            id = bridge.read_id(obj)
+            { id: id, short_id: id[0..7], show_href: "#{prefix}/#{p}/show?id=#{id}", cells: cells }
+          end
+        end
+
+        def append_computed_cells(items, ir, bridge, agg)
+          ir.computed_attributes(agg).each do |ca|
+            items.each do |item|
+              obj = bridge.find_by_id(agg.name, item[:id])
+              item[:cells] << bridge.evaluate_computed(obj, ca.block) if obj
+            end
+          end
+        end
+
+        def build_filter_query_string(filters, search_query)
+          parts = []
+          filters.each { |k, v| parts << "filter[#{k}]=#{ERB::Util.url_encode(v)}" }
+          parts << "q=#{ERB::Util.url_encode(search_query)}" if search_query && !search_query.strip.empty?
+          parts.empty? ? "" : "&#{parts.join("&")}"
         end
       end
     end

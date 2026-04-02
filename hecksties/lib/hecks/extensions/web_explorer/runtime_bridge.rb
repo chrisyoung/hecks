@@ -25,6 +25,17 @@ module Hecks
         klass_for(agg_name).all
       end
 
+      def search_and_filter(agg_name, filters: {}, query: nil, attributes: [])
+        klass = klass_for(agg_name)
+        results = apply_filters(klass, filters)
+        return results unless query && !query.strip.empty?
+
+        q = query.strip.downcase
+        results.select { |obj|
+          attributes.any? { |attr_name| obj.send(attr_name).to_s.downcase.include?(q) }
+        }
+      end
+
       def find_by_id(agg_name, id)
         klass_for(agg_name).find(id)
       end
@@ -60,6 +71,17 @@ module Hecks
       end
 
       private
+
+      def apply_filters(klass, filters)
+        return klass.all if filters.empty?
+        if klass.respond_to?(:where)
+          klass.where(**filters).to_a
+        else
+          klass.all.select { |obj|
+            filters.all? { |k, v| obj.send(k).to_s == v.to_s }
+          }
+        end
+      end
 
       def klass_for(agg_name)
         safe = domain_constant_name(agg_name)
