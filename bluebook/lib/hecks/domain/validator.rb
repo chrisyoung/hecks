@@ -26,7 +26,7 @@ module Hecks
   class Validator
     # Trigger autoloading of all validation rule modules so each rule
     # registers itself with Hecks.register_validation_rule.
-    [ValidationRules::Naming, ValidationRules::References, ValidationRules::Structure, ValidationRules::WorldConcerns].each do |mod|
+    [ValidationRules::Naming, ValidationRules::References, ValidationRules::Structure, ValidationRules::WorldConcerns, ValidationRules::WorldGoals].each do |mod|
       mod.constants.each { |c| mod.const_get(c) }
     end
 

@@ -66,6 +66,7 @@ module Hecks
     autoload :References,  "hecks/validation_rules/references"
     autoload :Structure,   "hecks/validation_rules/structure"
     autoload :WorldConcerns, "hecks/validation_rules/world_concerns"
+    autoload :WorldGoals,    "hecks/validation_rules/world_goals"
   end
 
   # = Hecks::DomainModel

@@ -71,6 +71,10 @@ module Hecks
       #   (e.g. :transparency, :consent, :privacy, :security)
       attr_reader :world_concerns
 
+      # @return [Array<Symbol>] declared world goals for this domain
+      #   (e.g. :equity, :sustainability). Goals produce advisory warnings only.
+      attr_reader :world_goals
+
       # @return [Array<DomainModel::SubscriberRegistration>] event subscriber registrations at the domain level
       attr_reader :event_subscribers
 
@@ -102,7 +106,7 @@ module Hecks
                      workflows: [], actors: [], custom_verbs: [],
                      tenancy: nil, event_subscribers: [],
                      sagas: [], glossary_rules: [], modules: [], glossary_strict: false,
-                     version: nil, world_concerns: [])
+                     version: nil, world_concerns: [], world_goals: [])
         validate_version!(version)
         @name = name
         @version = version
@@ -120,6 +124,7 @@ module Hecks
         @tenancy = tenancy
         @event_subscribers = event_subscribers
         @world_concerns = world_concerns.map(&:to_sym)
+        @world_goals = world_goals.map(&:to_sym)
       end
 
       # Returns the sanitized Ruby constant name for this domain.

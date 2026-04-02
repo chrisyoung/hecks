@@ -89,6 +89,12 @@
 - `:security` — command actors must be declared at domain level
 - **World Concerns Report** — `hecks validate` shows a per-concern PASS/FAIL summary with violations listed
 
+### World Goals (Advisory Validators)
+- `world_goals :equity, :sustainability` — opt-in advisory validators that produce warnings (never errors)
+- `:equity` — warns if only a single actor role is defined (concentrated authority)
+- `:sustainability` — warns if any aggregate lacks a lifecycle (no data retention/cleanup path)
+- Goals are only active when explicitly declared in the domain DSL
+
 ### Access Control & Ports
 - Define access-control ports that whitelist allowed methods per consumer
 - Import domains from event storm formats (Markdown and YAML)

@@ -66,6 +66,7 @@ module Hecks
         @tenancy = nil
         @event_subscribers = []
         @world_concerns = []
+        @world_goals = []
       end
 
       # Declare world concerns that this domain aspires to uphold.
@@ -78,6 +79,18 @@ module Hecks
       # @return [void]
       def world_concerns(*concerns)
         @world_concerns.concat(concerns.map(&:to_sym))
+      end
+
+      # Declare world goals that this domain aspires to. Goals produce advisory
+      # warnings (never errors) when the domain design could be improved.
+      # Available goals: :equity, :sustainability.
+      #
+      #   world_goals :equity, :sustainability
+      #
+      # @param goals [Array<Symbol>] one or more goal names
+      # @return [void]
+      def world_goals(*goals)
+        @world_goals.concat(goals.map(&:to_sym))
       end
 
       def actor(name, description: nil)
@@ -280,7 +293,8 @@ module Hecks
           event_subscribers: @event_subscribers,
           sagas: @sagas, glossary_rules: @glossary_rules, modules: @modules,
           glossary_strict: @glossary_strict || false,
-          world_concerns: @world_concerns
+          world_concerns: @world_concerns,
+          world_goals: @world_goals
         )
         classify_references(domain)
         if domain.respond_to?(:driving_ports=)
