@@ -434,6 +434,7 @@
 - `hecks migrations` — schema migration management
 - `hecks interview` — conversational onboarding that walks through domain definition interactively (name, aggregates, attributes, commands) and writes a Bluebook file
 - `hecks docs update` — sync doc headers and READMEs
+- `hecks benchmark` — run build, load, and dispatch benchmarks with monotonic timing; stores JSON results in `tmp/benchmarks/` and warns on 20% regressions; `--suite build|load|dispatch` for single suite; `--iterations N`; `--json` for machine output
 - All commands accept `--domain` flag consistently
 - `--format json` on `validate`, `inspect`, and `tree` commands for Studio/tooling consumption
 
