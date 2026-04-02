@@ -506,6 +506,17 @@
 - `add_lifecycle` and `add_transition` tools for state machine building via MCP
 - `add_attribute` tool for adding individual attributes to existing aggregates
 - All tool output uses `capture_output` to show the same terse feedback as the REPL
+- `review_domain` MCP tool runs an AI-powered DDD review returning structured findings with severity, category, and recommendations
+
+### AI Domain Review
+- `hecks review` CLI command runs an AI-powered DDD review of any domain model
+- Reviews aggregate boundaries, command design, value objects, naming, references, policies, and missing patterns
+- Structured findings with severity levels: critical, warning, suggestion
+- Each finding includes target element, category, message, and concrete recommendation
+- Overall score (1-10) with summary assessment
+- Degrades gracefully without `ANTHROPIC_API_KEY` — returns a stub review instead of crashing
+- JSON output format via `--format json` for tooling integration
+- Configurable model via `--model` option
 
 ### Command Bus Port (HTTP Adapter Boundary)
 - `Hecks::HTTP::CommandBusPort` — explicit port between HTTP routes and the domain

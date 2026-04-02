@@ -18,10 +18,13 @@ module Hecks
     autoload :TypeResolver,     "hecks_ai/type_resolver"
     autoload :LlmClient,        "hecks_ai/llm_client"
     autoload :DomainBuilder,    "hecks_ai/domain_builder"
+    autoload :DomainReviewer,   "hecks_ai/domain_reviewer"
 
     module Prompts
-      autoload :DomainGeneration, "hecks_ai/prompts/domain_generation"
-      autoload :DomainToolSchema, "hecks_ai/prompts/domain_tool_schema"
+      autoload :DomainGeneration,      "hecks_ai/prompts/domain_generation"
+      autoload :DomainToolSchema,      "hecks_ai/prompts/domain_tool_schema"
+      autoload :DomainReview,          "hecks_ai/prompts/domain_review"
+      autoload :DomainReviewToolSchema, "hecks_ai/prompts/domain_review_tool_schema"
     end
   end
 end

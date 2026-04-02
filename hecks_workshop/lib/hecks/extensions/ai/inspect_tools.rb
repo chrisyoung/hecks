@@ -13,6 +13,7 @@ module Hecks
     #   - +list_aggregates+  -- comma-separated list of aggregate names
     #   - +preview_code+     -- generated Ruby source code for an aggregate (or all)
     #   - +show_dsl+         -- the raw Hecks DSL source that defines the domain
+    #   - +review_domain+    -- AI-powered DDD review with structured findings
     #
     # All tools require an active session (enforced via +ctx.ensure_session!+).
     #
@@ -59,6 +60,19 @@ module Hecks
         ) do |_|
           ctx.ensure_session!
           ctx.workshop.to_dsl
+        end
+
+        server.define_tool(
+          name: "review_domain",
+          description: "AI-powered DDD review of the current domain model. Returns structured findings with severity, category, and recommendations. Requires ANTHROPIC_API_KEY.",
+          input_schema: { type: "object", properties: {} }
+        ) do |_|
+          ctx.ensure_session!
+          require "hecks_ai/domain_reviewer"
+          require "hecks_ai/prompts/domain_review"
+          domain = ctx.workshop.to_domain
+          review = Hecks::AI::DomainReviewer.new(domain).call
+          JSON.generate(review)
         end
       end
     end
