@@ -333,6 +333,8 @@
 - Every validation error includes a structured `hint` field with a fix suggestion -- rendered as colored "Fix:" lines in the CLI, included in `ValidationError` exception messages, and accessible via `error.hint` / `error.to_h`
 - Implicit foreign key detection: warns when `_id String` should be `reference_to("Aggregate")`
 - Validator collects non-blocking warnings alongside blocking errors
+- Big Ball of Mud detection: reference density warning (>2.0), hub aggregate detection (>50% inbound), cycle detection via DFS
+- Fan-out warning: aggregates with 4+ outgoing references flagged for potential responsibility splitting
 
 ## Domain Interface Versioning
 - `hecks version_tag <version>` — snapshot current domain DSL to `db/hecks_versions/<version>.rb` with metadata header

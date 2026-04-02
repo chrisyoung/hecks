@@ -14,6 +14,8 @@ module Hecks
   # - NoBidirectionalReferences: no two aggregates referencing each other
   # - NoSelfReferences: aggregates must not reference themselves
   # - NoValueObjectReferences: value objects must not contain references
+  # - BoundaryAnalysis: warns about Big Ball of Mud (density, hubs, cycles)
+  # - FanOut: warns when an aggregate has too many outgoing references
   # - AggregatesHaveCommands: every aggregate must have at least one command
   # - CommandsHaveAttributes: structural check on command attributes
   # - ValidPolicyEvents: policy events must match existing events
