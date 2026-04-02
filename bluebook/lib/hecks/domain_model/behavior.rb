@@ -43,6 +43,7 @@ module Hecks
       autoload :ScheduledStep,  "hecks/domain_model/behavior/workflow_step"
       autoload :Saga,           "hecks/domain_model/behavior/saga"
       autoload :SagaStep,       "hecks/domain_model/behavior/saga_step"
+      autoload :UpcasterDeclaration, "hecks/domain_model/behavior/upcaster_declaration"
     end
   end
 end

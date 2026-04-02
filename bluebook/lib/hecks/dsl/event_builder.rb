@@ -16,12 +16,27 @@ module Hecks
       def initialize(name)
         @name = name
         @attributes = []
+        @schema_version = 1
+      end
+
+      # Set the schema version for this event.
+      #
+      #   event "PolicyExpired" do
+      #     schema_version 3
+      #     attribute :policy_id, String
+      #   end
+      #
+      # @param version [Integer] the current schema version
+      # @return [void]
+      def schema_version(version)
+        @schema_version = version
       end
 
       def build
         DomainModel::Behavior::DomainEvent.new(
           name: @name,
-          attributes: @attributes
+          attributes: @attributes,
+          schema_version: @schema_version
         )
       end
     end

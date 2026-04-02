@@ -66,6 +66,7 @@ module Hecks
         @tenancy = nil
         @event_subscribers = []
         @world_concerns = []
+        @upcasters = []
       end
 
       # Declare world concerns that this domain aspires to uphold.
@@ -158,6 +159,24 @@ module Hecks
       def on_event(event_name, &block)
         @event_subscribers << DomainModel::SubscriberRegistration.new(
           event_name: event_name.to_s, block: block
+        )
+      end
+
+      # Declare an event upcaster that transforms stored event data from
+      # one schema version to the next.
+      #
+      #   upcast "CreatedPizza", from: 1, to: 2 do |data|
+      #     data.merge("description" => data.delete("style") || "")
+      #   end
+      #
+      # @param event_type [String] the event type name
+      # @param from [Integer] source schema version
+      # @param to [Integer] target schema version
+      # @yield [data] transform block receiving the event data hash
+      # @return [void]
+      def upcast(event_type, from:, to:, &block)
+        @upcasters << DomainModel::Behavior::UpcasterDeclaration.new(
+          event_type: event_type.to_s, from: from, to: to, transform: block
         )
       end
 
@@ -280,7 +299,7 @@ module Hecks
           event_subscribers: @event_subscribers,
           sagas: @sagas, glossary_rules: @glossary_rules, modules: @modules,
           glossary_strict: @glossary_strict || false,
-          world_concerns: @world_concerns
+          world_concerns: @world_concerns, upcasters: @upcasters
         )
         classify_references(domain)
         if domain.respond_to?(:driving_ports=)

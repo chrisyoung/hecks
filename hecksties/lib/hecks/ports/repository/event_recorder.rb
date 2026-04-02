@@ -27,8 +27,14 @@ module Hecks
         # Ensures the +domain_events+ table exists, creating it if necessary.
         #
         # @param db [Sequel::Database] the Sequel database connection to store events in
-        def initialize(db)
+        # @param upcaster_engine [Hecks::Events::UpcasterEngine, nil] optional engine
+        #   for upcasting stored events to their current schema version
+        # @param domain [Hecks::DomainModel::Structure::Domain, nil] optional domain IR
+        #   for resolving current event schema versions
+        def initialize(db, upcaster_engine: nil, domain: nil)
           @db = db
+          @upcaster_engine = upcaster_engine
+          @domain = domain
           ensure_table
         end
 
@@ -47,12 +53,15 @@ module Hecks
           stream_id = "#{aggregate_type}-#{aggregate_id}"
           version = next_version(stream_id)
 
+          event_type = Hecks::Utils.const_short_name(event)
+
           @db[:domain_events].insert(
             stream_id: stream_id,
-            event_type: Hecks::Utils.const_short_name(event),
+            event_type: event_type,
             data: serialize_event(event),
             occurred_at: event.occurred_at.iso8601,
-            version: version
+            version: version,
+            schema_version: current_schema_version(event_type)
           )
         end
 
@@ -119,13 +128,34 @@ module Hecks
         # @return [Hash] a normalized event hash with +:stream_id+, +:event_type+,
         #   +:data+ (parsed JSON), +:occurred_at+, and +:version+
         def deserialize_row(row)
+          data = JSON.parse(row[:data] || "{}")
+          stored_version = row[:schema_version] || 1
+          event_type = row[:event_type]
+          target_version = current_schema_version(event_type)
+
+          if @upcaster_engine && stored_version < target_version
+            data = @upcaster_engine.upcast(
+              event_type, data: data,
+              from_version: stored_version, to_version: target_version
+            )
+          end
+
           {
             stream_id: row[:stream_id],
-            event_type: row[:event_type],
-            data: JSON.parse(row[:data] || "{}"),
+            event_type: event_type,
+            data: data,
             occurred_at: row[:occurred_at],
-            version: row[:version]
+            version: row[:version],
+            schema_version: target_version
           }
+        end
+
+        # Returns the current schema version for an event type by looking
+        # it up in the domain IR. Defaults to 1 if no domain is set.
+        def current_schema_version(event_type)
+          return 1 unless @domain
+          event_ir = @domain.all_events.find { |e| e.name == event_type }
+          event_ir&.schema_version || 1
         end
 
         # Creates the +domain_events+ table if it does not already exist.
@@ -149,6 +179,7 @@ module Hecks
             String :data, text: true
             String :occurred_at
             Integer :version
+            Integer :schema_version, default: 1
             index :stream_id
           end
         end

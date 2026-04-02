@@ -74,6 +74,9 @@ module Hecks
       # @return [Array<DomainModel::SubscriberRegistration>] event subscriber registrations at the domain level
       attr_reader :event_subscribers
 
+      # @return [Array<DomainModel::Behavior::UpcasterDeclaration>] event upcaster declarations
+      attr_reader :upcasters
+
       # @return [String, nil] the filesystem path where this domain's source files live.
       #   Set after compilation or when loading from a gem. Used by generators to know
       #   where to write output files.
@@ -102,7 +105,7 @@ module Hecks
                      workflows: [], actors: [], custom_verbs: [],
                      tenancy: nil, event_subscribers: [],
                      sagas: [], glossary_rules: [], modules: [], glossary_strict: false,
-                     version: nil, world_concerns: [])
+                     version: nil, world_concerns: [], upcasters: [])
         validate_version!(version)
         @name = name
         @version = version
@@ -119,6 +122,7 @@ module Hecks
         @custom_verbs = custom_verbs
         @tenancy = tenancy
         @event_subscribers = event_subscribers
+        @upcasters = upcasters
         @world_concerns = world_concerns.map(&:to_sym)
       end
 

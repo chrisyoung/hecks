@@ -48,6 +48,15 @@
 - Define event subscribers with `on_event` for arbitrary side-effect code on events
 - Domain-level `on_event` subscribers for cross-aggregate reactions
 
+### Event Versioning & Upcasting
+- `schema_version` on explicit events: `event "CreatedPizza" do; schema_version 2; end` — tracks the current schema version in the domain IR
+- Domain-level `upcast` declarations: `upcast "CreatedPizza", from: 1, to: 2 do |data| ... end` — transforms stored event data between schema versions
+- EventUpcasterRegistry maps [event_type, version] pairs to transform procs
+- UpcasterEngine chains transforms sequentially (v1 -> v2 -> v3) to reach the current version
+- EventRecorder stores `schema_version` on every persisted event
+- EventRecorder applies upcasting transparently on read — `history` and `all_events` return current-version data
+- BuildEngine factory wires domain IR upcaster declarations into a registry and engine
+
 ### Queries & Scopes
 - Define named queries with `where`, `order`, `limit`, `offset` chainable DSL
 - Define named scopes as hash conditions or lambda predicates
