@@ -131,6 +131,7 @@
 - `hecks_transactions` — DB transaction wrapping when SQL adapter present
 - `hecks_retry` — exponential backoff for transient errors
 - `hecks_tracing` — distributed tracing: thread-local `trace_id` stamped on every published event, `Hecks.event_trace_id(event)` lookup, `Hecks.with_trace(id) { }` scoped block
+- `hecks_policy_tracing` — reactive policy execution traces: `Hecks.policy_traces` returns policy name, trigger event, condition result, and timestamp for each invocation
 
 ### Domain Connections DSL
 - `extend :sqlite` — declare persistence adapter
