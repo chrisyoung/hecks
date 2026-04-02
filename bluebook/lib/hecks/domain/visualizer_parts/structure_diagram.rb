@@ -23,31 +23,21 @@ module Hecks
       def generate_structure
         lines = ["classDiagram"]
 
-        @domain.aggregates.each do |agg|
-          lines << "    class #{agg.name} {"
-          agg.attributes.each do |attr|
-            lines << "        #{attribute_label(attr)}"
-          end
-          lines << "    }"
-
-          agg.value_objects.each do |vo|
-            lines << "    class #{vo.name} {"
-            vo.attributes.each do |attr|
-              lines << "        #{attribute_label(attr)}"
+        if @domain.modules.any?
+          @domain.modules.each do |mod|
+            mod_name = mod.respond_to?(:name) ? mod.name : mod[:name]
+            mod_aggs = mod.respond_to?(:aggregates) ? mod.aggregates : (mod[:aggregates] || [])
+            lines << "    namespace #{mod_name} {"
+            @domain.aggregates.select { |a| mod_aggs.include?(a.name) }.each do |agg|
+              lines.concat(aggregate_structure_lines(agg))
             end
             lines << "    }"
-            lines << "    #{agg.name} *-- #{vo.name}"
           end
+        end
 
-          agg.entities.each do |ent|
-            lines << "    class #{ent.name} {"
-            lines << "        +id : UUID"
-            ent.attributes.each do |attr|
-              lines << "        #{attribute_label(attr)}"
-            end
-            lines << "    }"
-            lines << "    #{agg.name} *-- #{ent.name}"
-          end
+        ungrouped = ungrouped_aggregates_for_viz
+        ungrouped.each do |agg|
+          lines.concat(aggregate_structure_lines(agg))
         end
 
         references(lines)
@@ -55,6 +45,34 @@ module Hecks
       end
 
       private
+
+      def aggregate_structure_lines(agg)
+        lines = []
+        lines << "    class #{agg.name} {"
+        agg.attributes.each { |attr| lines << "        #{attribute_label(attr)}" }
+        lines << "    }"
+        agg.value_objects.each do |vo|
+          lines << "    class #{vo.name} {"
+          vo.attributes.each { |attr| lines << "        #{attribute_label(attr)}" }
+          lines << "    }"
+          lines << "    #{agg.name} *-- #{vo.name}"
+        end
+        agg.entities.each do |ent|
+          lines << "    class #{ent.name} {"
+          lines << "        +id : UUID"
+          ent.attributes.each { |attr| lines << "        #{attribute_label(attr)}" }
+          lines << "    }"
+          lines << "    #{agg.name} *-- #{ent.name}"
+        end
+        lines
+      end
+
+      def ungrouped_aggregates_for_viz
+        grouped = @domain.modules.flat_map do |mod|
+          mod.respond_to?(:aggregates) ? mod.aggregates : (mod[:aggregates] || [])
+        end
+        @domain.aggregates.reject { |a| grouped.include?(a.name) }
+      end
 
       # Format an attribute for display in a Mermaid class diagram.
       # List attributes show as +Type[] name+, references show as

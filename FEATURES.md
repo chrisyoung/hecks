@@ -11,6 +11,7 @@
 - Closed operations on value objects: `operation :add, operator: :+ do |other| ... end` — methods that take another instance of the same type and return a new instance (closure of operations)
 - Side-effect-free functions: `function :full_name do ... end` on aggregates and value objects — pure computations from attributes, no mutation
 - Domain classification: `classification :core/:supporting/:generic` — strategic DDD classification with predicate methods (`core?`, `supporting?`, `generic?`), defaults to `:supporting`
+- Domain modules: `domain_module` promotes to proper IR node with `module_for(agg)` lookup, visualizer groups by module with Mermaid `namespace`, serializer emits `domain_module` blocks
 - Define entities within aggregates — sub-objects with identity (UUID), mutable, not frozen
 - Multi-domain support with shared event bus across domains
 - Domain version pinning and local path loading in configuration

@@ -58,6 +58,7 @@ module Hecks
       autoload :Reference,         "hecks/domain_model/structure/reference"
       autoload :ComputedAttribute,  "hecks/domain_model/structure/computed_attribute"
       autoload :ClosedOperation,   "hecks/domain_model/structure/closed_operation"
+      autoload :DomainModule,      "hecks/domain_model/structure/domain_module"
       autoload :PureFunction,      "hecks/domain_model/structure/pure_function"
     end
   end

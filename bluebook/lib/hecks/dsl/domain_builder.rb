@@ -134,13 +134,13 @@ module Hecks
       #     aggregate "GovernancePolicy" do ... end
       #   end
       def domain_module(name, &block)
-        mod = { name: name, aggregates: [] }
+        agg_names = []
         if block
           sub = ModuleBuilder.new(name, self)
           sub.instance_eval(&block)
-          mod[:aggregates] = sub.aggregate_names
+          agg_names = sub.aggregate_names
         end
-        @modules << mod
+        @modules << Structure::DomainModule.new(name: name, aggregates: agg_names)
       end
 
       # Set the multi-tenancy strategy for this domain.

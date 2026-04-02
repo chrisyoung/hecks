@@ -246,6 +246,15 @@ module Hecks
         aggregates.flat_map(&:events)
       end
 
+      # Find the module that contains a given aggregate.
+      #
+      # @param agg [Aggregate, String] an aggregate or aggregate name
+      # @return [DomainModule, nil] the containing module, or nil if ungrouped
+      def module_for(agg)
+        name = agg.is_a?(String) ? agg : agg.name
+        modules.find { |m| m.aggregates.include?(name) }
+      end
+
       # Find the aggregate that owns a command by name.
       #
       # @param command_name [String] the command name

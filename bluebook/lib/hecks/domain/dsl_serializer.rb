@@ -18,8 +18,12 @@ module Hecks
       if @domain.respond_to?(:domain_classification) && @domain.domain_classification != :supporting
         lines << "  classification :#{@domain.domain_classification}"
       end
-      @domain.aggregates.each_with_index do |agg, i|
-        lines << "" if i > 0
+      @domain.modules.each do |mod|
+        lines.concat(serialize_domain_module(mod))
+      end
+      ungrouped = ungrouped_aggregates
+      ungrouped.each_with_index do |agg, i|
+        lines << "" if i > 0 || @domain.modules.any?
         lines.concat(serialize_aggregate(agg))
       end
       @domain.policies.each { |pol| lines.concat(serialize_domain_policy(pol)) }
@@ -178,6 +182,25 @@ module Hecks
          "        #{Hecks::Utils.block_source(op.block)}",
          "      end"]
       end
+    end
+
+    def serialize_domain_module(mod)
+      mod_name = mod.respond_to?(:name) ? mod.name : mod[:name]
+      mod_aggs = mod.respond_to?(:aggregates) ? mod.aggregates : (mod[:aggregates] || [])
+      lines = ["", "  domain_module \"#{mod_name}\" do"]
+      mod_aggs.each do |agg_name|
+        agg = @domain.aggregates.find { |a| a.name == agg_name }
+        lines.concat(serialize_aggregate(agg).map { |l| "  #{l}" }) if agg
+      end
+      lines << "  end"
+      lines
+    end
+
+    def ungrouped_aggregates
+      grouped = @domain.modules.flat_map do |mod|
+        mod.respond_to?(:aggregates) ? mod.aggregates : (mod[:aggregates] || [])
+      end
+      @domain.aggregates.reject { |a| grouped.include?(a.name) }
     end
 
     def serialize_domain_policy(pol)
