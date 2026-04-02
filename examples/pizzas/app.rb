@@ -9,6 +9,7 @@ require "hecks"
 
 # Boot the domain — loads, validates, builds, and wires everything in one call
 app = Hecks.boot(__dir__)
+app.capability(:crud)
 
 # Subscribe to events
 app.on("CreatedPizza") do |event|

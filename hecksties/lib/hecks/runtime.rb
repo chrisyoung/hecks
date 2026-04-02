@@ -256,6 +256,24 @@ module Hecks
         puts "#{name} extension applied"
       end
 
+      # Apply a capability to the live runtime, enriching the domain IR.
+      #
+      # Capabilities generate constructs (commands, repository bindings) by
+      # visiting the domain IR. Unlike extensions, they modify what the domain
+      # can do rather than adding infrastructure around it.
+      #
+      #   runtime.capability(:crud)
+      #
+      # @param name [Symbol] the registered capability name
+      # @return [void]
+      # @raise [RuntimeError] if the capability is not registered
+      def capability(name)
+        require "hecks/capabilities/#{name}"
+        hook = Hecks.capability_registry[name.to_sym]
+        raise "Unknown capability: #{name}. Available: #{Hecks.capability_registry.keys.join(', ')}" unless hook
+        hook.call(self)
+      end
+
       # Returns a human-readable summary of this runtime instance, showing the
       # domain name and number of wired repositories.
       #
