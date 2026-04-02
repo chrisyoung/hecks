@@ -108,6 +108,10 @@
 - Auto-implemented as `find_by_<name>(value)` on memory adapter repositories
 - `FinderMethods.bind(aggregate, repo)` — bind finders onto any repository
 
+### Contract Testing
+- `Hecks::ContractTesting.install!` — register shared RSpec examples for repository contract verification
+- `it_behaves_like "a Hecks repository"` — verify CRUD, query, count, clear on any adapter
+
 ### Persistence Extensions
 - `hecks_sqlite` — SQLite persistence, auto-wires when in Gemfile
 - `hecks_postgres` — PostgreSQL persistence
