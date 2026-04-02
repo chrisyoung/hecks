@@ -18,6 +18,11 @@ module Hecks
   # - CommandsHaveAttributes: structural check on command attributes
   # - ValidPolicyEvents: policy events must match existing events
   # - ValidPolicyTriggers: policy triggers must name existing commands
+  # - TooManyAttributes: warns when aggregate has 8+ attributes
+  # - TooManyValueObjects: warns when aggregate has 5+ value objects
+  # - MissingLifecycle: warns when status attr present but no lifecycle
+  # - CohesionAnalysis: warns when commands touch few root attributes
+  # - GodAggregate: warns when aggregate exceeds all three thresholds
   #
   #   validator = Validator.new(domain)
   #   validator.valid?   # => true/false
