@@ -1,5 +1,19 @@
+# HecksCLI::Commands::NewProject
+#
+# Creates a new Hecks project scaffold with a Bluebook, app.rb, Gemfile,
+# spec/spec_helper.rb, .gitignore, and .rspec.
+#
+# Usage:
+#   hecks new my_domain
+#   hecks new my_domain --no-world-goals
+#
+require_relative "../world_goals_prompt"
+
 Hecks::CLI.register_command(:new_project, "Create a new Hecks project",
-  args: ["NAME"]
+  args: ["NAME"],
+  options: {
+    "no-world-goals": { type: :boolean, default: false, desc: "Skip world goals onboarding prompt (for CI)" }
+  }
 ) do |name|
   pascal = Hecks::Utils.sanitize_constant(name)
   dir = name
@@ -9,18 +23,13 @@ Hecks::CLI.register_command(:new_project, "Create a new Hecks project",
     next
   end
 
-  available_goals = %i[transparency consent privacy security]
-  selected_goals = []
+  world_concerns = []
+  domain_mode = :skip
 
-  if $stdin.tty?
-    say ""
-    say "World concerns are opt-in ethical validation rules for your domain.", :cyan
-    say "Available: #{available_goals.map { |g| ":#{g}" }.join(", ")}"
-    say "Enter concerns (space-separated), or press Enter to skip:"
-    input = $stdin.gets&.chomp
-    if input && !input.strip.empty?
-      selected_goals = input.strip.split(/\s+/).map(&:to_sym) & available_goals
-    end
+  if !options[:"no-world-goals"] && $stdin.tty?
+    result = HecksCLI::WorldGoalsPrompt.run(shell: shell)
+    domain_mode = result[:mode]
+    world_concerns = result[:goals] || []
   end
 
   app_template = lambda do
@@ -78,7 +87,7 @@ Hecks::CLI.register_command(:new_project, "Create a new Hecks project",
 
   FileUtils.mkdir_p(File.join(dir, "spec"))
 
-  write_or_diff(File.join(dir, "#{pascal}Bluebook"), domain_template(pascal, world_concerns: selected_goals))
+  write_or_diff(File.join(dir, "#{pascal}Bluebook"), domain_template(pascal, world_concerns: world_concerns, mode: domain_mode))
   write_or_diff(File.join(dir, "app.rb"), app_template.call)
   write_or_diff(File.join(dir, "Gemfile"), gemfile_template.call)
   write_or_diff(File.join(dir, "spec", "spec_helper.rb"), spec_helper_template.call)

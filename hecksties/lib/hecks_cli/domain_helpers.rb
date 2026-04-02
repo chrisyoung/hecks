@@ -116,9 +116,11 @@ module Hecks
       result.suggestions.each { |s| say "    - #{s}", :cyan }
     end
 
-    def domain_template(name, world_concerns: [])
+    def domain_template(name, world_concerns: [], mode: :skip)
       concerns_line = if world_concerns.any?
         "\n  world_concerns #{world_concerns.map { |g| ":#{g}" }.join(", ")}\n"
+      elsif mode == :not_applicable
+        "\n  # world_concerns :transparency, :consent  # add when ready\n"
       else
         ""
       end

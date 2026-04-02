@@ -427,7 +427,7 @@
 - Preview mode with `--preview` flag
 
 ## CLI Commands
-- `hecks new NAME` — scaffold a complete project with interactive world goals onboarding (opt-out by pressing Enter; skipped in non-interactive/CI)
+- `hecks new NAME` — scaffold a complete project with interactive world goals onboarding: choose to declare goals, skip, or mark as not applicable; `--no-world-goals` flag skips prompt entirely (for CI)
 - `hecks build` — validate and generate versioned gem
 - `hecks build --gem` — produce a publishable `.gem` artifact after building (runs `gem build` on generated output); supported for `ruby` and `static` targets
 - `hecks serve [--rpc]` — start REST or JSON-RPC server
