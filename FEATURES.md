@@ -343,6 +343,8 @@
 - Breaking change classification: removed commands, removed attributes, removed aggregates marked as BREAKING
 - Non-breaking changes: added commands, added attributes, added queries, added scopes
 - Auto-bump domain version on breaking changes: `hecks build` compares against the latest tagged snapshot and auto-bumps CalVer when breaking changes are detected
+- `hecks changelog` — generate a Markdown changelog from all tagged version snapshots, with Breaking Changes and Additions sections per version
+- `hecks changelog --output DOMAIN_CHANGELOG.md` — write the changelog to a file instead of stdout
 
 ## Migrations & Schema Evolution
 - `DomainDiff` detects added/removed aggregates, attributes, VOs, entities, commands, policies, validations, invariants, queries, scopes, subscribers, specifications

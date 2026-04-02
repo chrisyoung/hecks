@@ -10,6 +10,8 @@
 #
 require_relative "domain_versioning/breaking_classifier"
 require_relative "domain_versioning/breaking_bumper"
+require_relative "domain_versioning/changelog_generator"
+require_relative "domain_versioning/changelog_renderer"
 
 module Hecks
   module DomainVersioning
