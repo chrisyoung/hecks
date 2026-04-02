@@ -44,19 +44,25 @@ module Hecks
       #   Each generates a method that takes another instance and returns a new instance.
       attr_reader :operations
 
+      # @return [Array<PureFunction>] side-effect-free functions that compute results
+      #   from attributes without mutating state.
+      attr_reader :functions
+
       # Creates a new ValueObject IR node.
       #
       # @param name [String] PascalCase name of the value object (e.g., "Address", "Money")
       # @param attributes [Array<Attribute>] the attributes that define this value object
       # @param invariants [Array<Invariant>] business rules enforced at construction time
       # @param operations [Array<ClosedOperation>] closed operations on this value object
+      # @param functions [Array<PureFunction>] side-effect-free functions
       #
       # @return [ValueObject] a new ValueObject instance
-      def initialize(name:, attributes: [], invariants: [], operations: [])
+      def initialize(name:, attributes: [], invariants: [], operations: [], functions: [])
         @name = name
         @attributes = attributes
         @invariants = invariants
         @operations = operations
+        @functions = functions
       end
     end
     end

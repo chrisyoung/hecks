@@ -36,6 +36,7 @@ module Hecks
       lines.concat(serialize_invariants(agg.invariants, "    "))
       lines.concat(serialize_scopes(agg.scopes))
       lines.concat(serialize_computed_attributes(agg.computed_attributes))
+      lines.concat(serialize_functions(agg.functions, "    "))
       lines.concat(serialize_queries(agg.queries))
       lines.concat(serialize_specifications(agg.specifications))
       lines.concat(serialize_commands(agg.commands))
@@ -55,6 +56,7 @@ module Hecks
         lines.concat(serialize_attributes(vo.attributes, "      "))
         lines.concat(serialize_invariants(vo.invariants, "      "))
         lines.concat(serialize_operations(vo.operations))
+        lines.concat(serialize_functions(vo.functions, "      "))
         lines << "    end"
       end
     end
@@ -155,6 +157,14 @@ module Hecks
         lines = ["", "    on_event \"#{sub.event_name}\"#{async_opt} do |event|"]
         lines << "      #{Hecks::Utils.block_source(sub.block)}" if sub.block
         lines << "    end"
+      end
+    end
+
+    def serialize_functions(functions, indent)
+      (functions || []).flat_map do |func|
+        ["", "#{indent}function :#{func.name} do",
+         "#{indent}  #{Hecks::Utils.block_source(func.block)}",
+         "#{indent}end"]
       end
     end
 

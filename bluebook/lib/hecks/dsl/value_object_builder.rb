@@ -38,6 +38,7 @@ module Hecks
         @attributes = []
         @invariants = []
         @operations = []
+        @functions = []
       end
 
       # Define an invariant constraint on this value object.
@@ -65,6 +66,18 @@ module Hecks
         @operations << Structure::ClosedOperation.new(name: name, operator: operator, block: block)
       end
 
+      # Define a side-effect-free function on this value object.
+      #
+      # Pure functions compute a result from the object's attributes
+      # without mutating state. They are generated as instance methods.
+      #
+      # @param name [Symbol] the method name
+      # @yield block that computes the result from attributes
+      # @return [void]
+      def function(name, &block)
+        @functions << Structure::PureFunction.new(name: name, block: block)
+      end
+
       # Implicit DSL: `name Type` → attribute
       def method_missing(name, *args, **kwargs, &block)
         if args.first.is_a?(Class) || (args.first.is_a?(String) && args.first =~ /\A[A-Z]/)
@@ -86,7 +99,8 @@ module Hecks
           name: @name,
           attributes: @attributes,
           invariants: @invariants,
-          operations: @operations
+          operations: @operations,
+          functions: @functions
         )
       end
     end

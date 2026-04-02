@@ -106,6 +106,7 @@ module Hecks
         lines << "      end"
         lines << ""
         lines.concat(operation_lines) unless @vo.operations.empty?
+        lines.concat(function_lines) unless @vo.functions.empty?
         lines << "      private"
         lines << ""
         lines.concat(invariant_lines)
@@ -165,6 +166,19 @@ module Hecks
           if op.operator
             lines << "      alias #{op.operator} #{op.name}"
           end
+        end
+        lines
+      end
+
+      # Generates lines for side-effect-free function methods.
+      #
+      # @return [Array<String>] lines of Ruby source code for function methods
+      def function_lines
+        lines = [""]
+        @vo.functions.each do |func|
+          lines << "      def #{func.name}"
+          lines << "        #{Hecks::Utils.block_source(func.block)}"
+          lines << "      end"
         end
         lines
       end

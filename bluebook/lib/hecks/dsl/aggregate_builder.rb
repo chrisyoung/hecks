@@ -78,6 +78,7 @@ module Hecks
         @explicit_events = []
         @factories = []
         @computed_attributes = []
+        @functions = []
         @lifecycle = nil
         @identity_fields = nil
         @metadata = {}
@@ -97,6 +98,19 @@ module Hecks
       #
       def computed(name, &block)
         @computed_attributes << Structure::ComputedAttribute.new(name: name.to_sym, block: block)
+      end
+
+      # Define a side-effect-free function on this aggregate.
+      #
+      # Pure functions compute a result from the aggregate's attributes
+      # without mutating state. Generated as instance methods.
+      #
+      #   function :full_name do
+      #     "#{first_name} #{last_name}"
+      #   end
+      #
+      def function(name, &block)
+        @functions << Structure::PureFunction.new(name: name, block: block)
       end
 
       # Declare a natural key composed from attributes.
@@ -188,7 +202,7 @@ module Hecks
           scopes: @scopes, queries: @queries,
           subscribers: @subscribers,
           specifications: @specifications, computed_attributes: @computed_attributes,
-          lifecycle: @lifecycle,
+          functions: @functions, lifecycle: @lifecycle,
           metadata: @metadata, references: @references,
           factories: @factories, identity_fields: @identity_fields
         )

@@ -9,6 +9,7 @@
 - Inline aggregate definitions with `definition:` keyword — attaches a human-readable description to the aggregate IR, surfaced in `Hecks.aggregates` inspector output
 - Define value objects as immutable nested types within aggregates
 - Closed operations on value objects: `operation :add, operator: :+ do |other| ... end` — methods that take another instance of the same type and return a new instance (closure of operations)
+- Side-effect-free functions: `function :full_name do ... end` on aggregates and value objects — pure computations from attributes, no mutation
 - Define entities within aggregates — sub-objects with identity (UUID), mutable, not frozen
 - Multi-domain support with shared event bus across domains
 - Domain version pinning and local path loading in configuration
