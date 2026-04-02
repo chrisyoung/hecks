@@ -1,4 +1,5 @@
 require_relative "workshop_runner/constant_hoister"
+require_relative "natural_language_interpreter"
 
 module Hecks
   class Workshop
@@ -94,6 +95,24 @@ module Hecks
       print_help
       nil
     end
+
+    # Natural language domain editing via the REPL.
+    # Interprets English phrases as workshop DSL actions.
+    #
+    # @param phrase [String] natural language command
+    # @return [Object, nil] result, or nil if unrecognized
+    def say(phrase)
+      @interpreter ||= NaturalLanguageInterpreter.new(self)
+      result = @interpreter.interpret(phrase)
+      if result.nil?
+        puts "I didn't understand: #{phrase}"
+        puts "Try: 'add an aggregate called Pizza', 'give Pizza a name attribute'"
+      end
+      result
+    end
+
+    # Alias for say -- allows `domain_edit "..."` in REPL
+    alias_method :domain_edit, :say
 
     def inspect
       mode = @workshop&.play? ? "play" : "sketch"

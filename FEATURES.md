@@ -734,6 +734,47 @@
 - Same IR output — implicit is sugar on top of explicit DSL
 - Both forms can be mixed in the same file
 
+## Developer Experience
+
+### Naming Analysis (HEC-73)
+- IntentionRevealingNames: warns about generic aggregate/attribute names (Data, Info, Item, Thing)
+- EventNaming: warns when domain events are not past tense (e.g., CreatePizza → should be CreatedPizza)
+- AttributeNaming: warns about Hungarian notation prefixes, redundant type suffixes, boolean `is_`/`has_` prefixes
+
+### Conceptual Contours (HEC-74)
+- TooManyAttributes: warns when aggregate has 8+ attributes — extract value objects
+- TooManyValueObjects: warns when aggregate has 5+ value objects — consider splitting
+- MissingLifecycle: warns when status/state attribute lacks lifecycle DSL
+- CohesionAnalysis: warns when commands touch disjoint attribute sets (score < 0.3)
+- GodAggregate: warns when 2+ complexity thresholds co-occur (attributes, commands, VOs)
+
+### Boundary Analysis (HEC-83)
+- BoundaryAnalysis: warns about high reference density (>0.5), hub aggregates (3+ inbound), reference cycles via DFS
+- FanOut: warns when aggregate has 4+ outgoing references — high coupling
+
+### Benchmarks (HEC-95)
+- `hecks benchmark` — measures build, load, and dispatch performance
+- JSON result storage with append history
+- 20% regression detection against stored baseline
+- Configurable iterations, domain path, output format
+
+### Property-Based Testing (HEC-96)
+- TypeGenerator: seeded random values for all Hecks types (String, Integer, Float, Boolean, Date)
+- AggregateGenerator: random valid attribute hashes for commands and roots
+- DomainFuzzer: dispatches random commands, reports successes/failures with seed for reproduction
+
+### AI Domain Review (HEC-103)
+- `hecks review` — structured DDD feedback on naming, boundaries, missing concepts
+- Uses Anthropic API when ANTHROPIC_API_KEY is set
+- Falls back to local heuristic review (validation warnings + domain structure analysis)
+- JSON output for tooling integration
+
+### Implicit DSL in REPL (HEC-230)
+- `say "add an aggregate called Pizza"` — natural language domain editing in workshop
+- `domain_edit` alias for `say`
+- Recognizes: add aggregate, add attribute, add command, references, remove, validate, build, save
+- Graceful degradation: unrecognized phrases return nil with helpful suggestions
+
 ## Testing
 
 ### Cross-Target Parity
