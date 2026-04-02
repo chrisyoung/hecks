@@ -84,6 +84,15 @@ module Hecks
             lines << "    end"
           end
         end
+        unless (@aggregate.functions || []).empty?
+          lines << ""
+          lines << "    # Pure functions — side-effect-free"
+          @aggregate.functions.each do |fn|
+            lines << "    def #{fn.name}"
+            lines << "      #{Hecks::Utils.block_source(fn.block)}"
+            lines << "    end"
+          end
+        end
         if @aggregate.lifecycle
           lines << ""
           lines << "    # State predicates — see lifecycle.rb for full state machine"

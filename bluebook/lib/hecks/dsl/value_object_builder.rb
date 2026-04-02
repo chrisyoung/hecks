@@ -37,6 +37,7 @@ module Hecks
         @name = name
         @attributes = []
         @invariants = []
+        @functions = []
       end
 
       # Define an invariant constraint on this value object.
@@ -49,6 +50,17 @@ module Hecks
       # @return [void]
       def invariant(message, &block)
         @invariants << Structure::Invariant.new(message: message, block: block)
+      end
+
+      # Declare a side-effect-free function on this value object. The block
+      # body becomes a method on the generated class.
+      #
+      #   function :display do
+      #     "#{street}, #{city}"
+      #   end
+      #
+      def function(name, &block)
+        @functions << Structure::PureFunction.new(name: name.to_sym, block: block)
       end
 
       # Implicit DSL: `name Type` → attribute
@@ -71,7 +83,8 @@ module Hecks
         Structure::ValueObject.new(
           name: @name,
           attributes: @attributes,
-          invariants: @invariants
+          invariants: @invariants,
+          functions: @functions
         )
       end
     end

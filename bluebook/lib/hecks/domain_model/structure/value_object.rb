@@ -40,6 +40,9 @@ module Hecks
       #   Evaluated during construction; if any invariant fails, the object cannot be created.
       attr_reader :invariants
 
+      # @return [Array<PureFunction>] side-effect-free functions defined on this value object
+      attr_reader :functions
+
       # Creates a new ValueObject IR node.
       #
       # @param name [String] PascalCase name of the value object (e.g., "Address", "Money")
@@ -47,10 +50,11 @@ module Hecks
       # @param invariants [Array<Invariant>] business rules enforced at construction time
       #
       # @return [ValueObject] a new ValueObject instance
-      def initialize(name:, attributes: [], invariants: [])
+      def initialize(name:, attributes: [], invariants: [], functions: [])
         @name = name
         @attributes = attributes
         @invariants = invariants
+        @functions = functions
       end
     end
     end

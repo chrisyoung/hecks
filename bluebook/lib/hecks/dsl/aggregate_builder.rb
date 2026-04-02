@@ -78,6 +78,7 @@ module Hecks
         @explicit_events = []
         @factories = []
         @computed_attributes = []
+        @functions = []
         @lifecycle = nil
         @identity_fields = nil
         @metadata = {}
@@ -97,6 +98,17 @@ module Hecks
       #
       def computed(name, &block)
         @computed_attributes << Structure::ComputedAttribute.new(name: name.to_sym, block: block)
+      end
+
+      # Declare a side-effect-free function. The block body becomes a method
+      # on the generated aggregate class. Functions may only read attributes.
+      #
+      #   function :full_address do
+      #     "#{street}, #{city} #{zip}"
+      #   end
+      #
+      def function(name, &block)
+        @functions << Structure::PureFunction.new(name: name.to_sym, block: block)
       end
 
       # Declare a natural key composed from attributes.
@@ -188,7 +200,7 @@ module Hecks
           scopes: @scopes, queries: @queries,
           subscribers: @subscribers,
           specifications: @specifications, computed_attributes: @computed_attributes,
-          lifecycle: @lifecycle,
+          functions: @functions, lifecycle: @lifecycle,
           metadata: @metadata, references: @references,
           factories: @factories, identity_fields: @identity_fields
         )

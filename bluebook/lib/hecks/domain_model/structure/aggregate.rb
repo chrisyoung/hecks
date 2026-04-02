@@ -72,6 +72,9 @@ module Hecks
       # @return [Array<ComputedAttribute>] derived attributes computed from other attributes
       attr_reader :computed_attributes
 
+      # @return [Array<PureFunction>] side-effect-free functions defined on this aggregate
+      attr_reader :functions
+
       # @return [Lifecycle, nil] optional state machine definition
       attr_reader :lifecycle
 
@@ -107,6 +110,7 @@ module Hecks
                      scopes: [], queries: [], subscribers: [],
                      specifications: [], references: [],
                      factories: [], computed_attributes: [],
+                     functions: [],
                      lifecycle: nil, metadata: {}, origin_domain: nil,
                      identity_fields: nil)
         @name = Names.aggregate_name(name)
@@ -125,6 +129,7 @@ module Hecks
         @references = references
         @factories = factories
         @computed_attributes = computed_attributes
+        @functions = functions
         @lifecycle = lifecycle
         @metadata = metadata
         @origin_domain = origin_domain

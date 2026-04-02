@@ -11,6 +11,7 @@ module Hecks
     # - +UniqueAggregateNames+ -- no duplicate aggregate names within a domain
     # - +ReservedNames+ -- rejects Ruby keywords as attribute names and invalid aggregate constants
     # - +ComputedNameCollisions+ -- computed attribute names must not collide with regular attribute names
+    # - +FunctionNameCollisions+ -- pure function names must not collide with attributes or computed attributes
     # - +GlossaryTermViolations+ -- warns (or errors in strict mode) when names use banned glossary terms
     # - +SafeIdentifierNames+ -- rejects dangerous characters that could cause injection in generated Go/Ruby code
     #
@@ -22,6 +23,7 @@ module Hecks
       autoload :UniqueAggregateNames,   "hecks/validation_rules/naming/unique_aggregate_names"
       autoload :ReservedNames,          "hecks/validation_rules/naming/reserved_names"
       autoload :ComputedNameCollisions, "hecks/validation_rules/naming/computed_name_collisions"
+      autoload :FunctionNameCollisions, "hecks/validation_rules/naming/function_name_collisions"
       autoload :GlossaryTermViolations, "hecks/validation_rules/naming/glossary_term_violations"
       autoload :SafeIdentifierNames,    "hecks/validation_rules/naming/safe_identifier_names"
     end

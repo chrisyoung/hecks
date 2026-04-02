@@ -104,6 +104,15 @@ module Hecks
           lines << "        [self.class, #{@vo.attributes.map(&:name).join(", ")}].hash"
         end
         lines << "      end"
+        unless (@vo.functions || []).empty?
+          lines << ""
+          lines << "      # Pure functions — side-effect-free"
+          @vo.functions.each do |fn|
+            lines << "      def #{fn.name}"
+            lines << "        #{Hecks::Utils.block_source(fn.block)}"
+            lines << "      end"
+          end
+        end
         lines << ""
         lines << "      private"
         lines << ""

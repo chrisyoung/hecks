@@ -36,6 +36,7 @@ module Hecks
       lines.concat(serialize_invariants(agg.invariants, "    "))
       lines.concat(serialize_scopes(agg.scopes))
       lines.concat(serialize_computed_attributes(agg.computed_attributes))
+      lines.concat(serialize_functions(agg.functions))
       lines.concat(serialize_queries(agg.queries))
       lines.concat(serialize_specifications(agg.specifications))
       lines.concat(serialize_commands(agg.commands))
@@ -54,6 +55,7 @@ module Hecks
         lines = ["", "    value_object \"#{vo.name}\" do"]
         lines.concat(serialize_attributes(vo.attributes, "      "))
         lines.concat(serialize_invariants(vo.invariants, "      "))
+        lines.concat(serialize_functions(vo.functions, "      "))
         lines << "    end"
       end
     end
@@ -83,6 +85,14 @@ module Hecks
       scopes.reject(&:callable?).flat_map do |s|
         formatted = s.conditions.map { |k, v| "#{k}: #{v.inspect}" }.join(", ")
         ["", "    scope :#{s.name}, #{formatted}"]
+      end
+    end
+
+    def serialize_functions(fns, indent = "    ")
+      (fns || []).flat_map do |fn|
+        ["", "#{indent}function :#{fn.name} do",
+         "#{indent}  #{Hecks::Utils.block_source(fn.block)}",
+         "#{indent}end"]
       end
     end
 

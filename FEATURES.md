@@ -23,6 +23,7 @@
 - References hold live objects in memory — IDs are purely a persistence concern
 - Enum constraints: `attribute :category, String, enum: %w[low medium high]` — validated at runtime, dropdown in UI
 - Computed attributes: `computed :lot_size do; area / 43560.0; end` — derived values not stored in the database, shown in UI with "(computed)" hint, visible in `hecks inspect`, and available as MCP `add_computed` tool
+- Pure functions: `function :full_name do; "#{first} #{last}"; end` — side-effect-free methods on aggregates and value objects, generated as instance methods, serializer round-trip supported, name collision validation enforced
 
 ### Commands
 - Define commands with attributes, handlers, guards, read models, actors, and external system docs
