@@ -721,6 +721,24 @@
 - No `Object.const_get`, `respond_to?`, or `instance_variable_get` in the UI layer
 - Same IR structs consumed by Ruby, Go, and Rails generators now also drive the Web Explorer
 
+### Search and Filter (HEC-261)
+- `RuntimeBridge#search_and_filter` with `filter[attr]=value` convention and `q=` full-text search
+- `IRIntrospector#filterable_attributes` returns string and enum attributes for UI filter controls
+- Filter bar in index view with text inputs, enum dropdowns, and free-text search
+- Filters preserved in pagination links via query string propagation
+
+### Event Log Browser (HEC-262)
+- `EventIntrospector` reads the EventBus event log with `recent_events(limit:)` and `event_count`
+- `events.erb` template displays event type, timestamp, and payload in a table
+- "Events" link in sidebar navigation under System group
+- Multi-domain event aggregation across all domain event buses
+
+### Live Events via SSE (HEC-300)
+- `GET /_live` SSE endpoint streams domain events to browser clients in real time
+- `SSEHandler` manages thread-safe client connections and broadcasts from EventBus
+- `HecksLiveEvents` JavaScript class auto-connects, handles reconnection, and shows toast notifications
+- Wired into both DomainServer (single) and MultiDomainServer (multi-domain)
+
 ## Implicit DSL (HEC-229)
 
 ### Infer Domain Concepts from Structure

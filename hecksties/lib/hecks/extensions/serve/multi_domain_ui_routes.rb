@@ -45,7 +45,16 @@ module Hecks
         def serve_index(req, res, ir, bridge, agg, safe, p, prefix)
           token = ensure_csrf_cookie(req, res)
           user_attrs = ir.user_attributes(agg)
-          items = bridge.find_all(agg.name).map do |obj|
+          filterable = ir.filterable_attributes(agg)
+          filters = extract_filters(req.query)
+          query = req.query["q"]
+
+          objects = bridge.search_and_filter(
+            agg.name, filters: filters, query: query,
+            filterable: filterable.map(&:name)
+          )
+
+          items = objects.map do |obj|
             cells = user_attrs.map { |a|
               if ir.reference_attr?(a)
                 ref_agg = ir.find_referenced_aggregate(a)
@@ -69,12 +78,33 @@ module Hecks
             cm = domain_snake_name(c.name)
             { label: HecksTemplating::UILabelContract.label(c.name), href: "#{prefix}/#{p}/#{cm}/new", allowed: true }
           end
+          filter_qs = build_filter_query_string(filters, query)
           html = @renderer.render(:index,
             title: "#{safe}s — #{@brand}", brand: @brand, nav_items: @nav,
             aggregate_name: safe, items: items, columns: columns,
-            buttons: buttons, row_actions: [], csrf_token: token)
+            buttons: buttons, row_actions: [], csrf_token: token,
+            filterable: filterable, current_filters: filters,
+            current_query: query || "", filter_qs: filter_qs,
+            base_path: "#{prefix}/#{p}")
           res["Content-Type"] = "text/html"
           res.body = html
+        end
+
+        def extract_filters(query_params)
+          filters = {}
+          query_params.each do |key, value|
+            if key =~ /\Afilter\[(\w+)\]\z/
+              filters[$1.to_sym] = value unless value.to_s.strip.empty?
+            end
+          end
+          filters
+        end
+
+        def build_filter_query_string(filters, query)
+          parts = []
+          filters.each { |k, v| parts << "filter[#{k}]=#{ERB::Util.url_encode(v)}" }
+          parts << "q=#{ERB::Util.url_encode(query)}" if query && !query.strip.empty?
+          parts.empty? ? "" : "?#{parts.join('&')}"
         end
 
         def serve_show(req, res, ir, bridge, agg, safe, p, prefix)
@@ -143,6 +173,17 @@ module Hecks
             command_name: HecksTemplating::UILabelContract.label(cmd.name),
             action: "#{prefix}/#{p}/#{cmd_snake}/submit",
             error_message: e.message, fields: fields, csrf_token: token)
+          res["Content-Type"] = "text/html"
+          res.body = html
+        end
+
+        def serve_events(res, event_introspectors)
+          events = event_introspectors.flat_map { |ei| ei.recent_events(limit: 100) }
+          events.sort_by! { |e| e[:occurred_at] }.reverse!
+          total = event_introspectors.sum(&:event_count)
+          html = @renderer.render(:events,
+            title: "Events — #{@brand}", brand: @brand, nav_items: @nav,
+            events: events, event_count: total)
           res["Content-Type"] = "text/html"
           res.body = html
         end

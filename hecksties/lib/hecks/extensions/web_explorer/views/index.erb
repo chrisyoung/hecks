@@ -9,6 +9,31 @@
 <% if defined?(description) && description && !description.empty? %>
   <p style="color:#666;margin:-1rem 0 1.5rem"><%= description %></p>
 <% end %>
+<% if defined?(filterable) && filterable.any? %>
+<form method="get" action="<%= base_path %>" style="background:#fff;padding:1rem 1.5rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:1.5rem;display:flex;gap:1rem;align-items:end;flex-wrap:wrap">
+  <div>
+    <label style="font-size:0.8rem">Search</label>
+    <input type="text" name="q" value="<%= h(current_query) %>" placeholder="Search..." style="width:180px;margin:0">
+  </div>
+  <% filterable.each do |attr| %>
+    <div>
+      <label style="font-size:0.8rem"><%= h(attr.name) %></label>
+      <% if attr.enum %>
+        <select name="filter[<%= attr.name %>]" style="width:140px;margin:0">
+          <option value="">All</option>
+          <% attr.enum.each do |val| %>
+            <option value="<%= h(val) %>"<%= ' selected' if current_filters[attr.name]&.to_s == val %>><%= h(val) %></option>
+          <% end %>
+        </select>
+      <% else %>
+        <input type="text" name="filter[<%= attr.name %>]" value="<%= h(current_filters[attr.name] || '') %>" placeholder="Filter..." style="width:140px;margin:0">
+      <% end %>
+    </div>
+  <% end %>
+  <button class="btn btn-sm" type="submit">Filter</button>
+  <a href="<%= base_path %>" style="font-size:0.85rem">Clear</a>
+</form>
+<% end %>
 <table>
   <thead>
     <tr>
