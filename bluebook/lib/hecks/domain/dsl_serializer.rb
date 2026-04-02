@@ -15,6 +15,10 @@ module Hecks
     # @return [String] valid Ruby DSL source code
     def serialize
       lines = ["Hecks.domain \"#{@domain.name}\" do"]
+      if @domain.respond_to?(:classification) && @domain.classification &&
+         @domain.classification != :supporting
+        lines << "  classification :#{@domain.classification}"
+      end
       @domain.aggregates.each_with_index do |agg, i|
         lines << "" if i > 0
         lines.concat(serialize_aggregate(agg))

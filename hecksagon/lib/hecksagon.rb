@@ -34,4 +34,17 @@ module Hecksagon
   autoload :AclBuilder,       "hecksagon/acl_builder"
   autoload :AdapterRegistry,  "hecksagon/adapter_registry"
   autoload :ContractValidator, "hecksagon/contract_validator"
+
+  # Post-load injection: include StrategicDSL into DomainBuilder after both
+  # bluebook and hecksagon are loaded (bluebook defines DomainBuilder first,
+  # hecksagon loads second, so the `if defined?` guard in the class body fires
+  # too early).
+  def self.inject_strategic_dsl!
+    return unless defined?(Hecks::DSL::DomainBuilder)
+    return if Hecks::DSL::DomainBuilder.include?(StrategicDSL)
+
+    Hecks::DSL::DomainBuilder.include(StrategicDSL)
+  end
 end
+
+Hecksagon.inject_strategic_dsl!

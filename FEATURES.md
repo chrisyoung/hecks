@@ -11,6 +11,7 @@
 - Define entities within aggregates — sub-objects with identity (UUID), mutable, not frozen
 - Multi-domain support with shared event bus across domains
 - Domain version pinning and local path loading in configuration
+- Strategic domain classification: `classification :core` / `:supporting` / `:generic` — defaults to `:supporting`, queryable via `core?`, `supporting?`, `generic?` on the domain IR, emitted by serializer
 
 ### Attributes & Types
 - Define typed attributes with String, Integer, Float, Boolean, JSON, Date, DateTime, etc.

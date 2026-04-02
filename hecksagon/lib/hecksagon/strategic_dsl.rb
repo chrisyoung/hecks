@@ -3,9 +3,16 @@ module Hecksagon
   # Hecksagon::StrategicDSL
   #
   # Mixin for domain builders. Adds strategic hexagonal patterns:
-  # shared kernels, anti-corruption layers, published events.
+  # shared kernels, anti-corruption layers, published events,
+  # and domain classification (core, supporting, generic).
+  #
+  #   Hecks.domain "Billing" do
+  #     classification :core
+  #   end
   #
   module StrategicDSL
+    VALID_CLASSIFICATIONS = %i[core supporting generic].freeze
+
     def self.included(base)
       base.class_eval do
         def init_strategic
@@ -13,8 +20,26 @@ module Hecksagon
           @uses_kernels ||= []
           @anti_corruption_layers ||= []
           @published_events ||= []
+          @classification ||= :supporting
         end
       end
+    end
+
+    # Declare the strategic classification for this domain.
+    # Valid values: :core, :supporting, :generic. Defaults to :supporting.
+    #
+    #   classification :core
+    #
+    # @param value [Symbol] one of :core, :supporting, :generic
+    # @raise [ArgumentError] if the value is not a valid classification
+    def classification(value)
+      value = value.to_sym
+      unless VALID_CLASSIFICATIONS.include?(value)
+        raise ArgumentError,
+              "Invalid classification #{value.inspect}. Must be one of: #{VALID_CLASSIFICATIONS.join(", ")}"
+      end
+      init_strategic
+      @classification = value
     end
 
     def shared_kernel

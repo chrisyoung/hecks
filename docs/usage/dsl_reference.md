@@ -36,6 +36,21 @@ The version is accessible on the domain IR (`domain.version`), the loaded
 module (`BankingDomain.version`), the generated gemspec, and the Go server
 comment header. See [Domain Versioning](domain_version.md) for details.
 
+### Domain classification
+
+Classify a domain as `:core`, `:supporting`, or `:generic` to express its
+strategic importance. Defaults to `:supporting` when omitted.
+
+```ruby
+Hecks.domain "Billing" do
+  classification :core
+  # ...
+end
+```
+
+Query with `domain.classification`, `domain.core?`, `domain.supporting?`,
+`domain.generic?`. See [Domain Classification](domain_classification.md).
+
 ### Domain-level methods
 
 At the domain level you can declare aggregates, cross-aggregate policies, services, read models, workflows, actors, tenancy, and glossary rules:

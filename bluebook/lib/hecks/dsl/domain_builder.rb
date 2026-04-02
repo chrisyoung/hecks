@@ -290,6 +290,7 @@ module Hecks
           domain.uses_kernels = @uses_kernels || []
           domain.anti_corruption_layers = @anti_corruption_layers || []
           domain.published_events = @published_events || []
+          domain.classification = @classification || :supporting
         end
         domain
       end
