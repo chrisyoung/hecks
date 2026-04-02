@@ -705,6 +705,8 @@ end
 
 Access control is an infrastructure concern, not a domain concept. Declare gates in the [Hecksagon](hecksagon_reference.md), not the Bluebook.
 
+For the full Hecksagon DSL — concerns, attribute tags, chaining, and the two-file pattern — see [Hecksagon DSL Reference](hecksagon_dsl.md).
+
 The `port` keyword in the Bluebook is a no-op kept for backward compatibility. For the full rationale on the ports-vs-gates split and migration path, see [Architecture Decisions: Ports vs Gates](architecture_decisions.md#2-ports-vs-gates-naming-and-responsibility-split).
 
 ---
