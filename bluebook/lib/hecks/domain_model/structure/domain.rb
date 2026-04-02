@@ -64,7 +64,7 @@ module Hecks
       # @return [Boolean] true if glossary violations are treated as errors instead of warnings
       attr_reader :glossary_strict
 
-      # @return [Array<Hash>] logical module groupings within this domain
+      # @return [Array<DomainModule>] logical module groupings within this domain
       attr_reader :modules
 
       # @return [Array<Symbol>] declared world concerns for this domain
@@ -115,7 +115,7 @@ module Hecks
         @sagas = sagas
         @glossary_rules = glossary_rules
         @glossary_strict = glossary_strict
-        @modules = modules
+        @modules = modules.map { |m| coerce_module(m) }
         @custom_verbs = custom_verbs
         @tenancy = tenancy
         @event_subscribers = event_subscribers
@@ -254,7 +254,20 @@ module Hecks
         aggregates.find { |a| a.commands.any? { |c| c.name == command_name.to_s } }
       end
 
+      # Find the module that contains an aggregate by name.
+      #
+      # @param aggregate_name [String] the aggregate name to look up
+      # @return [DomainModule, nil] the module containing that aggregate, or nil
+      def module_for(aggregate_name)
+        modules.find { |m| m.aggregate_names.include?(aggregate_name.to_s) }
+      end
+
       private
+
+      def coerce_module(m)
+        return m if m.is_a?(DomainModule)
+        DomainModule.new(name: m[:name], aggregate_names: m[:aggregates] || [])
+      end
 
       def validate_version!(v)
         return if v.nil?

@@ -11,6 +11,7 @@
 - Define entities within aggregates — sub-objects with identity (UUID), mutable, not frozen
 - Multi-domain support with shared event bus across domains
 - Domain version pinning and local path loading in configuration
+- Domain modules: `domain_module "Name" do ... end` groups related aggregates under a namespace for visualization and serialization. `domain.module_for("Aggregate")` looks up which module owns an aggregate. Mermaid diagrams render modules as subgraphs/namespaces. DSL serializer round-trips module groupings.
 
 ### Attributes & Types
 - Define typed attributes with String, Integer, Float, Boolean, JSON, Date, DateTime, etc.

@@ -22,30 +22,46 @@ module Hecks
       def generate_behavior
         lines = ["flowchart LR"]
 
-        @domain.aggregates.each do |agg|
-          prefix = agg.name
-          lines << "    subgraph #{prefix}"
+        module_names = @domain.modules.flat_map(&:aggregate_names)
+        ungrouped = @domain.aggregates.reject { |a| module_names.include?(a.name) }
 
-          agg.commands.each_with_index do |cmd, i|
-            event = agg.events[i]
-            cmd_id = node_id(prefix, cmd.name)
-            lines << "        #{cmd_id}[#{cmd.name}]"
-
-            if event
-              evt_id = node_id(prefix, event.name)
-              lines << "        #{evt_id}([#{event.name}])"
-              lines << "        #{cmd_id} --> #{evt_id}"
-            end
-          end
-
+        @domain.modules.each do |mod|
+          aggs = @domain.aggregates.select { |a| mod.aggregate_names.include?(a.name) }
+          next if aggs.empty?
+          lines << "    subgraph #{mod.name}"
+          aggs.each { |agg| render_aggregate_subgraph(lines, agg, "        ") }
           lines << "    end"
         end
+
+        ungrouped.each { |agg| render_aggregate_subgraph(lines, agg, "    ") }
 
         policy_links(lines)
         lines.join("\n")
       end
 
       private
+
+      # Render an aggregate's commands and events as a Mermaid subgraph.
+      #
+      # @param lines [Array<String>] the diagram lines array
+      # @param agg [Aggregate] the aggregate to render
+      # @param indent [String] leading whitespace for the subgraph keyword
+      # @return [void]
+      def render_aggregate_subgraph(lines, agg, indent)
+        prefix = agg.name
+        lines << "#{indent}subgraph #{prefix}"
+        agg.commands.each_with_index do |cmd, i|
+          event = agg.events[i]
+          cmd_id = node_id(prefix, cmd.name)
+          lines << "#{indent}    #{cmd_id}[#{cmd.name}]"
+          if event
+            evt_id = node_id(prefix, event.name)
+            lines << "#{indent}    #{evt_id}([#{event.name}])"
+            lines << "#{indent}    #{cmd_id} --> #{evt_id}"
+          end
+        end
+        lines << "#{indent}end"
+      end
 
       # Add dotted-line policy links to the diagram. Each policy connects
       # an event node to a command node with a labeled edge showing the
