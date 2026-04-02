@@ -59,6 +59,7 @@ module Hecks
         FileUtils.mkdir_p(root)
 
         generate_gemspec(root, gem_name, mod)
+        generate_version_rb(root, gem_name, mod)
         generate_entry_point(root, gem_name, mod)
         generate_aggregates(root, gem_name, mod)
         generate_queries(root, gem_name, mod)

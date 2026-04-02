@@ -42,11 +42,23 @@ Hecks::CLI.register_command(:build, "Generate the domain gem",
     next
   end
 
+  gem_version = if options[:gem] && %w[ruby static].include?(target)
+                  if domain.version
+                    domain.version
+                  else
+                    say "Warning: domain has no version: set — defaulting to 0.1.0. " \
+                        "Add `version: \"YYYY.MM.DD.N\"` to your Hecks.domain DSL.", :yellow
+                    "0.1.0"
+                  end
+                else
+                  version
+                end
+
   opts = case target
          when "go"    then { smoke_test: false }
          when "node"  then {}
          when "rails" then { output_dir: "." }
-         else              { version: version }
+         else              { version: gem_version }
          end
 
   output = builder.call(domain, **opts)

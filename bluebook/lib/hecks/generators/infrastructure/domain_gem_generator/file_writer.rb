@@ -38,6 +38,21 @@ module Hecks
             RUBY
           end
 
+          # Writes +lib/<gem_name>/version.rb+ containing the +VERSION+ constant.
+          #
+          # @param root [String] absolute path to the gem root directory
+          # @param gem_name [String] snake_case gem name (e.g. +"pizzas_domain"+)
+          # @param mod [String] PascalCase domain module name (e.g. +"PizzasDomain"+)
+          # @return [void]
+          def generate_version_rb(root, gem_name, mod)
+            gem_version = @domain.version || @version
+            write_file(root, "lib/#{gem_name}/version.rb", <<~RUBY)
+              module #{mod}
+                VERSION = "#{gem_version}"
+              end
+            RUBY
+          end
+
           # Writes the autoload entry point file (+lib/<gem_name>.rb+) by
           # delegating to +AutoloadGenerator#generate_entry_point+.
           #

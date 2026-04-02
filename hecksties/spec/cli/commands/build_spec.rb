@@ -31,7 +31,7 @@ RSpec.describe "hecks build" do
     end
   end
 
-  it "produces a .gem artifact with --gem flag" do
+  it "produces a .gem artifact with --gem flag", :slow do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "verbs.txt"), "Create\n")
       File.write(File.join(dir, "PizzasBluebook"), <<~RUBY)
@@ -55,6 +55,91 @@ RSpec.describe "hecks build" do
         gem_files = Dir.glob(File.join(gem_dir, "*.gem"))
         expect(gem_files).not_to be_empty, "Expected a .gem file in #{gem_dir}"
         expect(messages).to include(match(/Gem artifact:/))
+      end
+    end
+  end
+
+  it "writes version.rb with VERSION constant from domain IR" do
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "verbs.txt"), "Create\n")
+      File.write(File.join(dir, "PizzasBluebook"), <<~RUBY)
+        Hecks.domain "Test", version: "2026.04.02.1" do
+          aggregate "Widget" do
+            attribute :name, String
+            command "CreateWidget" do
+              attribute :name, String
+            end
+          end
+        end
+      RUBY
+
+      Dir.chdir(dir) do
+        cli = Hecks::CLI.new
+        allow(cli).to receive(:say)
+        cli.build
+
+        version_file = File.join(dir, "test_domain", "lib", "test_domain", "version.rb")
+        expect(File.exist?(version_file)).to be true
+        expect(File.read(version_file)).to include('VERSION = "2026.04.02.1"')
+      end
+    end
+  end
+
+  it "uses domain.version in gemspec when --gem is used", :slow do
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "verbs.txt"), "Create\n")
+      File.write(File.join(dir, "PizzasBluebook"), <<~RUBY)
+        Hecks.domain "Test", version: "2026.04.02.1" do
+          aggregate "Widget" do
+            attribute :name, String
+            command "CreateWidget" do
+              attribute :name, String
+            end
+          end
+        end
+      RUBY
+
+      Dir.chdir(dir) do
+        cli = Hecks::CLI.new([], gem: true)
+        messages = []
+        allow(cli).to receive(:say) { |msg, *| messages << msg }
+        cli.build
+
+        gem_dir = File.join(dir, "test_domain")
+        gemspec_content = File.read(File.join(gem_dir, "test_domain.gemspec"))
+        expect(gemspec_content).to include("2026.04.02.1")
+
+        gem_files = Dir.glob(File.join(gem_dir, "test_domain-2026.04.02.1.gem"))
+        expect(gem_files).not_to be_empty, "Expected test_domain-2026.04.02.1.gem in #{gem_dir}"
+      end
+    end
+  end
+
+  it "warns when --gem is used without a domain version and defaults to 0.1.0" do
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "verbs.txt"), "Create\n")
+      File.write(File.join(dir, "PizzasBluebook"), <<~RUBY)
+        Hecks.domain "Test" do
+          aggregate "Widget" do
+            attribute :name, String
+            command "CreateWidget" do
+              attribute :name, String
+            end
+          end
+        end
+      RUBY
+
+      Dir.chdir(dir) do
+        cli = Hecks::CLI.new([], gem: true)
+        messages = []
+        allow(cli).to receive(:say) { |msg, *| messages << msg }
+        cli.build
+
+        gem_dir = File.join(dir, "test_domain")
+        gemspec_content = File.read(File.join(gem_dir, "test_domain.gemspec"))
+        expect(gemspec_content).to include('"0.1.0"')
+        warning = messages.find { |m| m.include?("no version:") }
+        expect(warning).not_to be_nil
       end
     end
   end
