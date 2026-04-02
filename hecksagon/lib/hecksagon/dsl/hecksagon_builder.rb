@@ -135,6 +135,17 @@ module Hecksagon
         AttributeSelector.new(@tags)
       end
 
+      # Bare attribute shorthand: avatar.attachable (without leading capability.)
+      #
+      #   avatar.attachable
+      #
+      # @return [TagApplier]
+      def method_missing(attr_name, *args)
+        TagApplier.new(@tags, attr_name.to_s)
+      end
+
+      def respond_to_missing?(_, _ = false) = true
+
       # Fluent attribute selector for capability tagging.
       class AttributeSelector
         def initialize(tags)

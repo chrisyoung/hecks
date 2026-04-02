@@ -45,6 +45,19 @@ module Hecks
       def apply_hecksagon_capabilities
         return unless @hecksagon
         (@hecksagon.capabilities || []).each { |cap| capability(cap) }
+        apply_hecksagon_attribute_tags
+      end
+
+      # Read aggregate_capabilities tags from the hecksagon IR and
+      # auto-activate matching extensions (e.g., :attachable, :pii).
+      def apply_hecksagon_attribute_tags
+        return unless @hecksagon&.aggregate_capabilities
+        tags = @hecksagon.aggregate_capabilities.values.flatten
+        ext_names = tags.map { |t| t[:tag] }.uniq
+        ext_names.each do |name|
+          next unless Hecks.extension_registry[name]
+          self.extend(name)
+        end
       end
     end
   end

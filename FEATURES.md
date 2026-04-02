@@ -138,6 +138,7 @@
 - `hecks_transactions` — DB transaction wrapping when SQL adapter present
 - `hecks_retry` — exponential backoff for transient errors
 - `hecks_bubble` — anti-corruption layer (ACL) for legacy data translation; context DSL with `map_aggregate`, `from_legacy` (field renaming + transforms), `map_out` (reverse mapping); API: `context.translate(:Pizza, :create, legacy_data)` and `context.reverse(:Pizza, :create, domain_data)`
+- `hecks_attachable` — file attachment metadata for aggregate attributes; tag attributes with `:attachable` in the Hecksagon DSL (`avatar.attachable`), generates `attach_<attr>` and `<attr>_attachments` methods; introspection via `DomainMod.attachable_fields`; auto-activates from hecksagon IR tags
 
 ### Domain Connections DSL
 - `extend :sqlite` — declare persistence adapter

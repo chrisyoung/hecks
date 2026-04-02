@@ -45,7 +45,7 @@ module Hecks
     include ConfigurationDSL
     include CommandDispatch
 
-    attr_reader :domain, :event_bus, :command_bus
+    attr_reader :domain, :event_bus, :command_bus, :hecksagon
 
     # @param domain [Hecks::DomainModel::Structure::Domain] the domain IR
     # @param gate [Symbol, nil] optional gate name
