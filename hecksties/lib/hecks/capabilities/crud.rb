@@ -80,7 +80,7 @@ module Hecks
         when "Update"
           snake = HecksTemplating::NamingHelpers.instance_method(:domain_snake_name)
             .bind_call(self, agg.name)
-          ref = Structure::Reference.new(name: snake.to_sym, type: agg.name)
+          ref = Structure::Reference.new(name: snake.to_sym, type: agg.name, validate: :exists)
           attrs = agg.attributes.reject { |a| reserved?(a.name) }.map do |a|
             Structure::Attribute.new(name: a.name, type: a.type, list: a.list?)
           end
@@ -88,7 +88,7 @@ module Hecks
         when "Delete"
           snake = HecksTemplating::NamingHelpers.instance_method(:domain_snake_name)
             .bind_call(self, agg.name)
-          ref = Structure::Reference.new(name: snake.to_sym, type: agg.name)
+          ref = Structure::Reference.new(name: snake.to_sym, type: agg.name, validate: :exists)
           [[], [ref]]
         else
           [[], []]

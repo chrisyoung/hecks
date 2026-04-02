@@ -109,6 +109,7 @@ module Hecks
         setup_workflows
         setup_sagas
         hoist_constants
+        apply_hecksagon_capabilities
       end
 
       # Register command bus middleware. Middleware wraps every command dispatch,
@@ -290,6 +291,14 @@ module Hecks
       # @param aggregate_name [String] the aggregate name
       # @param option [Symbol] the option key (e.g., :versioned, :attachable)
       # @return [Boolean]
+      # Apply capabilities declared in the Hecksagon file.
+      # Domain-wide capabilities (e.g., :crud) are applied first, then
+      # aggregate-level capability tags are stored for extensions to read.
+      def apply_hecksagon_capabilities
+        return unless @hecksagon
+        (@hecksagon.capabilities || []).each { |cap| capability(cap) }
+      end
+
       def runtime_option?(aggregate_name, option)
         (@runtime_options || {}).dig(aggregate_name.to_s, option) || false
       end
