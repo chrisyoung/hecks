@@ -19,6 +19,7 @@ module Hecksagon
         @extensions = []
         @subscriptions = []
         @tenancy = nil
+        @aggregate_capabilities = {}
       end
 
       # Declare a gate (access control) for an aggregate + role.
@@ -67,6 +68,22 @@ module Hecksagon
         @tenancy = strategy.to_sym
       end
 
+      # Declare attribute-level capabilities for an aggregate.
+      #
+      #   capabilities "Customer" do
+      #     email.privacy
+      #     ssn.privacy.searchable
+      #   end
+      #
+      # @param aggregate_name [String] the aggregate name
+      # @yield block evaluated in AggregateCapabilityBuilder context
+      # @return [void]
+      def capabilities(aggregate_name, &block)
+        builder = AggregateCapabilityBuilder.new(aggregate_name)
+        builder.instance_eval(&block) if block
+        @aggregate_capabilities[aggregate_name.to_s] = builder.build
+      end
+
       # Build and return the Hecksagon IR object.
       #
       # @return [Hecksagon::Structure::Hecksagon]
@@ -77,7 +94,8 @@ module Hecksagon
           adapter: @adapter,
           extensions: @extensions,
           subscriptions: @subscriptions,
-          tenancy: @tenancy
+          tenancy: @tenancy,
+          aggregate_capabilities: @aggregate_capabilities
         )
       end
     end

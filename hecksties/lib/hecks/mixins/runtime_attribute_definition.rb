@@ -12,5 +12,5 @@ module Hecks
   #   attr_def.default  # => nil
   #   attr_def[:freeze] # => false
   #
-  RuntimeAttributeDefinition = Struct.new(:name, :default, :freeze, keyword_init: true)
+  RuntimeAttributeDefinition = Struct.new(:name, :default, :freeze, :pii, keyword_init: true)
 end

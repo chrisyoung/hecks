@@ -19,15 +19,18 @@ module Hecksagon
     #   )
     #
     class Hecksagon
-      attr_reader :name, :gates, :adapter, :extensions, :subscriptions, :tenancy
+      attr_reader :name, :gates, :adapter, :extensions, :subscriptions, :tenancy,
+                  :aggregate_capabilities
 
-      def initialize(name:, gates: [], adapter: nil, extensions: [], subscriptions: [], tenancy: nil)
+      def initialize(name:, gates: [], adapter: nil, extensions: [], subscriptions: [],
+                     tenancy: nil, aggregate_capabilities: {})
         @name = name
         @gates = gates
         @adapter = adapter
         @extensions = extensions
         @subscriptions = subscriptions
         @tenancy = tenancy
+        @aggregate_capabilities = aggregate_capabilities
       end
 
       # Returns gates for a specific aggregate.
@@ -38,6 +41,15 @@ module Hecksagon
       # Returns the gate for a specific aggregate + role combination.
       def gate_for(aggregate_name, role)
         @gates.find { |g| g.aggregate == aggregate_name.to_s && g.role == role.to_sym }
+      end
+
+      # Returns attribute names tagged with :pii for the given aggregate.
+      #
+      # @param aggregate_name [String] the aggregate name
+      # @return [Array<String>] attribute names with the :pii tag
+      def pii_attributes(aggregate_name)
+        caps = @aggregate_capabilities[aggregate_name.to_s] || {}
+        caps.select { |_attr, tags| tags.include?(:pii) }.keys
       end
     end
   end

@@ -139,6 +139,17 @@
 - `hecks_retry` — exponential backoff for transient errors
 - `hecks_bubble` — anti-corruption layer (ACL) for legacy data translation; context DSL with `map_aggregate`, `from_legacy` (field renaming + transforms), `map_out` (reverse mapping); API: `context.translate(:Pizza, :create, legacy_data)` and `context.reverse(:Pizza, :create, domain_data)`
 
+### PII Attribute Tag (Hecksagon Capabilities)
+- Tag attributes as PII via hecksagon capabilities DSL: `capabilities "Customer" do; email.privacy; end`
+- `.privacy` concern expands to `:pii`, `:encrypted`, `:masked` tags
+- Tags are chainable: `email.privacy.searchable`
+- `capability.` prefix supported for backward compat
+- Runtime marks `RuntimeAttributeDefinition.pii = true` on tagged attributes
+- PII attributes redacted in `#inspect` output via `Hecks::PII.mask`
+- `runtime.pii_report` returns `{ aggregate => [attributes] }` compliance report
+- PII filter middleware registered on command bus for downstream consumers
+- IR query: `hecksagon.pii_attributes("Customer")` returns PII attribute names
+
 ### Domain Connections DSL
 - `extend :sqlite` — declare persistence adapter
 - `extend :slack, webhook: url` — forward all domain events to an outbound handler

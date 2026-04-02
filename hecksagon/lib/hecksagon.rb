@@ -18,8 +18,10 @@
 #
 module Hecksagon
   module DSL
-    autoload :HecksagonBuilder, "hecksagon/dsl/hecksagon_builder"
-    autoload :GateBuilder,      "hecksagon/dsl/gate_builder"
+    autoload :HecksagonBuilder,          "hecksagon/dsl/hecksagon_builder"
+    autoload :GateBuilder,               "hecksagon/dsl/gate_builder"
+    autoload :AggregateCapabilityBuilder, "hecksagon/dsl/aggregate_capability_builder"
+    autoload :TagApplier,                "hecksagon/dsl/tag_applier"
   end
 
   module Structure

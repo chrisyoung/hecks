@@ -169,7 +169,8 @@ module Hecks
       short_id = id.to_s[0, 8]
       attrs = self.class.hecks_attributes.map do |attr|
         val = instance_variable_get(:"@#{attr.name}")
-        "#{attr.name}: #{val.inspect}"
+        display = attr.pii ? Hecks::PII.mask(val) : val.inspect
+        "#{attr.name}: #{display}"
       end
       "#<#{short_class} id:#{short_id} #{attrs.join(' ')}>"
     end

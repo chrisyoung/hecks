@@ -1,3 +1,5 @@
+require_relative "runtime/pii_filter"
+require_relative "runtime/pii_compliance"
 require_relative "runtime/port_setup"
 require_relative "runtime/gate_enforcer"
 require_relative "runtime/repository_setup"
@@ -108,6 +110,7 @@ module Hecks
         ServiceSetup.bind(@domain, @mod, @command_bus)
         setup_workflows
         setup_sagas
+        apply_aggregate_tags
         hoist_constants
       end
 
@@ -274,6 +277,30 @@ module Hecks
       # @return [Boolean]
       def runtime_option?(aggregate_name, option)
         (@runtime_options || {}).dig(aggregate_name.to_s, option) || false
+      end
+
+      # Reads aggregate_capabilities from the hecksagon and marks matching
+      # RuntimeAttributeDefinition entries with tag flags (e.g., pii: true).
+      # Also binds PIICompliance and PIIFilter when PII tags are present.
+      #
+      # @return [void]
+      def apply_aggregate_tags
+        return unless @hecksagon
+        caps = @hecksagon.aggregate_capabilities
+        return if caps.empty?
+
+        caps.each do |agg_name, attr_tags|
+          klass = @mod.const_get(agg_name) rescue nil
+          next unless klass&.respond_to?(:hecks_attributes)
+          attr_tags.each do |attr_name, tags|
+            attr_def = klass.hecks_attributes.find { |a| a.name == attr_name.to_sym }
+            attr_def.pii = true if attr_def && tags.include?(:pii)
+          end
+        end
+
+        PIICompliance.bind(self, @hecksagon, @domain)
+        pii_lookup = PIIFilter.build_pii_lookup(@mod, @domain, @hecksagon)
+        PIIFilter.register(self, pii_lookup) unless pii_lookup.empty?
       end
 
       # Creates the command bus, binding it to the domain and event bus.
