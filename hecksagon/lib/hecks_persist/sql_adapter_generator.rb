@@ -23,9 +23,11 @@ module Hecks
       #   generate a repository for
       # @param domain_module [String] the fully qualified module name
       #   (e.g., "PizzasDomain")
-      def initialize(aggregate, domain_module:)
+      # @param searchable_fields [Array<String>] field names tagged :searchable
+      def initialize(aggregate, domain_module:, searchable_fields: [])
         @aggregate = aggregate
         @domain_module = domain_module
+        @searchable_fields = searchable_fields
       end
 
       # Generates the full SQL repository class source code.
@@ -93,6 +95,7 @@ module Hecks
         lines << "        ds.all.map { |row| build(row) }"
         lines << "      end"
         lines << ""
+        lines.concat(search_lines)
         lines << "      private"
         lines << ""
         lines << "      def sequel_op(col, op)"
@@ -117,6 +120,32 @@ module Hecks
       end
 
       private
+
+      # Generates a search(term) method when searchable fields are configured.
+      #
+      # Uses Sequel.ilike (case-insensitive LIKE) across all searchable fields,
+      # joined with OR. Returns an empty array when no searchable fields are declared.
+      # Works with SQLite, Postgres, and MySQL — no tsvector required.
+      #
+      # @return [Array<String>] lines of Ruby source code for the search method
+      def search_lines
+        return [] if @searchable_fields.empty?
+
+        fields = @searchable_fields
+        lines = []
+        lines << "      def search(term)"
+        lines << "        ds = @db[:#{table_name}]"
+        if fields.length == 1
+          lines << "        ds = ds.where(Sequel.ilike(:#{fields.first}, \"%\#{term}%\"))"
+        else
+          like_parts = fields.map { |f| "Sequel.ilike(:#{f}, \"%\#{term}%\")" }.join(", ")
+          lines << "        ds = ds.where(Sequel.|(" + like_parts + "))"
+        end
+        lines << "        ds.all.map { |row| build(row) }"
+        lines << "      end"
+        lines << ""
+        lines
+      end
 
       # Returns the SQL table name for the aggregate (underscore + pluralized).
       #

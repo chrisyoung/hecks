@@ -1,3 +1,4 @@
+require_relative "sql_helpers"
 
 module Hecks
   module Generators
@@ -7,32 +8,43 @@ module Hecks
     # Generates CREATE TABLE SQL statements from a domain model. Produces one
     # table per aggregate plus join tables for list-type value objects. Part of
     # Generators::SQL, invoked by the CLI `hecks build` command to produce
-    # db/schema.sql.
+    # db/schema.sql. Optionally accepts a hecksagon to emit GIN search indexes
+    # for attributes tagged :searchable (Postgres only).
     #
     #   gen = SqlMigrationGenerator.new(domain)
     #   gen.generate  # => "CREATE TABLE pizzas (\n  id VARCHAR(36) PRIMARY KEY,\n  ..."
     #
+    #   gen = SqlMigrationGenerator.new(domain, hecksagon: hex)
+    #   gen.generate  # => includes GIN index for :searchable attributes (Postgres)
+    #
     class SqlMigrationGenerator
       include HecksTemplating::NamingHelpers
+      include Hecks::Migrations::Strategies::SqlHelpers
+
       # Initializes a migration generator for a full domain.
       #
       # @param domain [DomainModel::Structure::Domain] the domain to generate SQL for
-      def initialize(domain)
+      # @param hecksagon [Hecksagon::Structure::Hecksagon, nil] optional hecksagon for capability tags
+      def initialize(domain, hecksagon: nil)
         @domain = domain
+        @hecksagon = hecksagon
       end
 
       # Generates CREATE TABLE SQL for the entire domain.
       #
       # Produces one table per aggregate with scalar attributes, plus join
-      # tables for list-type value objects and entities. Tables are separated
-      # by blank lines.
+      # tables for list-type value objects and entities. When a hecksagon is
+      # present and adapter_type is :postgres, also emits GIN search indexes
+      # for :searchable fields. Tables are separated by blank lines.
       #
+      # @param adapter_type [Symbol] :postgres emits GIN indexes; others skip them
       # @return [String] the complete SQL schema as a string
-      def generate
+      def generate(adapter_type: :sqlite)
         tables = []
 
         @domain.aggregates.each do |agg|
           tables << generate_aggregate_table(agg)
+          tables << generate_searchable_index(agg, adapter_type: adapter_type)
 
           agg.value_objects.each do |vo|
             # Value objects with list attributes get their own join table
@@ -51,7 +63,7 @@ module Hecks
           end
         end
 
-        tables.join("\n\n")
+        tables.compact.join("\n\n")
       end
 
       # Generates a CREATE TABLE statement for an aggregate's main table.
@@ -139,6 +151,20 @@ module Hecks
       end
 
       private
+
+      # Generates a GIN full-text search index for the aggregate's :searchable fields.
+      #
+      # Returns nil when no hecksagon is configured, no searchable fields exist,
+      # or the adapter type is not :postgres (SQLite uses LIKE at query time).
+      #
+      # @param agg [DomainModel::Structure::Aggregate] the aggregate
+      # @param adapter_type [Symbol] :postgres, :sqlite, or :mysql
+      # @return [String, nil] CREATE INDEX SQL or nil
+      def generate_searchable_index(agg, adapter_type: :postgres)
+        return nil unless @hecksagon
+        fields = @hecksagon.searchable_fields(agg.name)
+        searchable_index_sql(table_name(agg.name), fields, adapter_type: adapter_type)
+      end
 
       # Maps a domain attribute to its SQL column type.
       #

@@ -92,6 +92,25 @@ module Hecks
         def unique_fields_from(validations)
           (validations || []).select(&:uniqueness?).map(&:field)
         end
+
+        # Generates a search index SQL statement for the given table and fields.
+        #
+        # For Postgres: creates a GIN index on a tsvector expression so full-text
+        # search can use an index scan. For all other adapters (SQLite, MySQL):
+        # returns nil — LIKE-based search is used at query time without an index.
+        #
+        # @param table [String] the SQL table name (e.g., "pizzas")
+        # @param fields [Array<String>] column names to include in the search index
+        # @param adapter_type [Symbol] :postgres, :sqlite, :mysql, etc.
+        # @return [String, nil] the CREATE INDEX SQL string, or nil for non-Postgres
+        def searchable_index_sql(table, fields, adapter_type: :sqlite)
+          return nil if fields.empty?
+          return nil unless adapter_type == :postgres
+
+          idx_name = "idx_#{table}_fts"
+          tsvector = fields.map { |f| "coalesce(#{f}::text, '')" }.join(" || ' ' || ")
+          "CREATE INDEX #{idx_name} ON #{table} USING gin(to_tsvector('english', #{tsvector}));"
+        end
       end
     end
   end

@@ -15,10 +15,14 @@ module Hecks
     include HecksTemplating::NamingHelpers
     include SerializationLines
 
-    def initialize(aggregate, domain_module:)
+    # @param aggregate [DomainModel::Structure::Aggregate] the aggregate
+    # @param domain_module [String] the fully qualified module name
+    # @param searchable_fields [Array<String>] field names tagged :searchable
+    def initialize(aggregate, domain_module:, searchable_fields: [])
       @aggregate = aggregate
       @domain_module = domain_module
       @safe_name = domain_constant_name(@aggregate.name)
+      @searchable_fields = searchable_fields
     end
 
     def generate
@@ -63,6 +67,7 @@ module Hecks
       lines << "        @collection.delete_many({})"
       lines << "      end"
       lines << ""
+      lines.concat(mongo_search_lines(6))
       lines << "      private"
       lines << ""
       lines.concat(serialize_lines(6))
@@ -75,6 +80,26 @@ module Hecks
     end
 
     private
+
+    # Generates a search(term) method using MongoDB $text search.
+    #
+    # Returns an empty array when no searchable fields are configured.
+    # The $text search uses the text index created by MongoBoot.create_text_indexes.
+    #
+    # @param indent [Integer] number of spaces to indent
+    # @return [Array<String>] lines of Ruby source code for the search method
+    def mongo_search_lines(indent)
+      return [] if @searchable_fields.empty?
+
+      pad = " " * indent
+      [
+        "#{pad}def search(term)",
+        "#{pad}  cursor = @collection.find('$text' => { '$search' => term })",
+        "#{pad}  cursor.map { |doc| deserialize(doc) }",
+        "#{pad}end",
+        ""
+      ]
+    end
 
     def query_lines(indent)
       pad = " " * indent

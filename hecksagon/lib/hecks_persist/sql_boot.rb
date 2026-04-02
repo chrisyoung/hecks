@@ -48,15 +48,17 @@ module Hecks
       end
 
       # Performs full SQL setup: generates adapter classes, creates tables,
-      # and returns instantiated repository objects.
+      # creates search indexes, and returns instantiated repository objects.
       #
       # @param domain [DomainModel::Structure::Domain] the domain model
       # @param db [Sequel::Database] the database connection
+      # @param hecksagon [Hecksagon::Structure::Hecksagon, nil] optional hecksagon for capability tags
       # @return [Hash<String, Object>] adapter instances keyed by aggregate name
-      def setup(domain, db)
+      def setup(domain, db, hecksagon: nil)
         mod_name = domain_module_name(domain.name)
-        generate_adapters(domain, mod_name)
+        generate_adapters(domain, mod_name, hecksagon: hecksagon)
         create_tables(domain, db)
+        create_search_indexes(domain, db, hecksagon: hecksagon)
         instantiate_adapters(domain, db, mod_name)
       end
 
@@ -64,10 +66,12 @@ module Hecks
       #
       # @param domain [DomainModel::Structure::Domain] the domain model
       # @param mod_name [String] the domain module name (e.g., "PizzasDomain")
+      # @param hecksagon [Hecksagon::Structure::Hecksagon, nil] optional hecksagon for capability tags
       # @return [void]
-      def generate_adapters(domain, mod_name)
+      def generate_adapters(domain, mod_name, hecksagon: nil)
         domain.aggregates.each do |agg|
-          gen = Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: mod_name)
+          fields = hecksagon ? hecksagon.searchable_fields(agg.name) : []
+          gen = Generators::SQL::SqlAdapterGenerator.new(agg, domain_module: mod_name, searchable_fields: fields)
           eval(gen.generate, TOPLEVEL_BINDING, "(sql_adapter:#{agg.name})", 1)
         end
       end
@@ -148,6 +152,38 @@ module Hecks
             vo_cols.each { |name, type| column name, type }
           end
         end
+      end
+
+      # Creates full-text search indexes for aggregates with :searchable fields.
+      #
+      # For Postgres: executes a GIN/tsvector index via raw SQL. Skipped for
+      # SQLite (LIKE used at query time). Safe to call when hecksagon is nil.
+      #
+      # @param domain [DomainModel::Structure::Domain] the domain model
+      # @param db [Sequel::Database] the database connection
+      # @param hecksagon [Hecksagon::Structure::Hecksagon, nil] optional hecksagon IR
+      # @return [void]
+      def create_search_indexes(domain, db, hecksagon: nil)
+        return unless hecksagon
+        return unless postgres?(db)
+
+        domain.aggregates.each do |agg|
+          fields = hecksagon.searchable_fields(agg.name)
+          next if fields.empty?
+
+          tbl = table_name_for(agg).to_s
+          idx_name = "idx_#{tbl}_fts"
+          tsvector = fields.map { |f| "coalesce(#{f}::text, '')" }.join(" || ' ' || ")
+          db.run("CREATE INDEX IF NOT EXISTS #{idx_name} ON #{tbl} USING gin(to_tsvector('english', #{tsvector}));")
+        end
+      end
+
+      # Checks whether the Sequel connection is backed by Postgres.
+      #
+      # @param db [Sequel::Database] the database connection
+      # @return [Boolean]
+      def postgres?(db)
+        db.adapter_scheme.to_s.include?("postgres")
       end
 
       # Returns pairs of [value_object, list_attribute] for list-type VOs.

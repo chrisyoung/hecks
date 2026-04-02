@@ -156,6 +156,9 @@
 - CRUD capability auto-enabled in Workshop play mode and Rails (`Hecks.configure`)
 - `hecks new` app.rb scaffold includes `app.capability(:crud)` by default
 
+## Attribute Tags (Hecksagon DSL)
+- `:searchable` tag — `capability.field.searchable` marks fields for full-text search; generates `search(term)` on repositories; emits GIN tsvector index for Postgres, LIKE fallback for SQLite/MySQL; MongoDB uses `$text` with a text index
+
 ## Runtime API
 - `Hecks.boot(__dir__)` — find domain file, validate, build, load, and wire in one call
 - `Hecks.boot(__dir__, adapter: :sqlite)` — automatic SQL setup
