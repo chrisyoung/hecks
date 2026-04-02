@@ -80,6 +80,22 @@ module Hecks
         @world_concerns.concat(concerns.map(&:to_sym))
       end
 
+      # Classify this domain as core, supporting, or generic.
+      # Default is :supporting when unset.
+      #
+      #   classification :core
+      #   classification :supporting
+      #   classification :generic
+      #
+      # @param kind [Symbol] one of :core, :supporting, :generic
+      def classification(kind)
+        valid = %i[core supporting generic]
+        unless valid.include?(kind.to_sym)
+          raise ArgumentError, "classification must be one of #{valid.inspect}, got #{kind.inspect}"
+        end
+        @classification = kind.to_sym
+      end
+
       def actor(name, description: nil)
         @actors << Structure::Actor.new(name: name.to_s, description: description)
       end
@@ -290,6 +306,7 @@ module Hecks
           domain.uses_kernels = @uses_kernels || []
           domain.anti_corruption_layers = @anti_corruption_layers || []
           domain.published_events = @published_events || []
+          domain.classification = @classification || :supporting
         end
         domain
       end
