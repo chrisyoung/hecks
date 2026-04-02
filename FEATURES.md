@@ -82,11 +82,13 @@
 - Glossary `generate` produces a "Ubiquitous Language" section with definitions and avoid lists
 
 ### World Concerns
-- `world_concerns :transparency, :consent, :privacy, :security` — opt-in ethical validation rules
+- `world_concerns :transparency, :consent, :privacy, :security, :equity, :sustainability` — opt-in ethical validation rules
 - `:transparency` — commands must emit events (no silent mutations)
 - `:consent` — user-like aggregate commands must declare actors
 - `:privacy` — PII attributes must be `visible: false`; PII aggregate commands need actors
 - `:security` — command actors must be declared at domain level
+- `:equity` — warns when only one actor role is defined (single-role authority concentration)
+- `:sustainability` — warns when aggregates lack lifecycle management or expiration attributes
 - **World Concerns Report** — `hecks validate` shows a per-concern PASS/FAIL summary with violations listed
 
 ### Access Control & Ports
@@ -113,6 +115,13 @@
 ### Server Extensions
 - `hecks_serve` registers `:http` — adds `CatsDomain.serve(port: 9292)`
 - `hecks_ai` registers `:mcp` — adds `CatsDomain.mcp`
+
+### Anti-Corruption Layer
+- `hecks_bubble` — bubble context ACL extension for legacy field translation
+- `map_aggregate :Pizza { from_legacy :pie_name, to: :name }` — declare field mappings per aggregate
+- `context.translate(:Pizza, :create, legacy_data)` — forward translate legacy to domain
+- `context.reverse(:Pizza, domain_data)` — reverse translate domain back to legacy
+- Optional `transform:` lambda on `from_legacy` for value conversion (forward only)
 
 ### Application Service Extensions
 - `hecks_auth` — actor-based authentication & authorization
@@ -660,6 +669,8 @@
   - `UILabelContract` — PascalCase splitting, ActiveSupport pluralization, plural_label
 - Contract-driven Go templates (ShowTemplate, FormTemplate, IndexTemplate) — no ERB conversion or regex patching
 - Self-ref detection for multi-word aggregates via `AggregateContract.agg_suffixes` (policy_id matches GovernancePolicy)
+- `CommandContract.reference_attribute?(attr_name, agg_name)` — centralized `_id` suffix detection for self-referencing attributes
+- `CommandContract.find_self_ref(cmd, agg_name)` — find the self-referencing attribute on a command (nil for create commands)
 - Browser-style HTTP smoke test: GET form → parse HTML → POST form-urlencoded → follow redirect → verify show page
   - Tests every command, query, specification, lifecycle transition, view, workflow, service
   - Validates event log after commands and lifecycle walks

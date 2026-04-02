@@ -212,4 +212,124 @@ RSpec.describe "World Concerns validation rules" do
       expect(valid).to be true
     end
   end
+
+  describe ":equity" do
+    it "flags domains with only one actor role" do
+      domain = Hecks.domain "Monarchy" do
+        world_concerns :equity
+        actor "Admin"
+        aggregate "Config" do
+          attribute :key, String
+          command "UpdateConfig" do
+            attribute :key, String
+            actor "Admin"
+          end
+        end
+      end
+
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors).to include(/Equity.*only one actor role/)
+    end
+
+    it "passes with multiple actor roles" do
+      domain = Hecks.domain "Democracy" do
+        world_concerns :equity
+        actor "Admin"
+        actor "User"
+        aggregate "Config" do
+          attribute :key, String
+          command "UpdateConfig" do
+            attribute :key, String
+            actor "Admin"
+          end
+        end
+      end
+
+      valid, _errors = validate(domain)
+      expect(valid).to be true
+    end
+
+    it "passes with no actors (nothing to warn about)" do
+      domain = Hecks.domain "NoActors" do
+        world_concerns :equity
+        aggregate "Widget" do
+          attribute :name, String
+          command "CreateWidget" do
+            attribute :name, String
+          end
+        end
+      end
+
+      valid, _errors = validate(domain)
+      expect(valid).to be true
+    end
+  end
+
+  describe ":sustainability" do
+    it "flags aggregates with no lifecycle" do
+      domain = Hecks.domain "Ephemeral" do
+        world_concerns :sustainability
+        aggregate "Session" do
+          attribute :token, String
+          attribute :expires_at, DateTime
+          command "CreateSession" do
+            attribute :token, String
+          end
+        end
+      end
+
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors).to include(/Sustainability.*Session.*no lifecycle/)
+    end
+
+    it "flags aggregates with no expiration attribute" do
+      domain = Hecks.domain "Forever" do
+        world_concerns :sustainability
+        aggregate "Record" do
+          attribute :data, String
+
+          lifecycle :status, default: "active" do
+            transition "ArchiveRecord" => "archived"
+          end
+
+          command "CreateRecord" do
+            attribute :data, String
+          end
+          command "ArchiveRecord" do
+            reference_to "Record"
+          end
+        end
+      end
+
+      valid, errors = validate(domain)
+      expect(valid).to be false
+      expect(errors).to include(/Sustainability.*Record.*no expiration/)
+    end
+
+    it "passes with lifecycle and expiration" do
+      domain = Hecks.domain "Managed" do
+        world_concerns :sustainability
+        aggregate "Session" do
+          attribute :token, String
+          attribute :expires_at, DateTime
+
+          lifecycle :status, default: "active" do
+            transition "ExpireSession" => "expired"
+          end
+
+          command "CreateSession" do
+            attribute :token, String
+          end
+          command "ExpireSession" do
+            reference_to "Session"
+          end
+        end
+      end
+
+      valid, _errors = validate(domain)
+      expect(valid).to be true
+    end
+  end
 end

@@ -15,10 +15,12 @@ module Hecks
     #   end
     #
     module WorldConcerns
-      autoload :Transparency, "hecks/validation_rules/world_concerns/transparency"
-      autoload :Consent,      "hecks/validation_rules/world_concerns/consent"
-      autoload :Privacy,      "hecks/validation_rules/world_concerns/privacy"
-      autoload :Security,     "hecks/validation_rules/world_concerns/security"
+      autoload :Transparency,   "hecks/validation_rules/world_concerns/transparency"
+      autoload :Consent,        "hecks/validation_rules/world_concerns/consent"
+      autoload :Privacy,        "hecks/validation_rules/world_concerns/privacy"
+      autoload :Security,       "hecks/validation_rules/world_concerns/security"
+      autoload :Equity,         "hecks/validation_rules/world_concerns/equity"
+      autoload :Sustainability, "hecks/validation_rules/world_concerns/sustainability"
     end
   end
 end
