@@ -95,10 +95,8 @@ RSpec.describe "Shared Kernel" do
   end
 
   describe "auto-expose when no explicit types given" do
-    before(:all) do
-      Hecksagon::SharedKernelRegistry.clear!
-
-      @common = Hecks.domain "Common" do
+    it "exposes all value objects and entities when no explicit types" do
+      common = Hecks.domain "Common" do
         shared_kernel
 
         aggregate "Shared" do
@@ -119,10 +117,7 @@ RSpec.describe "Shared Kernel" do
         end
       end
 
-      Hecks.load(@common, force: true)
-    end
-
-    it "exposes all value objects and entities when no explicit types" do
+      Hecks.load(common, force: true)
       types = Hecksagon::SharedKernelRegistry.types_for("Common")
       expect(types).to include("Address", "PhoneNumber")
     end
