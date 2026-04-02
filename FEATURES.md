@@ -629,6 +629,15 @@
 - `Hecks.boot(__dir__, adapter: :filesystem)` explicit wiring
 - Same interface as memory: find, save, delete, all, count, query, clear
 
+### hecks_failover
+- Driven extension wrapping repos with FailoverProxy decorator
+- Transparent failover to in-memory store when primary repo raises errors
+- Write log captures all writes during failover for replay on recovery
+- `Hecks.failover_status` returns current mode and write log size
+- `Hecks.failover_recover!` forces immediate recovery attempt
+- RecoveryMonitor for periodic background recovery via `start(interval:)`
+- `failed_over?` predicate on each proxy
+
 ### hecks_validations
 - Server-side parameter validation from domain rules
 - Reads validation rules and VO invariants from domain IR at boot
