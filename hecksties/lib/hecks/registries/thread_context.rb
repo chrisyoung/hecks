@@ -1,8 +1,15 @@
 # Hecks::ThreadContextMethods
 #
-# Thread-local tenant and actor context.
+# Thread-local tenant, actor, and trace context.
+# Provides accessor pairs and +with_*+ scoping blocks for each context value.
 # Extracted from the Hecks module.
 #
+# Usage:
+#   Hecks.trace_id = "abc-123"
+#   Hecks.with_trace { |id| puts id }  # auto-generates UUID when nil
+#
+require "securerandom"
+
 module Hecks
   module ThreadContextMethods
     def tenant
@@ -51,6 +58,23 @@ module Hecks
       yield
     ensure
       Thread.current[:hecks_current_user] = old
+    end
+
+    def trace_id
+      Thread.current[:hecks_trace_id]
+    end
+
+    def trace_id=(id)
+      Thread.current[:hecks_trace_id] = id&.to_s
+    end
+
+    def with_trace(id = nil)
+      id ||= SecureRandom.uuid
+      old = Thread.current[:hecks_trace_id]
+      Thread.current[:hecks_trace_id] = id.to_s
+      yield id
+    ensure
+      Thread.current[:hecks_trace_id] = old
     end
   end
 end

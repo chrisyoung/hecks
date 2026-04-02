@@ -68,6 +68,7 @@ module Hecks
       #   a fully qualified name (the last segment is used for listener matching)
       # @return [void]
       def publish(event)
+        event = stamp_trace_id(event)
         @events << event
         event_name = Hecks::Utils.const_short_name(event)
         @listeners[event_name].each { |handler| handler.call(event) }
@@ -79,6 +80,28 @@ module Hecks
       # @return [void]
       def clear
         @events.clear
+      end
+
+      # Instance variable used to stamp the current trace ID onto published events.
+      TRACE_ATTR = :@_trace_id
+
+      private
+
+      # Stamps the current thread-local trace ID onto the event, if one is set.
+      #
+      # Uses an instance variable so the event's formal attribute contract is
+      # unchanged. Readers can access it via +event.instance_variable_get(:@_trace_id)+.
+      #
+      # @param event [Object] the domain event to stamp
+      # @return [void]
+      def stamp_trace_id(event)
+        tid = Hecks.trace_id
+        return event unless tid || @auto_trace
+
+        tid ||= SecureRandom.uuid
+        target = event.frozen? ? event.dup : event
+        target.instance_variable_set(TRACE_ATTR, tid)
+        target
       end
   end
 end

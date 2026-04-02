@@ -130,6 +130,7 @@
 - `hecks_idempotency` — command deduplication by fingerprint
 - `hecks_transactions` — DB transaction wrapping when SQL adapter present
 - `hecks_retry` — exponential backoff for transient errors
+- `hecks_tracing` — distributed tracing with correlation IDs stamped on every domain event; auto-generates UUIDs, preserves pre-set trace IDs from upstream (e.g. HTTP headers via `Hecks.trace_id=`)
 
 ### Domain Connections DSL
 - `extend :sqlite` — declare persistence adapter
