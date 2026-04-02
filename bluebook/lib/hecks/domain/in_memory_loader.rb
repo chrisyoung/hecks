@@ -15,6 +15,8 @@ module Hecks
       gem = domain.gem_name
       load_src(module_shell(mod, domain.version), "#{gem}.rb")
 
+      install_kernel_aliases(domain, mod)
+
       domain.aggregates.each do |agg|
         safe = domain_constant_name(agg.name)
         snake = domain_snake_name(safe)
@@ -77,6 +79,38 @@ module Hecks
     end
 
     def self.gen(klass, obj, **opts) = klass.new(obj, **opts).generate
+
+    # Creates class aliases in the consumer domain for types from shared kernels.
+    # When a domain declares `uses_kernel "Pricing"`, any types exposed by Pricing
+    # (e.g., Money) become available as `ConsumerDomain::Money`.
+    def self.install_kernel_aliases(domain, mod)
+      return unless defined?(Hecksagon::SharedKernelRegistry)
+      kernels = domain.respond_to?(:uses_kernels) ? (domain.uses_kernels || []) : []
+      kernels.each do |kernel_name|
+        types = Hecksagon::SharedKernelRegistry.types_for(kernel_name)
+        kernel_mod = domain_module_name(kernel_name)
+        types.each do |type_name|
+          src = resolve_kernel_type(kernel_mod, type_name)
+          next unless src
+          load_src("module #{mod}; #{type_name} = #{src}; end", "#{domain.gem_name}/kernel_alias_#{type_name.downcase}.rb")
+        end
+      end
+    end
+
+    # Searches aggregate namespaces in the kernel domain for the named type.
+    def self.resolve_kernel_type(kernel_mod, type_name)
+      return nil unless Object.const_defined?(kernel_mod)
+      km = Object.const_get(kernel_mod)
+      # Check directly on the kernel module first
+      return "#{kernel_mod}::#{type_name}" if km.const_defined?(type_name, false)
+      # Check nested under each aggregate
+      km.constants.each do |c|
+        sub = km.const_get(c)
+        next unless sub.is_a?(Class) || sub.is_a?(Module)
+        return "#{kernel_mod}::#{c}::#{type_name}" if sub.const_defined?(type_name, false)
+      end
+      nil
+    end
 
     def self.load_src(source, virtual_path)
       RubyVM::InstructionSequence.compile(source, virtual_path).eval

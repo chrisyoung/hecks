@@ -287,9 +287,17 @@ module Hecks
           domain.driving_ports = @driving_ports || []
           domain.driven_ports = @driven_ports || []
           domain.shared_kernel = @shared_kernel || false
+          domain.shared_kernel_types = @shared_kernel_types || []
           domain.uses_kernels = @uses_kernels || []
           domain.anti_corruption_layers = @anti_corruption_layers || []
           domain.published_events = @published_events || []
+          if domain.shared_kernel? && defined?(Hecksagon::SharedKernelRegistry)
+            types = domain.shared_kernel_types
+            if types.empty?
+              types = domain.aggregates.flat_map { |a| a.value_objects.map(&:name) + a.entities.map(&:name) }
+            end
+            Hecksagon::SharedKernelRegistry.register(domain.name, types)
+          end
         end
         domain
       end

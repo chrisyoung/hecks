@@ -10,6 +10,7 @@ module Hecksagon
       base.class_eval do
         def init_strategic
           @shared_kernel ||= false
+          @shared_kernel_types ||= []
           @uses_kernels ||= []
           @anti_corruption_layers ||= []
           @published_events ||= []
@@ -20,6 +21,17 @@ module Hecksagon
     def shared_kernel
       init_strategic
       @shared_kernel = true
+    end
+
+    # Declare which types this shared kernel exposes to consumers.
+    # Only meaningful when `shared_kernel` is also declared.
+    #
+    #   shared_kernel
+    #   expose_types "Money", "Currency"
+    #
+    def expose_types(*types)
+      init_strategic
+      @shared_kernel_types.concat(types.map(&:to_s))
     end
 
     def uses_kernel(name)

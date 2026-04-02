@@ -34,4 +34,16 @@ module Hecksagon
   autoload :AclBuilder,       "hecksagon/acl_builder"
   autoload :AdapterRegistry,  "hecksagon/adapter_registry"
   autoload :ContractValidator, "hecksagon/contract_validator"
+  autoload :SharedKernelRegistry, "hecksagon/shared_kernel_registry"
+
+  # Patch DomainBuilder with strategic/extension DSL methods when both
+  # hecksagon and bluebook are loaded (order-independent).
+  def self.patch_domain_builder!
+    return unless defined?(Hecks::DSL::DomainBuilder)
+    builder = Hecks::DSL::DomainBuilder
+    builder.include(StrategicDSL) unless builder.include?(StrategicDSL)
+    builder.include(ExtensionsDSL) unless builder.include?(ExtensionsDSL)
+  end
+
+  patch_domain_builder!
 end

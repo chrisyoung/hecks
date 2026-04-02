@@ -10,6 +10,7 @@
 - Define value objects as immutable nested types within aggregates
 - Define entities within aggregates — sub-objects with identity (UUID), mutable, not frozen
 - Multi-domain support with shared event bus across domains
+- Shared Kernel — `shared_kernel` + `expose_types` in provider domain, `uses_kernel "Name"` in consumer domain; value objects/entities become aliased in the consumer namespace via `SharedKernelRegistry`; auto-exposes all VOs and entities when no explicit types given
 - Domain version pinning and local path loading in configuration
 
 ### Attributes & Types
