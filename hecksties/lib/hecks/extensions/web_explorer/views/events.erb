@@ -1,0 +1,59 @@
+<div class="header-row">
+  <h1>Event Log (<%= entries.size %><%= " of #{total}" if total != entries.size %>)</h1>
+</div>
+<form method="get" action="<%= events_href %>" style="background:none;box-shadow:none;padding:0;max-width:none;display:flex;gap:1rem;align-items:end;margin-bottom:1.5rem">
+  <div>
+    <label>Event Type</label>
+    <select class="inline" name="type_filter" style="width:auto">
+      <option value="">All</option>
+      <% event_types.each do |t| %>
+        <option value="<%= h(t) %>"<%= ' selected' if type_filter == t %>><%= h(t) %></option>
+      <% end %>
+    </select>
+  </div>
+  <div>
+    <label>Aggregate</label>
+    <select class="inline" name="aggregate_filter" style="width:auto">
+      <option value="">All</option>
+      <% aggregate_types.each do |a| %>
+        <option value="<%= h(a) %>"<%= ' selected' if aggregate_filter == a %>><%= h(a) %></option>
+      <% end %>
+    </select>
+  </div>
+  <button class="btn btn-sm" type="submit">Filter</button>
+</form>
+<% if entries.empty? %>
+  <p style="color:#666">No events recorded yet. Execute some commands to generate events.</p>
+<% else %>
+  <table>
+    <thead>
+      <tr><th>Timestamp</th><th>Type</th><th>Aggregate</th><th>Payload</th></tr>
+    </thead>
+    <tbody>
+      <% entries.each_with_index do |entry, i| %>
+        <tr>
+          <td class="mono"><%= h(entry[:occurred_at] || "—") %></td>
+          <td><span class="badge"><%= h(entry[:type]) %></span></td>
+          <td><%= h(entry[:aggregate] || "—") %></td>
+          <td>
+            <% if entry[:payload] && !entry[:payload].empty? %>
+              <details>
+                <summary class="mono" style="cursor:pointer;color:#4361ee">
+                  <%= entry[:payload].size %> field<%= entry[:payload].size == 1 ? "" : "s" %>
+                </summary>
+                <dl class="detail" style="margin-top:0.5rem;padding:0.75rem;box-shadow:none;border:1px solid #eee">
+                  <% entry[:payload].each do |k, v| %>
+                    <dt style="margin-top:0.5rem"><%= h(k) %></dt>
+                    <dd class="mono"><%= h(v) %></dd>
+                  <% end %>
+                </dl>
+              </details>
+            <% else %>
+              <span style="color:#999">—</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

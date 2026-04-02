@@ -14,6 +14,26 @@ module Hecks
         include CsrfHelpers
         private
 
+        def serve_events(req, res)
+          require "hecks/extensions/web_explorer/event_introspector"
+          buses = @entries.map { |e| e[:runtime].event_bus }
+          combined_bus = Hecks::EventBus.new
+          buses.each { |b| b.events.each { |e| combined_bus.events << e } }
+          introspector = Hecks::WebExplorer::EventIntrospector.new(combined_bus)
+          type_filter = req.query["type_filter"]
+          agg_filter = req.query["aggregate_filter"]
+          entries = introspector.all_entries(type_filter: type_filter, aggregate_filter: agg_filter)
+          html = @renderer.render(:events,
+            title: "Events — #{@brand}", brand: @brand, nav_items: @nav,
+            entries: entries, total: combined_bus.events.size,
+            event_types: introspector.event_types,
+            aggregate_types: introspector.aggregate_types,
+            type_filter: type_filter, aggregate_filter: agg_filter,
+            events_href: "/events")
+          res["Content-Type"] = "text/html"
+          res.body = html
+        end
+
         def serve_ui_route(req, res, entry, sub_path)
           ir = entry[:ir]
           bridge = entry[:bridge]

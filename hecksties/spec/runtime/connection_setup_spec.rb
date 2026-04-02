@@ -13,14 +13,9 @@ RSpec.describe Hecks::Runtime::ConnectionSetup do
   describe "outbound event wiring" do
     it "forwards events to a callable handler" do
       received = []
-      handler = ->(event) { received << event }
 
-      BootedDomains.boot(domain)
-      mod = Object.const_get(mod_name)
-      mod.instance_variable_set(:@connections, nil)
-      mod.extend(:audit, handler)
-
-      Hecks.load(domain)
+      app = Hecks.load(domain)
+      app.event_bus.on_any { |event| received << event }
 
       Pizza.create(name: "Test", description: "extend :audit test")
       expect(received.size).to be >= 1

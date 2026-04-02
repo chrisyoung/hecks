@@ -87,6 +87,7 @@ module Hecks
             }
           end
         end
+        items << { label: "Events", href: "/events", group: "System" }
         items << { label: "Config", href: "/config", group: "System" }
         items
       end
@@ -102,6 +103,8 @@ module Hecks
           serve_home(res)
         elsif path == "/config"
           serve_config(res)
+        elsif path == "/events"
+          serve_events(req, res)
         else
           entry = @entries.find { |e| path.start_with?("/#{e[:slug]}/") || path == "/#{e[:slug]}" }
           if entry
