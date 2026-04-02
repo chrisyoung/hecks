@@ -585,6 +585,48 @@ Computed attribute names can't collide with regular attribute names (the validat
 
 ---
 
+## Pure Functions
+
+Pure functions are side-effect-free methods on aggregates or value objects. They may only read attributes — no state mutation, no commands, no events.
+
+```ruby
+aggregate "Person" do
+  attribute :first, String
+  attribute :last, String
+
+  function :full_name do
+    "#{first} #{last}"
+  end
+
+  command "CreatePerson" do
+    attribute :first, String
+    attribute :last, String
+  end
+end
+```
+
+Value objects support them too:
+
+```ruby
+value_object "Address" do
+  attribute :street, String
+  attribute :city, String
+
+  function :display do
+    "#{street}, #{city}"
+  end
+end
+```
+
+Function names can't collide with regular or computed attribute names. The generated class gets a plain instance method:
+
+```ruby
+person = Person.create(first: "Alice", last: "Smith")
+person.full_name # => "Alice Smith"
+```
+
+---
+
 ## Lifecycle
 
 A lifecycle is a state machine on a single attribute. It declares which commands trigger which state transitions, and optionally constrains which source states are valid. The runtime enforces these transitions — trying to publish an archived post raises an error.
