@@ -103,6 +103,9 @@ module Hecks
       driven, driving, untyped = partition_by_adapter_type(eligible)
       (driven + untyped + driving).each { |_name, hook| hook.call(mod, domain, runtime) }
 
+      require_relative "extension_dispatch"
+      ExtensionDispatch.apply_hecksagon_concerns(runtime)
+
       runtime.check_auth_coverage!
       runtime.check_reference_coverage!
     end

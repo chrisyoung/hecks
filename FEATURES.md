@@ -92,6 +92,20 @@
 - **GovernanceGuard** — general-purpose governance checker (`Hecks::GovernanceGuard.new(domain).check`) returns `Result` with `passed?`, `violations`, `suggestions`; works from CLI (`--governance`), MCP (`governance_check` tool), REPL, or any entry point
 - GovernanceGuard falls back to rule-based checks when no LLM API key is present; enriches suggestions via AI when available
 
+### Concerns-to-Capabilities Mapping
+- `Hecks::Concerns::Mapping` — shared mapping from world concerns to extensions and capabilities
+- `Hecks::Concerns::Mapping.resolve(:transparency)` — returns `{ extensions: [:audit], capabilities: [:audit] }`
+- `Hecks::Concerns::Mapping.resolve_all([:privacy, :transparency])` — deduplicates across multiple concerns
+- Hecksagon DSL: `concerns :transparency, :privacy` — declares concerns on the hecksagon IR
+- Boot resolves concerns via `ExtensionDispatch.apply_hecksagon_concerns` — activates extensions and capabilities
+
+### Audit Capability
+- `Hecks::Capabilities::Audit.apply(runtime)` — explicit programmatic wiring of audit trail
+- Idempotent: safe to call multiple times, returns existing audit instance
+- Custom resolvers: `actor_resolver:` and `tenant_resolver:` procs for request-scoped context
+- Auto-activated when `:transparency` or `:privacy` concerns are declared in hecksagon DSL
+- Reuses existing `Hecks::Audit` extension — detects if loaded, wires without duplication
+
 ### Access Control & Ports
 - Define access-control ports that whitelist allowed methods per consumer
 - Import domains from event storm formats (Markdown and YAML)

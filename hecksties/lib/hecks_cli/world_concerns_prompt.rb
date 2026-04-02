@@ -4,22 +4,20 @@
 # for a new domain. Each concern maps to a real Hecks extension that enforces
 # the goal at runtime. Extracted from new_project.rb to keep that file small.
 #
+# Delegates concern-to-extension mapping to Hecks::Concerns::Mapping so
+# that the CLI and runtime boot share a single source of truth.
+#
 # Usage:
 #   result = WorldConcernsPrompt.run(say_method: method(:say))
 #   result[:concerns]   # => [:privacy, :consent]
 #   result[:extensions] # => [:pii, :auth]
 #   result[:stub]       # => false
 #
+require_relative "../hecks/concerns/mapping"
+
 module Hecks
   class WorldConcernsPrompt
-    GOAL_TO_EXTENSION = {
-      privacy:       :pii,
-      transparency:  :audit,
-      consent:       :auth,
-      security:      :auth,
-      equity:        :tenancy,
-      sustainability: :rate_limit
-    }.freeze
+    GOAL_TO_EXTENSION = Hecks::Concerns::Mapping::CONCERN_TO_EXTENSION
 
     VALID_GOALS = GOAL_TO_EXTENSION.keys.freeze
 

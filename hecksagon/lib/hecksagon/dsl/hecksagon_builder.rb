@@ -19,6 +19,7 @@ module Hecksagon
         @extensions = []
         @subscriptions = []
         @tenancy = nil
+        @concerns = []
       end
 
       # Declare a gate (access control) for an aggregate + role.
@@ -67,6 +68,17 @@ module Hecksagon
         @tenancy = strategy.to_sym
       end
 
+      # Declare world concerns for this hecksagon.
+      #
+      # Concerns are resolved at boot time to extensions and capabilities
+      # via Hecks::Concerns::Mapping.
+      #
+      # @param names [Array<Symbol>] concern names (e.g., :transparency, :privacy)
+      # @return [void]
+      def concerns(*names)
+        @concerns = names.flatten.map(&:to_sym)
+      end
+
       # Build and return the Hecksagon IR object.
       #
       # @return [Hecksagon::Structure::Hecksagon]
@@ -77,7 +89,8 @@ module Hecksagon
           adapter: @adapter,
           extensions: @extensions,
           subscriptions: @subscriptions,
-          tenancy: @tenancy
+          tenancy: @tenancy,
+          concerns: @concerns
         )
       end
     end
