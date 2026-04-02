@@ -119,6 +119,47 @@ tenancy :schema    # schema-level isolation (separate schemas per tenant)
 
 ---
 
+## Aggregate Capability Tags
+
+The `aggregate` block declares per-aggregate attribute metadata. Tags are consumed by SQL/MongoDB generators and the hecksagon IR.
+
+```ruby
+Hecks.hecksagon do
+  aggregate "Order" do
+    # Emits CREATE INDEX for this column in SQL; { attr => 1 } in MongoDB
+    capability.created_at.indexed
+    capability.status.indexed
+
+    # Bare attribute shorthand (no capability. prefix needed)
+    email.indexed
+
+    # Chaining: registers both :privacy and :indexed on ssn
+    ssn.privacy.indexed
+  end
+end
+```
+
+### IR Query
+
+```ruby
+hex.indexed_attributes_for("Order")
+# => ["created_at", "status", "email", "ssn"]
+```
+
+### SQL Output
+
+Pass the hecksagon to `SqlMigrationGenerator` to include index statements:
+
+```ruby
+gen = Hecks::Generators::SQL::SqlMigrationGenerator.new(domain, hecksagon: hex)
+gen.generate
+# => includes CREATE INDEX idx_orders_created_at ON orders(created_at);
+```
+
+See [docs/usage/indexed.md](indexed.md) for full examples.
+
+---
+
 ## Booting with a Hecksagon
 
 `Hecks.boot` looks for both a Bluebook (domain definition) and a Hecksagon (infrastructure wiring) in the project directory. If no Hecksagon is found, it uses defaults: memory adapter, no gates, no extensions.
