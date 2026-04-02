@@ -114,6 +114,11 @@
 - `ApiContract.serialize(domain)` / `ApiContract.diff(old, new)` — programmatic contract comparison
 - BreakingClassifier extended with `remove_query`, `remove_scope`, `remove_finder` as breaking changes
 
+### Domain Changelog
+- `hecks changelog` — generate Markdown changelog from tagged version diffs
+- `hecks changelog --output DOMAIN_CHANGELOG.md` — write to file
+- `ChangelogGenerator.generate_diff(old, new, version:)` — single version diff as Markdown
+
 ### Contract Testing
 - `Hecks::ContractTesting.install!` — register shared RSpec examples for repository contract verification
 - `it_behaves_like "a Hecks repository"` — verify CRUD, query, count, clear on any adapter

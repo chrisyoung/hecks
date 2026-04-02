@@ -11,6 +11,7 @@
 require_relative "domain_versioning/breaking_classifier"
 require_relative "domain_versioning/breaking_bumper"
 require_relative "domain_versioning/api_contract"
+require_relative "domain_versioning/changelog_generator"
 
 module Hecks
   module DomainVersioning
