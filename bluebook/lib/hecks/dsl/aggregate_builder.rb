@@ -78,6 +78,7 @@ module Hecks
         @explicit_events = []
         @factories = []
         @computed_attributes = []
+        @finders = []
         @lifecycle = nil
         @identity_fields = nil
         @metadata = {}
@@ -188,7 +189,7 @@ module Hecks
           scopes: @scopes, queries: @queries,
           subscribers: @subscribers,
           specifications: @specifications, computed_attributes: @computed_attributes,
-          lifecycle: @lifecycle,
+          finders: @finders, lifecycle: @lifecycle,
           metadata: @metadata, references: @references,
           factories: @factories, identity_fields: @identity_fields
         )

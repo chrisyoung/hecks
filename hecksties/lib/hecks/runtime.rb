@@ -13,6 +13,7 @@ require_relative "runtime/connection_setup"
 require_relative "runtime/service_setup"
 require_relative "runtime/auth_coverage_check"
 require_relative "runtime/reference_authorizer_check"
+require_relative "runtime/finder_methods"
 
 module Hecks
   # Hecks::Runtime

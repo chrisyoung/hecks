@@ -32,6 +32,7 @@ module Hecks
               adapter_class = @mod::Adapters.const_get("#{agg.name}MemoryRepository")
               @repositories[agg.name] = adapter_class.new
             end
+            FinderMethods.bind(agg, @repositories[agg.name])
           end
         end
       end

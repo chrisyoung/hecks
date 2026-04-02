@@ -25,6 +25,18 @@ module Hecks
         def query(name, &block)
           @queries << DomainModel::Behavior::Query.new(name: name, block: block)
         end
+
+        # Declare a custom finder for repository lookup by attribute.
+        #
+        #   finder :email
+        #   finder :slug, attribute: :url_slug
+        #
+        # @param name [Symbol] the finder name (becomes find_by_<name>)
+        # @param attribute [Symbol, nil] the attribute to search (defaults to name)
+        # @return [void]
+        def finder(name, attribute: nil)
+          @finders << DomainModel::Structure::Finder.new(name: name, attribute: attribute)
+        end
       end
     end
   end

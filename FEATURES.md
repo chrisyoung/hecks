@@ -102,6 +102,12 @@
 - Two-phase boot: driven extensions (repos, middleware) fire before driving extensions (HTTP, queues)
 - Query helpers: `Hecks.driven_extensions` and `Hecks.driving_extensions`
 
+### Custom Finders
+- `finder :email` DSL keyword on aggregates — declares named repository lookups
+- `finder :slug, attribute: :url_slug` — custom attribute mapping
+- Auto-implemented as `find_by_<name>(value)` on memory adapter repositories
+- `FinderMethods.bind(aggregate, repo)` — bind finders onto any repository
+
 ### Persistence Extensions
 - `hecks_sqlite` — SQLite persistence, auto-wires when in Gemfile
 - `hecks_postgres` — PostgreSQL persistence
