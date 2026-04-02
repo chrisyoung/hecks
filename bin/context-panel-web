@@ -1,0 +1,23 @@
+#!/bin/bash
+# context-panel-web
+#
+# Launches the browser-based context panel that shows files Claude Code
+# is working with. Polls the active Claude session for file context.
+#
+# Usage: context-panel-web [port]
+
+GEM_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PORT="${1:-3001}"
+
+ruby -I"$GEM_DIR/hecks_ai/lib" -e "
+  require 'hecks_ai/context_panel/server'
+  Hecks::AI::ContextPanel::Server.new(project_dir: '$GEM_DIR', port: $PORT).run
+" &
+SERVER_PID=$!
+
+sleep 1
+if kill -0 "$SERVER_PID" 2>/dev/null; then
+  open "http://localhost:$PORT" 2>/dev/null || xdg-open "http://localhost:$PORT" 2>/dev/null
+fi
+
+wait "$SERVER_PID"

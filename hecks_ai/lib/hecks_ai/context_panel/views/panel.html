@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Context</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 12px;
+      min-height: 100vh;
+    }
+
+    .header {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding-left: 8px;
+      border-left: 2px solid #58a6ff;
+      color: #58a6ff;
+      margin-bottom: 8px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #30363d;
+      margin-bottom: 8px;
+    }
+
+    .file-list {
+      list-style: none;
+    }
+
+    .file-item {
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background 0.15s;
+    }
+
+    .file-item:hover {
+      background: #161b22;
+    }
+
+    .file-item .dir {
+      color: #8b949e;
+    }
+
+    .file-item .name {
+      font-weight: 500;
+    }
+
+    /* Extension-based colors */
+    .ext-rb .name   { color: #f85149; }
+    .ext-js .name   { color: #d29922; }
+    .ext-md .name   { color: #58a6ff; }
+    .ext-yml .name,
+    .ext-yaml .name { color: #bc8cff; }
+    .ext-sh .name   { color: #7ee787; }
+    .ext-erb .name  { color: #79c0ff; }
+    .ext-html .name { color: #f0883e; }
+    .ext-css .name  { color: #ff7b72; }
+    .ext-json .name { color: #d2a8ff; }
+    .ext-go .name   { color: #79c0ff; }
+
+    .footer {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid #30363d;
+      font-size: 11px;
+      color: #8b949e;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .empty {
+      color: #8b949e;
+      padding: 8px;
+      font-style: italic;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #7ee787;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Context Files</div>
+  <hr class="divider">
+  <ul class="file-list" id="file-list"></ul>
+  <div class="footer">
+    <span id="count">0 files</span>
+    <span><span class="dot"></span>polling</span>
+  </div>
+
+  <script>
+    const listEl = document.getElementById('file-list');
+    const countEl = document.getElementById('count');
+    let lastJson = '';
+
+    function extClass(filepath) {
+      const dot = filepath.lastIndexOf('.');
+      if (dot === -1) return '';
+      return 'ext-' + filepath.slice(dot + 1).toLowerCase();
+    }
+
+    function splitPath(filepath) {
+      const slash = filepath.lastIndexOf('/');
+      if (slash === -1) return { dir: '', name: filepath };
+      return { dir: filepath.slice(0, slash + 1), name: filepath.slice(slash + 1) };
+    }
+
+    function render(files) {
+      if (files.length === 0) {
+        listEl.innerHTML = '<li class="empty">No files in context yet.</li>';
+        countEl.textContent = '0 files';
+        return;
+      }
+
+      listEl.innerHTML = files.map(f => {
+        const { dir, name } = splitPath(f);
+        return `<li class="file-item ${extClass(f)}"><span class="dir">${dir}</span><span class="name">${name}</span></li>`;
+      }).join('');
+
+      const n = files.length;
+      countEl.textContent = `${n} file${n === 1 ? '' : 's'}`;
+    }
+
+    async function poll() {
+      try {
+        const res = await fetch('/files');
+        const text = await res.text();
+        if (text !== lastJson) {
+          lastJson = text;
+          const data = JSON.parse(text);
+          render(data.files);
+        }
+      } catch (e) {
+        // server down, keep trying
+      }
+    }
+
+    poll();
+    setInterval(poll, 2000);
+  </script>
+</body>
+</html>

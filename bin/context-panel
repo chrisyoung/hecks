@@ -1,0 +1,133 @@
+#!/bin/bash
+# context-panel
+#
+# Watches the active Claude Code session JSONL for file_path entries
+# and displays them as a live-updating panel. Deduplicates and shows
+# the most recently touched files first.
+#
+# Usage: context-panel <context_file>
+
+CONTEXT_FILE="${1:-/tmp/hecks_ide_context}"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+POLL_INTERVAL=2
+
+# Resolve the Claude projects directory for this working directory
+CLAUDE_PROJECT_DIR="$HOME/.claude/projects"
+
+find_session_file() {
+  # Find the project hash dir matching our working directory
+  local encoded
+  encoded=$(echo "$PROJECT_DIR" | sed 's|/|-|g')
+
+  local project_path="$CLAUDE_PROJECT_DIR/$encoded"
+  if [ ! -d "$project_path" ]; then
+    # Try parent directories
+    encoded=$(echo "$(dirname "$PROJECT_DIR")" | sed 's|/|-|g')
+    project_path="$CLAUDE_PROJECT_DIR/$encoded"
+  fi
+
+  if [ -d "$project_path" ]; then
+    # Find the most recently modified .jsonl file
+    ls -t "$project_path"/*.jsonl 2>/dev/null | head -1
+  fi
+}
+
+extract_files() {
+  local session_file="$1"
+  if [ -z "$session_file" ] || [ ! -f "$session_file" ]; then
+    return
+  fi
+
+  # Extract file_path values, strip the project prefix for readability,
+  # deduplicate preserving last-seen order (most recent last → reverse)
+  grep -o '"file_path":"[^"]*"' "$session_file" \
+    | sed 's/"file_path":"//;s/"$//' \
+    | awk '{ files[$0] = NR } END { for (f in files) print files[f], f }' \
+    | sort -rn \
+    | cut -d' ' -f2- \
+    | sed "s|$PROJECT_DIR/||" \
+    | sed "s|$HOME/.claude/projects/[^/]*/memory/|~claude/|" \
+    | sed "s|$HOME/.claude/projects/[^/]*/|~claude/|" \
+    | sed "s|$HOME/|~/|"
+}
+
+render() {
+  local cols lines
+  cols=$(tput cols 2>/dev/null || echo 40)
+  lines=$(tput lines 2>/dev/null || echo 24)
+
+  tput cup 0 0 2>/dev/null || clear
+  tput ed 2>/dev/null
+
+  # Header
+  local hr_width=$((cols - 2))
+  [ $hr_width -lt 1 ] && hr_width=1
+  printf "\033[1;36m Context Files\033[0m\n"
+  printf "\033[2m %s\033[0m\n" "$(printf '%*s' "$hr_width" '' | tr ' ' '─')"
+
+  local session_file
+  session_file=$(find_session_file)
+
+  if [ -z "$session_file" ]; then
+    printf "\033[2m Waiting for Claude session...\033[0m\n"
+    return
+  fi
+
+  local file_list
+  file_list=$(extract_files "$session_file")
+
+  if [ -z "$file_list" ]; then
+    printf "\033[2m No files in context yet.\033[0m\n"
+    return
+  fi
+
+  local count=0
+  local max_files=$((lines - 4))
+
+  while IFS= read -r filepath; do
+    count=$((count + 1))
+    if [ $count -gt $max_files ]; then
+      printf "\033[2m ... and more\033[0m\n"
+      break
+    fi
+
+    # Color based on file extension
+    local color="\033[0m"
+    case "$filepath" in
+      *.rb)   color="\033[0;31m" ;;   # red
+      *.js)   color="\033[0;33m" ;;   # yellow
+      *.md)   color="\033[0;34m" ;;   # blue
+      *.yml|*.yaml) color="\033[0;35m" ;; # magenta
+      *.sh)   color="\033[0;32m" ;;   # green
+      *.erb)  color="\033[0;36m" ;;   # cyan
+    esac
+
+    # Shorten: show parent/filename, truncate from the left if needed
+    local display="$filepath"
+    local max_width=$((cols - 3))
+    if [ $max_width -lt 10 ]; then max_width=10; fi
+
+    if [ ${#display} -gt $max_width ]; then
+      # Keep filename + as much parent context as fits
+      local fname="${filepath##*/}"
+      local dir="${filepath%/*}"
+      if [ ${#fname} -ge $((max_width - 4)) ]; then
+        display="...${fname: -$((max_width - 3))}"
+      else
+        local avail=$((max_width - ${#fname} - 4))
+        display="...${dir: -$avail}/$fname"
+      fi
+    fi
+
+    printf " ${color}%s\033[0m\n" "$display"
+  done <<< "$file_list"
+
+  # Footer
+  printf "\n\033[2m %d file(s)\033[0m" "$(echo "$file_list" | wc -l | tr -d ' ')"
+}
+
+# Main loop
+while true; do
+  render
+  sleep "$POLL_INTERVAL"
+done

@@ -1,0 +1,15 @@
+#!/bin/bash
+# hecks_ide
+#
+# Launches the Hecks IDE in a browser — Claude Code terminal on the
+# left (streamed via WebSocket) and a live context panel on the right.
+#
+# Usage: hecks_ide [port]
+
+GEM_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PORT="${1:-3001}"
+
+ruby -I"$GEM_DIR/hecks_ai/lib" -e "
+  require 'hecks_ai/ide/server'
+  Hecks::AI::IDE::Server.new(project_dir: '$GEM_DIR', port: $PORT).run
+"
