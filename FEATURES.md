@@ -32,6 +32,7 @@
 - Events carry command attrs + all aggregate attrs by convention — policies can reference any field
 - Command `sets` declaration: `sets status: "approved"` — static field assignments
 - Define command `call` blocks in DSL for inline business logic (prototyping and play mode)
+- Optimistic concurrency control: add `attribute :expected_version, Integer` to a command — the lifecycle pipeline compares it against the persisted aggregate's version and raises `Hecks::ConcurrencyError` on mismatch, then bumps the version on success
 
 ### State Machines
 - Lifecycle DSL: `lifecycle :status, default: "draft" { transition "Approve" => "approved" }`

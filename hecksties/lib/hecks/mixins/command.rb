@@ -1,6 +1,7 @@
 require_relative "command/lifecycle_steps"
 require_relative "command/reference_validation"
 require_relative "command/validation"
+require_relative "command/versioning"
 require_relative "command/dispatch"
 
 module Hecks
@@ -58,6 +59,7 @@ module Hecks
       base.attr_reader :aggregate, :event, :events
       base.include(ReferenceValidation)
       base.include(Validation)
+      base.include(Versioning)
       base.include(Dispatch)
     end
 

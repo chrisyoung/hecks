@@ -223,6 +223,47 @@ module Hecks
   # Raised when a rate limit is exceeded for a command or query operation.
   class RateLimitExceeded < Error; end
 
+  # Raised when a command's +expected_version+ does not match the aggregate's
+  # current +version+. Indicates a concurrent modification -- retry the command
+  # after re-reading the aggregate.
+  #
+  #   raise Hecks::ConcurrencyError.new(
+  #     "Version mismatch: expected 2, got 3",
+  #     expected_version: 2, actual_version: 3, aggregate_id: "abc-123"
+  #   )
+  class ConcurrencyError < Error
+    # @return [Integer, nil] the version the caller expected
+    attr_reader :expected_version
+
+    # @return [Integer, nil] the version currently on the aggregate
+    attr_reader :actual_version
+
+    # @return [String, nil] the aggregate ID involved in the conflict
+    attr_reader :aggregate_id
+
+    # @param message [String] human-readable error message
+    # @param expected_version [Integer, nil] the version the caller expected
+    # @param actual_version [Integer, nil] the current aggregate version
+    # @param aggregate_id [String, nil] the aggregate ID
+    def initialize(message = nil, expected_version: nil, actual_version: nil, aggregate_id: nil)
+      @expected_version = expected_version
+      @actual_version = actual_version
+      @aggregate_id = aggregate_id
+      super(message)
+    end
+
+    # Returns structured error data with version conflict context.
+    #
+    # @return [Hash] error data with version details
+    def as_json
+      h = super
+      h[:expected_version] = expected_version if expected_version
+      h[:actual_version] = actual_version if actual_version
+      h[:aggregate_id] = aggregate_id.to_s if aggregate_id
+      h
+    end
+  end
+
   # Raised when a generator attempts to write a file outside the designated
   # output directory. Prevents path traversal attacks where user-controlled
   # domain names or aggregate names contain +../+ segments, absolute paths,

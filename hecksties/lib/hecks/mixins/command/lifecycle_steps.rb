@@ -39,6 +39,11 @@ module Hecks
         cmd
       }
 
+      VersionCheckStep = ->(cmd) {
+        cmd.send(:check_version)
+        cmd
+      }
+
       PostconditionStep = ->(cmd) {
         before = cmd.send(:find_existing_for_postcondition)
         cmd.send(:check_postconditions, before, cmd.aggregate)
@@ -62,12 +67,12 @@ module Hecks
 
       PIPELINE = [
         GuardStep, HandlerStep, PreconditionStep, ValidateReferencesStep, CallStep,
-        PostconditionStep, PersistStep, EmitStep, RecordStep
+        VersionCheckStep, PostconditionStep, PersistStep, EmitStep, RecordStep
       ].freeze
 
       DRY_RUN_PIPELINE = [
         GuardStep, HandlerStep, PreconditionStep, ValidateReferencesStep, CallStep,
-        PostconditionStep
+        VersionCheckStep, PostconditionStep
       ].freeze
     end
   end

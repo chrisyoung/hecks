@@ -52,7 +52,7 @@ module Hecks
     # @return [void]
     def self.included(base)
       base.extend(ClassMethods)
-      base.attr_reader :id, :created_at, :updated_at
+      base.attr_reader :id, :created_at, :updated_at, :version
       create_submodule(base, :Commands)
       create_submodule(base, :Events)
       create_submodule(base, :Queries)
@@ -96,8 +96,9 @@ module Hecks
       # @return [void]
       def rebuild_initializer
         attrs = @hecks_attributes.dup
-        define_method(:initialize) do |id: nil, **kwargs|
+        define_method(:initialize) do |id: nil, version: 0, **kwargs|
           @id = id || SecureRandom.uuid
+          @version = version
           @_pristine = {}
           attrs.each do |attr|
             val = kwargs.fetch(attr.name, attr.default)
@@ -137,6 +138,14 @@ module Hecks
     # @return [void]
     def stamp_updated!
       @updated_at = Time.now
+    end
+
+    # Increments the aggregate version by one. Called by the versioning step
+    # in the command lifecycle after the version check passes.
+    #
+    # @return [Integer] the new version number
+    def bump_version!
+      @version += 1
     end
 
     # Returns true if both objects are the same type and share the same id.
