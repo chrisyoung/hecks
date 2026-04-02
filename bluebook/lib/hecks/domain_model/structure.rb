@@ -56,7 +56,8 @@ module Hecks
       autoload :Lifecycle,        "hecks/domain_model/structure/lifecycle"
       autoload :StateTransition, "hecks/domain_model/structure/state_transition"
       autoload :Reference,         "hecks/domain_model/structure/reference"
-      autoload :ComputedAttribute, "hecks/domain_model/structure/computed_attribute"
+      autoload :ComputedAttribute,  "hecks/domain_model/structure/computed_attribute"
+      autoload :ClosedOperation,   "hecks/domain_model/structure/closed_operation"
     end
   end
 end

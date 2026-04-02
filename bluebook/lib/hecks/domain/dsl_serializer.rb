@@ -54,6 +54,7 @@ module Hecks
         lines = ["", "    value_object \"#{vo.name}\" do"]
         lines.concat(serialize_attributes(vo.attributes, "      "))
         lines.concat(serialize_invariants(vo.invariants, "      "))
+        lines.concat(serialize_operations(vo.operations))
         lines << "    end"
       end
     end
@@ -154,6 +155,15 @@ module Hecks
         lines = ["", "    on_event \"#{sub.event_name}\"#{async_opt} do |event|"]
         lines << "      #{Hecks::Utils.block_source(sub.block)}" if sub.block
         lines << "    end"
+      end
+    end
+
+    def serialize_operations(operations)
+      (operations || []).flat_map do |op|
+        op_opts = op.operator ? ", operator: :#{op.operator}" : ""
+        ["", "      operation :#{op.name}#{op_opts} do |other|",
+         "        #{Hecks::Utils.block_source(op.block)}",
+         "      end"]
       end
     end
 
