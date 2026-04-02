@@ -37,6 +37,7 @@ module Hecks
         @name = name
         @attributes = []
         @invariants = []
+        @operations = []
       end
 
       # Define an invariant constraint on this value object.
@@ -49,6 +50,16 @@ module Hecks
       # @return [void]
       def invariant(message, &block)
         @invariants << Structure::Invariant.new(message: message, block: block)
+      end
+
+      # Define a closed operation on this value object. The operation takes
+      # another instance of the same type and returns a new instance.
+      #
+      # @param name [Symbol, String] the operator or method name (e.g., :+, :-, :merge)
+      # @yield [other] block receiving another instance and returning constructor kwargs
+      # @return [void]
+      def operation(name, &block)
+        @operations << Structure::ClosedOperation.new(name: name.to_sym, block: block)
       end
 
       # Implicit DSL: `name Type` → attribute
@@ -71,7 +82,8 @@ module Hecks
         Structure::ValueObject.new(
           name: @name,
           attributes: @attributes,
-          invariants: @invariants
+          invariants: @invariants,
+          operations: @operations
         )
       end
     end

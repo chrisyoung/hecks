@@ -698,6 +698,37 @@ end
 
 ---
 
+## Closed Operations
+
+Value objects can declare operations that return a new instance of the same type (closure of operations). This is a core DDD pattern for types like Money, Weight, or Distance where arithmetic produces another value of the same kind.
+
+```ruby
+value_object "Money" do
+  attribute :amount, Integer
+  attribute :currency, String
+
+  operation(:+) do |other|
+    { amount: amount + other.amount, currency: currency }
+  end
+
+  operation(:-) do |other|
+    { amount: amount - other.amount, currency: currency }
+  end
+end
+```
+
+The block receives `other` (another instance) and returns keyword arguments for constructing a new instance. Any name works — not just operators:
+
+```ruby
+operation(:combine) do |other|
+  { grams: grams + other.grams }
+end
+```
+
+See [Closed Operations](closed_operations.md) for full details and runtime examples.
+
+---
+
 ## Access Control (Gates)
 
 Access control is an infrastructure concern, not a domain concept. Declare gates in the [Hecksagon](hecksagon_reference.md), not the Bluebook.

@@ -105,6 +105,7 @@ module Hecks
         end
         lines << "      end"
         lines << ""
+        lines.concat(operation_lines)
         lines << "      private"
         lines << ""
         lines.concat(invariant_lines)
@@ -146,6 +147,24 @@ module Hecks
           lines << "        raise InvariantError, #{inv.message.inspect} unless instance_eval(&#{source_from_block(inv.block)})"
         end
         lines << "      end"
+        lines
+      end
+
+      # Generates lines for closed operation methods (e.g., +, -, *).
+      #
+      # Each operation becomes a method that accepts another instance and
+      # returns a new instance of the same value object type.
+      #
+      # @return [Array<String>] lines of Ruby source code for operation methods
+      def operation_lines
+        return [] if @vo.operations.empty?
+
+        lines = ["", "      # Closed operations -- return same type"]
+        @vo.operations.each do |op|
+          lines << "      def #{op.name}(other)"
+          lines << "        self.class.new(instance_exec(other, &#{source_from_block(op.block)}))"
+          lines << "      end"
+        end
         lines
       end
 

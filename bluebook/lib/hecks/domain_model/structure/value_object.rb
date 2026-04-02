@@ -40,17 +40,23 @@ module Hecks
       #   Evaluated during construction; if any invariant fails, the object cannot be created.
       attr_reader :invariants
 
+      # @return [Array<ClosedOperation>] operations that return a new instance of this
+      #   same value object type (closure of operations). E.g., Money + Money → Money.
+      attr_reader :operations
+
       # Creates a new ValueObject IR node.
       #
       # @param name [String] PascalCase name of the value object (e.g., "Address", "Money")
       # @param attributes [Array<Attribute>] the attributes that define this value object
       # @param invariants [Array<Invariant>] business rules enforced at construction time
+      # @param operations [Array<ClosedOperation>] closed operations returning same type
       #
       # @return [ValueObject] a new ValueObject instance
-      def initialize(name:, attributes: [], invariants: [])
+      def initialize(name:, attributes: [], invariants: [], operations: [])
         @name = name
         @attributes = attributes
         @invariants = invariants
+        @operations = operations
       end
     end
     end

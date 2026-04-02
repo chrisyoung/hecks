@@ -54,6 +54,7 @@ module Hecks
         lines = ["", "    value_object \"#{vo.name}\" do"]
         lines.concat(serialize_attributes(vo.attributes, "      "))
         lines.concat(serialize_invariants(vo.invariants, "      "))
+        lines.concat(serialize_operations(vo.operations, "      "))
         lines << "    end"
       end
     end
@@ -75,6 +76,14 @@ module Hecks
       invariants.flat_map do |inv|
         ["", "#{indent}invariant \"#{inv.message}\" do",
          "#{indent}  #{Hecks::Utils.block_source(inv.block)}",
+         "#{indent}end"]
+      end
+    end
+
+    def serialize_operations(operations, indent)
+      (operations || []).flat_map do |op|
+        ["", "#{indent}operation :#{op.name} do |other|",
+         "#{indent}  #{Hecks::Utils.block_source(op.block)}",
          "#{indent}end"]
       end
     end

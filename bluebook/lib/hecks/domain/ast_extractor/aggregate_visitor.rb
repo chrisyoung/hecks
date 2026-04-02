@@ -80,12 +80,13 @@ module Hecks
         name = call_args(node).first
         scope = node.children[1]
         stmts = block_statements(scope)
-        result = { name: name, attributes: [], invariants: [] }
+        result = { name: name, attributes: [], invariants: [], operations: [] }
         stmts.each do |stmt|
           m = call_method_name(stmt)
           case m
           when :attribute then result[:attributes] << extract_attribute(stmt)
           when :invariant then result[:invariants] << extract_invariant(stmt)
+          when :operation then result[:operations] << extract_operation(stmt)
           end
         end
         result
@@ -149,6 +150,10 @@ module Hecks
 
       def extract_invariant(node)
         { message: call_args(node).first }
+      end
+
+      def extract_operation(node)
+        { name: call_args(node).first }
       end
 
       def extract_scope(node)
