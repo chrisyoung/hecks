@@ -27,9 +27,19 @@ module Hecks
     # @param event_bus [Hecks::EventBus] the event bus to subscribe projections to
     # @param mod [Module] the domain module to define the view constant under
     # @return [void]
-    def self.bind(view, event_bus, mod)
+    # @param view [Hecks::DomainModel::View] the view definition containing projections
+    # @param event_bus [Hecks::EventBus] the event bus to subscribe projections to
+    # @param mod [Module] the domain module to define the view constant under
+    # @param event_store [Array<Object>, nil] optional historical events to replay
+    # @return [void]
+    def self.bind(view, event_bus, mod, event_store: nil)
       state = {}
       mutex = Mutex.new
+
+      # Replay historical events if a stream is declared and events exist
+      if view.stream && event_store
+        state = ProjectionRebuilder.replay(event_store, view.projections)
+      end
 
       view_mod = Module.new do
         define_singleton_method(:current) { mutex.synchronize { state.dup } }

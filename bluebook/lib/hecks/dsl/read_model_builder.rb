@@ -29,6 +29,22 @@ module Hecks
       def initialize(name)
         @name = name
         @projections = {}
+        @stream = nil
+      end
+
+      # Declare the event stream this view replays from on boot.
+      #
+      # When a stream is declared, the view will replay all historical
+      # events from the event bus before subscribing to live events.
+      # The stream name is stored on the IR and used by ProjectionRebuilder.
+      #
+      # @param name [String] the stream name (e.g. "orders", "all")
+      # @return [void]
+      #
+      # @example
+      #   from_stream "orders"
+      def from_stream(name)
+        @stream = name.to_s
       end
 
       # Define a projection that applies an event to the read model state.
@@ -56,7 +72,8 @@ module Hecks
       def build
         Behavior::ReadModel.new(
           name: @name,
-          projections: @projections
+          projections: @projections,
+          stream: @stream
         )
       end
     end

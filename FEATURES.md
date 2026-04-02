@@ -48,6 +48,13 @@
 - Define event subscribers with `on_event` for arbitrary side-effect code on events
 - Domain-level `on_event` subscribers for cross-aggregate reactions
 
+### Views & Projections
+- Define read model views with `view "Name" { project("Event") { |e, state| ... } }`
+- `from_stream "name"` on views — declares a stream for replaying historical events on boot
+- `ProjectionRebuilder.replay(events, projections)` — replays an event list through projection functions to rebuild state
+- ViewBinding replays historical events before subscribing to live events when `from_stream` is declared
+- Thread-safe `.current` method on each view module returns the projected state
+
 ### Queries & Scopes
 - Define named queries with `where`, `order`, `limit`, `offset` chainable DSL
 - Define named scopes as hash conditions or lambda predicates

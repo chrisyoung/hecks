@@ -23,11 +23,19 @@ module Hecks
       # (backward compatibility with older domain definitions).
       #
       # @return [void]
+      # Wires all view (read model) projections defined in the domain DSL.
+      #
+      # For views that declare +from_stream+, passes the event bus's
+      # historical events to ViewBinding so ProjectionRebuilder can replay
+      # them before subscribing to live events.
+      #
+      # @return [void]
       def setup_views
         return unless @domain.respond_to?(:views)
 
         @domain.views.each do |v|
-          ViewBinding.bind(v, @event_bus, @mod)
+          store = v.stream ? @event_bus.events.dup : nil
+          ViewBinding.bind(v, @event_bus, @mod, event_store: store)
         end
       end
     end

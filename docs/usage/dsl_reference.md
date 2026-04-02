@@ -65,6 +65,7 @@ Hecks.domain "Banking" do
 
   # Read model projections
   view "OrderSummary" do
+    from_stream "orders"  # replay historical events on boot
     project("PlacedOrder") { |event, state| state.merge(total: event.quantity) }
   end
 

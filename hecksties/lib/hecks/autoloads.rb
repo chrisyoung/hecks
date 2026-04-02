@@ -153,6 +153,7 @@ module Hecks
   autoload :Commands,          "hecks/ports/commands"
   autoload :Introspection,     "hecks/runtime/introspection"
   autoload :Versioning,        "hecks/runtime/versioning"
+  autoload :ProjectionRebuilder, "hecks/runtime/projection_rebuilder"
   autoload :ViewBinding,       "hecks/runtime/view_binding"
   autoload :WorkflowExecutor,  "hecks/runtime/workflow_executor"
 

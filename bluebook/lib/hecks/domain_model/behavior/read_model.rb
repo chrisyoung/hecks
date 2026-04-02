@@ -27,7 +27,11 @@ module Hecks
         # @return [String] PascalCase read model name (e.g. "OrderSummary")
         # @return [Hash{String => Proc}] mapping of event names to projection procs.
         #   Each proc receives (event, current_state) and returns the new state.
-        attr_reader :name, :projections
+        # @return [String] PascalCase read model name (e.g. "OrderSummary")
+        # @return [Hash{String => Proc}] mapping of event names to projection procs.
+        #   Each proc receives (event, current_state) and returns the new state.
+        # @return [String, nil] optional stream name to replay historical events from
+        attr_reader :name, :projections, :stream
 
         # Creates a new ReadModel IR node.
         #
@@ -36,10 +40,12 @@ module Hecks
         #   transformation procs. Each proc receives two arguments: the event object
         #   and the current projection state, and must return the updated state.
         #   Defaults to an empty hash.
+        # @param stream [String, nil] optional stream name to replay events from
         # @return [ReadModel]
-        def initialize(name:, projections: {})
+        def initialize(name:, projections: {}, stream: nil)
           @name = name
           @projections = projections.transform_keys { |k| Names.event_name(k) }
+          @stream = stream
         end
       end
     end
