@@ -750,6 +750,13 @@
 - Validates 422 on invalid params via ActiveModel validations
 - Run explicitly: `bundle exec rspec hecksties/spec/rails_smoke_spec.rb --tag slow`
 
+### Property-Based Testing
+- `require "hecks/test_helper/property_testing"` — no external gems needed
+- `TypeGenerators` — per-type random value generators with configurable seed for reproducibility
+- `AggregateGenerator` — generates N random valid attribute hashes from aggregate IR metadata
+- `DomainFuzzer` — generates random data, executes create commands via runtime, produces a pass/fail report
+- RSpec integration: `property_test` helper for per-attribute assertions, `survive_fuzz_testing` matcher for full-domain fuzz runs
+
 ## Examples
 - Pizzas domain: plain Ruby app with commands, queries, collection proxies, event history
 - Pizzas static Ruby: generated standalone Ruby project with HTTP server, UI, roles, filesystem persistence
