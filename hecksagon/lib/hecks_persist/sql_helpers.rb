@@ -92,6 +92,63 @@ module Hecks
         def unique_fields_from(validations)
           (validations || []).select(&:uniqueness?).map(&:field)
         end
+
+        # Generates a search index SQL statement for the given table and fields.
+        #
+        # For Postgres: creates a GIN index on a tsvector expression so full-text
+        # search can use an index scan. For all other adapters (SQLite, MySQL):
+        # generates nothing (LIKE-based search is done at query time without a
+        # dedicated index object).
+        #
+        # @param table [String] the SQL table name (e.g., "pizzas")
+        # @param fields [Array<String>] column names to include in the search index
+        # @param adapter_type [Symbol] :postgres, :sqlite, :mysql, etc.
+        # @return [String, nil] the CREATE INDEX SQL string, or nil for non-Postgres
+        def searchable_index_sql(table, fields, adapter_type: :sqlite)
+          return nil if fields.empty?
+          return nil unless adapter_type == :postgres
+
+          idx_name = "idx_#{table}_fts"
+          tsvector = fields.map { |f| "coalesce(#{f}::text, '')" }.join(" || ' ' || ")
+          "CREATE INDEX #{idx_name} ON #{table} USING gin(to_tsvector('english', #{tsvector}));"
+        end
+
+        # Generates CREATE INDEX statements for reference FK columns plus any
+        # attributes tagged :indexed in the hecksagon for an :add_aggregate change.
+        #
+        # @param change [Migrations::Change] the :add_aggregate change
+        # @param hecksagon [Hecksagon::Structure::Hecksagon, nil] optional hecksagon IR
+        # @return [String, nil] CREATE INDEX SQL, or nil if no indexes needed
+        def build_table_indexes(change, hecksagon = nil)
+          agg_name = change.aggregate
+          stmts = []
+          (change.details[:references] || []).each do |ref|
+            col = reference_column_name(ref)
+            stmts << "CREATE INDEX #{index_name(agg_name, [col])} ON #{table_name(agg_name)}(#{col});"
+          end
+          if hecksagon
+            hecksagon.indexed_attributes_for(agg_name).each do |col|
+              stmts << "CREATE INDEX #{index_name(agg_name, [col])} ON #{table_name(agg_name)}(#{col});"
+            end
+          end
+          stmts.empty? ? nil : stmts.join("\n")
+        end
+
+        # Generates a CREATE INDEX for an :add_attribute change when the attribute
+        # is tagged :indexed in the hecksagon.
+        #
+        # @param change [Migrations::Change] the :add_attribute change
+        # @param hecksagon [Hecksagon::Structure::Hecksagon, nil] optional hecksagon IR
+        # @return [String, nil] CREATE INDEX SQL, or nil if not indexed
+        def build_attribute_index(change, hecksagon = nil)
+          return nil unless hecksagon
+          d = change.details
+          return nil if d[:list]
+          col = d[:name].to_s
+          return nil unless hecksagon.indexed_attributes_for(change.aggregate).include?(col)
+          tbl = table_name(change.aggregate)
+          "CREATE INDEX #{index_name(change.aggregate, [col])} ON #{tbl}(#{col});"
+        end
       end
     end
   end

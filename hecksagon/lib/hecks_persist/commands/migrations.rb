@@ -52,7 +52,7 @@ Hecks::CLI.register_command(:generate_sql, "Generate SQL schema and adapters",
   mod = domain_module_name(domain.name)
   gem_name = domain.gem_name
 
-  migration_gen = Hecks::Generators::SQL::SqlMigrationGenerator.new(domain)
+  migration_gen = Hecks::Generators::SQL::SqlMigrationGenerator.new(domain, hecksagon: Hecks.last_hecksagon)
   FileUtils.mkdir_p("db")
   File.write("db/schema.sql", migration_gen.generate)
   say "Generated db/schema.sql", :green

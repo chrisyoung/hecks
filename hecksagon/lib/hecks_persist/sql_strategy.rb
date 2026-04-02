@@ -11,13 +11,19 @@ module Hecks
       # Supports NOT NULL (from presence validations), UNIQUE (from uniqueness
       # validations), DEFAULT values, foreign key cascading, and indexes.
       # Output goes to db/hecks_migrate/ to avoid conflicts with ActiveRecord.
+      # Pass hecksagon: to emit CREATE INDEX for :indexed attribute tags.
       #
-      #   strategy = SqlStrategy.new(output_dir: ".")
+      #   strategy = SqlStrategy.new(output_dir: ".", hecksagon: hex)
       #   strategy.generate(changes)
       #
       class SqlStrategy < MigrationStrategy
         include HecksTemplating::NamingHelpers
-      include SqlHelpers
+        include SqlHelpers
+
+        def initialize(output_dir:, hecksagon: nil)
+          super(output_dir: output_dir)
+          @hecksagon = hecksagon
+        end
 
       # Generates SQL migration content from a list of domain changes.
       #
@@ -42,6 +48,7 @@ module Hecks
             lines << "DROP TABLE IF EXISTS #{table_name(change.aggregate)};"
           when :add_attribute
             lines << generate_add_column(change)
+            lines << generate_indexed_column_index(change)
           when :remove_attribute
             lines << "ALTER TABLE #{table_name(change.aggregate)} DROP COLUMN #{change.details[:name]};"
           when :add_value_object
@@ -196,23 +203,8 @@ module Hecks
         "CREATE TABLE #{jt} (\n#{cols.join(",\n")}\n);"
       end
 
-      # Generates CREATE INDEX statements for reference columns on a new table.
-      #
-      # Automatically indexes all reference (foreign key) attributes for
-      # query performance.
-      #
-      # @param change [Migrations::Change] the :add_aggregate change
-      # @return [String, nil] the CREATE INDEX statements, or nil if no references
-      def generate_indexes_for_table(change)
-        agg_name = change.aggregate
-        refs = change.details[:references] || []
-        return nil if refs.empty?
-        refs.map do |ref|
-          col = reference_column_name(ref)
-          idx = index_name(agg_name, [col])
-          "CREATE INDEX #{idx} ON #{table_name(agg_name)}(#{col});"
-        end.join("\n")
-      end
+      def generate_indexes_for_table(change) = build_table_indexes(change, @hecksagon)
+      def generate_indexed_column_index(change) = build_attribute_index(change, @hecksagon)
 
       end
     end

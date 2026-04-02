@@ -135,6 +135,17 @@ module Hecksagon
         AttributeSelector.new(@tags)
       end
 
+      # Allow bare attribute chains without the `capability.` prefix.
+      #
+      #   created_at.indexed
+      #   ssn.privacy.indexed
+      #
+      def method_missing(attr_name, *args)
+        TagApplier.new(@tags, attr_name.to_s)
+      end
+
+      def respond_to_missing?(_, _ = false) = true
+
       # Fluent attribute selector for capability tagging.
       class AttributeSelector
         def initialize(tags)

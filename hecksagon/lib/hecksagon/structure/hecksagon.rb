@@ -43,6 +43,24 @@ module Hecksagon
       def gate_for(aggregate_name, role)
         @gates.find { |g| g.aggregate == aggregate_name.to_s && g.role == role.to_sym }
       end
+
+      # Returns attribute names tagged as :indexed for a given aggregate.
+      #
+      # @param aggregate_name [String, Symbol] the aggregate name
+      # @return [Array<String>] attribute names with the :indexed tag
+      def indexed_attributes_for(aggregate_name)
+        tags = @aggregate_capabilities[aggregate_name.to_s] || []
+        tags.select { |t| t[:tag] == :indexed }.map { |t| t[:attribute] }
+      end
+
+      # Returns the field names tagged :searchable for the given aggregate.
+      #
+      # @param aggregate_name [String, Symbol] the aggregate name (e.g., "Pizza")
+      # @return [Array<String>] the field names with the :searchable tag
+      def searchable_fields(aggregate_name)
+        caps = @aggregate_capabilities[aggregate_name.to_s] || []
+        caps.select { |c| c[:tag] == :searchable }.map { |c| c[:attribute] }
+      end
     end
   end
 end

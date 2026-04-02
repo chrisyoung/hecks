@@ -156,6 +156,13 @@
 - CRUD capability auto-enabled in Workshop play mode and Rails (`Hecks.configure`)
 - `hecks new` app.rb scaffold includes `app.capability(:crud)` by default
 
+### Hecksagon Per-Aggregate Capability Tags
+- `:indexed` attribute tag — `capability.created_at.indexed` or bare `created_at.indexed`; emits `CREATE INDEX idx_<table>_<col>` in SQL migrations and `{ attr => 1 }` indexes in MongoDB
+- Chaining supported: `ssn.privacy.indexed` registers both `:privacy` and `:indexed` on the same attribute
+- `hex.indexed_attributes_for("Aggregate")` — IR query returning attribute names tagged `:indexed`
+- `SqlMigrationGenerator.new(domain, hecksagon: hex)` — pass hecksagon to emit indexes in schema output
+- CLI `generate_sql` command passes `Hecks.last_hecksagon` automatically
+
 ## Runtime API
 - `Hecks.boot(__dir__)` — find domain file, validate, build, load, and wire in one call
 - `Hecks.boot(__dir__, adapter: :sqlite)` — automatic SQL setup
