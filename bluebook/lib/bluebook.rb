@@ -26,6 +26,7 @@ require_relative "hecks/dsl/domain_builder"
 require_relative "bluebook/grammar"
 
 # Domain tools
+require_relative "hecks/domain/shared_kernel_registry"
 require_relative "hecks/domain/inspector"
 require_relative "hecks/domain/builder_methods"
 require_relative "hecks/domain/compiler"

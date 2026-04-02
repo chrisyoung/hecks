@@ -15,8 +15,12 @@ module Hecks
     # @return [String] valid Ruby DSL source code
     def serialize
       lines = ["Hecks.domain \"#{@domain.name}\" do"]
+      lines << "  shared_kernel" if @domain.respond_to?(:shared_kernel?) && @domain.shared_kernel?
       if @domain.respond_to?(:domain_classification) && @domain.domain_classification != :supporting
         lines << "  classification :#{@domain.domain_classification}"
+      end
+      (@domain.respond_to?(:uses_kernels) ? (@domain.uses_kernels || []) : []).each do |k|
+        lines << "  uses_kernel \"#{k}\""
       end
       @domain.modules.each do |mod|
         lines.concat(serialize_domain_module(mod))
@@ -169,18 +173,14 @@ module Hecks
 
     def serialize_functions(functions, indent)
       (functions || []).flat_map do |func|
-        ["", "#{indent}function :#{func.name} do",
-         "#{indent}  #{Hecks::Utils.block_source(func.block)}",
-         "#{indent}end"]
+        ["", "#{indent}function :#{func.name} do", "#{indent}  #{Hecks::Utils.block_source(func.block)}", "#{indent}end"]
       end
     end
 
     def serialize_operations(operations)
       (operations || []).flat_map do |op|
         op_opts = op.operator ? ", operator: :#{op.operator}" : ""
-        ["", "      operation :#{op.name}#{op_opts} do |other|",
-         "        #{Hecks::Utils.block_source(op.block)}",
-         "      end"]
+        ["", "      operation :#{op.name}#{op_opts} do |other|", "        #{Hecks::Utils.block_source(op.block)}", "      end"]
       end
     end
 
@@ -197,9 +197,7 @@ module Hecks
     end
 
     def ungrouped_aggregates
-      grouped = @domain.modules.flat_map do |mod|
-        mod.respond_to?(:aggregates) ? mod.aggregates : (mod[:aggregates] || [])
-      end
+      grouped = @domain.modules.flat_map { |m| m.respond_to?(:aggregates) ? m.aggregates : (m[:aggregates] || []) }
       @domain.aggregates.reject { |a| grouped.include?(a.name) }
     end
 

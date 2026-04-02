@@ -15,6 +15,9 @@ module Hecks
       gem = domain.gem_name
       load_src(module_shell(mod, domain.version), "#{gem}.rb")
 
+      # Load shared kernel type aliases
+      load_kernel_aliases(domain, mod)
+
       domain.aggregates.each do |agg|
         safe = domain_constant_name(agg.name)
         snake = domain_snake_name(safe)
@@ -80,6 +83,25 @@ module Hecks
 
     def self.load_src(source, virtual_path)
       RubyVM::InstructionSequence.compile(source, virtual_path).eval
+    end
+
+    # Loads type aliases from shared kernel domains into the consuming
+    # domain module. Each kernel value object becomes a constant alias.
+    def self.load_kernel_aliases(domain, mod)
+      return unless domain.respond_to?(:uses_kernels)
+      (domain.uses_kernels || []).each do |kernel_name|
+        kernel_domain = Hecks::SharedKernelRegistry.lookup(kernel_name)
+        next unless kernel_domain
+        kernel_mod = Hecks::Utils.sanitize_constant(kernel_name) + "Domain"
+        kernel_domain.aggregates.each do |agg|
+          agg_name = domain_constant_name(agg.name)
+          agg.value_objects.each do |vo|
+            fqn = "#{kernel_mod}::#{agg_name}::#{vo.name}"
+            alias_src = "module #{mod}\n  #{vo.name} = #{fqn} if defined?(#{fqn})\nend"
+            load_src(alias_src, "#{domain.gem_name}/kernels/#{domain_snake_name(vo.name)}.rb")
+          end
+        end
+      end
     end
 
     def self.inject_mixin(source, class_name, mixin)

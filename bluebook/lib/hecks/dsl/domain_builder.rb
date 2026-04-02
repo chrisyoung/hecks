@@ -96,6 +96,21 @@ module Hecks
         @classification = kind.to_sym
       end
 
+      # Mark this domain as a shared kernel. Its value objects become
+      # available as type aliases in domains that `uses_kernel` it.
+      def shared_kernel
+        @shared_kernel = true
+      end
+
+      # Declare a dependency on a shared kernel domain. The kernel's
+      # value objects will be loaded as type aliases when this domain boots.
+      #
+      # @param name [String] the shared kernel domain name
+      def uses_kernel(name)
+        @uses_kernels ||= []
+        @uses_kernels << name.to_s
+      end
+
       def actor(name, description: nil)
         @actors << Structure::Actor.new(name: name.to_s, description: description)
       end
