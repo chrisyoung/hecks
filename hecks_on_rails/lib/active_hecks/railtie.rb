@@ -22,6 +22,8 @@ module ActiveHecks
 
     initializer "active_hecks.setup", after: :load_config_initializers do
       if Hecks.configuration
+        # Auto-include CRUD extension for Rails apps
+        require "hecks/extensions/crud"
         Hecks.configuration.boot!
       end
     end

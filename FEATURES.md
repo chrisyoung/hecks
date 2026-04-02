@@ -130,6 +130,7 @@
 - `hecks_idempotency` — command deduplication by fingerprint
 - `hecks_transactions` — DB transaction wrapping when SQL adapter present
 - `hecks_retry` — exponential backoff for transient errors
+- `hecks_crud` — opt-in CRUD extension: auto-generates Create, Update, Delete commands for aggregates that don't define them; `hecks_on_rails` auto-includes it by default
 
 ### Domain Connections DSL
 - `extend :sqlite` — declare persistence adapter

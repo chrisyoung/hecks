@@ -59,6 +59,7 @@ module Hecks
         agg_snake = domain_snake_name(aggregate_name)
         @self_ref = find_self_ref(agg_snake)
         @is_create = @self_ref.nil?
+        @is_delete = @command.name.start_with?("Delete") && @command.attributes.empty? && @self_ref
       end
 
       # Generates the full Ruby source code for the command class.
@@ -172,7 +173,9 @@ module Hecks
       def call_lines
         lines = []
         lines << "        def call"
-        if @is_create
+        if @is_delete
+          lines.concat(delete_body)
+        elsif @is_create
           lines.concat(create_body)
         else
           lines.concat(update_body)
@@ -214,6 +217,24 @@ module Hecks
         else
           lines.concat(format_new_call("          ", create_constructor_args))
         end
+        lines
+      end
+
+      # Generates the body of a delete command's +call+ method.
+      #
+      # Looks up an existing aggregate by ID, removes it from the repository,
+      # and returns the removed entity.
+      #
+      # @return [Array<String>] lines of Ruby source for the find-and-delete logic
+      def delete_body
+        ref = @self_ref
+        lines = []
+        lines << "          _ref_val = #{ref.name}"
+        lines << "          _lookup_id = _ref_val.respond_to?(:id) ? _ref_val.id : _ref_val"
+        lines << "          existing = repository.find(_lookup_id)"
+        lines << "          raise #{@domain_module}::Error, \"#{@aggregate_name} not found: \#{_lookup_id}\" unless existing"
+        lines << "          repository.delete(_lookup_id)"
+        lines << "          nil"
         lines
       end
 

@@ -46,7 +46,8 @@ module Hecks
         lines << "  class #{@aggregate_name}"
         lines << "    module Events"
         lines << "      class #{@event.name}"
-        lines << "        attr_reader #{@event.attributes.map { |a| ":#{a.name}" }.join(", ")}, :occurred_at"
+        attr_syms = @event.attributes.map { |a| ":#{a.name}" } + [":occurred_at"]
+        lines << "        attr_reader #{attr_syms.join(", ")}"
         lines << ""
         if @has_keyword_attrs
           lines << "        def initialize(**kwargs)"
