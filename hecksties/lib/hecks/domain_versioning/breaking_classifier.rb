@@ -17,6 +17,9 @@ module Hecks
         remove_command
         remove_value_object
         remove_entity
+        change_attribute_type
+        rename_attribute
+        add_required_command_attribute
       ].freeze
 
       NON_BREAKING_KINDS = %i[
@@ -84,6 +87,9 @@ module Hecks
         when :remove_index        then "- index: #{change.aggregate}"
         when :add_reference       then "+ reference: #{change.aggregate}"
         when :remove_reference    then "- reference: #{change.aggregate}"
+        when :change_attribute_type then "~ type: #{change.aggregate}.#{change.details[:name]} (#{change.details[:old_type]} -> #{change.details[:new_type]})"
+        when :rename_attribute     then "~ rename: #{change.aggregate}.#{change.details[:old_name]} -> #{change.details[:new_name]}"
+        when :add_required_command_attribute then "+ required: #{change.aggregate}.#{change.details[:command]}.#{change.details[:name]}"
         when :change_policy       then "~ policy: #{change.aggregate}.#{change.details[:name]}"
         else "#{change.kind}: #{change.aggregate} #{change.details}"
         end

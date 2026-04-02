@@ -340,9 +340,11 @@
 - `hecks diff --v1 <v1> --v2 <v2>` — diff two tagged version snapshots with breaking change classification
 - `hecks diff --v1 <v1>` — diff a tagged version against the working domain file
 - `hecks diff` — diff working domain against latest tagged version (falls back to build snapshot)
-- Breaking change classification: removed commands, removed attributes, removed aggregates marked as BREAKING
+- Breaking change classification: removed commands, removed attributes, removed aggregates, changed attribute types, renamed attributes, added required command attributes — all marked as BREAKING
 - Non-breaking changes: added commands, added attributes, added queries, added scopes
 - Auto-bump domain version on breaking changes: `hecks build` compares against the latest tagged snapshot and auto-bumps CalVer when breaking changes are detected
+- Versioned API contracts: `hecks contract_check --save` snapshots the public API surface (aggregates, attributes, command signatures) to `.hecks_api_contract.json`
+- `hecks contract_check` compares the current domain against the saved baseline and exits non-zero on unacknowledged breaking changes — suitable for CI pipelines
 
 ## Migrations & Schema Evolution
 - `DomainDiff` detects added/removed aggregates, attributes, VOs, entities, commands, policies, validations, invariants, queries, scopes, subscribers, specifications
