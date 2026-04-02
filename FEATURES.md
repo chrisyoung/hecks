@@ -743,6 +743,13 @@
 - Fetches `/_events` from both, normalizes to event name lists, asserts equality
 - Run explicitly: `bundle exec rspec hecksties/spec/cross_target_parity_spec.rb --tag parity`
 
+### Contract Testing
+- `Hecks::ContractTesting` module with shared RSpec examples for repository adapter compliance
+- `include_examples "hecks repository contract"` exercises find, save, delete, all, count, query, clear
+- Adapter and factory provided as lambdas -- works with any adapter (memory, SQL, filesystem, MongoDB)
+- `Hecks::ContractTesting.generate_specs(domain, output_dir:)` auto-generates contract specs per aggregate
+- Generated specs include full domain DSL so they run standalone
+
 ### Rails Smoke Test
 - `hecksties/spec/rails_smoke_spec.rb` — tagged `:slow`, excluded from default run
 - Boots `examples/pizzas_rails` as a real subprocess against a free port
