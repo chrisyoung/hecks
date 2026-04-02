@@ -595,6 +595,7 @@
 - Enum fields render as `<select>` dropdowns with valid values
 - Humanized labels everywhere — PascalCase split + ActiveSupport pluralization via UILabelContract
 - Nav sidebar grouped by origin domain in multi-domain servers
+- Live events via SSE — `GET /_live` endpoint streams domain events in real-time using Server-Sent Events (text/event-stream); JavaScript `HecksLiveEvents` class with auto-reconnect, configurable `maxEvents`, and `disconnect()` method; fixed-position indicator widget with green/red connection dot and expandable event panel; available in both single-domain and multi-domain servers
 
 ### Port-Based Access Control
 - Ports defined in DSL (`port :admin`, `port :customer`) enforced at domain level

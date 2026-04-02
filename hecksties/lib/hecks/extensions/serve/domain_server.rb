@@ -8,6 +8,7 @@ require_relative "command_bus_port"
 require_relative "csrf_helpers"
 require_relative "../auth/screen_routes"
 require_relative "domain_watcher"
+require_relative "sse_helpers"
 
 module Hecks
   module HTTP
@@ -30,6 +31,7 @@ module Hecks
       include Hecks::HTTP::CorsHeaders
       include CsrfHelpers
       include Hecks::Auth::ScreenRoutes
+      include Hecks::HTTP::SseHelpers
       # Initialize the server, boot the domain gem, and build routes.
       #
       # Builds the domain gem into a temporary directory, requires it,
@@ -76,6 +78,7 @@ module Hecks
         puts "  POST   /signup"
         puts "  GET    /logout"
         puts "  GET    /events (SSE)"
+        puts "  GET    /_live (SSE)"
         puts "  GET    /_openapi"
         puts "  GET    /_schema"
         start_websocket_server if @live
@@ -139,6 +142,11 @@ module Hecks
         end
 
         app, domain, routes = @lock.synchronize { [@app, @domain, @routes] }
+
+        if req.path == "/_live"
+          handle_sse(req, res)
+          return
+        end
 
         if req.path == "/events"
           res["Content-Type"] = "application/json"
@@ -257,6 +265,7 @@ module Hecks
       # @return [void]
       def rebuild_routes
         @app = Runtime.new(@domain)
+        register_sse_broadcaster(@app.event_bus)
         bus_port = CommandBusPort.new(command_bus: @app.command_bus)
         @routes = RouteBuilder.new(@domain, @mod, port: bus_port).build
       end

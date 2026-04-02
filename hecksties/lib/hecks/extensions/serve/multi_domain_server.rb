@@ -8,6 +8,7 @@ require "hecks/extensions/web_explorer/renderer"
 require "hecks/extensions/web_explorer/ir_introspector"
 require "hecks/extensions/web_explorer/runtime_bridge"
 require_relative "multi_domain_ui_routes"
+require_relative "sse_helpers"
 
 module Hecks
   module HTTP
@@ -27,13 +28,17 @@ module Hecks
       include UIRoutes
       include Hecks::HTTP::CorsHeaders
       include CsrfHelpers
+      include Hecks::HTTP::SseHelpers
 
       def initialize(domains, runtimes, port: 9292)
         @domains = domains
         @runtimes = runtimes
         @port = port
         @entries = []
+        @sse_clients = []
+        @lock = Mutex.new
         setup_domains
+        @runtimes.each { |rt| register_sse_broadcaster(rt.event_bus) }
       end
 
       def run
@@ -98,7 +103,10 @@ module Hecks
         return if req.request_method == "OPTIONS"
 
         path = req.path
-        if path == "/"
+        if path == "/_live"
+          handle_sse(req, res)
+          return
+        elsif path == "/"
           serve_home(res)
         elsif path == "/config"
           serve_config(res)

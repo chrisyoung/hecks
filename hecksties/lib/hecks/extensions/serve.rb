@@ -45,6 +45,8 @@ module Hecks
     autoload :RpcServer,          "hecks/extensions/serve/rpc_server"
     autoload :RouteBuilder,       "hecks/extensions/serve/route_builder"
     autoload :CommandBusPort,     "hecks/extensions/serve/command_bus_port"
+    autoload :SseHelpers,         "hecks/extensions/serve/sse_helpers"
+    autoload :LiveEventsJs,       "hecks/extensions/serve/live_events_js"
     autoload :OpenapiGenerator,   "hecks/generators/docs/openapi_generator"
     autoload :RpcDiscovery,       "hecks/generators/docs/rpc_discovery"
     autoload :JsonSchemaGenerator, "hecks/generators/docs/json_schema_generator"
