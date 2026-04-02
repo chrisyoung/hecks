@@ -54,16 +54,21 @@ module Hecks
       # @return [void]
       def wire_aggregate(agg)
         agg_class = @mod.const_get(domain_constant_name(agg.name))
-        repo = ownership_scoped_repo(agg, @repositories[agg.name])
+        write_repo = ownership_scoped_repo(agg, @repositories[agg.name])
+        query_repo = read_repo_for(agg.name) || write_repo
         defaults = build_defaults(agg)
 
-        Persistence.bind(agg_class, agg, repo)
-        Commands.bind(agg_class, agg, @command_bus, repo, defaults)
+        Persistence.bind(agg_class, agg, write_repo)
+        Commands.bind(agg_class, agg, @command_bus, write_repo, defaults)
         Querying.bind(agg_class, agg)
+        if cqrs_active?(agg.name)
+          require "hecks/ports/read_model_store/cqrs_read_binding"
+          CqrsReadBinding.bind(agg_class, query_repo)
+        end
         Introspection.bind(agg_class, agg)
-        Versioning.bind(agg_class, repo) if runtime_option?(agg.name, :versioned)
+        Versioning.bind(agg_class, repo_for_version(agg, write_repo)) if runtime_option?(agg.name, :versioned)
         AttachmentMethods.bind(agg_class) if runtime_option?(agg.name, :attachable)
-        wire_query_objects(agg, agg_class)
+        wire_query_objects(agg, agg_class, query_repo)
         GateEnforcer.new(gate_name: @gate_name, hecksagon: @hecksagon).enforce!(agg, agg_class)
       end
 
@@ -128,8 +133,34 @@ module Hecks
       # @param agg [Hecks::DomainModel::Aggregate] the aggregate definition
       # @param agg_class [Class] the runtime aggregate class to add query methods to
       # @return [void]
-      def wire_query_objects(agg, agg_class)
-        repo = @repositories[agg.name]
+      # Returns the read-side repo for an aggregate, or nil if no CQRS.
+      #
+      # @param name [String] aggregate name
+      # @return [Object, nil]
+      def read_repo_for(name)
+        store = @read_stores && @read_stores[name]
+        store&.adapter || store
+      end
+
+      # Returns true if a read store is registered for this aggregate.
+      #
+      # @param name [String] aggregate name
+      # @return [Boolean]
+      def cqrs_active?(name)
+        @read_stores && @read_stores.key?(name)
+      end
+
+      # Returns the appropriate repo for versioning (always write repo).
+      #
+      # @param agg [Object] aggregate definition
+      # @param write_repo [Object] the write repository
+      # @return [Object]
+      def repo_for_version(agg, write_repo)
+        write_repo
+      end
+
+      def wire_query_objects(agg, agg_class, query_repo = nil)
+        repo = query_repo || @repositories[agg.name]
         queries_mod = begin; agg_class.const_get(:Queries); rescue NameError; nil; end
 
         agg.queries.each do |query|

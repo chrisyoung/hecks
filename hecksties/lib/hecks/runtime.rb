@@ -91,6 +91,7 @@ module Hecks
         @mod.extend(Hecks::DomainConnections) unless @mod.respond_to?(:connections)
         @event_bus = event_bus || EventBus.new
         @repositories = {}
+        @read_stores = {}
         @adapter_overrides = {}
         @async_handler = nil
         @runtime_options = {}
@@ -222,6 +223,65 @@ module Hecks
         name = aggregate_name.to_s
         @repositories[name] = repo
         wire_aggregate!(name)
+      end
+
+      # Registers a ReadModelStore for a named aggregate (CQRS read side).
+      # When registered, queries and scopes route to this store instead of
+      # the write repository.
+      #
+      # @param aggregate_name [String, Symbol] the aggregate name
+      # @param store [Hecks::ReadModelStore] the read model store
+      # @return [void]
+      def register_read_store(aggregate_name, store)
+        name = aggregate_name.to_s
+        @read_stores[name] = store
+        wire_aggregate!(name)
+      end
+
+      # Returns the read store for a named aggregate, or nil if CQRS is not
+      # active for that aggregate.
+      #
+      # @param aggregate_name [String, Symbol] the aggregate name
+      # @return [Hecks::ReadModelStore, nil]
+      def read_store_for(aggregate_name)
+        @read_stores[aggregate_name.to_s]
+      end
+
+      # Programmatically enable CQRS for an aggregate with a custom read repo.
+      # Creates a ReadModelStore, subscribes to events for auto-sync, and
+      # re-wires the aggregate.
+      #
+      # @param aggregate_name [String, Symbol] the aggregate name
+      # @param read_repo [Object] the read-side repository adapter
+      # @return [Hecks::ReadModelStore] the created read model store
+      def enable_cqrs(aggregate_name, read_repo:)
+        require "hecks/ports/read_model_store"
+        name = aggregate_name.to_s
+        store = Hecks::ReadModelStore.new(adapter: read_repo)
+        write_repo = @repositories[name]
+
+        # Auto-sync on events
+        agg = @domain.aggregates.find { |a| a.name == name }
+        agg&.events&.each do |event|
+          @event_bus.subscribe(event.name) do |_evt|
+            write_repo.all.each { |obj| store.update(obj) }
+          end
+        end
+
+        register_read_store(name, store)
+        store
+      end
+
+      # Returns true if CQRS is active for the given aggregate.
+      #
+      # @param aggregate_name [String, Symbol] the aggregate name
+      # @return [Boolean]
+      def cqrs?(aggregate_name = nil)
+        if aggregate_name
+          @read_stores.key?(aggregate_name.to_s)
+        else
+          @read_stores.any?
+        end
       end
 
       # Apply an extension to the live runtime without rebooting.

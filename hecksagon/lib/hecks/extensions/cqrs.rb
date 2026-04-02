@@ -3,29 +3,27 @@ require "hecks"
 # HecksCqrs
 #
 # CQRS (Command Query Responsibility Segregation) support for Hecks domains.
-# Enables named persistence connections for read/write separation. Commands
-# route to the +:write+ connection, queries to the +:read+ connection.
-# Registers with the Hecks connection registry so domains can declare
-# multiple named adapters in their boot block.
+# Enables separate read and write repositories. Commands route to the write
+# repository, queries and scopes route to the read repository. When only a
+# single adapter is configured, behavior is unchanged (backward compatible).
 #
-# A domain has CQRS active when more than one named persist connection
-# exists in its connections hash. This module provides introspection
-# methods to check CQRS status and retrieve individual connection configs.
+# Activate CQRS by declaring named :write and :read persist connections:
 #
 #   CatsDomain.boot do
 #     persist_to :write, :sqlite
 #     persist_to :read, :sqlite, database: "read.db"
 #   end
 #
-#   # Access named connections:
-#   CatsDomain.connections[:persist][:write]
-#   # => { type: :sqlite }
-#   CatsDomain.connections[:persist][:read]
-#   # => { type: :sqlite, database: "read.db" }
+# Or programmatically after boot:
+#
+#   runtime.enable_cqrs("Pizza", read_repo: my_read_repo)
+#
+# The read store wraps the read adapter in a ReadModelStore, which auto-syncs
+# from command events on the event bus.
 #
 
 module HecksCqrs
-  VERSION = "2026.03.24.1"
+  VERSION = "2026.04.01.1"
 
   # Check whether a domain module has CQRS connections configured.
   # Returns true when more than one named persist connection exists,
@@ -55,9 +53,41 @@ module HecksCqrs
     persist = mod.connections[:persist]
     persist[name] if persist.is_a?(Hash)
   end
+
+  # Wires CQRS read/write separation onto a runtime.
+  #
+  # For each aggregate, creates a ReadModelStore backed by a fresh memory
+  # adapter, subscribes to all aggregate events to auto-sync the read store,
+  # and registers the read repository on the runtime for query routing.
+  #
+  # @param mod [Module] the domain module
+  # @param domain [Object] the domain IR
+  # @param runtime [Hecks::Runtime] the runtime to wire CQRS onto
+  # @return [void]
+  def self.call(mod, domain, runtime, **_kwargs)
+    require "hecks/ports/read_model_store"
+
+    domain.aggregates.each do |agg|
+      write_repo = runtime[agg.name]
+      adapter_class = mod::Adapters.const_get("#{agg.name}MemoryRepository")
+      read_adapter = adapter_class.new
+      read_store = Hecks::ReadModelStore.new(adapter: read_adapter)
+
+      # Auto-sync: on every aggregate event, copy the aggregate to the read store
+      agg.events.each do |event|
+        runtime.event_bus.subscribe(event.name) do |evt|
+          # Re-read from write repo and sync to read store
+          agg_class = mod.const_get(agg.name)
+          write_repo.all.each { |obj| read_store.update(obj) }
+        end
+      end
+
+      runtime.register_read_store(agg.name, read_store)
+    end
+  end
 end
 
-# Register with Hecks connection registry if available
+# Register with Hecks extension registry if available
 if defined?(Hecks) && Hecks.respond_to?(:extension_registry)
   Hecks.extension_registry[:cqrs] = HecksCqrs
 end
