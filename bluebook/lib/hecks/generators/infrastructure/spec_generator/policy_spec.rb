@@ -107,15 +107,7 @@ module Hecks
           end
 
           def is_update_cmd?(cmd, agg)
-            agg_snake = domain_snake_name(agg.name)
-            suffixes = agg_snake.split("_").each_index.map { |i|
-              agg_snake.split("_").drop(i).join("_")
-            }.uniq
-
-            cmd.attributes.any? { |a|
-              a.name.to_s.end_with?("_id") &&
-                suffixes.any? { |s| a.name.to_s == "#{s}_id" }
-            }
+            Hecks::Conventions::CommandContract.find_self_ref(cmd, agg.name) != nil
           end
 
           def find_create_cmd(agg)
@@ -123,14 +115,7 @@ module Hecks
           end
 
           def update_args_for(cmd, agg)
-            self_ref = cmd.attributes.find { |a|
-              agg_snake = domain_snake_name(agg.name)
-              suffixes = agg_snake.split("_").each_index.map { |i|
-                agg_snake.split("_").drop(i).join("_")
-              }.uniq
-              a.name.to_s.end_with?("_id") &&
-                suffixes.any? { |s| a.name.to_s == "#{s}_id" }
-            }
+            self_ref = Hecks::Conventions::CommandContract.find_self_ref(cmd, agg.name)
 
             cmd.attributes.map { |attr|
               if self_ref && attr.name == self_ref.name

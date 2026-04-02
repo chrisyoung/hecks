@@ -38,5 +38,28 @@ module Hecks::Conventions
         agg_snake.split("_").drop(i).join("_")
       }.uniq
     end
+
+    # True when the attribute name looks like a self-referencing foreign key
+    # for the given aggregate. Matches `_id` suffix against all aggregate
+    # name suffixes (e.g. `policy_id` matches `GovernancePolicy`).
+    #
+    # @param attr_name [String] the attribute name e.g. "policy_id"
+    # @param agg_name [String] the aggregate name e.g. "GovernancePolicy"
+    # @return [Boolean]
+    def self.reference_attribute?(attr_name, agg_name)
+      name = attr_name.to_s
+      return false unless name.end_with?("_id")
+      agg_suffixes(agg_name).any? { |s| name == "#{s}_id" }
+    end
+
+    # Find the self-referencing `_id` attribute on a command for the given
+    # aggregate. Returns nil for create commands (no self-ref).
+    #
+    # @param cmd [Command] the command IR
+    # @param agg_name [String] the aggregate name
+    # @return [Attribute, nil] the self-ref attribute, or nil
+    def self.find_self_ref(cmd, agg_name)
+      cmd.attributes.find { |a| reference_attribute?(a.name, agg_name) }
+    end
   end
 end
