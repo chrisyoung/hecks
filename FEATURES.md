@@ -215,6 +215,13 @@
 - Collection proxies for `list_of` attributes with `create`, `delete`, `each`, `count`
 - Automatic reference resolution with lazy loading from repository
 - Optional event sourcing with `EventRecorder` and `Aggregate.history(id)` replay
+- In-memory `EventStore` automatically records all published events with version numbers
+- Time travel: `app.as_of(timestamp).find("Pizza", id)` — reconstitutes aggregate state at a past point in time
+- Version replay: `app.at_version("Pizza", id, version: n)` — reconstitutes aggregate state at a specific event version
+- `app.reconstitute_at_version` alias for `at_version` for naming symmetry
+- `app.event_store` exposes the in-memory event store for direct stream queries
+- `event_store.read_stream_until(stream_id, timestamp:)` — filter events by time
+- `event_store.read_stream_to_version(stream_id, version:)` — filter events by version
 
 ## Querying
 - `where(field: value)` filtering on aggregates

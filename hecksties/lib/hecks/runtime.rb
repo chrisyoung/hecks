@@ -13,6 +13,8 @@ require_relative "runtime/connection_setup"
 require_relative "runtime/service_setup"
 require_relative "runtime/auth_coverage_check"
 require_relative "runtime/reference_authorizer_check"
+require_relative "runtime/time_travel"
+require_relative "runtime/as_of_proxy"
 
 module Hecks
   # Hecks::Runtime
@@ -63,6 +65,7 @@ module Hecks
       include AuthCoverageCheck
       include ReferenceCoverageCheck
       include SagaSetup
+      include TimeTravel
 
       # @return [Hecks::DomainModel::Structure::Domain] the domain IR object this runtime is wired to
       attr_reader :domain
@@ -72,6 +75,9 @@ module Hecks
 
       # @return [Hecks::Commands::CommandBus] the command bus that dispatches commands through middleware
       attr_reader :command_bus
+
+      # @return [Hecks::EventStore] the in-memory event store for time-travel queries
+      attr_reader :event_store
 
       # Boots the runtime: wires repositories, policies, subscribers, and the command bus.
       # Evaluates an optional configuration block in the context of the runtime instance,
@@ -90,6 +96,7 @@ module Hecks
         @mod = Object.const_get(@mod_name)
         @mod.extend(Hecks::DomainConnections) unless @mod.respond_to?(:connections)
         @event_bus = event_bus || EventBus.new
+        @event_store = EventStore.new
         @repositories = {}
         @adapter_overrides = {}
         @async_handler = nil
@@ -107,6 +114,7 @@ module Hecks
         ServiceSetup.bind(@domain, @mod, @command_bus)
         setup_workflows
         setup_sagas
+        wire_event_store
         hoist_constants
       end
 
@@ -275,6 +283,22 @@ module Hecks
           domain: @domain,
           event_bus: @event_bus
         )
+      end
+
+      # Subscribes a global listener on the event bus that appends every
+      # published event to the in-memory EventStore. Derives the stream ID
+      # from the event's class namespace and aggregate_id attribute.
+      #
+      # @return [void]
+      def wire_event_store
+        store = @event_store
+        @event_bus.on_any do |event|
+          agg_type = event.class.name&.split("::")&.[](-3)
+          agg_id = event.respond_to?(:aggregate_id) ? event.aggregate_id : nil
+          if agg_type && agg_id
+            store.append("#{agg_type}-#{agg_id}", event)
+          end
+        end
       end
 
       def trace_reactive_chain(command_name)
