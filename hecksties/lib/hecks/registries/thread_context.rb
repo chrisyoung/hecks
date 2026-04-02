@@ -52,5 +52,21 @@ module Hecks
     ensure
       Thread.current[:hecks_current_user] = old
     end
+
+    def trace_id
+      Thread.current[:hecks_trace_id]
+    end
+
+    def trace_id=(id)
+      Thread.current[:hecks_trace_id] = id&.to_s
+    end
+
+    def with_trace(id)
+      old = Thread.current[:hecks_trace_id]
+      Thread.current[:hecks_trace_id] = id.to_s
+      yield
+    ensure
+      Thread.current[:hecks_trace_id] = old
+    end
   end
 end
