@@ -33,15 +33,20 @@ module Hecks
         # @return [String, nil] command to dispatch on timeout
         attr_reader :on_timeout
 
+        # @return [Array<SagaTransition>] event-driven transitions for process manager mode
+        attr_reader :transitions
+
         # Creates a new Saga IR node.
         #
         # @param name [String] the saga name
-        # @param steps [Array<SagaStep>] ordered steps
+        # @param steps [Array<SagaStep>] ordered imperative steps
+        # @param transitions [Array<SagaTransition>] event-driven transitions
         # @param timeout [String, nil] timeout duration
         # @param on_timeout [String, nil] timeout handler command
-        def initialize(name:, steps: [], timeout: nil, on_timeout: nil)
+        def initialize(name:, steps: [], transitions: [], timeout: nil, on_timeout: nil)
           @name = name.to_s
           @steps = steps
+          @transitions = transitions
           @timeout = timeout
           @on_timeout = on_timeout&.to_s
         end
@@ -51,6 +56,14 @@ module Hecks
         # @return [Boolean]
         def timed?
           !@timeout.nil?
+        end
+
+        # Whether this saga uses event-driven transitions (process manager mode)
+        # rather than imperative steps.
+        #
+        # @return [Boolean]
+        def event_driven?
+          !@transitions.empty?
         end
       end
     end

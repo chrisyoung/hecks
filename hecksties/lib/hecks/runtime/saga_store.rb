@@ -41,6 +41,21 @@ module Hecks
       @instances.delete(saga_id.to_s)
     end
 
+    # Find a saga instance by correlation ID. Searches instance attrs for
+    # a matching :correlation_id value, or falls back to saga_id lookup.
+    #
+    # @param correlation_id [String] the correlation identifier
+    # @return [Hash, nil] the saga state, or nil if not found
+    def find_by_correlation(correlation_id)
+      key = correlation_id.to_s
+      return @instances[key] if @instances.key?(key)
+
+      @instances.values.find do |inst|
+        inst.dig(:attrs, :correlation_id).to_s == key ||
+          inst[:correlation_id].to_s == key
+      end
+    end
+
     # Remove all stored saga instances.
     #
     # @return [void]

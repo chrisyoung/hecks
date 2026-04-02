@@ -74,6 +74,14 @@
 - Steps declare success and failure transitions to other named commands
 - Compensations are rollback commands run in reverse order if the saga must unwind
 - Saga definitions stored in domain IR and available via `domain.sagas`
+- **Event-driven process managers**: `on "EventName", dispatch: "Command", from: "state", to: "next_state"` inside saga blocks
+- `ProcessManager` subscribes to event bus and transitions through states by dispatching commands
+- `SagaTransition` IR node: event trigger, command to dispatch, optional from-state guard, target state
+- State guards: transitions only fire when the instance is in the declared `from` state
+- `SagaStore#find_by_correlation(correlation_id)` looks up instances by correlation ID
+- `Saga#event_driven?` predicate distinguishes event-driven sagas from imperative step-based ones
+- Mixed sagas: combine imperative `step` entries with event-driven `on` transitions in one saga block
+- Full backward compatibility: imperative saga DSL (`step`, `compensate`) works unchanged
 
 ### Ubiquitous Language
 - `glossary { prefer "customer", not: ["user", "client"] }` — warn when banned terms appear in names across aggregates, commands, and events

@@ -155,6 +155,7 @@ module Hecks
   autoload :Versioning,        "hecks/runtime/versioning"
   autoload :ViewBinding,       "hecks/runtime/view_binding"
   autoload :WorkflowExecutor,  "hecks/runtime/workflow_executor"
+  autoload :ProcessManager,    "hecks/runtime/process_manager"
 
   # = Hecks::HTTP
   #

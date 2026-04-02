@@ -71,6 +71,7 @@ module Hecks
         def initialize(name)
           @name = name
           @steps = []
+          @transitions = []
           @timeout = nil
           @on_timeout = nil
         end
@@ -87,12 +88,22 @@ module Hecks
           end
         end
 
+        # Event-driven transition for process manager mode.
+        #
+        #   on "PaymentReceived", dispatch: "ShipOrder",
+        #      from: "awaiting_payment", to: "shipping"
+        def on(event, dispatch:, from: nil, to:)
+          @transitions << DomainModel::Behavior::SagaTransition.new(
+            event: event, command: dispatch, from: from, to: to
+          )
+        end
+
         def timeout(duration)   = (@timeout = duration)
         def on_timeout(command)  = (@on_timeout = command)
 
         def build
           DomainModel::Behavior::Saga.new(
-            name: @name, steps: @steps,
+            name: @name, steps: @steps, transitions: @transitions,
             timeout: @timeout, on_timeout: @on_timeout
           )
         end

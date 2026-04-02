@@ -8,6 +8,8 @@ require_relative "runtime/workflow_setup"
 require_relative "runtime/saga_store"
 require_relative "runtime/saga_runner"
 require_relative "runtime/saga_setup"
+require_relative "runtime/process_manager"
+require_relative "runtime/process_manager_setup"
 require_relative "runtime/constant_hoisting"
 require_relative "runtime/connection_setup"
 require_relative "runtime/service_setup"
@@ -63,6 +65,7 @@ module Hecks
       include AuthCoverageCheck
       include ReferenceCoverageCheck
       include SagaSetup
+      include ProcessManagerSetup
 
       # @return [Hecks::DomainModel::Structure::Domain] the domain IR object this runtime is wired to
       attr_reader :domain
@@ -107,6 +110,7 @@ module Hecks
         ServiceSetup.bind(@domain, @mod, @command_bus)
         setup_workflows
         setup_sagas
+        setup_process_managers
         hoist_constants
       end
 
