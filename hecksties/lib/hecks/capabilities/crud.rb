@@ -36,7 +36,7 @@ module Hecks
 
           agg.commands.concat(new_commands)
           agg.events.concat(new_events)
-          load_command_classes(agg, new_commands, new_events, mod_name)
+          CommandLoader.load(agg, new_commands, new_events, mod_name)
           rewire_aggregate(runtime, agg, mod)
         end
       end
@@ -119,64 +119,8 @@ module Hecks
         )
       end
 
-      # Generate and eval Ruby command classes for the new stubs.
-      #
-      # @param agg [Structure::Aggregate] the aggregate
-      # @param commands [Array<Behavior::Command>] new commands
-      # @param events [Array<Behavior::DomainEvent>] corresponding events
-      # @param mod_name [String] the domain module name
-      # @return [void]
-      def self.load_command_classes(agg, commands, events, mod_name)
-        commands.each_with_index do |cmd, i|
-          event = events[i]
-          event_source = Generators::Domain::EventGenerator.new(
-            event, domain_module: mod_name, aggregate_name: agg.name
-          ).generate
-          RubyVM::InstructionSequence.compile(event_source, "crud_event_#{cmd.name}").eval
-
-          source = if cmd.name.start_with?("Delete")
-            delete_command_source(cmd, event, agg, mod_name)
-          else
-            Generators::Domain::CommandGenerator.new(
-              cmd, domain_module: mod_name, aggregate_name: agg.name,
-              aggregate: agg, event: event
-            ).generate
-          end
-          RubyVM::InstructionSequence.compile(source, "crud_cmd_#{cmd.name}").eval
-        end
-      end
-
-      # Generate source for a delete command that removes from the repository.
-      #
-      # @return [String] Ruby source code
-      def self.delete_command_source(cmd, event, agg, mod_name)
-        ref_name = cmd.references.first.name
-        <<~RUBY
-          module #{mod_name}
-            class #{agg.name}
-              module Commands
-                class #{cmd.name}
-                  include Hecks::Command
-                  emits "#{event.name}"
-                  attr_reader :#{ref_name}
-                  def initialize(#{ref_name}: nil)
-                    @#{ref_name} = #{ref_name}
-                  end
-                  def call
-                    _id = #{ref_name}.respond_to?(:id) ? #{ref_name}.id : #{ref_name}
-                    existing = repository.find(_id)
-                    raise #{mod_name}::Error, "#{agg.name} not found: \#{_id}" unless existing
-                    repository.delete(_id)
-                    existing
-                  end
-                  private
-                  def persist_aggregate; end # already deleted in call
-                end
-              end
-            end
-          end
-        RUBY
-      end
+      # Load is delegated to CommandLoader (extracted for file size).
+      require_relative "crud/command_loader"
 
       # Re-wire command and persistence ports after injecting new commands.
       #
