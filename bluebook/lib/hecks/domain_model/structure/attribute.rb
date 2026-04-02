@@ -45,9 +45,11 @@ module Hecks
       # @param visible [Boolean] if false, this attribute is hidden from the web explorer
       #   and generated UI (index tables, show pages, home cards). Useful for internal fields
       #   like passwords, tokens, or raw foreign keys that should not be displayed to users.
+      # @param masked [Boolean] if true, this attribute is masked in display output, showing
+      #   only the last 4 characters (e.g., SSN `123-45-6789` → `***-**-6789`).
       #
       # @return [Attribute] a new Attribute instance
-      def initialize(name:, type:, default: nil, list: false, pii: false, enum: nil, visible: true)
+      def initialize(name:, type:, default: nil, list: false, pii: false, enum: nil, visible: true, masked: false)
         @name = name.to_sym
         @type = type
         @default = default
@@ -55,6 +57,7 @@ module Hecks
         @pii = pii
         @enum = enum
         @visible = visible
+        @masked = masked
       end
 
       # Returns true if this attribute holds a collection of values.
@@ -73,6 +76,16 @@ module Hecks
       # @return [Boolean] true if this attribute holds PII data
       def pii?
         @pii
+      end
+
+      # Returns true if this attribute is masked in display output.
+      # Masked attributes show only the last 4 characters, with the rest
+      # replaced by asterisks. Useful for sensitive data like SSNs, credit
+      # card numbers, or account numbers.
+      #
+      # @return [Boolean] true if this attribute should be masked in display
+      def masked?
+        @masked
       end
 
       # Returns true if this attribute should appear in the web explorer

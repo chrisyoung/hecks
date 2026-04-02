@@ -24,6 +24,7 @@
 - References hold live objects in memory — IDs are purely a persistence concern
 - Enum constraints: `attribute :category, String, enum: %w[low medium high]` — validated at runtime, dropdown in UI
 - Computed attributes: `computed :lot_size do; area / 43560.0; end` — derived values not stored in the database, shown in UI with "(computed)" hint, visible in `hecks inspect`, and available as MCP `add_computed` tool
+- Masked attributes: `attribute :ssn, String, masked: true` — display shows last 4 chars only (e.g., `123-45-6789` → `***-**-6789`); also available via hecksagon capability tagging (`capability.ssn.masked`) or the `:privacy` concern shorthand which expands to both `:pii` and `:masked` tags
 
 ### Commands
 - Define commands with attributes, handlers, guards, read models, actors, and external system docs

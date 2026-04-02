@@ -8,6 +8,7 @@ require_relative "conventions/naming_helpers"
 
 # Load all contract files
 Dir[File.join(__dir__, "conventions", "*_contract.rb")].sort.each { |f| require f }
+require_relative "conventions/masked_display"
 
 module Hecks
   # Short aliases — use these instead of the full Hecks::Conventions:: path

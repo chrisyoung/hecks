@@ -58,8 +58,9 @@ module Hecks
         extract_id(result)
       end
 
-      def read_attribute(obj, attr_name)
-        obj.send(attr_name).to_s
+      def read_attribute(obj, attr_name, masked: false)
+        raw = obj.send(attr_name).to_s
+        masked ? Hecks::Conventions::MaskedDisplay.mask(raw) : raw
       end
 
       def read_id(obj)

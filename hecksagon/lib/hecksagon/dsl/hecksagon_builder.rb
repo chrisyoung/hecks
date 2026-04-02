@@ -148,15 +148,26 @@ module Hecksagon
         def respond_to_missing?(_, _ = false) = true
       end
 
-      # Applies a tag to the selected attribute.
+      # Applies a tag to the selected attribute. Concern tags like `:privacy`
+      # expand to multiple concrete tags (e.g., `:pii` and `:masked`).
       class TagApplier
+        # Concern-to-tag expansion mapping. When a concern name is used as a
+        # tag, it expands to all concrete tags listed here.
+        CONCERN_TAGS = {
+          privacy: [:pii, :masked],
+        }.freeze
+
         def initialize(tags, attribute)
           @tags = tags
           @attribute = attribute
         end
 
         def method_missing(tag_name, *args)
-          @tags << { attribute: @attribute, tag: tag_name.to_sym }
+          sym = tag_name.to_sym
+          expanded = CONCERN_TAGS.fetch(sym, [sym])
+          expanded.each do |t|
+            @tags << { attribute: @attribute, tag: t }
+          end
           self
         end
 

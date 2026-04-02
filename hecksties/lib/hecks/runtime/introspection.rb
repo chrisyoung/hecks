@@ -62,7 +62,9 @@ module Hecks
           unless agg.attributes.empty?
             lines << "  Attributes:"
             agg.attributes.each do |attr|
-              lines << "    #{attr.name}: #{Hecks::Utils.type_label(attr)}"
+              label = "    #{attr.name}: #{Hecks::Utils.type_label(attr)}"
+              label += " [masked]" if attr.masked?
+              lines << label
             end
           end
 

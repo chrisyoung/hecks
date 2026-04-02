@@ -55,6 +55,7 @@ module Hecks::Conventions
     # Format a cell value for index table display.
     # List attributes show "N items"; scalars show the value.
     # Reference attributes resolve to the referenced entity's name.
+    # Masked attributes wrap the value in MaskedDisplay.mask.
     #
     # @param attr [Attribute] the attribute to display
     # @param obj_var [String] the variable name for the object
@@ -63,6 +64,16 @@ module Hecks::Conventions
     # @return [String] code expression
     def self.cell_expression(attr, obj_var, lang:, domain: nil)
       field = lang == :go ? GoFieldName.call(attr.name) : attr.name
+      expr = raw_cell_expression(attr, obj_var, field, lang: lang, domain: domain)
+      if attr.masked? && lang == :ruby
+        "Hecks::Conventions::MaskedDisplay.mask((#{expr}))"
+      else
+        expr
+      end
+    end
+
+    # Raw cell expression before masking is applied.
+    def self.raw_cell_expression(attr, obj_var, field, lang:, domain: nil)
       if attr.list?
         case lang
         when :go then "fmt.Sprintf(\"%d items\", len(#{obj_var}.#{field}))"

@@ -47,6 +47,19 @@ RSpec.describe "Hecksagon DSL capabilities" do
       expect(hex.aggregate_capabilities["Customer"]).to eq([{ attribute: "email", tag: :pii }])
       expect(hex.aggregate_capabilities["Order"]).to eq([{ attribute: "total", tag: :audit }])
     end
+
+    it "expands :privacy concern to :pii and :masked tags" do
+      hex = Hecks.hecksagon do
+        aggregate "Customer" do
+          capability.ssn.privacy
+        end
+      end
+
+      tags = hex.aggregate_capabilities["Customer"]
+      expect(tags).to include({ attribute: "ssn", tag: :pii })
+      expect(tags).to include({ attribute: "ssn", tag: :masked })
+      expect(tags.size).to eq(2)
+    end
   end
 
   describe "wired into boot" do
