@@ -107,6 +107,7 @@
 - `hecks_postgres` — PostgreSQL persistence
 - `hecks_mysql` — MySQL persistence
 - `hecks_mongodb` — MongoDB persistence; value objects embedded as nested documents (no join tables)
+- `hecks_redis_store` — Redis persistence (experimental); JSON-serialized aggregates under `hecks:<domain>:<aggregate>:<id>` keys; requires the `redis` gem
 - `hecks_cqrs` — named persistence connections for read/write separation
 - `hecks_mongodb` — MongoDB document persistence via the mongo Ruby driver
 
