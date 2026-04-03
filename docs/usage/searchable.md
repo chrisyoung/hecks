@@ -6,8 +6,8 @@ a `search(term)` method is generated on the repository.
 
 ## DSL
 
-In your `HecksagonBluebook` (or inline hecksagon block), tag attributes on an
-aggregate using the fluent `capability.field.searchable` syntax:
+In your `Hecksagon`, tag attributes on an
+aggregate using the `capability.field.searchable` syntax:
 
 ```ruby
 Hecks.hecksagon do
