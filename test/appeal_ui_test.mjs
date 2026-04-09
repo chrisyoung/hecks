@@ -155,4 +155,48 @@ test.describe("HecksAppeal UI", () => {
     const events2 = await page.evaluate(() => window.HecksApp.state.events);
     expect(events2.map((e) => e.event)).toContain("TabSelected");
   });
+
+  test("Explorer.OpenFile opens file in editor and switches tab", async ({
+    page,
+  }) => {
+    const bluebookPath = await page.evaluate(() => {
+      const s = window.HecksApp && window.HecksApp.state;
+      if (!s || !s.projects || s.projects.length === 0) return null;
+      const p = s.projects[0];
+      if (p.domains && p.domains.length > 0) {
+        const d = p.domains[0];
+        if (d.path) return d.path;
+      }
+      if (p.files && p.files.length > 0) {
+        const f = p.files.find((f) => f.name.endsWith(".bluebook"));
+        if (f) return f.path;
+      }
+      return null;
+    });
+
+    if (!bluebookPath) {
+      console.log("No bluebook path found, skipping test");
+      return;
+    }
+
+    await dispatch(page, "Explorer", "OpenFile", { path: bluebookPath });
+
+    await page.waitForFunction(
+      () =>
+        window.HecksApp &&
+        window.HecksApp.state.layout.activeTab === "editor",
+      { timeout: 5000 }
+    );
+
+    await expect(ide(page)).toHaveAttribute(
+      "data-domain-layout-tab",
+      "editor",
+      { timeout: 3000 }
+    );
+
+    const editorContent = await page.evaluate(
+      () => window.HecksApp.state.editor.content
+    );
+    expect(editorContent.length).toBeGreaterThan(10);
+  });
 });
