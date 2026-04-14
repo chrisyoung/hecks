@@ -1,0 +1,215 @@
+Hecks.bluebook "HecksLifeLazyProjection", version: "2026.04.15.1" do
+  vision "Virtual memory for domains — index everything at boot, project only what's needed, stream for sweeps"
+  category "runtime"
+
+  # ============================================================
+  # LAZY PROJECTION
+  # ============================================================
+  #
+  # Boot scans the filesystem and builds a domain index.
+  # No parsing. No projection. Just paths and names.
+  #
+  # When something needs a domain:
+  #   1. Check the index — is this domain known?
+  #   2. Check the cache — is it already projected?
+  #   3. If not, compile → validate → project → cache
+  #   4. Return the live runtime
+  #
+  # Memory tiers:
+  #   Resident  — governance (always projected, always in memory)
+  #   Cached    — recently used domains (projected, kept until evicted)
+  #   Indexed   — known but not loaded (path on disk, no memory)
+  #
+  # Access patterns:
+  #   Dispatch   — project on demand, cache for session
+  #   Training   — stream one at a time, never cache
+  #   Cop sweep  — stream one at a time, check, release
+  #   Clustering — extract signature only, don't project full runtime
+
+  aggregate "DomainIndex", "The map of all known domains — built at boot from filesystem scan" do
+    Integer :total_domains
+    Integer :resident_count
+    Integer :cached_count
+    Integer :indexed_count
+
+    Scan do
+      role "Bootloader"
+      description "Walk the filesystem, find all .bluebook files, build the index"
+      emits "IndexScanned"
+      then_set :cached_count, to: 0
+    end
+
+    Register do
+      role "Bootloader"
+      description "Add one domain to the index — path, name, aggregate count (from quick parse)"
+      reference_to(DomainIndex)
+      emits "DomainRegistered"
+      then_set :total_domains, increment: 1
+      then_set :indexed_count, increment: 1
+    end
+  end
+
+  aggregate "DomainEntry", "One entry in the index — knows where the domain is, whether it's loaded" do
+    String :domain_name
+    String :bluebook_path
+    String :tier
+    Integer :aggregate_count
+    Integer :command_count
+    Integer :fixture_count
+    Integer :access_count
+    String :last_accessed
+
+    Index do
+      role "Bootloader"
+      description "Register a domain — quick parse for counts, don't project"
+      String :domain_name
+      String :bluebook_path
+      Integer :aggregate_count
+      Integer :command_count
+      Integer :fixture_count
+      emits "DomainIndexed"
+      then_set :domain_name, to: :domain_name
+      then_set :bluebook_path, to: :bluebook_path
+      then_set :aggregate_count, to: :aggregate_count
+      then_set :command_count, to: :command_count
+      then_set :fixture_count, to: :fixture_count
+      then_set :tier, to: "indexed"
+      then_set :access_count, to: 0
+    end
+
+    Project do
+      role "Runtime"
+      description "Domain needed — compile, validate, project into memory, move to cached tier"
+      reference_to(DomainEntry)
+      String :last_accessed
+      emits "DomainProjected"
+      then_set :tier, to: "cached"
+      then_set :access_count, increment: 1
+      then_set :last_accessed, to: :last_accessed
+    end
+
+    Promote do
+      role "Runtime"
+      description "Mark as resident — always in memory, never evicted (governance, mind)"
+      reference_to(DomainEntry)
+      emits "DomainPromoted"
+      then_set :tier, to: "resident"
+    end
+
+    Evict do
+      role "Runtime"
+      description "Release from memory — domain goes back to indexed, runtime dropped"
+      reference_to(DomainEntry)
+      emits "DomainEvicted"
+      then_set :tier, to: "indexed"
+    end
+
+    Access do
+      role "Runtime"
+      description "Domain was accessed — update counter and timestamp"
+      reference_to(DomainEntry)
+      String :last_accessed
+      emits "DomainAccessed"
+      then_set :access_count, increment: 1
+      then_set :last_accessed, to: :last_accessed
+    end
+
+    lifecycle :tier, default: "unknown" do
+      transition "Index" => "indexed"
+      transition "Project" => "cached", from: "indexed"
+      transition "Promote" => "resident", from: ["indexed", "cached"]
+      transition "Evict" => "indexed", from: "cached"
+    end
+  end
+
+  aggregate "StreamProcessor", "Process domains one at a time without caching — for training and sweeps" do
+    String :operation
+    Integer :domains_processed
+    Integer :domains_total
+    String :status
+
+    StartStream do
+      role "Runtime"
+      description "Begin streaming through domains — one at a time, process, release"
+      String :operation
+      Integer :domains_total
+      emits "StreamStarted"
+      then_set :operation, to: :operation
+      then_set :domains_total, to: :domains_total
+      then_set :domains_processed, to: 0
+      then_set :status, to: "streaming"
+    end
+
+    ProcessDomain do
+      role "Runtime"
+      description "Compile one domain, process it, release memory"
+      reference_to(StreamProcessor)
+      emits "DomainStreamed"
+      then_set :domains_processed, increment: 1
+    end
+
+    CompleteStream do
+      role "Runtime"
+      description "All domains processed"
+      reference_to(StreamProcessor)
+      emits "StreamCompleted"
+      then_set :status, to: "completed"
+    end
+
+    lifecycle :status, default: "idle" do
+      transition "StartStream" => "streaming"
+      transition "CompleteStream" => "completed", from: "streaming"
+    end
+  end
+
+  aggregate "EvictionPolicy", "When to evict cached domains — LRU or access count threshold" do
+    String :policy_type
+    Integer :max_cached
+    Integer :eviction_threshold
+
+    Configure do
+      role "Architect"
+      description "Set the eviction policy — how many cached domains to keep, when to evict"
+      String :policy_type
+      Integer :max_cached
+      Integer :eviction_threshold
+      emits "PolicyConfigured"
+      then_set :policy_type, to: :policy_type
+      then_set :max_cached, to: :max_cached
+      then_set :eviction_threshold, to: :eviction_threshold
+    end
+  end
+
+  # Policies
+  policy "ProjectOnDispatch" do
+    on "CommandDispatched"
+    trigger "Project"
+    description "When a command targets an indexed domain, project it on demand"
+  end
+
+  policy "EvictOnThreshold" do
+    on "DomainProjected"
+    trigger "Evict"
+    description "When cache is full, evict least recently used"
+  end
+
+  policy "PromoteGovernance" do
+    on "IndexScanned"
+    trigger "Promote"
+    description "Governance domains are always resident"
+  end
+
+  # Fixtures
+  fixture "DomainIndex", total_domains: 477, resident_count: 6, cached_count: 3, indexed_count: 468
+
+  fixture "DomainEntry", domain_name: "Law", bluebook_path: "nursery/governance/hecks/law.bluebook", tier: "resident", aggregate_count: 4, command_count: 12, fixture_count: 22, access_count: 450, last_accessed: "2026-04-15T12:00:00Z"
+  fixture "DomainEntry", domain_name: "Enforcement", bluebook_path: "nursery/governance/hecks/enforcement.bluebook", tier: "resident", aggregate_count: 4, command_count: 11, fixture_count: 9, access_count: 300, last_accessed: "2026-04-15T12:00:00Z"
+  fixture "DomainEntry", domain_name: "Pizzas", bluebook_path: "nursery/pizzas/hecks/pizzas.bluebook", tier: "cached", aggregate_count: 2, command_count: 5, fixture_count: 8, access_count: 12, last_accessed: "2026-04-15T11:30:00Z"
+  fixture "DomainEntry", domain_name: "Taxidermy", bluebook_path: "nursery/taxidermy/taxidermy.bluebook", tier: "indexed", aggregate_count: 5, command_count: 12, fixture_count: 10, access_count: 0, last_accessed: ""
+
+  fixture "StreamProcessor", operation: "training", domains_processed: 344, domains_total: 344, status: "completed"
+  fixture "StreamProcessor", operation: "cop_sweep", domains_processed: 477, domains_total: 477, status: "completed"
+  fixture "StreamProcessor", operation: "enforcement_full", domains_processed: 882, domains_total: 882, status: "completed"
+
+  fixture "EvictionPolicy", policy_type: "lru", max_cached: 20, eviction_threshold: 50
+end
