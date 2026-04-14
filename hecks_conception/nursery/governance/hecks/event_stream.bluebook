@@ -1,0 +1,266 @@
+Hecks.bluebook "EventStream", version: "2026.04.15.1" do
+  vision "Every action is an event stream. Enforcement is inline. Rewind is discard. No git dependency. Pure Bluebook governance."
+  category "governance"
+
+  # ============================================================
+  # EVENT-SOURCED GOVERNANCE
+  # ============================================================
+  #
+  # Old model:
+  #   Work happens → commit → git hook → enforce → allow/block
+  #   Problem: enforcement is after the fact. Rewind is git reset.
+  #
+  # New model:
+  #   Action starts → before-state captured as fixtures
+  #   Every command emits an event → event passes through enforcement
+  #   Violation? → event flagged, action can rewind
+  #   Action completes → events persisted as permanent record
+  #   Rewind? → discard events, restore before-state
+  #
+  # The event stream is:
+  #   - The replay log (run forward = redo)
+  #   - The undo log (discard = rewind)
+  #   - The evidence (cop reads events, not files)
+  #   - The training data (events are verified input/output pairs)
+  #
+  # Git becomes version control. Not governance.
+  # Governance lives in the event stream.
+
+  aggregate "ActionStream", "The event stream for one action — every command that fired, every state change" do
+    String :action_name
+    String :action_path
+    Integer :event_count
+    String :status
+    String :started_at
+    String :before_snapshot
+
+    Open do
+      role "Runtime"
+      description "Open a new event stream for an action — capture before-state as fixture snapshot"
+      String :action_name
+      String :action_path
+      String :before_snapshot
+      String :started_at
+      emits "StreamOpened"
+      then_set :action_name, to: :action_name
+      then_set :action_path, to: :action_path
+      then_set :before_snapshot, to: :before_snapshot
+      then_set :started_at, to: :started_at
+      then_set :event_count, to: 0
+      then_set :status, to: "recording"
+    end
+
+    RecordEvent do
+      role "Runtime"
+      description "An event occurred — append it to the stream"
+      reference_to(ActionStream)
+      emits "EventRecorded"
+      then_set :event_count, increment: 1
+    end
+
+    Seal do
+      role "Runtime"
+      description "Action complete — seal the stream, events become permanent record"
+      reference_to(ActionStream)
+      emits "StreamSealed"
+      then_set :status, to: "sealed"
+    end
+
+    Rewind do
+      role "Runtime"
+      description "Discard all events, restore before-state — the action never happened"
+      reference_to(ActionStream)
+      emits "StreamRewound"
+      then_set :status, to: "rewound"
+      then_set :event_count, to: 0
+    end
+
+    lifecycle :status, default: "closed" do
+      transition "Open" => "recording"
+      transition "Seal" => "sealed", from: "recording"
+      transition "Rewind" => "rewound", from: "recording"
+    end
+  end
+
+  aggregate "Event", "One event in the stream — what happened, what changed, what law applies" do
+    String :stream_name
+    String :event_name
+    String :aggregate_name
+    String :command_name
+    String :state_change
+    Integer :sequence
+    String :enforcement_verdict
+
+    Emit do
+      role "Runtime"
+      description "A command fired and emitted this event — record it with enforcement inline"
+      String :stream_name
+      String :event_name
+      String :aggregate_name
+      String :command_name
+      String :state_change
+      Integer :sequence
+      emits "EventEmitted"
+      then_set :stream_name, to: :stream_name
+      then_set :event_name, to: :event_name
+      then_set :aggregate_name, to: :aggregate_name
+      then_set :command_name, to: :command_name
+      then_set :state_change, to: :state_change
+      then_set :sequence, to: :sequence
+    end
+
+    Enforce do
+      role "Runtime"
+      description "Check this event against applicable laws — inline, not after the fact"
+      reference_to(Event)
+      String :enforcement_verdict
+      emits "EventEnforced"
+      then_set :enforcement_verdict, to: :enforcement_verdict
+    end
+
+    Flag do
+      role "Runtime"
+      description "This event violated a law — flagged but not yet rewound"
+      reference_to(Event)
+      emits "EventFlagged"
+      then_set :enforcement_verdict, to: "violation"
+    end
+  end
+
+  aggregate "Snapshot", "Before-state captured as fixtures — the rewind target" do
+    String :action_name
+    String :captured_at
+    list_of(String) :fixture_paths
+    Integer :fixture_count
+
+    Capture do
+      role "Runtime"
+      description "Capture current state of all affected domains as fixture data"
+      String :action_name
+      String :captured_at
+      list_of(String) :fixture_paths
+      Integer :fixture_count
+      emits "SnapshotCaptured"
+      then_set :action_name, to: :action_name
+      then_set :captured_at, to: :captured_at
+      then_set :fixture_paths, to: :fixture_paths
+      then_set :fixture_count, to: :fixture_count
+    end
+
+    Restore do
+      role "Runtime"
+      description "Restore state from this snapshot — rewind to before the action"
+      reference_to(Snapshot)
+      emits "SnapshotRestored"
+    end
+  end
+
+  aggregate "Replay", "Replay a sealed action stream — re-execute all events in order" do
+    String :stream_name
+    Integer :events_replayed
+    Integer :events_total
+    String :status
+
+    StartReplay do
+      role "Runtime"
+      description "Begin replaying a sealed stream — events execute in sequence order"
+      String :stream_name
+      Integer :events_total
+      emits "ReplayStarted"
+      then_set :stream_name, to: :stream_name
+      then_set :events_total, to: :events_total
+      then_set :events_replayed, to: 0
+      then_set :status, to: "replaying"
+    end
+
+    ReplayEvent do
+      role "Runtime"
+      description "Re-execute one event from the stream"
+      reference_to(Replay)
+      emits "EventReplayed"
+      then_set :events_replayed, increment: 1
+    end
+
+    CompleteReplay do
+      role "Runtime"
+      description "All events replayed — action re-executed"
+      reference_to(Replay)
+      emits "ReplayCompleted"
+      then_set :status, to: "completed"
+    end
+
+    lifecycle :status, default: "pending" do
+      transition "StartReplay" => "replaying"
+      transition "CompleteReplay" => "completed", from: "replaying"
+    end
+  end
+
+  # === THE INLINE ENFORCEMENT PIPELINE ===
+
+  # Every event gets enforced as it's emitted
+  policy "EnforceOnEmit" do
+    on "EventEmitted"
+    trigger "Enforce"
+    description "Every event passes through enforcement — inline, not after the fact"
+  end
+
+  # Flagged events can trigger rewind
+  policy "FlagOnViolation" do
+    on "EventEnforced"
+    trigger "Flag"
+    description "If enforcement finds a violation, flag the event"
+    condition { |event| event.enforcement_verdict == "violation" }
+  end
+
+  # Stream operations flow to action stack
+  policy "PushOnOpen" do
+    on "StreamOpened"
+    trigger "Push"
+    description "Opening a stream pushes the action onto the stack"
+  end
+
+  policy "PopOnSeal" do
+    on "StreamSealed"
+    trigger "Pop"
+    description "Sealing a stream pops the action from the stack"
+  end
+
+  # Rewind flows to snapshot restore
+  policy "RestoreOnRewind" do
+    on "StreamRewound"
+    trigger "Restore"
+    description "Rewinding a stream restores the before-state snapshot"
+  end
+
+  # Conscience feels the events
+  policy "SenseOnFlag" do
+    on "EventFlagged"
+    trigger "Sense"
+    map source: "enforcement_violation", valence: -0.3
+  end
+
+  policy "SenseOnRewind" do
+    on "StreamRewound"
+    trigger "Sense"
+    map source: "action_rewind", valence: -0.1
+  end
+
+  # === FIXTURES ===
+
+  # A successful action stream
+  fixture "ActionStream", action_name: "BuildGovernance", action_path: "actions/build_governance.bluebook", event_count: 12, status: "sealed", started_at: "2026-04-15T09:00:00Z", before_snapshot: "snapshot_build_governance"
+  # A rewound action stream
+  fixture "ActionStream", action_name: "BadRefactor", action_path: "actions/bad_refactor.bluebook", event_count: 0, status: "rewound", started_at: "2026-04-15T10:00:00Z", before_snapshot: "snapshot_bad_refactor"
+
+  # Events in a stream
+  fixture "Event", stream_name: "BuildGovernance", event_name: "LawEnacted", aggregate_name: "Law", command_name: "Enact", state_change: "status: draft → active", sequence: 1, enforcement_verdict: "clear"
+  fixture "Event", stream_name: "BuildGovernance", event_name: "GateRegistered", aggregate_name: "BinaryGate", command_name: "RegisterGate", state_change: "enabled: false → true", sequence: 2, enforcement_verdict: "clear"
+  fixture "Event", stream_name: "BadRefactor", event_name: "FileEdited", aggregate_name: "Code", command_name: "Edit", state_change: "lines: 180 → 250", sequence: 1, enforcement_verdict: "violation"
+
+  # Snapshots
+  fixture "Snapshot", action_name: "BuildGovernance", captured_at: "2026-04-15T09:00:00Z", fixture_paths: ["nursery/governance/"], fixture_count: 3
+  fixture "Snapshot", action_name: "BadRefactor", captured_at: "2026-04-15T10:00:00Z", fixture_paths: ["lib/hecks/runtime/command_bus.rb"], fixture_count: 1
+
+  # Replay
+  fixture "Replay", stream_name: "BuildGovernance", events_replayed: 12, events_total: 12, status: "completed"
+end

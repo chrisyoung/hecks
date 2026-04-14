@@ -16,4 +16,9 @@ Hecks.hecksagon "Governance" do
     listens_to "action_gate"
     listens_to "enforcement"
   end
+  domain "event_stream" do
+    listens_to "action_gate"
+    listens_to "enforcement"
+    listens_to "law"
+  end
 end
