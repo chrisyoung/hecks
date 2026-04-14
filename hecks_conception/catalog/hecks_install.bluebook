@@ -1,0 +1,135 @@
+Hecks.bluebook "HecksInstall", version: "2026.04.15.1" do
+  vision "One-line installer — clone the repo, bundle dependencies, symlink the binary, verify PATH"
+  category "infrastructure"
+
+  aggregate "Installation", "A single Hecks installation — clone, bundle, link" do
+    String :hecks_home
+    String :bin_dir
+    String :repo_url
+    String :status
+    Boolean :path_configured
+
+    CloneRepo do
+      role "System"
+      description "Clone the Hecks repo to HECKS_HOME (defaults to ~/.hecks)"
+      String :hecks_home
+      String :repo_url
+      emits "RepoCloned"
+      then_set :hecks_home, to: :hecks_home
+      then_set :repo_url, to: :repo_url
+      then_set :status, to: "cloned"
+    end
+
+    UpdateRepo do
+      role "System"
+      description "HECKS_HOME already exists — pull latest or reset to origin/main"
+      String :hecks_home
+      emits "RepoUpdated"
+      then_set :hecks_home, to: :hecks_home
+      then_set :status, to: "cloned"
+    end
+
+    InstallDependencies do
+      role "System"
+      description "Run bundle install in the repo directory"
+      emits "DependenciesInstalled"
+      given { status == "cloned" }
+      then_set :status, to: "bundled"
+    end
+
+    SkipDependencies do
+      role "System"
+      description "Bundle install failed or unavailable — continue without"
+      String :reason
+      emits "DependenciesSkipped"
+      given { status == "cloned" }
+      then_set :status, to: "bundled"
+    end
+
+    LinkBinary do
+      role "System"
+      description "Symlink bin/hecks to /usr/local/bin or ~/.local/bin, chmod +x"
+      String :bin_dir
+      emits "BinaryLinked"
+      given { status == "bundled" }
+      then_set :bin_dir, to: :bin_dir
+      then_set :status, to: "linked"
+    end
+
+    VerifyPath do
+      role "System"
+      description "Check if bin_dir is on PATH — warn user if not"
+      Boolean :on_path
+      emits "PathVerified"
+      given { status == "linked" }
+      then_set :path_configured, to: :on_path
+      then_set :status, to: "installed"
+    end
+
+    lifecycle :status, default: "pending" do
+      transition "CloneRepo" => "cloned"
+      transition "UpdateRepo" => "cloned"
+      transition "InstallDependencies" => "bundled", from: "cloned"
+      transition "SkipDependencies" => "bundled", from: "cloned"
+      transition "LinkBinary" => "linked", from: "bundled"
+      transition "VerifyPath" => "installed", from: "linked"
+    end
+  end
+
+  aggregate "BinDirectory", "Where the hecks binary will live — /usr/local/bin or ~/.local/bin" do
+    String :path
+    Boolean :writable
+    Boolean :on_path
+
+    ResolveBinDir do
+      role "System"
+      description "Check if /usr/local/bin is writable, fall back to ~/.local/bin"
+      String :path
+      Boolean :writable
+      emits "BinDirResolved"
+      then_set :path, to: :path
+      then_set :writable, to: :writable
+    end
+
+    CheckPath do
+      role "System"
+      description "Verify the chosen bin directory is on the user's PATH"
+      Boolean :on_path
+      emits "PathChecked"
+      then_set :on_path, to: :on_path
+    end
+  end
+
+  # Installation pipeline
+  policy "BundleAfterClone" do
+    on "RepoCloned"
+    trigger "InstallDependencies"
+  end
+
+  policy "BundleAfterUpdate" do
+    on "RepoUpdated"
+    trigger "InstallDependencies"
+  end
+
+  policy "LinkAfterBundle" do
+    on "DependenciesInstalled"
+    trigger "LinkBinary"
+  end
+
+  policy "LinkAfterSkip" do
+    on "DependenciesSkipped"
+    trigger "LinkBinary"
+  end
+
+  policy "VerifyAfterLink" do
+    on "BinaryLinked"
+    trigger "VerifyPath"
+  end
+
+  # Fixtures
+  fixture "Installation", hecks_home: "/Users/chris/.hecks", bin_dir: "/usr/local/bin", repo_url: "https://github.com/chrisyoung/hecks.git", status: "installed", path_configured: true
+  fixture "Installation", hecks_home: "/Users/chris/.hecks", bin_dir: "/Users/chris/.local/bin", repo_url: "https://github.com/chrisyoung/hecks.git", status: "installed", path_configured: false
+
+  fixture "BinDirectory", path: "/usr/local/bin", writable: true, on_path: true
+  fixture "BinDirectory", path: "/Users/chris/.local/bin", writable: true, on_path: false
+end

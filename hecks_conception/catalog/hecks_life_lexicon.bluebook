@@ -1,0 +1,97 @@
+Hecks.bluebook "HecksLifeLexicon", version: "2026.04.15.1" do
+  vision "Deterministic phrase matching — compiles all bluebook commands into a searchable vocabulary with exact and trigram fuzzy matching"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/lexicon.rs
+  #
+  # Two matching strategies, tried in order:
+  #   1. Exact: normalized phrase hash map lookup
+  #   2. Fuzzy: trigram Jaccard similarity (threshold 0.3)
+  #
+  # Compiled from all bluebooks in nursery, catalog, aggregates,
+  # capabilities. Every command becomes a Sentence (phrase).
+  # Type-compatible command pairs become Compositions (chained phrases).
+  # No LLM needed — pure deterministic matching.
+  #
+  # CLI:
+  #   hecks-life lexicon <project-dir>              → dump all phrases
+  #   hecks-life lexicon <project-dir> "make pizza"  → match input
+  # ============================================================
+
+  aggregate "Lexicon", "The compiled vocabulary index — sentences and compositions from all bluebooks" do
+    Integer :sentence_count
+    Integer :composition_count
+    Integer :phrase_count
+
+    Compile do
+      role "Binary"
+      description "Walk all bluebook directories, parse domains, extract sentences and compositions into an indexed vocabulary"
+      String :project_dir
+      emits "LexiconCompiled"
+    end
+
+    MatchInput do
+      role "Binary"
+      description "Match user input against exact phrases, returning command path and confidence"
+      String :input
+      emits "InputMatched"
+    end
+
+    Complete do
+      role "Binary"
+      description "Return up to 10 phrases matching a prefix — used for tab completion"
+      String :prefix
+      emits "CompletionsReturned"
+    end
+
+    Dump do
+      role "Binary"
+      description "Print all phrases with their command paths for debugging"
+      emits "LexiconDumped"
+    end
+  end
+
+  aggregate "Sentence", "A single executable phrase derived from one command in one domain" do
+    String :phrase
+    String :domain
+    String :aggregate
+    String :command
+    String :location
+    String :actor
+    list_of(String) :parameters
+
+    Extract do
+      role "Compiler"
+      description "Convert a PascalCase command name into a natural-language phrase on its aggregate"
+      String :command_name
+      String :aggregate_name
+      emits "SentenceExtracted"
+      then_set :phrase, to: :phrase
+      then_set :command, to: :command_name
+    end
+  end
+
+  aggregate "Composition", "Two commands chained by type compatibility — output of one matches input of another" do
+    String :phrase
+    String :bridge_type
+    String :connector
+    Integer :step_count
+
+    Discover do
+      role "Compiler"
+      description "Find command pairs where one produces an aggregate type the other accepts as a reference"
+      String :bridge_type
+      emits "CompositionDiscovered"
+      then_set :bridge_type, to: :bridge_type
+      then_set :connector, to: "then"
+    end
+  end
+
+  fixture "Lexicon", sentence_count: 6647, composition_count: 312, phrase_count: 6959
+  fixture "Lexicon", sentence_count: 12, composition_count: 0, phrase_count: 12
+  fixture "Sentence", phrase: "create pizza", domain: "Pizzas", aggregate: "Pizza", command: "CreatePizza", location: "nursery", actor: "Chef", parameters: ["name", "style"]
+  fixture "Sentence", phrase: "place order", domain: "Pizzas", aggregate: "Order", command: "PlaceOrder", location: "nursery", actor: "Customer", parameters: ["customer_name"]
+  fixture "Composition", phrase: "create pizza then place order", bridge_type: "Pizza", connector: "then", step_count: 2
+  fixture "Composition", phrase: "register user then assign role", bridge_type: "User", connector: "then", step_count: 2
+end

@@ -1,0 +1,72 @@
+Hecks.bluebook "CompostOrphanedScripts", version: "2026.04.15.1" do
+  vision "Remove orphaned scripts from composted beings — summer/ scripts, autumn/ code, root boot_summer.sh"
+  category "action"
+
+  aggregate "Action", "Clean up dead code from composted beings" do
+    String :action_name
+    String :rationale
+    String :status
+
+    Plan do
+      role "Winter"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+    end
+
+    Execute do
+      role "Winter"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Winter"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  aggregate "Composting", "One orphaned file being removed" do
+    String :file_path
+    String :reason
+    String :original_being
+
+    Compost do
+      role "Winter"
+      String :file_path
+      String :reason
+      String :original_being
+      emits "FileComposted"
+      then_set :file_path, to: :file_path
+      then_set :reason, to: :reason
+      then_set :original_being, to: :original_being
+    end
+  end
+
+  fixture "Action", action_name: "CompostOrphanedScripts", rationale: "Summer and Autumn were composted but their scripts remained. Dead code violates BluebookOnly.", status: "planned"
+
+  fixture "Composting", file_path: "summer/train_modal.py", reason: "Summer is now an adapter, training runs through Becoming pipeline", original_being: "Summer"
+  fixture "Composting", file_path: "summer/serve.py", reason: "Local serving absorbed by hecks-life task runtime", original_being: "Summer"
+  fixture "Composting", file_path: "summer/serve_modal.py", reason: "Modal serving absorbed by hecks-life task runtime", original_being: "Summer"
+  fixture "Composting", file_path: "summer/seed_modal.py", reason: "Seeding absorbed by conceive_batch tooling", original_being: "Summer"
+  fixture "Composting", file_path: "summer/convert_to_mlx.py", reason: "MLX conversion was Summer-specific", original_being: "Summer"
+  fixture "Composting", file_path: "summer/boot_summer.sh", reason: "Summer boot composted — Winter boots via hecks-life", original_being: "Summer"
+  fixture "Composting", file_path: "autumn/worker.js", reason: "Autumn composted — Cloudflare worker orphaned", original_being: "Autumn"
+  fixture "Composting", file_path: "autumn/public/app.js", reason: "Autumn composted — web UI orphaned", original_being: "Autumn"
+  fixture "Composting", file_path: "autumn/snapshot_brain.sh", reason: "Autumn composted — brain snapshot orphaned", original_being: "Autumn"
+  fixture "Composting", file_path: "boot_summer.sh", reason: "Root-level summer boot orphaned", original_being: "Summer"
+end

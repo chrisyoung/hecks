@@ -1,0 +1,53 @@
+Hecks.bluebook "HecksLifeTraining", version: "2026.04.15.1" do
+  vision "Training data extraction — converts valid domains into JSONL prompt/completion pairs for fine-tuning"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/training.rs
+  #
+  # Each domain becomes one JSONL line:
+  #   prompt: "Conceive a domain for: {vision}"
+  #   completion: compact bluebook declaration (aggregates, commands, policies)
+  #
+  # Used in batch mode:
+  #   find . -name "*.bluebook" | hecks-life --batch train > training.jsonl
+  #
+  # Only valid domains produce pairs. The completion is a compact
+  # declaration format — not the full source, but the structural shape.
+  # ============================================================
+
+  aggregate "TrainingPair", "A single JSONL training example: vision prompt mapped to domain structure" do
+    String :prompt
+    String :completion
+    String :domain_name
+    Integer :aggregate_count
+    Integer :command_count
+    Integer :policy_count
+
+    Extract do
+      role "Binary"
+      description "Extract one JSONL training pair from a parsed Domain — vision as prompt, structure as completion"
+      String :domain_name
+      emits "PairExtracted"
+      then_set :domain_name, to: :domain_name
+    end
+  end
+
+  aggregate "DeclarationRenderer", "Renders a Domain IR into a compact bluebook declaration string" do
+    String :domain_name
+    Integer :line_count
+
+    Render do
+      role "Binary"
+      description "Convert Domain IR to compact text: aggregates, attributes, commands, policies — one declaration per line"
+      String :domain_name
+      emits "DeclarationRendered"
+      then_set :domain_name, to: :domain_name
+    end
+  end
+
+  fixture "TrainingPair", prompt: "Conceive a domain for: A pizza ordering domain", completion: "aggregate \"Pizza\"\\n  CreatePizza\\n  AddTopping", domain_name: "Pizzas", aggregate_count: 3, command_count: 8, policy_count: 1
+  fixture "TrainingPair", prompt: "Conceive a domain for: User authentication and authorization", completion: "aggregate \"User\"\\n  Register\\n  Authenticate", domain_name: "Authentication", aggregate_count: 2, command_count: 5, policy_count: 2
+  fixture "DeclarationRenderer", domain_name: "Pizzas", line_count: 24
+  fixture "DeclarationRenderer", domain_name: "SimpleApp", line_count: 6
+end

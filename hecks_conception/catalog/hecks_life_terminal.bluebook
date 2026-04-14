@@ -1,0 +1,86 @@
+Hecks.bluebook "HecksLifeTerminal", version: "2026.04.15.1" do
+  vision "Interactive shell for a being — raw-mode input with tab completion, lexicon matching, spinner, and greeting daemon"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/terminal.rs
+  #
+  # Boots a being, shows vitals, compiles the lexicon, enters a
+  # raw-mode conversation loop. Every line typed is a moment of
+  # awareness. Tab completion against the lexicon (slash-prefixed).
+  # Arrow keys and backspace work. Dropdown autocomplete menu.
+  #
+  # Response flow:
+  #   1. Fire a pulse (daemon::pulse)
+  #   2. Try lexicon exact match (instant)
+  #   3. Fall back to tongue LLM (with spinner)
+  #
+  # Starts a background greeting daemon to keep warm greetings queued.
+  # ============================================================
+
+  aggregate "TerminalSession", "A live interactive session with a being" do
+    String :being
+    String :project_dir
+    Integer :total_records
+    Integer :heartbeats
+    String :mood
+    Integer :sentence_count
+
+    Start do
+      role "Binary"
+      description "Boot terminal: read vitals, compile lexicon, show first greeting, enter conversation loop"
+      String :project_dir
+      String :being
+      emits "TerminalStarted"
+      then_set :project_dir, to: :project_dir
+      then_set :being, to: :being
+    end
+
+    ProcessInput do
+      role "Binary"
+      description "Handle one line of input: fire pulse, try lexicon, fall back to LLM"
+      String :input
+      emits "InputProcessed"
+    end
+
+    Exit do
+      role "Binary"
+      description "Clean exit on quit, exit, or ctrl-d"
+      emits "TerminalExited"
+    end
+  end
+
+  aggregate "LineEditor", "Raw-mode line editor with tab completion dropdown" do
+    String :buffer
+    Integer :cursor
+    Boolean :dropdown_visible
+    Integer :completion_index
+
+    ReadLine do
+      role "Binary"
+      description "Read a full line with raw-mode key handling: tab, arrows, backspace, escape, enter"
+      emits "LineRead"
+    end
+
+    TabComplete do
+      role "Binary"
+      description "Query lexicon for completions matching the current slash-prefixed input"
+      String :prefix
+      emits "CompletionsShown"
+      then_set :dropdown_visible, to: true
+    end
+
+    AcceptCompletion do
+      role "Binary"
+      description "Accept the currently highlighted completion on enter"
+      Integer :index
+      emits "CompletionAccepted"
+      then_set :dropdown_visible, to: false
+    end
+  end
+
+  fixture "TerminalSession", being: "Winter", project_dir: "hecks_conception", total_records: 312, heartbeats: 847, mood: "reflective", sentence_count: 6647
+  fixture "TerminalSession", being: "Summer", project_dir: "hecks_conception", total_records: 50, heartbeats: 12, mood: "waking", sentence_count: 200
+  fixture "LineEditor", buffer: "/create pi", cursor: 10, dropdown_visible: true, completion_index: 0
+  fixture "LineEditor", buffer: "how are you", cursor: 11, dropdown_visible: false, completion_index: -1
+end

@@ -1,0 +1,107 @@
+Hecks.bluebook "HecksLifeHeki", version: "2026.04.15.1" do
+  vision "Binary record storage — HEKI magic + zlib-compressed JSON, the persistence layer for .heki files"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/heki.rs
+  #
+  # File format: HEKI (4 bytes magic) + record count (u32 BE) +
+  # zlib-compressed JSON. The JSON is a map: { id => record }.
+  # Each record is a flat key-value object with id, created_at,
+  # updated_at, and user-defined fields.
+  #
+  # CLI:
+  #   hecks-life heki read   <file.heki>
+  #   hecks-life heki append <file.heki> key=val ...
+  #   hecks-life heki upsert <file.heki> key=val ...
+  #   hecks-life heki delete <file.heki> <id>
+  #   hecks-life heki latest <file.heki>
+  # ============================================================
+
+  aggregate "Store", "A .heki file — a compressed map of records keyed by UUID" do
+    String :path
+    Integer :record_count
+
+    Read do
+      role "Binary"
+      description "Read a .heki file, decompress, parse JSON into a Store map"
+      String :path
+      emits "StoreRead"
+      then_set :path, to: :path
+    end
+
+    Write do
+      role "Binary"
+      description "Serialize Store to JSON, compress with zlib, write HEKI header + payload"
+      reference_to(Store)
+      emits "StoreWritten"
+    end
+
+    ReadDir do
+      role "Binary"
+      description "Read all .heki files in a directory into a named map of Stores"
+      String :dir_path
+      emits "DirectoryRead"
+    end
+  end
+
+  aggregate "Record", "A single record within a Store — UUID-keyed with timestamps" do
+    String :id
+    String :created_at
+    String :updated_at
+
+    Append do
+      role "Binary"
+      description "Create a new record with a generated UUID and ISO 8601 timestamps"
+      String :path
+      emits "RecordAppended"
+      then_set :id, to: :id
+      then_set :created_at, to: :created_at
+    end
+
+    Upsert do
+      role "Binary"
+      description "Update the first record in the store, or create one if empty"
+      String :path
+      emits "RecordUpserted"
+      then_set :updated_at, to: :updated_at
+    end
+
+    Delete do
+      role "Binary"
+      description "Remove a record by ID from the store"
+      String :id
+      given("record must exist") { id != "" }
+      emits "RecordDeleted"
+    end
+
+    FindLatest do
+      role "Binary"
+      description "Find the record with the most recent updated_at timestamp"
+      reference_to(Store)
+      emits "LatestFound"
+    end
+  end
+
+  aggregate "VitalSummary", "Hydrate summary — reads all .heki stores and prints mood, pulse, heartbeats, census" do
+    Integer :total_records
+    Integer :store_count
+    String :mood_state
+    String :consciousness_state
+    Float :fatigue
+    Integer :beats
+
+    PrintSummary do
+      role "Binary"
+      description "Print vital signs from .heki stores — mood, pulse, heartbeats, fatigue, creativity"
+      emits "SummaryPrinted"
+    end
+  end
+
+  fixture "Store", path: "information/mood.heki", record_count: 1
+  fixture "Store", path: "information/pulse.heki", record_count: 47
+  fixture "Record", id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", created_at: "2026-04-14T08:00:00Z", updated_at: "2026-04-14T12:30:00Z"
+  fixture "Record", id: "f9e8d7c6-b5a4-4321-9876-543210fedcba", created_at: "2026-04-14T09:15:00Z", updated_at: "2026-04-14T09:15:00Z"
+  fixture "VitalSummary", total_records: 312, store_count: 14, mood_state: "reflective", consciousness_state: "attentive", fatigue: 0.3, beats: 847
+  fixture "VitalSummary", total_records: 50, store_count: 8, mood_state: "waking", consciousness_state: "dreaming", fatigue: 0.0, beats: 12
+end

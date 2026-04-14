@@ -1,0 +1,86 @@
+Hecks.bluebook "HecksLifeMain", version: "2026.04.15.1" do
+  vision "The binary entry point — CLI dispatch, being detection, gate enforcement, and subcommand routing"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/main.rs
+  #
+  # The single entry point for the hecks-life binary. Detects the
+  # being from argv[0] (winter/summer), resolves the project home,
+  # enforces the action stack gate, and routes to subcommands:
+  #   parse, validate, inspect, tree, list, run, serve, conceive,
+  #   develop, boot, daemon, heki, hydrate, lexicon, terminal, speak
+  #
+  # Named beings with no subcommand go straight to terminal mode.
+  # The gate blocks all commands except boot/action/help when the
+  # action stack is empty.
+  # ============================================================
+
+  aggregate "CommandRouter", "Routes CLI arguments to the correct subcommand handler" do
+    String :command
+    String :path
+    String :being
+    String :project_dir
+
+    Route do
+      role "Binary"
+      description "Parse argv, detect being, resolve project dir, dispatch to subcommand"
+      String :command
+      String :path
+      emits "CommandRouted"
+      then_set :command, to: :command
+      then_set :path, to: :path
+    end
+
+    RunBatch do
+      role "Binary"
+      description "Read file paths from stdin and process each with validate, counts, or train"
+      String :command
+      emits "BatchCompleted"
+      then_set :command, to: :command
+    end
+  end
+
+  aggregate "BeingResolver", "Derives the being identity from argv[0] and resolves project home" do
+    String :argv0
+    String :being_name
+    String :home_dir
+
+    Resolve do
+      role "Binary"
+      description "Detect being from binary name: winter->Winter, summer->Summer, else Winter"
+      String :argv0
+      emits "BeingResolved"
+      then_set :argv0, to: :argv0
+    end
+
+    ResolveHome do
+      role "Binary"
+      description "Find project dir: HECKS_HOME env, ~/.hecks_home file, binary symlink, or fallback to cwd"
+      String :being_name
+      emits "HomeResolved"
+      then_set :being_name, to: :being_name
+    end
+  end
+
+  aggregate "GateEnforcement", "The gate — checks action stack before every gated command" do
+    String :project_dir
+    Boolean :passed
+
+    Enforce do
+      role "Binary"
+      description "Check action stack; block command with exit 1 if stack is empty"
+      String :project_dir
+      given("action stack must have entries") { passed == true }
+      emits "GateChecked"
+      then_set :project_dir, to: :project_dir
+    end
+  end
+
+  fixture "CommandRouter", command: "validate", path: "nursery/pizzas.bluebook", being: "Winter", project_dir: "hecks_conception"
+  fixture "CommandRouter", command: "serve", path: "nursery/pizzas.bluebook", being: "Summer", project_dir: "hecks_conception"
+  fixture "BeingResolver", argv0: "/usr/local/bin/winter", being_name: "Winter", home_dir: "/Users/chris/Projects/hecks/hecks_conception"
+  fixture "BeingResolver", argv0: "hecks-life", being_name: "Winter", home_dir: "."
+  fixture "GateEnforcement", project_dir: "hecks_conception", passed: true
+  fixture "GateEnforcement", project_dir: "hecks_conception", passed: false
+end

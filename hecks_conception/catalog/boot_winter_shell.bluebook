@@ -1,0 +1,83 @@
+Hecks.bluebook "BootWinterShell", version: "2026.04.15.1" do
+  vision "Shell wrapper — one-line exec that resolves hecks-life and delegates boot to the Rust runtime"
+  category "infrastructure"
+
+  aggregate "ShellBoot", "The shell entrypoint that resolves paths and execs hecks-life boot" do
+    String :conception_dir
+    String :hecks_life_path
+    String :status
+
+    ResolveRuntime do
+      role "System"
+      description "Locate the hecks-life binary relative to the script — ../hecks_life/target/release/hecks-life"
+      String :hecks_life_path
+      emits "RuntimeResolved"
+      then_set :hecks_life_path, to: :hecks_life_path
+    end
+
+    ExecBoot do
+      role "System"
+      description "exec hecks-life boot with conception dir and any extra args — replaces the shell process"
+      String :conception_dir
+      emits "BootExeced"
+      given { hecks_life_path != "" }
+      then_set :conception_dir, to: :conception_dir
+      then_set :status, to: "execed"
+    end
+
+    FailResolve do
+      role "System"
+      description "hecks-life binary not found at expected path"
+      String :reason
+      emits "ResolveFailed"
+      then_set :status, to: "failed"
+    end
+
+    lifecycle :status, default: "pending" do
+      transition "ExecBoot" => "execed"
+      transition "FailResolve" => "failed"
+    end
+  end
+
+  aggregate "RuntimeBinary", "The compiled hecks-life Rust binary" do
+    String :path
+    Boolean :exists
+    String :build_mode
+
+    Locate do
+      role "System"
+      description "Check if the release binary exists at the expected path"
+      String :path
+      Boolean :exists
+      emits "BinaryLocated"
+      then_set :path, to: :path
+      then_set :exists, to: :exists
+    end
+
+    IdentifyBuild do
+      role "System"
+      description "Determine if this is a release or debug build"
+      String :build_mode
+      emits "BuildIdentified"
+      then_set :build_mode, to: :build_mode
+    end
+  end
+
+  # Boot flow
+  policy "ExecAfterResolve" do
+    on "RuntimeResolved"
+    trigger "ExecBoot"
+  end
+
+  policy "FailIfMissing" do
+    on "BinaryLocated"
+    trigger "FailResolve"
+  end
+
+  # Fixtures
+  fixture "ShellBoot", conception_dir: "/Users/chris/Projects/hecks/hecks_conception", hecks_life_path: "/Users/chris/Projects/hecks/hecks_life/target/release/hecks-life", status: "execed"
+  fixture "ShellBoot", conception_dir: "", hecks_life_path: "", status: "failed"
+
+  fixture "RuntimeBinary", path: "/Users/chris/Projects/hecks/hecks_life/target/release/hecks-life", exists: true, build_mode: "release"
+  fixture "RuntimeBinary", path: "/Users/chris/Projects/hecks/hecks_life/target/debug/hecks-life", exists: true, build_mode: "debug"
+end

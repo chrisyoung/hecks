@@ -1,0 +1,135 @@
+Hecks.bluebook "GenerateVisions", version: "2026.04.15.1" do
+  vision "Combinatoric vision generator — mix industries, knowledge domains, activities, and qualities to produce thousands of unique domain visions"
+  category "tooling"
+
+  aggregate "VisionRun", "A single generation run — seed, target count, output file" do
+    Integer :seed
+    Integer :target_count
+    Integer :generated_count
+    String :output_path
+    String :status
+
+    StartGeneration do
+      role "User"
+      description "Begin generating visions — set random seed for reproducibility, target count, output path"
+      Integer :seed
+      Integer :target_count
+      String :output_path
+      emits "GenerationStarted"
+      then_set :seed, to: :seed
+      then_set :target_count, to: :target_count
+      then_set :output_path, to: :output_path
+      then_set :status, to: "running"
+    end
+
+    CompleteGeneration do
+      role "System"
+      description "All unique visions generated and written to JSONL"
+      Integer :generated_count
+      emits "GenerationCompleted"
+      given { status == "running" }
+      then_set :generated_count, to: :generated_count
+      then_set :status, to: "completed"
+    end
+
+    lifecycle :status, default: "pending" do
+      transition "StartGeneration" => "running"
+      transition "CompleteGeneration" => "completed", from: "running"
+    end
+  end
+
+  aggregate "WordBank", "A category of combinatoric ingredients — industries, knowledge, activities, objects, qualities" do
+    String :category
+    Integer :word_count
+    String :description
+
+    LoadBank do
+      role "System"
+      description "Load a word bank category with its entries"
+      String :category
+      Integer :word_count
+      emits "BankLoaded"
+      then_set :category, to: :category
+      then_set :word_count, to: :word_count
+    end
+
+    AddWord do
+      role "User"
+      description "Add a new word to a bank category"
+      String :word
+      emits "WordAdded"
+    end
+  end
+
+  aggregate "Template", "A sentence template with placeholders for word bank categories" do
+    String :pattern
+    String :description
+    Integer :usage_count
+
+    RegisterTemplate do
+      role "User"
+      description "Add a vision template — e.g. 'A {industry} management system — {activity} {objects} {quality}'"
+      String :pattern
+      emits "TemplateRegistered"
+      then_set :pattern, to: :pattern
+      then_set :usage_count, to: 0
+    end
+
+    RecordUsage do
+      role "System"
+      description "Increment usage count when this template produces a vision"
+      emits "TemplateUsed"
+    end
+  end
+
+  aggregate "Vision", "A single generated domain vision with PascalCase name" do
+    String :name
+    String :vision_text
+    String :template_used
+    Boolean :is_unique
+
+    GenerateVision do
+      role "System"
+      description "Fill a template with random words, derive PascalCase name, check uniqueness"
+      String :name
+      String :vision_text
+      String :template_used
+      emits "VisionGenerated"
+      then_set :name, to: :name
+      then_set :vision_text, to: :vision_text
+      then_set :template_used, to: :template_used
+      then_set :is_unique, to: true
+    end
+
+    RejectDuplicate do
+      role "System"
+      description "Vision name already seen — discard and retry"
+      emits "DuplicateRejected"
+      then_set :is_unique, to: false
+    end
+  end
+
+  # Generation pipeline
+  policy "LoadBanksOnStart" do
+    on "GenerationStarted"
+    trigger "LoadBank"
+  end
+
+  policy "TrackTemplateUsage" do
+    on "VisionGenerated"
+    trigger "RecordUsage"
+  end
+
+  # Fixtures
+  fixture "VisionRun", seed: 42, target_count: 10000, generated_count: 10000, output_path: "/tmp/visions.jsonl", status: "completed"
+  fixture "VisionRun", seed: 99, target_count: 500, generated_count: 0, output_path: "/tmp/visions_small.jsonl", status: "running"
+
+  fixture "WordBank", category: "industries", word_count: 50, description: "Business types — restaurant, hospital, airline, etc."
+  fixture "WordBank", category: "domains_of_knowledge", word_count: 48, description: "Academic fields — astronomy, genetics, linguistics, etc."
+
+  fixture "Template", pattern: "A {industry} management system — {activity} {objects} {quality}", description: "Standard industry management", usage_count: 1200
+  fixture "Template", pattern: "The language of {knowledge} — {activity} {objects} and model relationships", description: "Knowledge domain modeling", usage_count: 800
+
+  fixture "Vision", name: "BreweryManagement", vision_text: "A brewery management system — track inventory with batch traceability", template_used: "A {industry} management system — {activity} {objects} {quality}", is_unique: true
+  fixture "Vision", name: "DuplicateName", vision_text: "duplicate", template_used: "", is_unique: false
+end

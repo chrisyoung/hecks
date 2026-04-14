@@ -1,0 +1,46 @@
+Hecks.bluebook "BluebookAllDarkCode", version: "2026.04.15.1" do
+  vision "No dark code — every script, every module, every CLI command has a Bluebook. If it's not in a Bluebook, it doesn't exist."
+  category "action"
+
+  aggregate "Action", "Conceive Bluebooks for all untracked code" do
+    String :action_name
+    String :rationale
+    String :status
+    Integer :files_covered
+
+    Plan do
+      role "Winter"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+      then_set :files_covered, to: 0
+    end
+
+    Execute do
+      role "Winter"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Winter"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  fixture "Action", action_name: "BluebookAllDarkCode", rationale: "16 BluebookOnly violations found. Every script needs a Bluebook or it gets composted.", status: "planned", files_covered: 0
+end

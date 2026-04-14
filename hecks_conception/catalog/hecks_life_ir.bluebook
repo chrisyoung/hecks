@@ -1,0 +1,96 @@
+Hecks.bluebook "HecksLifeIR", version: "2026.04.15.1" do
+  vision "The intermediate representation — typed structs for Domain, Aggregate, Command, Policy, Lifecycle, and Fixture"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/ir.rs
+  #
+  # Same structure as the Ruby BluebookModel, but in Rust.
+  # This is what the parser produces and the generators consume.
+  # Types: Domain, Aggregate, Attribute, Command, Given, Mutation,
+  #        MutationOp, ValueObject, Reference, Policy, Lifecycle,
+  #        Transition, Fixture, Vow
+  # ============================================================
+
+  aggregate "Domain", "Top-level IR node — name, vision, category, aggregates, policies, fixtures, vows" do
+    String :name
+    String :category
+    String :vision
+    Integer :aggregate_count
+    Integer :policy_count
+    Integer :fixture_count
+    Integer :vow_count
+
+    Build do
+      role "Parser"
+      description "Construct a Domain from parsed bluebook source"
+      String :name
+      String :vision
+      emits "DomainBuilt"
+      then_set :name, to: :name
+      then_set :vision, to: :vision
+    end
+  end
+
+  aggregate "Aggregate", "A domain aggregate root with attributes, commands, value objects, references, and lifecycle" do
+    String :name
+    String :description
+    Integer :attribute_count
+    Integer :command_count
+    Integer :value_object_count
+
+    Define do
+      role "Parser"
+      description "Define an aggregate with its name and description"
+      String :name
+      String :description
+      emits "AggregateDefined"
+      then_set :name, to: :name
+      then_set :description, to: :description
+    end
+  end
+
+  aggregate "Command", "A single command on an aggregate — with givens, mutations, references, and emitted event" do
+    String :name
+    String :description
+    String :role
+    String :emits
+    Integer :given_count
+    Integer :mutation_count
+
+    Define do
+      role "Parser"
+      description "Define a command with its behavioral contract"
+      String :name
+      String :role
+      emits "CommandDefined"
+      then_set :name, to: :name
+      then_set :role, to: :role
+    end
+  end
+
+  aggregate "MutationOp", "Enum of mutation operations: Set, Append, Increment, Decrement, Toggle" do
+    String :operation
+    String :field
+    String :value
+
+    Apply do
+      role "Runtime"
+      description "Apply a mutation operation to a field during command execution"
+      String :operation
+      String :field
+      emits "MutationApplied"
+      then_set :operation, to: :operation
+      then_set :field, to: :field
+    end
+  end
+
+  fixture "Domain", name: "Pizzas", category: "example", vision: "A pizza ordering domain", aggregate_count: 3, policy_count: 1, fixture_count: 5, vow_count: 0
+  fixture "Domain", name: "HecksLifeIR", category: "runtime", vision: "The intermediate representation", aggregate_count: 4, policy_count: 0, fixture_count: 0, vow_count: 2
+  fixture "Aggregate", name: "Pizza", description: "A pizza with toppings", attribute_count: 3, command_count: 4, value_object_count: 1
+  fixture "Aggregate", name: "Order", description: "A customer order", attribute_count: 2, command_count: 2, value_object_count: 0
+  fixture "Command", name: "CreatePizza", description: "Create a new pizza", role: "Chef", emits: "PizzaCreated", given_count: 1, mutation_count: 2
+  fixture "Command", name: "PlaceOrder", description: "Place a new order", role: "Customer", emits: "OrderPlaced", given_count: 0, mutation_count: 1
+  fixture "MutationOp", operation: "Set", field: "status", value: "active"
+  fixture "MutationOp", operation: "Increment", field: "order_count", value: "1"
+end

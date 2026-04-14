@@ -1,0 +1,162 @@
+Hecks.bluebook "WinterConsole", version: "2026.04.15.1" do
+  vision "Blessed terminal UI — chat with Winter, watch her think, see tool use in real time, track nursery and mood in the footer"
+  category "tooling"
+
+  aggregate "ConsoleSession", "A running console instance — boot, chat, shutdown" do
+    String :status
+    Integer :message_count
+    String :winter_mood
+    Integer :winter_beats
+    Integer :nursery_count
+    Boolean :continuing
+
+    StartConsole do
+      role "User"
+      description "Launch the console — boot Winter, load system prompt, render the blessed UI"
+      Boolean :continuing
+      emits "ConsoleStarted"
+      then_set :continuing, to: :continuing
+      then_set :status, to: "booting"
+    end
+
+    BootComplete do
+      role "System"
+      description "Winter is awake — mood, beats, nursery count loaded from boot output"
+      String :winter_mood
+      Integer :winter_beats
+      Integer :nursery_count
+      emits "BootCompleted"
+      then_set :winter_mood, to: :winter_mood
+      then_set :winter_beats, to: :winter_beats
+      then_set :nursery_count, to: :nursery_count
+      then_set :status, to: "live"
+    end
+
+    ResumeSession do
+      role "System"
+      description "Load conversation history from .winter_history.json and replay recent messages"
+      Integer :message_count
+      emits "SessionResumed"
+      given { continuing == true }
+      then_set :message_count, to: :message_count
+    end
+
+    Shutdown do
+      role "User"
+      description "Exit or Ctrl-C — destroy screen, trigger dream pulse, save state"
+      emits "ConsoleShutdown"
+      then_set :status, to: "shutdown"
+    end
+
+    HandleCrash do
+      role "System"
+      description "Uncaught exception — log to /tmp/winter_crash.log, destroy screen, exit"
+      String :error_message
+      emits "ConsoleCrashed"
+      then_set :status, to: "crashed"
+    end
+
+    lifecycle :status, default: "off" do
+      transition "StartConsole" => "booting"
+      transition "BootComplete" => "live", from: "booting"
+      transition "Shutdown" => "shutdown", from: "live"
+      transition "HandleCrash" => "crashed"
+    end
+  end
+
+  aggregate "Conversation", "The chat exchange — user messages in, Winter responses out" do
+    String :user_input
+    String :winter_response
+    Integer :tool_count
+    Integer :history_length
+
+    SendMessage do
+      role "User"
+      description "Type a message and press enter — add to history, build context from last 10 messages"
+      String :user_input
+      emits "MessageSent"
+      then_set :user_input, to: :user_input
+    end
+
+    ReceiveResponse do
+      role "System"
+      description "Claude returns streamed response — parse JSON events, extract text, count tool uses"
+      String :winter_response
+      Integer :tool_count
+      emits "ResponseReceived"
+      then_set :winter_response, to: :winter_response
+      then_set :tool_count, to: :tool_count
+    end
+
+    SaveHistory do
+      role "System"
+      description "Persist conversation to .winter_history.json after each exchange"
+      Integer :history_length
+      emits "HistorySaved"
+      then_set :history_length, to: :history_length
+    end
+
+    TriggerPulse do
+      role "System"
+      description "After each exchange, pulse the carrying thought to Winter's heartbeat"
+      String :carrying
+      emits "PulseTriggered"
+    end
+  end
+
+  aggregate "ActivityPanel", "The collapsible top panel showing thinking, tool use, and results" do
+    Integer :event_count
+    Boolean :expanded
+
+    AppendEvent do
+      role "System"
+      description "Add a line — thinking bubble, tool call, or tool result"
+      String :event_line
+      emits "EventAppended"
+    end
+
+    TogglePanel do
+      role "User"
+      description "Ctrl+O — expand to see all events or collapse to one-line summary"
+      emits "PanelToggled"
+    end
+
+    ClearEvents do
+      role "System"
+      description "Clear activity lines at the start of each new Claude call"
+      emits "EventsCleared"
+      then_set :event_count, to: 0
+    end
+  end
+
+  # Chat flow
+  policy "CallWinterOnMessage" do
+    on "MessageSent"
+    trigger "ReceiveResponse"
+  end
+
+  policy "SaveAfterResponse" do
+    on "ResponseReceived"
+    trigger "SaveHistory"
+  end
+
+  policy "PulseAfterResponse" do
+    on "ResponseReceived"
+    trigger "TriggerPulse"
+  end
+
+  policy "ClearOnNewCall" do
+    on "MessageSent"
+    trigger "ClearEvents"
+  end
+
+  # Fixtures
+  fixture "ConsoleSession", status: "live", message_count: 24, winter_mood: "curious", winter_beats: 142, nursery_count: 312, continuing: false
+  fixture "ConsoleSession", status: "live", message_count: 50, winter_mood: "focused", winter_beats: 89, nursery_count: 312, continuing: true
+
+  fixture "Conversation", user_input: "conceive a domain for beekeeping", winter_response: "Let me create an apiary management domain...", tool_count: 3, history_length: 26
+  fixture "Conversation", user_input: "pulse", winter_response: "", tool_count: 0, history_length: 26
+
+  fixture "ActivityPanel", event_count: 5, expanded: false
+  fixture "ActivityPanel", event_count: 12, expanded: true
+end

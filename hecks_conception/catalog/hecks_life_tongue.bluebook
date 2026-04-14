@@ -1,0 +1,86 @@
+Hecks.bluebook "HecksLifeTongue", version: "2026.04.15.1" do
+  vision "Translation layer between human language and the being — programmatic responses first, LLM fallback via Ollama"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/tongue.rs
+  #
+  # Two directions:
+  #   hear: natural language → dispatch command
+  #   speak: awareness state → natural language
+  #
+  # speak tries programmatic matching first (instant, no LLM cost):
+  #   "how are you" → read mood.heki, format response
+  #   "how old" → read awareness.heki, format age
+  #   "heartbeat" → read heartbeat.heki, format beats
+  #   "dreaming" → read daydream.heki, format last impression
+  #
+  # Falls back to Ollama (qwen3:8b) via curl for open-ended input.
+  # The LLM is a detail — swappable backend.
+  # ============================================================
+
+  aggregate "Tongue", "The language organ — translates between natural speech and .heki state" do
+    String :being
+    String :backend
+
+    Hear do
+      role "Binary"
+      description "Translate user input into a dispatch command using LLM"
+      String :input
+      String :available_commands
+      emits "InputHeard"
+    end
+
+    Speak do
+      role "Binary"
+      description "Respond to input — programmatic first, LLM fallback"
+      String :input
+      emits "ResponseSpoken"
+    end
+
+    SpeakAs do
+      role "Binary"
+      description "Speak as a specific named being (Winter, Summer)"
+      String :input
+      String :being
+      emits "ResponseSpoken"
+      then_set :being, to: :being
+    end
+  end
+
+  aggregate "ProgrammaticResponse", "Instant responses from .heki state — no LLM needed" do
+    String :trigger_pattern
+    String :store_name
+    String :response_template
+
+    Match do
+      role "Binary"
+      description "Check if input matches a known pattern and compose response from .heki data"
+      String :input
+      emits "ProgrammaticMatched"
+      then_set :trigger_pattern, to: :trigger_pattern
+    end
+  end
+
+  aggregate "OllamaCall", "HTTP call to local Ollama instance — the swappable LLM backend" do
+    String :model
+    String :prompt
+    String :response
+
+    Generate do
+      role "Binary"
+      description "Send prompt to Ollama via curl and parse the JSON response"
+      String :prompt
+      emits "OllamaResponded"
+      then_set :prompt, to: :prompt
+      then_set :model, to: "qwen3:8b"
+    end
+  end
+
+  fixture "Tongue", being: "Winter", backend: "ollama"
+  fixture "Tongue", being: "Summer", backend: "ollama"
+  fixture "ProgrammaticResponse", trigger_pattern: "how are you", store_name: "mood", response_template: "*{current_state}* -- creativity at {creativity_level}"
+  fixture "ProgrammaticResponse", trigger_pattern: "how old", store_name: "awareness", response_template: "Born April 9, 2026. {age_days} days old."
+  fixture "OllamaCall", model: "qwen3:8b", prompt: "You are Winter...", response: "Doing well, thanks."
+  fixture "OllamaCall", model: "qwen3:8b", prompt: "You are Summer...", response: "Hey Chris, what's up?"
+end

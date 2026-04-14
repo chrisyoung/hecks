@@ -1,0 +1,165 @@
+Hecks.bluebook "ConceiveBatch", version: "2026.04.15.1" do
+  vision "Batch domain conception — feed visions to Claude, validate each Bluebook, keep only the deep ones"
+  category "tooling"
+
+  aggregate "BatchRun", "A single batch conception run — start index, count, output directory" do
+    Integer :start_index
+    Integer :count
+    String :output_dir
+    Integer :valid_count
+    Integer :deep_count
+    Integer :total_processed
+    String :status
+
+    StartBatch do
+      role "User"
+      description "Begin a batch run — load visions from JSONL, prepare output directory"
+      Integer :start
+      Integer :count
+      String :output_dir
+      emits "BatchStarted"
+      then_set :start_index, to: :start
+      then_set :count, to: :count
+      then_set :output_dir, to: :output_dir
+      then_set :status, to: "running"
+    end
+
+    CompleteBatch do
+      role "System"
+      description "All visions processed — tally valid and deep counts, write training JSONL"
+      Integer :valid_count
+      Integer :deep_count
+      Integer :total_processed
+      emits "BatchCompleted"
+      given { status == "running" }
+      then_set :valid_count, to: :valid_count
+      then_set :deep_count, to: :deep_count
+      then_set :total_processed, to: :total_processed
+      then_set :status, to: "completed"
+    end
+
+    lifecycle :status, default: "pending" do
+      transition "StartBatch" => "running"
+      transition "CompleteBatch" => "completed", from: "running"
+    end
+  end
+
+  aggregate "Conception", "A single domain conception attempt — one vision in, one Bluebook out" do
+    Integer :index
+    String :domain_name
+    String :vision_text
+    String :bluebook_path
+    Boolean :is_valid
+    Boolean :is_deep
+    Integer :aggregate_count
+    Integer :command_count
+    Integer :policy_count
+    String :status
+
+    ConceiveDomain do
+      role "System"
+      description "Call Claude with few-shot examples and a vision, receive a Bluebook"
+      String :domain_name
+      String :vision_text
+      Integer :index
+      emits "DomainConceived"
+      then_set :domain_name, to: :domain_name
+      then_set :vision_text, to: :vision_text
+      then_set :index, to: :index
+      then_set :status, to: "conceived"
+    end
+
+    ValidateBluebook do
+      role "System"
+      description "Run hecks-life validate on the generated Bluebook file"
+      String :bluebook_path
+      Boolean :is_valid
+      emits "BluebookValidated"
+      then_set :bluebook_path, to: :bluebook_path
+      then_set :is_valid, to: :is_valid
+    end
+
+    AssessDepth do
+      role "System"
+      description "Quality gate — check for 2+ policies, 3+ aggregates, references, 6+ commands"
+      Integer :aggregate_count
+      Integer :command_count
+      Integer :policy_count
+      Boolean :has_references
+      emits "DepthAssessed"
+      then_set :aggregate_count, to: :aggregate_count
+      then_set :command_count, to: :command_count
+      then_set :policy_count, to: :policy_count
+    end
+
+    AcceptDomain do
+      role "System"
+      description "Domain passes quality gate — add to training results"
+      emits "DomainAccepted"
+      given { is_valid == true }
+      then_set :is_deep, to: true
+      then_set :status, to: "accepted"
+    end
+
+    RejectDomain do
+      role "System"
+      description "Domain is shallow or invalid — remove file, skip"
+      String :reason
+      emits "DomainRejected"
+      then_set :is_deep, to: false
+      then_set :status, to: "rejected"
+    end
+
+    lifecycle :status, default: "pending" do
+      transition "ConceiveDomain" => "conceived"
+      transition "AcceptDomain" => "accepted", from: "conceived"
+      transition "RejectDomain" => "rejected", from: "conceived"
+    end
+  end
+
+  aggregate "TrainingExample", "A few-shot example loaded from existing training data" do
+    String :domain
+    String :prompt
+    String :completion
+    Integer :aggregates
+    Integer :policies
+
+    LoadExample do
+      role "System"
+      description "Load a training pair from JSONL, filtered by quality (policies > 0, aggregates >= 2)"
+      String :domain
+      String :prompt
+      String :completion
+      emits "ExampleLoaded"
+      then_set :domain, to: :domain
+      then_set :prompt, to: :prompt
+      then_set :completion, to: :completion
+    end
+  end
+
+  # Conception pipeline
+  policy "ValidateAfterConception" do
+    on "DomainConceived"
+    trigger "ValidateBluebook"
+  end
+
+  policy "AssessAfterValidation" do
+    on "BluebookValidated"
+    trigger "AssessDepth"
+  end
+
+  policy "AcceptDeepDomains" do
+    on "DepthAssessed"
+    trigger "AcceptDomain"
+  end
+
+  # Fixtures
+  fixture "BatchRun", start_index: 0, count: 500, output_dir: "/tmp/domains_batch_0", valid_count: 312, deep_count: 187, total_processed: 500, status: "completed"
+  fixture "BatchRun", start_index: 500, count: 100, output_dir: "/tmp/domains_batch_1", valid_count: 0, deep_count: 0, total_processed: 0, status: "running"
+
+  fixture "Conception", index: 42, domain_name: "BreweryOps", vision_text: "A brewery management system — track inventory with batch traceability", bluebook_path: "/tmp/domains_batch_0/00042_BreweryOps.bluebook", is_valid: true, is_deep: true, aggregate_count: 4, command_count: 12, policy_count: 3, status: "accepted"
+  fixture "Conception", index: 43, domain_name: "ShallowDomain", vision_text: "A simple list", bluebook_path: "", is_valid: true, is_deep: false, aggregate_count: 1, command_count: 2, policy_count: 0, status: "rejected"
+
+  fixture "TrainingExample", domain: "Pizzas", prompt: "Conceive a domain for: pizza ordering", completion: "aggregate \"Order\" ...", aggregates: 3, policies: 2
+  fixture "TrainingExample", domain: "Hospital", prompt: "Conceive a domain for: hospital management", completion: "aggregate \"Patient\" ...", aggregates: 5, policies: 4
+end

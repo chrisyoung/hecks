@@ -1,0 +1,70 @@
+Hecks.bluebook "HecksLifeRepl", version: "2026.04.15.1" do
+  vision "Interactive command dispatch loop — boots a domain runtime and provides a prompt for dispatching, querying, and inspecting"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/repl.rs
+  #
+  # Boots a domain Runtime and presents a prompt for:
+  #   dispatch <Command> key=value ...  — execute a command
+  #   find <Aggregate> <id>             — find a record by ID
+  #   all <Aggregate>                   — list all records
+  #   events                            — show event log
+  #   policies                          — show policy bindings
+  #   quit                              — exit
+  #
+  # Usage:
+  #   hecks-life run pizzas.bluebook [--seed seeds.txt]
+  # ============================================================
+
+  aggregate "ReplSession", "An interactive REPL session backed by a domain Runtime" do
+    String :domain_name
+    Integer :aggregate_count
+    Integer :policy_count
+
+    Start do
+      role "Binary"
+      description "Boot the REPL: print domain summary, enter the dispatch-query loop"
+      String :domain_name
+      emits "ReplStarted"
+      then_set :domain_name, to: :domain_name
+    end
+
+    Dispatch do
+      role "User"
+      description "Execute a command by name with key=value attributes"
+      String :command_name
+      emits "CommandDispatched"
+    end
+
+    Find do
+      role "User"
+      description "Look up a single aggregate instance by type and ID"
+      String :aggregate_type
+      String :id
+      emits "RecordFound"
+    end
+
+    ListAll do
+      role "User"
+      description "List all records of a given aggregate type"
+      String :aggregate_type
+      emits "RecordsListed"
+    end
+
+    ShowEvents do
+      role "User"
+      description "Print the full event log from the event bus"
+      emits "EventsShown"
+    end
+
+    ShowPolicies do
+      role "User"
+      description "Print all policy bindings: event triggers and their target commands"
+      emits "PoliciesShown"
+    end
+  end
+
+  fixture "ReplSession", domain_name: "Pizzas", aggregate_count: 3, policy_count: 1
+  fixture "ReplSession", domain_name: "Court", aggregate_count: 5, policy_count: 3
+end

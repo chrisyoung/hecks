@@ -1,0 +1,72 @@
+Hecks.bluebook "HecksLifeValidator", version: "2026.04.15.1" do
+  vision "DDD consistency checker — validates aggregate uniqueness, command naming, reference integrity, and policy triggers"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/validator.rs
+  #
+  # Ports the Ruby Hecks::Validator rules to Rust. Each rule inspects
+  # the Domain IR and returns error strings. Empty vec = valid.
+  #
+  # Rules:
+  #   1. unique_aggregate_names — no duplicates
+  #   2. aggregates_have_commands — every aggregate has >= 1 command
+  #   3. command_naming — first word must be a verb (morphological check)
+  #   4. valid_references — targets must exist as aggregate roots
+  #   5. valid_policy_triggers — triggered commands must exist
+  #   6. no_duplicate_commands — command names unique across domain
+  # ============================================================
+
+  aggregate "ValidationRun", "A single validation pass over a Domain IR" do
+    String :domain_name
+    Integer :error_count
+    Boolean :valid
+    list_of(String) :errors
+
+    Validate do
+      role "Binary"
+      description "Run all six validation rules and collect errors"
+      String :domain_name
+      emits "DomainValidated"
+      then_set :domain_name, to: :domain_name
+    end
+  end
+
+  aggregate "NamingRule", "Morphological verb detection — rejects nouns and adjectives as command first-words" do
+    String :word
+    Boolean :is_verb
+    String :rejection_reason
+
+    CheckWord do
+      role "Validator"
+      description "Test if a word is provably NOT a verb using noun/adjective suffix patterns"
+      String :word
+      emits "WordChecked"
+      then_set :word, to: :word
+    end
+  end
+
+  aggregate "ReferenceRule", "Validates that reference_to targets exist as aggregate roots in the domain" do
+    String :aggregate_name
+    String :target
+    Boolean :exists
+
+    CheckReference do
+      role "Validator"
+      description "Verify a reference target exists in the domain's aggregate set"
+      String :aggregate_name
+      String :target
+      given("target must be a known aggregate") { exists == true }
+      emits "ReferenceChecked"
+      then_set :aggregate_name, to: :aggregate_name
+      then_set :target, to: :target
+    end
+  end
+
+  fixture "ValidationRun", domain_name: "Pizzas", error_count: 0, valid: true, errors: []
+  fixture "ValidationRun", domain_name: "Broken", error_count: 2, valid: false, errors: ["Duplicate aggregate name: Pizza", "Orphan has no commands"]
+  fixture "NamingRule", word: "Create", is_verb: true, rejection_reason: ""
+  fixture "NamingRule", word: "Pizza", is_verb: false, rejection_reason: "noun suffix"
+  fixture "ReferenceRule", aggregate_name: "Order", target: "Pizza", exists: true
+  fixture "ReferenceRule", aggregate_name: "Order", target: "Widget", exists: false
+end

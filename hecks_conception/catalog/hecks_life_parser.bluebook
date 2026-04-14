@@ -1,0 +1,64 @@
+Hecks.bluebook "HecksLifeParser", version: "2026.04.15.1" do
+  vision "Reads .bluebook source files and produces a Domain IR — pattern-matching on the Ruby-hosted DSL structure"
+  category "runtime"
+
+  # ============================================================
+  # hecks-life/src/parser.rs
+  #
+  # Not a full Ruby parser — just enough to read Bluebook declarations.
+  # Walks lines, matching on keywords: aggregate, command, policy,
+  # vow, fixture, attribute, reference_to, lifecycle, value_object.
+  # Tracks nesting depth via do/end blocks.
+  # Block parsers live in parse_blocks.rs.
+  # ============================================================
+
+  aggregate "Parser", "Line-by-line pattern matcher that builds a Domain IR from source text" do
+    String :source
+    String :domain_name
+    Integer :aggregate_count
+
+    Parse do
+      role "Binary"
+      description "Parse a .bluebook source string into a Domain IR struct"
+      String :source
+      emits "DomainParsed"
+      then_set :source, to: :source
+    end
+  end
+
+  aggregate "AggregateParser", "Parses an aggregate block including commands, attributes, value objects, references, and lifecycle" do
+    String :name
+    String :description
+    Integer :depth
+    Integer :commands_parsed
+
+    ParseAggregate do
+      role "Binary"
+      description "Parse an aggregate do..end block with nested commands, value objects, and lifecycle"
+      String :name
+      emits "AggregateParsed"
+      then_set :name, to: :name
+      then_set :depth, to: 1
+    end
+  end
+
+  aggregate "VowParser", "Parses vow blocks — named invariants with free-text descriptions" do
+    String :name
+    String :text
+
+    ParseVow do
+      role "Binary"
+      description "Parse a vow do..end block extracting name and text lines"
+      String :name
+      emits "VowParsed"
+      then_set :name, to: :name
+    end
+  end
+
+  fixture "Parser", source: "Hecks.bluebook \"Pizzas\" do ... end", domain_name: "Pizzas", aggregate_count: 3
+  fixture "Parser", source: "Hecks.bluebook \"Empty\" do end", domain_name: "Empty", aggregate_count: 0
+  fixture "AggregateParser", name: "Pizza", description: "A pizza", depth: 0, commands_parsed: 4
+  fixture "AggregateParser", name: "Order", description: "A customer order", depth: 0, commands_parsed: 2
+  fixture "VowParser", name: "Determinism", text: "Every command is deterministic — same input, same output"
+  fixture "VowParser", name: "Naming", text: "Commands start with verbs — imperative mood, always"
+end
