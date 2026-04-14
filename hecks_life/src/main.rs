@@ -15,7 +15,7 @@
 //!   hecks-life conceive  "Name" "vision" --corpus dir1 dir2
 //!   hecks-life develop   target.bluebook --add "feature"
 
-use hecks_life::{parser, formatter, validator, validator_warnings, server, repl, conceiver, heki, boot, daemon, tongue, lexicon, terminal, project, training};
+use hecks_life::{parser, formatter, validator, validator_warnings, server, repl, conceiver, heki, boot, daemon, tongue, lexicon, terminal, project, training, action_stack};
 use hecks_life::runtime::Runtime;
 
 use std::env;
@@ -53,6 +53,38 @@ fn main() {
     if command == "help" || command == "--help" {
         print_usage();
         return;
+    }
+
+    // Action commands — exempt from gate (they manage the gate itself)
+    if command == "action" {
+        let project_dir = resolve_project_dir(&args);
+        action_stack::run_action_command(&args, &project_dir);
+        return;
+    }
+
+    // Boot is exempt from gate — it IS the bootloader that creates the stack
+    if command == "boot" {
+        let dir = if !path.is_empty() {
+            path.to_string()
+        } else {
+            resolve_home(&being)
+        };
+        let show_nerves = args.iter().any(|a| a == "--nerves");
+        boot::run(&dir, show_nerves, &being);
+        return;
+    }
+
+    // === THE GATE ===
+    // Every command below this line checks the action stack.
+    // Empty stack = refused. This is deterministic enforcement.
+    // Only `action init`, `action check`, and `help` bypass this.
+    let project_dir_for_gate = resolve_project_dir(&args);
+    if !action_stack::check(&project_dir_for_gate) {
+        eprintln!("❄ BLOCKED: No active action.");
+        eprintln!("  Every command requires an active action on the stack.");
+        eprintln!("  Run: hecks-life action init <project-dir>");
+        eprintln!("  Or:  hecks-life boot <project-dir> (which inits automatically)");
+        std::process::exit(1);
     }
 
     // Heki commands — .heki binary store operations
@@ -123,17 +155,6 @@ fn main() {
         } else {
             eprintln!("tongue: could not reach language center (is ollama running?)");
         }
-        return;
-    }
-
-    if command == "boot" {
-        let dir = if !path.is_empty() {
-            path.to_string()
-        } else {
-            resolve_home(&being)
-        };
-        let show_nerves = args.iter().any(|a| a == "--nerves");
-        boot::run(&dir, show_nerves, &being);
         return;
     }
 
@@ -466,6 +487,38 @@ fn resolve_home(_being: &str) -> String {
 
 fn dirs() -> Option<String> {
     env::var("HOME").ok()
+}
+
+/// Resolve project dir from args — look for the conception directory.
+/// Checks args for directories, then walks up from file paths to find
+/// a directory containing hecksagon.hec (the conception root).
+fn resolve_project_dir(args: &[String]) -> String {
+    // Check all args for a directory
+    for arg in args.iter().skip(2) {
+        if arg.starts_with('-') { continue; }
+        let p = std::path::Path::new(arg);
+        if p.is_dir() {
+            return arg.to_string();
+        }
+        // If it's a file, walk up to find the root conception dir
+        // Root has both hecksagon.hec AND system_prompt.md (nursery subprojects only have hecksagon.hec)
+        if p.is_file() || p.is_dir() {
+            let start = if p.is_file() { p.parent() } else { Some(p) };
+            let mut dir = start;
+            while let Some(d) = dir {
+                if d.join(".action_stack").exists() {
+                    return d.to_string_lossy().into_owned();
+                }
+                if d.join("hecksagon.hec").exists() && d.join("system_prompt.md").exists() {
+                    return d.to_string_lossy().into_owned();
+                }
+                dir = d.parent();
+            }
+        }
+    }
+    // Fall back to resolve_home
+    let being = being_from_argv0(&args[0]);
+    resolve_home(&being)
 }
 
 fn print_usage() {
