@@ -21,6 +21,7 @@ mod projection;
 mod repository;
 pub mod seed_loader;
 pub mod multi_domain;
+pub mod lazy_runtime;
 
 pub use aggregate_state::AggregateState;
 pub use command_dispatch::CommandResult;

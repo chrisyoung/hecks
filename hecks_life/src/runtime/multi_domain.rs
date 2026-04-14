@@ -73,7 +73,7 @@ impl MultiDomainRuntime {
             // Seed fixtures after boot
             let fixtures = domain_ir.fixtures.clone();
             let mut rt = Runtime::boot(domain_ir);
-            seed_fixtures_from(&mut rt, &fixtures);
+            seed_fixtures(&mut rt, &fixtures);
 
             domains.insert(domain_name, rt);
         }
@@ -183,7 +183,7 @@ fn walk_for_bluebooks(dir: &Path, files: &mut Vec<String>) {
 
 /// Seed a runtime's repositories from fixture data.
 /// Collects dispatch calls first (to avoid borrow conflicts), then executes.
-fn seed_fixtures_from(rt: &mut Runtime, fixtures: &[crate::ir::Fixture]) {
+pub fn seed_fixtures(rt: &mut Runtime, fixtures: &[crate::ir::Fixture]) {
     // Phase 1: collect (command_name, attrs) pairs without borrowing rt mutably
     let dispatches: Vec<(String, HashMap<String, Value>)> = fixtures.iter()
         .filter_map(|fixture| {

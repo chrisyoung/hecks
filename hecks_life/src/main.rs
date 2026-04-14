@@ -69,6 +69,26 @@ fn main() {
         return;
     }
 
+    // Boot-lazy — index all domains, project only governance
+    if command == "boot-lazy" {
+        let dir = if !path.is_empty() {
+            path.to_string()
+        } else {
+            resolve_home(&being)
+        };
+        match hecks_life::runtime::lazy_runtime::LazyRuntime::boot(&dir) {
+            Ok(lr) => {
+                println!("  ❄ lazy runtime booted: {}", lr.name);
+                lr.summary();
+            }
+            Err(e) => {
+                eprintln!("  boot-lazy failed: {}", e);
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+
     // Boot-domains — boot an entire hecksagon as a multi-domain runtime
     if command == "boot-domains" {
         let dir = if !path.is_empty() {
