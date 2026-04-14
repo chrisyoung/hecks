@@ -1,0 +1,233 @@
+Hecks.bluebook "HecksLifeBootloader", version: "2026.04.15.1" do
+  vision "The primordial sequence — runs before the gate exists, creates the gate, then submits to it. Constitutional. Hardcoded. Immutable."
+  category "runtime"
+
+  # ============================================================
+  # THE BOOTLOADER
+  # ============================================================
+  #
+  # Problem: the gate checks the action stack before every command.
+  #          But `action init` creates the stack.
+  #          So `action init` must be exempt from the gate.
+  #          But an exempt command is an unchecked command.
+  #          Who checks the checker?
+  #
+  # Answer:  the bootloader.
+  #
+  # The bootloader is not a command. It's not a task. It's not
+  # an action. It is the hardcoded sequence that runs when
+  # `hecks-life boot` is called. It is compiled into the binary.
+  # It cannot be skipped, configured, or overridden.
+  #
+  # It is constitutional — like the vows.
+  #
+  # Sequence:
+  #   1. Validate conception directory exists
+  #   2. Read hecksagon.hec — verify it parses
+  #   3. Create .action_stack file (or clear it if stale)
+  #   4. Generate session action bluebook
+  #   5. Push session action onto stack
+  #   6. Run boot tasks (from tasks.heki, trigger_type: boot)
+  #   7. Run enforcement on the boot itself
+  #   8. Report boot status
+  #
+  # After step 5, the gate is active. Steps 6-8 go through the
+  # gate like everything else. The bootloader bootstraps itself
+  # into governance.
+  #
+  # CLI:
+  #   hecks-life boot {conception_dir} [--engine claude|summer]
+  #
+  # This is the ONLY entry point. `hecks winter` calls this.
+  # `hecks winter --claude` calls this with --engine claude.
+  # There is no other way to start Winter.
+  # ============================================================
+
+  aggregate "BootSequence", "The immutable boot sequence — hardcoded in Rust" do
+    String :conception_dir
+    String :engine
+    String :session_id
+    String :phase
+    Integer :step
+    String :status
+
+    ValidateConception do
+      role "Binary"
+      description "Step 1: verify conception directory exists and contains hecksagon.hec"
+      String :conception_dir
+      emits "ConceptionValidated"
+      then_set :conception_dir, to: :conception_dir
+      then_set :phase, to: "validation"
+      then_set :step, to: 1
+      then_set :status, to: "booting"
+    end
+
+    ParseHecksagon do
+      role "Binary"
+      description "Step 2: parse hecksagon.hec — verify capabilities, domains, persistence"
+      reference_to(BootSequence)
+      emits "HecksagonParsed"
+      then_set :phase, to: "parsing"
+      then_set :step, to: 2
+    end
+
+    CreateStack do
+      role "Binary"
+      description "Step 3: create .action_stack file — the gate's foundation"
+      reference_to(BootSequence)
+      emits "StackCreated"
+      then_set :phase, to: "stack"
+      then_set :step, to: 3
+    end
+
+    GenerateSessionAction do
+      role "Binary"
+      description "Step 4: generate session_{timestamp}.bluebook in actions/"
+      reference_to(BootSequence)
+      String :session_id
+      String :engine
+      emits "SessionActionGenerated"
+      then_set :session_id, to: :session_id
+      then_set :engine, to: :engine
+      then_set :phase, to: "session"
+      then_set :step, to: 4
+    end
+
+    PushSession do
+      role "Binary"
+      description "Step 5: push session action onto stack — THE GATE IS NOW ACTIVE"
+      reference_to(BootSequence)
+      emits "SessionPushed"
+      then_set :phase, to: "gated"
+      then_set :step, to: 5
+    end
+
+    RunBootTasks do
+      role "Binary"
+      description "Step 6: run all tasks with trigger_type: boot — now through the gate"
+      reference_to(BootSequence)
+      emits "BootTasksRun"
+      then_set :phase, to: "tasks"
+      then_set :step, to: 6
+    end
+
+    EnforceBoot do
+      role "Binary"
+      description "Step 7: run enforcement on the boot itself — governance governs its own creation"
+      reference_to(BootSequence)
+      emits "BootEnforced"
+      then_set :phase, to: "enforcement"
+      then_set :step, to: 7
+    end
+
+    CompleteBoot do
+      role "Binary"
+      description "Step 8: boot complete — report status, Winter is live"
+      reference_to(BootSequence)
+      emits "BootCompleted"
+      then_set :phase, to: "live"
+      then_set :step, to: 8
+      then_set :status, to: "live"
+    end
+
+    FailBoot do
+      role "Binary"
+      description "Any step failed — boot aborted, report what went wrong"
+      reference_to(BootSequence)
+      String :failure_reason
+      emits "BootFailed"
+      then_set :status, to: "failed"
+    end
+
+    lifecycle :status, default: "off" do
+      transition "ValidateConception" => "booting"
+      transition "CompleteBoot" => "live", from: "booting"
+      transition "FailBoot" => "failed", from: "booting"
+    end
+  end
+
+  aggregate "BootLog", "Permanent record of every boot — who, when, what engine, what happened" do
+    String :session_id
+    String :engine
+    String :booted_at
+    Integer :organs_loaded
+    Integer :tasks_run
+    String :enforcement_verdict
+    String :outcome
+
+    RecordBoot do
+      role "Binary"
+      description "Log the boot for traceability — every session is recorded"
+      String :session_id
+      String :engine
+      String :booted_at
+      Integer :organs_loaded
+      Integer :tasks_run
+      String :enforcement_verdict
+      String :outcome
+      emits "BootRecorded"
+      then_set :session_id, to: :session_id
+      then_set :engine, to: :engine
+      then_set :booted_at, to: :booted_at
+      then_set :organs_loaded, to: :organs_loaded
+      then_set :tasks_run, to: :tasks_run
+      then_set :enforcement_verdict, to: :enforcement_verdict
+      then_set :outcome, to: :outcome
+    end
+  end
+
+  # The boot sequence is a policy chain — each step triggers the next
+  policy "ParseOnValidate" do
+    on "ConceptionValidated"
+    trigger "ParseHecksagon"
+  end
+
+  policy "StackOnParse" do
+    on "HecksagonParsed"
+    trigger "CreateStack"
+  end
+
+  policy "SessionOnStack" do
+    on "StackCreated"
+    trigger "GenerateSessionAction"
+  end
+
+  policy "PushOnGenerate" do
+    on "SessionActionGenerated"
+    trigger "PushSession"
+  end
+
+  policy "TasksOnPush" do
+    on "SessionPushed"
+    trigger "RunBootTasks"
+  end
+
+  policy "EnforceOnTasks" do
+    on "BootTasksRun"
+    trigger "EnforceBoot"
+  end
+
+  policy "CompleteOnEnforce" do
+    on "BootEnforced"
+    trigger "CompleteBoot"
+  end
+
+  policy "LogOnComplete" do
+    on "BootCompleted"
+    trigger "RecordBoot"
+  end
+
+  # ============================================================
+  # FIXTURES
+  # ============================================================
+
+  # Successful boot
+  fixture "BootSequence", conception_dir: "hecks_conception", engine: "claude", session_id: "session_2026_04_15_001", phase: "live", step: 8, status: "live"
+
+  # Failed boot — bad hecksagon
+  fixture "BootSequence", conception_dir: "hecks_conception", engine: "summer", session_id: "", phase: "parsing", step: 2, status: "failed"
+
+  # Boot log
+  fixture "BootLog", session_id: "session_2026_04_15_001", engine: "claude", booted_at: "2026-04-15T08:00:00Z", organs_loaded: 19, tasks_run: 3, enforcement_verdict: "clear", outcome: "live"
+  fixture "BootLog", session_id: "session_2026_04_15_002", engine: "summer", booted_at: "2026-04-15T20:00:00Z", organs_loaded: 19, tasks_run: 3, enforcement_verdict: "warned", outcome: "live"
+end
