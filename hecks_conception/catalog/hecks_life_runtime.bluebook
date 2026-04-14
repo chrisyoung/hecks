@@ -1,0 +1,292 @@
+Hecks.bluebook "HecksLifeRuntime", version: "2026.04.15.1" do
+  vision "The execution engine — boots domains from Bluebooks in memory, dispatches commands, routes events, enforces law. No source files needed."
+  category "runtime"
+
+  aggregate "MultiDomainRuntime", "Boot an entire hecksagon — all domains projected in memory" do
+    String :hecksagon_name
+    Integer :domains_booted
+    Integer :total_aggregates
+    Integer :total_commands
+    Integer :cross_domain_policies
+    String :status
+
+    BootConception do
+      role "Bootloader"
+      description "Read hecksagon.hec, discover all domains, boot each into memory"
+      String :hecksagon_name
+      emits "ConceptionBooted"
+      then_set :hecksagon_name, to: :hecksagon_name
+      then_set :domains_booted, to: 0
+      then_set :status, to: "booting"
+    end
+
+    BootDomain do
+      role "Runtime"
+      description "Parse one .bluebook, create runtime, wire into the multi-domain bus"
+      reference_to(MultiDomainRuntime)
+      emits "DomainBooted"
+      then_set :domains_booted, increment: 1
+    end
+
+    WireCrossDomainPolicies do
+      role "Runtime"
+      description "Connect listens_to relationships — events in one domain trigger commands in another"
+      reference_to(MultiDomainRuntime)
+      Integer :cross_domain_policies
+      emits "CrossDomainWired"
+      then_set :cross_domain_policies, to: :cross_domain_policies
+    end
+
+    GoLive do
+      role "Runtime"
+      description "All domains booted, policies wired — the conception is live"
+      reference_to(MultiDomainRuntime)
+      emits "ConceptionLive"
+      then_set :status, to: "live"
+    end
+
+    lifecycle :status, default: "off" do
+      transition "BootConception" => "booting"
+      transition "GoLive" => "live", from: "booting"
+    end
+  end
+
+  aggregate "CommandBus", "Dispatch commands — interpret then_set, check given, emit events" do
+    String :domain_name
+    Integer :commands_dispatched
+    Integer :commands_succeeded
+    Integer :commands_failed
+
+    Dispatch do
+      role "Runtime"
+      description "Route a command to its aggregate, interpret then_set mutations, emit the event"
+      String :domain_name
+      String :command_name
+      String :aggregate_id
+      emits "CommandDispatched"
+      then_set :commands_dispatched, increment: 1
+    end
+
+    RecordSuccess do
+      role "Runtime"
+      description "Command executed successfully — state mutated, event emitted"
+      reference_to(CommandBus)
+      emits "CommandSucceeded"
+      then_set :commands_succeeded, increment: 1
+    end
+
+    RecordFailure do
+      role "Runtime"
+      description "Command failed — given failed, lifecycle blocked, or missing attribute"
+      reference_to(CommandBus)
+      emits "CommandFailed"
+      then_set :commands_failed, increment: 1
+    end
+  end
+
+  aggregate "EventBus", "Route events to policies — policies trigger commands, commands emit more events" do
+    String :domain_name
+    Integer :events_emitted
+    Integer :policies_triggered
+
+    EmitEvent do
+      role "Runtime"
+      description "A command emitted an event — route it to all matching policies"
+      String :domain_name
+      String :event_name
+      emits "EventEmitted"
+      then_set :events_emitted, increment: 1
+    end
+
+    TriggerPolicy do
+      role "Runtime"
+      description "A policy matched an event — trigger its target command"
+      reference_to(EventBus)
+      emits "PolicyTriggered"
+      then_set :policies_triggered, increment: 1
+    end
+  end
+
+  aggregate "InMemoryRepository", "Hold aggregate state in memory — seeded from fixtures, mutated by commands" do
+    String :aggregate_name
+    Integer :record_count
+    Integer :fixtures_loaded
+
+    CreateRecord do
+      role "Runtime"
+      description "A create command produced a new aggregate instance"
+      String :aggregate_name
+      emits "RecordCreated"
+      then_set :record_count, increment: 1
+    end
+
+    UpdateRecord do
+      role "Runtime"
+      description "An update command mutated an existing aggregate instance"
+      reference_to(InMemoryRepository)
+      emits "RecordUpdated"
+    end
+
+    SeedFromFixtures do
+      role "Runtime"
+      description "Load fixture data as initial aggregate state — each fixture becomes a record"
+      reference_to(InMemoryRepository)
+      Integer :fixtures_loaded
+      emits "FixturesSeeded"
+      then_set :fixtures_loaded, to: :fixtures_loaded
+    end
+  end
+
+  aggregate "LifecycleEngine", "Enforce state machine transitions — block commands that violate lifecycle" do
+    String :aggregate_name
+    String :field_name
+    Integer :transitions_enforced
+    Integer :transitions_blocked
+
+    EnforceTransition do
+      role "Runtime"
+      description "A command is about to change a lifecycle field — check if the transition is allowed"
+      String :aggregate_name
+      String :field_name
+      String :from_state
+      String :to_state
+      emits "TransitionEnforced"
+      then_set :transitions_enforced, increment: 1
+    end
+
+    BlockTransition do
+      role "Runtime"
+      description "Transition not allowed from current state — command blocked"
+      reference_to(LifecycleEngine)
+      emits "TransitionBlocked"
+      then_set :transitions_blocked, increment: 1
+    end
+  end
+
+  aggregate "InlineEnforcement", "Governance wired into the dispatch loop — every command checked against law" do
+    String :domain_name
+    String :command_name
+    String :verdict
+    Integer :checks_run
+
+    EnforceCommand do
+      role "Runtime"
+      description "Before dispatching, check the command against applicable laws from the governance domain"
+      String :domain_name
+      String :command_name
+      emits "CommandEnforced"
+      then_set :domain_name, to: :domain_name
+      then_set :command_name, to: :command_name
+      then_set :checks_run, increment: 1
+    end
+
+    Pass do
+      role "Runtime"
+      reference_to(InlineEnforcement)
+      emits "EnforcementPassed"
+      then_set :verdict, to: "clear"
+    end
+
+    Block do
+      role "Runtime"
+      reference_to(InlineEnforcement)
+      emits "EnforcementBlocked"
+      then_set :verdict, to: "blocked"
+    end
+  end
+
+  aggregate "EventCapture", "Capture all events for replay and rewind" do
+    String :session_id
+    Integer :events_captured
+    String :status
+
+    StartCapture do
+      role "Runtime"
+      String :session_id
+      emits "CaptureStarted"
+      then_set :session_id, to: :session_id
+      then_set :events_captured, to: 0
+      then_set :status, to: "capturing"
+    end
+
+    CaptureEvent do
+      role "Runtime"
+      reference_to(EventCapture)
+      emits "EventCaptured"
+      then_set :events_captured, increment: 1
+    end
+
+    SealCapture do
+      role "Runtime"
+      reference_to(EventCapture)
+      emits "CaptureSealed"
+      then_set :status, to: "sealed"
+    end
+
+    lifecycle :status, default: "idle" do
+      transition "StartCapture" => "capturing"
+      transition "SealCapture" => "sealed", from: "capturing"
+    end
+  end
+
+  # Boot pipeline
+  policy "BootDomainsOnConception" do
+    on "ConceptionBooted"
+    trigger "BootDomain"
+  end
+
+  policy "WireOnBoot" do
+    on "DomainBooted"
+    trigger "WireCrossDomainPolicies"
+  end
+
+  policy "SeedOnWire" do
+    on "CrossDomainWired"
+    trigger "SeedFromFixtures"
+  end
+
+  policy "CaptureOnLive" do
+    on "ConceptionLive"
+    trigger "StartCapture"
+  end
+
+  # Inline enforcement
+  policy "EnforceOnDispatch" do
+    on "CommandDispatched"
+    trigger "EnforceCommand"
+  end
+
+  # Event routing
+  policy "RouteOnEmit" do
+    on "EventEmitted"
+    trigger "TriggerPolicy"
+  end
+
+  # Capture
+  policy "CaptureOnEvent" do
+    on "EventEmitted"
+    trigger "CaptureEvent"
+  end
+
+  # Fixtures
+  fixture "MultiDomainRuntime", hecksagon_name: "Governance", domains_booted: 6, total_aggregates: 20, total_commands: 58, cross_domain_policies: 12, status: "live"
+  fixture "MultiDomainRuntime", hecksagon_name: "Winter", domains_booted: 19, total_aggregates: 127, total_commands: 350, cross_domain_policies: 45, status: "live"
+
+  fixture "CommandBus", domain_name: "Law", commands_dispatched: 15, commands_succeeded: 14, commands_failed: 1
+  fixture "CommandBus", domain_name: "Pizzas", commands_dispatched: 42, commands_succeeded: 42, commands_failed: 0
+
+  fixture "EventBus", domain_name: "Governance", events_emitted: 58, policies_triggered: 23
+  fixture "EventBus", domain_name: "Pizzas", events_emitted: 42, policies_triggered: 8
+
+  fixture "InMemoryRepository", aggregate_name: "Law", record_count: 19, fixtures_loaded: 19
+  fixture "InMemoryRepository", aggregate_name: "Pizza", record_count: 5, fixtures_loaded: 3
+
+  fixture "LifecycleEngine", aggregate_name: "Law", field_name: "status", transitions_enforced: 15, transitions_blocked: 1
+  fixture "LifecycleEngine", aggregate_name: "ActionPlan", field_name: "status", transitions_enforced: 8, transitions_blocked: 0
+
+  fixture "InlineEnforcement", domain_name: "Law", command_name: "Enact", verdict: "clear", checks_run: 1
+  fixture "InlineEnforcement", domain_name: "Code", command_name: "Edit", verdict: "blocked", checks_run: 1
+
+  fixture "EventCapture", session_id: "session_2026_04_15_001", events_captured: 342, status: "capturing"
+  fixture "EventCapture", session_id: "session_2026_04_14_001", events_captured: 1205, status: "sealed"
+end

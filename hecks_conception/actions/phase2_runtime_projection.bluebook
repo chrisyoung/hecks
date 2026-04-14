@@ -1,0 +1,44 @@
+Hecks.bluebook "Phase2RuntimeProjection", version: "2026.04.15.1" do
+  vision "Phase 2: project command bus, event bus, repositories, and lifecycle from Bluebooks in memory"
+  category "action"
+
+  aggregate "Action", "Phase 2 of migration" do
+    String :action_name
+    String :rationale
+    String :status
+
+    Plan do
+      role "Winter"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+    end
+
+    Execute do
+      role "Winter"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Winter"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  fixture "Action", action_name: "Phase2RuntimeProjection", rationale: "The runtime is what makes Bluebooks executable. Command bus interprets then_set. Event bus routes policies. Repository holds state from fixtures.", status: "planned"
+end
