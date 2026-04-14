@@ -1,0 +1,45 @@
+Hecks.bluebook "HecksLifeEnforce", version: "2026.04.15.1" do
+  vision "Pre-commit enforcement engine — reads git diff or full codebase, checks against laws, blocks on violations"
+  category "runtime"
+
+  aggregate "DiffEnforcer", "Check staged files against laws" do
+    Integer :files_checked
+    Integer :violations
+    Integer :warnings
+    String :verdict
+
+    RunDiff do
+      role "Binary"
+      description "Read git diff --cached, categorize files, check each against applicable laws"
+      emits "DiffEnforced"
+    end
+
+    RunFull do
+      role "Binary"
+      description "Scan entire codebase — all Rust modules, all Ruby files, action stack"
+      emits "FullEnforced"
+    end
+  end
+
+  aggregate "LawCheck", "One law checked against one file" do
+    String :file_path
+    String :law_name
+    String :evidence
+    Boolean :passed
+
+    Check do
+      role "Binary"
+      description "Evaluate one law against one file"
+      String :file_path
+      String :law_name
+      emits "LawChecked"
+      then_set :file_path, to: :file_path
+      then_set :law_name, to: :law_name
+    end
+  end
+
+  fixture "DiffEnforcer", files_checked: 15, violations: 0, warnings: 0, verdict: "clear"
+  fixture "DiffEnforcer", files_checked: 882, violations: 5, warnings: 0, verdict: "blocked"
+  fixture "LawCheck", file_path: "hecks_life/src/enforce.rs", law_name: "RustModuleBluebook", evidence: "no catalog/hecks_life_enforce.bluebook", passed: false
+  fixture "LawCheck", file_path: "lib/hecks_cli/argv.rb", law_name: "FileSizeLimit", evidence: "382 code lines", passed: false
+end

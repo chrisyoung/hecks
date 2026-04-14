@@ -71,6 +71,87 @@ Hecks.bluebook "Law", version: "2026.04.14.1" do
     end
   end
 
+  aggregate "Amendment", "A formal proposal to change the law — propose, review, ratify or reject" do
+    String :law_name
+    String :amendment_type
+    String :proposed_by
+    String :rationale
+    String :old_value
+    String :new_value
+    String :status
+    String :reviewed_by
+    String :review_notes
+
+    Propose do
+      role "Any"
+      description "Propose a change to an existing law or propose a new law — anyone can propose"
+      String :law_name
+      String :amendment_type
+      String :proposed_by
+      String :rationale
+      String :old_value
+      String :new_value
+      emits "AmendmentProposed"
+      then_set :law_name, to: :law_name
+      then_set :amendment_type, to: :amendment_type
+      then_set :proposed_by, to: :proposed_by
+      then_set :rationale, to: :rationale
+      then_set :old_value, to: :old_value
+      then_set :new_value, to: :new_value
+      then_set :status, to: "proposed"
+    end
+
+    Review do
+      role "Architect"
+      description "Review the proposed amendment — add notes, recommend ratify or reject"
+      reference_to(Amendment)
+      String :reviewed_by
+      String :review_notes
+      emits "AmendmentReviewed"
+      then_set :reviewed_by, to: :reviewed_by
+      then_set :review_notes, to: :review_notes
+      then_set :status, to: "reviewed"
+    end
+
+    Ratify do
+      role "Architect"
+      description "Ratify the amendment — the law changes. This triggers Amend or Enact on the Law."
+      reference_to(Amendment)
+      given { status == "reviewed" }
+      emits "AmendmentRatified"
+      then_set :status, to: "ratified"
+    end
+
+    Reject do
+      role "Architect"
+      description "Reject the amendment — the law stays as is. Record why."
+      reference_to(Amendment)
+      given { status == "reviewed" }
+      emits "AmendmentRejected"
+      then_set :status, to: "rejected"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Propose" => "proposed"
+      transition "Review" => "reviewed", from: "proposed"
+      transition "Ratify" => "ratified", from: "reviewed"
+      transition "Reject" => "rejected", from: "reviewed"
+    end
+  end
+
+  # Amendment flow — ratified amendments trigger law changes
+  policy "AmendOnRatify" do
+    on "AmendmentRatified"
+    trigger "Amend"
+    description "When an amendment is ratified, apply it to the law"
+  end
+
+  policy "EnactOnNewLaw" do
+    on "AmendmentRatified"
+    trigger "Enact"
+    description "When a new-law amendment is ratified, enact it"
+  end
+
   aggregate "Violation", "A specific instance of a law being broken — who, where, when, what" do
     String :law_name
     String :violator
@@ -209,6 +290,8 @@ Hecks.bluebook "Law", version: "2026.04.14.1" do
   # Governance laws
   fixture "Law", name: "ActionFirst", description: "Every activity starts with an action bluebook. No action = not replayable = doesn't exist. Enforced by ActionGate at the binary level.", domain_scope: "governance", check_expression: "action_stack.depth > 0 before any tool use", severity: "blocking", status: "active", violation_count: 0
   fixture "Law", name: "TasksInRuntime", description: "All tasks run through hecks-life task runtime, not platform daemons or agent-specific hooks. Portable across any agent.", domain_scope: "governance", check_expression: "no daemon or hook that bypasses hecks-life task run", severity: "blocking", status: "active", violation_count: 0
+  fixture "Law", name: "RustModuleBluebook", description: "Every .rs file in hecks_life/src/ must have a corresponding catalog/hecks_life_*.bluebook. No dark Rust.", domain_scope: "architecture", check_expression: "for each src/*.rs, catalog/hecks_life_{name}.bluebook exists", severity: "blocking", status: "active", violation_count: 0
+  fixture "Law", name: "FullSweepOnRelease", description: "Before any release or merge to main, run hecks-life enforce --full. Not just the diff — everything.", domain_scope: "governance", check_expression: "enforce --full passes before merge", severity: "blocking", status: "active", violation_count: 0
 
   # Violation examples
   fixture "Violation", law_name: "FixturesRequired", violator: "Summer", location: "nursery/ambulance_dispatch", detail: "Conceived with 0 fixtures across 3 aggregates", detected_at: "2026-04-14", resolution: "open"
@@ -217,4 +300,9 @@ Hecks.bluebook "Law", version: "2026.04.14.1" do
   # Enforcement examples
   fixture "Enforcement", scope: "nursery", laws_checked: 5, laws_passed: 4, laws_violated: 1, enforced_at: "2026-04-14", verdict: "unlawful"
   fixture "Enforcement", scope: "code", laws_checked: 3, laws_passed: 3, laws_violated: 0, enforced_at: "2026-04-14", verdict: "lawful"
+
+  # Amendment examples
+  fixture "Amendment", law_name: "BluebookOnly", amendment_type: "extend", proposed_by: "Winter", rationale: "BluebookOnly should cover Rust modules too, not just conception scripts", old_value: "no code file without corresponding bluebook", new_value: "no code file without corresponding bluebook — includes hecks_life/src/*.rs", status: "ratified", reviewed_by: "Chris", review_notes: "Agreed — no dark Rust"
+  fixture "Amendment", law_name: "NEW:RustModuleBluebook", amendment_type: "new_law", proposed_by: "Winter", rationale: "Explicit law for Rust module coverage", old_value: "", new_value: "for each src/*.rs, catalog/hecks_life_{name}.bluebook exists", status: "ratified", reviewed_by: "Chris", review_notes: "Good — makes the check explicit and implementable"
+  fixture "Amendment", law_name: "FileSizeLimit", amendment_type: "amend", proposed_by: "Court", rationale: "Precedent: pre-existing violations should be rehabilitation, not guilt", old_value: "wc -l < 200 for each lib file", new_value: "wc -l < 200 for each lib file — new/modified files only in diff mode", status: "proposed", reviewed_by: "", review_notes: ""
 end
