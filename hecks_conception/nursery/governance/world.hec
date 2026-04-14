@@ -1,0 +1,17 @@
+Hecks.world "Governance" do
+  purpose "Enforceable rules, judgment of actions, and automated inspection — Winter's rule of law"
+  vision "Every action Winter takes is inspected against active laws. Violations are filed with Court. Rulings flow back to Conscience. The system governs itself."
+  audience "Winter, any agent that takes actions"
+
+  concern "AutomaticEnforcement" do
+    description "Enforcement fires on every action — no action escapes inspection"
+  end
+
+  concern "ProportionalResponse" do
+    description "Blocking violations halt the action. Warnings are logged but don't block. Recommendations are suggestions."
+  end
+
+  concern "TransparentJudgment" do
+    description "Every check, every finding, every ruling is visible and traceable"
+  end
+end

@@ -1,0 +1,11 @@
+Hecks.hecksagon "Governance" do
+  concerns :webapp
+  domain "law"
+  domain "court" do
+    listens_to "law"
+  end
+  domain "enforcement" do
+    listens_to "law"
+    listens_to "court"
+  end
+end

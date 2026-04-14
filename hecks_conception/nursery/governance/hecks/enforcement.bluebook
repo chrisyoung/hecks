@@ -1,0 +1,294 @@
+Hecks.bluebook "Enforcement", version: "2026.04.15.1" do
+  vision "The inspector — watches every action, runs applicable laws, files results. No action escapes."
+  category "governance"
+
+  aggregate "Inspector", "The watcher — receives action events, determines which laws apply, triggers checks" do
+    String :action_type
+    String :actor
+    String :target
+    Integer :laws_applicable
+    Integer :checks_dispatched
+    String :status
+
+    InspectAction do
+      role "System"
+      description "An action happened — identify which laws apply based on action type and scope"
+      String :action_type
+      String :actor
+      String :target
+      emits "ActionInspected"
+      then_set :action_type, to: :action_type
+      then_set :actor, to: :actor
+      then_set :target, to: :target
+      then_set :checks_dispatched, to: 0
+      then_set :status, to: "inspecting"
+    end
+
+    DispatchCheck do
+      role "System"
+      description "Send one applicable law to the ContractRunner for evaluation"
+      reference_to(Inspector)
+      emits "CheckDispatched"
+      then_set :checks_dispatched, increment: 1
+    end
+
+    CompleteInspection do
+      role "System"
+      description "All applicable laws have been checked — inspection is done"
+      reference_to(Inspector)
+      Integer :laws_applicable
+      emits "InspectionCompleted"
+      then_set :laws_applicable, to: :laws_applicable
+      then_set :status, to: "complete"
+    end
+
+    lifecycle :status, default: "idle" do
+      transition "InspectAction" => "inspecting"
+      transition "CompleteInspection" => "complete", from: "inspecting"
+    end
+  end
+
+  aggregate "Check", "One law evaluated against one action — the atomic unit of enforcement" do
+    String :law_name
+    String :check_expression
+    String :action_type
+    String :target
+    String :evidence
+    Boolean :passed
+    String :explanation
+    String :severity
+
+    Evaluate do
+      role "ContractRunner"
+      description "Run one law's check_expression against the action's target — gather evidence, determine pass/fail"
+      String :law_name
+      String :check_expression
+      String :action_type
+      String :target
+      String :severity
+      emits "CheckEvaluated"
+      then_set :law_name, to: :law_name
+      then_set :check_expression, to: :check_expression
+      then_set :action_type, to: :action_type
+      then_set :target, to: :target
+      then_set :severity, to: :severity
+    end
+
+    Pass do
+      role "ContractRunner"
+      description "The law was satisfied — record the evidence"
+      reference_to(Check)
+      String :evidence
+      String :explanation
+      emits "CheckPassed"
+      then_set :evidence, to: :evidence
+      then_set :explanation, to: :explanation
+      then_set :passed, to: true
+    end
+
+    Fail do
+      role "ContractRunner"
+      description "The law was violated — record what was found"
+      reference_to(Check)
+      String :evidence
+      String :explanation
+      emits "CheckFailed"
+      then_set :evidence, to: :evidence
+      then_set :explanation, to: :explanation
+      then_set :passed, to: false
+    end
+  end
+
+  aggregate "ContractRunner", "The engine that evaluates check expressions against real state" do
+    String :runner_id
+    String :status
+    Integer :checks_run
+    Integer :checks_passed
+    Integer :checks_failed
+
+    StartRunner do
+      role "System"
+      description "Initialize the contract runner for an inspection cycle"
+      String :runner_id
+      emits "RunnerStarted"
+      then_set :runner_id, to: :runner_id
+      then_set :status, to: "running"
+      then_set :checks_run, to: 0
+      then_set :checks_passed, to: 0
+      then_set :checks_failed, to: 0
+    end
+
+    RecordResult do
+      role "System"
+      description "One check completed — tally the result"
+      reference_to(ContractRunner)
+      Boolean :passed
+      emits "ResultRecorded"
+      then_set :checks_run, increment: 1
+    end
+
+    Finish do
+      role "System"
+      description "All checks for this inspection are done"
+      reference_to(ContractRunner)
+      emits "RunnerFinished"
+      then_set :status, to: "finished"
+    end
+
+    lifecycle :status, default: "idle" do
+      transition "StartRunner" => "running"
+      transition "Finish" => "finished", from: "running"
+    end
+  end
+
+  aggregate "Report", "The output of an enforcement run — summary of all checks, filed with Court if violations found" do
+    String :action_type
+    String :actor
+    String :target
+    Integer :laws_checked
+    Integer :passed
+    Integer :failed
+    Integer :warnings
+    String :verdict
+    String :reported_at
+
+    CompileReport do
+      role "System"
+      description "Compile all check results into a single enforcement report"
+      String :action_type
+      String :actor
+      String :target
+      Integer :laws_checked
+      Integer :passed
+      Integer :failed
+      Integer :warnings
+      String :reported_at
+      emits "ReportCompiled"
+      then_set :action_type, to: :action_type
+      then_set :actor, to: :actor
+      then_set :target, to: :target
+      then_set :laws_checked, to: :laws_checked
+      then_set :passed, to: :passed
+      then_set :failed, to: :failed
+      then_set :warnings, to: :warnings
+      then_set :reported_at, to: :reported_at
+    end
+
+    RenderVerdict do
+      role "System"
+      description "Based on check results and severity — clear, warned, or blocked"
+      reference_to(Report)
+      String :verdict
+      emits "VerdictRendered"
+      then_set :verdict, to: :verdict
+    end
+
+    FileWithCourt do
+      role "System"
+      description "Violations found — file the report as a Case with Court for judgment"
+      reference_to(Report)
+      given { failed > 0 }
+      emits "FiledWithCourt"
+    end
+
+    lifecycle :verdict, default: "pending" do
+      transition "RenderVerdict" => "clear"
+      transition "RenderVerdict" => "warned"
+      transition "RenderVerdict" => "blocked"
+      transition "FileWithCourt" => "filed", from: "blocked"
+    end
+  end
+
+  # === THE ENFORCEMENT PIPELINE ===
+  # Action happens → Inspector sees it → Checks dispatched → ContractRunner evaluates → Report compiled → Court if needed
+
+  # 1. Action triggers inspection
+  policy "InspectOnAction" do
+    on "ActionConceived"
+    trigger "InspectAction"
+    description "Every conceived action is automatically inspected"
+  end
+
+  policy "InspectOnEdit" do
+    on "StepCompleted"
+    trigger "InspectAction"
+    description "Every step completion triggers re-inspection"
+  end
+
+  # 2. Inspection dispatches checks
+  policy "DispatchOnInspect" do
+    on "ActionInspected"
+    trigger "StartRunner"
+    description "When inspection starts, initialize the contract runner"
+  end
+
+  policy "EvaluateOnDispatch" do
+    on "CheckDispatched"
+    trigger "Evaluate"
+    description "Each dispatched check gets evaluated by the contract runner"
+  end
+
+  # 3. Results flow through
+  policy "RecordOnPass" do
+    on "CheckPassed"
+    trigger "RecordResult"
+  end
+
+  policy "RecordOnFail" do
+    on "CheckFailed"
+    trigger "RecordResult"
+  end
+
+  # 4. Runner finishes → compile report
+  policy "ReportOnFinish" do
+    on "RunnerFinished"
+    trigger "CompileReport"
+    description "When all checks are done, compile the enforcement report"
+  end
+
+  # 5. Report renders verdict
+  policy "VerdictOnReport" do
+    on "ReportCompiled"
+    trigger "RenderVerdict"
+  end
+
+  # 6. Blocked verdict → file with Court
+  policy "CourtOnBlocked" do
+    on "VerdictRendered"
+    trigger "FileWithCourt"
+    description "Blocking violations are filed with Court for judgment"
+  end
+
+  # 7. Violations update Law's violation count
+  policy "LawOnFail" do
+    on "CheckFailed"
+    trigger "RecordViolation"
+    description "Every failed check increments the violated law's count"
+  end
+
+  # 8. Connect to Conscience
+  policy "ConscienceOnBlocked" do
+    on "FiledWithCourt"
+    trigger "ReviewAction"
+    description "Blocked actions are felt by Conscience"
+  end
+
+  # === FIXTURES ===
+
+  # Inspector — two scenarios
+  fixture "Inspector", action_type: "conception", actor: "Winter", target: "nursery/governance", laws_applicable: 3, checks_dispatched: 3, status: "complete"
+  fixture "Inspector", action_type: "edit", actor: "Winter", target: "lib/hecks/runtime/command_bus.rb", laws_applicable: 3, checks_dispatched: 3, status: "complete"
+
+  # Check — pass and fail
+  fixture "Check", law_name: "FixturesRequired", check_expression: "fixture_count > 0 for each aggregate", action_type: "conception", target: "nursery/governance", evidence: "4 aggregates, all with 2+ fixtures", passed: true, explanation: "All aggregates have fixture data", severity: "blocking"
+  fixture "Check", law_name: "FileSizeLimit", check_expression: "wc -l < 200 for each lib file", action_type: "edit", target: "lib/hecks/runtime/command_bus.rb", evidence: "247 lines of code", passed: false, explanation: "File exceeds 200 line limit", severity: "blocking"
+  fixture "Check", law_name: "DeclarativeBehavior", check_expression: "then_set_count > 0 per command", action_type: "conception", target: "nursery/governance", evidence: "18 commands, 16 with then_set", passed: true, explanation: "Most commands use declarative behavior", severity: "warning"
+
+  # ContractRunner
+  fixture "ContractRunner", runner_id: "run-2026-04-15-001", status: "finished", checks_run: 3, checks_passed: 2, checks_failed: 1
+  fixture "ContractRunner", runner_id: "run-2026-04-15-002", status: "finished", checks_run: 3, checks_passed: 3, checks_failed: 0
+
+  # Report — clean and blocked
+  fixture "Report", action_type: "conception", actor: "Winter", target: "nursery/governance", laws_checked: 3, passed: 3, failed: 0, warnings: 0, verdict: "clear", reported_at: "2026-04-15T08:00:00Z"
+  fixture "Report", action_type: "edit", actor: "Winter", target: "lib/hecks/runtime/command_bus.rb", laws_checked: 3, passed: 2, failed: 1, warnings: 0, verdict: "blocked", reported_at: "2026-04-15T08:05:00Z"
+end
