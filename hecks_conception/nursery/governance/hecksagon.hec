@@ -8,4 +8,8 @@ Hecks.hecksagon "Governance" do
     listens_to "law"
     listens_to "court"
   end
+  domain "action_gate" do
+    listens_to "enforcement"
+    listens_to "law"
+  end
 end

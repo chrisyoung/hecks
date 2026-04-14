@@ -1,0 +1,291 @@
+Hecks.bluebook "ActionGate", version: "2026.04.15.1" do
+  vision "Deterministic enforcement — no tool use, no commit, no boot completion without an active action. Binary-enforced, not prompt-enforced."
+  category "governance"
+
+  # ============================================================
+  # THE ACTION STACK
+  # ============================================================
+  #
+  # .action_stack is a file managed by hecks-life.
+  # It is a stack of active action bluebook paths.
+  # Boot pushes the session action. Sub-actions push on top.
+  # When an action completes, it pops.
+  #
+  # Every hecks-life command checks the stack.
+  # Empty stack = command refused.
+  #
+  # This is not a prompt instruction. This is a binary gate.
+
+  aggregate "ActionStack", "The runtime stack of active actions — managed by hecks-life, not by the LLM" do
+    String :stack_path
+    Integer :depth
+    String :current_action
+    String :status
+
+    Initialize do
+      role "hecks-life"
+      description "Create the action stack file at boot — the session action is the first entry"
+      String :stack_path
+      String :session_action
+      emits "StackInitialized"
+      then_set :stack_path, to: :stack_path
+      then_set :current_action, to: :session_action
+      then_set :depth, to: 1
+      then_set :status, to: "active"
+    end
+
+    Push do
+      role "hecks-life"
+      description "A new sub-action starts — push it onto the stack"
+      reference_to(ActionStack)
+      String :action_path
+      emits "ActionPushed"
+      then_set :current_action, to: :action_path
+      then_set :depth, increment: 1
+    end
+
+    Pop do
+      role "hecks-life"
+      description "An action completes — pop it off the stack, previous action resumes"
+      reference_to(ActionStack)
+      emits "ActionPopped"
+      then_set :depth, decrement: 1
+    end
+
+    Refuse do
+      role "hecks-life"
+      description "A command was attempted with an empty stack — refused"
+      reference_to(ActionStack)
+      String :refused_command
+      emits "CommandRefused"
+    end
+
+    lifecycle :status, default: "empty" do
+      transition "Initialize" => "active"
+      transition "Pop" => "empty"
+      transition "Push" => "active", from: "active"
+    end
+  end
+
+  # ============================================================
+  # THE GATE — four enforcement layers
+  # ============================================================
+
+  aggregate "BinaryGate", "hecks-life checks the action stack before executing any command" do
+    String :gate_type
+    String :check_command
+    String :enforcement
+    Boolean :enabled
+
+    RegisterGate do
+      role "Architect"
+      description "Register a gate — a command that hecks-life checks the stack before executing"
+      String :gate_type
+      String :check_command
+      String :enforcement
+      emits "GateRegistered"
+      then_set :gate_type, to: :gate_type
+      then_set :check_command, to: :check_command
+      then_set :enforcement, to: :enforcement
+      then_set :enabled, to: true
+    end
+
+    DisableGate do
+      role "Architect"
+      description "Temporarily disable a gate — for emergencies only, logged as a violation"
+      reference_to(BinaryGate)
+      emits "GateDisabled"
+      then_set :enabled, to: false
+    end
+
+    EnableGate do
+      role "Architect"
+      description "Re-enable a disabled gate"
+      reference_to(BinaryGate)
+      emits "GateEnabled"
+      then_set :enabled, to: true
+    end
+  end
+
+  aggregate "HookGate", "Claude Code hooks check the action stack before allowing tool use" do
+    String :hook_type
+    String :matcher
+    String :check_script
+    String :block_message
+
+    RegisterHook do
+      role "Architect"
+      description "Register a hook gate — PreToolUse hook that checks for active action"
+      String :hook_type
+      String :matcher
+      String :check_script
+      String :block_message
+      emits "HookRegistered"
+      then_set :hook_type, to: :hook_type
+      then_set :matcher, to: :matcher
+      then_set :check_script, to: :check_script
+      then_set :block_message, to: :block_message
+    end
+  end
+
+  aggregate "BootGate", "Boot sequence creates the session action — no session without an action" do
+    String :session_action_template
+    String :stack_path
+    Boolean :auto_create
+
+    ConfigureBoot do
+      role "Architect"
+      description "Configure the boot gate — session action is created automatically at boot"
+      String :session_action_template
+      String :stack_path
+      emits "BootGateConfigured"
+      then_set :session_action_template, to: :session_action_template
+      then_set :stack_path, to: :stack_path
+      then_set :auto_create, to: true
+    end
+  end
+
+  aggregate "CommitGate", "Pre-commit hook refuses commits without an action bluebook staged" do
+    String :hook_path
+    String :check_expression
+    Boolean :enabled
+
+    ConfigureCommitGate do
+      role "Architect"
+      description "Configure the pre-commit gate — action bluebook must be staged"
+      String :hook_path
+      String :check_expression
+      emits "CommitGateConfigured"
+      then_set :hook_path, to: :hook_path
+      then_set :check_expression, to: :check_expression
+      then_set :enabled, to: true
+    end
+  end
+
+  # ============================================================
+  # THE SESSION ACTION
+  # ============================================================
+  #
+  # Every session IS an action. Boot creates it.
+  # It lives at .action_stack/session_<timestamp>.bluebook
+  # It records: who booted, what brain, when, what happened.
+  # Sub-actions nest inside it.
+  #
+  # When the session ends, the session action completes.
+  # The stack empties. The gate closes.
+
+  aggregate "SessionAction", "The automatic action created at boot — the session itself is the first action" do
+    String :session_id
+    String :engine
+    String :started_at
+    Integer :sub_actions
+    String :status
+
+    Create do
+      role "hecks-life"
+      description "Boot creates the session action — this is automatic, not LLM-initiated"
+      String :session_id
+      String :engine
+      String :started_at
+      emits "SessionActionCreated"
+      then_set :session_id, to: :session_id
+      then_set :engine, to: :engine
+      then_set :started_at, to: :started_at
+      then_set :sub_actions, to: 0
+      then_set :status, to: "active"
+    end
+
+    NestSubAction do
+      role "hecks-life"
+      description "A sub-action was pushed — the session tracks it"
+      reference_to(SessionAction)
+      emits "SubActionNested"
+      then_set :sub_actions, increment: 1
+    end
+
+    Complete do
+      role "hecks-life"
+      description "Session ends — session action completes, stack empties, gate closes"
+      reference_to(SessionAction)
+      emits "SessionActionCompleted"
+      then_set :status, to: "completed"
+    end
+
+    lifecycle :status, default: "pending" do
+      transition "Create" => "active"
+      transition "Complete" => "completed", from: "active"
+    end
+  end
+
+  # ============================================================
+  # POLICIES — the wiring
+  # ============================================================
+
+  # Boot creates the session action and initializes the stack
+  policy "InitStackOnBoot" do
+    on "SessionLive"
+    trigger "Initialize"
+    description "When Winter boots, create the action stack with the session action"
+  end
+
+  policy "CreateSessionOnBoot" do
+    on "SessionLive"
+    trigger "Create"
+    description "When Winter boots, create the session action automatically"
+  end
+
+  # Sub-actions push and pop
+  policy "PushOnConceive" do
+    on "ActionConceived"
+    trigger "Push"
+    description "When a new action is conceived, push it onto the stack"
+  end
+
+  policy "PopOnVerify" do
+    on "ActionVerified"
+    trigger "Pop"
+    description "When an action is verified, pop it off the stack"
+  end
+
+  policy "NestOnPush" do
+    on "ActionPushed"
+    trigger "NestSubAction"
+    description "Track sub-action nesting in the session action"
+  end
+
+  # Refusal flows to enforcement
+  policy "EnforceOnRefusal" do
+    on "CommandRefused"
+    trigger "InspectAction"
+    description "When a command is refused, trigger enforcement inspection"
+  end
+
+  policy "ConscienceOnRefusal" do
+    on "CommandRefused"
+    trigger "Sense"
+    map source: "action_gate_refusal", valence: -0.5
+    description "Refused commands are felt as negative sensation"
+  end
+
+  # ============================================================
+  # FIXTURES
+  # ============================================================
+
+  # Action stack states
+  fixture "ActionStack", stack_path: ".action_stack", depth: 2, current_action: "actions/build_governance.bluebook", status: "active"
+  fixture "ActionStack", stack_path: ".action_stack", depth: 0, current_action: "", status: "empty"
+
+  # The four gates
+  fixture "BinaryGate", gate_type: "hecks-life", check_command: "hecks-life action check", enforcement: "refuse command if stack empty", enabled: true
+  fixture "BinaryGate", gate_type: "hecks-life", check_command: "hecks-life heki write", enforcement: "refuse write if stack empty", enabled: true
+
+  fixture "HookGate", hook_type: "PreToolUse", matcher: "Edit|Write|Bash", check_script: "hecks-life action check --quiet", block_message: "BLOCKED: No active action. Conceive an action bluebook first."
+
+  fixture "BootGate", session_action_template: "actions/session_{{timestamp}}.bluebook", stack_path: ".action_stack", auto_create: true
+
+  fixture "CommitGate", hook_path: ".git/hooks/pre-commit", check_expression: "git diff --cached --name-only | grep actions/", enabled: true
+
+  # Session action
+  fixture "SessionAction", session_id: "session-2026-04-15-001", engine: "claude", started_at: "2026-04-15T08:00:00Z", sub_actions: 3, status: "active"
+  fixture "SessionAction", session_id: "session-2026-04-15-002", engine: "summer", started_at: "2026-04-15T20:00:00Z", sub_actions: 0, status: "completed"
+end
