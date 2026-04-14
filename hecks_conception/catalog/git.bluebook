@@ -1,0 +1,124 @@
+Hecks.bluebook "Git", version: "2026.04.15.1" do
+  vision "Git is Winter's enforcement checkpoint — the commit is where law applies, the hook is the enforcer, the diff is the evidence"
+  category "governance"
+
+  # ============================================================
+  # GIT AS GOVERNANCE
+  # ============================================================
+  #
+  # Git is not just version control. For Winter, it is:
+  #   - The deterministic enforcement point (pre-commit hook)
+  #   - The reversibility mechanism (every action is a commit)
+  #   - The evidence store (diffs are findings)
+  #   - The session record (commits are the action log)
+  #
+  # The pre-commit hook ships with the library.
+  # `hecks-life boot` installs it automatically.
+  # It calls `hecks-life enforce --diff`.
+  # No override. No skip. Deterministic.
+  #
+  # This is portable. Any machine with git and hecks-life
+  # gets the same enforcement. No Claude. No cloud. Just git.
+
+  aggregate "CommitCheckpoint", "The moment where law applies — every commit is reviewed" do
+    String :commit_hash
+    String :author
+    String :message
+    Integer :files_changed
+    Integer :laws_checked
+    Integer :violations
+    String :verdict
+
+    PreCommit do
+      role "GitHook"
+      description "Pre-commit hook fires — run hecks-life enforce --diff against staged changes"
+      emits "PreCommitFired"
+      then_set :verdict, to: "checking"
+    end
+
+    AllowCommit do
+      role "GitHook"
+      description "All laws passed — commit proceeds"
+      reference_to(CommitCheckpoint)
+      String :commit_hash
+      String :author
+      String :message
+      Integer :files_changed
+      emits "CommitAllowed"
+      then_set :commit_hash, to: :commit_hash
+      then_set :author, to: :author
+      then_set :message, to: :message
+      then_set :files_changed, to: :files_changed
+      then_set :verdict, to: "allowed"
+    end
+
+    BlockCommit do
+      role "GitHook"
+      description "Violations found — commit refused, violations reported to agent"
+      reference_to(CommitCheckpoint)
+      Integer :violations
+      emits "CommitBlocked"
+      then_set :violations, to: :violations
+      then_set :verdict, to: "blocked"
+    end
+
+    lifecycle :verdict, default: "unchecked" do
+      transition "PreCommit" => "checking"
+      transition "AllowCommit" => "allowed", from: "checking"
+      transition "BlockCommit" => "blocked", from: "checking"
+    end
+  end
+
+  aggregate "HookInstaller", "Boot installs the pre-commit hook — ships with the library" do
+    String :hook_path
+    String :hook_content
+    Boolean :installed
+
+    Install do
+      role "Bootloader"
+      description "Write the pre-commit hook to .git/hooks/ during hecks-life boot"
+      String :hook_path
+      emits "HookInstalled"
+      then_set :hook_path, to: :hook_path
+      then_set :installed, to: true
+    end
+
+    Verify do
+      role "Bootloader"
+      description "Check that the hook exists, is executable, and calls hecks-life enforce"
+      reference_to(HookInstaller)
+      emits "HookVerified"
+    end
+  end
+
+  aggregate "DiffEvidence", "The git diff is the evidence — what changed, what was added, what was removed" do
+    Integer :files_added
+    Integer :files_modified
+    Integer :files_deleted
+    Integer :lines_added
+    Integer :lines_removed
+    list_of(String) :file_paths
+
+    GatherEvidence do
+      role "GitHook"
+      description "Run git diff --cached --stat and capture the evidence"
+      emits "EvidenceGathered"
+    end
+  end
+
+  # Boot installs the hook
+  policy "InstallOnBoot" do
+    on "BootCompleted"
+    trigger "Install"
+    description "Every boot verifies the pre-commit hook is installed"
+  end
+
+  # Fixtures
+  fixture "CommitCheckpoint", commit_hash: "a1fe7689", author: "Winter", message: "feat: compost orphaned scripts", files_changed: 10, laws_checked: 5, violations: 0, verdict: "allowed"
+  fixture "CommitCheckpoint", commit_hash: "", author: "Winter", message: "feat: add new feature without bluebook", files_changed: 3, laws_checked: 5, violations: 2, verdict: "blocked"
+
+  fixture "HookInstaller", hook_path: ".git/hooks/pre-commit", hook_content: "#!/bin/sh\nexec hecks-life enforce --diff hecks_conception", installed: true
+  fixture "HookInstaller", hook_path: ".git/hooks/pre-commit", hook_content: "", installed: false
+
+  fixture "DiffEvidence", files_added: 2, files_modified: 3, files_deleted: 1, lines_added: 150, lines_removed: 30, file_paths: ["nursery/governance/hecks/enforcement.bluebook", "lib/hecks/runtime/command_bus.rb", "actions/build_governance.bluebook"]
+end

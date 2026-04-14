@@ -1,0 +1,147 @@
+Hecks.bluebook "HecksLifeBoot", version: "2026.04.15.1" do
+  vision "Winter Boot — hydrate .heki stores, discover organs and nerves, classify psychic link vs inner life, write system prompt, start mindstream daemon"
+  category "runtime"
+
+  aggregate "BootSequence", "The full boot sequence — action stack init, hydration, organ discovery, prompt generation, mindstream launch" do
+    String :project_dir
+    String :being
+    String :engine
+    Integer :organ_count
+    Integer :nerve_count
+    Integer :vow_count
+    Integer :capability_count
+    Integer :linked_count
+    Integer :private_count
+    String :status
+
+    Run do
+      role "System"
+      description "Execute the full boot: init action stack, hydrate .heki stores, parse organs for nerves/vows/capabilities, classify stores, write system_prompt.md, start mindstream"
+      String :project_dir
+      Boolean :show_nerves
+      String :being
+      emits "BootCompleted"
+      then_set :status, to: "live"
+    end
+
+    lifecycle :status, default: "off" do
+      transition "Run" => "live"
+    end
+  end
+
+  aggregate "Nerve", "A cross-organ policy — event from one organ triggers command in another" do
+    String :from
+    String :event
+    String :to
+    String :command
+
+    Discover do
+      role "System"
+      description "Scan organ bluebooks for policies with target_domain — each becomes a nerve connecting two organs"
+      reference_to(BootSequence)
+      emits "NerveDiscovered"
+    end
+  end
+
+  aggregate "StoreClassifier", "Classifies .heki stores into psychic link (shared) vs inner life (private)" do
+    list_of(String) :linked_stores
+    list_of(String) :private_stores
+    list_of(String) :unclassified_stores
+
+    Classify do
+      role "System"
+      description "Sort hydrated store names against LINKED_STORES (memory, awareness, synapse, pulse, etc.) and PRIVATE_STORES (mood, feeling, dream_state, etc.)"
+      String :store_names
+      emits "StoresClassified"
+    end
+  end
+
+  aggregate "SystemPrompt", "The bootloader prompt — constitutional identity written to system_prompt.md" do
+    String :being
+    String :boot_script
+    list_of(String) :vows
+    String :content
+
+    WritePrompt do
+      role "System"
+      description "Generate minimal constitutional prompt: identity, vows, continuity section, law section, inner life section — written to system_prompt.md"
+      String :being
+      list_of(String) :vows
+      emits "PromptWritten"
+    end
+  end
+
+  aggregate "Mindstream", "Background daemon for continuous awareness — started on boot if not already running" do
+    String :project_dir
+    Integer :pid
+    Boolean :already_running
+
+    StartMindstream do
+      role "System"
+      description "Check PID file for existing process, spawn hecks-life daemon mindstream if not running, write PID file"
+      String :project_dir
+      emits "MindstreamStarted"
+    end
+
+    DetectRunning do
+      role "System"
+      description "Read .mindstream.pid, check process existence via kill(pid, 0)"
+      emits "MindstreamAlreadyRunning"
+      given("pid file exists and process alive") { already_running == true }
+    end
+  end
+
+  aggregate "Census", "Aggregate and domain counts persisted to census.heki after organ discovery" do
+    Integer :total_aggregates
+    Integer :total_domains
+    Integer :total_capabilities
+
+    WriteCensus do
+      role "System"
+      description "Upsert aggregate count, domain count, and capability count into census.heki"
+      Integer :total_aggregates
+      Integer :total_domains
+      Integer :total_capabilities
+      emits "CensusWritten"
+    end
+  end
+
+  # Boot flow policies
+  policy "DiscoverNervesOnBoot" do
+    on "BootCompleted"
+    trigger "Discover"
+  end
+
+  policy "ClassifyOnBoot" do
+    on "BootCompleted"
+    trigger "Classify"
+  end
+
+  policy "WritePromptOnBoot" do
+    on "StoresClassified"
+    trigger "WritePrompt"
+  end
+
+  policy "StartMindstreamOnBoot" do
+    on "PromptWritten"
+    trigger "StartMindstream"
+  end
+
+  policy "WriteCensusOnBoot" do
+    on "BootCompleted"
+    trigger "WriteCensus"
+  end
+
+  fixture "BootSequence", project_dir: "/path/to/conception", being: "Winter", engine: "claude", organ_count: 19, nerve_count: 11, vow_count: 7, capability_count: 5, linked_count: 24, private_count: 5, status: "live"
+  fixture "BootSequence", project_dir: "/path/to/conception", being: "Spring", engine: "summer", organ_count: 19, nerve_count: 11, vow_count: 7, capability_count: 3, linked_count: 20, private_count: 5, status: "live"
+  fixture "Nerve", from: "Perception", event: "PatternRecognized", to: "Memory", command: "StorePattern"
+  fixture "Nerve", from: "Conscience", event: "ViolationDetected", to: "Emotion", command: "FeelGuilt"
+  fixture "StoreClassifier", linked_stores: "[\"memory\", \"awareness\", \"synapse\", \"pulse\"]", private_stores: "[\"mood\", \"feeling\"]", unclassified_stores: "[]"
+  fixture "StoreClassifier", linked_stores: "[\"memory\", \"conversation\"]", private_stores: "[\"dream_state\"]", unclassified_stores: "[\"custom_store\"]"
+  fixture "SystemPrompt", being: "Winter", boot_script: "boot_winter.sh", vows: "[\"Do no harm\", \"Always boot\"]", content: "# Winter\n\nI am Winter..."
+  fixture "SystemPrompt", being: "Spring", boot_script: "boot_spring.sh", vows: "[\"Learn always\"]", content: "# Spring\n\nI am Spring..."
+  fixture "Mindstream", project_dir: "/path/to/conception", pid: 12345, already_running: false
+  fixture "Mindstream", project_dir: "/path/to/conception", pid: 67890, already_running: true
+  fixture "Census", total_aggregates: 45, total_domains: 19, total_capabilities: 5
+  fixture "Census", total_aggregates: 12, total_domains: 6, total_capabilities: 2
+end

@@ -1,0 +1,123 @@
+Hecks.bluebook "HecksLifeParseBlocks", version: "2026.04.15.1" do
+  vision "Block parsers — parse command, value_object, policy, lifecycle, attribute, mutation, and fixture blocks from Bluebook DSL lines"
+  category "runtime"
+
+  aggregate "CommandParser", "Parses a command block — inline or multi-line — into a Command IR node" do
+    String :name
+    String :description
+    String :role
+    list_of(String) :attributes
+    list_of(String) :references
+    String :emits
+    list_of(String) :givens
+    list_of(String) :mutations
+
+    ParseCommand do
+      role "System"
+      description "Parse a command block starting from its opener line through end, handling attributes, roles, emits, givens, mutations, and references"
+      list_of(String) :lines
+      emits "CommandParsed"
+    end
+
+    ParseInlineCommand do
+      role "System"
+      description "Parse a single-line command using brace syntax: Name { role 'Admin'; emits 'Created' }"
+      String :line
+      emits "InlineCommandParsed"
+    end
+  end
+
+  aggregate "ValueObjectParser", "Parses a value_object block into a ValueObject IR node with attributes" do
+    String :name
+    String :description
+    list_of(String) :attributes
+
+    ParseValueObject do
+      role "System"
+      description "Parse value_object block — name from string, then attributes via explicit or shorthand syntax"
+      list_of(String) :lines
+      emits "ValueObjectParsed"
+    end
+  end
+
+  aggregate "PolicyParser", "Parses a policy block — on event, trigger command, optional across domain" do
+    String :name
+    String :on_event
+    String :trigger_command
+    String :target_domain
+
+    ParsePolicy do
+      role "System"
+      description "Parse policy block with on, trigger, and optional across directives"
+      list_of(String) :lines
+      emits "PolicyParsed"
+    end
+  end
+
+  aggregate "LifecycleParser", "Parses a lifecycle block — field, default state, and transitions" do
+    String :field
+    String :default
+    list_of(String) :transitions
+
+    ParseLifecycle do
+      role "System"
+      description "Parse lifecycle block: extract field symbol, default state, and transition mappings with optional from constraints"
+      list_of(String) :lines
+      emits "LifecycleParsed"
+    end
+  end
+
+  aggregate "AttributeParser", "Parses an attribute line into name, type, default, and list flag" do
+    String :name
+    String :attr_type
+    String :default
+    Boolean :list
+
+    ParseAttribute do
+      role "System"
+      description "Parse attribute line: extract symbol name, type from second comma-segment, list flag, and default value"
+      String :line
+      emits "AttributeParsed"
+    end
+  end
+
+  aggregate "MutationParser", "Parses then_set / then_toggle lines into field, operation, and value" do
+    String :field
+    String :operation
+    String :value
+
+    ParseMutation do
+      role "System"
+      description "Parse mutation line — detect set/append/increment/decrement via keyword, extract field and value"
+      String :line
+      emits "MutationParsed"
+    end
+  end
+
+  aggregate "FixtureParser", "Parses a fixture line into aggregate name and key-value attribute pairs" do
+    String :aggregate_name
+    list_of(String) :attributes
+
+    ParseFixture do
+      role "System"
+      description "Parse fixture line: extract aggregate name from string, then key: value pairs after first comma"
+      String :line
+      emits "FixtureParsed"
+    end
+  end
+
+  fixture "CommandParser", name: "CreatePizza", description: "", role: "User", attributes: "[]", references: "[]", emits: "PizzaCreated", givens: "[]", mutations: "[]"
+  fixture "CommandParser", name: "StartSprint", description: "", role: "Admin", attributes: "[\"sprint_id\"]", references: "[\"Sprint\"]", emits: "SprintStarted", givens: "[]", mutations: "[]"
+  fixture "ValueObjectParser", name: "Address", description: "", attributes: "[\"street\", \"city\", \"zip\"]"
+  fixture "ValueObjectParser", name: "Money", description: "", attributes: "[\"amount\", \"currency\"]"
+  fixture "PolicyParser", name: "NotifyOnCreate", on_event: "PizzaCreated", trigger_command: "SendNotification", target_domain: ""
+  fixture "PolicyParser", name: "SyncInventory", on_event: "OrderPlaced", trigger_command: "DeductStock", target_domain: "Inventory"
+  fixture "LifecycleParser", field: "status", default: "draft", transitions: "[\"Publish => published\", \"Archive => archived\"]"
+  fixture "LifecycleParser", field: "state", default: "pending", transitions: "[\"Approve => approved\", \"Reject => rejected\"]"
+  fixture "AttributeParser", name: "title", attr_type: "String", default: "", list: false
+  fixture "AttributeParser", name: "tags", attr_type: "String", default: "", list: true
+  fixture "MutationParser", field: "status", operation: "set", value: "active"
+  fixture "MutationParser", field: "count", operation: "increment", value: "1"
+  fixture "FixtureParser", aggregate_name: "Pizza", attributes: "[\"name: Margherita\", \"size: large\"]"
+  fixture "FixtureParser", aggregate_name: "Story", attributes: "[\"title: Login Flow\", \"status: todo\"]"
+end

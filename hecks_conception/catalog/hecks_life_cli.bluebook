@@ -1,0 +1,91 @@
+Hecks.bluebook "HecksLifeCli", version: "2026.04.15.1" do
+  vision "CLI router — dispatches ARGV to command handlers built from Bluebook aggregates"
+  category "runtime"
+
+  aggregate "CommandEntry", "A CLI command derived from a Bluebook aggregate — name, description, options" do
+    String :name
+    String :description
+    list_of(OptionDef) :options
+
+    BuildRegistry do
+      role "System"
+      description "Scan domain IR for aggregates ending in Command, derive CLI names and options"
+      reference_to(Domain)
+      emits "RegistryBuilt"
+    end
+
+    PrintHelp do
+      role "User"
+      description "Display grouped help listing all registered commands"
+      emits "HelpPrinted"
+    end
+
+    PrintCommandHelp do
+      role "User"
+      description "Display help for a single command including its options"
+      reference_to(CommandEntry)
+      emits "CommandHelpPrinted"
+    end
+  end
+
+  aggregate "OptionDef", "A flag or argument derived from a command's attributes" do
+    String :name
+    String :attr_type
+
+    Define do
+      role "System"
+      description "Create an option definition from a command attribute"
+      String :name
+      String :attr_type
+      emits "OptionDefined"
+    end
+  end
+
+  aggregate "Invocation", "Parsed ARGV for a matched command — command name, positional args, options map" do
+    String :command
+    list_of(String) :args
+    String :options
+
+    ParseArgv do
+      role "System"
+      description "Match first ARGV token against registry, split remaining into args and --options"
+      list_of(String) :argv
+      reference_to(CommandEntry)
+      emits "InvocationParsed"
+    end
+
+    RejectUnknown do
+      role "System"
+      description "No registry entry matches the given command name"
+      String :command_name
+      emits "UnknownCommandRejected"
+    end
+  end
+
+  aggregate "CliDomain", "The CLI domain loaded from a bluebook file for command routing" do
+    String :path
+    String :source
+
+    LoadCliDomain do
+      role "System"
+      description "Read and parse a bluebook file into domain IR for CLI routing"
+      String :path
+      emits "CliDomainLoaded"
+    end
+
+    PrintVersion do
+      role "User"
+      description "Print the hecks-life binary version from Cargo metadata"
+      emits "VersionPrinted"
+    end
+  end
+
+  fixture "CommandEntry", name: "validate", description: "Lints a domain definition for errors", options: "[]"
+  fixture "CommandEntry", name: "inspect", description: "Displays detailed domain structure", options: "[]"
+  fixture "OptionDef", name: "format", attr_type: "String"
+  fixture "OptionDef", name: "verbose", attr_type: "Boolean"
+  fixture "Invocation", command: "validate", args: "[\"pizzas.bluebook\"]", options: "{}"
+  fixture "Invocation", command: "tree", args: "[\"pm.bluebook\"]", options: "{\"verbose\": \"true\"}"
+  fixture "CliDomain", path: "cli.bluebook", source: ""
+  fixture "CliDomain", path: "winter.bluebook", source: ""
+end

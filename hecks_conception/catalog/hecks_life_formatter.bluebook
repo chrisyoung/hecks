@@ -1,0 +1,56 @@
+Hecks.bluebook "HecksLifeFormatter", version: "2026.04.15.1" do
+  vision "Domain formatter — terminal display of parsed domains in three views: inspect, tree, list"
+  category "runtime"
+
+  aggregate "InspectView", "Full-detail terminal view — every aggregate with attributes, commands, behavior, lifecycle" do
+    String :domain_name
+    String :output
+
+    Inspect do
+      role "User"
+      description "Render full domain inspection: aggregates, attributes, commands, mutations, givens, lifecycle, policies, vows"
+      reference_to(Domain)
+      emits "DomainInspected"
+    end
+
+    InspectAggregate do
+      role "System"
+      description "Render a single aggregate with attributes, references, value objects, commands, and lifecycle"
+      reference_to(Aggregate)
+      emits "AggregateInspected"
+    end
+  end
+
+  aggregate "TreeView", "Compact hierarchy view — domain as an ASCII tree with branch connectors" do
+    String :domain_name
+    String :output
+
+    RenderTree do
+      role "User"
+      description "Print domain name, then aggregates with branch connectors, then commands nested under each"
+      reference_to(Domain)
+      emits "TreeRendered"
+    end
+  end
+
+  aggregate "ListView", "Summary counts view — aggregate names, command counts, policy counts" do
+    String :domain_name
+    Integer :aggregate_count
+    Integer :policy_count
+    String :output
+
+    RenderList do
+      role "User"
+      description "Print domain summary with aggregate count and policy count, then list each aggregate's commands"
+      reference_to(Domain)
+      emits "ListRendered"
+    end
+  end
+
+  fixture "InspectView", domain_name: "Pizzas", output: "Domain: Pizzas\n==============\n  Pizza\n    Attributes:\n      name : String"
+  fixture "InspectView", domain_name: "ProjectManagement", output: "Domain: ProjectManagement\n=========================\n  Story\n    Attributes:"
+  fixture "TreeView", domain_name: "Pizzas", output: "Pizzas\n└── Pizza\n    └── CreatePizza"
+  fixture "TreeView", domain_name: "PM", output: "PM\n├── Story\n│   └── CreateStory\n└── Sprint\n    └── StartSprint"
+  fixture "ListView", domain_name: "Pizzas", aggregate_count: 1, policy_count: 0, output: "Pizzas — 1 aggregate(s), 0 policy(ies)"
+  fixture "ListView", domain_name: "PM", aggregate_count: 3, policy_count: 2, output: "PM — 3 aggregate(s), 2 policy(ies)"
+end

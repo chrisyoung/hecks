@@ -15,7 +15,7 @@
 //!   hecks-life conceive  "Name" "vision" --corpus dir1 dir2
 //!   hecks-life develop   target.bluebook --add "feature"
 
-use hecks_life::{parser, formatter, validator, validator_warnings, server, repl, conceiver, heki, boot, daemon, tongue, lexicon, terminal, project, training, action_stack};
+use hecks_life::{parser, formatter, validator, validator_warnings, server, repl, conceiver, heki, boot, daemon, tongue, lexicon, terminal, project, training, action_stack, enforce};
 use hecks_life::runtime::Runtime;
 
 use std::env;
@@ -59,6 +59,13 @@ fn main() {
     if command == "action" {
         let project_dir = resolve_project_dir(&args);
         action_stack::run_action_command(&args, &project_dir);
+        return;
+    }
+
+    // Enforce is exempt from gate — it IS the enforcement layer
+    if command == "enforce" {
+        let project_dir = resolve_project_dir(&args);
+        enforce::run_command(&args, &project_dir);
         return;
     }
 

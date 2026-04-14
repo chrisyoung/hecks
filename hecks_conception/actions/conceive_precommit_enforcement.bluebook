@@ -1,0 +1,44 @@
+Hecks.bluebook "ConceivePrecommitEnforcement", version: "2026.04.15.1" do
+  vision "Git pre-commit hook calls hecks-life enforce --diff. Deterministic. No commit without passing law."
+  category "action"
+
+  aggregate "Action", "Conceive and implement pre-commit enforcement" do
+    String :action_name
+    String :rationale
+    String :status
+
+    Plan do
+      role "Winter"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+    end
+
+    Execute do
+      role "Winter"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Winter"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  fixture "Action", action_name: "ConceivePrecommitEnforcement", rationale: "Git hooks are deterministic. pre-commit calls hecks-life enforce --diff. No commit without passing law. This is where enforcement gets teeth.", status: "planned"
+end

@@ -1,0 +1,114 @@
+Hecks.bluebook "HecksLifeParserHelpers", version: "2026.04.15.1" do
+  vision "String extraction and DSL pattern matching utilities — pull strings, symbols, blocks, and keywords from Bluebook DSL lines"
+  category "runtime"
+
+  aggregate "StringExtractor", "Extracts quoted strings, symbols, and blocks from DSL lines" do
+    String :input_line
+    String :extracted_value
+
+    ExtractString do
+      role "System"
+      description "Find first quoted string in a line — returns content between first pair of double quotes"
+      String :line
+      emits "StringExtracted"
+    end
+
+    ExtractSecondString do
+      role "System"
+      description "Find the second quoted string in a line — skips first pair of quotes"
+      String :line
+      emits "SecondStringExtracted"
+    end
+
+    ExtractSymbol do
+      role "System"
+      description "Extract a Ruby-style symbol after colon — alphanumeric and underscores only"
+      String :line
+      emits "SymbolExtracted"
+    end
+
+    ExtractWordAfter do
+      role "System"
+      description "Extract the first word after a keyword — used for reference_to targets"
+      String :line
+      String :keyword
+      emits "WordExtracted"
+    end
+
+    ExtractBlock do
+      role "System"
+      description "Extract content between curly braces — used for inline command and given blocks"
+      String :line
+      emits "BlockExtracted"
+    end
+
+    ExtractAfter do
+      role "System"
+      description "Extract trimmed text after a keyword like default: or to: — strips trailing commas"
+      String :line
+      String :keyword
+      emits "AfterExtracted"
+    end
+  end
+
+  aggregate "BlockDetector", "Detects DSL block boundaries — do/end pairs and shorthand patterns" do
+    String :line
+    Boolean :is_block
+
+    EndsWithDoBlock do
+      role "System"
+      description "Check if a line ends with ' do' as a whole word — excludes 'domain', 'document', etc."
+      String :line
+      emits "DoBlockDetected"
+    end
+
+    IsShorthandLine do
+      role "System"
+      description "Detect shorthand attribute or reference lines: String :name, list_of(X) :y, reference_to(X)"
+      String :line
+      emits "ShorthandLineDetected"
+    end
+
+    IsShorthandCommand do
+      role "System"
+      description "Detect bare PascalCase command like CreatePizza do — not a keyword, has uppercase then lowercase"
+      String :line
+      emits "ShorthandCommandDetected"
+    end
+  end
+
+  aggregate "ShorthandParser", "Parses shorthand syntax for attributes and references" do
+    String :line
+    String :result_type
+
+    ParseShorthandAttribute do
+      role "System"
+      description "Parse String :name, Integer :count, list_of(Order) :tags into Attribute struct"
+      String :line
+      emits "ShorthandAttributeParsed"
+    end
+
+    ParseShorthandReference do
+      role "System"
+      description "Parse reference_to(Order) or reference_to(Order).as(:recent_purchase) into Reference struct"
+      String :line
+      emits "ShorthandReferenceParsed"
+    end
+
+    ParseShorthand do
+      role "System"
+      description "Unified dispatcher — route to attribute or reference parser based on line prefix"
+      String :line
+      emits "ShorthandParsed"
+    end
+  end
+
+  fixture "StringExtractor", input_line: "aggregate \"Pizza\" do", extracted_value: "Pizza"
+  fixture "StringExtractor", input_line: "command \"Create\" do", extracted_value: "Create"
+  fixture "BlockDetector", line: "CreatePizza do", is_block: true
+  fixture "BlockDetector", line: "String :name", is_block: false
+  fixture "ShorthandParser", line: "String :name", result_type: "Attribute"
+  fixture "ShorthandParser", line: "reference_to(Order)", result_type: "Reference"
+  fixture "ShorthandParser", line: "list_of(String) :tags", result_type: "Attribute"
+  fixture "ShorthandParser", line: "reference_to(Billing::Invoice).as(:last_invoice)", result_type: "Reference"
+end

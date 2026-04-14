@@ -1,0 +1,133 @@
+Hecks.bluebook "HecksLifePrecommit", version: "2026.04.15.1" do
+  vision "Pre-commit enforcement — reads git diff, checks changed files against laws, blocks commit if violations found"
+  category "runtime"
+
+  # ============================================================
+  # PRE-COMMIT ENFORCEMENT
+  # ============================================================
+  #
+  # Git pre-commit hook calls:
+  #   hecks-life enforce --diff <conception-dir>
+  #
+  # The engine:
+  #   1. Runs `git diff --cached --name-only` to get staged files
+  #   2. Categorizes each file (bluebook, code, script, action, heki)
+  #   3. Checks applicable laws against each changed file
+  #   4. Compiles a report
+  #   5. Exit 0 if clear/warned, exit 1 if blocked
+  #
+  # Laws checked per file type:
+  #   .rb/.js files:  FileSizeLimit, DocHeaders
+  #   .bluebook files: FixturesRequired, CommandsRequired, VisionRequired
+  #   .py/.sh/.js scripts in conception: BluebookOnly (must have catalog bluebook)
+  #   any file: ActionFirst (action bluebook must be staged or on stack)
+  #
+  # The hook is deterministic. Git runs it. Not Claude. Not the LLM.
+  # If it exits 1, git refuses the commit. No override. No skip.
+
+  aggregate "DiffCheck", "Read the staged diff and categorize changed files" do
+    Integer :files_staged
+    Integer :bluebooks_changed
+    Integer :code_changed
+    Integer :scripts_changed
+    Integer :actions_staged
+
+    ReadDiff do
+      role "Binary"
+      description "Run git diff --cached --name-only, categorize each file"
+      emits "DiffRead"
+    end
+  end
+
+  aggregate "FileCheck", "One file checked against applicable laws" do
+    String :file_path
+    String :file_type
+    Integer :laws_checked
+    Integer :passed
+    Integer :failed
+    list_of(String) :violations
+
+    CheckFile do
+      role "Binary"
+      description "Check one staged file against all applicable laws"
+      String :file_path
+      String :file_type
+      emits "FileChecked"
+      then_set :file_path, to: :file_path
+      then_set :file_type, to: :file_type
+    end
+
+    RecordViolation do
+      role "Binary"
+      description "A law was violated for this file"
+      reference_to(FileCheck)
+      String :law_name
+      String :detail
+      emits "ViolationFound"
+      then_set :violations, append: :law_name
+      then_set :failed, increment: 1
+    end
+
+    RecordPass do
+      role "Binary"
+      description "A law passed for this file"
+      reference_to(FileCheck)
+      emits "LawPassed"
+      then_set :passed, increment: 1
+    end
+  end
+
+  aggregate "CommitVerdict", "The final verdict — commit allowed or blocked" do
+    Integer :total_files
+    Integer :total_violations
+    Integer :total_warnings
+    String :verdict
+    list_of(String) :blocked_files
+
+    RenderVerdict do
+      role "Binary"
+      description "Tally all file checks, render final verdict"
+      Integer :total_files
+      Integer :total_violations
+      Integer :total_warnings
+      emits "VerdictRendered"
+      then_set :total_files, to: :total_files
+      then_set :total_violations, to: :total_violations
+      then_set :total_warnings, to: :total_warnings
+    end
+
+    AllowCommit do
+      role "Binary"
+      description "No blocking violations — commit proceeds"
+      reference_to(CommitVerdict)
+      emits "CommitAllowed"
+      given("no violations") { total_violations == 0 }
+      then_set :verdict, to: "allowed"
+    end
+
+    BlockCommit do
+      role "Binary"
+      description "Blocking violations found — commit refused, report printed"
+      reference_to(CommitVerdict)
+      emits "CommitBlocked"
+      then_set :verdict, to: "blocked"
+    end
+  end
+
+  policy "CheckOnDiff" do
+    on "DiffRead"
+    trigger "CheckFile"
+  end
+
+  policy "VerdictOnCheck" do
+    on "FileChecked"
+    trigger "RenderVerdict"
+  end
+
+  # Fixtures
+  fixture "DiffCheck", files_staged: 5, bluebooks_changed: 2, code_changed: 2, scripts_changed: 0, actions_staged: 1
+  fixture "FileCheck", file_path: "lib/hecks/dsl/bluebook_builder.rb", file_type: "ruby", laws_checked: 2, passed: 1, failed: 1, violations: ["FileSizeLimit"]
+  fixture "FileCheck", file_path: "nursery/governance/hecks/enforcement.bluebook", file_type: "bluebook", laws_checked: 3, passed: 3, failed: 0, violations: []
+  fixture "CommitVerdict", total_files: 5, total_violations: 1, total_warnings: 0, verdict: "blocked", blocked_files: ["lib/hecks/dsl/bluebook_builder.rb"]
+  fixture "CommitVerdict", total_files: 3, total_violations: 0, total_warnings: 1, verdict: "allowed", blocked_files: []
+end

@@ -1,0 +1,63 @@
+Hecks.bluebook "HecksLifeJsonHelpers", version: "2026.04.15.1" do
+  vision "Zero-dependency JSON serialization and parsing for the HTTP server dispatch protocol"
+  category "runtime"
+
+  aggregate "DispatchBody", "A parsed command dispatch body — command name plus attribute map" do
+    String :command
+    String :attrs
+
+    ParseDispatchBody do
+      role "System"
+      description "Parse JSON body with command and attrs keys into a command name and typed attribute map"
+      String :body
+      emits "DispatchBodyParsed"
+    end
+
+    RejectMalformed do
+      role "System"
+      description "Body has no command key or is not valid JSON structure"
+      String :body
+      emits "MalformedBodyRejected"
+    end
+  end
+
+  aggregate "JsonValue", "A runtime Value serialized to or parsed from JSON" do
+    String :json_string
+    String :value_type
+
+    SerializeValue do
+      role "System"
+      description "Convert a runtime Value (Str, Int, Bool, Null, List, Map) to its JSON representation"
+      String :value
+      emits "ValueSerialized"
+    end
+
+    SerializeMap do
+      role "System"
+      description "Convert a HashMap of String to Value into a JSON object string"
+      String :fields
+      emits "MapSerialized"
+    end
+
+    ParseJsonValue do
+      role "System"
+      description "Parse a JSON token into a typed Value — string, integer, boolean, or null"
+      String :token
+      emits "JsonValueParsed"
+    end
+
+    EscapeString do
+      role "System"
+      description "Wrap a string in JSON quotes with internal quote escaping"
+      String :input
+      emits "StringEscaped"
+    end
+  end
+
+  fixture "DispatchBody", command: "CreatePizza", attrs: "{\"name\": \"Margherita\", \"size\": \"large\"}"
+  fixture "DispatchBody", command: "StartSprint", attrs: "{\"sprint_id\": 42}"
+  fixture "JsonValue", json_string: "\"hello\"", value_type: "Str"
+  fixture "JsonValue", json_string: "42", value_type: "Int"
+  fixture "JsonValue", json_string: "true", value_type: "Bool"
+  fixture "JsonValue", json_string: "null", value_type: "Null"
+end

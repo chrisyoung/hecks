@@ -1,0 +1,40 @@
+Hecks.bluebook "HecksLifeLib", version: "2026.04.15.1" do
+  vision "The Bluebook compiler and runtime — reads .bluebook files, parses them into IR, and executes them. The Bluebook is DNA. This is the ribosome. The runtime is life."
+  category "runtime"
+
+  aggregate "ModuleRegistry", "The top-level module graph — every subsystem the crate exposes" do
+    String :name
+    list_of(String) :modules
+
+    RegisterModule do
+      role "System"
+      description "Declare a public module in the crate root — parser, IR, runtime, server, etc."
+      String :module_name
+      emits "ModuleRegistered"
+    end
+
+    ListModules do
+      role "System"
+      description "Enumerate all public modules: parser_helpers, parse_blocks, parser, ir, runtime, json_helpers, server, validator, validator_warnings, formatter, repl, cli, conceiver, heki, boot, daemon, tongue, lexicon, terminal, project, training, action_stack"
+      emits "ModulesListed"
+    end
+  end
+
+  aggregate "Crate", "The hecks-life binary crate — entry point for the domain compiler" do
+    String :name
+    String :version
+    Integer :module_count
+
+    Boot do
+      role "System"
+      description "Initialize the crate, making all 22 public modules available"
+      emits "CrateBooted"
+      then_set :module_count, to: 22
+    end
+  end
+
+  fixture "ModuleRegistry", name: "hecks_life", modules: "[\"parser\", \"ir\", \"runtime\", \"server\", \"cli\", \"boot\", \"daemon\"]"
+  fixture "ModuleRegistry", name: "hecks_life", modules: "[\"heki\", \"formatter\", \"validator\", \"conceiver\", \"tongue\", \"lexicon\"]"
+  fixture "Crate", name: "hecks-life", version: "0.1.0", module_count: 22
+  fixture "Crate", name: "hecks-life", version: "2026.04.15.1", module_count: 22
+end

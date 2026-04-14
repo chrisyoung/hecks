@@ -1,0 +1,79 @@
+Hecks.bluebook "HecksLifeProject", version: "2026.04.15.1" do
+  vision "Emit a self-contained client-side app from domain IR — Alan's theme, localStorage runtime, no server needed"
+  category "runtime"
+
+  aggregate "ProjectedApp", "A self-contained HTML app generated from a domain — sidebar, modals, CRUD, lifecycle transitions" do
+    String :domain_name
+    String :html_output
+    Integer :aggregate_count
+
+    Project do
+      role "User"
+      description "Generate a complete single-page app from domain IR: sidebar nav, stats row, search, create/edit modals, localStorage persistence, seed data from fixtures"
+      reference_to(Domain)
+      emits "AppProjected"
+    end
+  end
+
+  aggregate "Sidebar", "Navigation sidebar — links per aggregate, sub-items for lifecycle states, settings" do
+    String :domain_name
+    list_of(String) :aggregate_links
+    list_of(String) :lifecycle_filters
+
+    BuildSidebar do
+      role "System"
+      description "Build sidebar HTML with All link, per-aggregate links with icons, lifecycle state sub-filters, and settings"
+      reference_to(Domain)
+      emits "SidebarBuilt"
+    end
+  end
+
+  aggregate "Modal", "Create/edit dialog for an aggregate — form fields derived from attributes, lifecycle selects, enum dropdowns" do
+    String :aggregate_name
+    list_of(String) :fields
+    Boolean :has_lifecycle
+    Boolean :has_delete
+
+    EmitModal do
+      role "System"
+      description "Generate a dialog element with form fields: text inputs, number inputs, checkboxes, selects for enums and lifecycle, textarea for description fields"
+      reference_to(Aggregate)
+      emits "ModalEmitted"
+    end
+  end
+
+  aggregate "ClientRuntime", "Client-side JavaScript runtime — localStorage CRUD, transitions, search, keyboard shortcuts" do
+    String :domain_name
+    Integer :storage_key_count
+
+    EmitRuntime do
+      role "System"
+      description "Generate JS: storage keys, transition maps, save/delete/transition functions, view switching, search, toast, seeding from fixtures, keyboard shortcuts"
+      reference_to(Domain)
+      emits "RuntimeEmitted"
+    end
+  end
+
+  aggregate "SeedData", "Fixture-based seed data injected into localStorage on first load" do
+    String :aggregate_name
+    Integer :fixture_count
+
+    EmitSeed do
+      role "System"
+      description "Generate seed function that checks if data exists, then inserts fixture records with UUIDs and timestamps"
+      reference_to(Domain)
+      emits "SeedEmitted"
+    end
+  end
+
+  fixture "ProjectedApp", domain_name: "Pizzas", html_output: "<html>...</html>", aggregate_count: 1
+  fixture "ProjectedApp", domain_name: "ProjectManagement", html_output: "<html>...</html>", aggregate_count: 3
+  fixture "Sidebar", domain_name: "PM", aggregate_links: "[\"story\", \"sprint\"]", lifecycle_filters: "[\"todo\", \"in_progress\", \"done\"]"
+  fixture "Sidebar", domain_name: "Pizzas", aggregate_links: "[\"pizza\"]", lifecycle_filters: "[]"
+  fixture "Modal", aggregate_name: "Pizza", fields: "[\"name\", \"size\", \"toppings\"]", has_lifecycle: false, has_delete: true
+  fixture "Modal", aggregate_name: "Story", fields: "[\"title\", \"description\", \"priority\"]", has_lifecycle: true, has_delete: true
+  fixture "ClientRuntime", domain_name: "Pizzas", storage_key_count: 1
+  fixture "ClientRuntime", domain_name: "PM", storage_key_count: 3
+  fixture "SeedData", aggregate_name: "Pizza", fixture_count: 2
+  fixture "SeedData", aggregate_name: "Story", fixture_count: 3
+end

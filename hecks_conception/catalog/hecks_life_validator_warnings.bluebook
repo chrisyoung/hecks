@@ -1,0 +1,52 @@
+Hecks.bluebook "HecksLifeValidatorWarnings", version: "2026.04.15.1" do
+  vision "Soft warnings for domain quality — non-failing checks that help modelers spot bounded-context smell early"
+  category "runtime"
+
+  aggregate "WarningRunner", "Runs all warning rules against a domain and collects results" do
+    String :domain_name
+    list_of(String) :warnings
+
+    RunWarnings do
+      role "System"
+      description "Execute all warning rules against a domain IR and return collected warning strings"
+      reference_to(Domain)
+      emits "WarningsCollected"
+    end
+  end
+
+  aggregate "AggregateCountWarning", "Warns when a domain has more than 7 aggregates — it may need splitting into bounded contexts" do
+    String :domain_name
+    Integer :aggregate_count
+    Integer :threshold
+    Boolean :triggered
+
+    CheckAggregateCount do
+      role "System"
+      description "Count aggregates in domain — if more than 7, emit a warning suggesting the domain be split"
+      reference_to(Domain)
+      emits "AggregateCountChecked"
+      given("domain has many aggregates") { aggregate_count > 7 }
+    end
+  end
+
+  aggregate "MixedConcernsWarning", "Warns when aggregates form disconnected clusters — references and policies build a graph, BFS finds components" do
+    String :domain_name
+    Integer :component_count
+    list_of(String) :disconnected_pairs
+
+    CheckMixedConcerns do
+      role "System"
+      description "Build adjacency graph from references and policies, run BFS to find connected components, warn on disconnected clusters (only for 5+ aggregates)"
+      reference_to(Domain)
+      emits "MixedConcernsChecked"
+      given("domain is large enough to check") { aggregate_count >= 5 }
+    end
+  end
+
+  fixture "WarningRunner", domain_name: "Pizzas", warnings: "[]"
+  fixture "WarningRunner", domain_name: "KitchenSink", warnings: "[\"Domain KitchenSink has 12 aggregates — consider splitting into bounded contexts\"]"
+  fixture "AggregateCountWarning", domain_name: "SmallDomain", aggregate_count: 3, threshold: 7, triggered: false
+  fixture "AggregateCountWarning", domain_name: "HugeDomain", aggregate_count: 12, threshold: 7, triggered: true
+  fixture "MixedConcernsWarning", domain_name: "Cohesive", component_count: 1, disconnected_pairs: "[]"
+  fixture "MixedConcernsWarning", domain_name: "Fragmented", component_count: 3, disconnected_pairs: "[\"Order and Notification\", \"Order and AuditLog\"]"
+end
