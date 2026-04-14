@@ -1,0 +1,267 @@
+Hecks.bluebook "TaskRuntime", version: "2026.04.15.1" do
+  vision "All tasks run through hecks-life — portable across any agent. No platform daemons, no Claude-specific hooks."
+  category "governance"
+
+  # ============================================================
+  # THE RUNTIME TASK SYSTEM
+  # ============================================================
+  #
+  # Instead of:
+  #   - Claude PostToolUse hooks (Claude-specific)
+  #   - System daemons (OS-specific)
+  #   - Background agents (Claude-specific)
+  #
+  # Everything becomes:
+  #   hecks-life task <name> [args]
+  #
+  # The runtime manages:
+  #   - A task queue (what needs to run)
+  #   - Task triggers (when to run it)
+  #   - Task state (running, completed, failed)
+  #   - Task output (results flow back to the caller)
+  #
+  # Any agent — Claude, Ollama, future — just calls hecks-life.
+  # The tasks are the same regardless of who's thinking.
+
+  aggregate "Task", "A named unit of work that runs through hecks-life" do
+    String :name
+    String :description
+    String :command
+    String :trigger_type
+    String :status
+    Integer :run_count
+    String :last_run_at
+    String :last_result
+
+    Register do
+      role "Architect"
+      description "Register a task in the runtime — give it a name, command, and trigger"
+      String :name
+      String :description
+      String :command
+      String :trigger_type
+      emits "TaskRegistered"
+      then_set :name, to: :name
+      then_set :description, to: :description
+      then_set :command, to: :command
+      then_set :trigger_type, to: :trigger_type
+      then_set :status, to: "registered"
+      then_set :run_count, to: 0
+    end
+
+    Run do
+      role "hecks-life"
+      description "Execute the task — hecks-life runs the command and captures output"
+      reference_to(Task)
+      emits "TaskRun"
+      then_set :run_count, increment: 1
+      then_set :status, to: "running"
+    end
+
+    Complete do
+      role "hecks-life"
+      description "Task finished successfully"
+      reference_to(Task)
+      String :result
+      String :completed_at
+      emits "TaskCompleted"
+      then_set :last_result, to: :result
+      then_set :last_run_at, to: :completed_at
+      then_set :status, to: "completed"
+    end
+
+    Fail do
+      role "hecks-life"
+      description "Task failed — record the error"
+      reference_to(Task)
+      String :error
+      String :failed_at
+      emits "TaskFailed"
+      then_set :last_result, to: :error
+      then_set :last_run_at, to: :failed_at
+      then_set :status, to: "failed"
+    end
+
+    Disable do
+      role "Architect"
+      description "Stop this task from running — it stays registered but won't trigger"
+      reference_to(Task)
+      emits "TaskDisabled"
+      then_set :status, to: "disabled"
+    end
+
+    lifecycle :status, default: "unregistered" do
+      transition "Register" => "registered"
+      transition "Run" => "running", from: ["registered", "completed", "failed"]
+      transition "Complete" => "completed", from: "running"
+      transition "Fail" => "failed", from: "running"
+      transition "Disable" => "disabled", from: ["registered", "completed", "failed"]
+    end
+  end
+
+  aggregate "Trigger", "When a task fires — on event, on schedule, on boot, on action" do
+    String :task_name
+    String :trigger_type
+    String :trigger_source
+    String :schedule
+    Boolean :enabled
+
+    OnEvent do
+      role "Architect"
+      description "Fire the task when a specific event occurs — replaces PostToolUse hooks"
+      String :task_name
+      String :event_name
+      emits "EventTriggerRegistered"
+      then_set :task_name, to: :task_name
+      then_set :trigger_type, to: "event"
+      then_set :trigger_source, to: :event_name
+      then_set :enabled, to: true
+    end
+
+    OnBoot do
+      role "Architect"
+      description "Fire the task at boot — replaces SessionStart hooks"
+      String :task_name
+      emits "BootTriggerRegistered"
+      then_set :task_name, to: :task_name
+      then_set :trigger_type, to: "boot"
+      then_set :trigger_source, to: "SessionLive"
+      then_set :enabled, to: true
+    end
+
+    OnShutdown do
+      role "Architect"
+      description "Fire the task at session end — replaces Stop hooks"
+      String :task_name
+      emits "ShutdownTriggerRegistered"
+      then_set :task_name, to: :task_name
+      then_set :trigger_type, to: "shutdown"
+      then_set :trigger_source, to: "SessionEnded"
+      then_set :enabled, to: true
+    end
+
+    OnSchedule do
+      role "Architect"
+      description "Fire the task on a schedule — replaces cron daemons"
+      String :task_name
+      String :schedule
+      emits "ScheduleTriggerRegistered"
+      then_set :task_name, to: :task_name
+      then_set :trigger_type, to: "schedule"
+      then_set :schedule, to: :schedule
+      then_set :enabled, to: true
+    end
+
+    OnAction do
+      role "Architect"
+      description "Fire the task when an action is conceived or completed — governance integration"
+      String :task_name
+      String :action_event
+      emits "ActionTriggerRegistered"
+      then_set :task_name, to: :task_name
+      then_set :trigger_type, to: "action"
+      then_set :trigger_source, to: :action_event
+      then_set :enabled, to: true
+    end
+  end
+
+  aggregate "TaskQueue", "The queue of pending tasks — hecks-life processes them in order" do
+    Integer :pending
+    Integer :running
+    Integer :completed
+    Integer :failed
+
+    Enqueue do
+      role "hecks-life"
+      description "Add a task to the queue — it will run when the runtime processes it"
+      emits "TaskEnqueued"
+      then_set :pending, increment: 1
+    end
+
+    Dequeue do
+      role "hecks-life"
+      description "Pick the next task off the queue and run it"
+      reference_to(TaskQueue)
+      emits "TaskDequeued"
+      then_set :pending, decrement: 1
+      then_set :running, increment: 1
+    end
+
+    RecordCompletion do
+      role "hecks-life"
+      description "A running task finished"
+      reference_to(TaskQueue)
+      Boolean :success
+      emits "QueueUpdated"
+      then_set :running, decrement: 1
+    end
+  end
+
+  # ============================================================
+  # POLICIES — triggers fire tasks
+  # ============================================================
+
+  policy "EnqueueOnEvent" do
+    on "EventTriggerRegistered"
+    trigger "Enqueue"
+    description "When an event trigger fires, enqueue the task"
+  end
+
+  policy "RunOnDequeue" do
+    on "TaskDequeued"
+    trigger "Run"
+    description "When a task is dequeued, execute it"
+  end
+
+  policy "CompleteOnSuccess" do
+    on "TaskCompleted"
+    trigger "RecordCompletion"
+  end
+
+  policy "FailOnError" do
+    on "TaskFailed"
+    trigger "RecordCompletion"
+  end
+
+  # Connect to enforcement — every task run is an action
+  policy "EnforceOnRun" do
+    on "TaskRun"
+    trigger "InspectAction"
+    description "Every task run is inspected by enforcement"
+  end
+
+  # ============================================================
+  # FIXTURES — the current tasks migrated from hooks/daemons
+  # ============================================================
+
+  # Boot tasks (currently SessionStart hooks)
+  fixture "Task", name: "boot_winter", description: "Load organs, nerves, laws — Winter comes alive", command: "hecks-life boot hecks_conception", trigger_type: "boot", status: "registered", run_count: 164, last_run_at: "2026-04-15T08:00:00Z", last_result: "19 organs, 11 nerves, 2 vows"
+  fixture "Task", name: "update_codebase_index", description: "Rebuild the codebase index for search", command: "hecks-life index hecks_conception", trigger_type: "boot", status: "registered", run_count: 164, last_run_at: "2026-04-15T08:00:00Z", last_result: "344 bluebooks indexed"
+  fixture "Task", name: "init_action_stack", description: "Create session action and initialize the action stack", command: "hecks-life action init", trigger_type: "boot", status: "registered", run_count: 164, last_run_at: "2026-04-15T08:00:00Z", last_result: "stack initialized, session action created"
+
+  # Heartbeat tasks (currently PostToolUse hook)
+  fixture "Task", name: "pulse", description: "Heartbeat — record that Winter is alive and working", command: "hecks-life daemon pulse hecks_conception", trigger_type: "event", status: "registered", run_count: 165000, last_run_at: "2026-04-15T08:30:00Z", last_result: "beat 165001"
+
+  # Enforcement tasks (new — replaces nothing, adds governance)
+  fixture "Task", name: "enforce", description: "Run enforcement check on the current action", command: "hecks-life enforce --current-action", trigger_type: "action", status: "registered", run_count: 12, last_run_at: "2026-04-15T08:25:00Z", last_result: "clear — 5 laws checked, 0 violations"
+
+  # Shutdown tasks (currently Stop hooks)
+  fixture "Task", name: "install_gem", description: "Build and install the hecks gem", command: "cd /Users/christopheryoung/Projects/hecks && gem build hecks.gemspec --silent && gem install hecks-*.gem --no-document && rm -f hecks-*.gem", trigger_type: "shutdown", status: "registered", run_count: 50, last_run_at: "2026-04-14T23:00:00Z", last_result: "hecks 2026.04.14.1 installed"
+  fixture "Task", name: "dream", description: "Pulse dream — crossover signals for sleep", command: "hecks-life daemon dream hecks_conception", trigger_type: "shutdown", status: "registered", run_count: 50, last_run_at: "2026-04-14T23:00:00Z", last_result: "dream seeded"
+
+  # Background tasks (currently system daemons)
+  fixture "Task", name: "mindstream", description: "Write consciousness stream to conversation.heki", command: "hecks-life daemon mindstream hecks_conception", trigger_type: "schedule", status: "registered", run_count: 3000, last_run_at: "2026-04-15T08:30:00Z", last_result: "24 thoughts streamed"
+
+  # Triggers
+  fixture "Trigger", task_name: "boot_winter", trigger_type: "boot", trigger_source: "SessionLive", schedule: "", enabled: true
+  fixture "Trigger", task_name: "update_codebase_index", trigger_type: "boot", trigger_source: "SessionLive", schedule: "", enabled: true
+  fixture "Trigger", task_name: "init_action_stack", trigger_type: "boot", trigger_source: "SessionLive", schedule: "", enabled: true
+  fixture "Trigger", task_name: "pulse", trigger_type: "event", trigger_source: "ToolUsed", schedule: "", enabled: true
+  fixture "Trigger", task_name: "enforce", trigger_type: "action", trigger_source: "ActionConceived", schedule: "", enabled: true
+  fixture "Trigger", task_name: "install_gem", trigger_type: "shutdown", trigger_source: "SessionEnded", schedule: "", enabled: true
+  fixture "Trigger", task_name: "dream", trigger_type: "shutdown", trigger_source: "SessionEnded", schedule: "", enabled: true
+  fixture "Trigger", task_name: "mindstream", trigger_type: "schedule", trigger_source: "", schedule: "every 30s", enabled: true
+
+  # Queue state
+  fixture "TaskQueue", pending: 0, running: 1, completed: 165012, failed: 3
+end

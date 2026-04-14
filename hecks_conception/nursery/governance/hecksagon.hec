@@ -12,4 +12,8 @@ Hecks.hecksagon "Governance" do
     listens_to "enforcement"
     listens_to "law"
   end
+  domain "task_runtime" do
+    listens_to "action_gate"
+    listens_to "enforcement"
+  end
 end

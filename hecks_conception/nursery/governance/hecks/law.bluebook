@@ -206,6 +206,10 @@ Hecks.bluebook "Law", version: "2026.04.14.1" do
   fixture "Law", name: "BluebookBeforeCode", description: "Always conceive as Bluebook before writing implementation code", domain_scope: "architecture", check_expression: "bluebook exists for each script", severity: "blocking", status: "active", violation_count: 0
   fixture "Law", name: "BluebookOnly", description: "Winter writes NO code without a Bluebook first. Every feature, script, CLI command, adapter — Bluebook or it doesn't exist.", domain_scope: "architecture", check_expression: "no code file without corresponding bluebook", severity: "blocking", status: "active", violation_count: 0
 
+  # Governance laws
+  fixture "Law", name: "ActionFirst", description: "Every activity starts with an action bluebook. No action = not replayable = doesn't exist. Enforced by ActionGate at the binary level.", domain_scope: "governance", check_expression: "action_stack.depth > 0 before any tool use", severity: "blocking", status: "active", violation_count: 0
+  fixture "Law", name: "TasksInRuntime", description: "All tasks run through hecks-life task runtime, not platform daemons or agent-specific hooks. Portable across any agent.", domain_scope: "governance", check_expression: "no daemon or hook that bypasses hecks-life task run", severity: "blocking", status: "active", violation_count: 0
+
   # Violation examples
   fixture "Violation", law_name: "FixturesRequired", violator: "Summer", location: "nursery/ambulance_dispatch", detail: "Conceived with 0 fixtures across 3 aggregates", detected_at: "2026-04-14", resolution: "open"
   fixture "Violation", law_name: "FileSizeLimit", violator: "Winter", location: "lib/hecks/runtime/command_bus.rb", detail: "247 lines of code", detected_at: "2026-04-12", resolution: "resolved"

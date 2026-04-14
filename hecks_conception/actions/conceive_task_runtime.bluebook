@@ -1,0 +1,44 @@
+Hecks.bluebook "ConceiveTaskRuntime", version: "2026.04.15.1" do
+  vision "Move tasks from platform daemons into the Winter runtime — portable across any agent"
+  category "action"
+
+  aggregate "Action", "This action: conceive a task runtime that lives in hecks-life" do
+    String :action_name
+    String :rationale
+    String :status
+
+    Plan do
+      role "Winter"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+    end
+
+    Execute do
+      role "Winter"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Winter"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  fixture "Action", action_name: "ConceiveTaskRuntime", rationale: "Daemons and hooks are platform-specific. Tasks in the runtime are portable — any agent can run them.", status: "verified"
+end
