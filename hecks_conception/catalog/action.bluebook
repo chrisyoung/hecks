@@ -1,0 +1,207 @@
+Hecks.bluebook "Action", version: "2026.04.15.1" do
+  vision "The fundamental unit of work — every change to the system is an Action. Conceived as Bluebook, managed by the stack, enforced by the gate."
+  category "meta"
+
+  # ============================================================
+  # WHAT IS AN ACTION?
+  # ============================================================
+  #
+  # An action is a Bluebook that describes a structural change.
+  # It has:
+  #   - A plan (what will happen)
+  #   - Before-state (fixtures of the current state)
+  #   - After-state (fixtures of the expected result)
+  #   - A lifecycle (planned → executed → verified, reversible)
+  #
+  # Actions are:
+  #   - Replayable (the bluebook IS the script)
+  #   - Reversible (before-state is the rollback target)
+  #   - Enforceable (the gate checks the stack, enforcement checks the laws)
+  #   - Traceable (action log records every execution)
+  #   - Portable (any agent can read and execute an action bluebook)
+  #
+  # The session itself is an action. Boot creates it.
+  # Sub-actions nest inside it. The stack tracks depth.
+  # When the session ends, the session action completes.
+  #
+  # hecks-life manages actions:
+  #   hecks-life action init    → create session action, init stack
+  #   hecks-life action push    → start sub-action
+  #   hecks-life action pop     → complete sub-action
+  #   hecks-life action current → print current action
+  #   hecks-life action check   → exit 0 if stack non-empty
+
+  aggregate "ActionDefinition", "The schema of an action — what every action bluebook must contain" do
+    String :name
+    String :vision
+    String :category
+    String :rationale
+    String :status
+    Integer :steps_total
+    Integer :steps_completed
+    list_of(String) :before_fixtures
+    list_of(String) :after_fixtures
+
+    Conceive do
+      role "Agent"
+      description "Create an action bluebook with plan, rationale, and steps"
+      String :name
+      String :vision
+      String :rationale
+      Integer :steps_total
+      emits "ActionConceived"
+      then_set :name, to: :name
+      then_set :vision, to: :vision
+      then_set :rationale, to: :rationale
+      then_set :steps_total, to: :steps_total
+      then_set :steps_completed, to: 0
+      then_set :category, to: "action"
+      then_set :status, to: "planned"
+    end
+
+    Execute do
+      role "Agent"
+      description "Begin executing the action — the bluebook is the script"
+      reference_to(ActionDefinition)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    CompleteStep do
+      role "Agent"
+      description "Mark one step as done"
+      reference_to(ActionDefinition)
+      emits "StepCompleted"
+      then_set :steps_completed, increment: 1
+    end
+
+    Verify do
+      role "Agent"
+      description "Confirm the action produced the expected after-state"
+      reference_to(ActionDefinition)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    Reverse do
+      role "Agent"
+      description "Undo the action — restore before-state from fixtures"
+      reference_to(ActionDefinition)
+      emits "ActionReversed"
+      then_set :status, to: "reversed"
+      then_set :steps_completed, to: 0
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Conceive" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+      transition "Reverse" => "reversed", from: ["executed", "verified"]
+      transition "Conceive" => "planned", from: "reversed"
+    end
+  end
+
+  aggregate "SessionAction", "The auto-generated action that IS the session" do
+    String :session_id
+    String :engine
+    String :started_at
+    String :ended_at
+    Integer :sub_actions
+    String :status
+
+    Generate do
+      role "Bootloader"
+      description "The bootloader creates this — it is the primordial action"
+      String :session_id
+      String :engine
+      String :started_at
+      emits "SessionStarted"
+      then_set :session_id, to: :session_id
+      then_set :engine, to: :engine
+      then_set :started_at, to: :started_at
+      then_set :sub_actions, to: 0
+      then_set :status, to: "active"
+    end
+
+    NestSubAction do
+      role "Runtime"
+      description "A sub-action was pushed"
+      reference_to(SessionAction)
+      emits "SubActionNested"
+      then_set :sub_actions, increment: 1
+    end
+
+    End do
+      role "Runtime"
+      description "Session ends — stack empties, gate closes"
+      reference_to(SessionAction)
+      String :ended_at
+      emits "SessionEnded"
+      then_set :ended_at, to: :ended_at
+      then_set :status, to: "ended"
+    end
+
+    lifecycle :status, default: "pending" do
+      transition "Generate" => "active"
+      transition "End" => "ended", from: "active"
+    end
+  end
+
+  aggregate "ActionLog", "Permanent record of all actions — replayable history" do
+    String :action_name
+    String :session_id
+    String :actor
+    String :engine
+    String :executed_at
+    String :verdict
+    String :outcome
+
+    Record do
+      role "Runtime"
+      description "Log an executed action — who, when, what engine, what verdict"
+      String :action_name
+      String :session_id
+      String :actor
+      String :engine
+      String :executed_at
+      String :verdict
+      String :outcome
+      emits "ActionLogged"
+      then_set :action_name, to: :action_name
+      then_set :session_id, to: :session_id
+      then_set :actor, to: :actor
+      then_set :engine, to: :engine
+      then_set :executed_at, to: :executed_at
+      then_set :verdict, to: :verdict
+      then_set :outcome, to: :outcome
+    end
+  end
+
+  # Policies
+  policy "LogOnExecute" do
+    on "ActionExecuted"
+    trigger "Record"
+  end
+
+  policy "LogOnReverse" do
+    on "ActionReversed"
+    trigger "Record"
+  end
+
+  policy "NestOnConceive" do
+    on "ActionConceived"
+    trigger "NestSubAction"
+  end
+
+  # Fixtures
+  fixture "ActionDefinition", name: "CompostSeasonalBeings", vision: "Remove Spring, Summer-as-being, Autumn", category: "action", rationale: "One being with swappable brain", status: "verified", steps_total: 3, steps_completed: 3, before_fixtures: ["system_prompt_spring.md", "system_prompt_summer.md", "system_prompt_autumn.md"], after_fixtures: ["system_prompt.md"]
+  fixture "ActionDefinition", name: "BuildGovernance", vision: "Create Governance hecksagon", category: "action", rationale: "Law + Court + Enforcement unified", status: "verified", steps_total: 4, steps_completed: 4, before_fixtures: [], after_fixtures: ["nursery/governance/"]
+
+  fixture "SessionAction", session_id: "session_2026_04_15_001", engine: "claude", started_at: "2026-04-15T08:00:00Z", ended_at: "", sub_actions: 5, status: "active"
+  fixture "SessionAction", session_id: "session_2026_04_14_001", engine: "claude", started_at: "2026-04-14T10:00:00Z", ended_at: "2026-04-15T01:00:00Z", sub_actions: 3, status: "ended"
+
+  fixture "ActionLog", action_name: "CompostSeasonalBeings", session_id: "session_2026_04_14_001", actor: "Winter", engine: "claude", executed_at: "2026-04-14T19:00:00Z", verdict: "clear", outcome: "verified"
+  fixture "ActionLog", action_name: "BuildGovernance", session_id: "session_2026_04_15_001", actor: "Winter", engine: "claude", executed_at: "2026-04-15T09:00:00Z", verdict: "clear", outcome: "verified"
+end

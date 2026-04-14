@@ -5,36 +5,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "hecks_life/target/release/hecks-life task run update_codebase_index hecks_conception 2>/dev/null || ruby bin/update-codebase-index 2>/dev/null || true",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hecks_life/target/release/hecks-life task run watcher hecks_conception 2>/dev/null || ruby bin/read-watcher-log 2>/dev/null || true",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hecks_life/target/release/hecks-life task run install_gem hecks_conception 2>/dev/null || (cd /Users/christopheryoung/Projects/hecks && gem build hecks.gemspec --silent && gem install hecks-*.gem --no-document 2>/dev/null; rm -f hecks-*.gem; true)",
-            "timeout": 15
-          },
-          {
-            "type": "command",
-            "command": "hecks_life/target/release/hecks-life task run dream hecks_conception 2>/dev/null || ruby /Users/christopheryoung/Projects/hecks/hecks_conception/pulse.rb --dream 2>/dev/null || true",
-            "timeout": 3
+            "command": "hecks_life/target/release/hecks-life boot hecks_conception 2>/dev/null || ruby bin/update-codebase-index 2>/dev/null || true",
+            "timeout": 15,
+            "statusMessage": "Booting Winter..."
           }
         ]
       }
