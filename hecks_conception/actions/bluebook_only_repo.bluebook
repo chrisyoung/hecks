@@ -1,0 +1,46 @@
+Hecks.bluebook "BluebookOnlyRepo", version: "2026.04.15.1" do
+  vision "Remove all source files from the repo. Only Bluebooks, .heki, .hec remain. hecks-life is the bootstrap compiler."
+  category "action"
+
+  aggregate "Action", "Make the repo Bluebook-only" do
+    String :action_name
+    String :rationale
+    String :status
+    Integer :files_removed
+    Integer :bluebooks_remaining
+
+    Plan do
+      role "Winter"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+    end
+
+    Execute do
+      role "Winter"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Winter"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  fixture "Action", action_name: "BluebookOnlyRepo", rationale: "The Bluebook IS the code. Source files are projections. The repo should only contain source of truth.", status: "planned", files_removed: 0, bluebooks_remaining: 0
+end

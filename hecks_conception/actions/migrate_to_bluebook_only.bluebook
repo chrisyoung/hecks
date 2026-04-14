@@ -1,0 +1,219 @@
+Hecks.bluebook "MigrateToBluebookOnly", version: "2026.04.15.1" do
+  vision "Migrate every Ruby capability into projectable Bluebooks — one at a time, verify each, lose nothing"
+  category "action"
+
+  # ============================================================
+  # MIGRATION PLAN
+  # ============================================================
+  #
+  # Principle: no capability is lost. Each Ruby module becomes a
+  # Bluebook that hecks-life can project. The Ruby is composted
+  # only after the Bluebook produces identical behavior.
+  #
+  # Verification: for each migration, run the fixtures from the
+  # Bluebook against the projected behavior. If they pass, the
+  # Ruby is redundant. If they fail, the projection is incomplete.
+  #
+  # Order: migrate from the inside out.
+  #   Phase 1: Core IR (already done — parser, validator, IR)
+  #   Phase 2: Runtime (command bus, event bus, repositories)
+  #   Phase 3: Governance (already projectable — law, court, enforcement)
+  #   Phase 4: Generators (code gen from Bluebook IR)
+  #   Phase 5: CLI (command routing from Bluebook aggregates)
+  #   Phase 6: Workshop/IDE (browser UI projected from domain)
+  #   Phase 7: HecksAppeal (domain visualization)
+  #   Phase 8: Extensions (persistence, serving, Rails)
+  #
+  # Each phase is its own action. Each action is reversible.
+
+  aggregate "MigrationPlan", "The overall plan — track phases, capabilities, progress" do
+    String :plan_name
+    Integer :total_phases
+    Integer :completed_phases
+    Integer :ruby_files_remaining
+    Integer :bluebooks_projectable
+    String :status
+
+    InitPlan do
+      role "Architect"
+      description "Initialize the migration plan with all phases"
+      String :plan_name
+      Integer :total_phases
+      Integer :ruby_files_remaining
+      emits "PlanInitialized"
+      then_set :plan_name, to: :plan_name
+      then_set :total_phases, to: :total_phases
+      then_set :ruby_files_remaining, to: :ruby_files_remaining
+      then_set :completed_phases, to: 0
+      then_set :bluebooks_projectable, to: 0
+      then_set :status, to: "active"
+    end
+
+    CompletePhase do
+      role "Architect"
+      reference_to(MigrationPlan)
+      Integer :ruby_files_composted
+      Integer :bluebooks_added
+      emits "PhaseCompleted"
+      then_set :completed_phases, increment: 1
+      then_set :ruby_files_remaining, decrement: :ruby_files_composted
+      then_set :bluebooks_projectable, increment: :bluebooks_added
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "InitPlan" => "active"
+    end
+  end
+
+  aggregate "Phase", "One migration phase — a group of related capabilities" do
+    String :phase_name
+    Integer :phase_number
+    String :description
+    Integer :ruby_files
+    Integer :bluebooks_needed
+    Integer :bluebooks_done
+    String :status
+    list_of(String) :capabilities
+
+    Plan do
+      role "Architect"
+      description "Define what this phase covers"
+      String :phase_name
+      Integer :phase_number
+      String :description
+      Integer :ruby_files
+      list_of(String) :capabilities
+      emits "PhasePlanned"
+      then_set :phase_name, to: :phase_name
+      then_set :phase_number, to: :phase_number
+      then_set :description, to: :description
+      then_set :ruby_files, to: :ruby_files
+      then_set :capabilities, to: :capabilities
+      then_set :bluebooks_done, to: 0
+      then_set :status, to: "planned"
+    end
+
+    MigrateCapability do
+      role "Architect"
+      description "One capability migrated — Bluebook written, projection verified, Ruby composted"
+      reference_to(Phase)
+      emits "CapabilityMigrated"
+      then_set :bluebooks_done, increment: 1
+    end
+
+    Verify do
+      role "Architect"
+      description "All capabilities in this phase migrated and verified — fixtures pass on projections"
+      reference_to(Phase)
+      given { bluebooks_done > 0 }
+      emits "PhaseVerified"
+      then_set :status, to: "verified"
+    end
+
+    CompostRuby do
+      role "Architect"
+      description "Phase verified — remove the Ruby files. They are now redundant."
+      reference_to(Phase)
+      given { status == "verified" }
+      emits "RubyComposted"
+      then_set :status, to: "composted"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Verify" => "verified", from: "planned"
+      transition "CompostRuby" => "composted", from: "verified"
+    end
+  end
+
+  aggregate "CapabilityMigration", "One capability being migrated — Ruby module → Bluebook → verify → compost" do
+    String :capability_name
+    String :ruby_path
+    String :bluebook_path
+    String :status
+    Integer :fixture_count
+    Integer :fixtures_passing
+
+    Conceive do
+      role "Architect"
+      description "Write the Bluebook for this capability — model its behavior as aggregates and commands"
+      String :capability_name
+      String :ruby_path
+      String :bluebook_path
+      emits "CapabilityConceived"
+      then_set :capability_name, to: :capability_name
+      then_set :ruby_path, to: :ruby_path
+      then_set :bluebook_path, to: :bluebook_path
+      then_set :status, to: "conceived"
+    end
+
+    AddFixtures do
+      role "Architect"
+      description "Write fixtures that capture the Ruby module's behavior — these are the acceptance tests"
+      reference_to(CapabilityMigration)
+      Integer :fixture_count
+      emits "FixturesAdded"
+      then_set :fixture_count, to: :fixture_count
+    end
+
+    VerifyProjection do
+      role "Runtime"
+      description "Project the Bluebook in memory, run the fixtures — do they match Ruby's behavior?"
+      reference_to(CapabilityMigration)
+      Integer :fixtures_passing
+      emits "ProjectionVerified"
+      then_set :fixtures_passing, to: :fixtures_passing
+      then_set :status, to: "verified"
+    end
+
+    CompostRuby do
+      role "Architect"
+      description "Fixtures pass — delete the Ruby file. The Bluebook is the source now."
+      reference_to(CapabilityMigration)
+      given("all fixtures must pass") { fixtures_passing == fixture_count }
+      emits "RubyFileComposted"
+      then_set :status, to: "composted"
+    end
+
+    lifecycle :status, default: "identified" do
+      transition "Conceive" => "conceived"
+      transition "VerifyProjection" => "verified", from: "conceived"
+      transition "CompostRuby" => "composted", from: "verified"
+    end
+  end
+
+  # Flow
+  policy "VerifyOnFixtures" do
+    on "FixturesAdded"
+    trigger "VerifyProjection"
+  end
+
+  policy "PhaseOnMigrate" do
+    on "RubyFileComposted"
+    trigger "MigrateCapability"
+  end
+
+  # === THE PHASES ===
+
+  fixture "MigrationPlan", plan_name: "BluebookOnlyRepo", total_phases: 8, completed_phases: 0, ruby_files_remaining: 861, bluebooks_projectable: 24, status: "active"
+
+  fixture "Phase", phase_name: "CoreIR", phase_number: 1, description: "Parser, IR, Validator — already implemented in Rust, already have Bluebooks", ruby_files: 45, bluebooks_needed: 0, bluebooks_done: 0, status: "planned", capabilities: ["parser", "ir", "validator", "formatter"]
+
+  fixture "Phase", phase_name: "Runtime", phase_number: 2, description: "Command bus, event bus, repositories, lifecycle — the execution engine", ruby_files: 85, bluebooks_needed: 5, bluebooks_done: 0, status: "planned", capabilities: ["command_bus", "event_bus", "repository", "lifecycle", "seed_loader"]
+
+  fixture "Phase", phase_name: "Governance", phase_number: 3, description: "Law, Court, Enforcement, ActionGate — already Bluebook-native, just need projection", ruby_files: 0, bluebooks_needed: 0, bluebooks_done: 6, status: "planned", capabilities: ["law", "court", "enforcement", "action_gate", "event_stream", "task_runtime"]
+
+  fixture "Phase", phase_name: "Generators", phase_number: 4, description: "Code generation from IR — Ruby target, Go target, static output", ruby_files: 120, bluebooks_needed: 8, bluebooks_done: 0, status: "planned", capabilities: ["ruby_generator", "go_generator", "domain_gem_generator", "command_generator", "event_generator", "migration_generator", "test_generator", "example_generator"]
+
+  fixture "Phase", phase_name: "CLI", phase_number: 5, description: "Command routing, ARGV parsing, help text — projected from CLI Bluebook", ruby_files: 35, bluebooks_needed: 2, bluebooks_done: 0, status: "planned", capabilities: ["cli_router", "cli_commands"]
+
+  fixture "Phase", phase_name: "Workshop", phase_number: 6, description: "Interactive development environment — REPL, play mode, web runner", ruby_files: 80, bluebooks_needed: 4, bluebooks_done: 0, status: "planned", capabilities: ["workshop", "play_mode", "web_runner", "repl_generator"]
+
+  fixture "Phase", phase_name: "Appeal", phase_number: 7, description: "Browser-based domain visualization — HTML/JS/CSS projected from domain IR", ruby_files: 65, bluebooks_needed: 3, bluebooks_done: 0, status: "planned", capabilities: ["appeal_renderer", "appeal_panels", "appeal_server"]
+
+  fixture "Phase", phase_name: "Extensions", phase_number: 8, description: "Persistence, serving, Rails, connections — the outer ring", ruby_files: 150, bluebooks_needed: 6, bluebooks_done: 0, status: "planned", capabilities: ["sql_adapter", "serve_extension", "rails_integration", "connections", "information_store", "migrations"]
+
+  # Example capability migration
+  fixture "CapabilityMigration", capability_name: "command_bus", ruby_path: "lib/hecks/runtime/command_bus.rb", bluebook_path: "catalog/hecks_life_command_bus.bluebook", status: "identified", fixture_count: 0, fixtures_passing: 0
+  fixture "CapabilityMigration", capability_name: "law", ruby_path: "", bluebook_path: "nursery/governance/hecks/law.bluebook", status: "verified", fixture_count: 22, fixtures_passing: 22
+end
