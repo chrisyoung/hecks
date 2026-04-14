@@ -1,0 +1,161 @@
+Hecks.bluebook "Cop", version: "2026.04.15.1" do
+  vision "Walk the beat — scan the whole codebase on demand, report every violation, file findings with enforcement"
+  category "capability"
+
+  # ============================================================
+  # THE COP
+  # ============================================================
+  #
+  # The pre-commit hook enforces at commit time.
+  # The cop enforces on demand — "walk the beat."
+  #
+  # When Chris says "have the cop walk the beat":
+  #   1. Run hecks-life enforce --full
+  #   2. Parse the output into violations
+  #   3. For each violation, file a finding
+  #   4. Compile a patrol report
+  #   5. Recommend actions: fix, back out, or file amendment
+  #
+  # The cop doesn't fix anything. It reports.
+  # Winter reads the report and decides what to do.
+  # Court reviews if needed. Conscience feels it.
+
+  aggregate "Patrol", "One walk of the beat — a full sweep of the codebase" do
+    String :patrol_id
+    String :scope
+    String :patrolled_at
+    Integer :files_checked
+    Integer :violations_found
+    Integer :warnings_found
+    String :verdict
+    String :status
+
+    WalkBeat do
+      role "Winter"
+      description "Initiate a patrol — run hecks-life enforce --full and capture results"
+      String :scope
+      emits "PatrolStarted"
+      then_set :scope, to: :scope
+      then_set :status, to: "patrolling"
+      then_set :violations_found, to: 0
+      then_set :warnings_found, to: 0
+    end
+
+    RecordViolation do
+      role "Cop"
+      description "A violation was found during the patrol"
+      reference_to(Patrol)
+      emits "ViolationSpotted"
+      then_set :violations_found, increment: 1
+    end
+
+    RecordWarning do
+      role "Cop"
+      description "A warning was found during the patrol"
+      reference_to(Patrol)
+      emits "WarningSpotted"
+      then_set :warnings_found, increment: 1
+    end
+
+    FileReport do
+      role "Cop"
+      description "Patrol complete — compile the report with all findings"
+      reference_to(Patrol)
+      String :patrolled_at
+      Integer :files_checked
+      emits "PatrolReported"
+      then_set :patrolled_at, to: :patrolled_at
+      then_set :files_checked, to: :files_checked
+      then_set :status, to: "reported"
+    end
+
+    RenderVerdict do
+      role "Cop"
+      description "Based on findings — all clear, needs attention, or critical"
+      reference_to(Patrol)
+      String :verdict
+      emits "VerdictRendered"
+      then_set :verdict, to: :verdict
+    end
+
+    lifecycle :status, default: "idle" do
+      transition "WalkBeat" => "patrolling"
+      transition "FileReport" => "reported", from: "patrolling"
+      transition "RenderVerdict" => "closed", from: "reported"
+    end
+  end
+
+  aggregate "Finding", "One violation or warning found during a patrol" do
+    String :patrol_id
+    String :file_path
+    String :law_name
+    String :severity
+    String :detail
+    String :recommendation
+
+    SpotViolation do
+      role "Cop"
+      description "Record a specific violation with recommendation"
+      String :patrol_id
+      String :file_path
+      String :law_name
+      String :severity
+      String :detail
+      String :recommendation
+      emits "FindingRecorded"
+      then_set :patrol_id, to: :patrol_id
+      then_set :file_path, to: :file_path
+      then_set :law_name, to: :law_name
+      then_set :severity, to: :severity
+      then_set :detail, to: :detail
+      then_set :recommendation, to: :recommendation
+    end
+  end
+
+  aggregate "PatrolSchedule", "When the cop walks — on demand, on boot, on interval" do
+    String :trigger
+    String :scope
+    Boolean :enabled
+
+    SchedulePatrol do
+      role "Architect"
+      description "Set up when the cop should patrol"
+      String :trigger
+      String :scope
+      emits "PatrolScheduled"
+      then_set :trigger, to: :trigger
+      then_set :scope, to: :scope
+      then_set :enabled, to: true
+    end
+  end
+
+  # Findings flow to enforcement
+  policy "EnforceOnViolation" do
+    on "ViolationSpotted"
+    trigger "RecordViolation"
+    description "Cop violations flow to the Law's violation counter"
+  end
+
+  policy "ConscienceOnPatrol" do
+    on "VerdictRendered"
+    trigger "ReviewAction"
+    description "Patrol verdict is reviewed by Conscience"
+  end
+
+  policy "ReportOnComplete" do
+    on "PatrolReported"
+    trigger "RenderVerdict"
+  end
+
+  # Fixtures
+  fixture "Patrol", patrol_id: "patrol-2026-04-15-001", scope: "full", patrolled_at: "2026-04-15T10:00:00Z", files_checked: 882, violations_found: 4, warnings_found: 0, verdict: "needs_attention", status: "closed"
+  fixture "Patrol", patrol_id: "patrol-2026-04-15-002", scope: "full", patrolled_at: "2026-04-15T12:00:00Z", files_checked: 882, violations_found: 0, warnings_found: 2, verdict: "all_clear", status: "closed"
+
+  fixture "Finding", patrol_id: "patrol-2026-04-15-001", file_path: "lib/hecks_cli/argv.rb", law_name: "FileSizeLimit", severity: "blocking", detail: "382 code lines (limit: 200)", recommendation: "Extract concerns: split argument parsing into subcommand modules"
+  fixture "Finding", patrol_id: "patrol-2026-04-15-001", file_path: "lib/hecks/generators/domain/command_generator.rb", law_name: "FileSizeLimit", severity: "blocking", detail: "237 code lines (limit: 200)", recommendation: "Extract template rendering into a separate module"
+  fixture "Finding", patrol_id: "patrol-2026-04-15-001", file_path: "lib/hecks/chapters/verify_contracts.rb", law_name: "FileSizeLimit", severity: "blocking", detail: "229 code lines (limit: 200)", recommendation: "Extract individual contract checks into their own files"
+  fixture "Finding", patrol_id: "patrol-2026-04-15-001", file_path: "lib/hecks/capabilities/workbench/repl_generator.rb", law_name: "FileSizeLimit", severity: "blocking", detail: "225 code lines (limit: 200)", recommendation: "Extract REPL command handlers into separate modules"
+
+  fixture "PatrolSchedule", trigger: "on_demand", scope: "full", enabled: true
+  fixture "PatrolSchedule", trigger: "on_boot", scope: "governance", enabled: true
+end
