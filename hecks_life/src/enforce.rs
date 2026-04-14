@@ -90,6 +90,41 @@ pub fn run_diff(project_dir: &str) -> bool {
                         "bluebook has no fixture lines".into(),
                     ));
                 }
+
+                // Law: FixturesAtDomainLevel — fixtures must be 2-space indent, not 4-space
+                let bad_indent = contents.lines().any(|l| l.starts_with("    fixture "));
+                if bad_indent {
+                    violations.push((
+                        file.clone(),
+                        "FixturesAtDomainLevel".into(),
+                        "fixtures inside aggregate blocks (4-space indent) — should be at domain level (2-space)".into(),
+                    ));
+                }
+
+                // Law: NoReferenceToInFixtures — fixtures should be flat data
+                // Only flag reference_to( as a function call, not in quoted description strings
+                let has_ref_in_fixture = contents.lines().any(|l| {
+                    let trimmed = l.trim_start();
+                    if !trimmed.starts_with("fixture ") { return false; }
+                    // Find reference_to( outside of quoted strings
+                    let mut in_quote = false;
+                    let chars: Vec<char> = trimmed.chars().collect();
+                    for i in 0..chars.len() {
+                        if chars[i] == '"' { in_quote = !in_quote; }
+                        if !in_quote && i + 13 <= chars.len() {
+                            let slice: String = chars[i..i+13].iter().collect();
+                            if slice == "reference_to(" { return true; }
+                        }
+                    }
+                    false
+                });
+                if has_ref_in_fixture {
+                    violations.push((
+                        file.clone(),
+                        "NoReferenceToInFixtures".into(),
+                        "fixture lines contain reference_to() — fixtures must be flat data".into(),
+                    ));
+                }
             }
         }
 
@@ -194,6 +229,45 @@ pub fn run_full(project_dir: &str) -> bool {
         }
     }
 
+    // Law: FixturesAtDomainLevel + NoReferenceToInFixtures — check all bluebooks
+    let nursery_dir = Path::new(project_dir).join("nursery");
+    if nursery_dir.is_dir() {
+        for entry in walk_bluebook_files(&nursery_dir) {
+            files_checked += 1;
+            if let Ok(contents) = std::fs::read_to_string(&entry) {
+                let bad_indent = contents.lines().any(|l| l.starts_with("    fixture "));
+                if bad_indent {
+                    violations.push((
+                        entry.clone(),
+                        "FixturesAtDomainLevel".into(),
+                        "fixtures inside aggregate blocks (4-space indent)".into(),
+                    ));
+                }
+                let has_ref = contents.lines().any(|l| {
+                    let trimmed = l.trim_start();
+                    if !trimmed.starts_with("fixture ") { return false; }
+                    let mut in_quote = false;
+                    let chars: Vec<char> = trimmed.chars().collect();
+                    for i in 0..chars.len() {
+                        if chars[i] == '"' { in_quote = !in_quote; }
+                        if !in_quote && i + 13 <= chars.len() {
+                            let slice: String = chars[i..i+13].iter().collect();
+                            if slice == "reference_to(" { return true; }
+                        }
+                    }
+                    false
+                });
+                if has_ref {
+                    violations.push((
+                        entry.clone(),
+                        "NoReferenceToInFixtures".into(),
+                        "fixture lines contain reference_to()".into(),
+                    ));
+                }
+            }
+        }
+    }
+
     // Law: ActionFirst — check action stack
     if !crate::action_stack::check(project_dir) {
         violations.push((
@@ -237,6 +311,22 @@ fn walk_rb_files(dir: &Path) -> Vec<String> {
             if path.is_dir() {
                 files.extend(walk_rb_files(&path));
             } else if path.extension().map_or(false, |e| e == "rb") {
+                files.push(path.to_string_lossy().into_owned());
+            }
+        }
+    }
+    files
+}
+
+/// Walk a directory recursively for .bluebook files.
+fn walk_bluebook_files(dir: &Path) -> Vec<String> {
+    let mut files = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let path = entry.path();
+            if path.is_dir() {
+                files.extend(walk_bluebook_files(&path));
+            } else if path.extension().map_or(false, |e| e == "bluebook") {
                 files.push(path.to_string_lossy().into_owned());
             }
         }
