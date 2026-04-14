@@ -1,0 +1,146 @@
+Hecks.bluebook "HecksLife::Runtime", version: "2026.04.15.1" do
+  category "runtime"
+
+  aggregate "Runtime" do
+    description "Executes domains from IR: dispatches commands, enforces givens, applies mutations, emits events, triggers policies, updates projections"
+
+    attribute :domain, type: "object", description: "IR domain definition"
+    attribute :repositories, type: "object", description: "Repository instances by aggregate name"
+    attribute :event_bus, type: "object", description: "Event dispatch hub"
+    attribute :policy_engine, type: "object", description: "Policy trigger engine"
+    attribute :projections, type: "array", description: "Projection instances"
+    attribute :middleware, type: "object", description: "Command middleware stack"
+    attribute :data_dir, type: "string", description: "Optional data directory path"
+
+    command "BootRuntime" do
+      attribute :domain, type: "object", required: true
+      yields "RuntimeBooted", aggregate_id: "domain_name", aggregate: "Runtime"
+    end
+
+    command "BootWithDataDir" do
+      attribute :domain, type: "object", required: true
+      attribute :data_dir, type: "string"
+      yields "RuntimeBooted", aggregate_id: "domain_name", aggregate: "Runtime"
+    end
+
+    command "DispatchCommand" do
+      attribute :command_name, type: "string", required: true
+      attribute :attrs, type: "object", required: true
+      yields "CommandDispatched", aggregate_id: "aggregate_id", aggregate: "Runtime"
+    end
+
+    command "FindAggregate" do
+      attribute :aggregate_name, type: "string", required: true
+      attribute :id, type: "string", required: true
+      yields "AggregateFound", aggregate_id: "id", aggregate: "Runtime"
+    end
+
+    command "ListAll" do
+      attribute :aggregate_name, type: "string", required: true
+      yields "AggregatesListed", aggregate_id: "aggregate_name", aggregate: "Runtime"
+    end
+
+    command "AddProjection" do
+      attribute :projection, type: "object", required: true
+      yields "ProjectionAdded", aggregate_id: "projection_name", aggregate: "Runtime"
+    end
+
+    command "QueryProjection" do
+      attribute :projection_name, type: "string", required: true
+      attribute :query_name, type: "string", required: true
+      yields "ProjectionQueried", aggregate_id: "projection_name", aggregate: "Runtime"
+    end
+  end
+
+  aggregate "Value" do
+    description "Dynamic value type: string, integer, boolean, list, map, or null"
+
+    attribute :kind, type: "string", enum: ["Str", "Int", "Bool", "List", "Map", "Null"]
+    attribute :content, type: "object"
+
+    command "CreateString" do
+      attribute :value, type: "string", required: true
+      yields "ValueCreated", aggregate_id: "value_id", aggregate: "Value"
+    end
+
+    command "CreateInt" do
+      attribute :value, type: "integer", required: true
+      yields "ValueCreated", aggregate_id: "value_id", aggregate: "Value"
+    end
+
+    command "CreateBool" do
+      attribute :value, type: "boolean", required: true
+      yields "ValueCreated", aggregate_id: "value_id", aggregate: "Value"
+    end
+
+    command "CreateList" do
+      attribute :items, type: "array", required: true
+      yields "ValueCreated", aggregate_id: "value_id", aggregate: "Value"
+    end
+
+    command "CreateMap" do
+      attribute :fields, type: "object", required: true
+      yields "ValueCreated", aggregate_id: "value_id", aggregate: "Value"
+    end
+  end
+
+  aggregate "RuntimeError" do
+    description "Runtime execution errors: command/aggregate resolution, lifecycle violations"
+
+    attribute :error_type, type: "string", enum: [
+      "UnknownCommand", "UnknownAggregate", "GivenFailed",
+      "AggregateNotFound", "MissingAttribute", "LifecycleViolation"
+    ]
+    attribute :message, type: "string"
+    attribute :details, type: "object"
+
+    command "RecordUnknownCommand" do
+      attribute :command_name, type: "string", required: true
+      yields "ErrorRecorded", aggregate_id: "command_name", aggregate: "RuntimeError"
+    end
+
+    command "RecordGivenFailure" do
+      attribute :message, type: "string", required: true
+      attribute :expression, type: "string", required: true
+      yields "ErrorRecorded", aggregate_id: "expression", aggregate: "RuntimeError"
+    end
+
+    command "RecordLifecycleViolation" do
+      attribute :command, type: "string", required: true
+      attribute :field, type: "string", required: true
+      attribute :current, type: "string", required: true
+      attribute :allowed, type: "array", required: true
+      yields "ErrorRecorded", aggregate_id: "command", aggregate: "RuntimeError"
+    end
+  end
+
+  fixture aggregate: "Runtime" do
+    attribute :domain, '"Pizza"'
+    attribute :data_dir, '"/tmp/pizza-domain"'
+  end
+
+  fixture aggregate: "Runtime" do
+    attribute :domain, '"Order"'
+    attribute :data_dir, '"/tmp/order-domain"'
+  end
+
+  fixture aggregate: "Value" do
+    attribute :kind, '"Str"'
+    attribute :content, '"Margherita"'
+  end
+
+  fixture aggregate: "Value" do
+    attribute :kind, '"Int"'
+    attribute :content, '42'
+  end
+
+  fixture aggregate: "RuntimeError" do
+    attribute :error_type, '"UnknownCommand"'
+    attribute :message, '"no such command: InvalidPizza"'
+  end
+
+  fixture aggregate: "RuntimeError" do
+    attribute :error_type, '"LifecycleViolation"'
+    attribute :message, '"cannot transition from archived state"'
+  end
+end

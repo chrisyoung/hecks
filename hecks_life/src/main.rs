@@ -69,6 +69,26 @@ fn main() {
         return;
     }
 
+    // Boot-domains — boot an entire hecksagon as a multi-domain runtime
+    if command == "boot-domains" {
+        let dir = if !path.is_empty() {
+            path.to_string()
+        } else {
+            resolve_home(&being)
+        };
+        match hecks_life::runtime::multi_domain::MultiDomainRuntime::boot(&dir) {
+            Ok(mdr) => {
+                println!("  ❄ multi-domain runtime booted: {}", mdr.name);
+                mdr.summary();
+            }
+            Err(e) => {
+                eprintln!("  boot-domains failed: {}", e);
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+
     // Boot is exempt from gate — it IS the bootloader that creates the stack
     if command == "boot" {
         let dir = if !path.is_empty() {

@@ -111,7 +111,7 @@ pub struct Transition {
     pub from_state: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Fixture {
     pub aggregate_name: String,
     pub attributes: Vec<(String, String)>,

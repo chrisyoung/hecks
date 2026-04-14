@@ -1,0 +1,182 @@
+Hecks.bluebook "HecksLife::MultiDomain", version: "2026.04.15.1" do
+  category "runtime"
+
+  aggregate "MultiDomainRuntime" do
+    description "Boots entire hecksagon from Bluebooks: discovers domain files, boots each as Runtime, wires cross-domain policies, seeds fixtures"
+
+    attribute :name, type: "string", description: "Hecksagon project name"
+    attribute :domains, type: "object", description: "Booted Runtime instances by domain name"
+    attribute :cross_policies, type: "array", description: "Cross-domain policy triggers"
+    attribute :event_log, type: "array", description: "Complete chronological event sequence"
+
+    command "BootHecksagon" do
+      attribute :project_dir, type: "string", required: true
+      yields "HecksagonBooted", aggregate_id: "project_dir", aggregate: "MultiDomainRuntime"
+    end
+
+    command "DispatchToDomain" do
+      attribute :domain_name, type: "string", required: true
+      attribute :command_name, type: "string", required: true
+      attribute :attrs, type: "object", required: true
+      yields "CrossDomainDispatched", aggregate_id: "domain_name", aggregate: "MultiDomainRuntime"
+    end
+
+    command "GetDomain" do
+      attribute :domain_name, type: "string", required: true
+      yields "DomainRetrieved", aggregate_id: "domain_name", aggregate: "MultiDomainRuntime"
+    end
+
+    command "PrintSummary" do
+      yields "SummaryPrinted", aggregate_id: "hecksagon", aggregate: "MultiDomainRuntime"
+    end
+  end
+
+  aggregate "CrossDomainPolicy" do
+    description "Links event emission in one domain to command dispatch in another"
+
+    attribute :source_domain, type: "string", description: "Domain emitting the triggering event"
+    attribute :event_name, type: "string", description: "Event that triggers the policy"
+    attribute :target_domain, type: "string", description: "Domain receiving the command"
+    attribute :target_command, type: "string", description: "Command to dispatch in target"
+
+    command "RegisterPolicy" do
+      attribute :source_domain, type: "string", required: true
+      attribute :event_name, type: "string", required: true
+      attribute :target_domain, type: "string", required: true
+      attribute :target_command, type: "string", required: true
+      yields "PolicyRegistered", aggregate_id: "source_domain", aggregate: "CrossDomainPolicy"
+    end
+
+    command "Trigger" do
+      attribute :source_domain, type: "string", required: true
+      attribute :target_domain, type: "string", required: true
+      attribute :event_data, type: "object", required: true
+      yields "PolicyTriggered", aggregate_id: "source_domain", aggregate: "CrossDomainPolicy"
+    end
+  end
+
+  aggregate "DomainEvent" do
+    description "Immutable event record: when, where, what happened across domains"
+
+    attribute :domain, type: "string", description: "Source domain"
+    attribute :event_name, type: "string", description: "Event type"
+    attribute :aggregate, type: "string", description: "Aggregate type affected"
+    attribute :aggregate_id, type: "string", description: "Aggregate instance ID"
+    attribute :sequence, type: "integer", description: "Global event sequence number"
+
+    command "RecordEvent" do
+      attribute :domain, type: "string", required: true
+      attribute :event_name, type: "string", required: true
+      attribute :aggregate, type: "string", required: true
+      attribute :aggregate_id, type: "string", required: true
+      yields "EventRecorded", aggregate_id: "aggregate_id", aggregate: "DomainEvent"
+    end
+
+    command "LogEvent" do
+      attribute :domain, type: "string", required: true
+      attribute :aggregate, type: "string", required: true
+      attribute :event_name, type: "string", required: true
+      yields "EventLogged", aggregate_id: "aggregate_id", aggregate: "DomainEvent"
+    end
+  end
+
+  aggregate "BluebookDiscovery" do
+    description "Scans directory tree for .bluebook files, skipping node_modules/.git/target"
+
+    attribute :root_path, type: "string", description: "Root directory to scan"
+    attribute :discovered_files, type: "array", description: "Sorted paths to .bluebook files found"
+    attribute :file_count, type: "integer", description: "Number of files discovered"
+
+    command "DiscoverBluebooks" do
+      attribute :project_dir, type: "string", required: true
+      yields "BluebooksDiscovered", aggregate_id: "project_dir", aggregate: "BluebookDiscovery"
+    end
+
+    command "WalkDirectory" do
+      attribute :path, type: "string", required: true
+      attribute :exclude_dirs, type: "array"
+      yields "DirectoryWalked", aggregate_id: "path", aggregate: "BluebookDiscovery"
+    end
+  end
+
+  aggregate "FixtureSeeding" do
+    description "Seeds runtime repositories from fixture data: collects create commands, executes in batch"
+
+    attribute :runtime, type: "object", description: "Target Runtime to seed"
+    attribute :fixtures, type: "array", description: "Fixture definitions"
+    attribute :seeded_count, type: "integer", description: "Number of aggregates created"
+
+    command "SeedFixtures" do
+      attribute :runtime, type: "object", required: true
+      attribute :fixtures, type: "array", required: true
+      yields "FixturesSeeded", aggregate_id: "runtime_name", aggregate: "FixtureSeeding"
+    end
+
+    command "CollectDispatches" do
+      attribute :fixtures, type: "array", required: true
+      yields "DispatchesCollected", aggregate_id: "fixture_count", aggregate: "FixtureSeeding"
+    end
+  end
+
+  fixture aggregate: "MultiDomainRuntime" do
+    attribute :name, '"hecks_conception"'
+    attribute :domain, '3'
+    attribute :cross_policies, '2'
+  end
+
+  fixture aggregate: "MultiDomainRuntime" do
+    attribute :name, '"hecks_production"'
+    attribute :domain, '5'
+    attribute :cross_policies, '4'
+  end
+
+  fixture aggregate: "CrossDomainPolicy" do
+    attribute :source_domain, '"Law"'
+    attribute :event_name, '"Enacted"'
+    attribute :target_domain, '"Justice"'
+    attribute :target_command, '"Enforce"'
+  end
+
+  fixture aggregate: "CrossDomainPolicy" do
+    attribute :source_domain, '"Order"'
+    attribute :event_name, '"Placed"'
+    attribute :target_domain, '"Pizza"'
+    attribute :target_command, '"Prepare"'
+  end
+
+  fixture aggregate: "DomainEvent" do
+    attribute :domain, '"Pizza"'
+    attribute :event_name, '"Created"'
+    attribute :aggregate, '"Pizza"'
+    attribute :aggregate_id, '"pizza-001"'
+    attribute :sequence, '1'
+  end
+
+  fixture aggregate: "DomainEvent" do
+    attribute :domain, '"Order"'
+    attribute :event_name, '"Placed"'
+    attribute :aggregate, '"Order"'
+    attribute :aggregate_id, '"order-042"'
+    attribute :sequence, '2'
+  end
+
+  fixture aggregate: "BluebookDiscovery" do
+    attribute :root_path, '"/home/user/hecks_project"'
+    attribute :file_count, '12'
+  end
+
+  fixture aggregate: "BluebookDiscovery" do
+    attribute :root_path, '"/home/user/hecks_conception"'
+    attribute :file_count, '8'
+  end
+
+  fixture aggregate: "FixtureSeeding" do
+    attribute :fixtures, '5'
+    attribute :seeded_count, '5'
+  end
+
+  fixture aggregate: "FixtureSeeding" do
+    attribute :fixtures, '3'
+    attribute :seeded_count, '3'
+  end
+end

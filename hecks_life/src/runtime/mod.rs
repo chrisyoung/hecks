@@ -20,6 +20,7 @@ mod policy_engine;
 mod projection;
 mod repository;
 pub mod seed_loader;
+pub mod multi_domain;
 
 pub use aggregate_state::AggregateState;
 pub use command_dispatch::CommandResult;
