@@ -1,0 +1,89 @@
+Hecks.bluebook "HecksLifeActionStack", version: "2026.04.15.1" do
+  vision "Rust module: .action_stack file, push/pop, depth check — the deterministic foundation of governance"
+  category "runtime"
+
+  # ============================================================
+  # This bluebook describes a Rust module: hecks-life/src/action_stack.rs
+  #
+  # The action stack is a file at {conception_dir}/.action_stack
+  # Each line is a path to an active action bluebook.
+  # Bottom of stack = session action (created at boot).
+  # Top of stack = current sub-action.
+  #
+  # CLI:
+  #   hecks-life action init {conception_dir}    → create stack with session action
+  #   hecks-life action push {action_path}       → push sub-action
+  #   hecks-life action pop                      → pop completed action
+  #   hecks-life action check                    → exit 0 if stack has entries, exit 1 if empty
+  #   hecks-life action current                  → print current action path
+  #   hecks-life action depth                    → print stack depth
+  #   hecks-life action list                     → print full stack
+  # ============================================================
+
+  aggregate "Stack", "The .action_stack file — one line per active action" do
+    String :file_path
+    Integer :depth
+    String :current_action
+    list_of(String) :entries
+
+    Init do
+      role "Binary"
+      description "Create .action_stack with a session action as the first entry"
+      String :conception_dir
+      emits "StackInitialized"
+      then_set :file_path, to: :conception_dir
+      then_set :depth, to: 1
+    end
+
+    Push do
+      role "Binary"
+      description "Append an action path to the stack file"
+      reference_to(Stack)
+      String :action_path
+      given("action bluebook must exist") { action_path != "" }
+      emits "ActionPushed"
+      then_set :entries, append: :action_path
+      then_set :current_action, to: :action_path
+      then_set :depth, increment: 1
+    end
+
+    Pop do
+      role "Binary"
+      description "Remove the top action from the stack file"
+      reference_to(Stack)
+      given("stack must not be empty") { depth > 0 }
+      emits "ActionPopped"
+      then_set :depth, decrement: 1
+    end
+
+    Check do
+      role "Binary"
+      description "Return exit code 0 if stack has entries, 1 if empty — the gate check"
+      reference_to(Stack)
+      emits "StackChecked"
+    end
+  end
+
+  aggregate "SessionAction", "Auto-generated action bluebook created at boot" do
+    String :session_id
+    String :engine
+    String :created_at
+    String :action_path
+
+    Generate do
+      role "Binary"
+      description "Generate a session action bluebook at .action_stack/session_{timestamp}.bluebook"
+      String :session_id
+      String :engine
+      String :created_at
+      emits "SessionActionGenerated"
+      then_set :session_id, to: :session_id
+      then_set :engine, to: :engine
+      then_set :created_at, to: :created_at
+    end
+  end
+
+  fixture "Stack", file_path: "hecks_conception/.action_stack", depth: 2, current_action: "actions/wire_governance_to_body.bluebook", entries: ["actions/session_2026_04_15_001.bluebook", "actions/wire_governance_to_body.bluebook"]
+  fixture "Stack", file_path: "hecks_conception/.action_stack", depth: 0, current_action: "", entries: []
+  fixture "SessionAction", session_id: "session_2026_04_15_001", engine: "claude", created_at: "2026-04-15T08:00:00Z", action_path: "actions/session_2026_04_15_001.bluebook"
+end

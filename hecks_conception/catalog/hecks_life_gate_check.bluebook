@@ -1,0 +1,68 @@
+Hecks.bluebook "HecksLifeGateCheck", version: "2026.04.15.1" do
+  vision "Rust module: every hecks-life command checks the action stack before executing — the binary-level gate"
+  category "runtime"
+
+  # ============================================================
+  # This bluebook describes behavior in hecks-life/src/cli.rs
+  #
+  # Before dispatching ANY subcommand (except `action init`),
+  # hecks-life calls action_stack::check().
+  # If the stack is empty, print an error and exit 1.
+  #
+  # This is not a middleware. It's a gate in main().
+  # The command never reaches the handler if the gate fails.
+  # ============================================================
+
+  aggregate "Gate", "The check that runs before every command dispatch" do
+    String :command
+    Boolean :passed
+    String :refusal_reason
+
+    Check do
+      role "Binary"
+      description "Read .action_stack, verify depth > 0. If empty, refuse the command."
+      String :command
+      emits "GateChecked"
+      then_set :command, to: :command
+    end
+
+    Pass do
+      role "Binary"
+      description "Stack has entries — command proceeds"
+      reference_to(Gate)
+      emits "GatePassed"
+      then_set :passed, to: true
+    end
+
+    Refuse do
+      role "Binary"
+      description "Stack is empty — command blocked, error printed, exit 1"
+      reference_to(Gate)
+      String :refusal_reason
+      emits "GateRefused"
+      then_set :passed, to: false
+      then_set :refusal_reason, to: :refusal_reason
+    end
+  end
+
+  aggregate "Exemption", "Commands that bypass the gate — only action init and action check" do
+    String :command
+    String :reason
+
+    RegisterExemption do
+      role "Architect"
+      description "Mark a command as exempt from the gate check"
+      String :command
+      String :reason
+      emits "ExemptionRegistered"
+      then_set :command, to: :command
+      then_set :reason, to: :reason
+    end
+  end
+
+  fixture "Gate", command: "hecks-life heki write", passed: true, refusal_reason: ""
+  fixture "Gate", command: "hecks-life boot", passed: false, refusal_reason: "No active action. Run: hecks-life action init"
+
+  fixture "Exemption", command: "action init", reason: "Must be callable to create the stack in the first place"
+  fixture "Exemption", command: "action check", reason: "Hooks need to query stack state without being inside an action"
+end

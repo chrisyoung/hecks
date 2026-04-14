@@ -1,0 +1,104 @@
+Hecks.bluebook "HecksLifeEnforcement", version: "2026.04.15.1" do
+  vision "Rust module: read laws from law.bluebook, evaluate check expressions against real state, compile reports"
+  category "runtime"
+
+  # ============================================================
+  # This bluebook describes: hecks-life/src/enforcement.rs
+  #
+  # CLI:
+  #   hecks-life enforce {conception_dir}              → run all laws against codebase
+  #   hecks-life enforce --scope {scope}               → run laws for one scope
+  #   hecks-life enforce --current-action              → run laws against current action
+  #   hecks-life enforce --law {name}                  → run one specific law
+  #
+  # The enforcement engine:
+  #   1. Reads law.bluebook to get all active laws
+  #   2. Filters by scope (if specified)
+  #   3. For each law, evaluates the check_expression
+  #   4. Compiles a report: laws checked, passed, failed, verdict
+  #   5. Prints results to stdout
+  #   6. Exits 0 if clear/warned, exits 1 if blocked
+  #
+  # Check expression evaluators (built into the binary):
+  #   "fixture_count > 0"         → grep for fixture lines in bluebook
+  #   "wc -l < 200"               → count code lines in target file
+  #   "vision present"             → grep for vision in bluebook
+  #   "action_stack.depth > 0"     → read .action_stack
+  #   "bluebook exists"            → check for corresponding .bluebook
+  #   "first line is comment"      → read first line of file
+  # ============================================================
+
+  aggregate "LawReader", "Parse law.bluebook and extract active laws" do
+    String :law_bluebook_path
+    Integer :total_laws
+    Integer :active_laws
+
+    ReadLaws do
+      role "Binary"
+      description "Parse the fixture lines from law.bluebook — each fixture is an active law"
+      String :law_bluebook_path
+      emits "LawsRead"
+      then_set :law_bluebook_path, to: :law_bluebook_path
+    end
+  end
+
+  aggregate "CheckEvaluator", "Evaluate one check expression against real filesystem state" do
+    String :law_name
+    String :check_expression
+    String :target
+    String :evidence
+    Boolean :passed
+
+    Evaluate do
+      role "Binary"
+      description "Run the check — read files, count lines, check existence, gather evidence"
+      String :law_name
+      String :check_expression
+      String :target
+      emits "CheckEvaluated"
+      then_set :law_name, to: :law_name
+      then_set :check_expression, to: :check_expression
+      then_set :target, to: :target
+    end
+  end
+
+  aggregate "EnforcementReport", "Compiled results of all checks — the verdict" do
+    String :scope
+    Integer :laws_checked
+    Integer :passed
+    Integer :failed
+    Integer :warnings
+    String :verdict
+
+    Compile do
+      role "Binary"
+      description "Tally all check results and render a verdict"
+      String :scope
+      Integer :laws_checked
+      Integer :passed
+      Integer :failed
+      Integer :warnings
+      emits "ReportCompiled"
+      then_set :scope, to: :scope
+      then_set :laws_checked, to: :laws_checked
+      then_set :passed, to: :passed
+      then_set :failed, to: :failed
+      then_set :warnings, to: :warnings
+    end
+
+    RenderVerdict do
+      role "Binary"
+      description "Determine verdict from results — clear, warned, or blocked"
+      reference_to(EnforcementReport)
+      String :verdict
+      emits "VerdictRendered"
+      then_set :verdict, to: :verdict
+    end
+  end
+
+  fixture "LawReader", law_bluebook_path: "nursery/governance/hecks/law.bluebook", total_laws: 15, active_laws: 15
+  fixture "CheckEvaluator", law_name: "FileSizeLimit", check_expression: "wc -l < 200 for each lib file", target: "lib/", evidence: "27 files over 200 lines", passed: false
+  fixture "CheckEvaluator", law_name: "ActionFirst", check_expression: "action_stack.depth > 0", target: ".action_stack", evidence: "depth: 2", passed: true
+  fixture "EnforcementReport", scope: "full", laws_checked: 15, passed: 8, failed: 5, warnings: 2, verdict: "blocked"
+  fixture "EnforcementReport", scope: "governance", laws_checked: 2, passed: 2, failed: 0, warnings: 0, verdict: "clear"
+end

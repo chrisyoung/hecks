@@ -16,6 +16,7 @@ Hecks.hecksagon "Winter" do
   capabilities :web_components
   capabilities :language
   capabilities :actions
+  capabilities :governance
 
   persistence :information, dir: File.join(__dir__, "information")
 end

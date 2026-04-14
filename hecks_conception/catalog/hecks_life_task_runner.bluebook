@@ -1,0 +1,122 @@
+Hecks.bluebook "HecksLifeTaskRunner", version: "2026.04.15.1" do
+  vision "Rust module: register, trigger, and execute tasks — replaces all platform-specific hooks and daemons"
+  category "runtime"
+
+  # ============================================================
+  # This bluebook describes: hecks-life/src/task_runner.rs
+  #
+  # CLI:
+  #   hecks-life task register {name} {command} {trigger_type}
+  #   hecks-life task run {name} {conception_dir}
+  #   hecks-life task list
+  #   hecks-life task disable {name}
+  #   hecks-life task enable {name}
+  #
+  # Tasks are stored in {conception_dir}/tasks.heki
+  # Each task has: name, command, trigger_type, enabled, run_count
+  #
+  # Trigger types:
+  #   boot      — runs during `hecks-life action init`
+  #   shutdown  — runs during session action completion
+  #   event     — runs when `hecks-life task trigger {event_name}` is called
+  #   schedule  — runs on interval (managed by the runtime loop)
+  #   action    — runs when an action is pushed or popped
+  #
+  # The task runner checks the action stack before executing.
+  # It IS a hecks-life command, so the gate applies.
+  # ============================================================
+
+  aggregate "TaskRegistry", "The .heki store of registered tasks" do
+    String :store_path
+    Integer :task_count
+    Integer :enabled_count
+
+    LoadRegistry do
+      role "Binary"
+      description "Read tasks.heki and load all registered tasks"
+      String :store_path
+      emits "RegistryLoaded"
+      then_set :store_path, to: :store_path
+    end
+
+    RegisterTask do
+      role "Binary"
+      description "Add a new task to tasks.heki"
+      reference_to(TaskRegistry)
+      String :name
+      String :command
+      String :trigger_type
+      emits "TaskRegistered"
+      then_set :task_count, increment: 1
+      then_set :enabled_count, increment: 1
+    end
+  end
+
+  aggregate "TaskExecution", "One run of a task — command executed, output captured" do
+    String :task_name
+    String :command
+    Integer :exit_code
+    String :output
+    String :executed_at
+    String :status
+
+    Execute do
+      role "Binary"
+      description "Run the task's command, capture stdout/stderr, record exit code"
+      String :task_name
+      String :command
+      emits "TaskExecuted"
+      then_set :task_name, to: :task_name
+      then_set :command, to: :command
+      then_set :status, to: "running"
+    end
+
+    RecordSuccess do
+      role "Binary"
+      description "Task exited 0 — record output"
+      reference_to(TaskExecution)
+      String :output
+      String :executed_at
+      emits "TaskSucceeded"
+      then_set :exit_code, to: 0
+      then_set :output, to: :output
+      then_set :executed_at, to: :executed_at
+      then_set :status, to: "success"
+    end
+
+    RecordFailure do
+      role "Binary"
+      description "Task exited non-zero — record error"
+      reference_to(TaskExecution)
+      Integer :exit_code
+      String :output
+      String :executed_at
+      emits "TaskFailed"
+      then_set :exit_code, to: :exit_code
+      then_set :output, to: :output
+      then_set :executed_at, to: :executed_at
+      then_set :status, to: "failed"
+    end
+  end
+
+  aggregate "TriggerDispatch", "Match events to tasks and fire them" do
+    String :event_name
+    Integer :tasks_matched
+    Integer :tasks_fired
+
+    Dispatch do
+      role "Binary"
+      description "An event occurred — find all tasks with matching trigger, execute them"
+      String :event_name
+      emits "TriggerDispatched"
+      then_set :event_name, to: :event_name
+      then_set :tasks_matched, to: 0
+      then_set :tasks_fired, to: 0
+    end
+  end
+
+  fixture "TaskRegistry", store_path: "hecks_conception/tasks.heki", task_count: 8, enabled_count: 8
+  fixture "TaskExecution", task_name: "pulse", command: "hecks-life daemon pulse hecks_conception", exit_code: 0, output: "beat 165002", executed_at: "2026-04-15T09:00:00Z", status: "success"
+  fixture "TaskExecution", task_name: "enforce", command: "hecks-life enforce --current-action", exit_code: 1, output: "BLOCKED: FileSizeLimit violated in argv.rb", executed_at: "2026-04-15T09:01:00Z", status: "failed"
+  fixture "TriggerDispatch", event_name: "SessionLive", tasks_matched: 3, tasks_fired: 3
+end

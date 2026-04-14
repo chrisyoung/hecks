@@ -1,0 +1,68 @@
+Hecks.bluebook "ImplementActionStackInRust", version: "2026.04.15.1" do
+  vision "Build the action stack, gate check, and task runner in hecks-life Rust — this is where law gets teeth"
+  category "action"
+
+  aggregate "Action", "Implement the deterministic enforcement layer in Rust" do
+    String :action_name
+    String :rationale
+    String :status
+    Integer :steps_total
+    Integer :steps_completed
+
+    Plan do
+      role "Winter"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+      then_set :steps_total, to: 5
+      then_set :steps_completed, to: 0
+    end
+
+    Execute do
+      role "Winter"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Winter"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  aggregate "Step", "One step of the Rust implementation" do
+    String :name
+    String :bluebook_path
+    String :description
+    String :status
+
+    Complete do
+      role "Winter"
+      reference_to(Step)
+      emits "StepCompleted"
+      then_set :status, to: "done"
+    end
+  end
+
+  fixture "Action", action_name: "ImplementActionStackInRust", rationale: "Bluebooks describe the system we want. Rust makes it deterministic. Until the binary enforces, laws are suggestions.", status: "planned", steps_total: 5, steps_completed: 0
+
+  fixture "Step", name: "ConceiveRustActionStack", bluebook_path: "to be conceived", description: "Bluebook for the Rust action stack module — .action_stack file, push/pop, depth check", status: "pending"
+  fixture "Step", name: "ConceiveRustGateCheck", bluebook_path: "to be conceived", description: "Bluebook for the gate check — every hecks-life command checks stack before executing", status: "pending"
+  fixture "Step", name: "ConceiveRustTaskRunner", bluebook_path: "to be conceived", description: "Bluebook for the task runner — register, trigger, queue, execute tasks", status: "pending"
+  fixture "Step", name: "ConceiveRustEnforcement", bluebook_path: "to be conceived", description: "Bluebook for the enforcement engine — run law checks, compile reports", status: "pending"
+  fixture "Step", name: "ImplementAll", bluebook_path: "all above", description: "Write the Rust code from the bluebooks — only after all are conceived", status: "pending"
+end
