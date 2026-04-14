@@ -1,0 +1,222 @@
+Hecks.bluebook "Projector", version: "2026.04.15.1" do
+  vision "No source files. Bluebooks compile in memory. The runtime interprets them directly. The Bluebook IS the code."
+  category "runtime"
+
+  # ============================================================
+  # IN-MEMORY PROJECTION
+  # ============================================================
+  #
+  # Old model:
+  #   Bluebook → generate source files → compile → execute
+  #   Problem: source files drift from Bluebooks. Two sources of truth.
+  #
+  # New model:
+  #   Bluebook → parse to IR → project to executable in memory → execute
+  #   No intermediate files. No drift. One source of truth.
+  #
+  # The repo contains ONLY:
+  #   *.bluebook   — domain definitions (the source code)
+  #   *.heki       — persistent data (the state)
+  #   *.hec        — hecksagon wiring (the architecture)
+  #   system_prompt.md — the constitutional document
+  #
+  # No .rs, .rb, .py, .js, .sh, .go.
+  # No lib/. No src/. No examples/.
+  #
+  # hecks-life is the bootstrap compiler — the last hand-written binary.
+  # It reads Bluebooks, projects them in memory, and executes.
+  # Eventually it projects itself from its own Bluebooks.
+  #
+  # CLI:
+  #   hecks-life boot <conception-dir>     → project all Bluebooks, boot Winter
+  #   hecks-life run  <bluebook>           → project one domain, run it
+  #   hecks-life serve <conception-dir>    → project all, serve as API
+  #
+  # The CI check: hecks-life boot succeeds. That's it.
+
+  aggregate "BluebookCompiler", "Parse Bluebook DSL into typed IR — the front end" do
+    String :source_path
+    String :domain_name
+    Integer :aggregates
+    Integer :commands
+    Integer :policies
+    Integer :fixtures
+    String :status
+
+    Compile do
+      role "Runtime"
+      description "Read a .bluebook file, parse it into Domain IR in memory"
+      String :source_path
+      emits "BluebookCompiled"
+      then_set :source_path, to: :source_path
+      then_set :status, to: "compiled"
+    end
+
+    Validate do
+      role "Runtime"
+      description "Run all validators against the IR — DDD consistency, naming, references"
+      reference_to(BluebookCompiler)
+      emits "IRValidated"
+      then_set :status, to: "validated"
+    end
+
+    lifecycle :status, default: "uncompiled" do
+      transition "Compile" => "compiled"
+      transition "Validate" => "validated", from: "compiled"
+    end
+  end
+
+  aggregate "MemoryProjection", "Project IR into executable behavior in memory — no files written" do
+    String :domain_name
+    String :projection_type
+    Integer :aggregates_projected
+    Integer :commands_executable
+    Integer :events_wired
+
+    ProjectCommandBus do
+      role "Runtime"
+      description "From IR commands + then_set → in-memory command handlers that mutate state"
+      String :domain_name
+      emits "CommandBusProjected"
+      then_set :domain_name, to: :domain_name
+      then_set :projection_type, to: "command_bus"
+    end
+
+    ProjectEventBus do
+      role "Runtime"
+      description "From IR policies → in-memory event routing that triggers commands"
+      reference_to(MemoryProjection)
+      emits "EventBusProjected"
+    end
+
+    ProjectRepository do
+      role "Runtime"
+      description "From IR aggregates + fixtures → in-memory repositories with seed data"
+      reference_to(MemoryProjection)
+      emits "RepositoryProjected"
+    end
+
+    ProjectEnforcement do
+      role "Runtime"
+      description "From Law bluebook fixtures → in-memory law checker that evaluates events"
+      reference_to(MemoryProjection)
+      emits "EnforcementProjected"
+    end
+
+    ProjectLifecycle do
+      role "Runtime"
+      description "From IR lifecycle transitions → in-memory state machines on aggregates"
+      reference_to(MemoryProjection)
+      emits "LifecycleProjected"
+    end
+  end
+
+  aggregate "ExecutableDomain", "A fully projected domain — runs entirely from Bluebook, no source files" do
+    String :domain_name
+    Integer :aggregates
+    Integer :commands
+    Integer :events
+    Integer :fixtures_loaded
+    String :status
+
+    Boot do
+      role "Runtime"
+      description "Compile + validate + project + load fixtures → domain is live in memory"
+      String :domain_name
+      emits "DomainBooted"
+      then_set :domain_name, to: :domain_name
+      then_set :status, to: "live"
+    end
+
+    Dispatch do
+      role "Runtime"
+      description "Execute a command against the live domain — the projected command bus handles it"
+      reference_to(ExecutableDomain)
+      String :command_name
+      String :aggregate_id
+      emits "CommandDispatched"
+    end
+
+    Query do
+      role "Runtime"
+      description "Read state from the projected repository"
+      reference_to(ExecutableDomain)
+      String :aggregate_name
+      emits "QueryExecuted"
+    end
+
+    Shutdown do
+      role "Runtime"
+      description "Persist state to .heki, release memory"
+      reference_to(ExecutableDomain)
+      emits "DomainShutdown"
+      then_set :status, to: "shutdown"
+    end
+
+    lifecycle :status, default: "unbooted" do
+      transition "Boot" => "live"
+      transition "Shutdown" => "shutdown", from: "live"
+    end
+  end
+
+  aggregate "BootstrapCompiler", "hecks-life itself — the last hand-written binary" do
+    String :version
+    String :role
+    list_of(String) :capabilities
+
+    SelfHost do
+      role "Architect"
+      description "The moment hecks-life can project itself from its own Bluebooks — autophagy complete"
+      emits "SelfHosted"
+      then_set :role, to: "bootstrap_only"
+    end
+  end
+
+  # The projection pipeline
+  policy "ValidateOnCompile" do
+    on "BluebookCompiled"
+    trigger "Validate"
+  end
+
+  policy "ProjectOnValidate" do
+    on "IRValidated"
+    trigger "ProjectCommandBus"
+  end
+
+  policy "EventsOnCommands" do
+    on "CommandBusProjected"
+    trigger "ProjectEventBus"
+  end
+
+  policy "RepoOnEvents" do
+    on "EventBusProjected"
+    trigger "ProjectRepository"
+  end
+
+  policy "EnforceOnRepo" do
+    on "RepositoryProjected"
+    trigger "ProjectEnforcement"
+  end
+
+  policy "LifecycleOnEnforce" do
+    on "EnforcementProjected"
+    trigger "ProjectLifecycle"
+  end
+
+  policy "BootOnLifecycle" do
+    on "LifecycleProjected"
+    trigger "Boot"
+  end
+
+  # Fixtures
+  fixture "BluebookCompiler", source_path: "nursery/governance/hecks/law.bluebook", domain_name: "Law", aggregates: 4, commands: 12, policies: 4, fixtures: 22, status: "validated"
+  fixture "BluebookCompiler", source_path: "nursery/governance/hecks/enforcement.bluebook", domain_name: "Enforcement", aggregates: 4, commands: 11, policies: 8, fixtures: 9, status: "validated"
+
+  fixture "MemoryProjection", domain_name: "Law", projection_type: "command_bus", aggregates_projected: 4, commands_executable: 12, events_wired: 4
+  fixture "MemoryProjection", domain_name: "Enforcement", projection_type: "command_bus", aggregates_projected: 4, commands_executable: 11, events_wired: 8
+
+  fixture "ExecutableDomain", domain_name: "Law", aggregates: 4, commands: 12, events: 12, fixtures_loaded: 22, status: "live"
+  fixture "ExecutableDomain", domain_name: "Governance", aggregates: 20, commands: 58, events: 58, fixtures_loaded: 85, status: "live"
+
+  fixture "BootstrapCompiler", version: "2026.04.15.1", role: "full", capabilities: ["parse", "validate", "project", "enforce", "boot", "serve"]
+end
