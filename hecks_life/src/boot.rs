@@ -8,6 +8,7 @@
 //!   hecks-life boot <project-dir>
 
 use crate::{heki, parser, action_stack};
+use crate::runtime::lazy_runtime::LazyRuntime;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -212,6 +213,16 @@ pub fn run(project_dir: &str, show_nerves: bool, being: &str) {
     }
     println!("  session continuity — {} linked, {} private",
         linked.len(), private.len());
+
+    // 6. Boot lazy runtime — index all domains, project governance
+    match LazyRuntime::boot(project_dir) {
+        Ok(lr) => {
+            lr.summary();
+        }
+        Err(e) => {
+            eprintln!("  lazy runtime: {}", e);
+        }
+    }
 
     if show_nerves {
         for n in &nerves {
