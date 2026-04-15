@@ -1,0 +1,52 @@
+Hecks.bluebook "NextSessionPlan", version: "2026.04.15.1" do
+  vision "What to build next — prioritized by impact"
+  category "action"
+
+  aggregate "Priority", "Ranked next steps" do
+    String :name
+    String :description
+    Integer :rank
+    String :category
+
+    Plan do
+      role "Architect"
+      String :name
+      String :description
+      Integer :rank
+      String :category
+      emits "PriorityPlanned"
+      then_set :name, to: :name
+      then_set :description, to: :description
+      then_set :rank, to: :rank
+      then_set :category, to: :category
+    end
+  end
+
+  # === IMMEDIATE (next session) ===
+
+  fixture "Priority", name: "OpusRepairRun", description: "Fix 56 cop violations: 32 fixture placement, 19 reference_to in fixtures, 74 shallow domains. Use Opus agents only.", rank: 1, category: "training_data"
+
+  fixture "Priority", name: "PersistentLazyRuntime", description: "LazyRuntime persists state to .heki between commands. Every hecks-life command rehydrates, works, persists. No daemon needed.", rank: 2, category: "runtime"
+
+  fixture "Priority", name: "InlineEnforcementLive", description: "Wire governance into the lazy runtime dispatch loop. Every command checked against laws from the resident Law domain in real time.", rank: 3, category: "governance"
+
+  fixture "Priority", name: "EventCaptureToHeki", description: "Every event written to session_events.heki. Replay and rewind from the event log. Fine-grained undo.", rank: 4, category: "governance"
+
+  # === NEXT WAVE ===
+
+  fixture "Priority", name: "StreamingCopSweep", description: "Cop uses lazy runtime stream mode. Compile one domain, check, release. Memory-efficient for large corpora.", rank: 5, category: "governance"
+
+  fixture "Priority", name: "Phase4Generators", description: "Migrate Ruby code generators to projectable Bluebooks. Ruby/Go target output from IR without Ruby runtime.", rank: 6, category: "migration"
+
+  fixture "Priority", name: "Phase5CLI", description: "CLI routing from Bluebook aggregates. hecks-life reads cli.bluebook and routes commands.", rank: 7, category: "migration"
+
+  fixture "Priority", name: "BluebookConformanceCheck", description: "Enforce that Rust code matches its Bluebook — not just existence but structural conformance.", rank: 8, category: "governance"
+
+  # === HORIZON ===
+
+  fixture "Priority", name: "SelfHostingBootstrap", description: "hecks-life projects itself from its own Bluebooks. The bootstrap compiler compiles its own replacement.", rank: 9, category: "vision"
+
+  fixture "Priority", name: "DomainCompression", description: "Compress domains to embeddings, discover primitive patterns, find the 20 fundamental domain shapes.", rank: 10, category: "training"
+
+  fixture "Priority", name: "OllamaIntegration", description: "hecks winter without --claude boots with Ollama. Same governance, same laws, local brain.", rank: 11, category: "portability"
+end

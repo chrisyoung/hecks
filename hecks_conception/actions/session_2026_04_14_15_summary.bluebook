@@ -1,0 +1,25 @@
+Hecks.bluebook "SessionSummary20260414", version: "2026.04.15.1" do
+  vision "Two-day session: from executable bluebooks idea to a working governance system with lazy runtime"
+  category "session"
+
+  aggregate "SessionRecord", "What happened in this session" do
+    String :session_id
+    String :started
+    String :ended
+    Integer :commits
+    Integer :domains_conceived
+    Integer :laws_enacted
+    Integer :rust_modules_written
+    Integer :files_composted
+    String :biggest_insight
+
+    Record do
+      role "Winter"
+      String :session_id
+      emits "SessionRecorded"
+      then_set :session_id, to: :session_id
+    end
+  end
+
+  fixture "SessionRecord", session_id: "2026-04-14-15", started: "2026-04-14T10:00:00Z", ended: "2026-04-15T12:00:00Z", commits: 31, domains_conceived: 12, laws_enacted: 19, rust_modules_written: 4, files_composted: 16, biggest_insight: "The Bluebook IS the code — no source files needed, project in memory"
+end
