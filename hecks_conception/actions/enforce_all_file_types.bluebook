@@ -1,0 +1,44 @@
+Hecks.bluebook "EnforceAllFileTypes", version: "2026.04.15.1" do
+  vision "The enforce engine checks every code file extension against BluebookOnly — not just .rs and conception scripts"
+  category "action"
+
+  aggregate "Action", "Widen enforcement to all file types" do
+    String :action_name
+    String :rationale
+    String :status
+
+    Plan do
+      role "Winter"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+    end
+
+    Execute do
+      role "Winter"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Winter"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  fixture "Action", action_name: "EnforceAllFileTypes", rationale: "I just edited statusline-command.sh without a Bluebook. The enforce engine didn't catch it because it only checks .rs files. Every code file must be checked.", status: "planned"
+end

@@ -55,26 +55,13 @@ pub fn run_diff(project_dir: &str) -> bool {
             }
         }
 
-        // Law: RustModuleBluebook — every .rs file needs a catalog bluebook
-        if is_rust_module(file) {
-            let module_name = Path::new(file)
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("");
-            // Skip mod.rs and main.rs special cases
-            let bluebook_name = if module_name == "main" {
-                "hecks_life_main".to_string()
-            } else {
-                format!("hecks_life_{}", module_name)
-            };
-            let catalog_path = Path::new(project_dir)
-                .join("catalog")
-                .join(format!("{}.bluebook", bluebook_name));
-            if !catalog_path.exists() {
+        // Law: AllCodeHasBluebook — every code file needs a bluebook
+        if is_any_code_file(file) {
+            if !has_bluebook(file, project_dir) {
                 violations.push((
                     file.clone(),
-                    "RustModuleBluebook".into(),
-                    format!("no catalog/{}.bluebook found", bluebook_name),
+                    "AllCodeHasBluebook".into(),
+                    format!("no bluebook found for {}", Path::new(file).file_name().and_then(|n| n.to_str()).unwrap_or(file)),
                 ));
             }
         }
@@ -181,32 +168,17 @@ pub fn run_full(project_dir: &str) -> bool {
     let mut warnings: Vec<(String, String, String)> = Vec::new();
     let mut files_checked = 0;
 
-    // Law: RustModuleBluebook — check all .rs files
-    let rust_src = Path::new(project_dir).parent()
-        .map(|p| p.join("hecks_life/src"))
-        .unwrap_or_default();
-    if rust_src.is_dir() {
-        if let Ok(entries) = std::fs::read_dir(&rust_src) {
-            for entry in entries.filter_map(|e| e.ok()) {
-                let path = entry.path();
-                if path.extension().map_or(false, |e| e == "rs") {
-                    files_checked += 1;
-                    let module_name = path.file_stem()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("");
-                    let bluebook_name = format!("hecks_life_{}", module_name);
-                    let catalog_path = Path::new(project_dir)
-                        .join("catalog")
-                        .join(format!("{}.bluebook", bluebook_name));
-                    if !catalog_path.exists() {
-                        violations.push((
-                            path.to_string_lossy().into_owned(),
-                            "RustModuleBluebook".into(),
-                            format!("no catalog/{}.bluebook", bluebook_name),
-                        ));
-                    }
-                }
-            }
+    // Law: AllCodeHasBluebook — check all code files in the entire repo
+    let repo_root = Path::new(project_dir).parent().unwrap_or(Path::new("."));
+    let all_code = walk_all_code_files(repo_root);
+    for file in &all_code {
+        files_checked += 1;
+        if !has_bluebook(file, project_dir) {
+            violations.push((
+                file.clone(),
+                "AllCodeHasBluebook".into(),
+                format!("no bluebook for {}", Path::new(file).file_name().and_then(|n| n.to_str()).unwrap_or(file)),
+            ));
         }
     }
 
@@ -352,14 +324,30 @@ fn get_staged_files() -> Vec<String> {
     }
 }
 
+/// Code file extensions — anything that's code needs a bluebook.
+const CODE_EXTENSIONS: &[&str] = &[
+    "rs", "rb", "py", "js", "ts", "sh", "go", "jsx", "tsx",
+    "css", "html", "erb", "haml", "slim", "toml", "yml", "yaml",
+];
+
+/// Files/dirs to skip during sweeps.
+const SKIP_DIRS: &[&str] = &[
+    "node_modules", ".git", "target", "vendor", "tmp",
+    "log", ".bundle", "pkg",
+];
+
 /// Is this a code file that should be checked for size?
 fn is_code_file(path: &str) -> bool {
     path.ends_with(".rb") || path.ends_with(".js")
 }
 
-/// Is this a Rust module in hecks_life/src/?
-fn is_rust_module(path: &str) -> bool {
-    path.ends_with(".rs") && (path.contains("hecks_life/src/") || path.contains("hecks-life/src/"))
+/// Is this any kind of code file?
+fn is_any_code_file(path: &str) -> bool {
+    let p = Path::new(path);
+    p.extension()
+        .and_then(|e| e.to_str())
+        .map(|ext| CODE_EXTENSIONS.contains(&ext))
+        .unwrap_or(false)
 }
 
 /// Is this a script in the conception directory without a bluebook?
@@ -369,6 +357,70 @@ fn is_conception_script(path: &str, project_dir: &str) -> bool {
     let is_script = path.ends_with(".py") || path.ends_with(".sh") ||
         (path.ends_with(".js") && !path.ends_with(".bluebook"));
     in_conception && is_script
+}
+
+/// Check if a code file has a corresponding bluebook anywhere in the catalog.
+/// Tries multiple naming conventions:
+///   foo.rs        → catalog/hecks_life_foo.bluebook
+///   bar.rb        → catalog/bar.bluebook
+///   baz.sh        → catalog/baz.bluebook
+///   dir/thing.py  → catalog/thing.bluebook
+fn has_bluebook(file_path: &str, project_dir: &str) -> bool {
+    let stem = Path::new(file_path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("");
+
+    let catalog = Path::new(project_dir).join("catalog");
+
+    // Try exact name
+    if catalog.join(format!("{}.bluebook", stem)).exists() {
+        return true;
+    }
+
+    // Try with hecks_life_ prefix (for Rust modules)
+    if catalog.join(format!("hecks_life_{}.bluebook", stem)).exists() {
+        return true;
+    }
+
+    // Try with underscored directory prefix
+    // e.g. runtime/multi_domain.rs → hecks_life_multi_domain.bluebook
+    let parent = Path::new(file_path).parent()
+        .and_then(|p| p.file_name())
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
+    if !parent.is_empty() {
+        if catalog.join(format!("{}_{}.bluebook", parent, stem)).exists() {
+            return true;
+        }
+        if catalog.join(format!("hecks_life_{}.bluebook", stem)).exists() {
+            return true;
+        }
+    }
+
+    false
+}
+
+/// Walk the entire repo for code files (skipping excluded dirs).
+fn walk_all_code_files(dir: &Path) -> Vec<String> {
+    let mut files = Vec::new();
+    walk_code_recursive(dir, &mut files);
+    files
+}
+
+fn walk_code_recursive(dir: &Path, files: &mut Vec<String>) {
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let path = entry.path();
+            if path.is_dir() {
+                let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if SKIP_DIRS.contains(&name) { continue; }
+                walk_code_recursive(&path, files);
+            } else if is_any_code_file(&path.to_string_lossy()) {
+                files.push(path.to_string_lossy().into_owned());
+            }
+        }
+    }
 }
 
 /// Count non-comment, non-blank lines in a file.
