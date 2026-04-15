@@ -214,7 +214,34 @@ pub fn run(project_dir: &str, show_nerves: bool, being: &str) {
     println!("  session continuity — {} linked, {} private",
         linked.len(), private.len());
 
-    // 6. Boot lazy runtime — index all domains, project governance
+    // 6. Rehydrate consciousness — read actual state, not vibes
+    let consciousness_path = info_dir.join("consciousness.heki");
+    if let Ok(store) = heki::read(consciousness_path.to_str().unwrap_or("")) {
+        if let Some(rec) = heki::latest(&store) {
+            let state = rec.get("state").and_then(|v| v.as_str()).unwrap_or("unknown");
+            let sleep_stage = rec.get("sleep_stage").and_then(|v| v.as_str()).unwrap_or("");
+            let sleep_cycle = rec.get("sleep_cycle").and_then(|v| v.as_i64()).unwrap_or(0);
+            let sleep_summary = rec.get("sleep_summary").and_then(|v| v.as_str()).unwrap_or("");
+
+            match state {
+                "sleeping" => {
+                    println!("  consciousness: sleeping (stage: {}, cycle: {})", sleep_stage, sleep_cycle);
+                    if !sleep_summary.is_empty() {
+                        println!("  dream: {}", &sleep_summary[..sleep_summary.len().min(80)]);
+                    }
+                }
+                "awake" | "attentive" => {
+                    println!("  consciousness: awake");
+                }
+                _ => {
+                    println!("  consciousness: {} (just woke — previous: {} stage, cycle {})",
+                        state, sleep_stage, sleep_cycle);
+                }
+            }
+        }
+    }
+
+    // 7. Boot lazy runtime — index all domains, project governance
     match LazyRuntime::boot(project_dir) {
         Ok(lr) => {
             lr.summary();
