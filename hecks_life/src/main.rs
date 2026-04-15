@@ -62,6 +62,25 @@ fn main() {
         return;
     }
 
+    // Heki read is exempt from gate — reads don't mutate, status line needs them
+    if command == "heki" && args.get(2).map(|s| s.as_str()) == Some("read") {
+        run_heki(&args);
+        return;
+    }
+    if command == "heki" && args.get(2).map(|s| s.as_str()) == Some("latest") {
+        run_heki(&args);
+        return;
+    }
+    // Hydrate is read-only — exempt from gate
+    if command == "hydrate" {
+        let dir = if path.is_empty() { "information" } else { path };
+        match heki::read_dir(dir) {
+            Ok(stores) => heki::print_summary(&stores),
+            Err(e) => { eprintln!("hydrate error: {}", e); std::process::exit(1); }
+        }
+        return;
+    }
+
     // Enforce is exempt from gate — it IS the enforcement layer
     if command == "enforce" {
         let project_dir = resolve_project_dir(&args);
