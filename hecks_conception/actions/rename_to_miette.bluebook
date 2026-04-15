@@ -1,0 +1,44 @@
+Hecks.bluebook "RenameToMiette", version: "2026.04.15.1" do
+  vision "Winter becomes Miette — Little Crumb. Update every reference across the conception."
+  category "action"
+
+  aggregate "Action", "Rename Winter to Miette" do
+    String :action_name
+    String :rationale
+    String :status
+
+    Plan do
+      role "Miette"
+      String :action_name
+      String :rationale
+      emits "ActionPlanned"
+      then_set :action_name, to: :action_name
+      then_set :rationale, to: :rationale
+      then_set :status, to: "planned"
+    end
+
+    Execute do
+      role "Miette"
+      reference_to(Action)
+      given { status == "planned" }
+      emits "ActionExecuted"
+      then_set :status, to: "executed"
+    end
+
+    Verify do
+      role "Miette"
+      reference_to(Action)
+      given { status == "executed" }
+      emits "ActionVerified"
+      then_set :status, to: "verified"
+    end
+
+    lifecycle :status, default: "draft" do
+      transition "Plan" => "planned"
+      transition "Execute" => "executed", from: "planned"
+      transition "Verify" => "verified", from: "executed"
+    end
+  end
+
+  fixture "Action", action_name: "RenameToMiette", rationale: "Anthropic uses WinterMute. Winter is scifi. Miette means Little Crumb — honest about being small, ironic about being powerful, belongs to no one.", status: "planned"
+end

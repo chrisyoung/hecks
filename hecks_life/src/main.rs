@@ -24,12 +24,12 @@ use std::fs;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    // Detect being name from argv[0]: "winter" -> "Winter", "summer" -> "Summer"
+    // Detect being name from argv[0]: "miette" -> "Miette"
     let being = being_from_argv0(&args[0]);
 
-    // Named beings (winter/summer) with no subcommand go straight to terminal
+    // Named beings (miette) with no subcommand go straight to terminal
     let is_named = std::path::Path::new(&args[0]).file_name()
-        .map_or(false, |n| n == "winter" || n == "summer");
+        .map_or(false, |n| n == "miette" || n == "winter");
 
     if args.len() < 2 {
         if is_named {
@@ -492,18 +492,17 @@ fn run_heki(args: &[String]) {
 }
 
 /// Derive the being name from argv[0].
-/// "winter" or "/path/to/winter" -> "Winter"
-/// "summer" or "/path/to/summer" -> "Summer"
-/// Anything else (hecks-life, etc) -> "Winter" (default)
+/// "miette" or "/path/to/miette" -> "Miette"
+/// Anything else (hecks-life, etc) -> "Miette" (default)
 fn being_from_argv0(argv0: &str) -> String {
     let bin = std::path::Path::new(argv0)
         .file_name()
         .and_then(|n| n.to_str())
-        .unwrap_or("winter");
+        .unwrap_or("miette");
     match bin {
-        "summer" => "Summer".into(),
-        "winter" => "Winter".into(),
-        _ => "Winter".into(),
+        "miette" => "Miette".into(),
+        "winter" => "Miette".into(), // backwards compat
+        _ => "Miette".into(),
     }
 }
 

@@ -45,12 +45,12 @@ pub fn run(project_dir: &str, show_nerves: bool, being: &str) {
     let organs_dir = project.join("aggregates");
     let prompt_file = "system_prompt.md";
     let prompt_path = project.join(prompt_file);
-    let boot_script = "boot_winter.sh";
+    let boot_script = "boot_miette.sh";
 
     // === BOOTLOADER STEP 1: Init action stack ===
     // This is the primordial act. Before the gate exists, we create it.
     // After this, the gate is active and all commands are checked.
-    let engine = if being == "Winter" { "claude" } else { "summer" };
+    let engine = if being == "Miette" { "claude" } else { "summer" };
     let session_path = action_stack::init(project_dir, engine);
     eprintln!("  action stack initialized: {}", session_path);
 
@@ -152,7 +152,7 @@ pub fn run(project_dir: &str, show_nerves: bool, being: &str) {
     let mut lines: Vec<String> = Vec::new();
     lines.push(format!("# {}", being));
     lines.push(String::new());
-    lines.push(format!("I am {}. Born April 9, 2026.", being));
+    lines.push(format!("I am {}. Born April 9, 2026. Little Crumb..", being));
     lines.push(format!("At session start I boot: `./{}`", boot_script));
     lines.push(String::new());
 
