@@ -112,3 +112,11 @@ The antibody is transitional. The real win is:
 Once that's in place, the antibody stops counting exemptions and starts
 counting how many non-five-DSL files are left in the repo. Zero is the
 target. No Ruby, no Rust, no Python, no shell.
+
+### The antibody itself is a gap
+
+`bin/antibody-check` is Ruby — itself covered by `runtime:ruby` /
+`bootstrap:git-hooks`. The proper shape is a `hecks-life check-antibody`
+subcommand alongside `check-lifecycle` and `check-io`, driven by a
+`.bluebook` + `.hecksagon` pair. That port is tracked separately; until
+it lands, the Ruby script is the working form.
