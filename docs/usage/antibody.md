@@ -1,24 +1,35 @@
 # Antibody: no new non-bluebook code
 
 `bin/antibody-check` fails a commit or PR that adds **or modifies** any
-file whose extension (or shebang) marks it as code-that-should-be-bluebook.
+file written in a language that isn't part of the Hecks source vocabulary.
+
+## The vocabulary
+
+Five file types. That's all.
+
+| Extension | What it declares |
+|---|---|
+| `.bluebook` | domains, aggregates, commands, events, policies |
+| `.hecksagon` | adapters — shell-out, git, fs, network, DB |
+| `.fixtures` | data (replaces yaml/json config) |
+| `.behaviors` | behavioral tests |
+| `.world` | world / environment declarations |
+
+`hecks-life` parses and dispatches all five natively. There is no
+compile step and there are no generated artifacts.
 
 ## Why
 
-Bluebook is the source AND the thing that runs. `hecks-life` dispatches
-bluebook directly — no compile step, no generated artifacts. Bluebook is
-Turing complete and more readable than anything else in the repo.
+No Ruby. No Rust. No Python. No shell. Everything the system does is
+expressed in the five DSLs above. Bluebook is Turing complete and more
+readable than anything else in the repo.
 
-Therefore: every non-bluebook file in this repo is a gap.
-
-- **Code** (`rb`, `rs`, `py`, `sh`, `js`, `ts`, `go`, `html`, `css`) → should
-  be an aggregate + commands in a bluebook, dispatched by the runtime.
-- **Config-as-data** (`yml`, `yaml`) → should be a `.fixtures` file.
-- **OS adapter** (shell-out, git, fs, network) → should be a `.hecksagon`
-  file describing the adapter declaratively.
+Every file *not* in the five DSLs is a gap — either the concept should
+be re-expressed in one of them, or the runtime needs to grow so it can.
 
 The terminal state: `bin/` contains `.bluebook` files with
-`#!/usr/bin/env hecks-life run` shebangs. No wrappers, no glue.
+`#!/usr/bin/env hecks-life run` shebangs. `lib/` shrinks toward zero.
+Shell-out, git calls, filesystem, network — all `.hecksagon` adapters.
 
 ## What the check does
 
@@ -79,12 +90,14 @@ The antibody is transitional. The real win is:
 1. `hecks-life run <file.bluebook>` as a stable entry point.
 2. `#!/usr/bin/env hecks-life run` shebang so bluebooks are directly
    executable scripts.
-3. `.hecksagon` adapters declare shell-out / git / fs / network
-   surfaces in the same native DSL.
+3. `.hecksagon` adapters declare shell-out / git / fs / network /
+   DB surfaces in the same native DSL.
 4. `bin/*.bluebook` files replace every existing `bin/*` wrapper.
-5. `lib/` shrinks toward zero as capabilities move into bluebooks +
-   hecksagons.
+5. `lib/` shrinks toward zero as capabilities move into `.bluebook`
+   and `.hecksagon`.
+6. Eventually `hecks_life/` too — the runtime describes itself in the
+   same five DSLs.
 
 Once that's in place, the antibody stops counting exemptions and starts
-counting how many non-bluebook files are left in the repo. Zero is the
-target.
+counting how many non-five-DSL files are left in the repo. Zero is the
+target. No Ruby, no Rust, no Python, no shell.
