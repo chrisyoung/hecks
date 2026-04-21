@@ -8,7 +8,7 @@
 #   2. Lifecycle validator — block on any unreachable transitions
 #   3. Conceiver parity test — block if either conceiver drifts
 #   4. Miette enforce (hecks-life governance) — advisory, never blocks
-#   5. Antibody: no new non-bluebook code — advisory locally; CI blocks
+#   5. Antibody: no new non-bluebook code — blocks locally and in CI
 #
 # Exit 0 = commit allowed. Exit 1 = commit blocked.
 # Set PARITY_SKIP=1 to bypass gate 1 (an antibody failure).
@@ -86,10 +86,21 @@ fi
 
 # ── Gate 5: Antibody — no new non-bluebook code ───────────────────
 # Bluebook is executable and Turing complete. Every non-bluebook file
-# added by hand is a gap. Advisory at commit time (so local work isn't
-# blocked); the same check runs blocking in CI.
-if [ -x "$REPO/bin/antibody-check" ]; then
-    "$REPO/bin/antibody-check" --staged --advisory
+# added or modified is a gap. Blocks commits unless an explicit
+# [antibody-exempt: <specific reason>] marker appears in a commit on
+# the branch. Set ANTIBODY_SKIP=1 to bypass (itself an antibody failure).
+if [ -z "$ANTIBODY_SKIP" ] && [ -x "$REPO/bin/antibody-check" ]; then
+    if ! "$REPO/bin/antibody-check" --staged; then
+        echo ""
+        echo "COMMIT BLOCKED: non-bluebook file(s) touched without exemption."
+        echo ""
+        echo "Either rewrite as one of .bluebook / .hecksagon / .fixtures /"
+        echo ".behaviors / .world, or add '[antibody-exempt: <reason>]' to"
+        echo "your commit message with a concrete per-change justification."
+        echo ""
+        echo "Bypass only in an emergency: ANTIBODY_SKIP=1 git commit ..."
+        exit 1
+    fi
 fi
 
 exit 0

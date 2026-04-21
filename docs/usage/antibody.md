@@ -52,47 +52,44 @@ Extensionless binaries are classified by shebang (`ruby`, `bash`, `sh`,
 
 ## Where it runs
 
-- **Pre-commit hook (`bin/git-hooks/pre-commit`, Gate 5):** advisory.
-  Warns on commit; does not block. Local work stays unobstructed.
-- **CI (`.github/workflows/antibody.yml`):** blocking. Every PR must
-  either touch no non-bluebook files or carry an exemption.
+- **Pre-commit hook (`bin/git-hooks/pre-commit`, Gate 5):** blocking.
+  Catches violations before they become commits. Bypass in an emergency
+  with `ANTIBODY_SKIP=1 git commit ...` — the bypass itself is a smell.
+- **CI (`.github/workflows/antibody.yml`):** blocking. Second layer —
+  catches anything that slipped past a missing or stale local hook.
+  PR runs emit GitHub annotations so flagged files surface on the diff.
 
 ## Exemption
 
+When the antibody fires, you have two choices: **fix it now** (rewrite
+the concept as one of the five DSLs) or **exempt this specific change**
+with a concrete reason.
+
+Exemptions are **case-by-case.** There are no pre-approved categories,
+no standing allowlists, no named carve-outs. Each exemption justifies
+*one specific change* — the next PR that touches the same file makes
+its own case from scratch.
+
 Put `[antibody-exempt: <reason>]` in any commit message on the branch.
-The reason is captured in the hook output and on the PR, so the gap is
-explicitly named and searchable.
-
-`EXEMPTIONS.md` in the repo root is the running ledger of known
-categories and why they exist today. Use a category name as the reason
-when it fits — treat the free-text form as a last resort:
+Good reasons name the concrete gap and how it'll close:
 
 ```
-fix: patch command bus so saga steps retry on transient errors
+fix: patch saga retry logic
 
-[antibody-exempt: runtime:ruby]
+[antibody-exempt: patching lib/hecks/runtime/saga_retry.rb before it
+ ports to a Saga bluebook; port tracked in i29]
 ```
 
 ```
-feat: nursery viability stats script
+feat: add CI job for parity suite
 
-[antibody-exempt: tool:audit]
+[antibody-exempt: GitHub Actions YAML — will move to .hecksagon once
+ a CI-adapter shape exists]
 ```
 
-Current categories (see `EXEMPTIONS.md` for the full entries):
-
-| Category | Lives where | Arc |
-|---|---|---|
-| `runtime:ruby` | `lib/hecks/**` | Stays — better than Rust for business operations |
-| `runtime:rust` | `hecks_life/**` | Becomes a binary that Ruby wraps |
-| `ecosystem:python-ml` | `hecks_conception/summer/**` | Shrinks toward zero — `.hecksagon` adapter replaces authored Python; MLX/Modal stay external |
-| `bootstrap:ci` | `.github/workflows/**` | Until `.hecksagon` describes CI |
-| `bootstrap:git-hooks` | `bin/**`, `bin/git-hooks/**` | Until shebang bluebooks |
-| `tool:audit` | `tools/**` | Until `hecks-life` dispatches audit commands |
-
-**There are no permanent path-based exemptions** — the antibody re-fires
-every time any of these files change. `EXEMPTIONS.md` is a vocabulary,
-not a carve-out.
+Thin reasons (`runtime`, `temporary`, `bootstrap`) are the smell the
+antibody is trying to prevent. If you can't name the gap, that's a
+signal the change should wait for a bluebook instead.
 
 ## Follow-up path
 

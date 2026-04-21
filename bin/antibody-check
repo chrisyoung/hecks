@@ -126,10 +126,9 @@ puts ""
 puts "  Hecks source vocabulary: .bluebook .hecksagon .fixtures"
 puts "  .behaviors .world. Everything else is a gap."
 puts ""
-puts "  See EXEMPTIONS.md for the known categories — runtime:ruby,"
-puts "  runtime:rust, ecosystem:python-ml, bootstrap:ci,"
-puts "  bootstrap:git-hooks, tool:audit. If your change fits one,"
-puts "  use that shorthand as the reason."
+puts "  Decide now: fix each file (rewrite as one of the five DSLs)"
+puts "  or name a specific exemption reason. Exemptions are"
+puts "  case-by-case — no pre-approved categories."
 puts ""
 
 if reasons.any?
