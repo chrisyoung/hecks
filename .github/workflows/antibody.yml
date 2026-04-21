@@ -1,0 +1,25 @@
+name: Antibody
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, "**"]
+
+jobs:
+  antibody:
+    name: No new non-bluebook code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Run antibody check against base branch
+        run: |
+          base="${{ github.base_ref || 'main' }}"
+          bin/antibody-check --base "origin/$base"
