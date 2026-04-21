@@ -8,6 +8,7 @@
 #   2. Lifecycle validator — block on any unreachable transitions
 #   3. Conceiver parity test — block if either conceiver drifts
 #   4. Miette enforce (hecks-life governance) — advisory, never blocks
+#   5. Antibody: no new non-bluebook code — advisory locally; CI blocks
 #
 # Exit 0 = commit allowed. Exit 1 = commit blocked.
 # Set PARITY_SKIP=1 to bypass gate 1 (an antibody failure).
@@ -80,7 +81,15 @@ fi
 # ── Gate 4: Miette enforce ─────────────────────────────────────────
 # Governance advisory. Never blocks (yet).
 if [ -x "$HECKS_LIFE" ] && "$HECKS_LIFE" enforce "$CONCEPTION_DIR" 2>/dev/null; then
-    exit 0
+    :
+fi
+
+# ── Gate 5: Antibody — no new non-bluebook code ───────────────────
+# Bluebook is executable and Turing complete. Every non-bluebook file
+# added by hand is a gap. Advisory at commit time (so local work isn't
+# blocked); the same check runs blocking in CI.
+if [ -x "$REPO/bin/antibody-check" ]; then
+    "$REPO/bin/antibody-check" --staged --advisory
 fi
 
 exit 0

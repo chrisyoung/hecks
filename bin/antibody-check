@@ -1,0 +1,155 @@
+#!/usr/bin/env ruby
+# antibody-check — fail when a commit or PR adds non-Bluebook code.
+#
+# Bluebook is the source of truth AND the thing that runs. The runtime
+# dispatches bluebook directly — there is no compile-to-Ruby step and
+# there are no generated artifacts. Bluebook is Turing complete and
+# more readable than anything else in this repo.
+#
+# Therefore: every non-bluebook code file in this repo is a gap. Either
+# the concept should be re-expressed as a bluebook that the runtime
+# dispatches, or it's a thin shell wrapper gluing bluebook to the OS
+# (acceptable, but still worth naming).
+#
+# This check compares the current branch to a base (default origin/main)
+# and lists every file *added OR modified* whose extension (or shebang)
+# marks it as code-that-should-be-bluebook. Touching any of them counts
+# — editing existing Ruby/Rust/Python/shell is also a reaffirmation of
+# the gap. If any are flagged without an exemption, exits 1 —
+# pre-commit warns, CI blocks.
+#
+# Exemption:
+#   Put "[antibody-exempt: <reason>]" in any commit message on the
+#   branch. Common reasons: "thin shell wrapper", "external Python
+#   dep (Modal/MLX)", "generator scaffolding pending <ref>". The
+#   reason is captured in the hook output and on the PR.
+#
+# Flags:
+#   --base <ref>   ref to diff against (default: origin/main)
+#   --advisory     warn only, exit 0 even on failures (pre-commit use)
+#   --staged       also scan currently staged additions (pre-commit use)
+
+require "optparse"
+require "open3"
+
+# Extensions the antibody flags as should-be-bluebook:
+#   - code: rb rs py sh js ts go html css
+#   - config-as-data: yml yaml (→ .fixtures in Hecks)
+# Not listed: .bluebook, .behaviors, .fixtures, .hecksagon, .world,
+# .md, .toml, .json, .heki — source or artifacts outside the
+# self-hosting path.
+CODE_EXTS = %w[rb rs py sh js ts go html css yml yaml].freeze
+
+# Map shebang keywords → logical extension, so extensionless binaries
+# under bin/ get classified by their interpreter. Any shebang not in
+# this map falls through as "not code" — e.g. `#!/usr/bin/env awk`
+# is rare enough we don't mind it slipping.
+SHEBANG_EXT = {
+  "ruby"   => "rb",
+  "python" => "py",
+  "bash"   => "sh",
+  "sh"     => "sh",
+  "node"   => "js",
+}.freeze
+
+def shebang_ext(path)
+  return nil unless File.file?(path) && File.readable?(path)
+  first = File.open(path, &:readline) rescue nil
+  return nil unless first&.start_with?("#!")
+  SHEBANG_EXT.each { |k, v| return v if first.include?(k) }
+  nil
+end
+
+def run(cmd)
+  out, _, status = Open3.capture3(*cmd)
+  [out.strip, status.success?]
+end
+
+def touched_files(base_ref, include_staged)
+  touched = []
+  if base_ref
+    out, ok = run(["git", "diff", "--name-only", "--diff-filter=AM",
+                   "#{base_ref}...HEAD"])
+    touched.concat(out.lines.map(&:strip).reject(&:empty?)) if ok
+  end
+  if include_staged
+    out, ok = run(["git", "diff", "--cached", "--name-only", "--diff-filter=AM"])
+    touched.concat(out.lines.map(&:strip).reject(&:empty?)) if ok
+  end
+  touched.uniq
+end
+
+def exempt_reasons(base_ref)
+  reasons = []
+  range = base_ref ? "#{base_ref}...HEAD" : "HEAD"
+  out, ok = run(["git", "log", "--format=%B", range])
+  return reasons unless ok
+  out.scan(/\[antibody-exempt:\s*([^\]]+)\]/i).each { |m| reasons << m[0].strip }
+  reasons
+end
+
+def filter_code_files(paths)
+  paths.select do |p|
+    ext = File.extname(p).delete_prefix(".").downcase
+    next true if CODE_EXTS.include?(ext)
+    # Extensionless binaries: classify by shebang.
+    ext.empty? && !shebang_ext(p).nil?
+  end
+end
+
+options = { base: "origin/main", advisory: false, staged: false }
+OptionParser.new do |o|
+  o.on("--base REF") { |v| options[:base] = v }
+  o.on("--advisory") { options[:advisory] = true }
+  o.on("--staged")   { options[:staged]   = true }
+end.parse!
+
+# If the base ref doesn't resolve (e.g. shallow clone in CI), fall back
+# to staged-only. Better to be advisory than to false-green.
+_, base_ok = run(["git", "rev-parse", "--verify", options[:base]])
+base_ref = base_ok ? options[:base] : nil
+
+touched = touched_files(base_ref, options[:staged] || base_ref.nil?)
+code    = filter_code_files(touched)
+
+if code.empty?
+  puts "✓ antibody: no non-bluebook files touched"
+  exit 0
+end
+
+reasons = exempt_reasons(base_ref)
+
+puts ""
+puts "⚠ antibody: #{code.size} non-bluebook file(s) touched"
+code.each { |p| puts "    #{p}" }
+puts ""
+puts "  Bluebook is the source AND the thing that runs. The runtime"
+puts "  dispatches bluebook directly — no compile step, no generated"
+puts "  artifacts. Bluebook is Turing complete and more readable."
+puts ""
+puts "  Adding OR modifying a non-bluebook file is a gap. Paths forward:"
+puts "    - code (rb/rs/py/sh/js/ts/go) → aggregate + commands in a"
+puts "      bluebook, dispatched by the runtime"
+puts "    - config (yml/yaml) → .fixtures"
+puts "    - thin shell wrapper gluing bluebook to the OS → exempt"
+puts ""
+
+if reasons.any?
+  puts "  Exempted by commit-message marker:"
+  reasons.each { |r| puts "    [antibody-exempt: #{r}]" }
+  puts ""
+  puts "✓ antibody: exempted — proceed, the gap is named and searchable"
+  exit 0
+end
+
+puts "  To proceed anyway: add '[antibody-exempt: <reason>]' to any"
+puts "  commit on this branch. Reason goes in the hook output and the"
+puts "  PR so the gap is explicitly named, not silently accepted."
+puts ""
+
+if options[:advisory]
+  puts "  (advisory: local commit allowed; CI will block without exemption)"
+  exit 0
+end
+
+exit 1
