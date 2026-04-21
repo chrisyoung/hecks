@@ -85,7 +85,7 @@ Current categories (see `EXEMPTIONS.md` for the full entries):
 |---|---|---|
 | `runtime:ruby` | `lib/hecks/**` | Stays — better than Rust for business operations |
 | `runtime:rust` | `hecks_life/**` | Becomes a binary that Ruby wraps |
-| `ecosystem:python-ml` | `hecks_conception/summer/**` | Stays — external ML ecosystem |
+| `ecosystem:python-ml` | `hecks_conception/summer/**` | Shrinks toward zero — `.hecksagon` adapter replaces authored Python; MLX/Modal stay external |
 | `bootstrap:ci` | `.github/workflows/**` | Until `.hecksagon` describes CI |
 | `bootstrap:git-hooks` | `bin/**`, `bin/git-hooks/**` | Until shebang bluebooks |
 | `tool:audit` | `tools/**` | Until `hecks-life` dispatches audit commands |

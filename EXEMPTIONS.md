@@ -35,8 +35,17 @@ Paths: `hecks_life/**`
 
 ## ecosystem:python-ml
 
-Python for Summer (MLX + Modal) — external ML ecosystem we integrate
-with via Hecksagon adapters, not absorb. Stays Python indefinitely.
+Summer's current `*.py` files wrap MLX + Modal. MLX and Modal stay
+external — they're a world we call into, not code we absorb. But the
+`.py` files in `hecks_conception/summer/` were still *authored* here,
+and that's the gap: we should reach those ecosystems through a
+`.hecksagon` adapter that dispatches to MLX/Modal's own APIs, not
+through Python modules we maintain.
+
+Arc: shrink `summer/**` toward zero authored Python. The adapter
+lives in `.hecksagon`; ML training/serving commands live in
+`.bluebook`; the hot path crosses a well-defined boundary into the
+external Python runtime that MLX/Modal provide.
 
 Paths: `hecks_conception/summer/**`
 
