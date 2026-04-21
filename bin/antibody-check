@@ -79,12 +79,30 @@ def touched_files(base_ref, include_staged)
   touched.uniq
 end
 
-def exempt_reasons(base_ref)
+def exempt_reasons(message_file)
+  # Exemptions are PER COMMIT, not per branch. Each commit that
+  # touches a flagged file must carry its own justification.
+  # Scanning the branch range would let an old exemption marker
+  # silently cover later commits — a major slip-through.
+  #
+  # commit-msg hook: git passes the message file path as $1, which
+  #   we relay via --message-file. Read only that file.
+  # CI / manual invocation: HEAD IS the commit being checked. Read
+  #   HEAD's message only.
+  #
+  # Note: pre-commit has no access to the message at all (it runs
+  # before the message stage), so pre-commit can only warn, never
+  # block on exemptions.
   reasons = []
-  range = base_ref ? "#{base_ref}...HEAD" : "HEAD"
-  out, ok = run(["git", "log", "--format=%B", range])
-  return reasons unless ok
-  out.scan(/\[antibody-exempt:\s*([^\]]+)\]/i).each { |m| reasons << m[0].strip }
+  text = nil
+  if message_file && File.exist?(message_file)
+    text = File.read(message_file)
+  else
+    out, ok = run(["git", "log", "-1", "--format=%B", "HEAD"])
+    text = out if ok
+  end
+  return reasons unless text
+  text.scan(/\[antibody-exempt:\s*([^\]]+)\]/i).each { |m| reasons << m[0].strip }
   reasons
 end
 
@@ -97,11 +115,12 @@ def filter_code_files(paths)
   end
 end
 
-options = { base: "origin/main", advisory: false, staged: false }
+options = { base: "origin/main", staged: false, message_file: nil, list_only: false }
 OptionParser.new do |o|
-  o.on("--base REF") { |v| options[:base] = v }
-  o.on("--advisory") { options[:advisory] = true }
-  o.on("--staged")   { options[:staged]   = true }
+  o.on("--base REF")           { |v| options[:base] = v }
+  o.on("--staged")             { options[:staged]   = true }
+  o.on("--message-file PATH")  { |v| options[:message_file] = v }
+  o.on("--list-only")          { options[:list_only] = true }
 end.parse!
 
 # If the base ref doesn't resolve (e.g. shallow clone in CI), fall back
@@ -117,8 +136,6 @@ if code.empty?
   exit 0
 end
 
-reasons = exempt_reasons(base_ref)
-
 puts ""
 puts "⚠ antibody: #{code.size} non-bluebook file(s) touched"
 code.each { |p| puts "    #{p}" }
@@ -126,27 +143,27 @@ puts ""
 puts "  Hecks source vocabulary: .bluebook .hecksagon .fixtures"
 puts "  .behaviors .world. Everything else is a gap."
 puts ""
-puts "  Decide now: fix each file (rewrite as one of the five DSLs)"
-puts "  or name a specific exemption reason. Exemptions are"
-puts "  case-by-case — no pre-approved categories."
-puts ""
+
+# --list-only: pre-commit uses this to surface the list without
+# opining on exemptions (it can't see the message yet). Exit 0.
+if options[:list_only]
+  puts "  commit-msg hook will enforce — add [antibody-exempt: <reason>]"
+  puts "  to the commit message for each file you're not fixing."
+  exit 0
+end
+
+reasons = exempt_reasons(options[:message_file])
 
 if reasons.any?
   puts "  Exempted by commit-message marker:"
   reasons.each { |r| puts "    [antibody-exempt: #{r}]" }
   puts ""
-  puts "✓ antibody: exempted — proceed, the gap is named and searchable"
+  puts "✓ antibody: exempted — gap named and searchable"
   exit 0
 end
 
-puts "  To proceed anyway: add '[antibody-exempt: <reason>]' to any"
-puts "  commit on this branch. Reason goes in the hook output and the"
-puts "  PR so the gap is explicitly named, not silently accepted."
+puts "  To proceed: add '[antibody-exempt: <reason>]' to this commit's"
+puts "  message with a concrete per-change justification."
 puts ""
-
-if options[:advisory]
-  puts "  (advisory: local commit allowed; CI will block without exemption)"
-  exit 0
-end
 
 exit 1

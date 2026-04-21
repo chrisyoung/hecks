@@ -8,7 +8,9 @@
 #   2. Lifecycle validator — block on any unreachable transitions
 #   3. Conceiver parity test — block if either conceiver drifts
 #   4. Miette enforce (hecks-life governance) — advisory, never blocks
-#   5. Antibody: no new non-bluebook code — blocks locally and in CI
+#   5. Antibody: surface non-bluebook adds/mods (list only — the
+#      commit-msg hook does the actual enforcement, since that's
+#      the only hook that sees the message's exemption marker)
 #
 # Exit 0 = commit allowed. Exit 1 = commit blocked.
 # Set PARITY_SKIP=1 to bypass gate 1 (an antibody failure).
@@ -84,23 +86,13 @@ if [ -x "$HECKS_LIFE" ] && "$HECKS_LIFE" enforce "$CONCEPTION_DIR" 2>/dev/null; 
     :
 fi
 
-# ── Gate 5: Antibody — no new non-bluebook code ───────────────────
-# Bluebook is executable and Turing complete. Every non-bluebook file
-# added or modified is a gap. Blocks commits unless an explicit
-# [antibody-exempt: <specific reason>] marker appears in a commit on
-# the branch. Set ANTIBODY_SKIP=1 to bypass (itself an antibody failure).
-if [ -z "$ANTIBODY_SKIP" ] && [ -x "$REPO/bin/antibody-check" ]; then
-    if ! "$REPO/bin/antibody-check" --staged; then
-        echo ""
-        echo "COMMIT BLOCKED: non-bluebook file(s) touched without exemption."
-        echo ""
-        echo "Either rewrite as one of .bluebook / .hecksagon / .fixtures /"
-        echo ".behaviors / .world, or add '[antibody-exempt: <reason>]' to"
-        echo "your commit message with a concrete per-change justification."
-        echo ""
-        echo "Bypass only in an emergency: ANTIBODY_SKIP=1 git commit ..."
-        exit 1
-    fi
+# ── Gate 5: Antibody — flag non-bluebook files (informational) ────
+# Actual enforcement happens in the commit-msg hook, which is the only
+# hook that sees the commit message (where exemption markers live).
+# Here we just surface the list so the author can decide before
+# writing their message.
+if [ -x "$REPO/bin/antibody-check" ]; then
+    "$REPO/bin/antibody-check" --staged --list-only || true
 fi
 
 exit 0
