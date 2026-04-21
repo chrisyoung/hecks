@@ -63,25 +63,36 @@ Put `[antibody-exempt: <reason>]` in any commit message on the branch.
 The reason is captured in the hook output and on the PR, so the gap is
 explicitly named and searchable.
 
-Examples:
+`EXEMPTIONS.md` in the repo root is the running ledger of known
+categories and why they exist today. Use a category name as the reason
+when it fits — treat the free-text form as a last resort:
 
 ```
-fix: correct parity drift in nursery section
+fix: patch command bus so saga steps retry on transient errors
 
-[antibody-exempt: thin shell wrapper calling hecks-life parity]
+[antibody-exempt: runtime:ruby]
 ```
 
 ```
-feat: Modal training config
+feat: nursery viability stats script
 
-[antibody-exempt: external Python dep — Modal/MLX ecosystem, tracked in i37]
+[antibody-exempt: tool:audit]
 ```
 
-**There are no permanent exemptions.** No allowlist file, no repo-wide
-carve-outs, no grandfathered paths. Every PR that touches a non-bluebook
-file supplies its own justification. The next time someone edits the
-same file, the same question is asked again — because the gap is still
-there.
+Current categories (see `EXEMPTIONS.md` for the full entries):
+
+| Category | Lives where | Arc |
+|---|---|---|
+| `runtime:ruby` | `lib/hecks/**` | Stays — better than Rust for business operations |
+| `runtime:rust` | `hecks_life/**` | Becomes a binary that Ruby wraps |
+| `ecosystem:python-ml` | `hecks_conception/summer/**` | Stays — external ML ecosystem |
+| `bootstrap:ci` | `.github/workflows/**` | Until `.hecksagon` describes CI |
+| `bootstrap:git-hooks` | `bin/**`, `bin/git-hooks/**` | Until shebang bluebooks |
+| `tool:audit` | `tools/**` | Until `hecks-life` dispatches audit commands |
+
+**There are no permanent path-based exemptions** — the antibody re-fires
+every time any of these files change. `EXEMPTIONS.md` is a vocabulary,
+not a carve-out.
 
 ## Follow-up path
 
