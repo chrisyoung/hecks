@@ -1,41 +1,9 @@
-//! Soft warnings for domain quality — non-failing bounded-context checks
-//!
-//! GENERATED FILE — do not edit.
-//! Source:    hecks_conception/capabilities/validator_warnings_shape/
-//! Regenerate: bin/specialize-validator-warnings --output hecks_life/src/validator_warnings.rs
-//! Contract:  specializer.hecksagon :specialize_validator_warnings shell adapter
-//! Tests:     hecks_life/tests/validator_warnings_test.rs
-//!
-//! These rules emit advisory warnings but never cause validation to fail.
-//! They help domain modelers spot bounded-context smell early.
-//!
-//! Usage:
-//!   if let Some(msg) = validator_warnings::aggregate_count_warning(&domain) {
-//!       println!("  {}", msg);
-//!   }
-//!   if let Some(msg) = validator_warnings::mixed_concerns_warning(&domain) {
-//!       println!("  {}", msg);
-//!   }
-
-use crate::ir::Domain;
-use std::collections::{HashMap, HashSet, VecDeque};
-
-/// Returns Some(msg) if the domain has more than 7 aggregates.
-pub fn aggregate_count_warning(domain: &Domain) -> Option<String> {
-    if domain.aggregates.len() > 7 {
-        Some(format!(
-            "⚠ domain '{}' has {} aggregates; consider splitting",
-            domain.name,
-            domain.aggregates.len()
-        ))
-    } else {
-        None
-    }
-}
-
-/// Returns Some(msg) if the domain has 5+ aggregates split across
-/// disconnected reference/policy clusters.
-pub fn mixed_concerns_warning(domain: &Domain) -> Option<String> {
+// Snippet: mixed_concerns body — sui-generis BFS logic that doesn't
+// fit a check_kind primitive. Referenced by the `MixedConcernsWarning`
+// fixture's snippet_path. The specializer interpolates this directly
+// as the function body between the opening `{` and closing `}`.
+//
+// Tracked for taxonomy lift-out in inbox i58 (graph_components as IR).
     if domain.aggregates.len() < 5 {
         return None;
     }
@@ -142,4 +110,3 @@ pub fn mixed_concerns_warning(domain: &Domain) -> Option<String> {
         components.len(),
         rendered.join(" and ")
     ))
-}
