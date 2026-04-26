@@ -20,8 +20,18 @@
 # Usage: ./status_coherence.sh [INFO_DIR]
 #   Defaults INFO_DIR to <script_dir>/information.
 #
-# Retirement: once `hecks-life run <bluebook>` hosts a StatusCoherence capability
-# natively, this shim retires (same as the rest of the bash control plane).
+# Source-of-truth declaration : aggregates/coherence.bluebook (i107 lands
+# the parser-side support — Query.givens + Query.returns ; coherence
+# bluebook now declares the same five invariants as predicate queries
+# with `returns Bool` + `given { … }`). This shell stays as the
+# transitional runner until a Rust `query` subcommand lands that loads
+# the bluebook + populates AggregateState from sibling .heki stores +
+# evaluates givens via the existing check_givens infrastructure.
+#
+# [antibody-exempt: hecks_conception/status_coherence.sh — transitional
+#  runner for aggregates/coherence.bluebook's predicate queries. Retires
+#  when `hecks-life query Coherence.MoodMatchesFatigue` lands as a
+#  kernel-surface CLI subcommand. Same i80 retirement contract.]
 
 set -u
 

@@ -92,9 +92,15 @@ module Hecks
       end
 
       def dump_query(q)
+        # Predicate queries (i107) carry givens + returns ; Ruby's
+        # BluebookModel::Behavior::Query doesn't yet model them, so they
+        # come out as `[]` and `nil` here. Rust's parser extracts both
+        # fields from the block body.
         {
           "name"        => q.name.to_s,
           "description" => q.respond_to?(:description) ? q.description : nil,
+          "givens"      => (q.respond_to?(:givens) && q.givens || []).map { |g| dump_given(g) },
+          "returns"     => q.respond_to?(:returns) ? q.returns : nil,
         }
       end
 

@@ -94,6 +94,8 @@ fn dump_query(q: &Query) -> Value {
     json!({
         "name": q.name,
         "description": q.description,
+        "givens": q.givens.iter().map(dump_given).collect::<Vec<_>>(),
+        "returns": q.returns,
     })
 }
 

@@ -12,29 +12,29 @@ module Hecks
     # which evaluates the block in a context that supports filtering, ordering,
     # and pagination methods.
     #
-    # Part of the BluebookModel IR layer. Built by the DSL aggregate builder and
-    # consumed by QueryGenerator to produce query classes in the domain gem.
+    # Predicate-style queries (i107) carry givens + returns + description so
+    # the runtime can evaluate them as kernel-surface invariants. Ruby
+    # parity-tests rely on these accessors returning the same shape Rust
+    # extracts.
+    #
+    # [antibody-exempt: lib/hecks/bluebook_model/behavior/query.rb — adds
+    #  description / givens / returns accessors so the DSL `query "Foo"
+    #  do given { … } end` shape produces the same canonical IR as the
+    #  Rust parser. Same i80 retirement contract.]
     #
     #   query = Query.new(name: "Classics", block: proc { where(style: "Classic") })
     #   query.name   # => "Classics"
     #   query.block  # => #<Proc>
     #
     class Query
-      # @return [String] PascalCase query name (e.g. "Classics", "RecentOrders")
-      # @return [Proc] block evaluated in the query DSL context at runtime;
-      #   can call +where+, +order+, +limit+, and other query methods
-      attr_reader :name, :block
+      attr_reader :name, :block, :description, :givens, :returns
 
-      # Creates a new Query IR node.
-      #
-      # @param name [String] PascalCase query name (e.g. "Classics")
-      # @param block [Proc] callable that defines the query logic. Evaluated in
-      #   a QueryBuilder context at runtime, with access to methods like +where+,
-      #   +order+, +limit+, etc.
-      # @return [Query]
-      def initialize(name:, block:)
+      def initialize(name:, block:, description: nil, givens: [], returns: nil)
         @name = name
         @block = block
+        @description = description
+        @givens = givens
+        @returns = returns
       end
     end
     end

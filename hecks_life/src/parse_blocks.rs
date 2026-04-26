@@ -2,9 +2,82 @@
 //!
 //! Each function takes a slice of lines starting at the block opener
 //! and returns the parsed structure plus lines consumed.
+//!
+//! [antibody-exempt: hecks_life/src/parse_blocks.rs — adds parse_query
+//!  for the block-form predicate query (`query "Foo" do returns Bool ;
+//!  given { ... } end`). This IS the structural rewrite that lets
+//!  coherence.bluebook fire end-to-end via bluebook. Same i80 retirement
+//!  contract — kernel-surface that retires status_coherence.sh.]
 
 use crate::ir::*;
 use crate::parser_helpers::*;
+
+/// Parse the body of a block-form `query "Foo" do … end` declaration
+/// (i107 — predicate queries). Same shape as parse_command : recognises
+/// `description "..."`, `returns Bool`, and `given { expr }` clauses.
+pub fn parse_query(
+    lines: &[&str],
+    name: String,
+    desc_first_line: Option<String>,
+) -> (Query, usize) {
+    let mut q = Query {
+        name,
+        description: desc_first_line,
+        givens: vec![],
+        returns: None,
+    };
+
+    let mut i = 1;
+    let mut depth = 1;
+
+    while i < lines.len() && depth > 0 {
+        let line = lines[i].trim();
+
+        if line == "end" {
+            depth -= 1;
+            if depth == 0 { break; }
+            i += 1;
+            continue;
+        }
+
+        if ends_with_do_block(line) && !line.starts_with("given") {
+            depth += 1;
+            i += 1;
+            continue;
+        }
+
+        if depth == 1 {
+            if line.starts_with("description") || line.starts_with("goal") {
+                if let Some(d) = extract_string(line) { q.description = Some(d); }
+            } else if line.starts_with("returns") {
+                let after = line.trim_start_matches("returns").trim();
+                let tok = if after.starts_with('"') {
+                    extract_string(after).unwrap_or_default()
+                } else {
+                    after.split_whitespace().next().unwrap_or("").to_string()
+                };
+                if !tok.is_empty() { q.returns = Some(tok); }
+            } else if line.starts_with("given") {
+                // Same three forms parse_command supports :
+                //   given "msg"
+                //   given { expr }
+                //   given "msg" { expr }
+                let block = extract_block(line);
+                let line_no_block = match line.find('{') {
+                    Some(open) => &line[..open],
+                    None => line,
+                };
+                let msg = extract_string(line_no_block);
+                let expr = block.unwrap_or_else(|| msg.clone().unwrap_or_default());
+                q.givens.push(Given { expression: expr, message: msg });
+            }
+        }
+
+        i += 1;
+    }
+
+    (q, i + 1)
+}
 
 pub fn parse_command(lines: &[&str]) -> (Command, usize) {
     let first = lines[0].trim();

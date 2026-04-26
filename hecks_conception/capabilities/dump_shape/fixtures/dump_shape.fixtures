@@ -67,9 +67,11 @@ Hecks.fixtures "DumpShape" do
     fixture "Cmd_givens",      serializer: "dump_command", order: 7, key: "givens",      source: "givens",      mapping_kind: "recurse_list", helper_fn: "dump_given"
     fixture "Cmd_mutations",   serializer: "dump_command", order: 8, key: "mutations",   source: "mutations",   mapping_kind: "recurse_list", helper_fn: "dump_mutation"
 
-    # dump_query — 2 fields
-    fixture "Qry_name",        serializer: "dump_query", order: 1, key: "name",        source: "name",        mapping_kind: "direct", helper_fn: ""
-    fixture "Qry_description", serializer: "dump_query", order: 2, key: "description", source: "description", mapping_kind: "direct", helper_fn: ""
+    # dump_query — 4 fields (i107 — predicate queries carry givens + returns)
+    fixture "Qry_name",        serializer: "dump_query", order: 1, key: "name",        source: "name",        mapping_kind: "direct",       helper_fn: ""
+    fixture "Qry_description", serializer: "dump_query", order: 2, key: "description", source: "description", mapping_kind: "direct",       helper_fn: ""
+    fixture "Qry_givens",      serializer: "dump_query", order: 3, key: "givens",      source: "givens",      mapping_kind: "recurse_list", helper_fn: "dump_given"
+    fixture "Qry_returns",     serializer: "dump_query", order: 4, key: "returns",     source: "returns",     mapping_kind: "direct",       helper_fn: ""
 
     # dump_given — 2 fields
     fixture "Gvn_expression", serializer: "dump_given", order: 1, key: "expression", source: "expression", mapping_kind: "direct", helper_fn: ""

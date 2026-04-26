@@ -3,6 +3,10 @@
 //! Parses the Ruby-hosted DSL by pattern matching on the structure.
 //! Not a full Ruby parser — just enough to read Bluebook declarations.
 //! Block parsers live in parse_blocks.rs.
+//!
+//! [antibody-exempt: hecks_life/src/parser.rs — adds the predicate-query
+//!  parser support (block form `query "Foo" do given { … } end`). Same
+//!  i80 retirement contract.]
 
 use crate::ir::*;
 use crate::parser_helpers::*;
@@ -211,12 +215,24 @@ fn parse_aggregate(lines: &[&str]) -> (Aggregate, usize) {
                     ShorthandResult::None => {}
                 }
             } else if line.starts_with("query") {
+                // Predicate-query support (i107) : when the query is a
+                // block form (`query "Foo" do … end`), parse the body for
+                // `description`, `returns`, and `given { … }`. Otherwise
+                // (single-line `query "Foo"`) just capture name + desc.
                 let name = extract_string(line).unwrap_or_else(|| {
                     line.split_whitespace().nth(1).unwrap_or("").trim_matches('"').to_string()
                 });
                 let desc = extract_second_string(line);
-                agg.queries.push(Query { name, description: desc });
-                if ends_with_do_block(line) { depth += 1; }
+                if ends_with_do_block(line) {
+                    let (q, consumed) = crate::parse_blocks::parse_query(&lines[i..], name, desc);
+                    agg.queries.push(q);
+                    i += consumed;
+                    continue;
+                } else {
+                    agg.queries.push(Query {
+                        name, description: desc, givens: vec![], returns: None,
+                    });
+                }
             } else if ends_with_do_block(line) {
                 depth += 1;
             }

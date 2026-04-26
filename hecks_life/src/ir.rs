@@ -2,6 +2,11 @@
 //!
 //! Same structure as the Ruby BluebookModel, but in Rust.
 //! This is what the parser produces and the generators consume.
+//!
+//! [antibody-exempt: hecks_life/src/ir.rs — adds the predicate-query
+//!  IR support (Query.givens + Query.returns). This IS the structural
+//!  rewrite that lets coherence.bluebook fire end-to-end via bluebook.
+//!  Same i80 retirement contract.]
 
 use std::fmt;
 
@@ -55,6 +60,12 @@ pub struct Command {
 pub struct Query {
     pub name: String,
     pub description: Option<String>,
+    /// Predicate-style queries return Bool ; `given { … }` clauses inside
+    /// the query body are the truth tests. Empty for descriptive queries.
+    /// (i107 — coherence invariants as runnable predicates.)
+    pub givens: Vec<Given>,
+    /// Optional `returns Bool` (or other type) inside the query body.
+    pub returns: Option<String>,
 }
 
 #[derive(Debug)]

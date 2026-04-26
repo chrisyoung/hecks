@@ -84,22 +84,35 @@ Hecks.bluebook "Coherence", version: "2026.04.26.1" do
 
     query MoodMatchesFatigue do
       description "Invariant 1 : when mood.current_state == 'refreshed', fatigue_state must be alert or focused. A 'refreshed' mood paired with 'tired' or worse is the canonical contradiction the inbox i35 thread flagged after the mood-follows-fatigue ship."
+      returns Bool
+      given("mood-refreshed implies fatigue alert or focused") { mood_state != "refreshed" || fatigue_state == "alert" || fatigue_state == "focused" }
     end
 
     query ConsciousnessMatchesMood do
       description "Invariant 2 : when consciousness.state == 'sleeping', mood.current_state must NOT be refreshed or focused. A sleeping body with a wide-awake mood is the second canonical contradiction — it crops up when the mood aggregate's wake hook fires while the sleep daemon hasn't yet flipped consciousness."
+      returns Bool
+      given("consciousness-sleeping implies mood not in refreshed nor focused") { consciousness_state != "sleeping" || (mood_state != "refreshed" && mood_state != "focused") }
     end
 
     query FatigueLadderMatchesPulses do
       description "Invariant 3 : pulses_since_sleep must match the fatigue_state rung of the ladder. Thresholds (open intervals) : 0..249 alert, 250..499 focused, 500..999 normal, 1000..1399 tired, 1400..1799 exhausted, 1800+ delirious. The lived state may lag the raw count by one rung (one tick) ; lag of two or more rungs OR exceeding the expected rung is a violation."
+      returns Bool
+      # Ladder is multi-rung — i107's simple expression evaluator can
+      # reason about thresholds but enumerating six rungs as one
+      # given-clause is unwieldy. Keeping the description-only form
+      # until expression-eval grows enum-style ladder predicates.
     end
 
     query TickMonotonic do
       description "Invariant 4 : tick.cycle is monotonic at ≤ ~1 Hz. Compares the stored baseline (tick_baseline_ts, tick_baseline_cycle) against the current (tick_now_ts, tick_cycle) ; cycle_delta must not exceed wall_delta + 5s tolerance, AND must not be negative. The baseline lives in information/.tick_baseline so the check survives across runs."
+      returns Bool
+      given("tick.cycle does not go backwards") { tick_cycle >= tick_baseline_cycle }
     end
 
     query DreamNarrativePresence do
-      description "Invariant 5 : sleep_stage ∈ {rem, lucid_rem} ↔ lucid_dream.latest_narrative is non-empty. Both directions enforced — REM without narrative AND non-REM with stale narrative are both bugs (the latter shows up when render state isn't cleared at REM end)."
+      description "Invariant 5 : sleep_stage in rem or lucid_rem iff lucid_dream.latest_narrative is non-empty. Both directions enforced — REM without narrative AND non-REM with stale narrative are both bugs (the latter shows up when render state isn't cleared at REM end)."
+      returns Bool
+      given("rem stage implies narrative present") { sleep_stage != "rem" || lucid_narrative != "" }
     end
 
     # ============================================================
