@@ -225,6 +225,19 @@ fn main() {
         std::process::exit(hecks_life::run::run_script(&args));
     }
 
+    // [TRANSITIONAL — i80 cli-routing-as-bluebook + i107 capability-
+    //  bluebook-end-to-end-dispatch] The inbox capability runner. Walks
+    //  capabilities/inbox/inbox.bluebook's Invocation pipeline (route →
+    //  resolve → dispatch → commit → push → render → exit). This route
+    //  is the structural successor to hecks_conception/inbox.sh — the
+    //  shell collapses to `exec hecks-life inbox "$@"`. Retires
+    //  alongside the speak/status/musings/boot/daemon/loop wrappers
+    //  when i80's cli.bluebook lands and capability bluebooks dispatch
+    //  end-to-end through `hecks-life run`.
+    if command == "inbox" {
+        std::process::exit(hecks_life::run_inbox::run(&args));
+    }
+
     // `hecks-life loop <agg-dir-or-bluebook> <Aggregate.Command> --every <duration> [key=val ...]`
     //
     // Cadence-loop primitive (i76). Boots the runtime once and dispatches
