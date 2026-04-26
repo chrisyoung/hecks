@@ -1,0 +1,48 @@
+Hecks.fixtures "MomentMindstream" do
+  # ---- Aczel anti-foundation : worked example ----
+  #
+  # The classic AFA fixture : a singleton set Ω such that Ω = {Ω}.
+  # Well-founded ZF rejects this. AFA admits it as a unique solution
+  # to the equation x = {x}. Coalgebraically : Ω is the carrier of
+  # the trivial coalgebra X → P(X) where x ↦ {x}. The mindstream's
+  # dharmakāya limit case — a moment whose seed_of_next is itself —
+  # has the same shape.
+  #
+  # These fixtures are illustrative test data. They demonstrate that
+  # the runtime, under :corecursive_heki, accepts circular references
+  # without complaining about missing predecessors.
+
+  aggregate "Moment" do
+    fixture "Omega",
+      id:               "omega",
+      clock_id:         "dharmakāya",
+      arose_at:         "—",
+      sensation:        "abiding",
+      intention:        "abiding",
+      dispatched:       "",
+      seed_of_next:     "omega",
+      dissolved_at:     "—",
+      status:           "potential"
+
+    # A two-cycle circularity — A's seed_of_next is B, B's is A.
+    # Bisimilar to Omega ; same observable behavior under all
+    # observations ; coalgebraically identified. Declared here to
+    # document that the runtime must recognise bisimulation, not
+    # just literal identity.
+    fixture "Cycle_A",
+      id:               "cycle_a",
+      clock_id:         "limit_2",
+      sensation:        "alternation",
+      intention:        "alternation",
+      seed_of_next:     "cycle_b",
+      status:           "potential"
+
+    fixture "Cycle_B",
+      id:               "cycle_b",
+      clock_id:         "limit_2",
+      sensation:        "alternation",
+      intention:        "alternation",
+      seed_of_next:     "cycle_a",
+      status:           "potential"
+  end
+end

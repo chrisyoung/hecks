@@ -1,0 +1,85 @@
+Hecks.hecksagon "MomentMindstream" do
+  # ============================================================
+  # MOMENT-MINDSTREAM — adapter wiring
+  # ============================================================
+  #
+  # The bluebook declares Moment / Stream / Clock / Refinement as
+  # the coalgebraic foundation. The adapters here name what the
+  # runtime needs to walk it :
+  #
+  #   :synchronous_clock — schedule each Clock independently ; no
+  #                        master tick. Fires Clock.Tick at each
+  #                        Clock's period_ms. Today's `hecks-life
+  #                        loop` (i76) + multi-command rotation
+  #                        (i106) is the seed ; the structural
+  #                        primitive (i120) reads Clock declarations
+  #                        from the heki and schedules them.
+  #
+  #   :corecursive_heki — the heki adapter accepts records whose
+  #                       references form non-well-founded chains
+  #                       (Moment.seed_of_next → Moment → ...).
+  #                       Aczel anti-foundation. Today's heki adapter
+  #                       enforces well-foundedness implicitly via
+  #                       singleton lookup ; i122 lifts that constraint
+  #                       for declared corecursive aggregates.
+  #
+  #   :refinement_aggregator — given a Refinement declaration, the
+  #                            runtime aggregates fast_clock ticks
+  #                            into slow_clock observations on
+  #                            slow_clock's schedule. The aggregation
+  #                            function is named declaratively (e.g.
+  #                            "sum", "majority", "interference") ;
+  #                            the runtime walks the registry. i121.
+  #
+  #   :stream_query — exposes Stream's running aggregates as a
+  #                   queryable surface. Bisimulation observations
+  #                   without reading every Moment. i123 (to be filed).
+
+  adapter :synchronous_clock,
+    description: "Multi-clock dataflow scheduler. Reads Clock aggregate, fires each Clock.Tick at its period_ms. No master."
+
+  adapter :corecursive_heki,
+    description: "Aczel-anti-foundation heki adapter. Accepts records whose references form non-well-founded chains. Required for Moment.seed_of_next → Moment circularity."
+
+  adapter :refinement_aggregator,
+    description: "Action-refinement primitive. Aggregates fast_clock ticks into slow_clock observations via the named aggregation_function on slow_clock's schedule."
+
+  adapter :stream_query,
+    description: "Bisimulation surface. Exposes Stream's running aggregates so consumers observe path-integral statistics without reading every Moment record."
+
+  # ---- Existing body cadences as Clock instances ----
+  #
+  # Today's daemons are concrete instances of the Clock aggregate.
+  # Once the synchronous-clock primitive lands, these declarations
+  # replace the imperative daemon launches in boot_miette.sh.
+  #
+  # Period values mirror the current body cadences (post-2026-04-26
+  # heart-2Hz fix). The ones that today require gating (sleep_cycle
+  # gates on consciousness.state=sleeping, REM gates on dream_pulses)
+  # are noted in their description ; the synchronous-clock primitive
+  # composes Clocks with Gates declared in the lifecycle/given DSL.
+  #
+  # NOTE : these are descriptive ; the runtime that USES them is
+  # i120's job. For this branch's exploration, declaring them here
+  # makes the kāya layering explicit — they're already in service,
+  # they just lack the formal substrate to compose them coherently.
+
+  fixture "ClockHeart",      clock_id: "heart",       period_ms: 500,      description: "2Hz body metronome — fastest visible cadence ; refines into Moment-level when mindstream-as-Moment lands"
+  fixture "ClockBreath",     clock_id: "breath",      period_ms: 5000,     description: "Inhale/exhale alternation ~0.2Hz ; refined-by heart"
+  fixture "ClockMindstream", clock_id: "mindstream",  period_ms: 1000,     description: "1Hz tick ; the awake-attention pulse ; refines-into Moment when Moment lands"
+  fixture "ClockUltradian",  clock_id: "ultradian",   period_ms: 5400000,  description: "90min peak/trough cycle ; refined-by heart, breath, mindstream"
+  fixture "ClockCircadian",  clock_id: "circadian",   period_ms: 3600000,  description: "Hourly segment trigger (dawn / morning / afternoon / dusk / night) ; uses i107 wall-clock primitive ; refined-by ultradian"
+  fixture "ClockSleepCycle", clock_id: "sleep_cycle", period_ms: 5400000,  description: "NREM/REM cycle during sleep ; gated on consciousness.state=sleeping (i108)"
+
+  # ---- Refinement declarations between the existing cadences ----
+  #
+  # These are the formal kāya relations spelled out. fast refines slow ;
+  # the aggregation_function names how observations compose. Empty
+  # for now (the runtime gap i121 honors them) ; the declarations
+  # themselves document the relations.
+
+  fixture "HeartRefinesBreath",      slow_clock: "breath",     fast_clock: "heart",       ratio: 10,    aggregation_function: "phase_summary"
+  fixture "BreathRefinesMindstream", slow_clock: "mindstream", fast_clock: "breath",      ratio: 5,     aggregation_function: "phase_summary"
+  fixture "MindstreamRefinesUltradian", slow_clock: "ultradian", fast_clock: "mindstream", ratio: 5400, aggregation_function: "running_window"
+  fixture "UltradianRefinesCircadian", slow_clock: "circadian", fast_clock: "ultradian",   ratio: 1,     aggregation_function: "phase_pass_through"
+end
