@@ -102,6 +102,27 @@ impl Runtime {
         // Core dispatch
         let result = command_dispatch::dispatch(self, command_name, attrs)?;
 
+        // Breadcrumb : write the entry-point command (the top-level
+        // dispatch the user / daemon / CLI invoked) to a tiny plaintext
+        // file under data_dir. The statusline reads it. Critically, this
+        // fires ONLY for the top-level dispatch — `drain_policies`'s
+        // cascade calls go through `command_dispatch::dispatch` directly
+        // and do NOT touch the breadcrumb. Without this distinction the
+        // statusline ended up showing only the cascade tail (every
+        // mindstream tick → Synapse.DecaySynapse / Awareness.RecordMoment /
+        // Mode.SetAttentive) and missed the actual entry-point variety
+        // (Tick.MindstreamTick / Heart.Beat / Breath.Inhale / etc.).
+        // Plaintext, not heki — runtime introspection metadata, not
+        // domain state ; write failure is silently ignored.
+        if let Some(ref dir) = self.data_dir {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs()).unwrap_or(0);
+            let path = format!("{}/.last_dispatch", dir.trim_end_matches('/'));
+            let _ = std::fs::write(&path,
+                format!("{}.{}\n{}\n", result.aggregate_type, command_name, now));
+        }
+
         // Middleware: after
         let ctx = CommandContext {
             command_name: command_name.to_string(),
