@@ -1,9 +1,11 @@
 require "json"
-require "fileutils"
+require "net/http"
+require "uri"
 
 require_relative "sql_query_builder"
 require_relative "sqlite/schema_builder"
 require_relative "sqlite/codec"
+require_relative "sqlite" # for Sqlite::SchemaBuilder/Sqlite::Codec — see the reuse note below
 require_relative "../../ports/persistence/append_only"
 require_relative "../../query_specification/common/null_policy"
 require_relative "../../runtime/event"
@@ -11,35 +13,83 @@ require_relative "../../runtime/instance"
 
 module Hecksagain
   module Adapters
-    # The SQLite store: one table per aggregate head, an append-only entry
-    # table beside it. The DDL lives in sqlite/schema_builder.rb, the
-    # column codec in sqlite/codec.rb, and the query compilation is the
-    # shared SqlQueryBuilder — this file supplies only SQLite's dialect.
-    class Sqlite
+    # Cloudflare D1 — SQLite, managed, reached over its REST API rather
+    # than a local file. D1 IS SQLite, dialect and all, so this file
+    # reuses Sqlite::SchemaBuilder and Sqlite::Codec UNCHANGED (the DDL
+    # and the column encode/decode) and SqlQueryBuilder's dialect hooks
+    # are copied near-verbatim from sqlite.rb — the only real difference
+    # is the transport (D1::Connection, an HTTP call per query, vs a
+    # persistent local sqlite3 handle). See sqlite.rb's own header
+    # comment: "this file supplies only SQLite's dialect" — true here too.
+    class D1
+      # THE TRANSPORT — mirrors just the slice of SQLite3::Database's own
+      # interface (execute/get_first_row/get_first_value, rows as
+      # column-name-keyed hashes) that Sqlite::SchemaBuilder, Sqlite::Codec,
+      # and this file's own methods already assume. One stateless HTTP call
+      # per execute, not a persistent connection — D1 has no connection to
+      # hold open.
+      class Connection
+        ENDPOINT = "https://api.cloudflare.com/client/v4"
+
+        def initialize(account_id:, database_id:, api_token:)
+          @uri = URI("#{ENDPOINT}/accounts/#{account_id}/d1/database/#{database_id}/query")
+          @api_token = api_token
+        end
+
+        def execute(sql, binds = [])
+          request = Net::HTTP::Post.new(@uri)
+          request["Authorization"] = "Bearer #{@api_token}"
+          request["Content-Type"] = "application/json"
+          request.body = JSON.generate(sql: sql, params: binds)
+
+          response = Net::HTTP.start(@uri.host, @uri.port, use_ssl: true) { |http| http.request(request) }
+          body =
+            begin
+              JSON.parse(response.body)
+            rescue JSON::ParserError
+              raise Runtime::WiringError, "D1 query failed: non-JSON response (HTTP #{response.code}): #{response.body}"
+            end
+
+          unless body["success"]
+            messages = (body["errors"] || []).map { |error| error["message"] }.join("; ")
+            raise Runtime::WiringError, "D1 query failed: #{messages.empty? ? response.body : messages}"
+          end
+
+          body.fetch("result").first.fetch("results")
+        end
+
+        def get_first_row(sql, binds = [])
+          execute(sql, binds).first
+        end
+
+        def get_first_value(sql, binds = [])
+          get_first_row(sql, binds)&.values&.first
+        end
+      end
+
       include SqlQueryBuilder
-      include SchemaBuilder
-      include Codec
+      include Sqlite::SchemaBuilder
+      include Sqlite::Codec
 
       SQL_TYPES = { "Integer" => "INTEGER", "Float" => "REAL" }.freeze
 
-      attr_reader :aggregate, :path
+      attr_reader :aggregate
 
       def initialize(aggregate:, settings: {}, root: nil)
-        # LAZY, ON PURPOSE — a domain that never wires Sqlite should never
-        # need the gem installed. `require "hecksagain"` alone must not
-        # force a database client library nobody asked for.
-        require "sqlite3"
-
         @aggregate = aggregate
-        @path      = resolve_path(settings, root)
 
-        FileUtils.mkdir_p(File.dirname(@path))
-        @db = SQLite3::Database.new(@path)
-        @db.results_as_hash = true
-        # The append is the recovery commit point. Keep SQLite's fsync policy
-        # explicit instead of inheriting a process-wide pragma choice.
-        @db.execute("PRAGMA synchronous = FULL")
+        account_id  = settings[:account_id]  || settings["account_id"]
+        database_id = settings[:database_id] || settings["database_id"]
+        api_token   = settings[:api_token]   || settings["api_token"]
+        { "account_id" => account_id, "database_id" => database_id, "api_token" => api_token }.each do |name, value|
+          raise Runtime::WiringError, "D1 needs a #{name.inspect} in its world settings" if value.to_s.empty?
+        end
 
+        @db = Connection.new(account_id: account_id, database_id: database_id, api_token: api_token)
+
+        # No PRAGMA synchronous here, unlike Sqlite — D1 is a managed
+        # durable service; there is no local fsync policy for a caller to
+        # tune, and the query endpoint has no PRAGMA write-access to it.
         create_aggregate_table!
         create_entry_table!
         ensure_entry_operation_column!
@@ -139,11 +189,13 @@ module Hecksagain
 
       private
 
-      # ── SqlQueryBuilder's dialect hooks ─────────────────────────────
-
+      # ── SqlQueryBuilder's dialect hooks — identical to Sqlite's, since
+      # D1 speaks the same dialect (copied, not shared by module include,
+      # because Sqlite's own copies are private instance methods on a
+      # different class — see the file header) ───────────────────────
       def select_list = "*"
       def from_relation = quoted_table
-      def dialect_name = "SQLite"
+      def dialect_name = "D1"
       def empty_in_clause = "0"
 
       def placeholder(binds, value)
@@ -167,8 +219,8 @@ module Hecksagain
         "json_extract(#{quote_ident(name)}, '#{json_path}')"
       end
 
-      # SQLite has no bare OFFSET — LIMIT -1 is its own documented
-      # unbounded spelling, exactly for this case.
+      # SQLite (and D1, the same engine) has no bare OFFSET — LIMIT -1 is
+      # its own documented unbounded spelling, exactly for this case.
       def unbounded_limit = " LIMIT -1"
 
       def order_clause(order_by, policy)
@@ -188,19 +240,6 @@ module Hecksagain
       def quoted_table = quote_ident(table)
       def entry_table = "#{table}_entries"
       def quoted_entry_table = quote_ident(entry_table)
-
-      def resolve_path(settings, root)
-        declared = settings[:database] || settings["database"] || "data/#{table}.db"
-        return declared if declared.start_with?("/")
-
-        File.join(root || Dir.pwd, declared)
-      end
     end
-
-    # Port-specific bindings share SQLite's storage mechanics but advertise
-    # only one operational contract each.
-    class SqlitePersistence < Sqlite; end
   end
 end
-
-require_relative "sqlite/projection"
