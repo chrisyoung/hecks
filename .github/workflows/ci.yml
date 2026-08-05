@@ -23,6 +23,13 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
+          # spec/adapters/driven/postgres/lineage_spec.rb creates its own
+          # unprivileged roles at runtime (`CREATE ROLE ... LOGIN`, no
+          # password — it's testing GRANTs, not credentials) and connects
+          # as them; the official image's default password auth would
+          # refuse every one of those logins since none has a password to
+          # check. trust is scoped to this ephemeral service container.
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -43,6 +50,15 @@ jobs:
         with:
           ruby-version: "3.3"
           bundler-cache: true
+
+      # examples/pizzas/bluebook/pizzas.world wires straight at this
+      # database by name — spec/dsl_spec.rb, spec/runtime/domain_refusal_spec.rb,
+      # and the schema-evolution guide's own live example all boot it.
+      # Nothing creates it on demand (unlike the adapter specs' own
+      # scratch databases, which manage their own lifecycle); a fresh
+      # Postgres needs it provisioned once, up front.
+      - name: Create the pizzas example's database
+        run: createdb -h localhost -U postgres hecks_pizzas
 
       # The whole suite — corpus, adapters (Postgres and SQLite both
       # reachable here, so neither skips itself), the guides' own doctests,
