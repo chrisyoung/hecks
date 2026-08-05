@@ -3,6 +3,7 @@ require_relative "../ports/query"
 require_relative "../ports/query/ordering"
 require_relative "../query_specification/field_path"
 require_relative "errors"
+require_relative "reference_hop"
 require_relative "refusal_wording"
 require_relative "tenant_scope"
 require_relative "value"
@@ -23,6 +24,14 @@ module Hecksagain
         declared = declared_query(aggregate, query_name)
         args = normalize_args(aggregate, declared, args)
         declared = TenantScope.apply(declared, args)
+        # AFTER TenantScope, so its synthetic clause is already present
+        # in `.wheres` and rides through as an ordinary LOCAL clause on
+        # the OUTER query. It does not reach the hop's own inner
+        # sub-query against the TARGET aggregate — a hop's target may
+        # not even declare the same tenant boundary, and propagating one
+        # aggregate's tenant scope onto an unrelated aggregate's own
+        # query is a real design question of its own, not answered here.
+        declared = ReferenceHop.apply(declared, args, registry: @registry, domain: domain, aggregate: aggregate)
 
         repository = @registry.repository(domain, aggregate)
         if (native = Ports::Query.execute(repository, declared, args, context: { domain: domain, aggregate: aggregate }))
