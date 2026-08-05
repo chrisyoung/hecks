@@ -1516,8 +1516,39 @@ RSpec.describe "the DSL surface" do
       expect(port.operation("Receive").hecks_name).to eq("Receive")
     end
 
-    it "refuses a port with no operations" do
-      expect { build_domain_port {} }.to raise_error(Hecksagain::Bluebook::DSL::Malformed, /declares no operations/)
+    # THE DRIVEN HALF, reached through the same `port` call — registered
+    # the same way `Hecks.port`'s own top-level method registers one
+    # (`registry.ports`, not the aggregate's own IR — that's where an
+    # operations-shaped port lands, checked above).
+    it "verb builds a resource-style port, registered the same way Hecks.port is" do
+      registry = in_registry do
+        Hecks.bluebook("DomPortVerb") do
+          aggregate("Thing") do
+            identified_by { thing_id.value }
+          end
+        end
+        Hecks.hecksagon("DomPortVerb") { DomPortVerb::Thing.port("Checkout") { verb "opened_by" } }
+      end
+
+      port = registry.ports["Checkout"]
+      expect(port.verb).to eq("opened_by")
+      expect(registry.bluebook("DomPortVerb").aggregate("Thing").port("Checkout")).to be_nil
+    end
+
+    it "refuses a port declaring both a verb and operations" do
+      expect do
+        build_domain_port do
+          verb "opened_by"
+          operation("Receive") do
+            reference_to Thing, as: :thing_id
+            emits "Received"
+          end
+        end
+      end.to raise_error(Hecksagain::Bluebook::DSL::Malformed, /declares both a verb and operations/)
+    end
+
+    it "refuses a port with no verb and no operations" do
+      expect { build_domain_port {} }.to raise_error(Hecksagain::Bluebook::DSL::Malformed, /declares no verb and no operations/)
     end
 
     it "a bare port at a hecksagon's root belongs to the chapter, not one aggregate" do
@@ -1534,6 +1565,21 @@ RSpec.describe "the DSL surface" do
 
       port = registry.bluebook("RootPort").port("Clock")
       expect(port.operation("Tick").emits).to eq(["Ticked"])
+    end
+
+    it "a bare verb port at a hecksagon's root registers the same way a bound one does" do
+      registry = in_registry do
+        Hecks.bluebook("RootPortVerb") do
+          aggregate("Thing") do
+            identified_by { thing_id.value }
+          end
+        end
+        Hecks.hecksagon("RootPortVerb") { port("Weather") { verb "provided_by" } }
+      end
+
+      port = registry.ports["Weather"]
+      expect(port.verb).to eq("provided_by")
+      expect(registry.bluebook("RootPortVerb").port("Weather")).to be_nil
     end
   end
 
