@@ -14,6 +14,10 @@ pub struct Store {
     pub invoice: crate::kernel::InMemoryRepository<crate::generated::embryonaut::invoice::Invoice>,
     pub payment: crate::kernel::InMemoryRepository<crate::generated::embryonaut::payment::Payment>,
     pub recurringpayment: crate::kernel::InMemoryRepository<crate::generated::embryonaut::recurringpayment::RecurringPayment>,
+    pub roleassignment: crate::kernel::InMemoryRepository<crate::generated::governance::roleassignment::RoleAssignment>,
+    pub roletransition: crate::kernel::InMemoryRepository<crate::generated::governance::roletransition::RoleTransition>,
+    pub identity: crate::kernel::InMemoryRepository<crate::generated::identity::identity::Identity>,
+    pub externalidentifier: crate::kernel::InMemoryRepository<crate::generated::identity::externalidentifier::ExternalIdentifier>,
 }
 
 impl Store {
@@ -29,6 +33,10 @@ impl Store {
             invoice: crate::kernel::InMemoryRepository::new(),
             payment: crate::kernel::InMemoryRepository::new(),
             recurringpayment: crate::kernel::InMemoryRepository::new(),
+            roleassignment: crate::kernel::InMemoryRepository::new(),
+            roletransition: crate::kernel::InMemoryRepository::new(),
+            identity: crate::kernel::InMemoryRepository::new(),
+            externalidentifier: crate::kernel::InMemoryRepository::new(),
         }
     }
 
@@ -68,6 +76,18 @@ for (id, record) in self.payment.entries() {
 }
 for (id, record) in self.recurringpayment.entries() {
     instances.push((format!("{}{}", "Embryonaut::RecurringPayment#", id), record.to_json()));
+}
+for (id, record) in self.roleassignment.entries() {
+    instances.push((format!("{}{}", "Governance::RoleAssignment#", id), record.to_json()));
+}
+for (id, record) in self.roletransition.entries() {
+    instances.push((format!("{}{}", "Governance::RoleTransition#", id), record.to_json()));
+}
+for (id, record) in self.identity.entries() {
+    instances.push((format!("{}{}", "Identity::Identity#", id), record.to_json()));
+}
+for (id, record) in self.externalidentifier.entries() {
+    instances.push((format!("{}{}", "Identity::ExternalIdentifier#", id), record.to_json()));
 }
         instances
     }
@@ -395,6 +415,45 @@ pub fn dispatch_by_name(
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
               crate::generated::embryonaut::recurringpayment::dispatch_cancel(&mut store.recurringpayment, &id, args).map(|(_, events)| stamp_payload(events, &payload))
           }
+          "Governance::RoleAssignment.Assign" => {
+              let args = crate::generated::governance::roleassignment::AssignArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Governance administrator"), "Assign", caller_role)?;
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::governance::roleassignment::dispatch_assign(&mut store.roleassignment, args).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Governance::RoleAssignment.Revoke" => {
+              let id = crate::generated::governance::roleassignment::RoleAssignment::extract_id(args_json)?;
+              let args = crate::generated::governance::roleassignment::RevokeArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Governance administrator"), "Revoke", caller_role)?;
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::governance::roleassignment::dispatch_revoke(&mut store.roleassignment, &id, args).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Governance::RoleTransition.Grant" => {
+              let args = crate::generated::governance::roletransition::GrantArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Governance administrator"), "Grant", caller_role)?;
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::governance::roletransition::dispatch_grant(&mut store.roletransition, args).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Governance::RoleTransition.Revoke" => {
+              let id = crate::generated::governance::roletransition::RoleTransition::extract_id(args_json)?;
+              let args = crate::generated::governance::roletransition::RevokeArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Governance administrator"), "Revoke", caller_role)?;
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::governance::roletransition::dispatch_revoke(&mut store.roletransition, &id, args).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Identity::Identity.Register" => {
+              let args = crate::generated::identity::identity::RegisterArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Identity registrar"), "Register", caller_role)?;
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::identity::identity::dispatch_register(&mut store.identity, args).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Identity::ExternalIdentifier.Link" => {
+              let args = crate::generated::identity::externalidentifier::LinkArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Identity registrar"), "Link", caller_role)?;
+              crate::kernel::check_reference(&store.identity, &args.identity_id, "Identity", "identity_id")?;
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::identity::externalidentifier::dispatch_link(&mut store.externalidentifier, args).map(|(_, events)| stamp_payload(events, &payload))
+          }
         other => Err(crate::kernel::Refusal::TypeMismatch(format!("unknown command {other:?}"))),
     }
 }
@@ -440,6 +499,10 @@ pub fn reference_key_for_aggregate(qualified_name: &str) -> Option<&'static str>
         "Embryonaut::Invoice" => Some("invoice"),
         "Embryonaut::Payment" => Some("payment"),
         "Embryonaut::RecurringPayment" => Some("recurring_payment"),
+        "Governance::RoleAssignment" => Some("role_assignment"),
+        "Governance::RoleTransition" => Some("role_transition"),
+        "Identity::Identity" => Some("identity"),
+        "Identity::ExternalIdentifier" => Some("external_identifier"),
         _ => None,
     }
 }
