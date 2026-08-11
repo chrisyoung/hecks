@@ -20,10 +20,14 @@ module Hecksagain
         IR_VERSION = 1
 
         attr_reader :name, :version, :vision, :aggregates, :policies, :process_managers,
-                    :classification, :read_models, :ports, :formerly_known_as
+                    :classification, :read_models, :ports, :formerly_known_as, :category
 
+        # category -- vendored addition, not (yet) upstream hecksagain. See
+        # BluebookBuilder#category's own comment: a free-form second axis
+        # alongside the fixed core/supporting/generic classification.
         def initialize(name:, version: nil, vision: nil, aggregates: [], policies: [],
-                       process_managers: [], classification: nil, read_models: [], formerly_known_as: nil)
+                       process_managers: [], classification: nil, read_models: [], formerly_known_as: nil,
+                       category: nil)
           @policies         = policies
           @process_managers = process_managers
           @name       = name.to_s
@@ -35,6 +39,7 @@ module Hecksagain
           @read_models = read_models
           @classification = classification&.to_s
           @formerly_known_as = formerly_known_as&.to_s
+          @category = category&.to_s
           # A port with NO owning aggregate — declared bare at a hecksagon's
           # root, belonging to the chapter as a whole rather than one record.
           # Attached the same way an aggregate-scoped one is, after the fact,
@@ -73,6 +78,7 @@ module Hecksagain
             version:          @version,
             vision:           @vision,
             classification:   @classification,
+            category:         @category,
             aggregates:       @aggregates.map(&:to_h),
             read_models:      @read_models.map(&:to_h),
             policies:         @policies.map(&:to_h),
