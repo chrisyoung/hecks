@@ -40,7 +40,27 @@ module Hecksagain
       end
 
       def add_bluebook(item)  = @bluebooks[item.name]  = item
-      def add_hecksagon(item) = @hecksagons[item.domain] = item
+
+      # Vendored fix, not (yet) upstream hecksagain (migration plan task
+      # 4): a plain overwrite before this -- the SAME gap `bluebook_
+      # builder` right above already exists to solve for multi-file
+      # BLUEBOOKS ("needs its declarations to accumulate into ONE builder
+      # rather than each file minting its own and silently discarding the
+      # one before"), just never extended to hecksagons. A domain's
+      # `.hecksagon` binds routinely split across files one-per-aggregate
+      # (conductor/{merge_queue,lease,sweeper,claim,worker}.hecksagon, all
+      # `Hecks.hecksagon "Conductor"`) -- each call built a FRESH
+      # IR::Hecksagon and overwrote the one before, so only the LAST
+      # file's binds survived registry-wide ("Conductor::MergeQueue has
+      # no persisted_by bind" even though merge_queue.hecksagon plainly
+      # binds it -- lease.hecksagon just loaded after and clobbered it).
+      # Merges binds/subscriptions/framework_members/driving_handlers
+      # across every call for the same domain instead.
+      def add_hecksagon(item)
+        existing = @hecksagons[item.domain]
+        @hecksagons[item.domain] = existing ? merge_hecksagons(existing, item) : item
+      end
+
       def add_port(item)    = @ports[item.name]   = item
       def add_adapter(item)   = @adapters[item.name]   = item
       def add_world(item)     = @worlds[item.domain]   = item
@@ -78,6 +98,17 @@ module Hecksagain
         end)
         authoritative = repository(domain, aggregate)
         projection_current?(projection, authoritative) ? projection : authoritative
+      end
+
+      # See #add_hecksagon's own comment.
+      def merge_hecksagons(a, b)
+        Bluebook::IR::Hecksagon.new(
+          domain:            a.domain,
+          binds:             a.binds + b.binds,
+          subscriptions:     a.subscriptions + b.subscriptions,
+          framework_members: a.framework_members + b.framework_members,
+          driving_handlers:  a.driving_handlers + b.driving_handlers
+        )
       end
 
       def projection_current?(projection, authoritative)
