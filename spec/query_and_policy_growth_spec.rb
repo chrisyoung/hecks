@@ -357,9 +357,11 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
   #    comparator: `where field: { none_in_state: "Aggregate:state" }`
   #    holds when the record `field`'s value points at is NOT currently
   #    in that state (including when it points at no record at all).
-  #    Exercised on an ENTITY query — see gap (2) in this file's own
-  #    header comment for exactly why the equivalent AGGREGATE-level
-  #    query silently returns nothing today.
+  #    Exercised on BOTH paths — the entity query below, and the ordinary
+  #    AGGREGATE-level Memory query further down (`Board.Flagged`) — per
+  #    gap (2) in this file's own header comment: before the fix, only
+  #    the entity path worked and the aggregate path silently returned
+  #    nothing, every time.
   # ---------------------------------------------------------------------
   describe "none_in_state, a cross-aggregate anti-join" do
     NONE_IN_STATE_SOURCE = <<~BLUEBOOK
