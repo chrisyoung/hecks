@@ -67,7 +67,13 @@ module Hecksagain
                               reason: "reaction depth #{@door.max_reaction_depth} reached")
         end
 
-        @door.reenter(target, **event.payload.transform_keys(&:to_sym))
+        # with_literals (vendored addition -- see IR::Policy's own
+        # comment) merges in AFTER the event payload, so a policy's own
+        # explicit `with "key", "value"` always wins over a same-named
+        # payload field -- the literal was written to be authoritative,
+        # not a fallback.
+        args = event.payload.transform_keys(&:to_sym).merge((policy.with_literals || {}).transform_keys(&:to_sym))
+        @door.reenter(target, **args)
         record.merge(delivered: true)
       rescue *DOMAIN_REFUSALS => error
         # The target refused — a fact about the domain, recorded and not
@@ -126,6 +132,7 @@ module Hecksagain
 
         rows = QueryInterpreter.new(@registry).call(domain, aggregate_name, query_name, resolved_where)
         target = "#{policy.target_domain || domain}::#{policy.trigger_command}"
+        literals = (policy.with_literals || {}).transform_keys(&:to_sym)
 
         Array(rows).map do |row|
           record = { policy: policy.name, on: event.name, trigger: target, for_row: row[:id] }
@@ -135,7 +142,7 @@ module Hecksagain
           end
 
           begin
-            @door.reenter(target, id: row[:id])
+            @door.reenter(target, id: row[:id], **literals)
             record.merge(delivered: true)
           rescue *DOMAIN_REFUSALS => error
             record.merge(delivered: false, reason: error.message)
