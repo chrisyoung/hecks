@@ -72,13 +72,75 @@ module Hecksagain
         instance[:state] = handler.to_state
         @registry.saga_log << record.merge(advanced: true, from: handler.from_state, to: handler.to_state)
 
+        remember_into_instance(handler, event, instance, correlation)
+
+        unless guards_pass?(handler, event, instance)
+          @registry.saga_log << record.merge(dispatched: false, reason: "given clause did not hold")
+          return
+        end
+
         handler.dispatches.each do |spec|
           deliver_saga_dispatch(pm, spec, event, instance, correlation, domain)
         end
       end
 
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4) — see HandlerBuilder#given's own comment. `ctx` merges the
+      # triggering event's payload UNDER the instance's remembered
+      # fields, so a `remember`ed value (this same firing's, per above,
+      # since remember runs first) wins on key collision — the more
+      # specific, more recently-decided fact.
+      def guards_pass?(handler, event, instance)
+        return true if (handler.guards || []).empty?
+
+        ctx = event.payload.merge(instance[:memory])
+        handler.guards.all? { |predicate| predicate.call(ctx) }
+      end
+
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4): resolves `handler.remembers` (from HandlerBuilder#remember)
+      # against THIS firing's event/instance and merges them into
+      # `instance[:memory]` -- BEFORE this handler's own dispatches run,
+      # so a `remember key: from_event(:x)` and a same-handler `dispatch
+      # ..., with: { y: from_pm(:key) }` compose in the natural written
+      # order. No `row:` context -- remembers fire once per handler
+      # firing, never once per for_each iteration.
+      def remember_into_instance(handler, event, instance, correlation)
+        return if (handler.remembers || []).empty?
+
+        handler.remembers.each do |key, value|
+          resolved = if !value.is_a?(Symbol) then value
+                     elsif value == correlation then correlation
+                     else resolve_with_value(value, event, instance)
+                     end
+          instance[:memory][key.to_sym] = resolved
+        end
+      end
+
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4, i225): `spec.for_each` fans this dispatch out over a
+      # named query's rows instead of firing once. `dispatch "Store.
+      # PromoteSignal", for_each: { from: "Signal.cold" }, with: { kind:
+      # from_iter(:kind), ... }` -- one Store.PromoteSignal per row
+      # `Signal.cold` (a canned query) returns, each row's fields
+      # resolved via `from_iter`. Zero rows is a legitimate no-op, not an
+      # error -- an empty sweep is the common case (nothing cold this
+      # tick), so it's silently skipped the same way a plain dispatch
+      # with no correlation would be. `qualified` reused unchanged for
+      # both the query FQN and the command FQN -- both are `Aggregate.
+      # verb` within the SAME domain the process manager itself lives in.
       def deliver_saga_dispatch(pm, spec, event, instance, correlation, domain)
-        args   = dispatch_args(pm, spec, event, instance, correlation)
+        unless spec.for_each
+          deliver_one(pm, spec, event, instance, correlation, domain, iter: nil)
+          return
+        end
+
+        rows = @door.query(qualified(spec.for_each, domain))
+        rows.each { |row| deliver_one(pm, spec, event, instance, correlation, domain, iter: row) }
+      end
+
+      def deliver_one(pm, spec, event, instance, correlation, domain, iter:)
+        args   = dispatch_args(pm, spec, event, instance, correlation, iter: iter)
         record = { process_manager: pm.name, instance: correlation, dispatch: spec.command_name }
 
         if @door.reaction_depth_reached?
@@ -158,19 +220,78 @@ module Hecksagain
         end
       end
 
-      def dispatch_args(pm, spec, event, instance, correlation)
+      def dispatch_args(pm, spec, event, instance, correlation, iter: nil)
         spec.with_spec.to_h do |key, value|
-          resolved = if !value.is_a?(Symbol) then value
-                     elsif value == pm.correlation_head then correlation
-                     elsif event.payload.key?(value) then event.payload[value]
-                     else instance[:memory][value]
-                     end
+          resolved = resolve_value(value, pm, event, instance, correlation, iter)
           # A process manager carries facts between aggregate boundaries.  It
           # must carry a value object's state, not its source aggregate's
           # runtime type: TransferMoney and Account::Money may share fields
           # without being the same domain object.
           [key.to_sym, Value.materialize(resolved)]
         end
+      end
+
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4): pulled out of `dispatch_args` unchanged, plus one new
+      # branch -- `Bluebook::IR::TemplateSpec` resolves each of its OWN
+      # args through this SAME method (recursively; a template arg can
+      # itself be `pm.correlation_head` or a plain field reference,
+      # anything an ordinary `with:` value could be) and substitutes into
+      # `format`. Fully qualified (not bare `IR`, unlike
+      # process_manager_builder.rb's own `template` sugar): THIS class
+      # lives under `Hecksagain::Runtime`, a SIBLING of `Hecksagain::
+      # Bluebook`, not nested inside it, so bare `IR` never resolves here
+      # the way it does from inside `Hecksagain::Bluebook::DSL` — this
+      # branch was never dispatched for real until burning-man-prep's own
+      # `PlaceNewItemOnOwnersPersonalList` saga hit it (migration
+      # investigation, 2026-08-11), raising `uninitialized constant
+      # Hecksagain::Runtime::SagaInterpreter::IR` on every `with:` value
+      # that happened to need a plain (non-template) resolution too,
+      # since the `case` itself never got past the `when` clause's own
+      # constant lookup.
+      def resolve_value(value, pm, event, instance, correlation, iter)
+        case value
+        when Bluebook::IR::TemplateSpec
+          resolved_args = value.args.map { |arg| resolve_value(arg, pm, event, instance, correlation, iter) }
+          format(value.format, *resolved_args)
+        when Symbol
+          value == pm.correlation_head ? correlation : resolve_with_value(value, event, instance, row: iter)
+        else
+          value
+        end
+      end
+
+      # A DOTTED SOURCE READS THE ONE SCALAR, the same "a path names a
+      # field, not a whole value object" idiom `identified_by`/
+      # `correlates_by` already hold every other declaration to —
+      # `with: { item_id: :"id.value" }` reaches into a VO-wrapped
+      # payload field (Item.Add's own `id: ItemId`) for the bare scalar
+      # a reference-typed target argument (Place's own `item_id`)
+      # actually needs, rather than handing it the whole `{value: "..."}`
+      # shape a plain top-level key would. A bare (undotted) source is
+      # unchanged from before this existed — reads the field whole,
+      # exactly as every existing `with:` mapping in the corpus already
+      # does.
+      # `row:`, vendored addition not (yet) upstream hecksagain (migration
+      # plan task 4, i225): a for_each dispatch's iteration record, tried
+      # FIRST -- `from_iter`/`from_event` are indistinguishable at the IR
+      # level (both HandlerBuilder methods just return the bare field
+      # Symbol, see process_manager_builder.rb's own comment), so this is
+      # a runtime-side, not parse-side, resolution: when a row is present
+      # (a for_each dispatch) and carries the field, it wins over the
+      # event/instance fallback every other dispatch already used.
+      def resolve_with_value(value, event, instance, row: nil)
+        head, *rest = value.to_s.split(".").map(&:to_sym)
+        base = if row && row.key?(head)
+                 row[head]
+               elsif event.payload.key?(head)
+                 event.payload[head]
+               else
+                 instance[:memory][head]
+               end
+        return base if rest.empty?
+
+        rest.reduce(Value.materialize(base)) { |held, segment| held.is_a?(Hash) ? held[segment] : held }
       end
 
       def qualified(command_name, domain)

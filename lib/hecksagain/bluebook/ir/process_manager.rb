@@ -1,23 +1,70 @@
 module Hecksagain
   module Bluebook
     module IR
-      DispatchSpec = Struct.new(:command_name, :with_spec, keyword_init: true) do
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4): `template("fmt %s", from_pm(:x, default: "y"))` inside a
+      # `dispatch ..., with: { field: template(...) }` -- composing a
+      # literal string with a resolved field, which no `with:` value
+      # spelling could do before this (a bare Symbol IS a whole resolved
+      # value; there was no way to embed one inside surrounding text).
+      # Found live in miette's mind.bluebook ("I'd like to go deeper into
+      # #{target} with this" -- the OLD imperative Proc form's own string
+      # interpolation, which the file's own comment already named as
+      # needing "a template: form" before it could convert). `args` holds
+      # whatever `dispatch_args`/`resolve_with_value` already know how to
+      # resolve -- bare Symbols (from_event/from_pm/from_iter) or
+      # literals -- resolved the SAME way an ordinary `with:` value is,
+      # just substituted into `format` via `Kernel#format` rather than
+      # assigned directly. See Runtime::SagaInterpreter#resolve_value's
+      # own comment for the read side.
+      TemplateSpec = Struct.new(:format, :args, keyword_init: true)
+
+      # `for_each`, vendored addition not (yet) upstream hecksagain
+      # (migration plan task 4, i225): the FQN of a query ("Signal.cold")
+      # to enumerate — nil for an ordinary single dispatch. See
+      # Runtime::SagaInterpreter#deliver_saga_dispatch's own comment for
+      # the runtime side.
+      DispatchSpec = Struct.new(:command_name, :with_spec, :for_each, keyword_init: true) do
         def to_h
           {
             command_name: command_name.to_s,
-            with_spec:    with_spec.map { |key, value| [key.to_s, IR.render_value(value)] }
+            with_spec:    with_spec.map { |key, value| [key.to_s, IR.render_value(value)] },
+            for_each:     for_each
           }
         end
       end
 
+      # `remembers`, vendored addition not (yet) upstream hecksagain
+      # (migration plan task 4): named values this handler writes into
+      # the saga instance's OWN carried memory, for a LATER handler on
+      # the same instance to read back via `from_pm`. A real gap this
+      # closes: `instance[:memory]` (Runtime::SagaInterpreter) was set
+      # ONCE, from the STARTING event's payload, and never mutated again
+      # -- so `from_pm` (added earlier this session) could only ever see
+      # what the FIRST event carried, never anything a later handler
+      # decided along the way (miette's Lucidity PM: `MindSteered` sets
+      # the steering target ; the NEXT tick's handler needs to read it
+      # back, and neither the starts_on event nor the current tick's own
+      # event carries it). `remember key: from_event(...)` is the
+      # explicit, named write; see HandlerBuilder#remember and
+      # Runtime::SagaInterpreter#advance_saga's own comment for the read
+      # side.
+      # `guards`, vendored addition not (yet) upstream hecksagain
+      # (migration plan task 4): raw Procs, not rendered into `to_h` --
+      # same reason a command's `given`/`ensures` predicates aren't
+      # either (Proc isn't JSON-shaped); only their PRESENCE is exported,
+      # as a count, so the IR still says a guard exists without claiming
+      # to describe it. See DSL::ProcessManagerBuilder::HandlerBuilder#given.
       ProcessManagerHandler = Struct.new(:event_type, :from_state, :to_state,
-                                         :dispatches, keyword_init: true) do
+                                         :dispatches, :remembers, :guards, keyword_init: true) do
         def to_h
           {
             event_type: event_type.to_s,
             from_state: from_state.to_s,
             to_state:   to_state.to_s,
-            dispatches: dispatches.map(&:to_h)
+            dispatches: dispatches.map(&:to_h),
+            remembers:  (remembers || []).map { |k, v| [k.to_s, IR.render_value(v)] },
+            guard_count: (guards || []).size
           }
         end
       end

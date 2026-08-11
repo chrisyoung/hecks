@@ -157,13 +157,26 @@ Hecks.bluebook "Bluebook" do
 
     reference_to ProcessManager
 
-    # THE PROCESS MANAGER IT IS IN, AND THE EVENT IT ANSWERS. A saga answers each
-    # event once, so the event names the leg. The judge keyed this by POSITION
-    # ("#{parent}##{index}"), which is a mint : insert a leg above and every leg
-    # below is renamed. The event does not move.
+    # THE PROCESS MANAGER IT IS IN, THE EVENT IT ANSWERS, AND THE STATE IT
+    # ANSWERS FROM. The judge keyed this by POSITION ("#{parent}##{index}"),
+    # which is a mint : insert a leg above and every leg below is renamed.
+    # The event does not move.
+    #
+    # Vendored correction (migration plan task 4, hecks-hecksagain-migration):
+    # (process_manager_id, event_type) ALONE is not one leg — a state machine
+    # legitimately answers the SAME event differently depending on which state
+    # it is currently in (miette's own BodyCycle PM: "BodyPulse" while
+    # attentive moves attentive->attentive, "BodyPulse" while sleeping_light
+    # moves sleeping_light->sleeping_light — six real, distinct legs, one
+    # event name). Excluding from_state collapsed all six into one identity,
+    # so the second-declared leg for the same event read as a duplicate
+    # Declare of the first. from_state doesn't move for the same reason
+    # event_type doesn't: it's a value, not a position. TODO upstream via
+    # bin/evolve.
     identified_by do
       process_manager_id
       event_type.value
+      from_state.value
     end
 
     # No `saga` field. It named the old word for a process manager, held nothing —
@@ -229,9 +242,23 @@ Hecks.bluebook "Bluebook" do
 
     # THE HANDLER IT IS IN, AND THE COMMAND IT SENDS — keyed by position before,
     # for the same want of a way to say this.
+    #
+    # Vendored correction (migration plan task 4): (handler_id, command_name)
+    # alone collides on a real, legitimate pattern — one handler fanning the
+    # SAME command out several times with different `with:` bindings each
+    # time (miette's body/pulse_organs/bluebook: one BodyPulse handler
+    # dispatching "Signal.FireSignal" once per organ, same command name,
+    # different args). Unlike Handler's from_state (a real business value),
+    # position here is not a stand-in for missing meaning — it names WHICH
+    # send this is, and each Dispatch is declared once, at load time, never
+    # re-addressed by identity afterward (the "way back" is always
+    # DeclaredIn + order_by :position, never a Dispatch looked up by its own
+    # id). So folding position into identity is safe exactly where it was
+    # unsafe for Handler's legs. TODO upstream via bin/evolve.
     identified_by do
       handler_id
       command_name.value
+      position.value
     end
 
     attribute :handler,      DispatchText
