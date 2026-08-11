@@ -50,7 +50,13 @@ RSpec.describe Hecksagain::Bluebook::MetaValidator::Plan do
       # is not a name the walk ever has to match.
       appends = plan.category("Command").appends
 
-      expect(appends.keys).to match_array(%w[attributes givens ensures mutations emits])
+      # `redirects_native` joined the other five once behavior.bluebook
+      # declared `Command.Redirect` (docs/hecks-migration-findings.md
+      # finding #1) — the append table is DERIVED from the grammar's own
+      # `then_set ..., append:` declarations, so a sixth appendable list
+      # shows up here automatically, not by a hand-kept map falling out of
+      # sync.
+      expect(appends.keys).to match_array(%w[attributes givens ensures mutations emits redirects_native])
       expect(appends["attributes"].verb).to eq("Argument")
       expect(appends["givens"].verb).to eq("Rule")
       expect(appends["ensures"].verb).to eq("Ensure")

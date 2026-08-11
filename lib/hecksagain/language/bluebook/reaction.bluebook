@@ -190,9 +190,33 @@ Hecks.bluebook "Bluebook" do
     attribute :event_type, HandlerText
     attribute :from_state, HandlerText
     attribute :to_state,   HandlerText
+    # Vendored addition, not (yet) upstream hecksagain (migration plan
+    # task 4): `remember key: from_event(...)` writes forward into the
+    # saga instance's own carried memory — see IR::ProcessManagerHandler's
+    # own comment. An OPEN MAP, the same shape `Dispatch`'s own
+    # `with_spec` already is (a value object cannot hold it), so it rides
+    # as rows the same way.
+    attribute :remembers,   list_of(Remembered)
+    # `given { |ctx| ... }` — a dispatch-level precondition. The predicate
+    # ITSELF is a raw Proc, never rendered into `to_h` (same reason a
+    # command's own `given`/`ensures` predicates are not) — only its
+    # PRESENCE is exported, as a count, so the self-hosted grammar holds
+    # exactly what the wire holds: a number, not a claim to describe the
+    # predicate.
+    attribute :guard_count, GuardCount
 
     value_object "HandlerText" do
       attribute :value, String
+    end
+
+    value_object "Remembered" do
+      attribute :key,   String
+      attribute :value, String
+    end
+
+    value_object "GuardCount" do
+      attribute :value, Integer
+      invariant("a guard count is never negative") { value >= 0 }
     end
 
     # The way back: everything DECLARED IN the process manager above. The parent
@@ -229,9 +253,31 @@ Hecks.bluebook "Bluebook" do
       # the language admitting a leg the runtime cannot parse.
       attribute :from_state, HandlerText
       attribute :to_state,   HandlerText
+      # KNOWN IN FULL BY THE TIME `on(...)`'s BLOCK FINISHES, the same as
+      # `event_type`/`from_state`/`to_state` — a scalar, so it rides as a
+      # Declare-time attribute rather than a sub-command the way
+      # `remembers` (an open map) needs to.
+      attribute :guard_count, GuardCount, optional: true
 
       attribute :position, Position, optional: true
       emits "LegDeclared"
+    end
+
+    # `remember key: from_event(...)` / `set :key, value` — vendored
+    # addition, not (yet) upstream hecksagain (migration plan task 4):
+    # the list-append counterpart to `Dispatch.Bind`'s own with_spec
+    # binding, same open-map shape (a value object cannot hold it).
+    command "Remember" do
+      role "Language"
+      goal "Attach one remembered key/value pair to the handler"
+
+      reference_to Handler
+      attribute :key,   HandlerText
+      attribute :value, HandlerText
+
+      then_set :remembers, append: { key: :key, value: :value }
+
+      emits "RememberedAttached"
     end
   end
 
