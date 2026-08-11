@@ -15,7 +15,18 @@ module Hecksagain
         # ARGUMENT (a Symbol) or a LITERAL. It used to spell the Symbol bare
         # and inspect the rest, which is the opposite of what a where-clause
         # did with the same two kinds — see Hecksagain::Literal.
-        def appended_fields = source.transform_values { |value| Literal.render(value) }
+        #
+        # Also handles the bare-symbol shape: `then_set :list, append: :src`
+        # appends a single scalar/attribute value directly to a list, rather
+        # than a record of named fields (`append: { field: :src, ... }`).
+        # Found live in acl.bluebook during the corpus-wide rewrite (vendored,
+        # not yet upstream — TODO via hecksagain's own bin/evolve
+        # word-admission process, migration plan task 7).
+        def appended_fields
+          return { value: Literal.render(source) } unless source.is_a?(Hash)
+
+          source.transform_values { |value| Literal.render(value) }
+        end
 
         def classified_source
           if source.is_a?(Symbol)
@@ -49,20 +60,25 @@ module Hecksagain
 
         class << self
           attr_reader :role, :goal, :attributes, :givens, :ensures, :mutations, :emits, :references,
-                      :provenance
+                      :provenance, :redirects_native
 
           def declare(name:, role: nil, goal: nil, attributes: [], givens: [], ensures: [],
-                      mutations: [], emits: [], references: nil, provenance: nil)
+                      mutations: [], emits: [], references: nil, provenance: nil, redirects_native: [])
             verb = Class.new(self)
             verb.hecks_name = name.to_s
             verb.absorb(role: role, goal: goal, attributes: attributes, givens: givens,
                         ensures: ensures, mutations: mutations, emits: emits, references: references&.to_s,
-                        provenance: provenance)
+                        provenance: provenance, redirects_native: redirects_native)
             verb
           end
 
+          # redirects_native -- vendored addition, not (yet) upstream hecksagain.
+          # Backs Macrophage::GovernedDoor.LookupDoor's IR-introspecting query:
+          # which native harness tool names this command is the storehouse-door
+          # equivalent for. TODO upstream via hecksagain's own bin/evolve
+          # word-admission process (migration plan task 7).
           def absorb(role:, goal:, attributes:, givens:, ensures:, mutations:, emits:, references:,
-                     provenance: nil)
+                     provenance: nil, redirects_native: [])
             @role       = role
             @goal       = goal
             @attributes = attributes
@@ -72,6 +88,7 @@ module Hecksagain
             @emits      = emits
             @references = references
             @provenance = provenance
+            @redirects_native = redirects_native
             # Indexed once — attributes are final once absorbed, and every
             # dispatch asks this finder by name.
             @attributes_by_name = attributes.to_h { |held| [held.name, held] }
@@ -109,7 +126,8 @@ module Hecksagain
               ensures:    ensures.map { |rule| { description: rule.description, canonical: rule.canonical } },
               mutations:  mutations.map(&:to_h),
               emits:      emits,
-              provenance: provenance
+              provenance: provenance,
+              redirects_native: redirects_native
             }
           end
         end

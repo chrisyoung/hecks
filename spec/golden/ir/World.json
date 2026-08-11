@@ -76,6 +76,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Deployment"
         }
@@ -277,6 +280,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Deployment"
         },
@@ -326,6 +332,9 @@
           ],
           "name": "Set",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Wiring",
           "role": "Deployment"
         }

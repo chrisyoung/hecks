@@ -164,6 +164,9 @@
           ],
           "name": "Propose",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language designer"
         },
@@ -213,6 +216,9 @@
           ],
           "name": "Render",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Operator",
           "role": "Language designer"
         },
@@ -238,6 +244,9 @@
           ],
           "name": "Admit",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Operator",
           "role": "Language designer"
         },
@@ -260,6 +269,9 @@
           ],
           "name": "Retire",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Operator",
           "role": "Language designer"
         }
@@ -691,6 +703,9 @@
           ],
           "name": "Propose",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language designer"
         },
@@ -740,6 +755,9 @@
           ],
           "name": "Read",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Normalisation",
           "role": "Language designer"
         },
@@ -765,6 +783,9 @@
           ],
           "name": "Admit",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Normalisation",
           "role": "Language designer"
         },
@@ -787,6 +808,9 @@
           ],
           "name": "Retire",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Normalisation",
           "role": "Language designer"
         }
@@ -1254,6 +1278,9 @@
           ],
           "name": "Extract",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "System"
         },
@@ -1300,6 +1327,9 @@
           ],
           "name": "Note",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Expression",
           "role": "System"
         },
@@ -1329,6 +1359,9 @@
           ],
           "name": "Admit",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Expression",
           "role": "System"
         },
@@ -1359,6 +1392,9 @@
           ],
           "name": "Reject",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Expression",
           "role": "System"
         }

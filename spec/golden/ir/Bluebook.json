@@ -121,6 +121,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -197,6 +200,9 @@
           ],
           "name": "Normalise",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Bluebook",
           "role": "Language"
         }
@@ -607,6 +613,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -646,6 +655,9 @@
           ],
           "name": "Identify",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -742,6 +754,9 @@
           ],
           "name": "Attribute",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -838,6 +853,9 @@
           ],
           "name": "Reference",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -934,6 +952,9 @@
           ],
           "name": "Holds",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -988,6 +1009,9 @@
           ],
           "name": "Lifecycle",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -1044,6 +1068,9 @@
           ],
           "name": "Transition",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -1069,6 +1096,9 @@
           ],
           "name": "Seal",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -1105,6 +1135,9 @@
           ],
           "name": "Value",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         }
@@ -1553,6 +1586,15 @@
         {
           "admits": null,
           "default": null,
+          "list": true,
+          "name": "redirects_native",
+          "optional": false,
+          "pattern": null,
+          "type": "RedirectTarget"
+        },
+        {
+          "admits": null,
+          "default": null,
           "list": false,
           "name": "references",
           "optional": false,
@@ -1696,6 +1738,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -1792,6 +1837,9 @@
           ],
           "name": "Argument",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -1888,6 +1936,9 @@
           ],
           "name": "Reference",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -1941,6 +1992,9 @@
           ],
           "name": "Rule",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -1994,6 +2048,9 @@
           ],
           "name": "Ensure",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -2077,6 +2134,9 @@
           ],
           "name": "Change",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -2121,6 +2181,9 @@
           ],
           "name": "ActsOn",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -2160,6 +2223,51 @@
           ],
           "name": "Announce",
           "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": "Command",
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "tool",
+              "optional": false,
+              "pattern": null,
+              "type": "EventName"
+            }
+          ],
+          "emits": [
+            "RedirectNativeAttached"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+            {
+              "canonical": "!tool.value.to_s.empty?",
+              "description": "a native tool is named"
+            }
+          ],
+          "goal": "Name one native tool this command is the storehouse-door equivalent for",
+          "mutations": [
+            {
+              "fields": {
+                "name": ":tool"
+              },
+              "op": "append",
+              "target": "redirects_native"
+            }
+          ],
+          "name": "Redirect",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         }
@@ -2315,6 +2423,27 @@
 
           ],
           "name": "Announcement"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "name",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "RedirectTarget"
         },
         {
           "attributes": [
@@ -2823,6 +2952,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -2879,6 +3011,9 @@
           ],
           "name": "Filter",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Query",
           "role": "Language"
         },
@@ -2948,6 +3083,9 @@
           ],
           "name": "Option",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Query",
           "role": "Language"
         },
@@ -3044,6 +3182,9 @@
           ],
           "name": "Argument",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Query",
           "role": "Language"
         }
@@ -3425,6 +3566,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -3521,6 +3665,9 @@
           ],
           "name": "Field",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ValueObject",
           "role": "Language"
         },
@@ -3561,6 +3708,9 @@
           ],
           "name": "Close",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ValueObject",
           "role": "Language"
         },
@@ -3614,6 +3764,9 @@
           ],
           "name": "Assert",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ValueObject",
           "role": "Language"
         }
@@ -3941,6 +4094,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -3990,6 +4146,9 @@
           ],
           "name": "Pair",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Member",
           "role": "Language"
         }
@@ -4269,6 +4428,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -4308,6 +4470,9 @@
           ],
           "name": "Identify",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         },
@@ -4333,6 +4498,9 @@
           ],
           "name": "Seal",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         },
@@ -4429,6 +4597,9 @@
           ],
           "name": "Attribute",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         },
@@ -4483,6 +4654,9 @@
           ],
           "name": "Lifecycle",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         },
@@ -4539,6 +4713,9 @@
           ],
           "name": "Transition",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         }
@@ -4938,6 +5115,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         }
@@ -5193,6 +5373,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -5229,6 +5412,9 @@
           ],
           "name": "State",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ProcessManager",
           "role": "Language"
         }
@@ -5478,6 +5664,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         }
@@ -5673,6 +5862,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -5719,6 +5911,9 @@
           ],
           "name": "Bind",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Dispatch",
           "role": "Language"
         }
@@ -15638,6 +15833,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -15694,6 +15892,9 @@
           ],
           "name": "Gather",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ReadModel",
           "role": "Language"
         },
@@ -15733,6 +15934,9 @@
           ],
           "name": "GroupBy",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ReadModel",
           "role": "Language"
         },
@@ -15802,6 +16006,9 @@
           ],
           "name": "Option",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ReadModel",
           "role": "Language"
         }

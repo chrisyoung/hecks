@@ -58,6 +58,9 @@
           ],
           "name": "Flip",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Operator"
         },
@@ -89,6 +92,9 @@
           ],
           "name": "Log",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Light",
           "role": "System"
         }
@@ -252,6 +258,9 @@
           ],
           "name": "Install",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Operator"
         },
@@ -274,6 +283,9 @@
           ],
           "name": "Ring",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Echo",
           "role": "Operator"
         }
@@ -371,6 +383,9 @@
           ],
           "name": "Raise",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Operator"
         }
