@@ -217,6 +217,64 @@ RSpec.describe "the DSL surface" do
     end
   end
 
+  describe "a hecksagon" do
+    it "adapter with a bare domain-wide kind persists every aggregate that declares no bind of its own" do
+      registry = in_registry do
+        Hecks.bluebook("DomainDefaulted") do
+          aggregate("Thing") do
+            identified_by { thing_id.value }
+          end
+        end
+        Hecks.hecksagon("DomainDefaulted") { adapter :memory }
+      end
+
+      bind = registry.hecksagon("DomainDefaulted").binds.first
+      expect([bind.aggregate, bind.verb, bind.adapter]).to eq(["Thing", "persisted_by", "Memory"])
+    end
+
+    # `raw_adapters`/`domain_wide_persisted_by` never reach the final
+    # IR::Hecksagon (HecksagonBuilder#build does not pass them through —
+    # a documented gap, the same shape Aggregate-level invariant/
+    # specification are), so this reads the raw builder instance rather
+    # than the registry.
+    it "adapter with an unrecognised bare kind and options records a raw adapter, not a bind" do
+      in_registry do
+        builder = Hecksagain::Bluebook::DSL::HecksagonBuilder.new("RawAdapted")
+        builder.instance_eval { adapter :custom_queue, url: "amqp://local" }
+
+        expect(builder.raw_adapters).to eq([{ kind: "custom_queue", opts: { url: "amqp://local" } }])
+      end
+    end
+
+    it "gate accepts a role allowlist block and discards it" do
+      registry = in_registry { Hecks.hecksagon("Gated") { gate("Thing", :role) { allow :Cmd1, :Cmd2 } } }
+
+      expect(registry.hecksagon("Gated")).not_to be_nil
+    end
+
+    it "success and failure are no-op stubs for the effect-family verdict shape" do
+      registry = in_registry do
+        Hecks.hecksagon("Verdicted") do
+          success "Thing.Authorize"
+          failure "Thing.Decline"
+        end
+      end
+
+      expect(registry.hecksagon("Verdicted")).not_to be_nil
+    end
+
+    it "method_missing absorbs an unrecognised call, structurally, without raising" do
+      registry = in_registry do
+        Hecks.hecksagon("Branded") do
+          capabilities :webapp
+          brand_color "#336699"
+        end
+      end
+
+      expect(registry.hecksagon("Branded")).not_to be_nil
+    end
+  end
+
   describe "declarations that cannot mean what they say" do
     Malformed = Hecksagain::Bluebook::DSL::Malformed
 
@@ -801,6 +859,71 @@ RSpec.describe "the DSL surface" do
       expect(build_bluebook("Renamed") { formerly_known_as "OldName" }.formerly_known_as).to eq("OldName")
     end
 
+    it "category records a free-form second axis, alongside classification" do
+      bluebook = build_bluebook("Categorized") do
+        core
+        category "framework"
+      end
+
+      expect([bluebook.classification, bluebook.category]).to eq(["core", "framework"])
+    end
+
+    # THE NO-OP STUBS — accepted so a bluebook using them still boots, not
+    # yet threaded into the IR (each builder method's own comment says so).
+    # Real, direct tests of the ACCEPT-AND-DISCARD behaviour, not merely
+    # "does not raise" — every one below proves the word is genuinely inert,
+    # which is the actual claim each of these methods makes.
+    it "glossary accepts a strict-mode block and discards it" do
+      expect(build_bluebook("Glossaried") { glossary(strict: true) { } }).to be_a(Hecksagain::Bluebook::IR::Bluebook)
+    end
+
+    it "entrypoint accepts arguments and discards them" do
+      expect(build_bluebook("Entered") { entrypoint "boot", via: "cli" }).to be_a(Hecksagain::Bluebook::IR::Bluebook)
+    end
+
+    it "fixture at the bluebook level accepts a named block and discards it" do
+      chapter = build_bluebook("Fixtured") do
+        fixture "House Battery Bank", on: "Aggregate" do
+          voltage 12.8
+        end
+      end
+
+      expect(chapter).to be_a(Hecksagain::Bluebook::IR::Bluebook)
+    end
+
+    it "section accepts row lines inside its block and discards them" do
+      chapter = build_bluebook("Sectioned") do
+        section "Header" do
+          row "key", "value"
+        end
+      end
+
+      expect(chapter).to be_a(Hecksagain::Bluebook::IR::Bluebook)
+    end
+
+    it "define accepts a term and its definition and discards them" do
+      expect(build_bluebook("Defined") { define "Term", "definition text" }).to be_a(Hecksagain::Bluebook::IR::Bluebook)
+    end
+
+    it "lifecycle at the bluebook level accepts named states and transitions and discards them" do
+      chapter = build_bluebook("LifecycleNamed") do
+        lifecycle "Order" do
+          state "placed"
+          transition from: "placed", to: "shipped", on: "Ship"
+        end
+      end
+
+      expect(chapter).to be_a(Hecksagain::Bluebook::IR::Bluebook)
+    end
+
+    it "event at the bluebook level accepts a bare name and discards it" do
+      expect(build_bluebook("EventNamed") { event "SomethingHappened" }).to be_a(Hecksagain::Bluebook::IR::Bluebook)
+    end
+
+    it "actor accepts a name and description and discards them" do
+      expect(build_bluebook("Actored") { actor "Ops", description: "runs the pipeline" }).to be_a(Hecksagain::Bluebook::IR::Bluebook)
+    end
+
     it "policy declares a reaction the domain owns rather than one aggregate" do
       reaction = build_bluebook("Reacting") do
         policy "NotifyOnPlacement" do
@@ -1000,6 +1123,79 @@ RSpec.describe "the DSL surface" do
       provenanced = build_aggregate("Provenanced") { provenance from: origin }
 
       expect(provenanced.provenance).to eq(origin)
+    end
+
+    # AGGREGATE-SCOPED invariant/rule/specification are NOT (yet) threaded
+    # into IR::Aggregate (AggregateBuilder's own comments say so — a
+    # documented gap, not a silent one), so `build_aggregate` — which
+    # returns only the final IR object — cannot see them. Built through the
+    # raw builder instance instead, inside `in_registry` because canonical
+    # extraction needs a live boot the same way `given`/`invariant`
+    # elsewhere in this file do.
+    it "invariant records a whole-aggregate rule, distinct from a value object's own" do
+      in_registry do
+        builder = Hecksagain::Bluebook::DSL::AggregateBuilder.new("Thing")
+        builder.instance_eval do
+          invariant("append-only") { true }
+        end
+
+        recorded = builder.aggregate_invariants.first
+        expect(recorded[:description]).to eq("append-only")
+        expect(recorded[:canonical]).to eq("true")
+      end
+    end
+
+    it "rule is a live alias of invariant, at the aggregate level too" do
+      in_registry do
+        builder = Hecksagain::Bluebook::DSL::AggregateBuilder.new("Thing")
+        builder.instance_eval do
+          rule("never negative") { true }
+        end
+
+        expect(builder.aggregate_invariants.first[:description]).to eq("never negative")
+      end
+    end
+
+    it "specification names a reusable, aggregate-scoped predicate" do
+      in_registry do
+        builder = Hecksagain::Bluebook::DSL::AggregateBuilder.new("Thing")
+        builder.instance_eval do
+          specification(:in_lucid_rem) { |body| body.state == "sleeping" }
+        end
+
+        recorded = builder.specifications.first
+        expect(recorded[:name]).to eq("in_lucid_rem")
+        expect(recorded[:canonical]).to include("state")
+      end
+    end
+
+    it "fixture at the aggregate level accepts a named block and discards it" do
+      thing = build_aggregate("AggFixtured") do
+        fixture "Default" do
+          name "House Battery Bank"
+        end
+      end
+
+      expect(thing).to be_a(Hecksagain::Bluebook::IR::Aggregate)
+    end
+
+    it "validation accepts a field-presence declaration and discards it" do
+      thing = build_aggregate("Validated") { validation :status, presence: true }
+
+      expect(thing).to be_a(Hecksagain::Bluebook::IR::Aggregate)
+    end
+
+    it "a bare primitive attribute type auto-synthesises a wrapper value object" do
+      aggregate = build_aggregate("Wrapped") do
+        attribute :code, String
+      end
+
+      code  = aggregate.attributes.find { |a| a.name == :code }
+      shape = aggregate.value_object("Code")
+
+      expect(code.type).to eq("Code")
+      expect(shape.attributes.map(&:name)).to eq([:value])
+      expect(shape.attributes.first.type).to eq("String")
     end
 
     it "identified_by names a field, and the HEAD is what readers look up" do
@@ -1919,6 +2115,26 @@ RSpec.describe "the DSL surface" do
       expect(invariant.description).to eq("size must be positive")
       expect(invariant.canonical).to eq("size.positive?")
     end
+
+    it "rule is a live alias of invariant, not a rename" do
+      value_object = build_value_object("VoRule") do
+        attribute :size, Integer
+        rule("size must be positive") { size.positive? }
+      end
+      recorded = value_object.invariants.first
+
+      expect(recorded.description).to eq("size must be positive")
+      expect(recorded.canonical).to eq("size.positive?")
+    end
+
+    it "description is a no-op stub — accepted, and it changes nothing" do
+      value_object = build_value_object("VoDesc") do
+        attribute :size, Integer
+        description "narrative text, discarded"
+      end
+
+      expect(value_object.attributes.map(&:name)).to eq([:size])
+    end
   end
 
   describe "a command" do
@@ -1928,6 +2144,16 @@ RSpec.describe "the DSL surface" do
 
     it "goal records why" do
       expect(build_command("CmdGoal") { goal "feed people" }.goal).to eq("feed people")
+    end
+
+    it "description is a live alias of goal, not a rename" do
+      expect(build_command("CmdDesc") { description "feed people" }.goal).to eq("feed people")
+    end
+
+    it "redirects_native names the storehouse-door tool equivalents this command stands in for" do
+      command = build_command("CmdRedirect") { redirects_native "Edit", "MultiEdit" }
+
+      expect(command.redirects_native).to eq(["Edit", "MultiEdit"])
     end
 
     it "provenance records where a concept came from, as a literal Hash" do
@@ -1962,6 +2188,36 @@ RSpec.describe "the DSL surface" do
 
       expect(given.description).to eq("must be open")
       expect(given.canonical).to eq('status == "open"')
+    end
+
+    it "expects and requires are live aliases of given, not renames" do
+      expects_command = build_command("CmdExpects") do
+        expects("must be open") { status == "open" }
+      end
+      requires_command = build_command("CmdRequires") do
+        requires("must be open") { status == "open" }
+      end
+
+      expect(expects_command.givens.first.canonical).to eq('status == "open"')
+      expect(requires_command.givens.first.canonical).to eq('status == "open"')
+    end
+
+    it "ensures records a postcondition against the settled record" do
+      command = build_command("CmdEnsures") do
+        ensures("balance grew by the amount") { old.balance == balance - amount }
+      end
+      postcondition = command.ensures.first
+
+      expect(postcondition.description).to eq("balance grew by the amount")
+      expect(postcondition.canonical).to eq("old.balance == balance - amount")
+    end
+
+    it "guarantees is a live alias of ensures, not a rename" do
+      command = build_command("CmdGuarantees") do
+        guarantees("balance grew by the amount") { old.balance == balance - amount }
+      end
+
+      expect(command.ensures.first.canonical).to eq("old.balance == balance - amount")
     end
 
     it "then_set to: a symbol reads a command argument" do

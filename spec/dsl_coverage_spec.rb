@@ -10,20 +10,23 @@ RSpec.describe "the DSL surface is fully covered" do
     ],
     "BluebookBuilder" => [
       Hecksagain::Bluebook::DSL::BluebookBuilder,
-      %i[vision formerly_known_as core supporting generic aggregate report read_model policy process_manager classification]
+      %i[vision formerly_known_as core supporting generic category aggregate report read_model policy process_manager
+         classification glossary entrypoint fixture section define lifecycle event actor]
     ],
     "AggregateBuilder" => [
       Hecksagain::Bluebook::DSL::AggregateBuilder,
       %i[description provenance identified_by reference_to has_many has_one belongs_to value_object command lifecycle
-         entity query policy attribute list_of attributes]
+         entity query policy attribute list_of attributes invariant rule specification specifications fixture
+         validation aggregate_invariants synthesise_primitive_wrapper]
     ],
     "ValueObjectBuilder" => [
       Hecksagain::Bluebook::DSL::ValueObjectBuilder,
-      %i[invariant one_of member attribute list_of attributes]
+      %i[invariant rule description one_of member attribute list_of attributes]
     ],
     "CommandBuilder" => [
       Hecksagain::Bluebook::DSL::CommandBuilder,
-      %i[role goal provenance reference_to given ensures then_set sets emits attribute list_of attributes]
+      %i[role goal description provenance reference_to given expects requires ensures guarantees then_set sets emits
+         redirects_native attribute list_of attributes]
     ],
     "PortBuilder" => [
       Hecksagain::Bluebook::DSL::PortBuilder,
@@ -55,7 +58,8 @@ RSpec.describe "the DSL surface is fully covered" do
     ],
     "HecksagonBuilder" => [
       Hecksagain::Bluebook::DSL::HecksagonBuilder,
-      %i[binds subscribe subscriptions port uses_framework framework_members]
+      %i[binds subscribe subscriptions port uses_framework framework_members adapter domain_wide_persisted_by
+         apply_domain_wide_defaults! raw_adapters driving_handlers gate success failure method_missing]
     ],
     "TranslationBuilder" => [
       Hecksagain::Bluebook::DSL::TranslationBuilder,
