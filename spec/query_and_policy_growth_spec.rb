@@ -18,9 +18,9 @@ require "tempfile"
 # level coverage (the same discipline the migration doc's own second
 # section names as the reason most of ITS findings were only found by
 # dispatching, not validating) surfaced three further, separate, genuine
-# runtime gaps nobody had dispatched through yet. Documented here rather
-# than fixed — out of scope for a coverage pass — so each is named
-# precisely where it changes what an example below can honestly assert:
+# runtime gaps nobody had dispatched through yet — found and fixed here,
+# meta-validation left on throughout (the every-day default a real
+# caller gets ; no example below needs to turn it off any more):
 #
 # (1) `lib/hecksagain/bluebook/assembly/contracts.rb`'s "Query" and
 #     "Policy" contract entries were never extended with the fields their
@@ -28,22 +28,25 @@ require "tempfile"
 #     Query, `wheres`/`with_literals`/`for_each` on Policy. Every
 #     `Hecks.bluebook` load runs `MetaValidator.call`, which dispatches
 #     the built IR into the language's OWN self-hosted meta-domain and
-#     replaces it with what THAT domain reconstructs
-#     (`Reconstruction#query`/`#policy`, driven by that same contract
-#     table) — so a query's `group_by`/`count`/`median` and a policy's
-#     `where`/`for_each`/`with` survive parsing but silently vanish the
-#     moment the bluebook is actually loaded, in every ordinary boot.
-#     This is the exact same shape as `redirects_native`'s own gap
-#     (contracts.rb's own comment on the "Command" contract; migration
-#     finding #1) — just never closed for these four. Confirmed by
-#     dispatch, not by reading the builder: with meta-validation left
-#     on (the every-day default), a `group_by` query returns every row
-#     unGROUPED, and a policy's `where` fires on every event regardless
-#     of payload. `boot`, below, can turn meta-validation off for the
-#     one example at a time that needs its construct to actually survive
-#     the reload — narrowly, and restored immediately after — so what's
-#     under test is the DSL/interpreter pair the two commits above
-#     actually wrote, not this separate, undocumented reconstruction gap.
+#     replaces it with what THAT domain reconstructs — so all six fields
+#     survived parsing but silently vanished the moment a bluebook was
+#     actually loaded, in every ordinary boot. The exact same shape as
+#     `redirects_native`'s own gap (contracts.rb's own comment on the
+#     "Command" contract; migration finding #1), just never closed for
+#     these six. Fixed by mirroring that precedent: the self-hosted
+#     grammar's own "Query"/"Policy" aggregates (lib/hecksagain/language/
+#     bluebook/behavior.bluebook, reaction.bluebook) grew the matching
+#     fields — plain Declare-time attributes for the three Query scalars,
+#     and (since an open map has no value object that can hold it, the
+#     same reason `Handler#remembers`/`Dispatch#with_spec` are their own
+#     appended rows) a `Pair` value object plus `Where`/`With`/`ForEach`
+#     sub-commands for Policy's three. `IR::Policy#for_each_from`/
+#     `#for_each_where` and `IR::Policy#to_h` grew to match — see their
+#     own comments, and contracts.rb's Policy entry, for exactly how each
+#     field reads back. `judge.rb`/`plan.rb`/`readings.rb` needed no
+#     changes at all beyond two small open-map row shapers — confirming
+#     the same structural finding migration finding #31 already named:
+#     the judge is generic over the grammar's own declarations.
 #
 # (2) `Ports::Query::InMemory#holds?` — the comparator switch a REAL
 #     Memory-adapter-backed AGGREGATE query runs through
@@ -55,33 +58,34 @@ require "tempfile"
 #     statement, only `Runtime::QueryInterpreter#holds?` did. So an
 #     ordinary aggregate-level `none_in_state` where-clause against a
 #     Memory-backed aggregate (the only kind this whole suite's
-#     `InMemoryDomain` ever boots) silently falls to that switch's
-#     `else` branch and returns nothing, every time. `none_in_state` DOES
-#     work today, but only on the ENTITY path that gap doesn't touch —
-#     which is what the example below actually exercises.
+#     `InMemoryDomain` ever boots) silently fell to that switch's `else`
+#     branch and excluded every row, every time. Fixed by giving
+#     `Ports::Query::InMemory` the same comparator, threaded an optional
+#     `registry:` (`Runtime::QueryInterpreter#call` already holds one ;
+#     `Adapters::Memory#query` now forwards it through `context:`) so the
+#     cross-aggregate lookup `none_in_state` needs has something to
+#     search — both the entity path (already correct) and the aggregate
+#     path are exercised below.
 #
-# (3) `PolicyInterpreter#deliver_for_each` splits `for_each from:` into
-#     an aggregate NAME and hands that bare String straight to
-#     `QueryInterpreter#call`, which requires a resolved aggregate
-#     OBJECT (`QueryInterpreter#declared_query` calls `.query` on
-#     whatever it's given) — the resolution step `Dispatcher#query`
-#     always does first, via `Dispatcher#resolve_aggregate`, is simply
-#     missing here. That alone would raise a plain
-#     `NoMethodError: undefined method 'query' for an instance of
-#     String` — but `deliver`'s own `return deliver_for_each(...) if
-#     policy.for_each` runs BEFORE `record` (the reaction-log entry
-#     `deliver`'s two rescue clauses both call `.merge` on) is assigned,
-#     so the SAME method's own defect handling then raises a second,
-#     different `NoMethodError: undefined method 'merge' for nil` trying
-#     to record the first one — confirmed via a real dispatch below, and
-#     what the pinned example actually asserts. Fixing it needs two
-#     things at that call site: resolving the aggregate object (the same
-#     way `Dispatcher#resolve_aggregate` does) and moving `record`'s
-#     assignment above the `for_each` branch — out of scope here, so
-#     both crashes are pinned as CURRENT, real behaviour rather than
-#     asserted away, alongside a DSL-only example proving the builder
-#     side (`for_each`/`from_event` parsing into the right IR shape) is
-#     genuinely correct on its own.
+# (3) `PolicyInterpreter#deliver_for_each` split `for_each from:` into an
+#     aggregate NAME and handed that bare String straight to
+#     `QueryInterpreter#call`, which requires a resolved aggregate OBJECT
+#     (`QueryInterpreter#declared_query` calls `.query` on whatever it is
+#     given) — the resolution step `Dispatcher#query` always does first,
+#     via `Dispatcher#resolve_aggregate`, was simply missing. That alone
+#     raised a plain `NoMethodError: undefined method 'query' for an
+#     instance of String` — but `deliver`'s own `return
+#     deliver_for_each(...) if policy.for_each` ran BEFORE `record` (the
+#     reaction-log entry `deliver`'s two rescue clauses both call
+#     `.merge` on) was assigned, so the SAME method's own defect handling
+#     then raised a SECOND, different `NoMethodError: undefined method
+#     'merge' for nil` trying to record the first one. Fixed both ways:
+#     `deliver_for_each` now resolves the aggregate the same way
+#     `Dispatcher#resolve_aggregate` does (mirrored, not reused — that
+#     method is private, and this interpreter only ever sees the
+#     dispatcher as `@door`), and `record`'s assignment moved above the
+#     `for_each` branch so this method's own rescue clauses always have
+#     something real to merge onto.
 RSpec.describe "query and policy growth: group_by, policy where/for_each, none_in_state" do
   ROOT             = File.expand_path("..", __dir__)
   PERSISTENCE_PORT = File.join(ROOT, "lib/hecksagain/ports/persistence.port")
@@ -89,18 +93,14 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
   MEMORY_ADAPTER   = File.join(ROOT, "lib/hecksagain/adapters/driven/memory.adapter")
   PRISM_ADAPTER    = File.join(ROOT, "lib/hecksagain/adapters/driven/prism.adapter")
 
-  # `meta_validation:` defaults to leaving the language's own self-hosted
-  # judging pass ON — the every-day default a real caller gets. Set to
-  # `false` only for the examples gap (1) above names, and always
-  # restored in an `ensure`, so no other example in this file (or any
-  # other file the same process later runs) ever inherits it.
-  def boot(source, hecksagon_name, meta_validation: true, &binds)
+  # Meta-validation stays on throughout — the language's own self-hosted
+  # judging pass, the every-day default a real caller gets. No workaround
+  # needed any more (see gap (1) above): every construct this file
+  # exercises now survives the reload `Hecks.bluebook` always runs.
+  def boot(source, hecksagon_name, &binds)
     file = Tempfile.new(["growth-", ".bluebook"])
     file.write(source)
     file.flush
-
-    previous = ENV["HECKSAGAIN_META_VALIDATION"]
-    ENV["HECKSAGAIN_META_VALIDATION"] = "off" unless meta_validation
 
     registry = Hecksagain::Runtime::Registry.new
     Hecksagain.with_registry(registry) do
@@ -117,7 +117,6 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
       Hecksagain::Runtime::Dispatcher.new(registry)
     )
   ensure
-    ENV["HECKSAGAIN_META_VALIDATION"] = previous
     file&.close!
   end
 
@@ -156,7 +155,7 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
     BLUEBOOK
 
     def boot_scoreboard
-      boot(GROUP_BY_SOURCE, "ScoreboardGrowth", meta_validation: false) do
+      boot(GROUP_BY_SOURCE, "ScoreboardGrowth") do
         ::ScoreboardGrowth::Submission.persisted_by("Memory")
       end
     end
@@ -224,7 +223,7 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
     BLUEBOOK
 
     def boot_alarm
-      boot(POLICY_WHERE_SOURCE, "AlarmGrowth", meta_validation: false) do
+      boot(POLICY_WHERE_SOURCE, "AlarmGrowth") do
         ::AlarmGrowth::Sensor.persisted_by("Memory")
       end
     end
@@ -303,12 +302,11 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
       end
     BLUEBOOK
 
-    # The DSL side alone — `PolicyBuilder.build` — needs no boot at all,
-    # and needs none of gap (1)'s workaround: this proves the BUILDER
-    # (finding #12's own DSL half) parses `for_each`/`from_event` into
-    # the shape `PolicyInterpreter#deliver_for_each` reads, independent
-    # of whether a real dispatch can reach that shape at all (see the
-    # example below, and gap (3) in this file's own header comment).
+    # The DSL side alone — `PolicyBuilder.build` — needs no boot at all:
+    # this proves the BUILDER (finding #12's own DSL half) parses
+    # `for_each`/`from_event` into the shape
+    # `PolicyInterpreter#deliver_for_each` reads, independent of the real
+    # dispatch the example below drives through that same shape.
     it "parses for_each + from_event into the fan-out shape the interpreter reads" do
       policy = Hecksagain::Bluebook::DSL::PolicyBuilder.build("PingTicketsOnOpen") do
         on "Opened"
@@ -322,28 +320,35 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
     # A REAL dispatch, not just a parse — the discipline
     # docs/hecks-migration-findings.md's own "the discipline that found
     # these" section names as the reason most of its 36 findings were
-    # findable at all. It finds a 37th here: gap (3) in this file's own
-    # header comment. `for_each`'s fan-out dispatch is not reachable
-    # today — `PolicyInterpreter#deliver_for_each` hands
-    # `QueryInterpreter#call` the bare aggregate NAME it split out of
-    # `from:`, never resolved to the aggregate object `#call` needs, and
-    # `deliver`'s own defect handling then fails a second way trying to
-    # record that first failure (see gap (3) for both). Pinned here as
-    # the current, real behaviour — a future fix to `deliver`/
-    # `deliver_for_each` should turn this red, which is the point: it is
-    # the signal to replace this example with the positive one (one
-    # dispatch per matching row) this construct is actually meant to
-    # prove.
-    it "currently crashes on dispatch — deliver_for_each never resolves the aggregate it queries" do
-      runtime = boot(FOR_EACH_SOURCE, "FanoutGrowth", meta_validation: false) do
+    # findable at all. It found a 37th here: gap (3) in this file's own
+    # header comment, now fixed — `deliver_for_each` resolves `from:`'s
+    # aggregate name properly before querying it, so the fan-out actually
+    # runs: one `Ticket.Ping` dispatch per row `Ticket.ForBoard` returns,
+    # each `for_each`'s own `where:` correctly threading `from_event(:id)`
+    # — the OPENING board's own id, from `Opened`'s payload — into the
+    # query, so only tickets on THAT board are touched.
+    it "dispatches once per row the named query returns, threading the triggering event into each" do
+      runtime = boot(FOR_EACH_SOURCE, "FanoutGrowth") do
         ::FanoutGrowth::Board.persisted_by("Memory")
         ::FanoutGrowth::Ticket.persisted_by("Memory")
       end
       runtime.dispatch("FanoutGrowth::Ticket.Create", id: { value: "t1" }, board_id: "b1")
       runtime.dispatch("FanoutGrowth::Ticket.Create", id: { value: "t2" }, board_id: "b1")
+      # A THIRD ticket, on a DIFFERENT board — proves the fan-out is
+      # SCOPED by for_each's own where:, not every ticket in existence.
+      runtime.dispatch("FanoutGrowth::Ticket.Create", id: { value: "t3" }, board_id: "b2")
 
-      expect { runtime.dispatch("FanoutGrowth::Board.Open", id: { value: "b1" }) }
-        .to raise_error(NoMethodError, /undefined method [`']merge['`]? for nil/)
+      runtime.dispatch("FanoutGrowth::Board.Open", id: { value: "b1" })
+
+      expect(runtime.reactions).to contain_exactly(
+        hash_including(policy: "PingTicketsOnOpen", on: "Opened",
+                       trigger: "FanoutGrowth::Ticket.Ping", for_row: "t1", delivered: true),
+        hash_including(policy: "PingTicketsOnOpen", on: "Opened",
+                       trigger: "FanoutGrowth::Ticket.Ping", for_row: "t2", delivered: true)
+      )
+      expect(FanoutGrowth::Ticket.find("t1").status.to_h).to eq(value: "pinged")
+      expect(FanoutGrowth::Ticket.find("t2").status.to_h).to eq(value: "pinged")
+      expect(FanoutGrowth::Ticket.find("t3").status.to_h).to eq(value: "open")
     end
   end
 
@@ -387,8 +392,14 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
             attribute :value, String
           end
 
-          attribute :id,          BoardId
-          attribute :assignments, list_of(Assignment)
+          attribute :id,               BoardId
+          attribute :assignments,      list_of(Assignment)
+          # A SCALAR twin of Assignment's own `claim_id` — Board's own
+          # field, not an entity's, so `Board.Flagged` below exercises the
+          # AGGREGATE-level Memory query path (`Ports::Query::InMemory#
+          # holds?`) rather than the entity path `Assignment.Unclaimed`
+          # already does (`Runtime::QueryInterpreter#holds?`).
+          attribute :flagged_claim_id, String, optional: true
 
           entity "Assignment" do
             identified_by { claim_id.value }
@@ -410,6 +421,17 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
             attribute :claim_id, String
             then_set :assignments, append: { claim_id: :claim_id }
             emits "Assigned"
+          end
+
+          command "Flag" do
+            reference_to Board
+            attribute :claim_id, String
+            then_set :flagged_claim_id, to: :claim_id
+            emits "Flagged"
+          end
+
+          query "Flagged" do
+            where flagged_claim_id: { none_in_state: "Claim:held" }
           end
         end
       end
@@ -439,6 +461,29 @@ RSpec.describe "query and policy growth: group_by, policy where/for_each, none_i
       rows = runtime.query("AntiJoinGrowth::Board.Assignment.Unclaimed")
 
       expect(rows.map { |row| row[:claim_id] }).to contain_exactly("c2", "nonexistent")
+    end
+
+    # Gap (2) in this file's own header comment, now fixed — the SAME
+    # anti-join, on an ordinary AGGREGATE-level Memory query
+    # (`Board.Flagged`) rather than the entity path the example above
+    # exercises. Before the fix this returned nothing, every time,
+    # regardless of any board's own state.
+    it "excludes a board whose flagged claim IS in the named state, on the aggregate query path" do
+      runtime = boot_anti_join
+      runtime.dispatch("AntiJoinGrowth::Claim.File", id: { value: "c1" })  # stays "held"
+      runtime.dispatch("AntiJoinGrowth::Claim.File", id: { value: "c2" })
+      runtime.dispatch("AntiJoinGrowth::Claim.Release", id: "c2")          # no longer "held"
+
+      runtime.dispatch("AntiJoinGrowth::Board.Open", id: { value: "b1" })
+      runtime.dispatch("AntiJoinGrowth::Board.Flag", id: "b1", claim_id: "c1")
+      runtime.dispatch("AntiJoinGrowth::Board.Open", id: { value: "b2" })
+      runtime.dispatch("AntiJoinGrowth::Board.Flag", id: "b2", claim_id: "c2")
+      runtime.dispatch("AntiJoinGrowth::Board.Open", id: { value: "b3" })
+      runtime.dispatch("AntiJoinGrowth::Board.Flag", id: "b3", claim_id: "nonexistent")
+
+      rows = runtime.query("AntiJoinGrowth::Board.Flagged")
+
+      expect(rows.map { |row| row[:id] }).to contain_exactly("b2", "b3")
     end
   end
 end
