@@ -85,6 +85,26 @@ module Hecksagain
           # supply an object rather than a scalar.
           return value.to_h if value.is_a?(self)
 
+          # Vendored addition, not (yet) upstream hecksagain (migration
+          # plan task 5): a bare scalar auto-wraps into a single-field
+          # value object's sole attribute -- the SAME shape #from_identifier
+          # right below already establishes for identity coercion
+          # (`build(value_object, { fields.first.name => identifier }) if
+          # fields.size == 1`), made consistent here for MUTATION
+          # coercion too. Real, corpus-wide gap, not theoretical : found
+          # via an actual dispatch (not validate, which never exercises
+          # this path at all) of `then_set :status, to: "alive"` --
+          # hecks_conception writes `then_set :field, to: "literal
+          # string"` for a VO-typed field hundreds of times (phase/state/
+          # status/... across dozens of files), every one of them
+          # ALREADY VALIDATE-CLEAN and NEVER ACTUALLY DISPATCH-TESTED
+          # until this pass. Multi-field VOs still refuse below,
+          # unchanged -- only the genuinely unambiguous single-field case
+          # auto-wraps, matching from_identifier's own precedent exactly.
+          if value_object.attributes.size == 1
+            return { value_object.attributes.first.name => value }
+          end
+
           raise TypeMismatch,
                 RefusalWording.render("TypeMismatch", "value_object_shape",
                                       name: name, type: value_object.hecks_name,
@@ -206,9 +226,66 @@ module Hecksagain
           return identifier unless value_object
 
           fields = value_object.attributes
-          return build(value_object, { fields.first.name => identifier }) if fields.size == 1
+          if fields.size == 1
+            field = fields.first
+            return build(value_object, { field.name => coerce_identifier(field, identifier) })
+          end
 
           raise TypeMismatch, RefusalWording.render("TypeMismatch", "composite_identity", type: value_object.hecks_name)
+        end
+
+        # Vendored fix, not (yet) upstream hecksagain (migration plan
+        # task 9): `identifier` here is always the DERIVED IDENTITY
+        # STRING -- `Identity.of`/`Identity.from` intentionally return
+        # one (correct for naming a repository key), and
+        # `Runtime::Instance#materialize_identity!` calls `from_identifier`
+        # with exactly that string on every fresh hydration -- but when
+        # the identity field's OWN declared type is Integer/Float
+        # (`SleepCycle::SleepCycle`'s `cycle_number`, grep-confirmed the
+        # ONLY non-String `identified_by` field in miette's entire
+        # corpus), seeding it straight from that string round-trips a
+        # correctly-derived identity back in as the WRONG Ruby type --
+        # and #build's own `check_numeric_fields` (added earlier this
+        # migration specifically to catch a genuine CALLER mismatch)
+        # then refused the runtime's own internal identity seed instead,
+        # on every dispatch, valid input or not : `StartCycle
+        # cycle_number=1`, a real, correctly-typed Integer argument,
+        # still failed, because the string round-trip happens AFTER the
+        # caller's own argument already coerced correctly. Confirmed
+        # live via `SleepCycle::SleepCycle.StartCycle` (real-dispatch
+        # smoke sweep across miette) -- blocked all 3 of that
+        # aggregate's commands unconditionally (`AdvanceStage`/
+        # `CompleteCycle` reference a record `StartCycle` could never
+        # create).
+        #
+        # Reuses THIS SAME FILE's own `NUMERIC` table (declared-type ->
+        # expected-Ruby-class, already read by `check_numeric_fields`
+        # two methods down) to decide WHICH declared types need
+        # converting, and Kernel#Integer/#Float to do the converting --
+        # the identical per-type conversion `Interview::Lowering#coerce`
+        # already performs for the one other place in this codebase a
+        # String becomes what a declared numeric type actually wants,
+        # including that method's own "rescue ArgumentError, hand back
+        # what was given" precedent: a genuinely malformed identifier
+        # (should never happen, since an identity is always derived FROM
+        # a correctly-typed field in the first place, but this stays
+        # defensive rather than assume it) passes back unconverted, and
+        # `check_numeric_fields` refuses it exactly as it always has --
+        # preserving its real job of catching a genuine caller mismatch,
+        # not just this migration's own runtime-internal one. Not a
+        # second, parallel coercion mechanism: the same `NUMERIC` table
+        # both `check_numeric_fields` and this method read, and the same
+        # conversion idiom `Lowering` already established.
+        private def coerce_identifier(field, identifier)
+          return identifier unless identifier.is_a?(String) && NUMERIC.key?(field.type.to_s)
+
+          case field.type.to_s
+          when "Integer" then Integer(identifier)
+          when "Float"   then Float(identifier)
+          else identifier
+          end
+        rescue ArgumentError
+          identifier
         end
 
         def canonical_fields(fields)

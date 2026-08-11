@@ -2,7 +2,7 @@ module Hecksagain
   module Bluebook
     module IR
       class Attribute
-        attr_reader :name, :type, :default, :pattern, :admits
+        attr_reader :name, :type, :default, :pattern, :admits, :logged
 
         # A Reference is kept AS ITSELF. Every other type is still a name, and
         # crosses over as its construct does.
@@ -27,8 +27,19 @@ module Hecksagain
         # The wire carries the NAME, not the members. A reader resolves it
         # against the IR it holds, so the members are declared once and
         # copied nowhere — which is the same reason `admits` exists at all.
+        # `logged:`, vendored addition not (yet) upstream hecksagain
+        # (migration plan task 4): `attribute :old_string, OldString,
+        # logged: false` (framework/tools/bluebook/tools.bluebook) --
+        # marks a field as excluded from the audit-log record (a large or
+        # sensitive payload -- a diff's old_string/new_string, file
+        # content -- that shouldn't ride the event-log trail whole).
+        # Defaults true (logged unless told otherwise). Captured
+        # structurally so the corpus boots ; NOT yet consulted by
+        # whatever writes the audit log -- a documented gap, matching
+        # this session's other structural-only additions. TODO upstream
+        # via bin/evolve (migration plan task 7).
         def initialize(name:, type:, list: false, default: nil, optional: false, pattern: nil,
-                       admits: nil)
+                       admits: nil, logged: true)
           @name     = name.to_sym
           @type     = type.is_a?(Reference) ? type : type.to_s
           @list     = list
@@ -36,6 +47,7 @@ module Hecksagain
           @optional = optional
           @pattern  = pattern
           @admits   = admits&.to_s
+          @logged   = logged
         end
 
         def list?   = @list
