@@ -13,6 +13,16 @@ module Hecksagain
 
         def description(value) = @description = value
 
+        # `group_by :field` -- a real, third scalar-reduction shape
+        # alongside `count`/`median`, except it doesn't reduce to ONE
+        # scalar -- it partitions the where-filtered set by `field`'s
+        # value and tallies each partition, matching what deciderate's
+        # own `PerPlayer`/leaderboard queries need ("the player
+        # leaderboard : submissions tallied per player"). See
+        # Runtime::QueryInterpreter#call's own comment for the
+        # evaluation side.
+        def group_by(field) = @group_by_field = field.to_sym
+
         # A query parameter naming another aggregate's own identity
         # (Card.Active's own `Board`, filtering to one board's cards) —
         # just a plain attribute typed as a reference,
@@ -41,7 +51,8 @@ module Hecksagain
             authorization: @authorization,
             null_semantics: @null_semantics,
             inspection: @inspection,
-            index_hints: @index_hints || []
+            index_hints: @index_hints || [],
+            group_by_field: @group_by_field
           )
         end
 

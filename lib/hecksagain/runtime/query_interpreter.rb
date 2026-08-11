@@ -34,6 +34,25 @@ module Hecksagain
         declared = ReferenceHop.apply(declared, args, registry: @registry, domain: domain, aggregate: aggregate)
 
         repository = @registry.repository(domain, aggregate)
+
+        # Vendored addition, not (yet) upstream hecksagain (migration
+        # plan task 8): `group_by :field` -- the SAME filtered-set
+        # starting point as an ordinary query, partitioned by `field`'s
+        # value instead of returned as a flat list (deciderate's own
+        # leaderboard queries: "submissions tallied per player").
+        # Returns one row per distinct value, `field => value, count:
+        # N`, ordered by count descending (a leaderboard's own natural
+        # order) then by the group value for ties, so output is
+        # deterministic. `comparable` unwraps a VO/Hash field the same
+        # way `ordered` already does.
+        if declared.group_by_field
+          field = declared.group_by_field
+          groups = interpret(repository.all, declared, args)
+                     .group_by { |row| comparable(row[field]) }
+          return groups.map { |value, rows| { field => value, count: rows.size } }
+                       .sort_by { |row| [-row[:count], row[field].to_s] }
+        end
+
         if (native = Ports::Query.execute(repository, declared, args, context: { domain: domain, aggregate: aggregate }))
           records = native
           # `record.state.merge(id: record.id)` — id LAST, not first. See

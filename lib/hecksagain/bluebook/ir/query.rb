@@ -21,12 +21,16 @@ module Hecksagain
       class Query < QuerySpecification::Common::Options
         include Construct
 
-        attr_reader :name, :description, :attributes
+        attr_reader :name, :description, :attributes, :group_by_field
 
+        # `group_by_field:`, vendored addition not (yet) upstream
+        # hecksagain (migration plan task 8): `group_by :field` -- a
+        # third aggregation shape, partition-and-tally rather than
+        # reduce-to-one-scalar. See QueryBuilder#group_by's own comment.
         def initialize(name:, description: nil, attributes: [], wheres: [],
                        order_by: nil, limit: nil, offset: nil, cursor: nil,
                        consistency: nil, freshness: nil, authorization: nil, null_semantics: nil,
-                       inspection: nil, index_hints: [])
+                       inspection: nil, index_hints: [], group_by_field: nil)
           null_semantics ||= QuerySpecification::Common::NullSemantics.default
           super(wheres: wheres, order_by: order_by, limit: limit, offset: offset, cursor: cursor,
                 consistency: consistency, freshness: freshness, authorization: authorization,
@@ -35,6 +39,7 @@ module Hecksagain
           @hecks_name  = @name
           @description = description
           @attributes  = attributes
+          @group_by_field = group_by_field
         end
 
         def attribute(named) = @attributes.find { |a| a.name == named.to_sym }
