@@ -22,6 +22,10 @@ Hecks.hecksagon "Banking" do
   Banking::OnboardingCase.projected_by("SqliteProjection")
   Banking::Statement.persisted_by("Heki")
   Banking::Statement.projected_by("SqliteProjection")
+  Banking::WatchlistEntry.persisted_by("Heki")
+  Banking::WatchlistEntry.projected_by("SqliteProjection")
+  Banking::ComplianceSweep.persisted_by("Heki")
+  Banking::ComplianceSweep.projected_by("SqliteProjection")
 end
 
 # A FRAMEWORK MEMBER BRINGS ITS OWN SHAPE, NOT ITS OWN PERSISTENCE —

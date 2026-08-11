@@ -535,10 +535,17 @@
   "name": "Pizzas",
   "policies": [
     {
+      "for_each": null,
       "name": "OnPizzaPaymentReceived",
       "on_event": "PizzaPaymentReceived",
       "target_domain": null,
-      "trigger_command": "Order.Purchase"
+      "trigger_command": "Order.Purchase",
+      "wheres": [
+
+      ],
+      "with_literals": [
+
+      ]
     }
   ],
   "process_managers": [

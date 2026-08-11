@@ -31,20 +31,20 @@ require "json"
 RSpec.describe "every nullable field the wire carries, actually filled" do
   # An entry here is a claim that some field is not worth a fixture, and
   # it must say why.
-  ALLOWED_UNSET = {
-    # `dispatch ..., for_each: { from: "Aggregate.query" }` (docs/hecks-
-    # migration-findings.md's #12) — a real, dispatch-time fan-out, but
-    # proving it needs a fixture with a genuine multi-row query wired to
-    # a saga that consumes it end to end, verified through a real
-    # dispatch, not merely a parsed declaration — exactly the discipline
-    # this migration's own findings doc names as the difference between
-    # `validate`-clean and actually working. That verification is real,
-    # separate work (Runtime::SagaInterpreter#deliver_saga_dispatch's own
-    # `@door.query` call is untested against a live for_each corpus
-    # member as of this pass), not a side effect of closing this gate.
-    "for_each" => "for_each fan-out has no corpus member exercising a real multi-row dispatch yet — " \
-                  "building and verifying one through a real dispatch is separate work"
-  }.freeze
+  # WAS: `"for_each" => "for_each fan-out has no corpus member exercising a
+  # real multi-row dispatch yet..."`, entered for `dispatch ..., for_each:
+  # { from: "Aggregate.query" }` (docs/hecks-migration-findings.md's #12,
+  # the SAGA handler's own dispatch fan-out — `IR::DispatchSpec#for_each`).
+  # Deleted this session — this gate measures the WIRE key `for_each`,
+  # which `Policy#for_each` (the same finding, a policy's own fan-out —
+  # `where`/`for_each` growth, this session) now shares and genuinely
+  # fills (`WatchlistEntry.FlagZoneOnSweep`, examples/banking/bluebook/
+  # banking.bluebook), so the key is no longer unset on the wire. The
+  # SAGA dispatch's own `for_each` stays exactly as unverified as this
+  # entry always said — a real, separate gap, not closed by this deletion,
+  # just no longer this GATE's business, since it never distinguished the
+  # two constructs by name, only by wire key.
+  ALLOWED_UNSET = {}.freeze
 
   # SET and NULL counts for every key in every frozen IR. An object or a list
   # counts as SET: `lifecycle` is a Hash when it is there and null when it is
