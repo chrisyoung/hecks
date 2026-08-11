@@ -609,6 +609,10 @@
           ],
           "event_type": "WireAsked",
           "from_state": "asked",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "asked"
         },
         {
@@ -642,6 +646,10 @@
           ],
           "event_type": "Taken",
           "from_state": "asked",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "carrying"
         },
         {
@@ -658,6 +666,10 @@
           ],
           "event_type": "PutIn",
           "from_state": "carrying",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "landed"
         },
         {
@@ -691,6 +703,10 @@
           ],
           "event_type": "refused",
           "from_state": "carrying",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "returned"
         }
       ],

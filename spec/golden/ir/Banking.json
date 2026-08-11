@@ -5422,6 +5422,10 @@
           ],
           "event_type": "TransferRequested",
           "from_state": "requested",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "requested"
         },
         {
@@ -5459,6 +5463,10 @@
           ],
           "event_type": "AccountDebited",
           "from_state": "requested",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "awaiting_credit"
         },
         {
@@ -5475,6 +5483,10 @@
           ],
           "event_type": "AccountCredited",
           "from_state": "awaiting_credit",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "awaiting_credit"
         },
         {
@@ -5491,6 +5503,10 @@
           ],
           "event_type": "TransferCredited",
           "from_state": "awaiting_credit",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "settled"
         },
         {
@@ -5524,6 +5540,10 @@
           ],
           "event_type": "refused",
           "from_state": "awaiting_credit",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "reversed"
         }
       ],
@@ -5554,6 +5574,10 @@
           ],
           "event_type": "ExternalTransferRequested",
           "from_state": "requested",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "requested"
         },
         {
@@ -5570,6 +5594,10 @@
           ],
           "event_type": "refused",
           "from_state": "requested",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "returned"
         }
       ],
@@ -5611,6 +5639,10 @@
           ],
           "event_type": "OnboardingCleared",
           "from_state": "screening",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "cleared"
         },
         {
@@ -5619,6 +5651,10 @@
           ],
           "event_type": "OnboardingDeclined",
           "from_state": "screening",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "declined"
         }
       ],

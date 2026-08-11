@@ -15,6 +15,12 @@ module Hecksagain
         def ends_on(event)       = @ends_on = event.to_s
         def state(name)          = @states << name.to_s
 
+        # `description` -- vendored addition, not (yet) upstream hecksagain
+        # (migration plan task 4): prose-only, matches PolicyBuilder's own
+        # accept-and-discard stub. A process manager's narrative belongs to
+        # the corpus author, not the IR.
+        def description(value) = nil
+
         def on(event_type, transition:, &block)
           from, to = single_transition(event_type, transition)
           handler  = HandlerBuilder.new
@@ -24,7 +30,9 @@ module Hecksagain
             event_type: event_type.to_s,
             from_state: from,
             to_state:   to,
-            dispatches: handler.dispatches
+            dispatches: handler.dispatches,
+            remembers:  handler.remembers,
+            guards:     handler.guards
           )
         end
 
@@ -97,9 +105,38 @@ module Hecksagain
         end
 
         class HandlerBuilder
-          attr_reader :dispatches
+          attr_reader :dispatches, :remembers, :guards
 
-          def initialize = @dispatches = []
+          def initialize
+            @dispatches = []
+            @remembers  = []
+            @guards     = []
+          end
+
+          # `remember key: from_event(...)` -- vendored addition, not
+          # (yet) upstream hecksagain (migration plan task 4). Writes
+          # into the saga instance's OWN carried memory (Runtime::
+          # SagaInterpreter's `instance[:memory]`) under `key`, for a
+          # LATER handler on the same instance to read back via
+          # `from_pm(:key)`. See IR::ProcessManagerHandler's own comment
+          # on why this exists -- `instance[:memory]` was write-once
+          # before this, so `from_pm` could only ever see the starting
+          # event, never anything a mid-saga handler decided.
+          def remember(**fields)
+            @remembers.concat(fields.to_a)
+          end
+
+          # `set :field, from_event(:field)` -- vendored addition, not
+          # (yet) upstream hecksagain (migration plan task 8, bin-buddy's
+          # SubscriptionLifecycle PM): the POSITIONAL-argument sibling of
+          # `remember key: from_event(...)` -- same accumulator, same
+          # saga-memory write, just written field-then-value instead of
+          # as a kwarg (bin-buddy's own corpus convention, found live
+          # rather than invented). Kept as a real alias, not a rename --
+          # `remember` stays the kwarg form other corpora already use.
+          def set(field, value)
+            @remembers << [field.to_sym, value]
+          end
 
           def dispatch(command_name, with: nil)
             @dispatches << IR::DispatchSpec.new(
@@ -107,6 +144,21 @@ module Hecksagain
               with_spec:    (with || {}).to_a
             )
           end
+
+          # Vendored addition, not (yet) upstream hecksagain: `with: {
+          # key: from_event(:field, default: "x") }` (miette's
+          # body/pulse_organs/bluebook and body/sleep/consolidation/
+          # bluebook) -- explicit sugar for "read :field from the
+          # triggering event's payload, falling back to default if
+          # absent". Returns the bare Symbol, relying on with_spec's
+          # EXISTING Symbol-means-argument-reference-resolved-at-
+          # dispatch-time mechanism to source it from the event payload
+          # the same way any other argument reference already does --
+          # the `default:` fallback is NOT threaded through (a real,
+          # documented gap: an absent field currently resolves to nil,
+          # not the declared default). TODO upstream via bin/evolve
+          # (migration plan task 7).
+          def from_event(field, default: nil) = field
         end
       end
     end

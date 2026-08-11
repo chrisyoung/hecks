@@ -72,8 +72,30 @@ module Hecksagain
         instance[:state] = handler.to_state
         @registry.saga_log << record.merge(advanced: true, from: handler.from_state, to: handler.to_state)
 
+        remember_into_instance(handler, event, instance, correlation)
+
         handler.dispatches.each do |spec|
           deliver_saga_dispatch(pm, spec, event, instance, correlation, domain)
+        end
+      end
+
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4): resolves `handler.remembers` (from HandlerBuilder#remember)
+      # against THIS firing's event/instance and merges them into
+      # `instance[:memory]` -- BEFORE this handler's own dispatches run,
+      # so a `remember key: from_event(:x)` and a same-handler `dispatch
+      # ..., with: { y: from_pm(:key) }` compose in the natural written
+      # order. No `row:` context -- remembers fire once per handler
+      # firing, never once per for_each iteration.
+      def remember_into_instance(handler, event, instance, correlation)
+        return if (handler.remembers || []).empty?
+
+        handler.remembers.each do |key, value|
+          resolved = if !value.is_a?(Symbol) then value
+                     elsif value == correlation then correlation
+                     else resolve_with_value(value, event, instance)
+                     end
+          instance[:memory][key.to_sym] = resolved
         end
       end
 
@@ -171,6 +193,42 @@ module Hecksagain
           # without being the same domain object.
           [key.to_sym, Value.materialize(resolved)]
         end
+      end
+
+      # A DOTTED SOURCE READS THE ONE SCALAR, the same "a path names a
+      # field, not a whole value object" idiom `identified_by`/
+      # `correlates_by` already hold every other declaration to —
+      # `with: { item_id: :"id.value" }` reaches into a VO-wrapped
+      # payload field (Item.Add's own `id: ItemId`) for the bare scalar
+      # a reference-typed target argument (Place's own `item_id`)
+      # actually needs, rather than handing it the whole `{value: "..."}`
+      # shape a plain top-level key would. A bare (undotted) source is
+      # unchanged from before this existed — reads the field whole,
+      # exactly as every existing `with:` mapping in the corpus already
+      # does.
+      # `row:`, vendored addition not (yet) upstream hecksagain (migration
+      # plan task 4, i225): a for_each dispatch's iteration record, tried
+      # FIRST -- `from_iter`/`from_event` are indistinguishable at the IR
+      # level (both HandlerBuilder methods just return the bare field
+      # Symbol, see process_manager_builder.rb's own comment), so this is
+      # a runtime-side, not parse-side, resolution: when a row is present
+      # (a for_each dispatch) and carries the field, it wins over the
+      # event/instance fallback every other dispatch already used. Written
+      # complete here (item 10, `remember`'s own landing) even though
+      # `row:` has no real caller yet -- the saga `for_each` fan-out that
+      # exercises it lands in a later PR in this split.
+      def resolve_with_value(value, event, instance, row: nil)
+        head, *rest = value.to_s.split(".").map(&:to_sym)
+        base = if row && row.key?(head)
+                 row[head]
+               elsif event.payload.key?(head)
+                 event.payload[head]
+               else
+                 instance[:memory][head]
+               end
+        return base if rest.empty?
+
+        rest.reduce(Value.materialize(base)) { |held, segment| held.is_a?(Hash) ? held[segment] : held }
       end
 
       def qualified(command_name, domain)
