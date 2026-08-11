@@ -28,8 +28,24 @@ module Hecksagain
 
         bluebook.policies.select do |policy|
           policy.event_name == event.name &&
-            (policy.event_qualifier.nil? || policy.event_qualifier == emitting)
+            (policy.event_qualifier.nil? || policy.event_qualifier == emitting) &&
+            wheres_match?(policy, event)
         end
+      end
+
+      # `where field: value` -- vendored addition, not (yet) upstream
+      # hecksagain (migration plan task 8): see PolicyBuilder#where's own
+      # comment. A wheres-mismatch is NOT a refusal -- it means this
+      # policy simply doesn't apply to this particular event, the same
+      # as `policy.event_qualifier` not matching just above. Compared
+      # against the RAW event payload (symbolized), not a stored record
+      # -- a policy's where clause reads what the triggering event
+      # itself carried, not the aggregate's current state.
+      def wheres_match?(policy, event)
+        return true if policy.wheres.nil? || policy.wheres.empty?
+
+        payload = event.payload.transform_keys(&:to_sym)
+        policy.wheres.all? { |field, expected| payload[field] == expected }
       end
 
       def deliver(policy, event, domain)
