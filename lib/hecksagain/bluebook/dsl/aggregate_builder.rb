@@ -21,6 +21,121 @@ module Hecksagain
           @description = value
         end
 
+        # Vendored addition, not (yet) upstream hecksagain: hecksagain's
+        # own named principle is "primitives live in value objects
+        # only" (lib/hecksagain/language/bluebook/vocabulary.bluebook) --
+        # a bare `attribute :x, String` directly on an aggregate is
+        # refused by the self-hosted meta-validator. hecks_conception +
+        # miette's own convention does this 260+ times at the aggregate
+        # level (value_object-internal bare types were always fine and
+        # are untouched here). DECISION, documented not hidden: rather
+        # than a corpus-wide rewrite touching every declaration AND
+        # every call site that constructs these attributes, this
+        # transparently AUTO-SYNTHESISES a single-field wrapper value
+        # object per bare-primitive aggregate attribute -- the exact
+        # same mechanism `one_of(...)`'s `synthesise_closed_set` already
+        # uses for inline closed sets, just triggered by a bare
+        # primitive Class instead of a OneOf. Preserves hecksagain's own
+        # "primitives only live in VOs" invariant (the VO now just has
+        # an author of "the runtime" instead of "the corpus") rather
+        # than relaxing it. TODO upstream via bin/evolve (migration plan
+        # task 7) -- or supersede with the real corpus-wide VO-wrapping
+        # pass if Chris prefers that path instead.
+        PRIMITIVE_CLASSES = [String, Integer, Float, TrueClass, FalseClass, Numeric].freeze
+
+        def attribute(name, type = String, **kwargs)
+          # Vendored fix, not (yet) upstream hecksagain (migration plan task
+          # 4): apply the SAME inverted-form correction AttributeCollector#
+          # attribute makes -- but BEFORE the primitive-wrapper check below,
+          # not after. `super` (which is where the base correction actually
+          # lived) runs LAST, so a bare `attribute App` (no `as:`) used to
+          # reach the primitive check below still shaped `name: :App, type:
+          # String` (the un-fixed positional default) -- String IS a
+          # PRIMITIVE_CLASS, so it synthesised a wrapper VO NAMED "App",
+          # colliding with a real hand-written `value_object "App"` a few
+          # lines above it in the same file. See AttributeCollector.
+          # resolve_inverted's own comment for why the check is reliable.
+          name, type = AttributeCollector.resolve_inverted(name, type, kwargs[:as])
+          type = AttributeCollector.normalize_boolean_alias(type)
+
+          if PRIMITIVE_CLASSES.include?(type)
+            type = synthesise_primitive_wrapper(name, type)
+          elsif type.is_a?(ListOf) && PRIMITIVE_CLASSES.include?(type.type)
+            type = ListOf.new(synthesise_primitive_wrapper(name, type.type))
+          end
+          super(name, type, **kwargs)
+        end
+
+        def synthesise_primitive_wrapper(name, primitive_class)
+          wrapper_name = Naming.pascal(name)
+          (@closed_sets ||= closed_sets) << IR::ValueObject.declare(
+            name:       wrapper_name,
+            attributes: [IR::Attribute.new(name: :value, type: primitive_class.name)]
+          )
+          wrapper_name
+        end
+
+        # Vendored addition, not (yet) upstream hecksagain: miette's
+        # consciousness.bluebook (and others) declare NAMED, reusable
+        # boolean predicates over the aggregate's own state --
+        # `specification :in_lucid_rem do |body| body.state == "sleeping" && ... end`
+        # -- distinct from a command's `given` (precondition) or a VO's
+        # `invariant` (field rule): a specification belongs to the
+        # AGGREGATE, named, presumably referenced elsewhere by name.
+        # Stored structurally (captured via the same canonical-source
+        # extraction `given`/`invariant` use) so the corpus boots; NOT
+        # yet threaded into IR::Aggregate or referenceable by name
+        # elsewhere -- a real, documented gap, not silently pretended
+        # complete. TODO upstream via bin/evolve (migration plan task 7).
+        attr_reader :specifications
+        def specification(name, &predicate)
+          canonical = Ports::Extraction.canonical(predicate)
+          (@specifications ||= []) << { name: name.to_s, canonical: canonical, predicate: predicate }
+        end
+
+        # Vendored addition, not (yet) upstream hecksagain (migration plan
+        # task 4): an AGGREGATE-level `invariant "description" do ... end`
+        # — a whole-record rule (miette's mind/awareness/witness.bluebook:
+        # "WitnessedMoments are append-only — never updated, never
+        # deleted"), distinct from a value object's field-scoped
+        # `invariant` (ValueObjectBuilder#invariant, which this mirrors)
+        # and a command's `given` precondition. Same documented-gap shape
+        # as `specification` right above: captured structurally so the
+        # corpus boots, NOT yet threaded into IR::Aggregate or walked at
+        # dispatch time — the corpus's own comment already says as much
+        # ("once the runtime walks specifications + invariants in
+        # production... until then, the antibody at commit time scans").
+        # TODO upstream via bin/evolve (migration plan task 7).
+        attr_reader :aggregate_invariants
+        def invariant(description = "an invariant holds", &predicate)
+          canonical = Ports::Extraction.canonical(predicate)
+          (@aggregate_invariants ||= []) << { description: description, canonical: canonical, predicate: predicate }
+        end
+        # Vendored alias, not (yet) upstream hecksagain (migration plan
+        # task 8): `rule` at the AGGREGATE level too, not just inside a
+        # value_object (ValueObjectBuilder's own alias) -- bin-buddy's
+        # add_on.bluebook writes a whole-aggregate `rule` the same way
+        # macrophage.bluebook writes a whole-aggregate `invariant`.
+        alias_method :rule, :invariant
+
+        # Vendored no-op stub, not (yet) upstream hecksagain (migration
+        # plan task 8): `validation :field, presence: true` -- a Rails-
+        # style field-presence declaration (pigeoncoop.bluebook, 5
+        # occurrences, always `presence: true`). Genuinely a field-level
+        # invariant in spirit ("this field must always be present"), but
+        # NOT synthesized as a real `invariant` call here : `invariant`'s
+        # predicate is canonicalized from its OWN literal source text
+        # (Ports::Extraction.canonical reads the block's actual bluebook-
+        # file location), and a dynamically-built predicate standing in
+        # for a `validation` call has no real source line to extract from
+        # -- attempting it risked a subtly wrong canonical form rather
+        # than an honest gap. Structurally captured so the file boots,
+        # not enforced -- same documented-gap pattern as `gate`/
+        # `success`/`failure` elsewhere in this migration. TODO upstream
+        # via bin/evolve (migration plan task 7): a real field-presence
+        # sugar, not a one-off stub.
+        def validation(*) = nil
+
         # ORIGIN, not runtime identity — a concept adopted from a canonical
         # source (§28) names where it came from without that fact ever
         # touching `hecks_fqn`/dispatch. Captured raw, the same way
@@ -149,6 +264,35 @@ module Hecksagain
           @value_objects << ValueObjectBuilder.build(name, &block)
         end
 
+        # Vendored no-op stub, not (yet) upstream hecksagain (migration
+        # plan task 8): `fixture "Name" do field value ... end` declared
+        # INSIDE an aggregate block -- a THIRD fixture shape hecks_nursury
+        # uses (328 occurrences, 32 files) besides its 312 dedicated
+        # `.fixtures` files and BluebookBuilder's already-stubbed
+        # bluebook-level `fixture "Name", on: "Aggregate" do ... end`
+        # (deciderate). Same documented gap, same reasoning as that
+        # sibling stub's own comment : the field-setter calls inside
+        # (`name "House Battery Bank"`, `voltage 12.8`) have no real
+        # receiver methods, one per the aggregate's own attribute names,
+        # varying per file -- executing the block for real needs an
+        # actual seeding mechanism (dispatch a Declare-equivalent at
+        # boot, or write straight into the repository bypassing command
+        # validation), a real design question not attempted here.
+        # Accepted so the file boots ; block body captured via a tiny
+        # inert `method_missing` receiver (field names vary too widely
+        # per aggregate to enumerate), NOT stored or seeded anywhere.
+        # TODO upstream via bin/evolve (migration plan task 7): a real
+        # aggregate-fixture seeding mechanism, one design covering all
+        # three shapes at once.
+        class InlineFixtureFieldStub
+          def method_missing(*, **, &) = nil
+          def respond_to_missing?(*) = true
+        end
+
+        def fixture(*, **, &block)
+          InlineFixtureFieldStub.new.instance_eval(&block) if block
+        end
+
         def command(name, &block)
           # The verb is declared ON this aggregate — the owner `acts_on` answers
           # with — stamped by `IR::Aggregate#initialize` once the aggregate
@@ -159,6 +303,23 @@ module Hecksagain
 
         def build
           resolve_pending_identity!
+
+          # Vendored default, not (yet) upstream hecksagain: hecks_nursury
+          # (375 files) declares no identified_by anywhere -- hecksagain
+          # refuses an aggregate with none ("an aggregate says what it
+          # is known by"). Falls back to the FIRST declared attribute's
+          # own .value path rather than requiring a corpus-wide add-a-
+          # line pass across every nursery domain -- either exactly
+          # right (most nursery aggregates have one obviously-primary
+          # field) or a visible wrong guess a real boot/dispatch
+          # surfaces immediately, not a silent one. TODO upstream via
+          # bin/evolve (migration plan task 7).
+          if @identity_paths.empty? && attributes.any?
+            @identity_paths = ["#{attributes.first.name}.value"]
+          end
+
+          resolve_bare_primitive_collisions
+
           seal_mutation_targets
           seal_query_targets
           seal_defaults
@@ -185,8 +346,17 @@ module Hecksagain
           ir
         end
 
-        def self.build(name, &block)
+        # inline_description -- vendored addition, not (yet) upstream
+        # hecksagain. hecks_conception writes `aggregate "Name", "desc" do
+        # ... end` (a second positional string) rather than a
+        # `description "desc"` call inside the block -- syntactic sugar
+        # over the same information, so this just calls #description
+        # first rather than duplicating what it does. TODO upstream via
+        # hecksagain's own bin/evolve word-admission process (migration
+        # plan task 7).
+        def self.build(name, inline_description = nil, &block)
           builder = new(name)
+          builder.description(inline_description) if inline_description
           builder.instance_eval(&block) if block
           builder.build
         end
@@ -199,6 +369,61 @@ module Hecksagain
             @identity_paths = resolve_identity_type!(type, as, insert_at, @value_objects + closed_sets, @name)
           elsif @identity_field_pending
             @identity_paths = resolve_identity_field!(@identity_field_pending, @value_objects + closed_sets, @name)
+          end
+        end
+
+        # Vendored fix, not (yet) upstream hecksagain (migration plan task
+        # 8): `synthesise_primitive_wrapper` (above) mints an auto-wrapper
+        # VO named after a bare attribute's own field (PascalCase) with NO
+        # check for whether an EXPLICIT, hand-written `value_object` of
+        # that same name already exists elsewhere in the same aggregate,
+        # for an entirely unrelated purpose. hecks_nursury's own
+        # biology.bluebook: `Neuron`'s bare `attribute :neurotransmitter,
+        # String` (a plain field on the neuron itself) shares its
+        # PascalCased name with a hand-written `value_object
+        # "Neurotransmitter" do ... end` (an embedded shape `Synapse`'s
+        # OWN `neurotransmitter` field uses) -- same English word, two
+        # unrelated, both CORRECTLY-authored concepts, an ordinary domain-
+        # modeling coincidence, not a corpus bug to rewrite around. This
+        # is the same FAMILY of bug as the earlier "App" collision
+        # (AttributeCollector's own comment) but not the same CAUSE --
+        # that one was a misparse ; this is two independently-intended
+        # declarations. And unlike the App case, attribute-call-time could
+        # not have caught this even with a perfect check : the bare
+        # attribute here is declared BEFORE the value_object it collides
+        # with, so @value_objects is not yet populated when the wrapper is
+        # synthesised. Deferred to build time on purpose, once
+        # @value_objects holds everything the block declared. Resolved by
+        # disambiguating the SYNTHESISED wrapper only -- the hand-written
+        # VO's name is real authorial intent and is never touched -- and
+        # re-pointing the bare attribute's own type string at the
+        # disambiguated name, so both concepts keep their own, non-
+        # colliding IR entry rather than the second Declare crashing the
+        # boot. TODO upstream via bin/evolve (migration plan task 7).
+        def resolve_bare_primitive_collisions
+          return if closed_sets.empty?
+
+          handwritten = @value_objects.map { |vo| vo.hecks_name.to_s }
+          taken       = handwritten + closed_sets.map { |c| c.hecks_name.to_s }
+
+          closed_sets.each do |synthesised|
+            old_name = synthesised.hecks_name.to_s
+            next unless handwritten.include?(old_name)
+
+            new_name = "#{old_name}Value"
+            new_name = "#{old_name}Value#{taken.count(new_name) + 1}" while taken.include?(new_name)
+            taken << new_name
+            synthesised.hecks_name = new_name
+
+            attributes.each_with_index do |attr, i|
+              next unless attr.type.to_s == old_name
+
+              attributes[i] = IR::Attribute.new(
+                name: attr.name, type: new_name, list: attr.list?, default: attr.default,
+                optional: attr.optional?, pattern: attr.pattern, admits: attr.admits,
+                logged: attr.logged
+              )
+            end
           end
         end
 

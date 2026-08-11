@@ -28,8 +28,139 @@ module Hecksagain
         def supporting = @classification = :supporting
         def generic    = @classification = :generic
 
-        def aggregate(name, &block)
-          @aggregates << AggregateBuilder.build(name, &block)
+        # Vendored addition, not (yet) upstream hecksagain. hecks_conception
+        # uses a free-form `category "framework"` (119 files, 12 distinct
+        # values: framework/world/language/discipline/meta/body/library/plan/
+        # memory/drafting/demo/correspondence) alongside the fixed 3-value
+        # core/supporting/generic classification -- a different axis, not a
+        # synonym, so it gets its own field rather than overloading
+        # @classification. TODO upstream via hecksagain's own bin/evolve
+        # word-admission process (migration plan task 7).
+        attr_reader :category
+        def category(value) = @category = value.to_s
+
+        # Vendored no-op stub, not (yet) upstream hecksagain: bluebook-level
+        # `glossary(strict: true) do ... end` (found in sleep_cycle.bluebook)
+        # -- accepted so the file boots, block body NOT evaluated/stored (a
+        # real, documented gap, not silently pretended complete). TODO
+        # upstream via bin/evolve (migration plan task 7): understand and
+        # implement the intended vocabulary-glossary semantics properly.
+        def glossary(**) = nil
+
+        # Vendored no-op stub, not (yet) upstream hecksagain: bluebook-level
+        # `entrypoint ...` (found in miette body/wake/bluebook). TODO
+        # upstream via bin/evolve (migration plan task 7).
+        def entrypoint(*) = nil
+
+        # Vendored no-op stub, not (yet) upstream hecksagain (migration
+        # plan task 8): bluebook-level `fixture "Name", on: "Aggregate" do
+        # field value ... end` (found in deciderate's cloudflare.bluebook
+        # -- deploy-config seed data for `storehouse specialize
+        # wrangler_toml`, not live business-domain logic). Same shape as
+        # `glossary` just above -- accepted so the file boots, block body
+        # NOT evaluated (the field-setter calls inside it have no real
+        # receiver methods at all, so executing the block would need a
+        # real seeding mechanism : dispatch a Declare-equivalent command
+        # at boot, or write straight into the repository, bypassing
+        # command validation either way -- a real design question, not
+        # attempted under this pass's time pressure since this ONE
+        # occurrence is deploy tooling, not domain content). TODO
+        # upstream via bin/evolve (migration plan task 7).
+        def fixture(*, **) = nil
+
+        # Vendored no-op stub, not (yet) upstream hecksagain: bluebook-level
+        # `section "Name" do row "key", value ... end` (found in miette's
+        # system_prompt_assembly.bluebook — a declarative source/template
+        # pairing the corpus's OWN comment already names as a documented
+        # DSL gap: "a first-class `section "Header", source: :Identity,
+        # template: :header` form would let the bluebook declare the
+        # mapping without two row lines... stays bluebook-first" — written
+        # against an OLD Rust-runtime SectionBuilder no-op that has no
+        # hecksagain counterpart at all. `row` only exists inside the
+        # block, so it needs its own tiny inert receiver rather than a
+        # bare method stub. TODO upstream via bin/evolve (migration plan
+        # task 7): the corpus's own filed gap, not a new one.
+        class SectionRowStub
+          def row(*) = nil
+        end
+
+        def section(*, &block)
+          SectionRowStub.new.instance_eval(&block) if block
+        end
+
+        # Vendored no-op stub, not (yet) upstream hecksagain: bluebook-level
+        # `define "Term", "definition text"` (found in miette mind/bluebook
+        # — a glossary-TERM entry, sibling to the `glossary(strict: true)
+        # do prefer ... end` block right above, which is itself already a
+        # no-op stub). Same documented gap: accepted so the file boots,
+        # not stored or enforced. TODO upstream via bin/evolve (migration
+        # plan task 7), alongside `glossary`/`prefer` — they're one
+        # feature (a strict-mode vocabulary lock + its term definitions),
+        # not two, and should land together.
+        def define(*) = nil
+
+        # Vendored no-op stub, not (yet) upstream hecksagain (migration
+        # plan task 8): bluebook-level `lifecycle "Name" do state "x" ;
+        # transition from: "a", to: "b", on: "Event" end` -- found 44
+        # times across hecks_nursury's 375-file corpus (100% of that
+        # corpus's OWN `lifecycle "..."` occurrences; its far more common
+        # `lifecycle :field, default: "x" do ... end` inline-attribute
+        # sugar is a wholly separate, already-working AggregateBuilder/
+        # EntityBuilder construct, unaffected). This bare-string-named
+        # form is disconnected from any specific aggregate or field --
+        # a documentation-flavored state-machine SUMMARY sitting as a
+        # sibling of `aggregate` blocks, not a real attribute-lifecycle
+        # declaration (the corpus's own generation pattern separately
+        # writes ad-hoc `attribute :status, String` + manual `then_set`
+        # calls inside the relevant aggregate's commands -- this block
+        # restates the same shape as prose, never wired to it). Grepped
+        # every occurrence's block body corpus-wide before writing this:
+        # only `state "name"` and `transition from:, to:, on:` ever
+        # appear inside one. Same documented-gap shape as `section`
+        # just above -- accepted so the file boots, block body captured
+        # structurally via a tiny inert receiver, NOT stored on the
+        # bluebook or wired to any aggregate's real lifecycle. TODO
+        # upstream via bin/evolve (migration plan task 7): decide
+        # whether this deserves real IR (a bluebook-level named lifecycle
+        # list) or should be corpus-rewritten into the real per-aggregate
+        # `lifecycle :field, default: ... do ... end` sugar once a human
+        # picks the owning aggregate/field per occurrence.
+        class LifecycleStub
+          def state(*) = nil
+          def transition(**) = nil
+        end
+
+        def lifecycle(*, &block)
+          LifecycleStub.new.instance_eval(&block) if block
+        end
+
+        # Vendored no-op stub, not (yet) upstream hecksagain (migration
+        # plan task 8): bluebook-level `event "Name"` (found in
+        # hecks_nursury's alans_engine_additive_business/hecks/
+        # quality.bluebook only -- 3 occurrences, 1 file corpus-wide,
+        # not a dominant pattern like `lifecycle`/`fixture`). All three
+        # named events (TestRun/ResultRecorded/CertificateOfAnalysis
+        # Issued) are ALREADY `emits`-declared by real commands earlier
+        # in the same file -- this is a redundant vocabulary-listing
+        # sibling to `glossary`/`define`, not a new event source.
+        # Same documented-gap shape as those. TODO upstream via
+        # bin/evolve (migration plan task 7).
+        def event(*) = nil
+
+        # Vendored no-op stub, not (yet) upstream hecksagain (migration
+        # plan task 8): bluebook-level `actor "Name", description: "..."`
+        # -- 14 occurrences, 3 files (tag_management/hecks/, blog.bluebook,
+        # and its blog/hecks/ near-duplicate -- the same half-finished
+        # `hecks/`-subdir convention pair this migration's own inventory
+        # already flagged). A prose role-registry sibling to `role "X"`
+        # already used freely inside commands -- documentation, not a
+        # new construct with runtime meaning. Same documented-gap shape
+        # as `event`/`glossary`/`define`. TODO upstream via bin/evolve
+        # (migration plan task 7).
+        def actor(*, **) = nil
+
+        def aggregate(name, inline_description = nil, &block)
+          @aggregates << AggregateBuilder.build(name, inline_description, &block)
         end
 
         # `report` is the word; `read_model` is the spelling every existing
@@ -73,7 +204,8 @@ module Hecksagain
                                       policies: policies,
                                       process_managers: @process_managers,
                                       classification: @classification,
-                                      formerly_known_as: @formerly_known_as)
+                                      formerly_known_as: @formerly_known_as,
+                                      category: @category)
 
           # Every hop AggregateBuilder#seal_query_field recognised and
           # deferred gets checked for real here — the earliest point a

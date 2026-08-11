@@ -324,22 +324,26 @@ Hecks.bluebook "Bluebook" do
 
         # A PIECE SAYS LESS THAN A HEAD, and the table is where that stops being
         # folklore : an entity admits no `value_object`, no `policy` and no
-        # nested `entity`. `reference_to` is the one exception — a piece can
-        # point at another ROOT the same way its own head can (Card.assignee_id),
-        # just never at another piece, since there's no cross-piece addressing
-        # anywhere in this language to resolve one against. Seven words,
-        # against an aggregate's eleven.
+        # nested `entity` of its own. `reference_to` is the one exception —
+        # not because a piece pointing at another aggregate root is wrong
+        # (standard DDD: an entity may reference a root by identity same as
+        # its own aggregate can), but because the DSL sugar to spell it had
+        # simply never been written. `AggregateBuilder
+        # #reference_bearing_attributes` was already walking `entity
+        # .attributes` looking for exactly this by the time anyone noticed —
+        # the resolution machinery was ready before the word was. Seven
+        # words now, against an aggregate's eleven.
         member word: "description",     context: "Entity", body: "none",     inner: "",           opens: "",         fills: "description"
         member word: "identified_by",   context: "Entity", body: "source",   inner: "",           opens: "",         fills: "identified_by"
         # The same two rows an aggregate carries, for the same reason — a
         # piece is identified exactly the way a head is, and EntityBuilder's
         # own `identified_by` is the aggregate's method line for line.
         member word: "identified_by",   context: "Entity", body: "none",     inner: "",           opens: "",         fills: "identified_by"
+        member word: "reference_to",    context: "Entity", body: "none",     inner: "",           opens: "",         fills: "attributes"
         member word: "command",         context: "Entity", body: "keywords", inner: "Command",    opens: "Command",  fills: ""
         member word: "query",           context: "Entity", body: "keywords", inner: "Query",      opens: "Query",    fills: ""
         member word: "lifecycle",       context: "Entity", body: "keywords", inner: "Lifecycle",  opens: "",         fills: "state_field"
         member word: "attribute",       context: "Entity", body: "none",     inner: "",           opens: "",         fills: "attributes"
-        member word: "reference_to",    context: "Entity", body: "none",     inner: "",           opens: "",         fills: "attributes"
 
         member word: "role",            context: "Command", body: "none",   inner: "", opens: "", fills: "role"
         member word: "goal",            context: "Command", body: "none",   inner: "", opens: "", fills: "goal"
@@ -588,6 +592,12 @@ Hecks.bluebook "Bluebook" do
         # as the language's own spelling rather than as a convention.
         member keyword: "reference_to",    context: "Aggregate", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
         member keyword: "reference_to",    context: "Aggregate", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
+        # THE SAME THREE ARGUMENTS, ONE CONTEXT OVER — an entity's own
+        # `reference_to` mints the identical `_id`-suffixed attribute a
+        # head's does; only which construct is doing the pointing differs.
+        member keyword: "reference_to",    context: "Entity", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
+        member keyword: "reference_to",    context: "Entity", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
+        member keyword: "reference_to",    context: "Entity", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         # THE SAME TWO ARGUMENTS `reference_to` TAKES — a target and an
         # optional alias. What `as:` fills differs in the Ruby builder (no
         # `_id` mint), but that default-naming rule is not a fact this table
@@ -631,8 +641,6 @@ Hecks.bluebook "Bluebook" do
         member keyword: "attribute",       context: "Entity", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         member keyword: "attribute",       context: "Entity", at: "",  named: "pattern",  kind: "text",     required: "false", fills: "pattern"
         member keyword: "attribute",       context: "Entity", at: "",  named: "admits",   kind: "text",     required: "false", fills: "admits"
-        member keyword: "reference_to",    context: "Entity", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
-        member keyword: "reference_to",    context: "Entity", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
 
         member keyword: "role",            context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "role"
         member keyword: "goal",            context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "goal"
