@@ -26,6 +26,16 @@ module Hecksagain
         # evaluation side.
         def median(field) = @median_field = field.to_sym
 
+        # `scope_to :field` -- NO-OP stub: "injects a where(player ==
+        # :actor) from the reserved `actor` kwarg the ACL/edge supplies"
+        # (deciderate's own comment) -- real caller-identity-based row
+        # authorization, a security-relevant feature not rushed under
+        # time pressure (same discipline as `success`/`failure`'s
+        # effect-family stubs -- structurally captured so the file
+        # boots, never silently pretended enforced). Needs a real
+        # design pass on how the runtime learns "who is calling."
+        def scope_to(*) = nil
+
         # `group_by :field` -- a real, third scalar-reduction shape
         # alongside `count`/`median`, except it doesn't reduce to ONE
         # scalar -- it partitions the where-filtered set by `field`'s
