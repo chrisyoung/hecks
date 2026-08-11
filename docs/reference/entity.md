@@ -33,6 +33,22 @@ A free-text label for the entity — no rules attached, read by nothing but a hu
 
 Names the field that tells one element of the list apart from another — unique within the parent, not globally, since a `FoyerTicketNumber` only has to be unambiguous inside its own counter. See entities.md for how this identity is carried alongside the parent's own when a command or query reaches through the aggregate.
 
+## reference_to
+
+<!-- generated:begin word=reference_to -->
+`reference_to type, as:, optional:` — fills `attributes`
+
+| argument | kind | required | fills |
+|---|---|---|---|
+| positional 1 | constant | true | type |
+| `as:` | symbol | false | name |
+| `optional:` | flag | false | optional |
+<!-- generated:end -->
+
+Points an entity at a real ROOT, the same way an aggregate's own `reference_to` does — a `Card` entity's own `assignee_id`, pointing at a `Team`. Never at another entity: there's no cross-piece addressing anywhere in this language to resolve one against, so this only ever reaches a head.
+
+<!-- TODO: document this word -->
+
 ## command
 
 <!-- generated:begin word=command -->
@@ -73,7 +89,7 @@ Opens the same `transition` vocabulary an aggregate's `lifecycle` does, checked 
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, default:, optional:, pattern:, admits:, as:, required:, logged:, enum:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -83,22 +99,11 @@ Opens the same `transition` vocabulary an aggregate's `lifecycle` does, checked 
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
 | `admits:` | text | false | admits |
+| `as:` | symbol | false | name |
+| `required:` | flag | false | optional |
+| `logged:` | flag | false | logged |
+| `enum:` | literal | false | type |
 <!-- generated:end -->
 
 Declares a field on the entity, scalar or value object — same word, same modifiers, as an aggregate's own `attribute`. See the Type and ValueObject context pages for what each type position and modifier does.
-
-## reference_to
-
-<!-- generated:begin word=reference_to -->
-`reference_to type, as:` — fills `attributes`
-
-| argument | kind | required | fills |
-|---|---|---|---|
-| positional 1 | constant | true | type |
-| `as:` | symbol | false | name |
-<!-- generated:end -->
-
-Points an entity at a real ROOT, the same way an aggregate's own `reference_to` does — a `Card` entity's own `assignee_id`, pointing at a `Team`. Never at another entity: there's no cross-piece addressing anywhere in this language to resolve one against, so this only ever reaches a head.
-
-<!-- TODO: document this word -->
 

@@ -103,3 +103,75 @@ The same word as inside an `aggregate` — a reaction to an event, `on`/`trigger
 
 Opens a stateful saga spanning several events and commands — `correlates_by`, `starts_on`/`ends_on`, its `handler`s. Chapter-level only, like `report` and top-level `policy`, since it belongs to no single aggregate. See the ProcessManager reference page.
 
+## category
+
+<!-- generated:begin word=category -->
+`category` — fills `category`
+<!-- generated:end -->
+
+A free-form second axis alongside `classification`'s fixed core/supporting/generic set — `category "framework"`, `category "world"`, whatever grouping a corpus actually uses. Unlike `classification`, nothing enforces a closed set of values here; it is a fact recorded and read back, not judged.
+
+## glossary
+
+<!-- generated:begin word=glossary -->
+`glossary`
+<!-- generated:end -->
+
+Accepted so a chapter using it still boots — `glossary(strict: true) do ... end` names a vocabulary lock and its preferred terms. Not yet threaded into the IR: the block body is never evaluated or stored, a documented gap rather than a silently pretended feature.
+
+## entrypoint
+
+<!-- generated:begin word=entrypoint -->
+`entrypoint`
+<!-- generated:end -->
+
+Accepted and discarded — names where a deployment or process starts, prose rather than a fact the language currently holds.
+
+## fixture
+
+<!-- generated:begin word=fixture -->
+`fixture`
+<!-- generated:end -->
+
+`fixture "Name", on: "Aggregate" do ... end` — deploy-config seed data. Accepted so the file boots ; the block's field-setter calls have no real receiver methods and nothing seeds a real record from them yet.
+
+## section
+
+<!-- generated:begin word=section -->
+`section`
+<!-- generated:end -->
+
+`section "Name" do row "key", value end` — a declarative source/template pairing. Accepted so the file boots ; `row` lines inside are captured by an inert receiver and go nowhere.
+
+## define
+
+<!-- generated:begin word=define -->
+`define`
+<!-- generated:end -->
+
+`define "Term", "definition text"` — a glossary-term entry, sibling to `glossary` above. Accepted and discarded, the same documented gap.
+
+## lifecycle
+
+<!-- generated:begin word=lifecycle -->
+`lifecycle`
+<!-- generated:end -->
+
+A bluebook-level, bare-string-named state-machine SUMMARY — `lifecycle "Name" do state "x" ; transition from: "a", to: "b", on: "Event" end` — disconnected from any one aggregate or field, a documentation-flavored restatement of what the real per-aggregate `lifecycle :field, default: ... do ... end` sugar (see the Aggregate context page) actually declares. Accepted so the file boots ; not wired to any aggregate's real lifecycle.
+
+## event
+
+<!-- generated:begin word=event -->
+`event`
+<!-- generated:end -->
+
+`event "Name"` — a redundant vocabulary-listing sibling to `glossary`/`define`, naming an event some command elsewhere in the same file already `emits`. Accepted and discarded.
+
+## actor
+
+<!-- generated:begin word=actor -->
+`actor`
+<!-- generated:end -->
+
+`actor "Name", description: "..."` — a prose role registry, sibling to `role "X"` already used freely inside commands. Documentation, not a new construct with runtime meaning. Accepted and discarded.
+

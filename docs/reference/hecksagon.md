@@ -31,6 +31,38 @@ Names an event this hecksagon takes in from outside its own bluebook. It is decl
 
 Names a `lib/hecksagain/framework/bluebook/` member this domain wants attached — `uses_framework "Governance"`, say. Attaching one is a deployment decision, the same kind `persisted_by`/`projected_by` already are, so it lives in the hecksagon rather than as a fact stated in the domain's own bluebook. Loads that member's own bluebook into whatever registry this one is loading into — always from its own real location, never a copy, so it keeps working even when this domain is itself copied somewhere else first (a fuzz run's isolated tmp boot, for instance). Persistence is NOT part of what this loads — a member's aggregates need their own `Hecks.hecksagon "Governance" do ... end` block, declared by whoever is attaching it, the same as any other binding decision.
 
+## adapter
+
+<!-- generated:begin word=adapter -->
+`adapter`
+<!-- generated:end -->
+
+Two forms. Bare — `adapter :heki`/`:memory`/`:sqlite` — is a domain-wide default: every aggregate in this bluebook persists there unless it declares its own `persisted_by`, applied last so an aggregate-level bind always wins. Bare with a different kind and options — `adapter :custom_queue, url: "..."` — records a raw, opaque adapter binding, not a bind on any one aggregate. The block form — `adapter "Name" do driving on <kind> "<arg>" do |signal| dispatch "Domain::Aggregate.Command" end end` — declares a DRIVING-side construct: an external clock/file-watch/http-post reaching IN, the inverse of `persisted_by`/`charged_by`'s driven side. Structural support only; the actual scheduler that fires these is a separate concern.
+
+## gate
+
+<!-- generated:begin word=gate -->
+`gate`
+<!-- generated:end -->
+
+`gate "Aggregate", :role do allow :Cmd1, :Cmd2, ... end` — a centralized command allowlist. Accepted so the file boots ; not stored or enforced, since each command's own `role` (see the Command context page) already checks the same thing at dispatch time, and this would be a second, easily-stale source of truth for it.
+
+## success
+
+<!-- generated:begin word=success -->
+`success`
+<!-- generated:end -->
+
+Names the command dispatched when an adapter-mediated effect succeeds — `Aggregate.verb("Adapter", on: "Event") do success "Cmd" end`, the canonical Pizzas example's own async-verdict shape. Accepted so the file boots ; no adapter-host delivery mechanism or verdict re-entry wiring exists yet, so nothing actually calls this back.
+
+## failure
+
+<!-- generated:begin word=failure -->
+`failure`
+<!-- generated:end -->
+
+The refusal-side sibling of `success`, naming the command dispatched when the adapter-mediated effect fails. Same structural-only status.
+
 ## port
 
 <!-- generated:begin word=port -->

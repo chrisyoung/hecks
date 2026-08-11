@@ -22,7 +22,7 @@ A free-text label for the query — no rules attached, read by nothing but a hum
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, default:, optional:, pattern:, admits:, as:, required:, logged:, enum:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -32,6 +32,10 @@ A free-text label for the query — no rules attached, read by nothing but a hum
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
 | `admits:` | text | false | admits |
+| `as:` | symbol | false | name |
+| `required:` | flag | false | optional |
+| `logged:` | flag | false | logged |
+| `enum:` | literal | false | type |
 <!-- generated:end -->
 
 Declares an argument this query accepts at ask-time, not a field on the
@@ -244,4 +248,36 @@ back; it can only ever refuse.
 Names an index hint. It's recorded on the specification and
 round-trips through the IR, but no adapter here reads it back to
 influence the query plan — the store still picks its own index.
+
+## count
+
+<!-- generated:begin word=count -->
+`count`
+<!-- generated:end -->
+
+Reduces the where-filtered set to a single scalar — how many rows match, rather than the rows themselves. Riding the same `where` clauses an ordinary query already applies.
+
+## median
+
+<!-- generated:begin word=median -->
+`median`
+<!-- generated:end -->
+
+`median :field` — the same scalar-reduction shape as `count`, one field further: the median value of `field` across the where-filtered set.
+
+## group_by
+
+<!-- generated:begin word=group_by -->
+`group_by`
+<!-- generated:end -->
+
+`group_by :field` — a third scalar-reduction shape alongside `count`/`median`, except it doesn't reduce to one scalar: it partitions the where-filtered set by `field`'s value and tallies each partition. The Query-context sibling of the ReadModel-context `group_by`, which nests a whole rootless table instead — see the ReadModel reference page.
+
+## scope_to
+
+<!-- generated:begin word=scope_to -->
+`scope_to`
+<!-- generated:end -->
+
+A no-op stub for caller-identity row authorization — the intent is a `where(actor == :caller)` injected from a reserved kwarg the runtime's own caller context would supply. Accepted and structurally captured ; no runtime learns "who is calling" yet, so nothing is actually scoped.
 

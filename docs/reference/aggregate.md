@@ -181,7 +181,7 @@ Opens what this aggregate may be asked to do — what it needs, what it refuses,
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, default:, optional:, pattern:, admits:, as:, required:, logged:, enum:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -191,7 +191,51 @@ Opens what this aggregate may be asked to do — what it needs, what it refuses,
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
 | `admits:` | text | false | admits |
+| `as:` | symbol | false | name |
+| `required:` | flag | false | optional |
+| `logged:` | flag | false | logged |
+| `enum:` | literal | false | type |
 <!-- generated:end -->
 
-Declares a field, scalar or value object. `pattern:` checks a String attribute against a regex the moment the bluebook loads, not the day a bad value reaches production — and only admits regexes every engine reads identically (no lookahead, no `\d`/`\w`). `admits:` points a field at a closed vocabulary declared elsewhere (a `one_of` on another value object) rather than restating its members, so two fields can't drift out of sync on what's allowed. `default:` fills the field when the record is built; for a value-object-typed attribute the default must fill that type's own fields (`default: { cents: 0 }`), not a bare scalar — a bare scalar loads cleanly and then refuses every create at dispatch. `optional:` lets a caller omit the argument entirely with no refusal, distinct from `default:`, which still fills the field either way.
+Declares a field, scalar or value object. `pattern:` checks a String attribute against a regex the moment the bluebook loads, not the day a bad value reaches production — and only admits regexes every engine reads identically (no lookahead, no `\d`/`\w`). `admits:` points a field at a closed vocabulary declared elsewhere (a `one_of` on another value object) rather than restating its members, so two fields can't drift out of sync on what's allowed. `default:` fills the field when the record is built; for a value-object-typed attribute the default must fill that type's own fields (`default: { cents: 0 }`), not a bare scalar — a bare scalar loads cleanly and then refuses every create at dispatch. `optional:` lets a caller omit the argument entirely with no refusal, distinct from `default:`, which still fills the field either way. Four more named arguments, each a live alias of one already above: `as:` names the field when the type leads positionally (`attribute App` reads the same as `attribute :app, App`) ; `required:` is the literal inverse of `optional:` ; `logged:` (default true) marks whether a field's changes are recorded ; `enum:` is a Rails-style spelling of the inline `one_of(*values)` closed-set sugar. A bare Ruby-primitive type (`String`/`Integer`/`Float`/booleans/`Numeric`) auto-synthesises a single-field wrapper value object named for the attribute, preserving "primitives only live in value objects" rather than relaxing it.
+
+## invariant
+
+<!-- generated:begin word=invariant -->
+`invariant do ... end`
+<!-- generated:end -->
+
+A whole-record rule, scoped to the AGGREGATE rather than one field — distinct from a value object's own field-scoped `invariant` and a command's dispatch-time `given`. Not yet threaded into `IR::Aggregate`: captured structurally (extracted, canonicalised) so the corpus boots and a future runtime walk has something real to read, but nothing evaluates it at dispatch time yet.
+
+## rule
+
+<!-- generated:begin word=rule -->
+`rule do ... end`
+<!-- generated:end -->
+
+A live alias of `invariant`, at the aggregate level — the same word other corpora already use for a value object's own rule (see the ValueObject context page), now available one level up too.
+
+## specification
+
+<!-- generated:begin word=specification -->
+`specification do ... end`
+<!-- generated:end -->
+
+A NAMED, reusable boolean predicate over the aggregate's own state — `specification :in_lucid_rem do |body| body.state == "sleeping" && ... end` — distinct from `invariant` (unnamed, whole-record) and a command's `given` (dispatch-time precondition). Captured structurally, the same documented gap as `invariant`: not yet threaded into `IR::Aggregate` or referenceable by name elsewhere.
+
+## fixture
+
+<!-- generated:begin word=fixture -->
+`fixture`
+<!-- generated:end -->
+
+`fixture "Name" do field value ... end`, declared inside an aggregate body — seed data for that aggregate. Accepted so the file boots ; the field-setter calls inside have no real receiver methods (they vary per aggregate) and nothing seeds a real record from them yet.
+
+## validation
+
+<!-- generated:begin word=validation -->
+`validation`
+<!-- generated:end -->
+
+`validation :field, presence: true` — a Rails-style field-presence declaration, genuinely a field-level invariant in spirit. Accepted and structurally captured so the file boots ; not synthesised as a real `invariant` call and not enforced.
 
