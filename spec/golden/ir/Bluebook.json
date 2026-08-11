@@ -206,11 +206,11 @@
           "mutations": [
             {
               "fields": {
-                "boundary": "boundary",
-                "position": "position",
-                "replacement": "replacement",
-                "source_token": "source_token",
-                "strategy": "strategy"
+                "boundary": ":boundary",
+                "position": ":position",
+                "replacement": ":replacement",
+                "source_token": ":source_token",
+                "strategy": ":strategy"
               },
               "op": "append",
               "target": "normalisations"
@@ -689,7 +689,7 @@
           "mutations": [
             {
               "fields": {
-                "value": "path"
+                "value": ":path"
               },
               "op": "append",
               "target": "identified_by"
@@ -782,13 +782,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": "admits",
-                "default": "default",
-                "list": "list",
-                "name": "name",
-                "optional": "optional",
-                "pattern": "pattern",
-                "type": "type"
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "type": ":type"
               },
               "op": "append",
               "target": "attributes"
@@ -881,13 +881,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": "admits",
-                "default": "default",
-                "list": "list",
-                "name": "name",
-                "optional": "optional",
-                "pattern": "pattern",
-                "type": "points_at"
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "type": ":points_at"
               },
               "op": "append",
               "target": "attributes"
@@ -980,13 +980,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": "admits",
-                "default": "default",
-                "list": "list",
-                "name": "name",
-                "optional": "optional",
-                "pattern": "pattern",
-                "type": "holds"
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "type": ":holds"
               },
               "op": "append",
               "target": "attributes"
@@ -1100,9 +1100,9 @@
           "mutations": [
             {
               "fields": {
-                "command": "command",
-                "from_state": "from_state",
-                "to_state": "to_state"
+                "command": ":command",
+                "from_state": ":from_state",
+                "to_state": ":to_state"
               },
               "op": "append",
               "target": "transitions"
@@ -1169,7 +1169,7 @@
           "mutations": [
             {
               "fields": {
-                "name": "name"
+                "name": ":name"
               },
               "op": "append",
               "target": "value_objects"
@@ -1865,13 +1865,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": "admits",
-                "default": "default",
-                "list": "list",
-                "name": "name",
-                "optional": "optional",
-                "pattern": "pattern",
-                "type": "type"
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "type": ":type"
               },
               "op": "append",
               "target": "attributes"
@@ -1964,13 +1964,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": "admits",
-                "default": "default",
-                "list": "list",
-                "name": "name",
-                "optional": "optional",
-                "pattern": "pattern",
-                "type": "points_at"
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "type": ":points_at"
               },
               "op": "append",
               "target": "attributes"
@@ -2025,8 +2025,8 @@
           "mutations": [
             {
               "fields": {
-                "canonical": "canonical",
-                "description": "description"
+                "canonical": ":canonical",
+                "description": ":description"
               },
               "op": "append",
               "target": "givens"
@@ -2081,8 +2081,8 @@
           "mutations": [
             {
               "fields": {
-                "canonical": "canonical",
-                "description": "description"
+                "canonical": ":canonical",
+                "description": ":description"
               },
               "op": "append",
               "target": "ensures"
@@ -2164,11 +2164,11 @@
           "mutations": [
             {
               "fields": {
-                "field": "field",
-                "kind": "kind",
-                "op": "op",
-                "source": "source",
-                "target": "target"
+                "field": ":field",
+                "kind": ":kind",
+                "op": ":op",
+                "source": ":source",
+                "target": ":target"
               },
               "op": "append",
               "target": "mutations"
@@ -2257,7 +2257,7 @@
           "mutations": [
             {
               "fields": {
-                "name": "announces"
+                "name": ":announces"
               },
               "op": "append",
               "target": "emits"
@@ -2299,7 +2299,7 @@
           "mutations": [
             {
               "fields": {
-                "name": "tool"
+                "name": ":tool"
               },
               "op": "append",
               "target": "redirects_native"
@@ -3097,9 +3097,9 @@
           "mutations": [
             {
               "fields": {
-                "field": "field",
-                "op": "op",
-                "value": "value"
+                "field": ":field",
+                "op": ":op",
+                "value": ":value"
               },
               "op": "append",
               "target": "wheres"
@@ -3168,10 +3168,10 @@
           "mutations": [
             {
               "fields": {
-                "at": "at",
-                "key": "key",
-                "option": "option",
-                "value": "value"
+                "at": ":at",
+                "key": ":key",
+                "option": ":option",
+                "value": ":value"
               },
               "op": "append",
               "target": "options"
@@ -3264,13 +3264,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": "admits",
-                "default": "default",
-                "list": "list",
-                "name": "name",
-                "optional": "optional",
-                "pattern": "pattern",
-                "type": "type"
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "type": ":type"
               },
               "op": "append",
               "target": "attributes"
@@ -3747,13 +3747,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": "admits",
-                "default": "default",
-                "list": "list",
-                "name": "name",
-                "optional": "optional",
-                "pattern": "pattern",
-                "type": "type"
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "type": ":type"
               },
               "op": "append",
               "target": "attributes"
@@ -3851,8 +3851,8 @@
           "mutations": [
             {
               "fields": {
-                "canonical": "canonical",
-                "description": "description"
+                "canonical": ":canonical",
+                "description": ":description"
               },
               "op": "append",
               "target": "invariants"
@@ -4170,7 +4170,7 @@
               "default": null,
               "list": false,
               "name": "position",
-              "optional": true,
+              "optional": false,
               "pattern": null,
               "type": "Position"
             }
@@ -4233,8 +4233,8 @@
           "mutations": [
             {
               "fields": {
-                "key": "key",
-                "value": "value"
+                "key": ":key",
+                "value": ":value"
               },
               "op": "append",
               "target": "pairs"
@@ -4558,7 +4558,7 @@
           "mutations": [
             {
               "fields": {
-                "value": "path"
+                "value": ":path"
               },
               "op": "append",
               "target": "identified_by"
@@ -4679,13 +4679,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": "admits",
-                "default": "default",
-                "list": "list",
-                "name": "name",
-                "optional": "optional",
-                "pattern": "pattern",
-                "type": "type"
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "type": ":type"
               },
               "op": "append",
               "target": "attributes"
@@ -4799,9 +4799,9 @@
           "mutations": [
             {
               "fields": {
-                "command": "command",
-                "from_state": "from_state",
-                "to_state": "to_state"
+                "command": ":command",
+                "from_state": ":from_state",
+                "to_state": ":to_state"
               },
               "op": "append",
               "target": "transitions"
@@ -5296,8 +5296,8 @@
           "mutations": [
             {
               "fields": {
-                "key": "key",
-                "value": "value"
+                "key": ":key",
+                "value": ":value"
               },
               "op": "append",
               "target": "wheres"
@@ -5345,8 +5345,8 @@
           "mutations": [
             {
               "fields": {
-                "key": "key",
-                "value": "value"
+                "key": ":key",
+                "value": ":value"
               },
               "op": "append",
               "target": "with_literals"
@@ -5394,8 +5394,8 @@
           "mutations": [
             {
               "fields": {
-                "key": "key",
-                "value": "value"
+                "key": ":key",
+                "value": ":value"
               },
               "op": "append",
               "target": "for_each_where"
@@ -5722,7 +5722,7 @@
           "mutations": [
             {
               "fields": {
-                "name": "name"
+                "name": ":name"
               },
               "op": "append",
               "target": "states"
@@ -6049,8 +6049,8 @@
           "mutations": [
             {
               "fields": {
-                "key": "key",
-                "value": "value"
+                "key": ":key",
+                "value": ":value"
               },
               "op": "append",
               "target": "remembers"
@@ -6351,8 +6351,8 @@
           "mutations": [
             {
               "fields": {
-                "key": "key",
-                "value": "value"
+                "key": ":key",
+                "value": ":value"
               },
               "op": "append",
               "target": "with_spec"
@@ -8016,6 +8016,20 @@
               ],
               [
                 "site",
+                "value_object_invariant"
+              ],
+              [
+                "template",
+                "{name} invariant violated — {description} (given {offered})"
+              ]
+            ],
+            [
+              [
+                "refusal",
+                "InvariantViolation"
+              ],
+              [
+                "site",
                 "admits_declared_set"
               ],
               [
@@ -8093,6 +8107,100 @@
             ]
           ],
           "name": "Trigger"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "name",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "pattern",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "resolves_to",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": true,
+          "invariants": [
+
+          ],
+          "members": [
+            [
+              [
+                "name",
+                "email"
+              ],
+              [
+                "pattern",
+                "email"
+              ],
+              [
+                "resolves_to",
+                "html_type"
+              ]
+            ],
+            [
+              [
+                "name",
+                "url"
+              ],
+              [
+                "pattern",
+                "\\b(url|uri|website|link)\\b"
+              ],
+              [
+                "resolves_to",
+                "html_type"
+              ]
+            ],
+            [
+              [
+                "name",
+                "tel"
+              ],
+              [
+                "pattern",
+                "phone|\\btel(ephone)?\\b"
+              ],
+              [
+                "resolves_to",
+                "html_type"
+              ]
+            ],
+            [
+              [
+                "name",
+                "textarea"
+              ],
+              [
+                "pattern",
+                "\\b(text|body|note|notes|description|message|comment)\\b"
+              ],
+              [
+                "resolves_to",
+                "kind"
+              ]
+            ]
+          ],
+          "name": "FieldHint"
         }
       ]
     },
@@ -9191,6 +9299,32 @@
             [
               [
                 "word",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "identified_by"
+              ]
+            ],
+            [
+              [
+                "word",
                 "reference_to"
               ],
               [
@@ -9642,6 +9776,32 @@
               [
                 "body",
                 "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "identified_by"
+              ]
+            ],
+            [
+              [
+                "word",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "body",
+                "none"
               ],
               [
                 "inner",
@@ -12682,6 +12842,96 @@
             [
               [
                 "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "identified_by"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "reference_to"
               ],
               [
@@ -13547,6 +13797,96 @@
               [
                 "fills",
                 "description"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "identified_by"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
               ]
             ],
             [
@@ -18144,9 +18484,9 @@
           "mutations": [
             {
               "fields": {
-                "aggregate": "aggregate",
-                "as": "as",
-                "many": "many"
+                "aggregate": ":aggregate",
+                "as": ":as",
+                "many": ":many"
               },
               "op": "append",
               "target": "aggregate_heads"
@@ -18188,7 +18528,7 @@
           "mutations": [
             {
               "fields": {
-                "field": "field"
+                "field": ":field"
               },
               "op": "append",
               "target": "group_by"
@@ -18257,10 +18597,10 @@
           "mutations": [
             {
               "fields": {
-                "at": "at",
-                "key": "key",
-                "option": "option",
-                "value": "value"
+                "at": ":at",
+                "key": ":key",
+                "option": ":option",
+                "value": ":value"
               },
               "op": "append",
               "target": "options"
@@ -18617,10 +18957,15 @@
       "group_by": [
 
       ],
+      "limit": null,
       "name": "WholeBluebook",
+      "order_by": null,
       "query_name": "whole_bluebook",
       "reference_name": "bluebook",
-      "reference_target": "Bluebook"
+      "reference_target": "Bluebook",
+      "wheres": [
+
+      ]
     }
   ],
   "version": "1",

@@ -5745,17 +5745,17 @@
       "wheres": [
         [
           "severity",
-          "critical"
+          "\"critical\""
         ]
       ],
       "with_literals": [
         [
           "note",
-          "auto-flagged — critical on arrival"
+          "\"auto-flagged — critical on arrival\""
         ],
         [
           "flagged_by",
-          "policy"
+          "\"policy\""
         ]
       ]
     },
