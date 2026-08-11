@@ -74,9 +74,27 @@ module Hecksagain
 
         remember_into_instance(handler, event, instance, correlation)
 
+        unless guards_pass?(handler, event, instance)
+          @registry.saga_log << record.merge(dispatched: false, reason: "given clause did not hold")
+          return
+        end
+
         handler.dispatches.each do |spec|
           deliver_saga_dispatch(pm, spec, event, instance, correlation, domain)
         end
+      end
+
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4) — see HandlerBuilder#given's own comment. `ctx` merges the
+      # triggering event's payload UNDER the instance's remembered
+      # fields, so a `remember`ed value (this same firing's, per above,
+      # since remember runs first) wins on key collision — the more
+      # specific, more recently-decided fact.
+      def guards_pass?(handler, event, instance)
+        return true if (handler.guards || []).empty?
+
+        ctx = event.payload.merge(instance[:memory])
+        handler.guards.all? { |predicate| predicate.call(ctx) }
       end
 
       # Vendored addition, not (yet) upstream hecksagain (migration plan

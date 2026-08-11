@@ -126,6 +126,26 @@ module Hecksagain
             @remembers.concat(fields.to_a)
           end
 
+          # `given { |ctx| ... }` -- vendored addition, not (yet) upstream
+          # hecksagain (migration plan task 4): a handler-level
+          # precondition on its DISPATCHES, not on the transition itself
+          # -- the transition + any `remember`s always happen when the
+          # event fires in the right from_state; `given` only decides
+          # whether this handler's `dispatch`es actually fire. Real need,
+          # not speculative: miette's Lucidity PM enters `rejoined` on
+          # `LucidRemEntered` regardless of whether Mind is present (the
+          # bridge's Body-half alone is enough to transition), but only
+          # dispatches `LucidDream.BecomeLucid` when Mind actually is —
+          # the OLD imperative Proc form did `next({commands: []}) unless
+          # mind_present` after the transition had already been decided
+          # by the enclosing framework, same split. `ctx` is a merged
+          # Hash of the triggering event's payload + the saga instance's
+          # own remembered fields — see Runtime::SagaInterpreter#
+          # advance_saga's own comment for how it's built and evaluated.
+          def given(&predicate)
+            @guards << predicate
+          end
+
           # `set :field, from_event(:field)` -- vendored addition, not
           # (yet) upstream hecksagain (migration plan task 8, bin-buddy's
           # SubscriptionLifecycle PM): the POSITIONAL-argument sibling of
