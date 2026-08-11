@@ -393,10 +393,17 @@ anyone else will ever reuse.
 
 The trap: the inline shorthand desugars by calling `one_of` on
 whichever builder currently has `self` — and a nested `value_object`
-block already defines its own `one_of`, for closed-set members. Writing
-the shorthand inside a `value_object` block does not synthesize a
-closed set — it calls the wrong `one_of`, with the wrong arity, and the
-bluebook does not load:
+block already defines its own `one_of`, for closed-set members.
+`ValueObjectBuilder` tells the two calling shapes apart (arguments with
+no block reach the same type-position sugar an aggregate's own
+attribute uses ; a bare block keeps the closed-set-body form), so the
+shorthand no longer raises the wrong-arity crash it once did — but a
+value object still cannot HOLD a nested one: `IR::ValueObject` has no
+member for a value object inside a value object, only a flat list of
+attributes and members of its own. Writing the shorthand inside a
+`value_object` block still does not synthesize a usable closed set —
+the bluebook refuses to load, now with a message that says so plainly
+instead of a Ruby arity error:
 
 ```ruby
 def banking_bad_one_of
@@ -422,7 +429,7 @@ def banking_bad_one_of
   end
 end
 
-banking_bad_one_of   # ~> ArgumentError: wrong number of arguments
+banking_bad_one_of   # ~> Malformed: value object cannot hold
 ```
 
 ## A field that grows
