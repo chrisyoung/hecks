@@ -591,6 +591,7 @@
           "dispatches": [
             {
               "command_name": "Wire::Drawer.Take",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -619,6 +620,7 @@
           "dispatches": [
             {
               "command_name": "Wire::Wire.Moved",
+              "for_each": null,
               "with_spec": [
                 [
                   "wire",
@@ -628,6 +630,7 @@
             },
             {
               "command_name": "Wire::Drawer.Put",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -656,6 +659,7 @@
           "dispatches": [
             {
               "command_name": "Wire::Wire.Landed",
+              "for_each": null,
               "with_spec": [
                 [
                   "wire",
@@ -676,6 +680,7 @@
           "dispatches": [
             {
               "command_name": "Wire::Drawer.Put",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -693,6 +698,7 @@
             },
             {
               "command_name": "Wire::Wire.Returned",
+              "for_each": null,
               "with_spec": [
                 [
                   "wire",

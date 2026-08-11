@@ -1,11 +1,35 @@
 module Hecksagain
   module Bluebook
     module IR
-      DispatchSpec = Struct.new(:command_name, :with_spec, keyword_init: true) do
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4): `template("fmt %s", from_pm(:x, default: "y"))` inside a
+      # `dispatch ..., with: { field: template(...) }` -- composing a
+      # literal string with a resolved field, which no `with:` value
+      # spelling could do before this (a bare Symbol IS a whole resolved
+      # value; there was no way to embed one inside surrounding text).
+      # Found live in miette's mind.bluebook ("I'd like to go deeper into
+      # #{target} with this" -- the OLD imperative Proc form's own string
+      # interpolation, which the file's own comment already named as
+      # needing "a template: form" before it could convert). `args` holds
+      # whatever `dispatch_args`/`resolve_with_value` already know how to
+      # resolve -- bare Symbols (from_event/from_pm/from_iter) or
+      # literals -- resolved the SAME way an ordinary `with:` value is,
+      # just substituted into `format` via `Kernel#format` rather than
+      # assigned directly. See Runtime::SagaInterpreter#resolve_value's
+      # own comment for the read side.
+      TemplateSpec = Struct.new(:format, :args, keyword_init: true)
+
+      # `for_each`, vendored addition not (yet) upstream hecksagain
+      # (migration plan task 4, i225): the FQN of a query ("Signal.cold")
+      # to enumerate — nil for an ordinary single dispatch. See
+      # Runtime::SagaInterpreter#deliver_saga_dispatch's own comment for
+      # the runtime side.
+      DispatchSpec = Struct.new(:command_name, :with_spec, :for_each, keyword_init: true) do
         def to_h
           {
             command_name: command_name.to_s,
-            with_spec:    with_spec.map { |key, value| [key.to_s, IR.render_value(value)] }
+            with_spec:    with_spec.map { |key, value| [key.to_s, IR.render_value(value)] },
+            for_each:     for_each
           }
         end
       end

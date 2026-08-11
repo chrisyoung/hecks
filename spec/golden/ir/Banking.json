@@ -5400,6 +5400,7 @@
           "dispatches": [
             {
               "command_name": "Banking::Account.Debit",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -5432,6 +5433,7 @@
           "dispatches": [
             {
               "command_name": "Banking::Transfer.Debited",
+              "for_each": null,
               "with_spec": [
                 [
                   "transfer",
@@ -5441,6 +5443,7 @@
             },
             {
               "command_name": "Banking::Account.Credit",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -5473,6 +5476,7 @@
           "dispatches": [
             {
               "command_name": "Banking::Transfer.Credited",
+              "for_each": null,
               "with_spec": [
                 [
                   "transfer",
@@ -5493,6 +5497,7 @@
           "dispatches": [
             {
               "command_name": "Banking::Transfer.Settle",
+              "for_each": null,
               "with_spec": [
                 [
                   "transfer",
@@ -5513,6 +5518,7 @@
           "dispatches": [
             {
               "command_name": "Banking::Account.Credit",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -5530,6 +5536,7 @@
             },
             {
               "command_name": "Banking::Transfer.Reverse",
+              "for_each": null,
               "with_spec": [
                 [
                   "transfer",
@@ -5564,6 +5571,7 @@
           "dispatches": [
             {
               "command_name": "Banking::ExternalTransfer.Send",
+              "for_each": null,
               "with_spec": [
                 [
                   "end_to_end",
@@ -5584,6 +5592,7 @@
           "dispatches": [
             {
               "command_name": "Banking::ExternalTransfer.Return",
+              "for_each": null,
               "with_spec": [
                 [
                   "end_to_end",
@@ -5617,6 +5626,7 @@
           "dispatches": [
             {
               "command_name": "Banking::Account.Open",
+              "for_each": null,
               "with_spec": [
                 [
                   "customer_id",

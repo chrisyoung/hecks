@@ -158,10 +158,17 @@ module Hecksagain
             @remembers << [field.to_sym, value]
           end
 
-          def dispatch(command_name, with: nil)
+          # `for_each: { from: "Aggregate.query" }` -- vendored addition,
+          # not (yet) upstream hecksagain (migration plan task 4, i225):
+          # enumerate the named query and fire this dispatch once per
+          # returned row, each field sourced via `from_iter(:field)`
+          # against THAT row rather than the triggering event. See
+          # Runtime::SagaInterpreter#deliver_saga_dispatch.
+          def dispatch(command_name, with: nil, for_each: nil)
             @dispatches << IR::DispatchSpec.new(
               command_name: command_name,
-              with_spec:    (with || {}).to_a
+              with_spec:    (with || {}).to_a,
+              for_each:     for_each && for_each.fetch(:from)
             )
           end
 
@@ -179,6 +186,30 @@ module Hecksagain
           # not the declared default). TODO upstream via bin/evolve
           # (migration plan task 7).
           def from_event(field, default: nil) = field
+
+          # Same shape as from_event, sourcing from an iteration/loop
+          # variable instead of the event payload -- see from_event's
+          # own comment for the same documented default: gap.
+          def from_iter(field, default: nil) = field
+
+          # `template("fmt %s", from_pm(:x, default: "y"))` -- vendored
+          # addition, not (yet) upstream hecksagain (migration plan task
+          # 4). See IR::TemplateSpec's own comment for why. Inherits the
+          # SAME documented default:-not-threaded gap as from_event/
+          # from_iter/from_pm -- a `default:` on an ARGUMENT passed into
+          # a template still resolves to nil, not the fallback, if the
+          # field is absent; this call adds no new gap, just composes
+          # with an existing one.
+          def template(format, *args) = IR::TemplateSpec.new(format: format, args: args)
+
+          # Same shape again, sourcing from the PROCESS MANAGER'S OWN
+          # persisted state instead of the triggering event or an
+          # iteration variable -- the third of the same family (miette's
+          # mind/bluebook: `from_pm(:carrying, default: "—")`, reading a
+          # field the PM itself carries across ticks, not something the
+          # current event/iteration handed it). Same documented
+          # default:-not-threaded gap as its two siblings.
+          def from_pm(field, default: nil) = field
         end
       end
     end

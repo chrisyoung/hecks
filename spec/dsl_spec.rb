@@ -808,8 +808,11 @@ RSpec.describe "the DSL surface" do
 
       handler = checkout.handler_for("PaymentAuthorized")
       expect([handler.from_state, handler.to_state]).to eq(["awaiting_payment", "paid"])
+      # `for_each: nil` -- a Dispatch::for_each addition this session
+      # (saga fan-out, i225) always renders, nil for an ordinary
+      # single dispatch like this one.
       expect(handler.dispatches.first.to_h)
-        .to eq({ command_name: "Order.Confirm", with_spec: [["order", ":order_id"]] })
+        .to eq({ command_name: "Order.Confirm", with_spec: [["order", ":order_id"]], for_each: nil })
     end
 
     it "process_manager refuses a machine that could never advance" do
