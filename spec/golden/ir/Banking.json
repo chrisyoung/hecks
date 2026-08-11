@@ -108,6 +108,9 @@
           ],
           "name": "Register",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Branch clerk"
         },
@@ -145,6 +148,9 @@
           ],
           "name": "Suspend",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Customer",
           "role": "Compliance officer"
         },
@@ -176,6 +182,9 @@
           ],
           "name": "Reinstate",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Customer",
           "role": "Compliance officer"
         },
@@ -198,6 +207,9 @@
           ],
           "name": "Close",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Customer",
           "role": "Branch clerk"
         }
@@ -568,6 +580,9 @@
           ],
           "name": "Open",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Branch clerk"
         },
@@ -626,6 +641,9 @@
           ],
           "name": "Credit",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Account",
           "role": "Teller"
         },
@@ -699,6 +717,9 @@
           ],
           "name": "Debit",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Account",
           "role": "Teller"
         },
@@ -721,6 +742,10 @@
           ],
           "name": "Freeze",
           "provenance": null,
+          "redirects_native": [
+            "ComplianceHold",
+            "AccountLock"
+          ],
           "references": "Account",
           "role": "Compliance officer"
         },
@@ -743,6 +768,9 @@
           ],
           "name": "Unfreeze",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Account",
           "role": "Compliance officer"
         },
@@ -768,6 +796,9 @@
           ],
           "name": "CloseAccount",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Account",
           "role": "Branch clerk"
         },
@@ -825,6 +856,9 @@
           ],
           "name": "ApplyFee",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Account",
           "role": null
         },
@@ -873,6 +907,9 @@
           ],
           "name": "CorrectFee",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Account",
           "role": null
         },
@@ -918,6 +955,9 @@
           ],
           "name": "AccrueInterest",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Account",
           "role": null
         },
@@ -970,6 +1010,9 @@
           ],
           "name": "CorrectInterest",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Account",
           "role": null
         }
@@ -1070,6 +1113,9 @@
               ],
               "name": "Amend",
               "provenance": null,
+              "redirects_native": [
+
+              ],
               "references": null,
               "role": "Back office"
             },
@@ -1107,6 +1153,9 @@
               ],
               "name": "Reverse",
               "provenance": null,
+              "redirects_native": [
+
+              ],
               "references": null,
               "role": "Back office"
             }
@@ -1721,6 +1770,9 @@
           ],
           "name": "Issue",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Branch clerk"
         },
@@ -1758,6 +1810,9 @@
           ],
           "name": "Rename",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ATMCard",
           "role": "Customer"
         },
@@ -1804,6 +1859,9 @@
           ],
           "name": "Withdraw",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ATMCard",
           "role": "Customer"
         },
@@ -1826,6 +1884,9 @@
           ],
           "name": "Activate",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ATMCard",
           "role": "Customer"
         },
@@ -1848,6 +1909,9 @@
           ],
           "name": "Retire",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ATMCard",
           "role": "Back office"
         }
@@ -1919,6 +1983,9 @@
               ],
               "name": "Dispute",
               "provenance": null,
+              "redirects_native": [
+
+              ],
               "references": null,
               "role": "Customer"
             }
@@ -2330,6 +2397,9 @@
           ],
           "name": "Request",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Customer"
         },
@@ -2352,6 +2422,9 @@
           ],
           "name": "Debited",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Transfer",
           "role": "System"
         },
@@ -2374,6 +2447,9 @@
           ],
           "name": "Settle",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Transfer",
           "role": "System"
         },
@@ -2396,6 +2472,9 @@
           ],
           "name": "Credited",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Transfer",
           "role": "System"
         },
@@ -2418,6 +2497,9 @@
           ],
           "name": "Reverse",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Transfer",
           "role": "System"
         },
@@ -2440,6 +2522,9 @@
           ],
           "name": "Reject",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Transfer",
           "role": "System"
         }
@@ -2727,6 +2812,9 @@
           ],
           "name": "Authorize",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": null
         },
@@ -2749,6 +2837,9 @@
           ],
           "name": "Capture",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "CardPayment",
           "role": null
         },
@@ -2771,6 +2862,9 @@
           ],
           "name": "Void",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "CardPayment",
           "role": null
         },
@@ -2793,6 +2887,9 @@
           ],
           "name": "Refund",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "CardPayment",
           "role": null
         },
@@ -2815,6 +2912,9 @@
           ],
           "name": "Reverse",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "CardPayment",
           "role": null
         },
@@ -2852,6 +2952,9 @@
           ],
           "name": "Dispute",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "CardPayment",
           "role": "Customer"
         },
@@ -2874,6 +2977,9 @@
           ],
           "name": "Chargeback",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "CardPayment",
           "role": null
         },
@@ -2896,6 +3002,9 @@
           ],
           "name": "RejectDispute",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "CardPayment",
           "role": null
         }
@@ -3239,6 +3348,9 @@
           ],
           "name": "Request",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": null
         },
@@ -3261,6 +3373,9 @@
           ],
           "name": "Send",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ExternalTransfer",
           "role": null
         },
@@ -3283,6 +3398,9 @@
           ],
           "name": "Recall",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ExternalTransfer",
           "role": null
         },
@@ -3305,6 +3423,9 @@
           ],
           "name": "Return",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ExternalTransfer",
           "role": null
         }
@@ -3606,6 +3727,9 @@
           ],
           "name": "Schedule",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": null
         },
@@ -3628,6 +3752,9 @@
           ],
           "name": "Execute",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ScheduledPayment",
           "role": null
         },
@@ -3650,6 +3777,9 @@
           ],
           "name": "Cancel",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ScheduledPayment",
           "role": null
         },
@@ -3672,6 +3802,9 @@
           ],
           "name": "Fail",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ScheduledPayment",
           "role": "System"
         },
@@ -3709,6 +3842,9 @@
           ],
           "name": "Retry",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ScheduledPayment",
           "role": "System"
         },
@@ -3734,6 +3870,9 @@
           ],
           "name": "Abandon",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ScheduledPayment",
           "role": "Back office"
         }
@@ -4067,6 +4206,9 @@
           ],
           "name": "Rent",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Branch clerk"
         },
@@ -4093,6 +4235,9 @@
           ],
           "name": "Surrender",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "SafeDepositBox",
           "role": "Customer"
         },
@@ -4152,6 +4297,9 @@
           ],
           "name": "LogVisit",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "SafeDepositBox",
           "role": "Vault officer"
         },
@@ -4188,6 +4336,9 @@
           ],
           "name": "IssueKey",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "SafeDepositBox",
           "role": "Vault officer"
         }
@@ -4277,6 +4428,9 @@
               ],
               "name": "Annotate",
               "provenance": null,
+              "redirects_native": [
+
+              ],
               "references": null,
               "role": "Vault officer"
             }
@@ -4362,6 +4516,9 @@
               ],
               "name": "Return",
               "provenance": null,
+              "redirects_native": [
+
+              ],
               "references": null,
               "role": "Vault officer"
             }
@@ -4714,6 +4871,9 @@
           ],
           "name": "Open",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Branch clerk"
         },
@@ -4736,6 +4896,9 @@
           ],
           "name": "Clear",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "OnboardingCase",
           "role": "Compliance officer"
         },
@@ -4758,6 +4921,9 @@
           ],
           "name": "Decline",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "OnboardingCase",
           "role": "Compliance officer"
         }
@@ -4992,6 +5158,9 @@
           ],
           "name": "Generate",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "System"
         }
@@ -5182,6 +5351,7 @@
       "strategy": "replace"
     }
   ],
+  "category": null,
   "classification": "core",
   "ir_version": 1,
   "name": "Banking",
@@ -5232,6 +5402,7 @@
           "dispatches": [
             {
               "command_name": "Banking::Account.Debit",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -5254,12 +5425,24 @@
           ],
           "event_type": "TransferRequested",
           "from_state": "requested",
+          "guard_count": 0,
+          "remembers": [
+            [
+              "destination_account",
+              ":destination"
+            ],
+            [
+              "source_account",
+              ":source"
+            ]
+          ],
           "to_state": "requested"
         },
         {
           "dispatches": [
             {
               "command_name": "Banking::Transfer.Debited",
+              "for_each": null,
               "with_spec": [
                 [
                   "transfer",
@@ -5269,6 +5452,7 @@
             },
             {
               "command_name": "Banking::Account.Credit",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -5291,12 +5475,17 @@
           ],
           "event_type": "AccountDebited",
           "from_state": "requested",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "awaiting_credit"
         },
         {
           "dispatches": [
             {
               "command_name": "Banking::Transfer.Credited",
+              "for_each": null,
               "with_spec": [
                 [
                   "transfer",
@@ -5307,12 +5496,17 @@
           ],
           "event_type": "AccountCredited",
           "from_state": "awaiting_credit",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "awaiting_credit"
         },
         {
           "dispatches": [
             {
               "command_name": "Banking::Transfer.Settle",
+              "for_each": null,
               "with_spec": [
                 [
                   "transfer",
@@ -5323,12 +5517,17 @@
           ],
           "event_type": "TransferCredited",
           "from_state": "awaiting_credit",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "settled"
         },
         {
           "dispatches": [
             {
               "command_name": "Banking::Account.Credit",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -5346,6 +5545,7 @@
             },
             {
               "command_name": "Banking::Transfer.Reverse",
+              "for_each": null,
               "with_spec": [
                 [
                   "transfer",
@@ -5356,6 +5556,10 @@
           ],
           "event_type": "refused",
           "from_state": "awaiting_credit",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "reversed"
         }
       ],
@@ -5376,6 +5580,7 @@
           "dispatches": [
             {
               "command_name": "Banking::ExternalTransfer.Send",
+              "for_each": null,
               "with_spec": [
                 [
                   "end_to_end",
@@ -5386,12 +5591,17 @@
           ],
           "event_type": "ExternalTransferRequested",
           "from_state": "requested",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "requested"
         },
         {
           "dispatches": [
             {
               "command_name": "Banking::ExternalTransfer.Return",
+              "for_each": null,
               "with_spec": [
                 [
                   "end_to_end",
@@ -5402,6 +5612,10 @@
           ],
           "event_type": "refused",
           "from_state": "requested",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "returned"
         }
       ],
@@ -5421,6 +5635,7 @@
           "dispatches": [
             {
               "command_name": "Banking::Account.Open",
+              "for_each": null,
               "with_spec": [
                 [
                   "customer_id",
@@ -5443,6 +5658,10 @@
           ],
           "event_type": "OnboardingCleared",
           "from_state": "screening",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "cleared"
         },
         {
@@ -5451,6 +5670,10 @@
           ],
           "event_type": "OnboardingDeclined",
           "from_state": "screening",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "declined"
         }
       ],

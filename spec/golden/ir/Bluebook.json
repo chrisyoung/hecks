@@ -50,6 +50,15 @@
         {
           "admits": null,
           "default": null,
+          "list": false,
+          "name": "category",
+          "optional": false,
+          "pattern": null,
+          "type": "Category"
+        },
+        {
+          "admits": null,
+          "default": null,
           "list": true,
           "name": "normalisations",
           "optional": false,
@@ -104,6 +113,15 @@
               "optional": true,
               "pattern": null,
               "type": "FormerlyKnownAs"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "category",
+              "optional": true,
+              "pattern": null,
+              "type": "Category"
             }
           ],
           "emits": [
@@ -121,6 +139,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -185,11 +206,11 @@
           "mutations": [
             {
               "fields": {
-                "boundary": ":boundary",
-                "position": ":position",
-                "replacement": ":replacement",
-                "source_token": ":source_token",
-                "strategy": ":strategy"
+                "boundary": "boundary",
+                "position": "position",
+                "replacement": "replacement",
+                "source_token": "source_token",
+                "strategy": "strategy"
               },
               "op": "append",
               "target": "normalisations"
@@ -197,6 +218,9 @@
           ],
           "name": "Normalise",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Bluebook",
           "role": "Language"
         }
@@ -438,6 +462,30 @@
 
           ],
           "name": "FormerlyKnownAs"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "a category says something"
+            }
+          ],
+          "members": [
+
+          ],
+          "name": "Category"
         }
       ]
     },
@@ -607,6 +655,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -638,7 +689,7 @@
           "mutations": [
             {
               "fields": {
-                "value": ":path"
+                "value": "path"
               },
               "op": "append",
               "target": "identified_by"
@@ -646,6 +697,9 @@
           ],
           "name": "Identify",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -728,13 +782,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": ":admits",
-                "default": ":default",
-                "list": ":list",
-                "name": ":name",
-                "optional": ":optional",
-                "pattern": ":pattern",
-                "type": ":type"
+                "admits": "admits",
+                "default": "default",
+                "list": "list",
+                "name": "name",
+                "optional": "optional",
+                "pattern": "pattern",
+                "type": "type"
               },
               "op": "append",
               "target": "attributes"
@@ -742,6 +796,9 @@
           ],
           "name": "Attribute",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -824,13 +881,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": ":admits",
-                "default": ":default",
-                "list": ":list",
-                "name": ":name",
-                "optional": ":optional",
-                "pattern": ":pattern",
-                "type": ":points_at"
+                "admits": "admits",
+                "default": "default",
+                "list": "list",
+                "name": "name",
+                "optional": "optional",
+                "pattern": "pattern",
+                "type": "points_at"
               },
               "op": "append",
               "target": "attributes"
@@ -838,6 +895,9 @@
           ],
           "name": "Reference",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -920,13 +980,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": ":admits",
-                "default": ":default",
-                "list": ":list",
-                "name": ":name",
-                "optional": ":optional",
-                "pattern": ":pattern",
-                "type": ":holds"
+                "admits": "admits",
+                "default": "default",
+                "list": "list",
+                "name": "name",
+                "optional": "optional",
+                "pattern": "pattern",
+                "type": "holds"
               },
               "op": "append",
               "target": "attributes"
@@ -934,6 +994,9 @@
           ],
           "name": "Holds",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -988,6 +1051,9 @@
           ],
           "name": "Lifecycle",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -1034,9 +1100,9 @@
           "mutations": [
             {
               "fields": {
-                "command": ":command",
-                "from_state": ":from_state",
-                "to_state": ":to_state"
+                "command": "command",
+                "from_state": "from_state",
+                "to_state": "to_state"
               },
               "op": "append",
               "target": "transitions"
@@ -1044,6 +1110,9 @@
           ],
           "name": "Transition",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -1069,6 +1138,9 @@
           ],
           "name": "Seal",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         },
@@ -1097,7 +1169,7 @@
           "mutations": [
             {
               "fields": {
-                "name": ":name"
+                "name": "name"
               },
               "op": "append",
               "target": "value_objects"
@@ -1105,6 +1177,9 @@
           ],
           "name": "Value",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Aggregate",
           "role": "Language"
         }
@@ -1553,6 +1628,15 @@
         {
           "admits": null,
           "default": null,
+          "list": true,
+          "name": "redirects_native",
+          "optional": false,
+          "pattern": null,
+          "type": "RedirectTarget"
+        },
+        {
+          "admits": null,
+          "default": null,
           "list": false,
           "name": "references",
           "optional": false,
@@ -1696,6 +1780,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -1778,13 +1865,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": ":admits",
-                "default": ":default",
-                "list": ":list",
-                "name": ":name",
-                "optional": ":optional",
-                "pattern": ":pattern",
-                "type": ":type"
+                "admits": "admits",
+                "default": "default",
+                "list": "list",
+                "name": "name",
+                "optional": "optional",
+                "pattern": "pattern",
+                "type": "type"
               },
               "op": "append",
               "target": "attributes"
@@ -1792,6 +1879,9 @@
           ],
           "name": "Argument",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -1874,13 +1964,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": ":admits",
-                "default": ":default",
-                "list": ":list",
-                "name": ":name",
-                "optional": ":optional",
-                "pattern": ":pattern",
-                "type": ":points_at"
+                "admits": "admits",
+                "default": "default",
+                "list": "list",
+                "name": "name",
+                "optional": "optional",
+                "pattern": "pattern",
+                "type": "points_at"
               },
               "op": "append",
               "target": "attributes"
@@ -1888,6 +1978,9 @@
           ],
           "name": "Reference",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -1932,8 +2025,8 @@
           "mutations": [
             {
               "fields": {
-                "canonical": ":canonical",
-                "description": ":description"
+                "canonical": "canonical",
+                "description": "description"
               },
               "op": "append",
               "target": "givens"
@@ -1941,6 +2034,9 @@
           ],
           "name": "Rule",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -1985,8 +2081,8 @@
           "mutations": [
             {
               "fields": {
-                "canonical": ":canonical",
-                "description": ":description"
+                "canonical": "canonical",
+                "description": "description"
               },
               "op": "append",
               "target": "ensures"
@@ -1994,6 +2090,9 @@
           ],
           "name": "Ensure",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -2065,11 +2164,11 @@
           "mutations": [
             {
               "fields": {
-                "field": ":field",
-                "kind": ":kind",
-                "op": ":op",
-                "source": ":source",
-                "target": ":target"
+                "field": "field",
+                "kind": "kind",
+                "op": "op",
+                "source": "source",
+                "target": "target"
               },
               "op": "append",
               "target": "mutations"
@@ -2077,6 +2176,9 @@
           ],
           "name": "Change",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -2121,6 +2223,9 @@
           ],
           "name": "ActsOn",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         },
@@ -2152,7 +2257,7 @@
           "mutations": [
             {
               "fields": {
-                "name": ":announces"
+                "name": "announces"
               },
               "op": "append",
               "target": "emits"
@@ -2160,6 +2265,51 @@
           ],
           "name": "Announce",
           "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": "Command",
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "tool",
+              "optional": false,
+              "pattern": null,
+              "type": "EventName"
+            }
+          ],
+          "emits": [
+            "RedirectNativeAttached"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+            {
+              "canonical": "!tool.value.to_s.empty?",
+              "description": "a native tool is named"
+            }
+          ],
+          "goal": "Name one native tool this command is the storehouse-door equivalent for",
+          "mutations": [
+            {
+              "fields": {
+                "name": "tool"
+              },
+              "op": "append",
+              "target": "redirects_native"
+            }
+          ],
+          "name": "Redirect",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Command",
           "role": "Language"
         }
@@ -2315,6 +2465,27 @@
 
           ],
           "name": "Announcement"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "name",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "RedirectTarget"
         },
         {
           "attributes": [
@@ -2823,6 +2994,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -2869,9 +3043,9 @@
           "mutations": [
             {
               "fields": {
-                "field": ":field",
-                "op": ":op",
-                "value": ":value"
+                "field": "field",
+                "op": "op",
+                "value": "value"
               },
               "op": "append",
               "target": "wheres"
@@ -2879,6 +3053,9 @@
           ],
           "name": "Filter",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Query",
           "role": "Language"
         },
@@ -2937,10 +3114,10 @@
           "mutations": [
             {
               "fields": {
-                "at": ":at",
-                "key": ":key",
-                "option": ":option",
-                "value": ":value"
+                "at": "at",
+                "key": "key",
+                "option": "option",
+                "value": "value"
               },
               "op": "append",
               "target": "options"
@@ -2948,6 +3125,9 @@
           ],
           "name": "Option",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Query",
           "role": "Language"
         },
@@ -3030,13 +3210,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": ":admits",
-                "default": ":default",
-                "list": ":list",
-                "name": ":name",
-                "optional": ":optional",
-                "pattern": ":pattern",
-                "type": ":type"
+                "admits": "admits",
+                "default": "default",
+                "list": "list",
+                "name": "name",
+                "optional": "optional",
+                "pattern": "pattern",
+                "type": "type"
               },
               "op": "append",
               "target": "attributes"
@@ -3044,6 +3224,9 @@
           ],
           "name": "Argument",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Query",
           "role": "Language"
         }
@@ -3425,6 +3608,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -3507,13 +3693,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": ":admits",
-                "default": ":default",
-                "list": ":list",
-                "name": ":name",
-                "optional": ":optional",
-                "pattern": ":pattern",
-                "type": ":type"
+                "admits": "admits",
+                "default": "default",
+                "list": "list",
+                "name": "name",
+                "optional": "optional",
+                "pattern": "pattern",
+                "type": "type"
               },
               "op": "append",
               "target": "attributes"
@@ -3521,6 +3707,9 @@
           ],
           "name": "Field",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ValueObject",
           "role": "Language"
         },
@@ -3561,6 +3750,9 @@
           ],
           "name": "Close",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ValueObject",
           "role": "Language"
         },
@@ -3605,8 +3797,8 @@
           "mutations": [
             {
               "fields": {
-                "canonical": ":canonical",
-                "description": ":description"
+                "canonical": "canonical",
+                "description": "description"
               },
               "op": "append",
               "target": "invariants"
@@ -3614,6 +3806,9 @@
           ],
           "name": "Assert",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ValueObject",
           "role": "Language"
         }
@@ -3921,7 +4116,7 @@
               "default": null,
               "list": false,
               "name": "position",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "Position"
             }
@@ -3941,6 +4136,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -3981,8 +4179,8 @@
           "mutations": [
             {
               "fields": {
-                "key": ":key",
-                "value": ":value"
+                "key": "key",
+                "value": "value"
               },
               "op": "append",
               "target": "pairs"
@@ -3990,6 +4188,9 @@
           ],
           "name": "Pair",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Member",
           "role": "Language"
         }
@@ -4269,6 +4470,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -4300,7 +4504,7 @@
           "mutations": [
             {
               "fields": {
-                "value": ":path"
+                "value": "path"
               },
               "op": "append",
               "target": "identified_by"
@@ -4308,6 +4512,9 @@
           ],
           "name": "Identify",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         },
@@ -4333,6 +4540,9 @@
           ],
           "name": "Seal",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         },
@@ -4415,13 +4625,13 @@
           "mutations": [
             {
               "fields": {
-                "admits": ":admits",
-                "default": ":default",
-                "list": ":list",
-                "name": ":name",
-                "optional": ":optional",
-                "pattern": ":pattern",
-                "type": ":type"
+                "admits": "admits",
+                "default": "default",
+                "list": "list",
+                "name": "name",
+                "optional": "optional",
+                "pattern": "pattern",
+                "type": "type"
               },
               "op": "append",
               "target": "attributes"
@@ -4429,6 +4639,9 @@
           ],
           "name": "Attribute",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         },
@@ -4483,6 +4696,9 @@
           ],
           "name": "Lifecycle",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         },
@@ -4529,9 +4745,9 @@
           "mutations": [
             {
               "fields": {
-                "command": ":command",
-                "from_state": ":from_state",
-                "to_state": ":to_state"
+                "command": "command",
+                "from_state": "from_state",
+                "to_state": "to_state"
               },
               "op": "append",
               "target": "transitions"
@@ -4539,6 +4755,9 @@
           ],
           "name": "Transition",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Entity",
           "role": "Language"
         }
@@ -4938,6 +5157,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         }
@@ -5193,6 +5415,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -5221,7 +5446,7 @@
           "mutations": [
             {
               "fields": {
-                "name": ":name"
+                "name": "name"
               },
               "op": "append",
               "target": "states"
@@ -5229,6 +5454,9 @@
           ],
           "name": "State",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ProcessManager",
           "role": "Language"
         }
@@ -5407,6 +5635,24 @@
         {
           "admits": null,
           "default": null,
+          "list": true,
+          "name": "remembers",
+          "optional": false,
+          "pattern": null,
+          "type": "Remembered"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "guard_count",
+          "optional": false,
+          "pattern": null,
+          "type": "GuardCount"
+        },
+        {
+          "admits": null,
+          "default": null,
           "list": false,
           "name": "position",
           "optional": false,
@@ -5457,6 +5703,15 @@
               "admits": null,
               "default": null,
               "list": false,
+              "name": "guard_count",
+              "optional": true,
+              "pattern": null,
+              "type": "GuardCount"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
               "name": "position",
               "optional": true,
               "pattern": null,
@@ -5478,7 +5733,59 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "key",
+              "optional": false,
+              "pattern": null,
+              "type": "HandlerText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "HandlerText"
+            }
+          ],
+          "emits": [
+            "RememberedAttached"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": "Attach one remembered key/value pair to the handler",
+          "mutations": [
+            {
+              "fields": {
+                "key": "key",
+                "value": "value"
+              },
+              "op": "append",
+              "target": "remembers"
+            }
+          ],
+          "name": "Remember",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": "Handler",
           "role": "Language"
         }
       ],
@@ -5488,7 +5795,8 @@
       ],
       "identified_by": [
         "process_manager_id",
-        "event_type.value"
+        "event_type.value",
+        "from_state.value"
       ],
       "lifecycle": null,
       "name": "Handler",
@@ -5546,6 +5854,60 @@
 
           ],
           "name": "HandlerText"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "key",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "Remembered"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "Integer"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+            {
+              "canonical": "value >= 0",
+              "description": "a guard count is never negative"
+            }
+          ],
+          "members": [
+
+          ],
+          "name": "GuardCount"
         },
         {
           "attributes": [
@@ -5673,6 +6035,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -5710,8 +6075,8 @@
           "mutations": [
             {
               "fields": {
-                "key": ":key",
-                "value": ":value"
+                "key": "key",
+                "value": "value"
               },
               "op": "append",
               "target": "with_spec"
@@ -5719,6 +6084,9 @@
           ],
           "name": "Bind",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Dispatch",
           "role": "Language"
         }
@@ -5729,7 +6097,8 @@
       ],
       "identified_by": [
         "handler_id",
-        "command_name.value"
+        "command_name.value",
+        "position.value"
       ],
       "lifecycle": null,
       "name": "Dispatch",
@@ -6401,6 +6770,36 @@
                 "sign",
                 "-1"
               ]
+            ],
+            [
+              [
+                "name",
+                "multiply"
+              ],
+              [
+                "sign",
+                ""
+              ]
+            ],
+            [
+              [
+                "name",
+                "clamp"
+              ],
+              [
+                "sign",
+                ""
+              ]
+            ],
+            [
+              [
+                "name",
+                "remove"
+              ],
+              [
+                "sign",
+                ""
+              ]
             ]
           ],
           "name": "MutationOp"
@@ -6468,6 +6867,12 @@
               [
                 "name",
                 "contains"
+              ]
+            ],
+            [
+              [
+                "name",
+                "none_in_state"
               ]
             ]
           ],
@@ -7335,20 +7740,6 @@
               ],
               [
                 "site",
-                "value_object_invariant"
-              ],
-              [
-                "template",
-                "{name} invariant violated — {description} (given {offered})"
-              ]
-            ],
-            [
-              [
-                "refusal",
-                "InvariantViolation"
-              ],
-              [
-                "site",
                 "admits_declared_set"
               ],
               [
@@ -7426,100 +7817,6 @@
             ]
           ],
           "name": "Trigger"
-        },
-        {
-          "attributes": [
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
-              "name": "name",
-              "optional": false,
-              "pattern": null,
-              "type": "String"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
-              "name": "pattern",
-              "optional": false,
-              "pattern": null,
-              "type": "String"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
-              "name": "resolves_to",
-              "optional": false,
-              "pattern": null,
-              "type": "String"
-            }
-          ],
-          "closed_set": true,
-          "invariants": [
-
-          ],
-          "members": [
-            [
-              [
-                "name",
-                "email"
-              ],
-              [
-                "pattern",
-                "email"
-              ],
-              [
-                "resolves_to",
-                "html_type"
-              ]
-            ],
-            [
-              [
-                "name",
-                "url"
-              ],
-              [
-                "pattern",
-                "\\b(url|uri|website|link)\\b"
-              ],
-              [
-                "resolves_to",
-                "html_type"
-              ]
-            ],
-            [
-              [
-                "name",
-                "tel"
-              ],
-              [
-                "pattern",
-                "phone|\\btel(ephone)?\\b"
-              ],
-              [
-                "resolves_to",
-                "html_type"
-              ]
-            ],
-            [
-              [
-                "name",
-                "textarea"
-              ],
-              [
-                "pattern",
-                "\\b(text|body|note|notes|description|message|comment)\\b"
-              ],
-              [
-                "resolves_to",
-                "kind"
-              ]
-            ]
-          ],
-          "name": "FieldHint"
         }
       ]
     },
@@ -8306,6 +8603,240 @@
             [
               [
                 "word",
+                "category"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "category"
+              ]
+            ],
+            [
+              [
+                "word",
+                "glossary"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "entrypoint"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "fixture"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "section"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "define"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "lifecycle"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "event"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "actor"
+              ],
+              [
+                "context",
+                "Bluebook"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
                 "description"
               ],
               [
@@ -8367,32 +8898,6 @@
               [
                 "body",
                 "source"
-              ],
-              [
-                "inner",
-                ""
-              ],
-              [
-                "opens",
-                ""
-              ],
-              [
-                "fills",
-                "identified_by"
-              ]
-            ],
-            [
-              [
-                "word",
-                "identified_by"
-              ],
-              [
-                "context",
-                "Aggregate"
-              ],
-              [
-                "body",
-                "none"
               ],
               [
                 "inner",
@@ -8696,6 +9201,136 @@
             [
               [
                 "word",
+                "invariant"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "rule"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "specification"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "fixture"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "validation"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
                 "description"
               ],
               [
@@ -8748,7 +9383,7 @@
             [
               [
                 "word",
-                "identified_by"
+                "reference_to"
               ],
               [
                 "context",
@@ -8768,7 +9403,7 @@
               ],
               [
                 "fills",
-                "identified_by"
+                "attributes"
               ]
             ],
             [
@@ -8853,32 +9488,6 @@
               [
                 "word",
                 "attribute"
-              ],
-              [
-                "context",
-                "Entity"
-              ],
-              [
-                "body",
-                "none"
-              ],
-              [
-                "inner",
-                ""
-              ],
-              [
-                "opens",
-                ""
-              ],
-              [
-                "fills",
-                "attributes"
-              ]
-            ],
-            [
-              [
-                "word",
-                "reference_to"
               ],
               [
                 "context",
@@ -9034,6 +9643,84 @@
             [
               [
                 "word",
+                "description"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "goal"
+              ]
+            ],
+            [
+              [
+                "word",
+                "expects"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "givens"
+              ]
+            ],
+            [
+              [
+                "word",
+                "requires"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "givens"
+              ]
+            ],
+            [
+              [
+                "word",
                 "sets"
               ],
               [
@@ -9116,6 +9803,32 @@
             [
               [
                 "word",
+                "redirects_native"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "redirects_native"
+              ]
+            ],
+            [
+              [
+                "word",
                 "attribute"
               ],
               [
@@ -9189,6 +9902,58 @@
               [
                 "fills",
                 "invariants"
+              ]
+            ],
+            [
+              [
+                "word",
+                "rule"
+              ],
+              [
+                "context",
+                "ValueObject"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "invariants"
+              ]
+            ],
+            [
+              [
+                "word",
+                "description"
+              ],
+              [
+                "context",
+                "ValueObject"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
               ]
             ],
             [
@@ -9324,6 +10089,214 @@
             [
               [
                 "word",
+                "description"
+              ],
+              [
+                "context",
+                "Policy"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "where"
+              ],
+              [
+                "context",
+                "Policy"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "for_each"
+              ],
+              [
+                "context",
+                "Policy"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "from_event"
+              ],
+              [
+                "context",
+                "Policy"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "with"
+              ],
+              [
+                "context",
+                "Policy"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "map"
+              ],
+              [
+                "context",
+                "Policy"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "condition"
+              ],
+              [
+                "context",
+                "Policy"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "cross_domain"
+              ],
+              [
+                "context",
+                "Policy"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
                 "correlates_by"
               ],
               [
@@ -9428,6 +10401,32 @@
             [
               [
                 "word",
+                "description"
+              ],
+              [
+                "context",
+                "ProcessManager"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
                 "on"
               ],
               [
@@ -9471,6 +10470,188 @@
               [
                 "opens",
                 "Dispatch"
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "given"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "remember"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "set"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "from_event"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "from_iter"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "from_pm"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "template"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
               ],
               [
                 "fills",
@@ -9839,6 +11020,110 @@
               [
                 "fills",
                 "options"
+              ]
+            ],
+            [
+              [
+                "word",
+                "count"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "median"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "group_by"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "scope_to"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
               ]
             ],
             [
@@ -10312,6 +11597,32 @@
             [
               [
                 "word",
+                "guarantees"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "source"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "ensures"
+              ]
+            ],
+            [
+              [
+                "word",
                 "subscribe"
               ],
               [
@@ -10359,6 +11670,110 @@
               [
                 "fills",
                 "framework_members"
+              ]
+            ],
+            [
+              [
+                "word",
+                "adapter"
+              ],
+              [
+                "context",
+                "Hecksagon"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "gate"
+              ],
+              [
+                "context",
+                "Hecksagon"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "success"
+              ],
+              [
+                "context",
+                "Hecksagon"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "failure"
+              ],
+              [
+                "context",
+                "Hecksagon"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
               ]
             ],
             [
@@ -10991,96 +12406,6 @@
             [
               [
                 "keyword",
-                "identified_by"
-              ],
-              [
-                "context",
-                "Aggregate"
-              ],
-              [
-                "at",
-                "1"
-              ],
-              [
-                "named",
-                ""
-              ],
-              [
-                "kind",
-                "symbol"
-              ],
-              [
-                "required",
-                "false"
-              ],
-              [
-                "fills",
-                "identified_by"
-              ]
-            ],
-            [
-              [
-                "keyword",
-                "identified_by"
-              ],
-              [
-                "context",
-                "Aggregate"
-              ],
-              [
-                "at",
-                "1"
-              ],
-              [
-                "named",
-                ""
-              ],
-              [
-                "kind",
-                "constant"
-              ],
-              [
-                "required",
-                "false"
-              ],
-              [
-                "fills",
-                "type"
-              ]
-            ],
-            [
-              [
-                "keyword",
-                "identified_by"
-              ],
-              [
-                "context",
-                "Aggregate"
-              ],
-              [
-                "at",
-                ""
-              ],
-              [
-                "named",
-                "as"
-              ],
-              [
-                "kind",
-                "symbol"
-              ],
-              [
-                "required",
-                "false"
-              ],
-              [
-                "fills",
-                "name"
-              ]
-            ],
-            [
-              [
-                "keyword",
                 "reference_to"
               ],
               [
@@ -11136,6 +12461,96 @@
               [
                 "fills",
                 "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "optional"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
               ]
             ],
             [
@@ -11711,6 +13126,126 @@
             [
               [
                 "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "required"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "logged"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "logged"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "enum"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "description"
               ],
               [
@@ -11736,96 +13271,6 @@
               [
                 "fills",
                 "description"
-              ]
-            ],
-            [
-              [
-                "keyword",
-                "identified_by"
-              ],
-              [
-                "context",
-                "Entity"
-              ],
-              [
-                "at",
-                "1"
-              ],
-              [
-                "named",
-                ""
-              ],
-              [
-                "kind",
-                "symbol"
-              ],
-              [
-                "required",
-                "false"
-              ],
-              [
-                "fills",
-                "identified_by"
-              ]
-            ],
-            [
-              [
-                "keyword",
-                "identified_by"
-              ],
-              [
-                "context",
-                "Entity"
-              ],
-              [
-                "at",
-                "1"
-              ],
-              [
-                "named",
-                ""
-              ],
-              [
-                "kind",
-                "constant"
-              ],
-              [
-                "required",
-                "false"
-              ],
-              [
-                "fills",
-                "type"
-              ]
-            ],
-            [
-              [
-                "keyword",
-                "identified_by"
-              ],
-              [
-                "context",
-                "Entity"
-              ],
-              [
-                "at",
-                ""
-              ],
-              [
-                "named",
-                "as"
-              ],
-              [
-                "kind",
-                "symbol"
-              ],
-              [
-                "required",
-                "false"
-              ],
-              [
-                "fills",
-                "name"
               ]
             ],
             [
@@ -12131,37 +13576,7 @@
             [
               [
                 "keyword",
-                "reference_to"
-              ],
-              [
-                "context",
-                "Entity"
-              ],
-              [
-                "at",
-                "1"
-              ],
-              [
-                "named",
-                ""
-              ],
-              [
-                "kind",
-                "constant"
-              ],
-              [
-                "required",
-                "true"
-              ],
-              [
-                "fills",
-                "type"
-              ]
-            ],
-            [
-              [
-                "keyword",
-                "reference_to"
+                "attribute"
               ],
               [
                 "context",
@@ -12191,6 +13606,96 @@
             [
               [
                 "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "required"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "logged"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "logged"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "enum"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "role"
               ],
               [
@@ -12212,6 +13717,36 @@
               [
                 "required",
                 "true"
+              ],
+              [
+                "fills",
+                "role"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "role"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "false"
               ],
               [
                 "fills",
@@ -12567,6 +14102,142 @@
             [
               [
                 "keyword",
+                "sets"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "from"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=set"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "sets"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "multiply"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=multiply"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "sets"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "clamp"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=clamp"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "sets"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "remove"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=remove"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "emits"
               ],
               [
@@ -12781,6 +14452,126 @@
               ],
               [
                 "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "required"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "logged"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "logged"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "enum"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
                 "ValueObject"
               ],
               [
@@ -12952,6 +14743,126 @@
               [
                 "fills",
                 "admits"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "ValueObject"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "ValueObject"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "required"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "ValueObject"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "logged"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "logged"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "ValueObject"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "enum"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
               ]
             ],
             [
@@ -13499,6 +15410,36 @@
             [
               [
                 "keyword",
+                "dispatch"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "for_each"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "for_each"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "description"
               ],
               [
@@ -13704,6 +15645,126 @@
               [
                 "fills",
                 "admits"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "required"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "logged"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "logged"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "enum"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
               ]
             ],
             [
@@ -15371,6 +17432,126 @@
             [
               [
                 "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "PortOperation"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "PortOperation"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "required"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "PortOperation"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "logged"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "logged"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "attribute"
+              ],
+              [
+                "context",
+                "PortOperation"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "enum"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "emits"
               ],
               [
@@ -15638,6 +17819,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Language"
         },
@@ -15684,9 +17868,9 @@
           "mutations": [
             {
               "fields": {
-                "aggregate": ":aggregate",
-                "as": ":as",
-                "many": ":many"
+                "aggregate": "aggregate",
+                "as": "as",
+                "many": "many"
               },
               "op": "append",
               "target": "aggregate_heads"
@@ -15694,6 +17878,9 @@
           ],
           "name": "Gather",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ReadModel",
           "role": "Language"
         },
@@ -15725,7 +17912,7 @@
           "mutations": [
             {
               "fields": {
-                "field": ":field"
+                "field": "field"
               },
               "op": "append",
               "target": "group_by"
@@ -15733,6 +17920,9 @@
           ],
           "name": "GroupBy",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ReadModel",
           "role": "Language"
         },
@@ -15791,10 +17981,10 @@
           "mutations": [
             {
               "fields": {
-                "at": ":at",
-                "key": ":key",
-                "option": ":option",
-                "value": ":value"
+                "at": "at",
+                "key": "key",
+                "option": "option",
+                "value": "value"
               },
               "op": "append",
               "target": "options"
@@ -15802,6 +17992,9 @@
           ],
           "name": "Option",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "ReadModel",
           "role": "Language"
         }
@@ -16070,6 +18263,7 @@
       "strategy": "replace"
     }
   ],
+  "category": null,
   "classification": "core",
   "ir_version": 1,
   "name": "Bluebook",
@@ -16147,15 +18341,10 @@
       "group_by": [
 
       ],
-      "limit": null,
       "name": "WholeBluebook",
-      "order_by": null,
       "query_name": "whole_bluebook",
       "reference_name": "bluebook",
-      "reference_target": "Bluebook",
-      "wheres": [
-
-      ]
+      "reference_target": "Bluebook"
     }
   ],
   "version": "1",

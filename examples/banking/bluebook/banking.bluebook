@@ -353,7 +353,10 @@ Hecks.bluebook "Banking", version: "v1" do
       # compliance freeze is exactly the shape of command a governed-door
       # tool substitution stands in for (a native "hold" action gated the
       # same way a native tool call would be).
-      redirects_native "ComplianceHold"
+      # Two tools, not one — Command.redirects_native is a list, and a
+      # corpus that only ever fills it once is indistinguishable from a
+      # scalar (spec/plurality_coverage_spec's own concern).
+      redirects_native "ComplianceHold", "AccountLock"
       emits "AccountFrozen"
     end
 
@@ -1446,10 +1449,13 @@ Hecks.bluebook "Banking", version: "v1" do
 
     on "TransferRequested", transition: { "requested" => "requested" } do
       # Exercises `remember` (docs/hecks-migration-findings.md finding #7)
-      # somewhere in the judged corpus — the destination account written
-      # forward into the saga's own carried memory, the mechanism
-      # `from_pm` reads back later in the same conversation.
-      remember destination_account: :destination
+      # somewhere in the judged corpus — the destination account AND the
+      # source account written forward into the saga's own carried
+      # memory, the mechanism `from_pm` reads back later in the same
+      # conversation. Two keys, not one — Handler.remembers is a list,
+      # and a corpus that only ever fills it once is indistinguishable
+      # from a scalar (spec/plurality_coverage_spec's own concern).
+      remember destination_account: :destination, source_account: :source
       # Debit never declared :destination — the credit leg reads it from the saga's
       # memory of the opening payload. `reference:` carries the correlation
       # forward — Account.Debit does not reference Transfer, so this is pure

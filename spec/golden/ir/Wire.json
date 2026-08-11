@@ -51,6 +51,9 @@
           ],
           "name": "Open",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Clerk"
         },
@@ -91,6 +94,9 @@
           ],
           "name": "Put",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Drawer",
           "role": "Clerk"
         },
@@ -135,6 +141,9 @@
           ],
           "name": "Take",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Drawer",
           "role": "Clerk"
         },
@@ -157,6 +166,9 @@
           ],
           "name": "Shut",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Drawer",
           "role": "Clerk"
         },
@@ -179,6 +191,9 @@
           ],
           "name": "Reopen",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Drawer",
           "role": "Clerk"
         }
@@ -381,6 +396,9 @@
           ],
           "name": "Ask",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Customer"
         },
@@ -403,6 +421,9 @@
           ],
           "name": "Moved",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Wire",
           "role": "System"
         },
@@ -425,6 +446,9 @@
           ],
           "name": "Landed",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Wire",
           "role": "System"
         },
@@ -447,6 +471,9 @@
           ],
           "name": "Returned",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Wire",
           "role": "System"
         }
@@ -549,6 +576,7 @@
       "strategy": "replace"
     }
   ],
+  "category": null,
   "classification": "core",
   "ir_version": 1,
   "name": "Wire",
@@ -564,6 +592,7 @@
           "dispatches": [
             {
               "command_name": "Wire::Drawer.Take",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -582,12 +611,17 @@
           ],
           "event_type": "WireAsked",
           "from_state": "asked",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "asked"
         },
         {
           "dispatches": [
             {
               "command_name": "Wire::Wire.Moved",
+              "for_each": null,
               "with_spec": [
                 [
                   "wire",
@@ -597,6 +631,7 @@
             },
             {
               "command_name": "Wire::Drawer.Put",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -615,12 +650,17 @@
           ],
           "event_type": "Taken",
           "from_state": "asked",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "carrying"
         },
         {
           "dispatches": [
             {
               "command_name": "Wire::Wire.Landed",
+              "for_each": null,
               "with_spec": [
                 [
                   "wire",
@@ -631,12 +671,17 @@
           ],
           "event_type": "PutIn",
           "from_state": "carrying",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "landed"
         },
         {
           "dispatches": [
             {
               "command_name": "Wire::Drawer.Put",
+              "for_each": null,
               "with_spec": [
                 [
                   "number",
@@ -654,6 +699,7 @@
             },
             {
               "command_name": "Wire::Wire.Returned",
+              "for_each": null,
               "with_spec": [
                 [
                   "wire",
@@ -664,6 +710,10 @@
           ],
           "event_type": "refused",
           "from_state": "carrying",
+          "guard_count": 0,
+          "remembers": [
+
+          ],
           "to_state": "returned"
         }
       ],

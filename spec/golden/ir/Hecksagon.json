@@ -58,6 +58,9 @@
           ],
           "name": "Declare",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Deployment"
         },
@@ -94,6 +97,9 @@
           ],
           "name": "Subscribe",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Hecksagon",
           "role": "Deployment"
         },
@@ -130,6 +136,9 @@
           ],
           "name": "UsesFramework",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Hecksagon",
           "role": "Deployment"
         }
@@ -349,6 +358,9 @@
           ],
           "name": "Bind",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Deployment"
         }
@@ -633,6 +645,7 @@
       "strategy": "replace"
     }
   ],
+  "category": null,
   "classification": "core",
   "ir_version": 1,
   "name": "Hecksagon",

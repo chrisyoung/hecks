@@ -59,6 +59,19 @@ module Hecksagain
             vision:           text(@chapter[:vision]),
             classification:   text(@chapter[:classification]),
             formerly_known_as: text(@chapter[:formerly_known_as]),
+            # Vendored addition, not (yet) upstream hecksagain (migration
+            # plan task 4): `category` reached `assembly/contracts.rb`'s
+            # Bluebook contract and bluebook.bluebook's own self-hosted
+            # schema, but this method is hand-written rather than built
+            # off the contract table the way `declaration()` is for every
+            # OTHER category — so it still needed its own line, or
+            # `Hecks.bluebook` (which always routes through
+            # `MetaValidator.call` -> this) would silently drop a
+            # declared `category` on every real boot. The round-trip
+            # corpus never exercises `category` (no fixture calls it), so
+            # this was invisible there — found by a real dsl_spec.rb unit
+            # test asserting a non-nil value survives.
+            category:         text(@chapter[:category]),
             aggregates:       declared("Aggregate", chapter_id).map { |row| aggregate(row) },
             read_models:      declared("ReadModel", chapter_id).map { |row| read_model(row) },
             policies:         declared("Policy", chapter_id).map { |row| policy(row) },

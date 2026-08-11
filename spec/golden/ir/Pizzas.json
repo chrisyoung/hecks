@@ -76,6 +76,9 @@
           ],
           "name": "CreatePizza",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": null,
           "role": "Chef"
         },
@@ -129,6 +132,9 @@
           ],
           "name": "AddTopping",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Order",
           "role": "Chef"
         },
@@ -194,6 +200,9 @@
           ],
           "name": "Purchase",
           "provenance": null,
+          "redirects_native": [
+
+          ],
           "references": "Order",
           "role": "Customer"
         }
@@ -520,6 +529,7 @@
       "strategy": "replace"
     }
   ],
+  "category": null,
   "classification": "supporting",
   "ir_version": 1,
   "name": "Pizzas",
