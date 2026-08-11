@@ -35,6 +35,16 @@ module Hecksagain
 
         repository = @registry.repository(domain, aggregate)
 
+        # Vendored addition, not (yet) upstream hecksagain (migration plan
+        # task 4): `query "Count" do count end` -- a scalar row-count ask.
+        # Reuses the SAME filtering (`interpret`, wheres/order_by/limit
+        # all still apply) rather than a separate code path, then answers
+        # with the size instead of the mapped records -- so a `count`
+        # query with its own where-clauses counts a FILTERED set, not the
+        # whole table, matching what a bluebook author would expect
+        # `where`+`count` together to mean.
+        return interpret(repository.all, declared, args).size if declared.count
+
         # Vendored addition, not (yet) upstream hecksagain (migration
         # plan task 8): `group_by :field` -- the SAME filtered-set
         # starting point as an ordinary query, partitioned by `field`'s

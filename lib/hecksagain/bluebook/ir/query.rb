@@ -21,8 +21,15 @@ module Hecksagain
       class Query < QuerySpecification::Common::Options
         include Construct
 
-        attr_reader :name, :description, :attributes, :group_by_field
+        attr_reader :name, :description, :attributes, :count, :group_by_field
 
+        # `count:`, vendored addition not (yet) upstream hecksagain
+        # (migration plan task 4): `query "Count" do count end`
+        # (framework/web_debug/bluebook/web_debug.bluebook) -- a scalar
+        # row-count ask, not a filtered record list. See
+        # Runtime::QueryInterpreter#call's own comment for the
+        # evaluation side (returns an Integer instead of an Array).
+        #
         # `group_by_field:`, vendored addition not (yet) upstream
         # hecksagain (migration plan task 8): `group_by :field` -- a
         # third aggregation shape, partition-and-tally rather than
@@ -30,7 +37,7 @@ module Hecksagain
         def initialize(name:, description: nil, attributes: [], wheres: [],
                        order_by: nil, limit: nil, offset: nil, cursor: nil,
                        consistency: nil, freshness: nil, authorization: nil, null_semantics: nil,
-                       inspection: nil, index_hints: [], group_by_field: nil)
+                       inspection: nil, index_hints: [], count: false, group_by_field: nil)
           null_semantics ||= QuerySpecification::Common::NullSemantics.default
           super(wheres: wheres, order_by: order_by, limit: limit, offset: offset, cursor: cursor,
                 consistency: consistency, freshness: freshness, authorization: authorization,
@@ -39,6 +46,7 @@ module Hecksagain
           @hecks_name  = @name
           @description = description
           @attributes  = attributes
+          @count       = count
           @group_by_field = group_by_field
         end
 

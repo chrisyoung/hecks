@@ -13,6 +13,9 @@ module Hecksagain
 
         def description(value) = @description = value
 
+        # `count` -- see IR::Query's own comment.
+        def count = @count = true
+
         # `group_by :field` -- a real, third scalar-reduction shape
         # alongside `count`/`median`, except it doesn't reduce to ONE
         # scalar -- it partitions the where-filtered set by `field`'s
@@ -52,6 +55,7 @@ module Hecksagain
             null_semantics: @null_semantics,
             inspection: @inspection,
             index_hints: @index_hints || [],
+            count: @count || false,
             group_by_field: @group_by_field
           )
         end
