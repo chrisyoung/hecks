@@ -46,6 +46,27 @@ module Hecksagain
         return interpret(repository.all, declared, args).size if declared.count
 
         # Vendored addition, not (yet) upstream hecksagain (migration
+        # plan task 8): `median :field` -- the SAME filtered-then-reduce
+        # shape as `count` just above, one field further (deciderate's
+        # own Consensus query: "the median estimate across a decision's
+        # submissions" -- a where-filtered set folded to one number).
+        # Standard median (sorted middle value ; average of the two
+        # middle values on an even count) over whichever scalars the
+        # field actually holds -- `comparable` unwraps a Value/Hash field
+        # the same way ordering/comparison already do elsewhere in this
+        # file, so a VO-wrapped numeric field reduces the same as a bare
+        # one. An empty filtered set has no median -- nil, not a crash.
+        if declared.median_field
+          values = interpret(repository.all, declared, args)
+                     .map { |row| comparable(row[declared.median_field]) }
+                     .compact.sort
+          return nil if values.empty?
+
+          mid = values.size / 2
+          return values.size.odd? ? values[mid] : (values[mid - 1] + values[mid]) / 2.0
+        end
+
+        # Vendored addition, not (yet) upstream hecksagain (migration
         # plan task 8): `group_by :field` -- the SAME filtered-set
         # starting point as an ordinary query, partitioned by `field`'s
         # value instead of returned as a flat list (deciderate's own

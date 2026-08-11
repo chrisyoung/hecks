@@ -16,6 +16,16 @@ module Hecksagain
         # `count` -- see IR::Query's own comment.
         def count = @count = true
 
+        # `median :field` -- the SAME shape as `count` (a scalar
+        # reduction over the filtered set, riding the where-clauses
+        # that already apply), one field further -- deciderate's own
+        # vision names this explicitly ("proves the grown query DSL
+        # (aggregation)"; Consensus.median :estimate -- "the ESTIMATION
+        # answer: the median estimate across a decision's submissions").
+        # See Runtime::QueryInterpreter#call's own comment for the
+        # evaluation side.
+        def median(field) = @median_field = field.to_sym
+
         # `group_by :field` -- a real, third scalar-reduction shape
         # alongside `count`/`median`, except it doesn't reduce to ONE
         # scalar -- it partitions the where-filtered set by `field`'s
@@ -56,6 +66,7 @@ module Hecksagain
             inspection: @inspection,
             index_hints: @index_hints || [],
             count: @count || false,
+            median_field: @median_field,
             group_by_field: @group_by_field
           )
         end
