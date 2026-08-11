@@ -80,11 +80,27 @@ module Hecksagain
             ensures:    [:ensures,    [:each, :given]],
             mutations:  [:mutations,  [:each, :mutation]],
             emits:      [:emits,      :plain],
-            provenance: [:provenance, :plain]
+            provenance: [:provenance, :plain],
+            # Vendored addition, not (yet) upstream hecksagain (migration
+            # plan task 5): this Contract REBUILDS Command objects via
+            # `IR::Command.declare(**fields)` (the self-hosted meta-
+            # validator's own judging pass reads bluebook structure back
+            # through contracts like this one) -- `redirects_native` was
+            # never added to the field list, so `declare`'s own default
+            # (`redirects_native: []`) silently WON on every rebuilt
+            # command, discarding whatever the original DSL declaration
+            # actually said. Found live, not by inspection: a real
+            # `storehouse mailboxes`-adapter-facing check
+            # (GovernedDoor.LookupDoor) queried FileTool.Read's own
+            # `redirects_native "Read"` and got `[]` back -- the hard
+            # PreToolUse block's entire mechanism depends on this field
+            # surviving. Same shape as `emits`, a plain string list.
+            redirects_native: [:redirects_native, :plain]
           },
           rows: { mutations: :mutation_rows },
           reads: { attributes: [:each, :shape_field], givens: [:each, :rule], ensures: [:each, :rule],
-                  mutations: [:call, :mutations], emits: :names, provenance: :provenance },
+                  mutations: [:call, :mutations], emits: :names, provenance: :provenance,
+                  redirects_native: :names },
           derived: { position: :walk }
         ),
 

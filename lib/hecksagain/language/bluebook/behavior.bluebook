@@ -35,6 +35,14 @@ Hecks.bluebook "Bluebook" do
     attribute :role,       Actor
     attribute :goal,       Goal
     attribute :emits,      list_of(Announcement)
+    # Vendored addition, not (yet) upstream hecksagain (migration plan task
+    # 5): the self-hosted grammar's OWN "Command" aggregate never declared
+    # this field, so the meta-domain had nowhere to WRITE it even though
+    # IR::Command#to_h carries it (see ir/command.rb's own comment) and
+    # assembly/contracts.rb already reads it back on the way out. Same
+    # shape as `emits` -- a plain string list, one RedirectTarget row per
+    # native tool name. TODO upstream via bin/evolve (migration plan task 7).
+    attribute :redirects_native, list_of(RedirectTarget)
     attribute :references, EventName
     attribute :attributes, list_of(Argument)
     attribute :givens,     list_of(Rule)
@@ -68,6 +76,14 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "Announcement" do
+      attribute :name, String
+    end
+
+    # Vendored addition, not (yet) upstream hecksagain (migration plan task
+    # 5): the list-element counterpart to `redirects_native` above, same
+    # single-field shape as `Announcement` -- a bare tool name, not a
+    # structured row. TODO upstream via bin/evolve (migration plan task 7).
+    value_object "RedirectTarget" do
       attribute :name, String
     end
 
@@ -311,6 +327,32 @@ Hecks.bluebook "Bluebook" do
       then_set :emits, append: { name: :announces }
 
       emits "AnnouncementNamed"
+    end
+
+    # Vendored addition, not (yet) upstream hecksagain (migration plan task
+    # 5): the missing sub-command that closes the governed-door gap traced
+    # in the migration plan's own "the governed-door gap, traced to its
+    # actual root" section -- the Judge (bluebook/meta_validator/judge.rb)
+    # walks a built IR and fires one dispatch per list-append mutation, read
+    # generically off THIS file's own `then_set ..., append:` declarations
+    # (see meta_validator/plan.rb's `appends_in`) -- so no separate "walker"
+    # needed touching; declaring the append verb here is sufficient for the
+    # Judge to discover and fire it. Mirrors `Announce` above exactly,
+    # since `redirects_native` is the same shape as `emits` (a plain list of
+    # bare tool-name strings), not `Argument`'s multi-field row.
+    # TODO upstream via bin/evolve (migration plan task 7).
+    command "Redirect" do
+      role "Language"
+      goal "Name one native tool this command is the storehouse-door equivalent for"
+
+      reference_to Command
+      attribute :tool, EventName
+
+      given("a native tool is named") { !tool.value.to_s.empty? }
+
+      then_set :redirects_native, append: { name: :tool }
+
+      emits "RedirectNativeAttached"
     end
   end
 
