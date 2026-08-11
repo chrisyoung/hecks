@@ -102,9 +102,9 @@ module Hecksagain
         # (`with "key", "value"` / `map key: value`, both `to_s`-keyed —
         # see PolicyBuilder#with/#map's own comments), unlike `bindings`
         # just above, whose Symbol keys match `where`'s own
-        # `transform_keys(&:to_sym)`. Same decode (`unmark`) either way;
+        # `transform_keys(&:to_sym)`. Same decode (`read`) either way;
         # only the key's own type differs.
-        def literal_map(with) = Array(with).to_h { |key, value| [key.to_s, unmark(value)] }
+        def literal_map(with) = Array(with).to_h { |key, value| [key.to_s, read(value)] }
 
         # `for_each`'s own shape — one scalar (`from`) and one open map
         # (`where`), Reconstruction's `policy_for_each` gathers the parts,
