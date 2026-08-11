@@ -21,12 +21,29 @@ module Hecksagain
       class Query < QuerySpecification::Common::Options
         include Construct
 
-        attr_reader :name, :description, :attributes
+        attr_reader :name, :description, :attributes, :count, :median_field, :group_by_field
 
+        # `count:`, vendored addition not (yet) upstream hecksagain
+        # (migration plan task 4): `query "Count" do count end`
+        # (framework/web_debug/bluebook/web_debug.bluebook) -- a scalar
+        # row-count ask, not a filtered record list. See
+        # Runtime::QueryInterpreter#call's own comment for the
+        # evaluation side (returns an Integer instead of an Array).
+        #
+        # `median_field:`, vendored addition not (yet) upstream
+        # hecksagain (migration plan task 8): `median :field` -- the
+        # same scalar-reduction shape as `count`, one field further. See
+        # QueryBuilder#median's own comment.
+        #
+        # `group_by_field:`, vendored addition not (yet) upstream
+        # hecksagain (migration plan task 8): `group_by :field` -- a
+        # third aggregation shape, partition-and-tally rather than
+        # reduce-to-one-scalar. See QueryBuilder#group_by's own comment.
         def initialize(name:, description: nil, attributes: [], wheres: [],
                        order_by: nil, limit: nil, offset: nil, cursor: nil,
                        consistency: nil, freshness: nil, authorization: nil, null_semantics: nil,
-                       inspection: nil, index_hints: [])
+                       inspection: nil, index_hints: [], count: false, median_field: nil,
+                       group_by_field: nil)
           null_semantics ||= QuerySpecification::Common::NullSemantics.default
           super(wheres: wheres, order_by: order_by, limit: limit, offset: offset, cursor: cursor,
                 consistency: consistency, freshness: freshness, authorization: authorization,
@@ -35,6 +52,9 @@ module Hecksagain
           @hecks_name  = @name
           @description = description
           @attributes  = attributes
+          @count       = count
+          @median_field = median_field
+          @group_by_field = group_by_field
         end
 
         def attribute(named) = @attributes.find { |a| a.name == named.to_sym }

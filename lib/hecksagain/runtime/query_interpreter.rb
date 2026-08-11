@@ -34,6 +34,56 @@ module Hecksagain
         declared = ReferenceHop.apply(declared, args, registry: @registry, domain: domain, aggregate: aggregate)
 
         repository = @registry.repository(domain, aggregate)
+
+        # Vendored addition, not (yet) upstream hecksagain (migration plan
+        # task 4): `query "Count" do count end` -- a scalar row-count ask.
+        # Reuses the SAME filtering (`interpret`, wheres/order_by/limit
+        # all still apply) rather than a separate code path, then answers
+        # with the size instead of the mapped records -- so a `count`
+        # query with its own where-clauses counts a FILTERED set, not the
+        # whole table, matching what a bluebook author would expect
+        # `where`+`count` together to mean.
+        return interpret(repository.all, declared, args, domain: domain).size if declared.count
+
+        # Vendored addition, not (yet) upstream hecksagain (migration
+        # plan task 8): `median :field` -- the SAME filtered-then-reduce
+        # shape as `count` just above, one field further (deciderate's
+        # own Consensus query: "the median estimate across a decision's
+        # submissions" -- a where-filtered set folded to one number).
+        # Standard median (sorted middle value ; average of the two
+        # middle values on an even count) over whichever scalars the
+        # field actually holds -- `comparable` unwraps a Value/Hash field
+        # the same way ordering/comparison already do elsewhere in this
+        # file, so a VO-wrapped numeric field reduces the same as a bare
+        # one. An empty filtered set has no median -- nil, not a crash.
+        if declared.median_field
+          values = interpret(repository.all, declared, args, domain: domain)
+                     .map { |row| comparable(row[declared.median_field]) }
+                     .compact.sort
+          return nil if values.empty?
+
+          mid = values.size / 2
+          return values.size.odd? ? values[mid] : (values[mid - 1] + values[mid]) / 2.0
+        end
+
+        # Vendored addition, not (yet) upstream hecksagain (migration
+        # plan task 8): `group_by :field` -- the SAME filtered-set
+        # starting point as `count`/`median` above, partitioned by
+        # `field`'s value instead of reduced to one scalar (deciderate's
+        # own leaderboard queries: "submissions tallied per player").
+        # Returns one row per distinct value, `field => value, count:
+        # N`, ordered by count descending (a leaderboard's own natural
+        # order) then by the group value for ties, so output is
+        # deterministic. `comparable` unwraps a VO/Hash field the same
+        # way `median_field`/`ordered` already do.
+        if declared.group_by_field
+          field = declared.group_by_field
+          groups = interpret(repository.all, declared, args, domain: domain)
+                     .group_by { |row| comparable(row[field]) }
+          return groups.map { |value, rows| { field => value, count: rows.size } }
+                       .sort_by { |row| [-row[:count], row[field].to_s] }
+        end
+
         if (native = Ports::Query.execute(repository, declared, args, context: { domain: domain, aggregate: aggregate }))
           records = native
           # `record.state.merge(id: record.id)` — id LAST, not first. See
@@ -46,7 +96,7 @@ module Hecksagain
           return records.map { |record| record.state.merge(id: record.id) }
         end
 
-        interpret(repository.all, declared, args)
+        interpret(repository.all, declared, args, domain: domain)
       end
 
       # The REFERENCE answer — this interpreter's own evaluation, never an
@@ -82,8 +132,8 @@ module Hecksagain
                                                     aggregate: aggregate.hecks_name, query: query_name.inspect))
       end
 
-      def interpret(records, declared, args)
-        matched = records.select { |r| declared.wheres.all? { |w| where_holds?(w, r, args) } }
+      def interpret(records, declared, args, domain: nil)
+        matched = records.select { |r| declared.wheres.all? { |w| where_holds?(w, r, args, domain: domain) } }
         ordered = ordered(matched, declared.order_by, declared.null_semantics)
         capped  = declared.limit ? ordered.first(resolve_query_value(declared.limit.value, args).to_i) : ordered
 
@@ -139,13 +189,17 @@ module Hecksagain
         declared = entity.query(query_name) ||
                    raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_query_missing",
                                                              entity: entity_name, query: query_name.inspect))
+        args = normalize_args(aggregate, declared, args)
         declared = TenantScope.apply(declared, args)
         list_attr = aggregate.attributes.find { |a| a.list? && a.type.to_s == entity_name } ||
                     raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_holds_no_list",
                                                               aggregate: aggregate.hecks_name, entity: entity_name))
 
-        parent_key = Naming.reference_key(aggregate.hecks_name)
-        rows = @registry.repository(domain, aggregate).all.flat_map do |record|
+        parent_key     = Naming.reference_key(aggregate.hecks_name)
+        repository     = @registry.repository(domain, aggregate)
+        parent_records = scoped_parents(aggregate, declared, args, repository)
+
+        rows = parent_records.flat_map do |record|
           Array(record[list_attr.name])
             .select { |el| declared.wheres.all? { |w| element_where_holds?(w, el, args) } }
             .map    { |el| { parent_key => record.id }.merge(el) }
@@ -154,6 +208,26 @@ module Hecksagain
         ordered = ordered_elements(rows, declared.order_by, declared.null_semantics,
                                    parent_key, entity.identity_heads)
         declared.limit ? ordered.first(resolve_query_value(declared.limit.value, args).to_i) : ordered
+      end
+
+      # ONE PARENT, NOT EVERY PARENT — an entity query that declares
+      # `reference_to <ItsOwnAggregate>` (PersonalList.Item.OnList's own
+      # `reference_to PersonalList`, say) is asking to be scoped the
+      # same way an ordinary query's `where(field: :arg)` already scopes
+      # a plain aggregate query — this is that same ask, one level down,
+      # answered by finding the ONE named record directly rather than
+      # flat-mapping every record's own list and filtering afterward.
+      # Absent the argument, or absent a matching reference_to on the
+      # query at all, every parent is still walked — unchanged from
+      # before this existed, and still how a query meant to span every
+      # list (an admin's "everything on every list," if one existed)
+      # keeps working.
+      def scoped_parents(aggregate, declared, args, repository)
+        parent_ref = declared.attributes.find { |a| a.reference? && a.type.target_name == aggregate.hecks_name }
+        return repository.all unless parent_ref && args.key?(parent_ref.name)
+
+        record = repository.find(args[parent_ref.name])
+        record ? [record] : []
       end
 
       def element_where_holds?(clause, element, args)
@@ -189,11 +263,11 @@ module Hecksagain
         ) { |row| comparable(QuerySpecification::FieldPath.dig(row, field)) }
       end
 
-      def where_holds?(clause, record, args)
-        holds?(clause, QuerySpecification::FieldPath.dig(record, clause.field), args)
+      def where_holds?(clause, record, args, domain: nil)
+        holds?(clause, QuerySpecification::FieldPath.dig(record, clause.field), args, record: record, domain: domain)
       end
 
-      def holds?(clause, held, args)
+      def holds?(clause, held, args, record: nil, domain: nil)
         held = comparable(held)
         want = comparable(resolve_query_value(clause.value, args))
 
@@ -206,8 +280,43 @@ module Hecksagain
         when "gte"      then ordered?(held, want) && held >= want
         when "in"       then members(want).include?(held.to_s)
         when "contains" then contains?(held, want)
+        when "none_in_state" then none_in_state?(held, want)
         else                 held == want
         end
+      end
+
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4) -- see comparators.rb's own comment on `none_in_state`
+      # itself. `want` is "Aggregate:state" (a literal, never resolved
+      # through `resolve_query_value`'s Symbol path -- the target names a
+      # TYPE, not an argument). `held` is THIS record's own field value,
+      # already unwrapped by `comparable` -- the point-lookup key. No
+      # `domain:` qualifier on "Aggregate" because the corpus's own usage
+      # never gives one (plan.bluebook's Story reaching Conductor's Claim)
+      # -- searched by bare name across every loaded domain, the same
+      # single free-text lookup `HecksagainRuntime.state` already does for
+      # a caller-supplied aggregate FQN. Ambiguous (two domains declaring
+      # the same aggregate name) is a real, theoretical gap -- picks the
+      # first match rather than refusing, since a where-clause never
+      # raises (see `ordered?`'s own comment on the same contract).
+      def none_in_state?(held, want)
+        aggregate_name, state = want.to_s.split(":", 2)
+        target = find_aggregate_by_name(aggregate_name)
+        return true unless target
+
+        target_domain, target_ir = target
+        record = @registry.repository(target_domain, target_ir).find(held)
+        return true unless record
+
+        comparable(record.state[:state]) != state
+      end
+
+      def find_aggregate_by_name(name)
+        @registry.bluebooks.each do |domain, bluebook|
+          aggregate = bluebook.aggregates.find { |a| a.hecks_name == name }
+          return [domain, aggregate] if aggregate
+        end
+        nil
       end
 
       # gt/gte/lt/lte are numeric-only and silently false otherwise — a
