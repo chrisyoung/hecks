@@ -26,13 +26,38 @@ module Hecksagain
           (@wheres ||= {}).merge!(conditions.transform_keys(&:to_sym))
         end
 
+        # `for_each from: "Aggregate.query_name", where: { field:
+        # from_event(:x) }` -- vendored addition, not (yet) upstream
+        # hecksagain (migration plan task 8): a policy-level fan-out,
+        # the SAME shape as `dispatch ..., for_each:` already built for
+        # saga handlers, except a policy has no saga instance to source
+        # from -- every `where:` value resolves against the triggering
+        # EVENT's payload only. deciderate's own SettleVotesOnPop names
+        # it exactly : "a pop settles the bubble's live votes" -- one
+        # Vote.Settle per row `Vote.ForBubble` returns, not one dispatch
+        # total. See Runtime::PolicyInterpreter#deliver's own comment
+        # for the evaluation side.
+        def for_each(from:, where: {})
+          @for_each = { from: from.to_s, where: where }
+        end
+
+        # `from_event(:field)` -- vendored addition, not (yet) upstream
+        # hecksagain (migration plan task 8): the SAME trivial sugar as
+        # HandlerBuilder's own `from_event` (a PM handler's sibling) --
+        # returns the bare Symbol, relying on `for_each`'s `where:` hash
+        # resolving a Symbol value against the triggering event's
+        # payload at delivery time, exactly like a `with:` spec already
+        # does for `dispatch`.
+        def from_event(field, default: nil) = field
+
         def build
           IR::Policy.new(
             name:            @name,
             on_event:        @on_event,
             trigger_command: @trigger_command,
             target_domain:   @target_domain,
-            wheres:          @wheres || {}
+            wheres:          @wheres || {},
+            for_each:        @for_each
           )
         end
 
