@@ -42,7 +42,16 @@ module Hecksagain
             version:        [:version,        :plain],
             vision:         [:vision,         :plain],
             classification: [:classification, :plain],
-            formerly_known_as: [:formerly_known_as, :plain]
+            formerly_known_as: [:formerly_known_as, :plain],
+            # Vendored addition, not (yet) upstream hecksagain (migration
+            # plan task 4): same three-part shape `redirects_native`
+            # already used to close this exact gap on Command -- the
+            # self-hosted Bluebook aggregate now declares `category`
+            # (bluebook.bluebook), so the Judge's rebuild needs to read it
+            # back too, or `IR::Bluebook.new`'s own default (`category:
+            # nil`) would silently win over whatever the original DSL
+            # declaration said.
+            category: [:category, :plain]
           },
           rows: { normalisations: :normalisation_table },
           derived: { normalisations: :elsewhere }

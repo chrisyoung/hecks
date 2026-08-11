@@ -129,7 +129,14 @@ RSpec.describe "the declared syntax" do
     "Hecksagon" => {
       binds:              "the builder's own collected Bind records, read by whoever owns them",
       subscriptions:      "the builder's own collected subscription strings, read by whoever owns them",
-      framework_members:  "the builder's own collected framework-member names, read by whoever owns them"
+      framework_members:  "the builder's own collected framework-member names, read by whoever owns them",
+      raw_adapters:       "the builder's own collected #adapter(kind, **opts) records, read by whoever owns them",
+      driving_handlers:   "the builder's own collected DrivingAdapterBuilder output, read by whoever owns them",
+      apply_domain_wide_defaults!: "#build's own closing act — synthesises persisted_by binds from a bare " \
+                                   "domain-wide `adapter :heki`/etc, called by #build the same way AggregateBuilder#build's own defaulting is",
+      domain_wide_persisted_by:   "#adapter's own helper, recording a bare domain-wide kind for #build to apply later",
+      method_missing:     "the open port-branding-settings catch-all — bin-buddy's portal .hecksagon files " \
+                          "(capabilities/brand_color/task_colors/...) are not a fixed set the language can enumerate"
     },
     "World" => {
       # THE OPEN VERB-SETTINGS CATCH-ALL. `posted_by("Carrier") { office
@@ -139,6 +146,15 @@ RSpec.describe "the declared syntax" do
       # form, named in syntax.bluebook's own comment on the `world` row.
       method_missing: "the open port-verb settings catch-all — .world's adapter-binding " \
                       "vocabulary is per-application, not a fixed set the language can enumerate"
+    },
+    "Aggregate" => {
+      aggregate_invariants:      "the builder's own collected #invariant records, read by whoever owns them",
+      specifications:            "the builder's own collected #specification records, read by whoever owns them",
+      synthesise_primitive_wrapper: "#attribute's own helper, minting a wrapper value object for a bare primitive type"
+    },
+    "Handler" => {
+      guards:    "the builder's own collected #given predicates, read by ProcessManagerBuilder#on",
+      remembers: "the builder's own collected #remember/#set pairs, read by ProcessManagerBuilder#on"
     },
     "*" => {
       build:              "the builder's closing act, called by self.build",
