@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-## Fixed Bugs (4)
+## Fixed Bugs (10)
 
 ### #1: List Attributes Not Frozen (FIXED 2026-08-11)
 - **Commit:** 8baa725
@@ -29,6 +29,54 @@ Documented bugs and findings from systematic adversarial testing.
 - **Impact:** HIGH - Audit trail mutation vulnerability
 - **Details:** runtime.events, .reactions, .sagas were mutable arrays
 - **Root Cause:** Dispatcher returned logs directly without freezing
+
+### #13: DailyLimit Default Conflicts with Positive Invariant (FIXED 2026-08-11)
+- **Commit:** 6c67b31
+- **Impact:** HIGH - Test setup failures, prevents domain usage
+- **Details:** DailyLimit has default: 0 but invariant requires cents.positive? (>0)
+- **Root Cause:** Bug #13 fix added invariant without updating default value
+- **Fix:** Changed default from 0 to 100000 cents ($1000)
+- **Category:** Design conflict - default must satisfy all invariants
+
+### #14: TillNumber Missing Validation (FIXED 2026-08-11)
+- **Commit:** b4a5030
+- **Impact:** MEDIUM - Data quality issue
+- **Details:** TillNumber accepted empty and whitespace-only strings
+- **Root Cause:** No pattern constraint; invariant `!value.to_s.empty?` allowed whitespace
+- **Fix:** Added pattern: '[^ \t\n\r]' to reject whitespace-only values
+- **Location:** spec/fixtures/till.bluebook
+
+### #15: DailyLimit Default Violates Positive Invariant (FIXED 2026-08-11)
+- **Commit:** b4a5030 (Note: Same as #13, cross-committed)
+- **Impact:** MEDIUM - Initialization failure
+- **Details:** Default value of 0 violates cents.positive? invariant
+- **Root Cause:** Invariant added without checking default value
+- **Status:** MERGED - Changed default to 100000
+
+### #16: SafeDepositBox Missing Create Command (FIXED 2026-08-11)
+- **Commit:** b4a5030
+- **Impact:** HIGH - Aggregate incomplete
+- **Details:** Aggregate starts at "vacant" but no command to reach that state
+- **Root Cause:** Lifecycle has Create => vacant but command was missing
+- **Fix:** Added Create command to register new boxes in vault
+- **Affected Command:** Banking::SafeDepositBox.Create
+- **Location:** examples/banking/bluebook/banking.bluebook
+
+### #17: CustomerNumber Accepts Whitespace-Only Values (FIXED 2026-08-11)
+- **Commit:** b4a5030
+- **Impact:** MEDIUM - Data quality issue
+- **Details:** CustomerNumber pattern accepts whitespace-only strings
+- **Root Cause:** Invariant `!value.to_s.empty?` without whitespace strip
+- **Fix:** Added pattern: '[^ \t\n\r]' to reject whitespace-only values
+- **Location:** examples/banking/bluebook/banking.bluebook line 54
+
+### #18: AccountNumber Accepts Whitespace-Only Values (FIXED 2026-08-11)
+- **Commit:** b4a5030
+- **Impact:** MEDIUM - Data quality issue
+- **Details:** AccountNumber pattern accepts whitespace-only strings
+- **Root Cause:** Invariant `!value.to_s.empty?` without whitespace strip
+- **Fix:** Added pattern: '[^ \t\n\r]' to reject whitespace-only values
+- **Location:** examples/banking/bluebook/banking.bluebook line 172
 
 ## Critical Runtime Bugs (Silent Data Corruption)
 
