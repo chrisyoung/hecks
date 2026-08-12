@@ -690,6 +690,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Record that the destination credit committed"
 
       reference_to Transfer
+      given("transfer is debited") { status == "debited" }
       emits "TransferCredited"
     end
 
