@@ -1289,6 +1289,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
       reference_to SafeDepositBox
 
+      given("customer is active") { customer.status == "active" }
       given("only a rented box is surrendered") { status == "rented" }
 
       # TWO FACTS FROM ONE ACT, on a head that is composite-identified and
