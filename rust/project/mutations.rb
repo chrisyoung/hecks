@@ -116,13 +116,36 @@ module RustProjection
     # more than one `from:` (CloseAccount: from "open" OR "frozen") shares
     # one `to_state` across every matching row, per the "Lifecycles"
     # section above, so only `from_states` needs to be a list.
+    #
+    # `from: nil` — an UNCONSTRAINED transition, admitting from any state
+    # (`SafeDepositBox`'s own `transition "Create" => "vacant", from: nil`,
+    # a creating command, which by definition has no prior state to come
+    # from). Ruby reads it as `candidates.find { |t| !t.constrained? ||
+    # Array(t.from).include?(current) }` (IR::Lifecycle#constrained? is
+    # `!@from.nil?`) — one unconstrained row admits everything, so the
+    # whole check is skipped. `nil` used to survive into `from_states` and
+    # `.inspect` rendered it as the literal Rust token `nil`, which is not
+    # a Rust value at all: the generated crate did not compile.
+    #
+    # `unconstrained` is carried BESIDE the (compacted) list rather than
+    # returning nil for the whole row, because the caller reads this hash
+    # for TWO independent things — the `TransitionCheck` guard AND the
+    # `advance_lifecycle` assignment of `to_state`. Dropping the row
+    # entirely would silently stop advancing the lifecycle, trading a
+    # compile error for a wrong answer.
     def lifecycle_transition_for(command, aggregate)
       return nil unless aggregate[:lifecycle]
 
       rows = aggregate[:lifecycle][:transitions].select { |t| t[:command] == command[:name] }
       return nil if rows.empty?
 
-      { field: aggregate[:lifecycle][:field], to_state: rows.first[:to_state], from_states: rows.map { |r| r[:from_state] }.uniq }
+      froms = rows.map { |r| r[:from_state] }
+      {
+        field: aggregate[:lifecycle][:field],
+        to_state: rows.first[:to_state],
+        from_states: froms.compact.uniq,
+        unconstrained: froms.any?(&:nil?)
+      }
     end
 
     # Ruby's real `apply`, for `:set`, does `Value.for(aggregate,
@@ -193,13 +216,38 @@ module RustProjection
     # an argument-sourced field runs through the same `value_rhs` bridge
     # `:set` does. `append_field_problems` already confirmed either
     # direction bridges before this could be reached.
+    # `optional:` on either side is NOT a mismatch to skip over here —
+    # `optional_source_mismatches` (commands.rb) has already refused the
+    # one combination that cannot be represented (an optional ARGUMENT
+    # feeding a target field this generator has no reason to
+    # `Option`-wrap). What reaches this method is the supported case, and
+    # it has to bridge the wrapper as well as the type: `args.<name>` is
+    # `Option<T>` for an optional argument (types.rb's own rule), and the
+    # element field is `Option<U>` for an optional field.
+    #
+    # The inner conversion is `value_rhs`'s existing job either way — the
+    # same one-field rewrap it already performs — just applied to the
+    # Option's CONTENTS (`|v| v.value.clone()`) instead of to the whole
+    # expression. Reading `.value` straight off an `Option<T>` is what the
+    # generated crate used to do, and Rust has no such field: E0609, on
+    # the self-hosted grammar's own `Transition.from_state` and
+    # `NormalisationRule.position`.
     def append_field_rhs(source, field_attr, command, value_objects_by_name)
       if source.start_with?("{")
-        literal_hash_rhs(Hecksagain::Bluebook::Assembly::Marks.unmark(source), field_attr[:type], value_objects_by_name)
-      else
-        arg_attr = command[:attributes].find { |a| a[:name].to_s == source }
-        value_rhs("args.#{rust_ident_field(arg_attr[:name])}", arg_attr[:type], field_attr[:type], value_objects_by_name)
+        return literal_hash_rhs(Hecksagain::Bluebook::Assembly::Marks.unmark(source), field_attr[:type], value_objects_by_name)
       end
+
+      arg_attr = command[:attributes].find { |a| a[:name].to_s == source }
+      arg_expr = "args.#{rust_ident_field(arg_attr[:name])}"
+
+      # `as_ref()` so the Option is borrowed, never moved out of `args` —
+      # `args` is borrowed elsewhere in the same generated call (as `&dyn
+      # Fielded`, for given evaluation), the same constraint that makes
+      # every other rhs here `.clone()` rather than take ownership.
+      return "#{arg_expr}.as_ref().map(|v| #{value_rhs('v', arg_attr[:type], field_attr[:type], value_objects_by_name)})" if arg_attr[:optional]
+
+      inner = value_rhs(arg_expr, arg_attr[:type], field_attr[:type], value_objects_by_name)
+      field_attr[:optional] ? "Some(#{inner})" : inner
     end
 
     # `optional:` — true for an aggregate RECORD (every non-list field is
