@@ -953,6 +953,7 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :end_to_end, EndToEndReference
       attribute :amount, ExternalAmount
       attribute :beneficiary, BeneficiaryName
+      given("customer is active") { account.customer.status == "active" }
       given("account is open") { account.status == "open" }
       # Named on the ARGUMENT as well as on the head : the head says what the
       # aggregate holds, this is where a caller hands one in, and a set that is
