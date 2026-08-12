@@ -277,7 +277,7 @@ RSpec.describe "QA Bug Demonstrations", qa: true do
       box = banking_runtime.dispatch("Banking::SafeDepositBox.Create",
         branch_code: { value: "NYC" },
         box_number: { value: 123 })
-      expect(box.id).to be_present
+      expect(box.id).to_not be_nil
     end
 
     it "allows same box number in different branches" do

@@ -52,7 +52,7 @@ Hecks.bluebook "Banking", version: "v1" do
     attribute :standing,  CustomerStanding
 
     value_object "CustomerNumber" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a customer reference is present") { !value.to_s.empty? }
     end
 
@@ -170,7 +170,7 @@ Hecks.bluebook "Banking", version: "v1" do
     attribute :interest_cents, Money
 
     value_object "AccountNumber" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an account number is present") { !value.to_s.empty? }
     end
 
@@ -1177,8 +1177,19 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     lifecycle :status, default: "vacant" do
+      transition "Create"    => "vacant", from: nil
       transition "Rent"      => "rented", from: "vacant"
       transition "Surrender" => "vacant", from: "rented"
+    end
+
+    command "Create" do
+      role "Branch manager"
+      goal "Register a new safe deposit box in the vault"
+
+      attribute :branch_code, BranchCode
+      attribute :box_number,  BoxNumber
+
+      emits "BoxCreated"
     end
 
     command "Rent" do
