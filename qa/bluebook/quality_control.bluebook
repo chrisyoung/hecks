@@ -57,6 +57,7 @@ Hecks.bluebook "QualityControl" do
     # predicate sublanguage compares numbers and nothing else, and the
     # staleness rule below has to be EXPRESSIBLE, not merely true.
     attribute :claimed_at, Instant
+    attribute :window,     StaleAfter
     attribute :last_swept, SweptIn
     attribute :reason,     TargetReason
 
@@ -133,10 +134,18 @@ Hecks.bluebook "QualityControl" do
       role "QA engineer"
       goal "Take the next chapter in the rotation, or one whose holder has gone quiet"
 
+      # THE WINDOW IS NOT THE CLAIMER'S TO SET. It was an argument, which meant
+      # any agent could take a live claim from any other by asking with a window
+      # of one second — the guard read a number the CALLER supplied and dutifully
+      # agreed. A staleness rule that the party it constrains gets to choose is
+      # not a rule.
+      #
+      # So it lives on the record, where `given` reads it as state and no dispatch
+      # can name it. Fifteen minutes is the practice's answer, written once as a
+      # default rather than re-asserted by every claimer.
       reference_to Target
       attribute :held_by,    Engineer
       attribute :now,        Instant
-      attribute :window,     StaleAfter
 
       given("a live claim is not taken from the agent holding it") do
         status != "held" || claimed_at.value + window.value <= now.value
@@ -157,10 +166,16 @@ Hecks.bluebook "QualityControl" do
       role "QA engineer"
       goal "Hand a chapter back to the rotation, stamped with when"
 
+      # THE ARGUMENT IS `now`, AND THE FIELD IS `last_swept`, which is what
+      # `then_set` is for. It was `last_swept` on both sides and that made it
+      # the one timestamp a caller still had to type by hand — the door fills
+      # `now` and knows nothing about a field called `last_swept`. Naming the
+      # ARGUMENT for where it comes from and the FIELD for what it means costs
+      # one line and leaves no hand-typed clock anywhere in the chapter.
       reference_to Target
-      attribute :last_swept, SweptIn
+      attribute :now, Instant
 
-      then_set :last_swept, to: :last_swept
+      then_set :last_swept, to: :now
 
       emits "TargetReleased"
     end
@@ -571,6 +586,7 @@ Hecks.bluebook "QualityControl" do
     # the serialisation is the same either way: one dispatch per record wins.
     attribute :held_by,       Engineer
     attribute :claimed_at,    Instant
+    attribute :window,        StaleAfter
 
     value_object "BugReference" do
       attribute :value, String, pattern: '[^ \t\n\r]'
@@ -826,10 +842,11 @@ Hecks.bluebook "QualityControl" do
       role "QA engineer"
       goal "Take the next bug off the queue, or one whose holder has gone quiet"
 
+      # SAME RULE, SAME REASON — see Target.Claim. The window is the practice's,
+      # on the record, not the claimer's to name.
       reference_to Bug
       attribute :held_by, Engineer
       attribute :now,     Instant
-      attribute :window,  StaleAfter
 
       given("a live claim is not taken from the agent holding it") do
         held_by.value == "nobody" || claimed_at.value + window.value <= now.value

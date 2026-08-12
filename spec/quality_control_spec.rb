@@ -39,6 +39,16 @@ RSpec.describe "QualityControl" do
     def run(**) = raise "suite red against abc1234: 1335 examples, 2 failures"
   end
 
+  # A FIXED CLOCK, WHICH IS THE WHOLE REASON THE CLOCK IS A PORT. A staleness
+  # rule read against the real clock is untestable — the spec would either
+  # sleep for fifteen minutes or never exercise the rule at all. Bound to this,
+  # it is three lines.
+  module FixedClock
+    module_function
+
+    def now = 1_000
+  end
+
   def boot_quality_control(tracker = StubTracker, ci: GreenCi)
     registry = Hecksagain::Runtime::Registry.new
 
@@ -56,6 +66,10 @@ RSpec.describe "QualityControl" do
       Hecksagain::Adapters.send(:remove_const, :QcCi) if Hecksagain::Adapters.const_defined?(:QcCi, false)
       Hecksagain::Adapters.const_set(:QcCi, ci)
       Hecks.adapter("QcCi") { port "CI" }
+
+      Hecksagain::Adapters.send(:remove_const, :QcClock) if Hecksagain::Adapters.const_defined?(:QcClock, false)
+      Hecksagain::Adapters.const_set(:QcClock, FixedClock)
+      Hecks.adapter("QcClock") { port "clock" }
 
       Hecks.hecksagon "QualityControl" do
         ::QualityControl::Target.persisted_by("Memory")
@@ -124,13 +138,64 @@ RSpec.describe "QualityControl" do
     )
   end
 
+# ── the clock, and the window it is measured against ─────────────────
+
+describe "the clock" do
+  def cli(*argv) = Hecksagain::Facade::CliRunner.call(runtime: runtime, argv: argv, program: "bin/qc")
+
+  def target = @target ||= a_target("banking")
+
+  # THE FRICTION THIS REMOVED. Every claim used to want
+  # `now.value=$(date +%s) window.value=900` typed in front of it, which is a
+  # shell incantation an agent gets wrong by pasting a stale number.
+  it "fills now from the clock when the caller leaves it out" do
+    target
+    text, code = cli("target.claim", "id=banking", "held_by.value=agent-one")
+
+    expect(code).to eq(0)
+    expect(JSON.parse(text).dig("state", "claimed_at", "value")).to eq(1_000)
+  end
+
+  # SO A SPEC OR A CALLER REPRODUCING A MOMENT IS BELIEVED. The door supplies
+  # only what was omitted.
+  it "believes an explicit time over the clock" do
+    target
+    text, = cli("target.claim", "id=banking", "held_by.value=agent-one", "now.value=55")
+
+    expect(JSON.parse(text).dig("state", "claimed_at", "value")).to eq(55)
+  end
+
+  # THE HOLE THIS CLOSED. `window` was an argument, so any agent could take a
+  # live claim from any other by asking with a window of one second — the
+  # guard read a number the CALLER supplied and dutifully agreed.
+  it "will not let a claimer name the window it is judged against" do
+    target
+    _, code = cli("target.claim", "id=banking", "held_by.value=agent-one")
+    expect(code).to eq(0)
+
+    text, refused = cli("target.claim", "id=banking", "held_by.value=agent-two", "window.value=1")
+
+    expect(refused).to eq(1)
+    expect(text).to include("no argument")
+  end
+
+  it "still goes stale on the practice own window, not the claimer own" do
+    target.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
+
+    # 900 is the record default, so this is the first instant it is takeable.
+    target.claim(held_by: { value: "agent-two" }, now: { value: 1_900 })
+
+    expect(target.held_by.to_h).to eq(value: "agent-two")
+  end
+end
+
   # ── the rotation ─────────────────────────────────────────────────────
 
   describe "the rotation" do
     it "offers the least recently swept first" do
       swept = a_target("banking")
-      swept.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
-      swept.release(last_swept: { value: 1_000 })
+      swept.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
+      swept.release(now: { value: 1_000 })
       a_target("pizzas", "examples/pizzas")
 
       # "never" sorts before any sweep reference, which is the ordering the
@@ -149,12 +214,12 @@ RSpec.describe "QualityControl" do
     # wins, the other is refused and takes the next chapter.
     it "gives a chapter to one agent and refuses the other" do
       target = a_target
-      target.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+      target.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
 
       expect(target.held_by.to_h).to eq(value: "agent-one")
 
       expect {
-        target.claim(held_by: { value: "agent-two" }, now: { value: 1_060 }, window: { value: 900 })
+        target.claim(held_by: { value: "agent-two" }, now: { value: 1_060 })
       }.to raise_error(Hecksagain::Runtime::GivenNotMet, /not taken from the agent holding it/)
     end
 
@@ -162,17 +227,17 @@ RSpec.describe "QualityControl" do
     # chapter forever unless the claim can go stale.
     it "lets the next agent take a claim whose holder has gone quiet" do
       target = a_target
-      target.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+      target.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
 
-      target.claim(held_by: { value: "agent-two" }, now: { value: 1_000 + 900 }, window: { value: 900 })
+      target.claim(held_by: { value: "agent-two" }, now: { value: 1_000 + 900 })
 
       expect(target.held_by.to_h).to eq(value: "agent-two")
     end
 
     it "puts a released chapter back at the end of the rotation" do
       target = a_target
-      target.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
-      target.release(last_swept: { value: 1_000 })
+      target.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
+      target.release(now: { value: 1_000 })
 
       expect(target.status).to eq("waiting")
       expect(rows("Target.Untouched")).to be_empty
@@ -196,7 +261,7 @@ RSpec.describe "QualityControl" do
 
     it "takes it out of the queue and into somebody's hands" do
       bug = a_bug(a_sweep)
-      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
 
       expect(rows("Bug.Queue")).to be_empty
       expect(references("Bug.InHand")).to eq([bug.id])
@@ -204,17 +269,17 @@ RSpec.describe "QualityControl" do
 
     it "refuses a second agent while the first is still on it" do
       bug = a_bug(a_sweep)
-      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
 
       expect {
-        bug.claim(held_by: { value: "agent-two" }, now: { value: 1_060 }, window: { value: 900 })
+        bug.claim(held_by: { value: "agent-two" }, now: { value: 1_060 })
       }.to raise_error(Hecksagain::Runtime::GivenNotMet, /not taken from the agent holding it/)
     end
 
     it "lets the next agent take one whose holder has gone quiet" do
       bug = a_bug(a_sweep)
-      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
-      bug.claim(held_by: { value: "agent-two" }, now: { value: 1_900 }, window: { value: 900 })
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
+      bug.claim(held_by: { value: "agent-two" }, now: { value: 1_900 })
 
       expect(bug.held_by.to_h).to eq(value: "agent-two")
     end
@@ -225,14 +290,14 @@ RSpec.describe "QualityControl" do
     it "does not move the fix along" do
       bug = a_bug(a_sweep)
       bug.investigate(site: { value: "x.rb:1" }, cause: { value: "y" })
-      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
 
       expect(bug.status).to eq("investigating")
     end
 
     it "puts it back on the queue when somebody gives up on it" do
       bug = a_bug(a_sweep)
-      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 })
       bug.drop(held_by: { value: "nobody" })
 
       expect(references("Bug.Queue")).to eq([bug.id])

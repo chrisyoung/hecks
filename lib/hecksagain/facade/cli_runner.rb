@@ -2,6 +2,7 @@ require "json"
 require_relative "cli_door"
 require_relative "json_door"
 require_relative "../projector"
+require_relative "../ports/clock"
 
 module Hecksagain
   module Facade
@@ -55,7 +56,7 @@ module Hecksagain
       end
 
       def dispatch(runtime, spec, name, rest, program, asking)
-        args = CliDoor.arguments(spec, rest)
+        args = stamp_time(runtime, spec, CliDoor.arguments(spec, rest))
 
         if spec[:kind] == :query
           rows = runtime.query(spec[:verb], **args)
@@ -79,6 +80,48 @@ module Hecksagain
       rescue *Runtime::DOMAIN_REFUSALS => e
         # THE REFUSAL IS THE PRODUCT — the chapter's own sentence, verbatim.
         [e.message, 1]
+      end
+
+      # THE CLOCK, FILLED IN AT THE DOOR.
+      #
+      # A staleness rule needs the time, and the sublanguage cannot ask for it
+      # — a `given` that read the clock would judge the same record differently
+      # on two runs, and every replay, audit and fuzz oracle here assumes it
+      # does not. So `now` stays an ARGUMENT the predicate merely reads, and
+      # the question becomes who types it. Before this, the caller did:
+      #
+      #   bin/quality_control target.claim id=QC held_by.value=me \
+      #     now.value=$(date +%s) window.value=900
+      #
+      # which is a shell incantation in front of every claim, and one an agent
+      # gets wrong by pasting a stale number.
+      #
+      # AT THE DOOR, NOT IN THE RUNTIME, and the distinction is load-bearing.
+      # `Ports::IdentityGeneration` reasons the same question through for a
+      # minted uuid and lands on "the value is baked into the caller's args at
+      # the first live dispatch". A clock consulted INSIDE the interpreter
+      # would not have that property — a recorded corpus step replayed
+      # tomorrow would quietly get tomorrow's time, and the fuzzer's oracle and
+      # the adapter-agreement gate both compare runs of exactly that shape. Here
+      # it fills only what a person or an agent is typing, and `runtime.dispatch`
+      # is left alone.
+      #
+      # AN EXPLICIT VALUE ALWAYS WINS, so a spec or a caller reproducing a
+      # moment says so and is believed. This only supplies what was omitted.
+      #
+      # BY NAME, WHICH IS THE ONE UNCOMFORTABLE PART. `now` is a plausible
+      # domain word and nothing declares that it means the clock. It is
+      # tolerable because this is a convenience layer rather than semantics —
+      # the verb's own help says the argument exists, dispatch is unchanged,
+      # and passing it explicitly is always available. The honest version is a
+      # declaration in the chapter (`attribute :now, Instant, from: :clock`),
+      # which is a language change: DSL, IR, the self-hosted grammar and its
+      # goldens. Worth doing; not worth smuggling in here.
+      def stamp_time(runtime, spec, args)
+        return args unless spec[:arguments].any? { |argument| argument[:path].start_with?("now.") }
+        return args if args.key?(:now)
+
+        args.merge(now: { value: Ports::Clock.now(runtime.registry) })
       end
 
       # A PORT OPERATION HAS NO STATE, AND ITS PAYLOAD IS THE ENTIRE POINT.
