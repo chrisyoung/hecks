@@ -6,6 +6,14 @@
 
 ---
 
+## 📊 Session Results
+- **Bugs Fixed:** 0
+- **Bugs Reported (Filed):** 0
+- **Tests Written:** 0
+- **Domains Tested:** 0
+
+---
+
 ## Plan for Today
 - [ ] Test [Domain] domain ([testing categories])
 - [ ] Fix any bugs found
