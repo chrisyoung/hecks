@@ -592,7 +592,7 @@ Hecks.bluebook "Interview" do
     # (`AccountNumber`, `TransferReference`), and this aggregate's own
     # `FindingReference`/`FindingSequence` were already spelled that way.
     value_object "FindingStatement" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a finding states something") { !value.to_s.empty? }
     end
 
@@ -615,11 +615,11 @@ Hecks.bluebook "Interview" do
     end
 
     value_object "Reason" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "InterviewRef" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     lifecycle :status, default: "asserted" do
@@ -759,7 +759,7 @@ Hecks.bluebook "Interview" do
     attribute :reason,    CorrectionReason
 
     value_object "ProposalReference" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a proposal is referenced") { !value.to_s.empty? }
     end
 
@@ -785,7 +785,7 @@ Hecks.bluebook "Interview" do
     end
 
     value_object "Rationale" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a proposal says why it is being made") { !value.to_s.empty? }
     end
 
@@ -803,22 +803,22 @@ Hecks.bluebook "Interview" do
     # `field` IS EMPTY FOR A REFERENCE ARGUMENT, and that is not a gap. A
     # reference is an id, not an object, and an id has no field to open.
     value_object "Argument" do
-      attribute :name,  String
-      attribute :field, String
-      attribute :value, String
+      attribute :name,  String, pattern: '[^ \t\n\r]'
+      attribute :field, String, pattern: '[^ \t\n\r]'
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "ArgumentName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an argument is named") { !value.to_s.empty? }
     end
 
     value_object "ArgumentField" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "ArgumentValue" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     # WHAT THE META-DOMAIN SAID WHEN IT REFUSED. No `given` on `Refused`
@@ -826,12 +826,12 @@ Hecks.bluebook "Interview" do
     # before any given is reached, so a predicate here could never be the
     # one to refuse.
     value_object "RefusalText" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a refusal says what was wrong") { !value.to_s.empty? }
     end
 
     value_object "InterviewRef" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     # WHY A WRITTEN MISTAKE STILL NEEDS A WORD FOR ITSELF. `written` is a
