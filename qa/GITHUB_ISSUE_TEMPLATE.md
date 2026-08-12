@@ -198,21 +198,43 @@ Cannot safely fix without understanding the bypass.
 
 ---
 
-## When to File vs When to Fix
+## When to File vs When to Fix vs When to Skip
 
-### File a Ticket ❌
-- Requires runtime architecture change
-- Needs investigation (don't know root cause)
-- Fix is >30 minutes of work
-- Blocked on another issue
-- Requires design decision
+### File a GitHub Issue 📝
+**ONLY if the bug is CONFIRMED:**
+- ✅ Test demonstrates real bug exists
+- ✅ Root cause identified (framework boundary found)
+- ✅ Not a false positive or user error
+- ✅ Requires architectural change OR >30 min to fix
+
+Examples:
+- Nested VO invariants silently ignored (architectural)
+- State mutation at query boundary (framework gap)
 
 ### Fix Immediately ✅
-- Simple invariant change (like whitespace check)
+**If you can fix it yourself:**
+- Simple invariant change (whitespace check)
 - Clear code change required
 - Fix is <30 minutes
 - All tests pass after fix
-- No design decisions needed
+
+Examples:
+- `!value.empty?` → `!value.strip.empty?`
+- Add `.freeze` to result arrays
+
+### Document in FINDINGS.md, Don't File 📚
+**If you're uncertain or code exists but untested:**
+- ❌ Type checking exists but no tests confirm it works
+- ❌ Overdraft check exists but you're not 100% sure
+- ❌ May be false positive or user misunderstanding
+- ❌ Needs investigation but not confirmed bug
+
+Mark as: "Investigation Needed" or "PAUSED"
+- Create test to document the issue
+- Don't file GitHub issue (wastes triage time)
+- Next QA session can investigate further
+
+**This session's mistake:** Filed #40, #41, #42 without confirming they were actual bugs
 
 ---
 

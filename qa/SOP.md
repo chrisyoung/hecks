@@ -404,9 +404,18 @@ Claude-Session: https://claude.ai/code/session_xxx"
 
 ---
 
-## Phase 6: File GitHub Issue (Only If Fix Wasn't Possible) (20 min)
+## Phase 6: File GitHub Issue (Only If Bug is Confirmed) (20 min)
 
-**Note:** Only reach this phase if Phase 5 didn't result in a fix.
+**Note:** Only reach this phase if:
+- ✅ You've confirmed the bug is real (not a false positive)
+- ✅ You've investigated the root cause
+- ✅ You've created a test that demonstrates it
+- ✅ You can't fix it in Phase 5
+
+**Do NOT file if:**
+- ❌ You're uncertain whether it's a bug (mark as "Investigation Needed" in FINDINGS.md instead)
+- ❌ The code check already exists but hasn't been tested (add test, don't file)
+- ❌ It might be user error or a misunderstanding of the rules
 
 ### 6.0 Find the Framework Boundary
 
