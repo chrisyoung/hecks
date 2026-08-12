@@ -52,16 +52,32 @@ def domains
      .uniq.sort
 end
 
-if ARGV.empty?
-  warn "usage: bin/docs <domain-path> [aggregate]"
+# STANDING IN A DOMAIN IS ENOUGH. `Adapters::Folder#domain_root` walks up for
+# the nearest `.hecksagon`, so inside `examples/banking` — or anywhere under it
+# — the path can be left off entirely.
+#
+# WHICH MAKES THE FIRST ARGUMENT AMBIGUOUS, and the rule is: a directory is a
+# domain, anything else is an aggregate name. `bin/docs Account` from inside
+# banking asks for the Account section; `bin/docs examples/banking` asks for
+# the whole of banking. Nothing in this corpus names an aggregate after a
+# directory in the same checkout, and if something ever does, the explicit
+# two-argument form still says which is which.
+here = Hecksagain::Adapters::Folder.new.domain_root
+
+path, aggregate =
+  if ARGV.empty?              then [here, nil]
+  elsif ARGV.length > 1       then [ARGV[0], ARGV[1]]
+  elsif File.directory?(ARGV[0]) then [ARGV[0], nil]
+  else                             [here, ARGV[0]]
+  end
+
+unless path
+  warn "usage: bin/docs [domain-path] [aggregate]"
   warn ""
-  warn "domains in this checkout:"
-  domains.each { |path| warn "  #{path}" }
+  warn "No bluebook here — #{Dir.pwd} is not inside a domain. Name one:"
+  domains.each { |candidate| warn "  #{candidate}" }
   exit 1
 end
-
-path      = ARGV.fetch(0)
-aggregate = ARGV[1]
 
 begin
   runtime = Hecks.boot(path, install_facade: false)

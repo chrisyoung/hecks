@@ -5,17 +5,68 @@
 # The corpus scripts under spec/corpus/ are exactly this format.
 #
 #   bin/run <domain> <script.json>
+#   bin/run <domain> -            # the same script, on stdin
+#   bin/run <domain> '{"steps":[…]}'
+#
+# THE LAST TWO ARE FOR A CALLER WITH ONE VERB TO ISSUE. A corpus member is a
+# file because it is kept; an agent dispatching a single command should not
+# have to leave a file behind to do it, and a temp file is exactly the friction
+# that sends somebody back to editing the store by hand. `bin/docs <domain>`
+# prints what each verb wants — its arguments, the states it may be issued
+# from, and every way it can refuse.
+#
+#   bin/run qa '{"steps":[{"query":"QualityControl::Bug.Unfixed"}]}'
+#
+#   bin/run qa - <<'JSON'
+#   {"steps":[
+#     {"verb":"QualityControl::Session.Start",
+#      "args":{"reference":{"value":"QA-1"},"engineer":{"value":"Claude QA"}}}
+#   ]}
+#   JSON
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
 require "hecksagain"
 require "json"
 
-domain = ARGV.shift or abort "usage: bin/run <domain> <script.json>"
-script = ARGV.shift or abort "usage: bin/run <domain> <script.json>"
+USAGE = "usage: bin/run [domain] <script.json | - | '{\"steps\":[…]}'>".freeze
+
+# STANDING IN A DOMAIN IS ENOUGH — `Adapters::Folder#domain_root` walks up for
+# the nearest `.hecksagon`, so inside `examples/banking` the path can be left
+# off. The first argument is the SCRIPT when it obviously is one: stdin, inline
+# JSON, or a file that exists. Otherwise it names the domain.
+script_shaped = ->(arg) { arg == "-" || arg.match?(/\A\s*\{/) || File.file?(arg) }
+
+domain, script =
+  if ARGV.length > 1                            then [ARGV[0], ARGV[1]]
+  elsif ARGV.length == 1 && script_shaped[ARGV[0]] then [Hecksagain::Adapters::Folder.new.domain_root, ARGV[0]]
+  else                                               [ARGV[0], ARGV[1]]
+  end
+
+abort "no bluebook here — #{Dir.pwd} is not inside a domain. #{USAGE}" unless domain
+abort USAGE unless script
+
+# A PATH, STDIN, OR THE JSON ITSELF — decided by looking, because a script
+# beginning with `{` is not a filename anybody meant.
+source =
+  case script
+  when "-"      then $stdin.read
+  when /\A\s*\{/ then script
+  else
+    File.exist?(script) ? File.read(script) : abort("no such script: #{script}")
+  end
+
+# PARSED BEFORE THE BOOT. Booting opens a real store — Postgres for some
+# domains — and a typo in the JSON should cost a sentence, not a connection.
+begin
+  document = JSON.parse(source)
+rescue JSON::ParserError => e
+  abort "that is not JSON: #{e.message.lines.first.strip}"
+end
+
+steps = document["steps"] or abort %(the script has no "steps" — #{USAGE})
 
 runtime   = Hecks.boot(domain)
-steps     = JSON.parse(File.read(script)).fetch("steps")
 refusals  = []
 
 queries = []
@@ -69,7 +120,7 @@ puts JSON.pretty_generate(
   sagas: sagas, queries: queries
 )
 
-expectations = JSON.parse(File.read(script))["expectations"] || {}
+expectations = document["expectations"] || {}
 unmet = []
 
 missing_events = Array(expectations["event_names"]) - events.map { |event| event[:name] }
