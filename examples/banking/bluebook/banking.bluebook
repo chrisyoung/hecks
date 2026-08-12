@@ -720,6 +720,8 @@ Hecks.bluebook "Banking", version: "v1" do
       reference_to Transfer
       given("source customer is active") { source.customer.status == "active" }
       given("source account is open") { source.status == "open" }
+      given("destination customer is active") { destination.customer.status == "active" }
+      given("destination account is open") { destination.status == "open" }
       given("transfer is requested") { status == "requested" }
       emits "TransferDebited"
     end
