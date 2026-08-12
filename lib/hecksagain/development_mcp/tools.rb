@@ -330,6 +330,156 @@ module Hecksagain
           }
         },
 
+        "qc_withdraw" => {
+          description: "Take back a report that could not be made to happen AT ALL. Only from 'found', " \
+                       "and deliberately NOT the same as qc_dismiss: withdrawn means the TEST was wrong, " \
+                       "dismissed means the EXPECTATION was. qa/FINDINGS.md #7, #8 and #9 all belong " \
+                       "here — all three were filed as public GitHub issues before anybody checked, and " \
+                       "all three turned out to be correct code. The reason is required and is the whole " \
+                       "value: 'could not reproduce' is not a reason, 'the given was already there and " \
+                       "the test asserted against the wrong command' is.",
+          properties: Hash[[
+            text("bug", "the bug reference"),
+            text("reason", "what was actually wrong with the report")
+          ]],
+          required: %w[bug reason],
+          run: lambda { |ledger, args|
+            ledger.withdraw(bug: args[:bug], reason: args[:reason])
+            "#{args[:bug]} withdrawn"
+          }
+        },
+
+        "qc_duplicate" => {
+          description: "Point at the record already tracking this, and stop tracking it twice. Real, not " \
+                       "correct behaviour, and not unreproducible — just already somebody's problem under " \
+                       "another name. The reference can name a record in another system entirely " \
+                       "('FINDINGS.md #11', 'gh #54'), which is usually where the other copy is.",
+          properties: Hash[[
+            text("bug", "the bug reference to retire"),
+            text("duplicate_of", "the reference that is already tracking it")
+          ]],
+          required: %w[bug duplicate_of],
+          run: lambda { |ledger, args|
+            ledger.duplicate(bug: args[:bug], of: args[:duplicate_of])
+            "#{args[:bug]} is a duplicate of #{args[:duplicate_of]}"
+          }
+        },
+
+        "qc_tally" => {
+          description: "The bug count, with the number that says whether it is real: how many entries " \
+                       "were once called bugs and are not one now (withdrawn, dismissed, or already " \
+                       "tracked elsewhere), as a share of everything logged. Watch doubtful_share — a " \
+                       "practice whose withdrawal rate is climbing is not finding more bugs, it is " \
+                       "reporting faster.",
+          properties: {},
+          run: ->(ledger, _args) { pretty(ledger.tally) }
+        },
+
+        # ── the backlog ────────────────────────────────────────────────
+        "qc_identify_target" => {
+          description: "Write down that a thing EXISTS which nobody has swept — a bluebook, a domain, a " \
+                       "subsystem. This is the only fact in the ledger that cannot be derived: an " \
+                       "untested thing has no test cases and no bugs, so it is invisible until somebody " \
+                       "names it. Walk the repository and identify everything once; qc_status then keeps " \
+                       "telling you what is left.",
+          properties: Hash[[
+            text("reference", "a short handle, e.g. banking or till"),
+            text("path", "where it actually is, e.g. examples/banking/bluebook/banking.bluebook"),
+            text("kind", "domain, fixture, framework, language, runtime — or a new word if you need one"),
+            text("rationale", "why it is worth sweeping")
+          ]],
+          required: %w[reference path kind rationale],
+          run: lambda { |ledger, args|
+            ledger.identify(reference: args[:reference], path: args[:path],
+                            kind: args[:kind], rationale: args[:rationale])
+            "#{args[:reference]} identified — it will show in qc_status until it is swept"
+          }
+        },
+
+        "qc_rank_target" => {
+          description: "Put a number on a target and say what makes it worth doing next. Lower is " \
+                       "sooner; 0 is unranked. Ranking does NOT sweep it — a ranked target still shows " \
+                       "as untouched, which is the point.",
+          properties: Hash[[
+            text("target", "the target reference"),
+            number("priority", "lower is sooner"),
+            text("rationale", "what makes it worth doing next")
+          ]],
+          required: %w[target priority rationale],
+          run: lambda { |ledger, args|
+            ledger.rank(target: args[:target], priority: args[:priority].to_i, rationale: args[:rationale])
+            "#{args[:target]} ranked #{args[:priority]}"
+          }
+        },
+
+        "qc_intend" => {
+          description: "Say which adversarial category this target is going to get, and why it is the " \
+                       "right one for this thing. Only while the target is still planned — a target that " \
+                       "grows a category after it was swept did not have that category swept. Read back " \
+                       "with qc_gaps.",
+          properties: Hash[[
+            text("target", "the target reference"),
+            text("category", "boundary, empty, state, mutation, identity, coercion, rapid, special_chars, …"),
+            text("why", "what about this target makes that category worth applying")
+          ]],
+          required: %w[target category why],
+          run: lambda { |ledger, args|
+            ledger.intend(target: args[:target], category: args[:category], why: args[:why])
+            "#{args[:target]} will get #{args[:category]}"
+          }
+        },
+
+        "qc_gaps" => {
+          description: "What was planned for a target against what has actually been applied to it. " \
+                       "Neither half can answer this alone, which is why the plan is declared and the " \
+                       "application is recorded. 'unapplied' is the work left.",
+          properties: Hash[[text("target", "the target reference")]],
+          required: %w[target],
+          run: ->(ledger, args) { pretty(ledger.gaps(target: args[:target])) }
+        },
+
+        "qc_sweep_target" => {
+          description: "Record that a session actually went at this target. Takes it off the untouched " \
+                       "list until somebody restores it.",
+          properties: Hash[[
+            text("target", "the target reference"),
+            text("session", "the session that swept it")
+          ]],
+          required: %w[target session],
+          run: lambda { |ledger, args|
+            ledger.sweep(target: args[:target], session: args[:session])
+            "#{args[:target]} swept in #{args[:session]}"
+          }
+        },
+
+        "qc_settle_target" => {
+          description: "Stop sweeping a target, and say which kind of stop it is. 'exhausted' claims " \
+                       "there is nothing further to find HERE — a claim about the target. 'shelved' says " \
+                       "it is not worth the practice's time — a decision about you. Only one of them " \
+                       "should be doubted when a bug turns up there anyway. 'restored' puts it back in " \
+                       "play because the code moved.",
+          properties: Hash[[
+            text("target", "the target reference"),
+            text("outcome", "exhausted, shelved, or restored"),
+            text("reason", "required for exhausted and shelved")
+          ]],
+          required: %w[target outcome],
+          run: lambda { |ledger, args|
+            case args[:outcome].to_s
+            when "restored"
+              ledger.restore(target: args[:target])
+              "#{args[:target]} is back in play — re-plan it before sweeping"
+            when "exhausted", "shelved"
+              reason = args[:reason] or raise ArgumentError, "#{args[:outcome]} requires a reason"
+              args[:outcome].to_s == "exhausted" ? ledger.exhaust(target: args[:target], reason: reason)
+                                                 : ledger.shelve(target: args[:target], reason: reason)
+              "#{args[:target]} #{args[:outcome]}"
+            else
+              raise ArgumentError, "outcome must be exhausted, shelved or restored"
+            end
+          }
+        },
+
         "qc_regress" => {
           description: "Put a fixed or verified bug back in play because the fix stopped holding. It " \
                        "keeps its evidence and history and returns to 'reproduced' — the investigation " \

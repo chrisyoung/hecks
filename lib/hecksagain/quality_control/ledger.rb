@@ -119,6 +119,42 @@ module Hecksagain
       def revisit(bug:)               = dispatch("Bug.Revisit", id: bug)
       def block(bug:, blocked_by:)    = dispatch("Bug.Block", id: bug, blocked_by: v(blocked_by))
       def unblock(bug:)               = dispatch("Bug.Unblock", id: bug, blocked_by: v("none"))
+      # NEVER HAPPENED, as distinct from `dismiss`'s "happens, and is correct".
+      # The only exit from `found` other than `reproduce`.
+      def withdraw(bug:, reason:)     = dispatch("Bug.Withdraw", id: bug, reason: v(reason))
+      def duplicate(bug:, of:)        = dispatch("Bug.Duplicate", id: bug, duplicate_of: v(of))
+
+      # ── targets ────────────────────────────────────────────────────────
+
+      def identify(reference:, path:, kind:, rationale:)
+        dispatch("Target.Identify", reference: v(reference), path: v(path),
+                                    kind: v(kind), rationale: v(rationale))
+        reference
+      end
+
+      def rank(target:, priority:, rationale:)
+        dispatch("Target.Rank", id: target, priority: v(priority, :value), rationale: v(rationale))
+      end
+
+      def intend(target:, category:, why:)  = dispatch("Target.Intend", id: target, name: v(category), why: v(why))
+      def sweep(target:, session:)          = dispatch("Target.Sweep", id: target, last_swept: v(session))
+      def exhaust(target:, reason:)         = dispatch("Target.Exhaust", id: target, reason: v(reason))
+      def shelve(target:, reason:)          = dispatch("Target.Shelve", id: target, reason: v(reason))
+      def restore(target:)                  = dispatch("Target.Restore", id: target)
+
+      # THE PLANNED HALF OF COVERAGE READ AGAINST THE APPLIED HALF — the one
+      # question neither aggregate can answer alone. `Target#plan` declares
+      # what the practice means to point at this thing; `TestCase.InCategory`
+      # records what it actually pointed. The difference is the work left.
+      def gaps(target:)
+        record  = query("Target.All").find { |row| field(row, :reference) == target } ||
+                  raise(Runtime::NotFound, "no target in the ledger referenced #{target.inspect}")
+        domain  = field(record, :reference)
+        planned = Array(record[:plan]).map { |category| category[:name] }
+        applied = query("Session.TestCase.ForDomain", domain: v(domain)).map { |row| field(row, :category) }.uniq
+
+        { target: target, planned: planned, applied: applied.sort, unapplied: (planned - applied).sort }
+      end
 
       # ── remedies ───────────────────────────────────────────────────────
 
@@ -211,6 +247,12 @@ module Hecksagain
           blocked:              query("Bug.Blocked"),
           ready_to_verify:      query("Bug.ReadyToVerify"),
           paused:               query("Bug.Paused"),
+          # WHAT NOBODY HAS LOOKED AT — first, because it is the only list
+          # here that cannot be derived from anything else, and the only one
+          # whose emptiness is meaningful.
+          untouched:            query("Target.Untouched"),
+          stale:                query("Target.Stale"),
+          queue:                query("Target.Queue"),
           unresolved_remedies:  query("Remedy.Unresolved"),
           filings_unanswered:   query("Ticket.Submitting"),
           filings_failed:       query("Ticket.Failed"),
@@ -258,6 +300,27 @@ module Hecksagain
           categories: tests.map { |t| field(t, :category) }.uniq.sort,
           bugs:       bugs.length,
           open:       bugs.count { |b| %w[found reproduced investigating paused].include?(b[:status]) }
+        }
+      end
+
+      # THE HONESTY CHECK ON A BUG COUNT, and the reason `Bug.Doubtful`
+      # exists. Reported as a ratio rather than a list, because the number is
+      # the point: a practice whose withdrawal rate is climbing is not
+      # finding more bugs, it is reporting faster. Three of this practice's
+      # first ten entries were withdrawals.
+      def tally
+        all      = query("Bug.All")
+        doubtful = query("Bug.Doubtful")
+        {
+          logged:    all.length,
+          doubtful:  doubtful.length,
+          withdrawn: all.count { |bug| bug[:status] == "withdrawn" },
+          dismissed: all.count { |bug| bug[:status] == "dismissed" },
+          duplicate: all.count { |bug| bug[:status] == "duplicate" },
+          verified:  all.count { |bug| bug[:status] == "verified" },
+          open:      query("Bug.Unfixed").length,
+          # The one number worth watching. Nothing here is a target.
+          doubtful_share: all.empty? ? 0.0 : (doubtful.length.to_f / all.length).round(2)
         }
       end
 
