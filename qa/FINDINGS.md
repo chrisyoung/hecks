@@ -35,6 +35,8 @@ Documented bugs and findings from systematic adversarial testing.
 | 21 | Banking.StatementFrequency.cadence lacks pattern | Closed-set VO String not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 22 | Expression.SourceToken.value lacks pattern | VO String attribute not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 23 | Returned aggregates not frozen | Dispatcher returns mutable results | Add `.freeze` to instance at return | CRITICAL - Data mutation/corruption |
+| 24 | Email pattern allows newlines | Pattern `^[^@ ]+@[^@ ]+\.[^@ ]+$` excludes only space+@ | Use stricter pattern or `\S` | MEDIUM - Email integrity/injection |
+| 25 | Reference pattern allows null bytes | Pattern `[^ \t\n\r]` doesn't exclude `\x00` | Add `\x00` exclusion to pattern | MEDIUM - Serialization/database |
 
 ---
 
