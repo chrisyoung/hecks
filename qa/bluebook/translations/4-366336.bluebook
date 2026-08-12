@@ -1,0 +1,5 @@
+Hecks.data_translation "QualityControl", from: "09d737", to: "366336" do
+  aggregate "Bug" do
+    retype "Engineer", to: "Submitter"
+  end
+end

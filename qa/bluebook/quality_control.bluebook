@@ -275,6 +275,14 @@ Hecks.bluebook "QualityControl" do
     # the battery derives its subjects from the chapter's own command surface
     # at run time, and a closed set here would refuse whatever the language
     # grew last week.
+    # PLAIN TEXT, NO PATTERN — and that is the point. Every other string in
+    # this chapter refuses whitespace, because a reference or a name that is
+    # all spaces is a mistake somebody wants caught early. A test file is
+    # newlines by construction, and tool output is whatever the tool said.
+    value_object "Listing" do
+      attribute :value, String
+    end
+
     value_object "Subject" do
       attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a check names what it put to the system") { !value.to_s.empty? }
@@ -527,6 +535,16 @@ Hecks.bluebook "QualityControl" do
     attribute :demonstration, Demonstration
     attribute :symptom,       Symptom
     attribute :expectation,   Expectation
+    # WHO SAYS SO. A bug with no submitter is an anonymous accusation, and
+    # in a ledger more than one agent writes to, "who found this" is the
+    # first question anybody asks about a finding they did not make.
+    #
+    # DISTINCT FROM `held_by`, which is who is working on it NOW and changes
+    # every time a claim is taken or goes stale. A submitter never changes:
+    # it is a fact about the REPORT, not about the work.
+    attribute :submitter,     Submitter
+    attribute :order,         BugOrder
+    attribute :tags,          list_of(Tag)
     attribute :site,          BugSite
     attribute :cause,         BugCause
     attribute :commit,        CommitRef
@@ -652,6 +670,59 @@ Hecks.bluebook "QualityControl" do
       invariant("a staleness window is positive") { value.positive? }
     end
 
+    # TAGS ARE A SET ON THE BUG, NOT AN ENTITY UNDER IT — and the choice is
+    # about what a tag IS. An entity has identity, a lifecycle and a history:
+    # a check has all three, which is why a check is one. A tag has none. It
+    # is a word that is either on the bug or not, nobody cares when it was
+    # put there, and "flaky" on one bug is the same "flaky" as on another.
+    #
+    # THE COST IS THAT TAGGING REPLACES RATHER THAN APPENDS. There is no
+    # append in this language — `then_set` sets — so `Tag` takes the whole
+    # set and the caller sends every tag it wants the bug to end up with.
+    # That reads worse in one place and better everywhere else: removing a
+    # tag needs no second verb, tagging twice is not two tags, and the
+    # attribute is always exactly what the bug is tagged with.
+    # A SUBMITTER IS SOMEBODY, WHICH IS WHY IT IS NOT AN `Engineer`.
+    #
+    # `Engineer` defaults to "nobody" because `held_by` needs that value — an
+    # unclaimed bug IS held by nobody, and the default is what makes the claim
+    # arithmetic work. Reusing the type here gave `submitter` the same default
+    # and made it optional in everything but intent: omit it and the ledger
+    # cheerfully recorded that nobody found this. `--help` said so out loud —
+    # `submitter.value  String; defaults to "nobody"` — which is how it was
+    # caught.
+    #
+    # So it is its own type, with no default and an invariant that says the
+    # quiet part. The two fields look alike and mean opposite things: one is
+    # who is working on it NOW and changes constantly, the other is who
+    # reported it and never changes at all.
+    value_object "Submitter" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+
+      invariant("a bug is reported by somebody") { value != "nobody" }
+    end
+
+    # WHAT TO DO FIRST. The queue was ordered by `sequence` — the order things
+    # were FOUND in, which is a fact about the sweep and says nothing about
+    # what matters. An order is somebody's judgement, and it is kept apart from
+    # the discovery order so that changing your mind about priority does not
+    # rewrite the history of when a thing was seen.
+    #
+    # LOWER IS SOONER, and the default is deliberately not zero: a bug nobody
+    # has ranked sits BEHIND everything anybody has, rather than jumping the
+    # whole queue by saying nothing.
+    value_object "BugOrder" do
+      attribute :value, Integer, default: 1_000
+
+      invariant("an order is a position, not a direction") { !value.negative? }
+    end
+
+    value_object "Tag" do
+      attribute :value, String, pattern: "^[a-z0-9][a-z0-9_-]*$"
+
+      invariant("a tag is a word, not a sentence") { !value.empty? }
+    end
+
     # A bug is born PROVEN. There is no state for "somebody thinks something
     # is wrong" — that is a check, and it lives on the sweep.
     lifecycle :status, default: "logged" do
@@ -678,8 +749,69 @@ Hecks.bluebook "QualityControl" do
       attribute :demonstration, Demonstration
       attribute :symptom,       Symptom
       attribute :expectation,   Expectation
+      # REQUIRED, LIKE THE DEMONSTRATION. Both answer "why should anybody
+      # believe this" — one is the evidence, the other is who produced it,
+      # and a ledger that let either be omitted would be collecting claims
+      # rather than findings.
+      attribute :submitter,     Submitter
+      attribute :tags,          list_of(Tag), optional: true
 
       emits "BugLogged"
+    end
+
+    # TAGGING IS NOT A LIFECYCLE MOVE, deliberately. A bug can be tagged
+    # while logged, while being fixed, after it is verified, after it is
+    # withdrawn — a tag says what KIND of thing this is, and that is knowable
+    # at any point and does not change what may happen next. Putting it in
+    # the lifecycle would mean inventing a state per tag, which is how a
+    # lifecycle stops describing the work.
+    # NOT A LIFECYCLE MOVE, for the same reason `Tag` is not: a bug can be
+    # ranked while logged, while being fixed, or after it is paused, and
+    # ranking it changes nothing about what may happen to it next.
+    command "Rank" do
+      role "QA engineer"
+      goal "Say what should be dealt with first"
+
+      reference_to Bug
+      attribute :order, BugOrder
+
+      then_set :order, to: :order
+
+      emits "BugRanked"
+    end
+
+    command "Tag" do
+      role "QA engineer"
+      goal "Say what kind of thing this bug is, so it can be found with its kind later"
+
+      reference_to Bug
+      attribute :tags, list_of(Tag)
+
+      then_set :tags, to: :tags
+
+      emits "BugTagged"
+    end
+
+    # THE LOOKUP THE TAGS EXIST FOR. `contains` against a bound argument
+    # rather than a literal — banking's `Flagged` asks the same question with
+    # `"high_risk"` written into the chapter, which answers one question
+    # forever; this asks whichever one you have.
+    # EVERYTHING ONE AGENT FOUND, whatever became of it. The counterpart of
+    # `InHand`, which answers what somebody is holding NOW: this answers what
+    # they have ever reported, which is the question a daily report is
+    # written from and the one a second agent asks before trusting a queue.
+    query "From" do
+      description "Every bug one submitter has ever logged, in whatever state — what an agent found, as against what it is holding."
+      attribute :submitter, Submitter
+      where(submitter: :submitter)
+      order_by :reference
+    end
+
+    query "Tagged" do
+      description "Every bug carrying one tag, whatever state it is in — the way to find all the flaky ones, or everything about the projector."
+      attribute :tag, Tag
+      where(tags: { contains: :tag })
+      order_by :reference
     end
 
     # THE SAME RULE AS A TARGET'S, IN THE SAME ARITHMETIC. Held by nobody, or
@@ -819,10 +951,19 @@ Hecks.bluebook "QualityControl" do
     # ones already found and not yet in anybody's hands, oldest first — which
     # is what an agent that is not sweeping picks from.
     query "Queue" do
-      description "Open bugs nobody is holding, oldest first. The queue an agent takes from when it is fixing rather than sweeping."
+      description "Open bugs nobody is holding, most important first, then oldest. The queue an agent takes from when it is fixing rather than sweeping."
       where(status: { in: "logged,investigating" })
       where(:"held_by.value" => "nobody")
-      order_by :sequence
+      # RANK FIRST, THEN AGE. Ordering by `sequence` alone made the queue the
+      # order things were found in, which is the one ordering nobody wants
+      # from a queue. Age stays as the tiebreak so two bugs nobody has ranked
+      # still come out oldest-first rather than arbitrarily.
+      # THE SCALAR, NOT THE VALUE OBJECT. `order_by :order` sorted by the
+      # whole `{value: n}` and put the bug ranked 1 BEHIND two ranked 1000 —
+      # silently, in the one query whose entire job is the ordering. A VO is
+      # ordered by whatever comparing two of them happens to do; the number
+      # inside it is what anybody meant.
+      order_by :"order.value"
     end
 
     query "InHand" do
@@ -887,7 +1028,8 @@ Hecks.bluebook "QualityControl" do
     attribute :reference,  TicketReference
     attribute :repository, TicketRepository
     attribute :title,      TicketTitle
-    attribute :body,       TicketBody
+    attribute :body,         TicketBody
+    attribute :pull_request, PullRequest
     attribute :number,     IssueNumber
     attribute :url,        IssueUrl
     attribute :refusal,    RefusalText
@@ -911,6 +1053,21 @@ Hecks.bluebook "QualityControl" do
     value_object "TicketTitle" do
       attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a ticket is titled") { !value.to_s.empty? }
+    end
+
+    # A FIX MAY ALREADY EXIST, AND THE TICKET SHOULD SAY SO.
+    #
+    # Filing an issue for a bug somebody has already opened a pull request for
+    # is how the same work gets done twice. The URL is on the TICKET rather
+    # than only in the body prose because the ledger should be able to ANSWER
+    # "which of these already have a fix proposed" — `Ticket.Proposed` below —
+    # and a substring search of prose is not an answer.
+    #
+    # OPTIONAL, because most tickets are raised before anybody has fixed
+    # anything. An empty one is the ordinary case, not a missing value, which
+    # is why it defaults rather than being refused.
+    value_object "PullRequest" do
+      attribute :value, String, default: ""
     end
 
     value_object "TicketBody" do
@@ -982,10 +1139,14 @@ Hecks.bluebook "QualityControl" do
       goal "Say the outside world needs to know about a bug we could not fix"
 
       reference_to Bug
-      attribute :reference,  TicketReference
-      attribute :repository, TicketRepository
-      attribute :title,      TicketTitle
-      attribute :body,       TicketBody
+      attribute :reference,    TicketReference
+      attribute :repository,   TicketRepository
+      attribute :title,        TicketTitle
+      attribute :body,         TicketBody
+      # CARRIED INTO THE FILING WITHOUT A SECOND VERB. `held_state` hands the
+      # whole ticket to the adapter, so a field on the record reaches `gh`
+      # even though the ask itself declares no argument for it.
+      attribute :pull_request, PullRequest, optional: true
 
       emits "TicketRaised"
     end
@@ -1080,6 +1241,15 @@ Hecks.bluebook "QualityControl" do
 
       reference_to Ticket
       emits "TicketClosed"
+    end
+
+    # WHICH ONES ALREADY HAVE A FIX. The reason the URL is a field and not
+    # prose: somebody triaging a list of filed tickets wants to skip the ones
+    # already answered, and that has to be a question the ledger can take.
+    query "Proposed" do
+      description "Tickets that already carry a pull request — a fix exists, so more work filed against them is duplicated effort."
+      where(:"pull_request.value" => { ne: "" })
+      order_by :reference
     end
 
     query "Raised" do
@@ -1200,10 +1370,16 @@ Hecks.bluebook "QualityControl" do
       role "System"
       goal "Record that the suite went red against this commit"
 
+      # `refusal`, NOT `summary`, and the rename is load-bearing. A policy
+      # re-enters its target with the answering event payload VERBATIM, and
+      # the runtime names what came back from a refused ask `refusal` — so a
+      # command expecting `summary` here would be handed a key it never
+      # declared and refuse the very failure it exists to record. The word
+      # is the framework's; `then_set` is where it becomes ours.
       reference_to Clearance
-      attribute :summary, RunSummary
+      attribute :refusal, RunSummary
 
-      then_set :summary, to: :summary
+      then_set :summary, to: :refusal
 
       emits "ClearanceRefused"
     end
@@ -1238,6 +1414,30 @@ Hecks.bluebook "QualityControl" do
   # Splitting them is what lets a crash between the two leave a row in
   # `Ticket.Raised` rather than a lie, and it is why the ask is a reaction to
   # an event rather than something a command does on the side.
+  # THE SUITE ANSWERS THE CLEARANCE. `Start` puts a commit up; the ask runs
+  # the suite; whichever ending comes back records itself. Nothing here reads
+  # a result and decides — the adapter already decided, by answering or
+  # refusing, which is the only branch a policy can express.
+  # THE LOOP CLOSED FROM EITHER END. `Ticket.Close` is the only way a ticket
+  # leaves `filed`, and nothing in this repository can know it happened —
+  # somebody fixes the bug on GitHub and clicks close. So the fact has to
+  # arrive from outside, by whichever route reaches us first, and both routes
+  # already say the same word.
+  policy "CloseWhenClosedUpstream" do
+    on      "Ticket.IssueClosedUpstream"
+    trigger "Ticket.Close"
+  end
+
+  policy "ClearOnPass" do
+    on      "Clearance.SuitePassed"
+    trigger "Clearance.Passed"
+  end
+
+  policy "RefuseOnFail" do
+    on      "Clearance.SuiteFailed"
+    trigger "Clearance.Failed"
+  end
+
   policy "FileWhenSubmitted" do
     on      "Ticket.TicketSubmitted"
     trigger "Ticket.IssueTracker.File"

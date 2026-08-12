@@ -26,7 +26,20 @@ RSpec.describe "QualityControl" do
     def file(**) = raise IOError, "the token expired"
   end
 
-  def boot_quality_control(tracker = StubTracker)
+  # CI, BOTH WAYS. A green suite ANSWERS with the summary `Clearance.Passed`
+  # takes; a red one REFUSES, and the runtime hands that refusal to
+  # `Clearance.Failed` under the key `refusal` — which is why that command
+  # declares `refusal` and not `summary`. Nothing but running it says whether
+  # those two words line up.
+  class GreenCi
+    def run(**) = { "summary" => { "value" => "1335 examples, 0 failures" } }
+  end
+
+  class RedCi
+    def run(**) = raise "suite red against abc1234: 1335 examples, 2 failures"
+  end
+
+  def boot_quality_control(tracker = StubTracker, ci: GreenCi)
     registry = Hecksagain::Runtime::Registry.new
 
     Hecksagain.with_registry(registry) do
@@ -39,6 +52,10 @@ RSpec.describe "QualityControl" do
       Hecksagain::Adapters.send(:remove_const, :QcTracker) if Hecksagain::Adapters.const_defined?(:QcTracker, false)
       Hecksagain::Adapters.const_set(:QcTracker, tracker)
       Hecks.adapter("QcTracker") { port "IssueTracker" }
+
+      Hecksagain::Adapters.send(:remove_const, :QcCi) if Hecksagain::Adapters.const_defined?(:QcCi, false)
+      Hecksagain::Adapters.const_set(:QcCi, ci)
+      Hecks.adapter("QcCi") { port "CI" }
 
       Hecks.hecksagon "QualityControl" do
         ::QualityControl::Target.persisted_by("Memory")
@@ -57,6 +74,14 @@ RSpec.describe "QualityControl" do
           tells "Closed" do
             reference_to Ticket, as: :id
             emits "IssueClosedUpstream"
+          end
+        end
+
+        ::QualityControl::Clearance.port "CI" do
+          asks "Run" do
+            reference_to Clearance, as: :id
+            answers "SuitePassed"
+            refuses "SuiteFailed"
           end
         end
       end
@@ -94,7 +119,8 @@ RSpec.describe "QualityControl" do
       title: { value: "as: is accepted and does not alias" },
       demonstration: { value: 'rspec spec/qa_bugs_spec.rb -e "aliasing"' },
       symptom: { value: "the alias is ignored and the original name still answers" },
-      expectation: { value: "the aliased name answers and the original does not" }
+      expectation: { value: "the aliased name answers and the original does not" },
+      submitter: { value: "Claude QA" }
     )
   end
 
@@ -406,7 +432,8 @@ RSpec.describe "QualityControl" do
       bug    = QualityControl::Bug.log(
         sweep_id: sweep.id, reference: { value: "BUG#1" }, sequence: { value: 1 },
         title: { value: "t" }, demonstration: { value: "rspec x" },
-        symptom: { value: "s" }, expectation: { value: "e" }
+        symptom: { value: "s" }, expectation: { value: "e" },
+        submitter: { value: "Claude QA" }
       )
       bug.pause(reason: { value: "architectural" }, next_step: { value: "review" })
 
@@ -447,9 +474,89 @@ RSpec.describe "QualityControl" do
     it "keeps what the run actually said when it went red" do
       runtime
       run = QualityControl::Clearance.start(commit: { value: "0d85613" })
-      run.failed(summary: { value: "1335 examples, 5 failures, seed 12345" })
+      # `refusal`, NOT `summary` — the argument is named for where it comes
+      # from. A refused ask hands its policy the word `refusal`, so the
+      # command that records a red run has to take that word or never fire;
+      # `then_set` is what puts it in the `summary` this query reads.
+      run.failed(refusal: { value: "1335 examples, 5 failures, seed 12345" })
 
       expect(rows("Clearance.Red").first[:summary][:value]).to include("5 failures")
+    end
+
+    # THE GATE, DRIVEN END TO END BY THE PORT rather than by hand. The two
+    # tests above dispatch `Passed`/`Failed` directly, which proves the
+    # chapter but not the wiring — and the wiring is where this broke: the
+    # refusal arrives under a key the command must already declare, and
+    # nothing but running it says whether it does.
+    it "records a clearance from whatever CI answers, both ways" do
+      runtime
+
+      QualityControl::Clearance.start(commit: { value: "abc1234" })
+      runtime.dispatch("QualityControl::Clearance.CI.Run", id: "abc1234")
+
+      expect(rows("Clearance.All").first[:status]).to eq("green")
+    end
+
+    it "records a red run under the word the runtime actually hands back" do
+      red = boot_quality_control(StubTracker, ci: RedCi)
+      QualityControl::Clearance.start(commit: { value: "def5678" })
+      red.dispatch("QualityControl::Clearance.CI.Run", id: "def5678")
+
+      expect(red.query("QualityControl::Clearance.Red").first[:summary][:value]).to include("2 failures")
+    end
+  end
+
+  # TAGS — PUT ON, REPLACED, AND FOUND AGAIN.
+  describe "tags" do
+    let(:sweep) { a_sweep }
+
+    def a_bug_tagged(reference, *tags)
+      # `sweep` FIRST, because Ruby evaluates the receiver before the
+      # arguments — `QualityControl::Bug` would be resolved before the boot
+      # that defines it.
+      holder = sweep
+
+      QualityControl::Bug.log(sweep_id: holder.id, reference: { value: reference }, sequence: { value: 1 },
+                              title: { value: "t" }, demonstration: { value: "spec/x_spec.rb:1" },
+                              symptom: { value: "s" }, expectation: { value: "e" },
+                              submitter: { value: "Claude QA" },
+                              tags: tags.map { |tag| { value: tag } })
+    end
+
+    it "finds every bug carrying one tag, whatever state it is in" do
+      a_bug_tagged("BUG#1", "framework", "cli")
+      a_bug_tagged("BUG#2", "docs")
+
+      expect(references("Bug.Tagged", tag: { value: "framework" })).to eq(["BUG#1"])
+      expect(references("Bug.Tagged", tag: { value: "docs" })).to eq(["BUG#2"])
+      expect(references("Bug.Tagged", tag: { value: "nothing" })).to be_empty
+    end
+
+    it "does not match a tag that is merely a prefix of another" do
+      a_bug_tagged("BUG#1", "framework")
+
+      expect(references("Bug.Tagged", tag: { value: "frame" })).to be_empty
+    end
+
+    # REPLACES RATHER THAN APPENDS, and the spec says so out loud because it
+    # is the one surprising thing about the verb. There is no append in this
+    # language; `Tag` takes the whole set.
+    it "replaces the set, so a tag can be taken off" do
+      bug = a_bug_tagged("BUG#1", "framework", "cli")
+      bug.tag(tags: [{ value: "framework" }])
+
+      expect(references("Bug.Tagged", tag: { value: "framework" })).to eq(["BUG#1"])
+      expect(references("Bug.Tagged", tag: { value: "cli" })).to be_empty
+    end
+
+    it "can be tagged after it is verified — a tag is not a lifecycle move" do
+      bug = a_bug_tagged("BUG#1")
+      bug.investigate(site: { value: "lib/x.rb" }, cause: { value: "c" })
+      bug.fix(commit: { value: "abc1234" })
+      bug.verify(evidence: { value: "the failing spec now passes" })
+      bug.tag(tags: [{ value: "regression" }])
+
+      expect(references("Bug.Tagged", tag: { value: "regression" })).to eq(["BUG#1"])
     end
   end
 end

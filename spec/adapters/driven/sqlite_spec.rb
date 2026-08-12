@@ -65,10 +65,22 @@ RSpec.describe Hecksagain::Adapters::Sqlite do
     expect(found.status).to eq("available")
   end
 
+  # A LIST COMES BACK AS VALUES, THE SAME AS A SCALAR FIELD DOES.
+  #
+  # This used to expect plain hashes, and that expectation was the two
+  # adapters disagreeing rather than a contract worth keeping: Memory handed
+  # back Values — `spec/runtime/value_spec.rb` reads `row.name` off pizzas'
+  # `toppings` and would break otherwise — while SQLite handed back whatever
+  # its JSON column happened to hold. Coercing a `list_of` on the way out
+  # (`Value::Coercion#hydrate_value_list`) is what closed the gap, and the two
+  # stores now answer alike.
+  #
+  # The field is still stored as plain JSON; this is about what a caller
+  # READS, which is where a difference between adapters is felt.
   it "round-trips a list of value objects through its JSON column" do
     adapter.save(instance("p1", toppings: [{ name: "Basil", amount: 3 }]))
 
-    expect(adapter.find("p1").toppings).to eq([{ name: "Basil", amount: 3 }])
+    expect(adapter.find("p1").toppings.map(&:to_h)).to eq([{ name: "Basil", amount: 3 }])
   end
 
   it "answers nil for an id it never stored" do

@@ -51,11 +51,165 @@ Hecks.hecksagon "QualityControl" do
   # The adapter is bound by NAME — anything declaring `port "IssueTracker"`
   # answers this — so a fake one answers in a spec and a real one answers in
   # anger, and nothing in the chapter knows which.
+  # THREE PORTS, NOT ONE, BECAUSE A PORT IS A ROLE.
+  #
+  # These began as a single `Toolchain`, and splitting them is the better
+  # modelling: "run the specs" and "search for a counterexample" are
+  # different jobs with different swappable implementations, and a chapter
+  # that wanted a different test runner should be able to have one without
+  # the fuzzer noticing. Each port is named for the JOB — `Testing`, not
+  # `Rspec` — so the program answering it stays a wiring detail, which is
+  # the only reason to have a port at all.
+  #
+  # `answers` vs `refuses` IS "DID THE CALL WORK", NOT "WAS THE NEWS GOOD".
+  # A fuzz run that finds a counterexample ANSWERED — that is the tool
+  # working, and the interesting output is the point. `refuses` is for a
+  # tool that could not run: no binary, no domain, a signal. Reading a red
+  # result as a refusal would put every genuine finding in the failure
+  # channel and make the good case indistinguishable from a broken
+  # toolchain. The one port where red IS a refusal is `CI` below, and it is
+  # so for a different question: not "what happens when you run this" but
+  # "will you vouch for this commit".
+  QualityControl::Sweep.port "Testing" do
+    # ONE ASK COVERS "the whole file" AND "line 42" — `scope` is handed to
+    # the runner verbatim, so `spec/bug_spec.rb:42` needs no second
+    # operation. A separate `RunOneTest` would differ only in the string.
+    asks "RunSpecs" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "SpecsCompleted"
+      refuses "TestingRefused"
+    end
+
+    # THE ONLY ASK THAT WRITES, and it exists because `Bug.Log` will not
+    # accept a bug without a `demonstration`. The order is the one the
+    # interview settled on: write the failing test, THEN log — the test is
+    # what proves it, so a ledger that let you log first would be
+    # collecting opinions.
+    asks "WriteTest" do
+      reference_to Sweep, as: :id
+      attribute :scope,  Subject
+      attribute :source, Listing
+      answers "TestWritten"
+      refuses "TestingRefused"
+    end
+
+    asks "SmokeTest" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "SmokeCompleted"
+      refuses "TestingRefused"
+    end
+
+    # WHICH COMMIT INTRODUCED IT — the one question on any of these ports
+    # that no amount of running the suite at HEAD can answer, and the
+    # reason "investigate a bug" is a story of its own.
+    asks "Bisect" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      attribute :since, Subject
+      answers "BisectCompleted"
+      refuses "TestingRefused"
+    end
+  end
+
+  # SEARCHING FOR WHAT NOBODY WROTE A TEST FOR. A fuzzer explores runs; the
+  # model checker explores the model. Same question, two reaches, and
+  # neither is a test run — which is why they are not on `Testing`.
+  QualityControl::Sweep.port "Fuzzing" do
+    asks "Fuzz" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "FuzzCompleted"
+      refuses "FuzzingRefused"
+    end
+
+    asks "ModelCheck" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "ModelCheckCompleted"
+      refuses "FuzzingRefused"
+    end
+  end
+
+  # THE CHAPTER'S OWN TOOLING — reading the repository and keeping it
+  # consistent, as against running anything over it.
+  QualityControl::Sweep.port "Toolchain" do
+    asks "TranslationAudit" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "TranslationsAudited"
+      refuses "ToolRefused"
+    end
+
+    asks "RefreshProjections" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "ProjectionsRefreshed"
+      refuses "ToolRefused"
+    end
+
+    # THE SHAPE, AND THE MANUAL. A QA agent that can read a chapter's
+    # canonical IR can see an `as:` that did not alias and a query whose
+    # read model drifted — the failure the interview named first.
+    asks "Structure" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "StructureRead"
+      refuses "ToolRefused"
+    end
+
+    asks "ReadDocs" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "DocsRead"
+      refuses "ToolRefused"
+    end
+
+    asks "RunScript" do
+      reference_to Sweep, as: :id
+      attribute :scope, Subject
+      answers "ScriptCompleted"
+      refuses "ToolRefused"
+    end
+  end
+
+  # THE FULL SUITE IS A DIFFERENT KIND OF ASK, which is why it hangs off
+  # Clearance rather than Sweep. A red suite is not a failed call — it is the
+  # outside REFUSING to vouch for this commit, which is precisely what
+  # `refuses` means, and it lands on the record whose whole job is answering
+  # "is this sha safe to ship".
+  QualityControl::Clearance.port "CI" do
+    asks "Run" do
+      reference_to Clearance, as: :id
+      answers "SuitePassed"
+      refuses "SuiteFailed"
+    end
+  end
+
   QualityControl::Ticket.port "IssueTracker" do
     asks "File" do
       reference_to Ticket, as: :id
       answers "IssueFiled"
       refuses "IssueFilingRefused"
+    end
+
+    # THE PULL AND THE PUSH LAND ON ONE EVENT, which is the whole reason to
+    # bother declaring both. `tells "Closed"` is GitHub telling us (a webhook,
+    # somebody running the verb); `asks "Poll"` is us going to look. They
+    # answer the same word, so the policy that closes a ticket is written
+    # once and cannot drift between the two routes.
+    #
+    # THE TWO ENDINGS ARE THE BRANCH. A policy cannot read a result and
+    # decide — so "is it closed yet" has to be asked as a question the
+    # outside can say no to, and "still open" is that no. Answering
+    # `IssueStillOpen` in the success channel instead would need somebody
+    # downstream to inspect a field, and there is nowhere in this language
+    # that could.
+    asks "Poll" do
+      reference_to Ticket, as: :id
+      answers "IssueClosedUpstream"
+      refuses "IssueStillOpen"
     end
 
     tells "Closed" do

@@ -280,11 +280,29 @@ module Hecksagain
         aggregate_emits = bluebook.aggregates.flat_map do |aggregate|
           aggregate.commands.map(&:emits) +
             aggregate.entities.flat_map { |entity| entity.commands.map(&:emits) } +
-            aggregate.ports.flat_map { |port| port.operations.map(&:emits) }
+            aggregate.ports.flat_map { |port| port.operations.map { |o| announcements(o) } }
         end
-        chapter_emits = bluebook.ports.flat_map { |port| port.operations.map(&:emits) }
+        chapter_emits = bluebook.ports.flat_map { |port| port.operations.map { |o| announcements(o) } }
 
-        (aggregate_emits + chapter_emits).flatten.uniq
+        (aggregate_emits + chapter_emits).flatten.compact.uniq
+      end
+
+      # AN ASK ANNOUNCES TWO WORDS AND `emits` IS NEITHER OF THEM.
+      #
+      # `emits` was the whole vocabulary when a port operation only ever
+      # pointed inward; an outbound one names its two endings as `answers` and
+      # `refuses` instead, and collecting only `emits` made every policy
+      # reacting to one report as `deaf_policy` — listening for an event
+      # "no command in this domain emits", about an event the runtime emits
+      # perfectly well.
+      #
+      # THE FALSE POSITIVES WERE THE REAL DAMAGE. A domain using ports scored
+      # six errors it did not have, and six errors of noise is where a genuine
+      # one goes to hide.
+      def announcements(operation)
+        return operation.emits unless operation.outbound?
+
+        [operation.answers, operation.refuses]
       end
 
       # Fully-qualified, the same spelling DispatchSpec#command_name
@@ -294,8 +312,19 @@ module Hecksagain
       def verbs_of(bluebook)
         bluebook.aggregates.flat_map do |aggregate|
           verbs = aggregate.commands.map { |command| "#{bluebook.name}::#{aggregate.hecks_name}.#{command.hecks_name}" }
-          verbs + aggregate.entities.flat_map do |entity|
+          verbs += aggregate.entities.flat_map do |entity|
             entity.commands.map { |command| "#{bluebook.name}::#{aggregate.hecks_name}.#{entity.hecks_name}.#{command.hecks_name}" }
+          end
+
+          # A PORT OPERATION IS A VERB A POLICY MAY TRIGGER, which is how the
+          # filing of a GitHub issue happens at all — `FileWhenSubmitted`
+          # triggers `Ticket.IssueTracker.File`, and `Dispatcher#dispatch`
+          # resolves it by reading the head as a port. Listing only commands
+          # here called that trigger unknown while it was demonstrably
+          # working, which is the worst thing a checker can say: correct
+          # design, confident refusal.
+          verbs + aggregate.ports.flat_map do |port|
+            port.operations.map { |op| "#{bluebook.name}::#{aggregate.hecks_name}.#{port.name}.#{op.hecks_name}" }
           end
         end
       end

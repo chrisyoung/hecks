@@ -1,0 +1,9 @@
+# Three roles, three ports, three adapters — declared here rather than in
+# `lib/hecksagain/adapters/driven/`, which loads into every registry.
+require_relative "toolchain"
+require_relative "rspec_runner"
+require_relative "fuzzer"
+
+Hecks.adapter("Toolchain") { port "Toolchain" }
+Hecks.adapter("Rspec")     { port "Testing" }
+Hecks.adapter("Fuzzer")    { port "Fuzzing" }

@@ -31,7 +31,10 @@ module Hecksagain
           argument    = options[path] || options[expand(path, options)] ||
                         raise(Runtime::NotFound, unknown(path, options.keys))
 
-          bury(args, (options.key?(path) ? path : expand(path, options)).split("."), cast(value, argument[:type]))
+          full = options.key?(path) ? path : expand(path, options)
+          next append(args, full.split("."), cast(value, argument[:type])) if argument[:list]
+
+          bury(args, full.split("."), cast(value, argument[:type]))
         end
       end
 
@@ -61,6 +64,36 @@ module Hecksagain
         end
       rescue ArgumentError
         raise Runtime::TypeMismatch, "#{value.inspect} is not #{type} — the chapter declares this field as #{type}"
+      end
+
+      # A LIST GROWS RATHER THAN OVERWRITES, and getting this wrong is silent.
+      #
+      # `tags.value=framework tags.value=model-checker` used to reach `bury`
+      # twice and store the second one alone — no refusal, no warning, one tag
+      # simply gone. That is the failure the interview named first: not the
+      # loud kind, the kind where a value is forgotten and the caller has no
+      # way to notice.
+      #
+      # A LIST OF ONE IS STILL A LIST. `tags.value=flaky` produces
+      # `[{ value: "flaky" }]`, not `{ value: "flaky" }`, because the chapter
+      # declared a collection and a caller who sent one element did not
+      # thereby declare a different shape. The old behaviour handed a bare
+      # object to a `list_of` attribute, and everything downstream that walks
+      # it — a query's `contains`, a projection, the Postgres adapter's own
+      # array handling — is entitled to assume it can iterate.
+      #
+      # MULTI-FIELD ELEMENTS ARE NOT SUPPORTED HERE, deliberately. A flat
+      # command line has no way to say which `a.x=` goes with which `a.y=`,
+      # and inventing an index syntax would be a language nobody asked for.
+      # Every list in this corpus is a list of single-field value objects; a
+      # richer one is a job for `JsonDoor`, which has real nesting.
+      def append(hash, path, value)
+        *branches, leaf = path.map(&:to_sym)
+        holder = branches[0..-2].reduce(hash) { |node, key| node[key] ||= {} }
+        list   = holder[branches.last] ||= []
+
+        list << { leaf => value }
+        hash
       end
 
       def bury(hash, path, value)

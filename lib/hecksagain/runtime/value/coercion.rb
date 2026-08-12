@@ -87,9 +87,38 @@ module Hecksagain
           end
         end
 
+        # A LIST IS A LIST, AND ITS ELEMENTS ARE STILL VALUES.
+        #
+        # This used to return `value` untouched whenever the list's type was
+        # not an entity — which is every `list_of(<value object>)` there is.
+        # The effect was total: a `list_of(Tag)` was stored exactly as it
+        # arrived, so `Tag`'s `pattern:` never matched anything and its
+        # `invariant` never ran. `tags.value="THIS IS NOT A TAG!!"` was
+        # accepted against `^[a-z0-9][a-z0-9_-]*$` and written to a durable
+        # ledger, and banking's `Charge#tags` had the same hole.
+        #
+        # WORSE, IT WAS SHAPED WRONG TOO. A bare `{value: "x"}` where a list
+        # belonged went in as an object, and the row was then unreadable by
+        # the very query the tags exist for — `contains` against an object is
+        # a raw `PG::InvalidParameterValue`, thrown from inside the adapter,
+        # about a record written without complaint some days earlier.
+        #
+        # SO THE SHAPE IS REFUSED AT THE DOOR — `refuse_unlisted`, called
+        # from `coerce_declared_arguments` beside `refuse_object_reference`,
+        # which is the same place and the same kind of rule.
+        #
+        # AND ONLY AT THE DOOR. The first version of this refused here
+        # instead, on every coercion, which meant it also fired while READING
+        # — and a ledger holding one row the old code had written would not
+        # open at all: "cannot open QualityControl: tags is a list of Tag".
+        # That is a far worse failure than the one being fixed. Data already
+        # written cannot be retroactively refused; a store gets repaired on
+        # the way out, and it is the DOOR that stops any more arriving.
         def hydrate_entity_list(aggregate, attribute, value)
+          value = value.is_a?(Array) ? value : [value]
+
           entity = aggregate.entities.find { |candidate| candidate.hecks_name == attribute.type.to_s }
-          return value unless entity
+          return hydrate_value_list(aggregate, attribute, value) unless entity
 
           Array(value).map do |element|
             next element unless element.is_a?(Hash)
@@ -100,6 +129,44 @@ module Hecksagain
               hydrated[key] = field ? for_attribute(aggregate, field, field_value) : field_value
             end
           end.freeze
+        end
+
+        # EVERY ELEMENT IS A Value, THE SAME AS A SCALAR FIELD OF THAT TYPE.
+        #
+        # `build` is what runs a value object's `pattern:` and its
+        # `invariant`s, so every element goes through it — that is the whole
+        # point of the fix.
+        #
+        # AND WHAT COMES BACK IS THE Value, not its hash. The first attempt
+        # returned `to_h`, reasoning that a plain hash was the safer storage
+        # shape; `spec/runtime/value_spec.rb` said otherwise in four places,
+        # and it was right. Pizzas' `toppings` is read as
+        # `row.name` / `row.amount`, and every consumer of a `list_of` in this
+        # corpus expects the elements to behave exactly like the scalar
+        # attribute of the same type — which is what `for_attribute` has
+        # always returned for the non-list case one method up. A list of
+        # Values is the consistent answer; a list of hashes was a special case
+        # invented here and nowhere else.
+        def hydrate_value_list(aggregate, attribute, value)
+          return value.freeze unless aggregate.respond_to?(:value_object)
+
+          value_object = aggregate.value_object(attribute.type)
+          return value.freeze unless value_object
+
+          value.map do |element|
+            next element if element.is_a?(self)
+
+            build(value_object, fields_for(value_object, attribute.name, element))
+          end.freeze
+        end
+
+        def refuse_unlisted(command, attribute, value)
+          return unless attribute.list?
+          return if value.nil? || value.is_a?(Array)
+
+          raise TypeMismatch,
+                "#{command.hecks_name} takes #{attribute.name} as a list of #{attribute.type} — " \
+                "send a list of them, not #{Rendering.describe(value)}"
         end
 
         # `Value.identifier` used to live here: hand it a one-field value object

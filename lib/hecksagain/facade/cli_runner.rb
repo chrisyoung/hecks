@@ -67,6 +67,8 @@ module Hecksagain
         # somebody who issued one verb wants that verb's outcome, and against a
         # Postgres-backed domain the full dump is every record there has been.
         handle = runtime.dispatch(spec[:verb], **args)
+        return [JSON.pretty_generate(answered(handle)), 0] if handle.state.nil?
+
         [JSON.pretty_generate(id: handle.id,
                               state: JsonDoor.materialize(handle.state),
                               events: handle.events.map(&:name)), 0]
@@ -77,6 +79,36 @@ module Hecksagain
       rescue *Runtime::DOMAIN_REFUSALS => e
         # THE REFUSAL IS THE PRODUCT — the chapter's own sentence, verbatim.
         [e.message, 1]
+      end
+
+      # A PORT OPERATION HAS NO STATE, AND ITS PAYLOAD IS THE ENTIRE POINT.
+      #
+      # A command answers with the record it changed, so naming the events is
+      # enough — the interesting part is in `state`. A port operation changes
+      # no record: it asked something outside and came back with what was
+      # said, and that lives ONLY in the event payload. Reporting names alone
+      # would print `SpecsCompleted` and drop the spec output on the floor.
+      #
+      # This is what makes a projected CLI usable as somebody's only door. An
+      # agent that may not shell out cannot run `rspec` and read the terminal;
+      # it asks the port and reads the answer, and if the answer is a bare
+      # event name then the door leads nowhere and it needs a shell after all.
+      #
+      # BOTH ENDINGS COME BACK THE SAME WAY, and the status stays 0 for both.
+      # A refusal here is not a misuse — `IssueStillOpen` and `SuiteFailed`
+      # are answers the caller asked for, correctly delivered. Exit 1 is for
+      # "you typed something wrong", and conflating the two would have a
+      # scripted agent treat a healthy no as a broken call.
+      def answered(handle)
+        # THE ID COMES OFF THE EVENT, because a port operation hydrates no
+        # instance and the handle's own `id` is nil by design. The event knows
+        # which record was asked about — it was stamped with it — and printing
+        # `null` beside a payload that plainly says `SW-TOOL` would read as a
+        # bug in something.
+        { id: handle.id || handle.events.first&.id,
+          events: handle.events.map do |event|
+            { name: event.name, payload: JsonDoor.materialize(event.payload) }
+          end }
       end
 
       # A NEAR MISS IS WORTH MORE THAN A LIST. Somebody who typed

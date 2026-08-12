@@ -51,6 +51,7 @@ module Hecksagain
           next unless normalized.key?(attribute.name)
 
           Value.refuse_object_reference(command, attribute, normalized[attribute.name])
+          Value.refuse_unlisted(command, attribute, normalized[attribute.name])
           normalized[attribute.name] = Value.for_attribute(aggregate, attribute, normalized[attribute.name])
         end
       end

@@ -64,6 +64,29 @@ module Hecksagain
         { number: { value: url[%r{/(\d+)\s*\z}, 1].to_i }, url: { value: url } }
       end
 
+      # HAS IT BEEN CLOSED YET — asked as a question the outside can refuse,
+      # because that is the only way a two-ended ask can carry a branch.
+      # Closed answers; open, or unreachable, refuses. Both are recorded.
+      #
+      # `--json state` RATHER THAN SCRAPING. `gh issue view` prints a human
+      # page whose wording is not a contract; the JSON field is.
+      def poll(repository:, number:, **)
+        issue = text(number)
+        raise "this ticket has no issue number yet — nothing to poll" if issue == "0"
+
+        out, err, status = Open3.capture3(
+          "gh", "issue", "view", issue,
+          "--repo", text(repository), "--json", "state",
+          **(@root ? { chdir: @root } : {})
+        )
+        raise refusal(err, out, status) unless status.success?
+
+        state = JSON.parse(out)["state"].to_s
+        raise "issue ##{issue} is still #{state.downcase}" unless state.casecmp("closed").zero?
+
+        {}
+      end
+
       private
 
       # A value object arrives as a Hash once `Value.materialize` has been

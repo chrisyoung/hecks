@@ -57,6 +57,19 @@ module Hecksagain
             entity.commands.each { |c| claim(verbs, name_for(aggregate, c, entity), command_spec(bluebook, aggregate, entity, c)) }
             entity.queries.each  { |q| claim(questions, name_for(aggregate, q, entity), query_spec(bluebook, aggregate, entity, q)) }
           end
+
+          # A PORT IS A VERB TOO, and leaving it off the map was a real gap
+          # rather than a tasteful omission. The runtime has always dispatched
+          # a port operation by exactly the same name as a command — the
+          # projection simply never listed one, so `run_specs` and `file`
+          # answered "no such verb" while working perfectly through Ruby.
+          #
+          # It matters most for the caller with no other door. An agent that
+          # may not shell out reaches this domain ONLY through the projected
+          # CLI, and a port it cannot see is a capability it does not have.
+          aggregate.ports.each do |port|
+            port.operations.each { |o| claim(verbs, name_for(aggregate, o), port_spec(bluebook, aggregate, port, o)) }
+          end
         end
 
         # THE SHORT SPELLING, WHERE IT CANNOT BE AMBIGUOUS. `pizzas
@@ -155,6 +168,44 @@ module Hecksagain
           refusals: refusals(command, holder), arguments: arguments }
       end
 
+      # A PORT OPERATION READS AS A VERB BUT REPORTS AS A BOUNDARY.
+      #
+      # `creates: false` because it makes no record, and `refusals: []`
+      # because it has none in the sense every other verb means: a command's
+      # refusals are sentences the chapter will say back to you, and an
+      # outbound operation's failure is somebody else's sentence, unknowable
+      # from here.
+      #
+      # THE SUMMARY NAMES BOTH ENDINGS, which is the one thing a caller most
+      # needs and cannot infer. `run_specs` looks like it either works or
+      # errors; what it actually does is answer `SpecsCompleted` even when the
+      # suite is red, and refuse only when rspec could not run. Somebody
+      # reading `--help` should not have to open the hecksagon to find that
+      # out.
+      def port_spec(bluebook, aggregate, port, operation)
+        arguments = operation.attributes.flat_map { |a| options_for(a, aggregate, aggregate) }
+
+        # THE WIRE NAME CARRIES THE PORT, THE TYPED NAME DOES NOT.
+        #
+        # `Dispatcher#dispatch` splits a verb into head and sub and looks the
+        # head up as a port, so a port operation is addressed
+        # `Aggregate.Port.Operation` — three parts where a command has two.
+        # But nobody should have to type `sweep.toolchain.run_specs`: which
+        # port a verb goes out through is wiring, and the caller's business is
+        # what they want done. So the projection spells the verb in full and
+        # names it short, which is the same split `shorten` already makes.
+        { verb: [fqn(bluebook, aggregate, operation).sub(/\.[^.]+\z/, ""), port.name, operation.hecks_name].join("."),
+          kind: :command, creates: false, refusals: [],
+          role: operation.outbound? ? "#{aggregate.hecks_name} asking #{port.name}" : "#{port.name} telling #{aggregate.hecks_name}",
+          summary: port_summary(port, operation), arguments: arguments }
+      end
+
+      def port_summary(port, operation)
+        return "#{port.name} reports it; emits #{operation.emits.join(', ')}" unless operation.outbound?
+
+        "Ask #{port.name} — answers #{operation.answers}, refuses #{operation.refuses}"
+      end
+
       def query_spec(bluebook, aggregate, entity, query)
         arguments = Array(query.to_h[:attributes]).flat_map do |declared|
           attribute = query.attributes.find { |a| a.name.to_s == declared[:name].to_s }
@@ -190,13 +241,30 @@ module Hecksagain
         value_object = value_object_for(attribute, holder, aggregate)
         return [scalar_option(path, attribute, optional)] unless value_object
 
-        value_object.attributes.flat_map do |field|
+        # A LIST SAYS SO, ALL THE WAY DOWN TO ITS LEAVES.
+        #
+        # Without this a `list_of(Tag)` projected exactly like a single Tag:
+        # one option, `tags.value`, indistinguishable from a scalar. So the
+        # help said to pass one, `CliDoor#bury` overwrote the leaf each time,
+        # and passing two tags stored the second and lost the first WITHOUT
+        # SAYING ANYTHING. A missing argument is refused loudly; a forgotten
+        # one is not, which makes it the more expensive of the two by far.
+        #
+        # The flag is carried on the leaf rather than kept beside the
+        # attribute because the leaf is all `CliDoor` ever sees — it is handed
+        # a path and a spec, and reuniting them with the attribute that
+        # produced them would be a lookup that exists only to answer this.
+        fields = value_object.attributes.flat_map do |field|
           nested = value_object_for(field, value_object, aggregate)
           next options_for(field, value_object, aggregate, path, optional) if nested
 
           scalar_option("#{path}.#{field.name}", field, optional || field.optional?,
                         enum: closed_members(value_object, field))
         end
+
+        return fields unless attribute.list?
+
+        fields.map { |option| option.merge(list: true, note: [option[:note], "repeatable"].compact.join("; ")) }
       end
 
       def reference_option(attribute)
