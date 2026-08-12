@@ -383,24 +383,49 @@ parallel_test spec/
 
 **Only commit if ALL tests pass.**
 
-### 5.5 Commit Fixes
+### 5.5 Commit Fixes (Push to Main Immediately)
 
+**CRITICAL:** Bug fixes go straight to **main**, not to the QA branch.
+
+**Workflow:**
 ```bash
-git add -A
-git commit -m "Fix: <Brief description>
+# You're on feat/qa-infrastructure
+# Switch to main to commit the actual fix
+git checkout main
+git pull origin main
+
+# Make the fix
+# Example: Edit lib/hecksagain/runtime/query_interpreter.rb
+# Then run tests to verify
+
+git add lib/hecksagain/runtime/query_interpreter.rb
+git commit -m "Fix: Query results mutable
 
 What was broken:
-- Specific problem
+- Query results returned mutable hashes, allowing accidental corruption
 
 How it was fixed:
-- File changed, line changed, what changed
+- query_interpreter.rb lines 92, 106: Added .freeze to result materialization
+- Freezes both individual hashes and the result array
 
 Why it works:
-- Brief explanation
+- Frozen objects raise FrozenError on mutation attempts
+- Protects read model output from accidental changes
 
 Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_xxx"
+
+# Push to main immediately
+git push origin main
+
+# Then return to QA branch to continue documenting
+git checkout feat/qa-infrastructure
 ```
+
+**Separation of Concerns:**
+- 🔧 **Bug fixes** (actual code) → Commit to main, push immediately
+- 📚 **QA infrastructure** (SOP, docs, templates) → Stay on feat/qa-infrastructure
+- 🧪 **Regression tests** (tests that demo the bug) → Stay on QA branch
 
 ---
 
