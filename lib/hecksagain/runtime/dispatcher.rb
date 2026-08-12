@@ -102,7 +102,7 @@ module Hecksagain
 
         announced.each { |event| @sagas.advance(event, domain) }
 
-        Result.new(verb: verb, instance: instance, events: announced)
+        Result.new(verb: verb, instance: instance&.freeze, events: announced.freeze)
       end
 
       # THE DOOR AN ADAPTER OUTSIDE THE BLUEBOOK CALLS THROUGH — never the
