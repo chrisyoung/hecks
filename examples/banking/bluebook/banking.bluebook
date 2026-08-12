@@ -1014,6 +1014,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Record that today's presentment could not be collected"
 
       reference_to ScheduledPayment
+      given("payment is scheduled") { status == "scheduled" }
 
       emits "ScheduledPaymentFailed"
     end
