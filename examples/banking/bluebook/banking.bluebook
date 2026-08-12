@@ -345,6 +345,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Release a cleared account"
 
       reference_to Account
+      given("account is frozen") { status == "frozen" }
       emits "AccountUnfrozen"
     end
 
