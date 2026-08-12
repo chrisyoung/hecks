@@ -1,7 +1,25 @@
 module Hecksagain
   module Bluebook
     module IR
-      def self.render_value(value) = Literal.render(value)
+      # `Literal.render` refuses any value it has no pinned spelling for, on
+      # purpose (its own header comment) — and a raw `IR::TemplateSpec`
+      # (`template("fmt %s", from_pm(:x))` inside a `with:` value) is
+      # exactly such a value: a Bluebook::IR-specific Struct, not one of
+      # Literal's five primitive/collection shapes. Spelled here, one level
+      # up from Literal, as the plain Hash it already carries — `format`
+      # and `args` — rather than teaching the domain-agnostic Literal
+      # module a Bluebook::IR class name. The meta-domain never reads this
+      # value back as a template (see `BluebookBuilder#reattach_saga_
+      # runtime_state!`'s own comment: the live with_spec structure is
+      # restored from the pre-judge graph after judging, not reconstructed
+      # from the wire), so this only has to render without raising —
+      # but it renders through the same self-describing spelling as
+      # everything else rather than falling back to `#to_s`.
+      def self.render_value(value)
+        return Literal.render({ format: value.format, args: value.args }) if value.is_a?(TemplateSpec)
+
+        Literal.render(value)
+      end
 
       # A query — an ASK, declared on an aggregate or on one of its entities.
       #

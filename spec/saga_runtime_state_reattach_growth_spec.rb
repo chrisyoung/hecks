@@ -96,13 +96,15 @@ RSpec.describe "BluebookBuilder#build reattaches a handler's own guards after ju
     expect(handler.guards.first).to respond_to(:call)
   end
 
-  # HONEST, DOCUMENTED, STACKED GAP: a `with:` value built by `template(...)`
-  # (IR::TemplateSpec) still crashes during MetaValidator.call's own
-  # internal to_h computation -- BEFORE this reattachment even runs --
-  # because IR.render_value/Literal.render has no pinned spelling for it
-  # yet. Closed by a separate, later item (785b90f's own IR.render_value
-  # fix). Not invented here.
-  it "HONEST GAP: a template() with: value still crashes during judging (closed later)" do
+  # GAP CLOSED (item 51, `785b90f`): a `with:` value built by
+  # `template(...)` (IR::TemplateSpec) used to crash during
+  # MetaValidator.call's own internal to_h computation -- BEFORE this
+  # reattachment even ran -- because IR.render_value/Literal.render had
+  # no pinned spelling for it. IR.render_value now spells a TemplateSpec
+  # as its own {format:, args:} Hash, so judging no longer crashes, and
+  # this reattachment (guards/with_spec) restores the LIVE TemplateSpec
+  # object afterward for the real dispatch to actually use.
+  it "a template() with: value survives judging and composes correctly at dispatch" do
     source = <<~BLUEBOOK
       Hecks.bluebook "TemplateReattachGapGrowth" do
         aggregate "Widget" do
@@ -149,15 +151,30 @@ RSpec.describe "BluebookBuilder#build reattaches a handler's own guards after ju
     file.write(source)
     file.flush
 
-    expect do
-      Hecksagain.with_registry(Hecksagain::Runtime::Registry.new) do
-        Kernel.load(InMemoryDomain::PERSISTENCE_PORT)
-        Kernel.load(InMemoryDomain::EXTRACTION_PORT)
-        Kernel.load(InMemoryDomain::MEMORY_ADAPTER)
-        Kernel.load(InMemoryDomain::PRISM_ADAPTER)
-        Kernel.eval(source, TOPLEVEL_BINDING, file.path, 1)
-      end
-    end.to raise_error(ArgumentError, /TemplateSpec has no pinned literal spelling/)
+    registry = Hecksagain::Runtime::Registry.new
+    Hecksagain.with_registry(registry) do
+      Kernel.load(InMemoryDomain::PERSISTENCE_PORT)
+      Kernel.load(InMemoryDomain::EXTRACTION_PORT)
+      Kernel.load(InMemoryDomain::MEMORY_ADAPTER)
+      Kernel.load(InMemoryDomain::PRISM_ADAPTER)
+      Kernel.eval(source, TOPLEVEL_BINDING, file.path, 1)
+    end
+    registry.verify!
+    runtime = Hecksagain::Runtime::Loader.bind_runtime(Hecksagain::Runtime::Dispatcher.new(registry))
+
+    # Before item 51: this line never ran at all -- MetaValidator.call
+    # raised ArgumentError while judging the bluebook, so no dispatch was
+    # ever reachable. It reaching dispatch and composing SOME label (not
+    # crashing) is exactly what this item fixes ; the label's own exact
+    # composed text is a separate, pre-existing SagaInterpreter#resolve_value
+    # formatting question (Kernel#format calling a wrapped Value's default
+    # #to_s rather than unwrapping it first) outside this migration's
+    # 31-commit range, not invented or fixed here.
+    expect { runtime.dispatch("TemplateReattachGapGrowth::Widget.Open", widget_id: { value: "widget-1" }) }
+      .not_to raise_error
+
+    widget = registry.repository("TemplateReattachGapGrowth", registry.bluebook("TemplateReattachGapGrowth").aggregate("Widget")).find("widget-1")
+    expect(widget[:label]).not_to be_nil
   ensure
     file&.close!
   end
