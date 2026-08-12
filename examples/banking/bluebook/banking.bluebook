@@ -1144,6 +1144,8 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Give up on a payment that could not be collected after every retry"
 
       reference_to ScheduledPayment
+      given("customer is active") { account.customer.status == "active" }
+      given("account is open") { account.status == "open" }
       given("payment is failed") { status == "failed" }
 
       given("every retry is exhausted") { attempts.value >= max_attempts.value }
