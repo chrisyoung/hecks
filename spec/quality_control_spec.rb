@@ -189,6 +189,62 @@ describe "the clock" do
   end
 end
 
+  # ── the composed reads ───────────────────────────────────────────────
+
+  describe "the tally" do
+    def report(name) = runtime.query("QualityControl.#{name}").first
+
+    def a_logged_bug(reference, submitter: "agent-one")
+      holder = sweep
+      QualityControl::Bug.log(sweep_id: holder.id, reference: { value: reference }, sequence: { value: 1 },
+                              title: { value: "t" }, demonstration: { value: "spec/x_spec.rb" },
+                              symptom: { value: "s" }, expectation: { value: "e" },
+                              submitter: { value: submitter })
+    end
+
+    let(:sweep) { a_sweep }
+
+    # THE ONE THING A QUERY CANNOT DO IS COUNT. `Bug.Open` answers rows and
+    # leaves the arithmetic to whoever is reading; a tally IS the arithmetic,
+    # and it is grouped by the LIFECYCLE state — which no `attribute` declares
+    # and `group_by` used to refuse.
+    it "counts every bug under what became of it" do
+      one = a_logged_bug("BUG#1")
+      a_logged_bug("BUG#2")
+      one.investigate(site: { value: "lib/x.rb" }, cause: { value: "c" })
+
+      by_status = report("BugsByStatus")[:bugs]
+
+      expect(by_status["logged"].keys).to eq(["BUG#2"])
+      expect(by_status["investigating"].keys).to eq(["BUG#1"])
+    end
+
+    it "sorts by who reported it, so a quiet agent is visible" do
+      a_logged_bug("BUG#1", submitter: "agent-one")
+      a_logged_bug("BUG#2", submitter: "agent-two")
+      a_logged_bug("BUG#3", submitter: "agent-one")
+
+      by_submitter = report("BugsBySubmitter")[:bugs]
+
+      expect(by_submitter["agent-one"].keys).to contain_exactly("BUG#1", "BUG#3")
+      expect(by_submitter["agent-two"].keys).to eq(["BUG#2"])
+    end
+
+    # REACHABLE FROM THE ONLY DOOR THERE IS. The dispatcher has always
+    # answered a report; the projected CLI never listed one, so a caller with
+    # no Ruby could not ask for the one reading that counts.
+    it "is a question the command line offers" do
+      a_logged_bug("BUG#1")
+
+      text, code = Hecksagain::Facade::CliRunner.call(
+        runtime: runtime, argv: %w[ask bugs_by_status], program: "qa/quality_control"
+      )
+
+      expect(code).to eq(0)
+      expect(JSON.parse(text).first["bugs"]["logged"].keys).to eq(["BUG#1"])
+    end
+  end
+
   # ── the rotation ─────────────────────────────────────────────────────
 
   describe "the rotation" do

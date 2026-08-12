@@ -396,6 +396,33 @@ RSpec.describe "a rootless read model's own group_by" do
     )
   end
 
+  # THE LIFECYCLE FIELD IS A FIELD. `where(status: "frozen")` has always been
+  # legal on the same aggregate — a lifecycle state is stored on the record
+  # like anything else, just declared by `lifecycle` rather than `attribute`.
+  # Refusing it in `group_by` was a drift between two halves of one language,
+  # and it barred the grouping anybody actually wants: a tally IS the count
+  # per status.
+  it "groups by the lifecycle state, which no `attribute` declares" do
+    runtime = build
+    open_accounts(runtime)
+
+    registry = runtime.registry
+    model    = registry.bluebook("Banking").read_model("AccountsByKind")
+    by_state = Hecksagain::Bluebook::IR::ReadModel.new(
+      name: model.name, reference_name: nil, reference_target: nil,
+      aggregate_heads: model.aggregate_heads, group_by: [{ field: :status }, { field: :number }]
+    )
+
+    grouped = Hecksagain::Runtime::ReadModelInterpreter.new(registry)
+                                                       .send(:project, "Banking", by_state, {}).first[:accounts]
+
+    # Three accounts, all newly opened, so they share one lifecycle state —
+    # which is the point: the grouping key came from `lifecycle`, not from
+    # any `attribute`, and every row still arrived.
+    expect(grouped.keys).to eq(["open"])
+    expect(grouped["open"].keys).to contain_exactly("a1", "a2", "a3")
+  end
+
   it "refuses group_by naming a field the aggregate doesn't declare" do
     runtime = build
     open_accounts(runtime)

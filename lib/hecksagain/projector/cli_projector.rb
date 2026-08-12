@@ -72,6 +72,26 @@ module Hecksagain
           end
         end
 
+        # A REPORT IS A QUESTION TOO, and leaving it off was the same gap the
+        # ports had: `Dispatcher#query` has always answered `Domain.ReportName`,
+        # the projection simply never listed one — so the composed reads worked
+        # from Ruby and did not exist for anybody whose only door is the command
+        # line.
+        #
+        # It matters most for exactly what a report is FOR. Every other question
+        # here answers with rows and leaves the arithmetic to the reader; a
+        # `group_by` report is the one that counts. An agent that cannot reach
+        # it can list bugs all day and never answer "how are we doing".
+        #
+        # ONE DOT, NOT TWO — a report belongs to the chapter rather than to any
+        # aggregate (that is what rootless means), so it is addressed
+        # `QualityControl.BugsByStatus` where a query is
+        # `QualityControl::Bug.Queue`. `Dispatcher#query` splits on precisely
+        # that difference.
+        bluebook.read_models.each do |model|
+          claim(questions, Naming.snake(model.hecks_name), report_spec(bluebook, model))
+        end
+
         # THE SHORT SPELLING, WHERE IT CANNOT BE AMBIGUOUS. `pizzas
         # create_pizza` rather than `pizzas order.create_pizza` — the
         # aggregate is worth typing only when two of them declare the same
@@ -204,6 +224,21 @@ module Hecksagain
         return "#{port.name} reports it; emits #{operation.emits.join(', ')}" unless operation.outbound?
 
         "Ask #{port.name} — answers #{operation.answers}, refuses #{operation.refuses}"
+      end
+
+      # A ROOTLESS REPORT TAKES NOTHING; a rooted one takes the id of the
+      # record it is a view of, under the name the model gave that reference.
+      def report_spec(bluebook, model)
+        arguments =
+          if model.reference_target
+            [{ path: model.reference_name.to_s, type: "String", required: true,
+               note: "id of the #{model.reference_target} this is a view of" }]
+          else
+            []
+          end
+
+        { verb: "#{bluebook.name}.#{model.hecks_name}", kind: :query,
+          summary: model.description, arguments: arguments }
       end
 
       def query_spec(bluebook, aggregate, entity, query)

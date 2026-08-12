@@ -1429,6 +1429,49 @@ Hecks.bluebook "QualityControl" do
     end
   end
 
+  # ── the composed reads ───────────────────────────────────────────────
+  #
+  # THE ONE THING A QUERY CANNOT DO IS COUNT. Every question above answers
+  # with rows and leaves the arithmetic to whoever is reading — which is fine
+  # for `queue` (you work the first one) and useless for "how are we doing",
+  # where the whole answer IS the shape of the pile. A rootless report with
+  # `group_by` nests an aggregate own whole table by its own field, so the
+  # count is the size of each group and nobody has to hold twenty numbers in
+  # their head.
+  #
+  # ROOTLESS ON PURPOSE. These centre on no record: there is no one bug whose
+  # view this is. That is exactly the shape `group_by` exists for, and why
+  # these take no id at dispatch.
+
+  # The number worth watching is not the total. It is the share of it that
+  # turned out not to be a bug — `withdrawn` beside `verified` says whether
+  # this practice is finding real things or crying wolf, and no single query
+  # can put those two side by side.
+  report "BugsByStatus" do
+    description "Every bug sorted into what became of it — the tally. The share that is withdrawn, beside the share verified, is the honesty check on the whole practice."
+    include Bug
+    group_by :status, :reference
+  end
+
+  # WHO IS FINDING THINGS, which matters once more than one agent is
+  # sweeping: a submitter with nothing but withdrawn reports is a different
+  # problem from a quiet one.
+  report "BugsBySubmitter" do
+    description "Every bug sorted by who reported it, then by its own reference — what each agent has actually found."
+    include Bug
+    group_by :submitter, :reference
+  end
+
+  # THE FILING PILE AT A GLANCE. `submitting` rows are calls whose outcome
+  # nobody recorded and `abandoned` rows are ones nothing automatic will
+  # touch again — both are only alarming as a COUNT, which is the reading
+  # the per-status queries cannot give.
+  report "TicketsByStatus" do
+    description "Every ticket sorted by where it got to — stuck filings and abandoned ones are only visible as a count."
+    include Ticket
+    group_by :status, :reference
+  end
+
   # ── what happens without anybody asking ──────────────────────────────
 
   # THE FILING, DRIVEN. `Raise` records the intent; this makes the call.
