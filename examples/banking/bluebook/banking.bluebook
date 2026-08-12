@@ -1077,6 +1077,8 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Cancel" do
       reference_to ScheduledPayment
+      given("customer is active") { account.customer.status == "active" }
+      given("account is open") { account.status == "open" }
       given("payment is scheduled") { status == "scheduled" }
       emits "ScheduledPaymentCancelled"
     end
