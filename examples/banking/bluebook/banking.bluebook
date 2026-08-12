@@ -726,6 +726,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Record that the destination credit committed"
 
       reference_to Transfer
+      given("destination customer is active") { destination.customer.status == "active" }
       given("destination account is open") { destination.status == "open" }
       given("transfer is debited") { status == "debited" }
       emits "TransferCredited"
