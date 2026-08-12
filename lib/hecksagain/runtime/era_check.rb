@@ -69,7 +69,44 @@ module Hecksagain
       # `uses_framework`.
       def source_text_for(bluebook, directory)
         domain_files = Dir[File.join(directory, "*.bluebook")]
-        own = domain_files.find { |path| Naming.pascal(File.basename(path, ".bluebook")) == bluebook.name }
+        # Vendored addition, not (yet) upstream hecksagain (migration plan
+        # task 8, embryonautfoundersapp finding): content match FIRST, not
+        # basename match -- `stage_flat_corpus` flattens a whole project
+        # into ONE numeric-prefixed directory (`042_foo.bluebook`), so
+        # `File.basename(path, ".bluebook") == bluebook.name` (pascal-
+        # cased) can never hit -- the prefix always sits in front of it.
+        # Stripping the prefix wouldn't have been enough either: a real
+        # corpus file is free to be named in a way that doesn't
+        # round-trip through `Naming.pascal` at all (found live:
+        # `embryonautfoundersapp.bluebook`, an all-lowercase, no-
+        # separator filename, pascal-cases to "Embryonautfoundersapp",
+        # never "EmbryonautFoundersApp" -- the declared domain name's own
+        # internal capitalization is lost the moment the filename has no
+        # word boundaries to carry it). The flatten also copies a
+        # domain's `translations/*.bluebook` era-history siblings
+        # (`Hecks.data_translation ...`, a different top-level construct
+        # entirely) into the SAME directory as the real bluebook, which
+        # used to be invisible to this glob (non-recursive, and
+        # `translations/` sits one level down) before staging made it
+        # recursive-by-copy -- inflating `domain_files.size` past 1 and
+        # silently defeating the single-file fallback below, which is
+        # what actually broke this case (the ORIGINAL, un-staged
+        # directory has exactly one top-level `.bluebook` file, so the
+        # fallback already covered it fine).
+        # The fix: read each candidate file's OWN `Hecks.bluebook "Name"`
+        # declaration line and match it directly against bluebook.name --
+        # the exact fact this function is trying to establish, rather
+        # than inferring it from a filename convention. Same regex
+        # `hecksagain_runtime.rb`'s `domain_name_of` already uses for
+        # topo-sort ordering, so this is a second, independent consumer
+        # of an already-proven-reliable signal, not a new heuristic.
+        # Immune to numeric prefixing, disambiguation-prefixing, and
+        # non-word-boundary filenames alike, since it never reads the
+        # filename at all. Falls through to the old basename heuristic
+        # and single-file fallback unchanged, so nothing that used to
+        # match stops matching.
+        own = domain_files.find { |path| File.read(path)[/^Hecks\.bluebook\s+"([^"]+)"/, 1] == bluebook.name }
+        own ||= domain_files.find { |path| Naming.pascal(File.basename(path, ".bluebook")) == bluebook.name }
         own ||= domain_files.first if domain_files.size == 1 && !Framework.members.key?(bluebook.name)
         path = own || Framework.members[bluebook.name]
         path && File.read(path)
