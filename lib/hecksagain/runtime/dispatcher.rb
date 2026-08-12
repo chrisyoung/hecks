@@ -49,11 +49,11 @@ module Hecksagain
         @sagas    = SagaInterpreter.new(registry, door: self)
       end
 
-      def events = @registry.event_log
+      def events = @registry.event_log.freeze
 
-      def reactions = @registry.reaction_log
+      def reactions = @registry.reaction_log.freeze
 
-      def sagas = @registry.saga_log
+      def sagas = @registry.saga_log.freeze
       def verbs = @registry.verbs
 
       def dispatch(verb, saga_correlation: nil, **args)
