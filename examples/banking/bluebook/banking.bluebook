@@ -748,7 +748,7 @@ Hecks.bluebook "Banking", version: "v1" do
     attribute :tags, list_of(Tag)
 
     value_object "Tag" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a tag is not the empty string") { !value.to_s.empty? }
     end
 
@@ -1099,7 +1099,7 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "VisitDate" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a visit names its date") { !value.to_s.empty? }
     end
 
@@ -1282,7 +1282,7 @@ Hecks.bluebook "Banking", version: "v1" do
     attribute :account_number, AccountNumber
 
     value_object "OnboardingReference" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an onboarding case is referenced") { !value.to_s.empty? }
     end
 
@@ -1361,16 +1361,17 @@ Hecks.bluebook "Banking", version: "v1" do
     attribute :frequency,       StatementFrequency
 
     value_object "StatementPeriod" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a statement names its period") { !value.to_s.empty? }
     end
 
     value_object "StatementAmount" do
       attribute :cents, Integer
+      invariant("a statement amount is non-negative") { cents >= 0 }
     end
 
     value_object "StatementDate" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a statement is dated") { !value.to_s.empty? }
     end
 
