@@ -864,6 +864,8 @@ Hecks.bluebook "Banking", version: "v1" do
       # `creates?` reading any reference at all.
       reference_to CardPayment
       reference_to Customer, as: :disputed_by
+      given("account is open") { account.status == "open" }
+      given("customer is active") { disputed_by.status == "active" }
       given("payment is captured or refunded") { ["captured", "refunded"].include?(status) }
 
       then_set :disputed_by, to: :disputed_by
