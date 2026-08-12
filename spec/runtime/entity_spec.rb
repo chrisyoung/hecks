@@ -63,6 +63,37 @@ RSpec.describe "an entity" do
     expect(ledger[0][:narrative].to_h).to eq(text: "Opening")
   end
 
+  # H1, docs/audits/2026-08-10-main-bug-audit.md: an entity command ran no
+  # argument gate at all — an unknown argument rode along silently, and a
+  # declared-but-absent one resolved to nil and overwrote the stored
+  # attribute. Both halves of the gate now run on the entity path too.
+  it "refuses an argument it never declared, naming it" do
+    runtime = boot_banking
+    funded_account(runtime)
+
+    expect do
+      runtime.dispatch("Banking::Account.LedgerEntry.Reverse",
+                       number: { value: "a1" }, sequence: { value: 2 },
+                       narrative: { text: "Posted in error" }, bogus_arg: 123)
+    end.to raise_error(Hecksagain::Runtime::UnknownArgument, /bogus_arg/)
+
+    ledger = Banking::Account.find("a1").ledger
+    expect(ledger[1][:state]).to eq("posted")
+  end
+
+  it "refuses a declared argument left out, rather than silently nulling the stored value" do
+    runtime = boot_banking
+    funded_account(runtime)
+
+    expect do
+      runtime.dispatch("Banking::Account.LedgerEntry.Reverse", number: { value: "a1" }, sequence: { value: 2 })
+    end.to raise_error(Hecksagain::Runtime::AbsentArgument, /narrative/)
+
+    ledger = Banking::Account.find("a1").ledger
+    expect(ledger[1][:state]).to eq("posted")
+    expect(ledger[1][:narrative].to_h).to eq(text: "Groceries")
+  end
+
   it "has its own state machine, refusing in so many words" do
     runtime = boot_banking
     funded_account(runtime)
