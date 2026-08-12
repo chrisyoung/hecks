@@ -569,6 +569,7 @@ Hecks.bluebook "Banking", version: "v1" do
       reference_to Account
       attribute :serial,    CardSerial
       attribute :daily_fee, DailyFee
+      given("customer is active") { account.customer.status == "active" }
       given("account is open") { account.status == "open" }
 
       then_set :serial,    to: :serial
