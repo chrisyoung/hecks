@@ -1287,7 +1287,7 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "AccountNumber" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an account number is present") { !value.to_s.empty? }
     end
 
