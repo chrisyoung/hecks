@@ -4,7 +4,7 @@ Documented bugs and findings from systematic adversarial testing.
 
 **Methodology Note:** One bug = one distinct root cause with one fix. Multiple failed specs from the same bug are not counted separately.
 
-**Session Status:** 12 distinct bugs identified and fixed
+**Session Status:** 22 distinct bugs identified and fixed (12 original + 10 new in this loop)
 
 ---
 
@@ -24,6 +24,16 @@ Documented bugs and findings from systematic adversarial testing.
 | 10 | Hecksagon.bluebook String validation gap | Language bluebook String VOs lack pattern validation | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 11 | Translation.bluebook String validation gap | Grammar bluebook String VOs lack pattern validation | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 12 | Nested VO invariants not validated | Runtime doesn't validate invariants on nested VOs | Modify runtime validation | HIGH - Silent failure |
+| 13 | Pizzas.Size.value lacks pattern validation | VO String attribute not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 14 | Syntax.Keyword.pair_key_fills lacks pattern | VO String attribute not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 15 | Syntax.Keyword attributes lack pattern | Multiple VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 16 | Banking.CustomerStanding.value lacks pattern | VO String attribute with default not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 17 | Banking.LedgerDirection.value lacks pattern | Closed-set VO String not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 18 | Banking.Money.currency lacks pattern | VO String attribute with default not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 19 | Banking.PositiveMoney.currency lacks pattern | VO String attribute with default not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 20 | Banking.AccountKind.name lacks pattern | Closed-set VO String not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 21 | Banking.StatementFrequency.cadence lacks pattern | Closed-set VO String not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 22 | Expression.SourceToken.value lacks pattern | VO String attribute not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 
 ---
 
