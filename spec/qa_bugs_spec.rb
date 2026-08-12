@@ -18,6 +18,8 @@ require "spec_helper"
 # 4. Remove from this file
 
 RSpec.describe "QA Bug Demonstrations", qa: true do
+  let(:banking_runtime) { boot_in_memory_for(:banking) }
+
   def boot_in_memory_for(domain)
     runtime = boot_in_memory
     Hecksagain.with_registry(runtime.registry) do
@@ -27,7 +29,6 @@ RSpec.describe "QA Bug Demonstrations", qa: true do
   end
 
   describe "BUG#7: Negative Account Balance Allowed" do
-    let(:banking_runtime) { boot_in_memory_for(:banking) }
 
 
     it "should prevent overdraft (currently fails)" do
@@ -79,4 +80,53 @@ RSpec.describe "QA Bug Demonstrations", qa: true do
       skip "Blocked on architectural fix"
     end
   end
+
+  describe "BUG#8: Float Type Coercion Accepted" do
+    it "should reject float values for integer cents fields (currently fails)" do
+      # Create a customer and account
+      cust = banking_runtime.dispatch("Banking::Customer.Register",
+                                      reference: { value: "cust-#{SecureRandom.hex(4)}" },
+                                      name: { given: "Jane", family: "Doe" },
+                                      email: { address: "jane@example.com" })
+
+      acct = banking_runtime.dispatch("Banking::Account.Open",
+                                      customer_id: cust.id,
+                                      number: { value: "acct-#{SecureRandom.hex(4)}" },
+                                      kind: { name: "current" },
+                                      daily_limit: { cents: 10_000 })
+
+      # Credit a float amount - should be REJECTED (but currently accepted)
+      expect {
+        banking_runtime.dispatch("Banking::Account.Credit",
+                                id: acct.id,
+                                amount: { cents: 12.5, currency: "USD" },
+                                narrative: { text: "Float credit" })
+      }.to raise_error(Hecksagain::Runtime::TypeMismatch, /Float|numeric|Integer/)
+    end
+  end
+
+  describe "BUG#9: String Type Coercion Accepted" do
+    it "should reject string values for integer cents fields (currently fails)" do
+      # Create a customer and account
+      cust = banking_runtime.dispatch("Banking::Customer.Register",
+                                      reference: { value: "cust-#{SecureRandom.hex(4)}" },
+                                      name: { given: "Bob", family: "Smith" },
+                                      email: { address: "bob@example.com" })
+
+      acct = banking_runtime.dispatch("Banking::Account.Open",
+                                      customer_id: cust.id,
+                                      number: { value: "acct-#{SecureRandom.hex(4)}" },
+                                      kind: { name: "current" },
+                                      daily_limit: { cents: 10_000 })
+
+      # Credit a string amount - should be REJECTED (but currently accepted)
+      expect {
+        banking_runtime.dispatch("Banking::Account.Credit",
+                                id: acct.id,
+                                amount: { cents: "1000", currency: "USD" },
+                                narrative: { text: "String credit" })
+      }.to raise_error(Hecksagain::Runtime::TypeMismatch, /String|numeric|Integer/)
+    end
+  end
+
 end
