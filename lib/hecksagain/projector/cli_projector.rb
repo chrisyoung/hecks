@@ -1,0 +1,285 @@
+require_relative "../naming"
+
+module Hecksagain
+  module Projector
+    # A BLUEBOOK, PROJECTED AS ITS OWN COMMAND-LINE SURFACE.
+    #
+    # Every verb a domain declares is a subcommand; every argument is an
+    # option whose TYPE, whose admitted values and whose required-ness are
+    # already stated in the chapter. A hand-written CLI restates all of it and
+    # then drifts — and the first thing to drift is the help text, which is the
+    # only part anybody reads.
+    #
+    # WHAT IS PROJECTED, AND WHAT IS NOT. This answers the SURFACE — the verb
+    # tree, the argument spec, the usage text — and nothing executes here. One
+    # small generic runner (`bin/run`) boots a domain, asks for this, parses
+    # against it and dispatches.
+    #
+    # The alternative was generating an executable per domain, which is what
+    # `bin/project_rust` does for a whole runtime and would be the more
+    # spectacular version of this. It was not taken: a generated program is a
+    # second copy of the dispatch logic, and it needs regenerating on every
+    # bluebook edit — a second tax beside the era gate, paid for a file nobody
+    # reads. Projecting the surface keeps one dispatcher and a help text that
+    # cannot be stale, because it is computed at the moment it is printed.
+    #
+    # THE TYPING IS THE POINT. A CLI hands everything over as a String.
+    # `sequence.value=99` has to become the Integer 99 or the runtime refuses
+    # it, and the only honest place to learn that is the value object's own
+    # declared field type. A CLI that guessed — "it looks like a number" —
+    # would send 99 for a version string of "99" and be wrong in a way nobody
+    # could see.
+    module CliProjector
+      module_function
+
+      # TWO NAMESPACES, NOT ONE — `{ verbs:, questions:, usage: }`.
+      #
+      # A chapter may legally declare a command and a query of one name: the
+      # language namespaces them and `Banking::Account.Open` is both, in the
+      # corpus, today. A single flat list of subcommands has to pick one, and
+      # picking silently is how `Ticket.Filed` sat undetected in this
+      # repository for a day.
+      #
+      # So a question is asked with `ask`: `bin/run ask account.open`. It is
+      # this codebase own word — `Query::AskOption`, "the ask" — it is
+      # shell-safe where a `?` suffix would be eaten by globbing, and it makes
+      # the collision impossible rather than detected. It also reads as what it
+      # is: everything under `ask` changes nothing.
+      def call(bluebook:, options: {})
+        verbs     = {}
+        questions = {}
+
+        bluebook.aggregates.each do |aggregate|
+          aggregate.commands.each { |c| claim(verbs, name_for(aggregate, c), command_spec(bluebook, aggregate, nil, c)) }
+          aggregate.queries.each  { |q| claim(questions, name_for(aggregate, q), query_spec(bluebook, aggregate, nil, q)) }
+
+          aggregate.entities.each do |entity|
+            entity.commands.each { |c| claim(verbs, name_for(aggregate, c, entity), command_spec(bluebook, aggregate, entity, c)) }
+            entity.queries.each  { |q| claim(questions, name_for(aggregate, q, entity), query_spec(bluebook, aggregate, entity, q)) }
+          end
+        end
+
+        { verbs: verbs, questions: questions, usage: usage(bluebook, verbs, questions, options) }
+      end
+
+      # A NAME IS CLAIMED ONCE. A command and a query of one name are legal in
+      # a chapter — the language namespaces them — and ambiguous as
+      # subcommands. Refused here rather than silently resolving to whichever
+      # was walked first, which is how `Ticket.Filed` (a command) and
+      # `Ticket.Filed` (a query) sat undetected until something flattened them.
+      def claim(verbs, name, spec)
+        if verbs.key?(name)
+          raise Bluebook::DSL::Malformed,
+                "two verbs project to the command-line name #{name.inspect}: " \
+                "#{verbs[name][:verb]} and #{spec[:verb]} — rename one"
+        end
+
+        verbs[name] = spec
+      end
+
+      def name_for(aggregate, verb, entity = nil)
+        parts = [Naming.snake(aggregate.hecks_name)]
+        parts << Naming.snake(entity.hecks_name) if entity
+        parts << Naming.snake(verb.hecks_name)
+        parts.join(".")
+      end
+
+      def fqn(bluebook, aggregate, verb, entity = nil)
+        [bluebook.name, "::", aggregate.hecks_name, ".",
+         entity ? "#{entity.hecks_name}." : "", verb.hecks_name].join
+      end
+
+      # ── one verb ──────────────────────────────────────────────────────
+
+      def command_spec(bluebook, aggregate, entity, command)
+        holder    = entity || aggregate
+        arguments = command.attributes.flat_map { |a| options_for(a, holder, aggregate) }
+
+        # `id` IS DECLARED NOWHERE AND IS REQUIRED BY ALMOST EVERYTHING.
+        #
+        # A command that does not create reaches an EXISTING record, and the
+        # `reference_to <its own aggregate>` that says so does not come back in
+        # `attributes` — only cross-aggregate references do. So a caller
+        # reading the argument list alone would never send it, which is exactly
+        # what happened the first time this ran: `bin/run bug.investigate
+        # id=BUG#1 …` answered "no argument id", for a verb that cannot work
+        # without one.
+        #
+        # `id` is the addressing key `ArgumentGate` tolerates on every dispatch
+        # (see its own note on why that is the one channel with no collision),
+        # so it is right for both shapes — an entity's holder and a head's own
+        # identity — and right for composite identities, which have no single
+        # head to name instead.
+        # AN ENTITY COMMAND ALWAYS NEEDS IT, whatever `creates?` says. That
+        # flag means "declares no references", and an entity command never
+        # declares one — it is addressed through its holder and its own
+        # identity heads — so every one of them reports true and would have
+        # lost the `id` to the guard below. Caught by a spec, not by reading.
+        if entity || !command.creates?
+          note = entity ? "id of the #{aggregate.hecks_name} holding it" : "id of the #{aggregate.hecks_name} to act on"
+          arguments = [{ path: "id", type: "String", required: true, note: note }] + arguments
+        end
+
+        { verb: fqn(bluebook, aggregate, command, entity), kind: :command,
+          summary: command.goal, role: command.role, creates: command.creates?,
+          refusals: refusals(command, holder), arguments: arguments }
+      end
+
+      def query_spec(bluebook, aggregate, entity, query)
+        arguments = Array(query.to_h[:attributes]).flat_map do |declared|
+          attribute = query.attributes.find { |a| a.name.to_s == declared[:name].to_s }
+          attribute ? options_for(attribute, entity || aggregate, aggregate) : []
+        end
+
+        { verb: fqn(bluebook, aggregate, query, entity), kind: :query,
+          summary: query.description, arguments: arguments }
+      end
+
+      # ── one argument, flattened ───────────────────────────────────────
+
+      # A VALUE OBJECT BECOMES ONE OPTION PER FIELD, dotted. `commit` typed
+      # `CommitRef` is `--commit.value`, because that is the shape the runtime
+      # wants and a flat `--commit` would have to guess which field it meant.
+      # Single-field value objects — almost all of them — read fine either way,
+      # and the runner accepts the short form for exactly those.
+      # RECURSIVE, AND IT HAS TO BE. A value object may hold another one —
+      # pizzas' `Pizza` holds a `Price` and a `Size` — so stopping after one
+      # level produced `pizza.price_cents=1500` and sent the STRING "1500"
+      # where `{ cents: 1500 }` belonged.
+      #
+      # The runtime took it. `qa/FINDINGS.md` #2 is exactly that gap —
+      # `Value::Coercion.build` does not validate nested value objects — so a
+      # one-level CLI is not merely inconvenient, it is a machine for writing
+      # malformed records into a real store, which is what it did on its first
+      # run against the pizzas database.
+      def options_for(attribute, holder, aggregate, prefix = nil, optional = nil)
+        path     = [prefix, attribute.name].compact.join(".")
+        optional = optional || attribute.optional?
+        return [reference_option(attribute)] if attribute.reference?
+
+        value_object = value_object_for(attribute, holder, aggregate)
+        return [scalar_option(path, attribute, optional)] unless value_object
+
+        value_object.attributes.flat_map do |field|
+          nested = value_object_for(field, value_object, aggregate)
+          next options_for(field, value_object, aggregate, path, optional) if nested
+
+          scalar_option("#{path}.#{field.name}", field, optional || field.optional?,
+                        enum: closed_members(value_object, field))
+        end
+      end
+
+      def reference_option(attribute)
+        { path: attribute.name.to_s, type: "String", required: !attribute.optional?,
+          note: "id of a #{attribute.type.target_name}" }
+      end
+
+      def scalar_option(path, field, optional, enum: [])
+        option = { path: path, type: field.type.to_s, required: !optional }
+        option[:enum]    = enum          unless enum.empty?
+        option[:pattern] = field.pattern if field.respond_to?(:pattern) && field.pattern
+        option[:default] = field.default if field.respond_to?(:default) && !field.default.nil?
+        option
+      end
+
+      def closed_members(value_object, field)
+        return [] unless value_object.closed_set?
+
+        value_object.members.filter_map { |member| member[field.name] }.uniq
+      end
+
+      def value_object_for(attribute, holder, aggregate)
+        [holder, aggregate].compact.each do |scope|
+          next unless scope.respond_to?(:value_objects)
+
+          found = scope.value_objects.find { |v| v.hecks_name == attribute.type.to_s }
+          return found if found
+        end
+        nil
+      end
+
+      # Every way this verb can say no, in the chapter's own words — printed
+      # by `--help` before the caller spends a dispatch finding out.
+      def refusals(command, holder)
+        out = []
+        lifecycle = holder.lifecycle
+        froms = lifecycle && lifecycle.transitions.filter_map do |name, transition|
+          Array(transition.from) if name.to_s == command.hecks_name
+        end.flatten.uniq
+        out << "#{lifecycle.field} is not #{froms.join(' or ')}" if froms && !froms.empty?
+        out += command.attributes.select(&:reference?).map { |r| "no #{r.type.target_name} has that #{r.name}" }
+        out + command.givens.map(&:description)
+      end
+
+      # ── the help ──────────────────────────────────────────────────────
+
+      def usage(bluebook, verbs, questions, options)
+        program = options[:program] || "bin/run"
+        only    = options[:verb]
+
+        # WHICH NAMESPACE, when both hold the name. `options[:ask]` says so;
+        # without it a `--help` for a question would print the command that
+        # shares its name, which banking has and which is how this was found.
+        if only
+          spec = options[:ask] ? questions[only] : (verbs[only] || questions[only])
+          return verb_help(program, only, spec, ask: options[:ask]) if spec
+        end
+
+        width = (verbs.keys + questions.keys).map(&:length).max.to_i
+        out = ["#{bluebook.name} — #{bluebook.vision}", "",
+               "  #{program} <verb> [name=value …]        do something",
+               "  #{program} ask <question> [name=value …]  read something", ""]
+
+        out << "verbs:"
+        verbs.each { |name, spec| out << "  #{name.ljust(width)}  #{spec[:summary]}" }
+        out << ""
+        out << "questions (nothing here changes anything):"
+        questions.each { |name, spec| out << "  #{name.ljust(width)}  #{first_sentence(spec[:summary])}" }
+        out << ""
+        out << "  #{program} <verb> --help       what one verb wants, and every way it refuses"
+        out.join("\n")
+      end
+
+      # A QUERY's `description` is written as a paragraph — it argues for why
+      # the list is worth reading. A verb table wants the first sentence of
+      # that argument; `--help` still prints the whole thing.
+      def first_sentence(text)
+        text.to_s.split(/(?<=\.)\s/).first.to_s
+      end
+
+      def verb_help(program, name, spec, ask: false)
+        out = ["#{name} — #{spec[:summary]}", ""]
+        out << "dispatches #{spec[:verb]}" if spec[:kind] == :command
+        out << "reads #{spec[:verb]}"      if spec[:kind] == :query
+        out << "issued by #{spec[:role]}"  if spec[:role]
+        out << ""
+        invocation = ask ? "#{program} ask #{name}" : "#{program} #{name}"
+        out << "  #{invocation}#{spec[:arguments].map { |a| " #{a[:path]}=…" }.join}"
+        out << ""
+
+        unless spec[:arguments].empty?
+          width = spec[:arguments].map { |a| a[:path].length }.max
+          spec[:arguments].each do |argument|
+            notes = []
+            notes << argument[:type]
+            notes << "one of #{argument[:enum].join(', ')}" if argument[:enum]
+            notes << "matches #{argument[:pattern]}"        if argument[:pattern]
+            notes << "defaults to #{argument[:default].inspect}" unless argument[:default].nil?
+            notes << argument[:note]                        if argument[:note]
+            notes << "optional"                             unless argument[:required]
+            out << "  #{argument[:path].ljust(width)}  #{notes.join('; ')}"
+          end
+          out << ""
+        end
+
+        unless Array(spec[:refusals]).empty?
+          out << "refused when:"
+          spec[:refusals].each { |refusal| out << "  #{refusal}" }
+          out << ""
+        end
+
+        out.join("\n")
+      end
+    end
+  end
+end

@@ -29,7 +29,76 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "hecksagain"
 require "json"
 
-USAGE = "usage: bin/run [domain] <script.json | - | '{\"steps\":[…]}'>".freeze
+USAGE = "usage: bin/run [domain] <verb [name=value …] | script.json | - | '{\"steps\":[…]}'>".freeze
+
+# ── the command-line form ───────────────────────────────────────────────
+#
+# `bin/run bug.discover reference=BUG#1 severity=high …` — no JSON anywhere.
+# The verb tree, every argument, its declared type and every way the verb can
+# refuse are projected out of the bluebook (`Projector::CliProjector`), so this
+# script knows nothing about any domain and the help cannot go stale.
+#
+# Tried FIRST, and falls through to the JSON form when the first argument does
+# not name a projected verb — which is what keeps `bin/run <domain> <script>`
+# working exactly as it did.
+def cli_form(domain, argv)
+  runtime  = Hecks.boot(domain, install_facade: false)
+  bluebook = runtime.registry.bluebooks.values.first
+  cli      = Hecksagain::Projector.call(:cli, bluebook: bluebook, options: { program: "bin/run" })
+
+  name = argv.first
+  if name.nil? || %w[--help -h help].include?(name)
+    puts cli[:usage]
+    exit 0
+  end
+
+  # `ask` PUTS A QUESTION IN ITS OWN NAMESPACE. See the projector: a chapter
+  # may declare a command and a query of one name, and banking does.
+  asking = name == "ask"
+  if asking
+    argv = argv[1..]
+    name = argv.first or abort cli[:usage]
+  end
+
+  spec = (asking ? cli[:questions] : cli[:verbs])[name]
+  return nil unless spec
+
+  if argv[1..].include?("--help")
+    puts Hecksagain::Projector.call(
+      :cli, bluebook: bluebook, options: { program: "bin/run", verb: name, ask: asking }
+    )[:usage]
+    exit 0
+  end
+
+  begin
+    args = Hecksagain::Facade::CliDoor.arguments(spec, argv[1..])
+  rescue Hecksagain::Runtime::NotFound, Hecksagain::Runtime::TypeMismatch => e
+    abort "#{e.message}\n\n  bin/run #{name} --help"
+  end
+
+  # THE ANSWER IS SCOPED TO WHAT WAS ASKED. The step-list form below reports
+  # the whole store because a corpus run is judged on all of it; a caller who
+  # issued one verb wants that verb's outcome, and on a Postgres-backed domain
+  # the full dump is every record there has ever been.
+  begin
+    if spec[:kind] == :query
+      rows = runtime.query(spec[:verb], **args)
+      puts JSON.pretty_generate(rows.map { |row| Hecksagain::Facade::JsonDoor.materialize(row) })
+    else
+      handle = runtime.dispatch(spec[:verb], **args)
+      puts JSON.pretty_generate(
+        id:     handle.id,
+        state:  Hecksagain::Facade::JsonDoor.materialize(handle.state),
+        events: handle.events.map(&:name)
+      )
+    end
+  rescue *Hecksagain::Runtime::DOMAIN_REFUSALS => e
+    # THE REFUSAL IS THE PRODUCT. In the chapter's own words, on stderr so a
+    # pipeline can tell it from an answer, and a non-zero exit so a script can.
+    abort e.message
+  end
+  exit 0
+end
 
 # STANDING IN A DOMAIN IS ENOUGH — `Adapters::Folder#domain_root` walks up for
 # the nearest `.hecksagon`, so inside `examples/banking` the path can be left
@@ -37,14 +106,20 @@ USAGE = "usage: bin/run [domain] <script.json | - | '{\"steps\":[…]}'>".freeze
 # JSON, or a file that exists. Otherwise it names the domain.
 script_shaped = ->(arg) { arg == "-" || arg.match?(/\A\s*\{/) || File.file?(arg) }
 
-domain, script =
-  if ARGV.length > 1                            then [ARGV[0], ARGV[1]]
-  elsif ARGV.length == 1 && script_shaped[ARGV[0]] then [Hecksagain::Adapters::Folder.new.domain_root, ARGV[0]]
-  else                                               [ARGV[0], ARGV[1]]
-  end
+# THE FIRST ARGUMENT IS A DOMAIN ONLY WHEN IT IS A DIRECTORY. Everything else
+# — a verb, a script path, inline JSON — belongs to the domain you are standing
+# in, found by walking up for a `.hecksagon`.
+here = Hecksagain::Adapters::Folder.new.domain_root
+argv = ARGV.dup
+domain = argv.first && File.directory?(argv.first) ? argv.shift : here
 
 abort "no bluebook here — #{Dir.pwd} is not inside a domain. #{USAGE}" unless domain
-abort USAGE unless script
+
+# The command-line form answers unless the first argument names no projected
+# verb, in which case this returns and the step-list form takes over.
+cli_form(domain, argv) unless argv.first && script_shaped[argv.first]
+
+script = argv.first or abort USAGE
 
 # A PATH, STDIN, OR THE JSON ITSELF — decided by looking, because a script
 # beginning with `{` is not a filename anybody meant.
