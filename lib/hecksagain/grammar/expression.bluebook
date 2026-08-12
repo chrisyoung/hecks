@@ -199,7 +199,7 @@ Hecks.bluebook "Expression" do
     end
 
     value_object "SourceToken" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Replacement" do
