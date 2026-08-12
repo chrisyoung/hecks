@@ -49,5 +49,7 @@ end
 
 require_relative "projector/exporter"
 require_relative "projector/ir_projector"
+require_relative "projector/docs_projector"
 
 Hecksagain::Projector.register(:ir, Hecksagain::Projector::IRProjector)
+Hecksagain::Projector.register(:docs, Hecksagain::Projector::DocsProjector)

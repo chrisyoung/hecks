@@ -363,6 +363,7 @@ Every domain this repository's own tests and docs draw examples from:
 | `bin/backfill_era_projections` | Proactively backfills `hecks_eras.held_projection` for every row of one domain that predates that column — an explicit, operator-run vers... |
 | `bin/canonicalise` | Sorts a JSON document's object keys, recursively — key order is not semantics, so a diff a human reads should not have to notice it moved. |
 | `bin/console` | Boots a domain (pizzas by default) and drops into IRB with its door installed — the fastest way to dispatch a real command by hand. bin/c... |
+| `bin/docs` | Writes a domain's usage document, projected from its own bluebook. bin/docs <domain-path> [aggregate] bin/docs examples/banking # the who... |
 | `bin/evolve` | The language-change convention, made executable. Adding a word to the bluebook surface has always been a many-file walk — syntax row, Rub... |
 | `bin/expression_projection` | The expression machinery's tables, projected from the grammar chapter's admitted set and checked in, so the evaluator and the canonical f... |
 | `bin/fuzz` | Generates random-but-valid command/query sequences from a domain's own IR (Hecksagain::Fuzzing::SequenceGenerator) and checks each one th... |
