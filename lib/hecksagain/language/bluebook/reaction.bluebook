@@ -157,13 +157,26 @@ Hecks.bluebook "Bluebook" do
 
     reference_to ProcessManager
 
-    # THE PROCESS MANAGER IT IS IN, AND THE EVENT IT ANSWERS. A saga answers each
-    # event once, so the event names the leg. The judge keyed this by POSITION
+    # THE PROCESS MANAGER IT IS IN, THE EVENT IT ANSWERS, AND THE STATE IT
+    # ANSWERS FROM. The judge keyed this by POSITION
     # ("#{parent}##{index}"), which is a mint : insert a leg above and every leg
     # below is renamed. The event does not move.
+    #
+    # Vendored correction (migration plan task 4, hecks-hecksagain-migration):
+    # (process_manager_id, event_type) ALONE is not one leg — a state machine
+    # legitimately answers the SAME event differently depending on which state
+    # it is currently in (miette's own BodyCycle PM: "BodyPulse" while
+    # attentive moves attentive->attentive, "BodyPulse" while sleeping_light
+    # moves sleeping_light->sleeping_light — six real, distinct legs, one
+    # event name). Excluding from_state collapsed all six into one identity,
+    # so the second-declared leg for the same event read as a duplicate
+    # Declare of the first. from_state doesn't move for the same reason
+    # event_type doesn't: it's a value, not a position. TODO upstream via
+    # bin/evolve.
     identified_by do
       process_manager_id
       event_type.value
+      from_state.value
     end
 
     # No `saga` field. It named the old word for a process manager, held nothing —

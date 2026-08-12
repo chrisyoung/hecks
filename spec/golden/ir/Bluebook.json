@@ -5677,7 +5677,8 @@
       ],
       "identified_by": [
         "process_manager_id",
-        "event_type.value"
+        "event_type.value",
+        "from_state.value"
       ],
       "lifecycle": null,
       "name": "Handler",
