@@ -581,6 +581,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Start using a card"
 
       reference_to ATMCard
+      given("card is issued") { status == "issued" }
       emits "ATMCardActivated"
     end
 
