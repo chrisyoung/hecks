@@ -1290,6 +1290,8 @@ Hecks.bluebook "Banking", version: "v1" do
         given("box is rented") { parent.status == "rented" }
         given("only an issued key is returned") { status == "issued" }
 
+        then_set :serial, to: :serial
+
         emits "KeyReturned"
       end
     end
