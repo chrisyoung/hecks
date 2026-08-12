@@ -4,6 +4,15 @@ Quick reference for all QA guides and scripts.
 
 ## 📚 Guides
 
+### [SOP.md](SOP.md) - **START HERE**
+Standard operating procedure for QA engineers.
+- 7-phase workflow for systematic testing
+- How to discover bugs (8 adversarial categories)
+- How to file GitHub issues
+- When to fix vs. defer
+- Pre-push verification checklist
+- **Read this first if you're doing QA work**
+
 ### [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md)
 Understanding how hecksagain works internally.
 - 15+ directories and their responsibilities
@@ -119,9 +128,21 @@ When you push, the pre-push hook runs the full test suite. If you've already ver
 
 ## 📊 Bugs Found So Far (2026-08-11)
 
-### ✅ Fixed
+### ✅ Fixed (4)
 - List attributes not frozen (state mutation vulnerability)
   - **Commit:** 8baa725
+  - **Impact:** HIGH
+  
+- Event/reaction/saga logs not frozen (audit trail mutation)
+  - **Commit:** e3b110f
+  - **Impact:** HIGH
+  
+- Whitespace-only strings accepted as names
+  - **Commit:** 63750a3
+  - **Impact:** MEDIUM
+  
+- Query result rows mutable (data corruption risk)
+  - **Commit:** 63750a3
   - **Impact:** HIGH
 
 ### 🟡 Known Issues (Require Architecture Changes)
