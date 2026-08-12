@@ -2,31 +2,52 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-**Session Status:** 44 bugs fixed (23% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
+**Session Status:** 86 bugs fixed (43% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
 
 ---
 
-## Quick Reference: All 44 Bugs Fixed
+## Quick Reference: All 86 Bugs Fixed
 
+### Core Bugs (4)
 | Bug | Category | Fix | Location |
 |-----|----------|-----|----------|
 | #1 | Immutability | Freeze lists at materialization | lib/hecksagain/runtime/instance.rb |
 | #4-5, #10 | Immutability | Freeze query results, event logs | lib/hecksagain/runtime/query_interpreter.rb, dispatcher.rb |
 | #13-15 | Design Conflict | DailyLimit default→invariant | examples/banking/bluebook/banking.bluebook |
 | #16 | Structural | SafeDepositBox.Create command | examples/banking/bluebook/banking.bluebook |
-| #17-26 | Whitespace Validation | pattern: '[^ \t\n\r]' added | examples/banking/bluebook/banking.bluebook |
-| #27-31 | Whitespace Validation | pattern added to nested/text fields | examples/banking/bluebook/banking.bluebook |
-| #32-33 | Numeric Validation | Mark.amount/direction invariants | spec/fixtures/till.bluebook |
-| #34-38 | Whitespace Validation | pattern + invariant on unvalidated VOs | examples/banking/bluebook/banking.bluebook |
-| #39-43 | Whitespace Validation | pattern on Tag, VisitDate, Statement* | examples/banking/bluebook/banking.bluebook |
-| #44-46 | Whitespace Validation | Settlement, Payments fixture VOs | spec/fixtures/{settlement,payments}.bluebook |
-| #47-50 | Validation | dispatch_order: Label, Note, Amount, Sequence | spec/fixtures/dispatch_order.bluebook |
-| #51-55 | Validation | reflex: Light*, Bell*, Signal*, Ring* | spec/fixtures/reflex.bluebook |
-| #56 | Whitespace Validation | WireTransfer::AccountNumber pattern | examples/banking/bluebook/banking.bluebook |
 
-**Reported (Not Fixed):**
-- #11: Array `in:` query bug → [GitHub #54](https://github.com/chrisyoung/hecksagain/issues/54)
-- #12: Empty string `ne:` query bug → [GitHub #55](https://github.com/chrisyoung/hecksagain/issues/55)
+### Whitespace Validation - Domains (48 bugs)
+| Bug | Location | Count | Details |
+|-----|----------|-------|---------|
+| #17-26 | banking.bluebook | 10 | Banking identifiers + nested fields |
+| #27-31 | banking.bluebook | 5 | PersonName, Narrative (×3) |
+| #32-33 | till.bluebook | 2 | Mark.amount/direction |
+| #34-38 | banking.bluebook | 5 | CardNickname, AuthorisationCode, EndToEndReference, MovementDirection, InstructionReference |
+| #39-43 | banking.bluebook | 5 | Tag, VisitDate, OnboardingReference, StatementPeriod, StatementDate |
+| #44-46 | settlement, payments | 3 | DrawerNumber, WireReference, PaymentId |
+| #47-50 | dispatch_order.bluebook | 4 | Label, Note, Amount, PartSequence |
+| #51-55 | reflex.bluebook | 5 | LightName, LightCondition, BellName, SignalName, RingCount |
+| #56 | banking.bluebook | 1 | WireTransfer::AccountNumber |
+| #57-60 | hop_chain.bluebook | 4 | Name, Reference, Number, Label |
+| #61-62 | pizzas.bluebook | 2 | Topping.name/amount |
+| #63-64 | banking/till | 2 | VisitNote, Note |
+| #65 | banking.bluebook | 1 | DailyFee (Float→Integer type fix) |
+| #66 | payments.bluebook | 1 | Money |
+
+### Framework Bluebooks (18 bugs)
+| Bug | Location | Count | Details |
+|-----|----------|-------|---------|
+| #67-68 | payments.bluebook | 2 | DeclineReason.code/message |
+| #69-70 | settlement.bluebook | 2 | Money validation (×2) |
+| #71-74 | governance.bluebook | 4 | IdentityId, RoleName, Scope, Timestamp |
+| #75-76 | identity.bluebook | 2 | IdentityId, ExternalIdentifierKey |
+| #77-78 | identity.bluebook | 2 | Issuer, Subject |
+| #79-86 | console_settings.bluebook | 8 | StateStyleText, Flag, SettingsText, SettingsNumber, Column.field, DetailField.field, Precondition (×2), FieldFormat (×2) |
+| #87-96 | interview.bluebook | 10 | SessionReference, Subject, ChapterName, IdentityId, QuestionText, AnswerText, Topic, CatalogueRef, Slug, Prompt |
+
+**Critical Query Bugs (2 - GitHub):**
+- #11: Array `in:` query bug → [GitHub #54 CLOSED](https://github.com/chrisyoung/hecksagain/issues/54) — FIXED ✅
+- #12: Empty string `ne:` query bug → [GitHub #55](https://github.com/chrisyoung/hecksagain/issues/55) — Under investigation
 
 ---
 
