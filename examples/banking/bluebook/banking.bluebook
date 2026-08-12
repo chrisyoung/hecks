@@ -478,7 +478,8 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "CardNickname" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a card nickname is present") { !value.to_s.empty? }
     end
 
     value_object "DailyFee" do
@@ -725,7 +726,8 @@ Hecks.bluebook "Banking", version: "v1" do
     attribute :amount,   PaymentAmount
 
     value_object "AuthorisationCode" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an authorisation code is present") { !value.to_s.empty? }
     end
     attribute :merchant, MerchantName
 
@@ -858,14 +860,16 @@ Hecks.bluebook "Banking", version: "v1" do
     attribute :direction,   MovementDirection, admits: "Account::LedgerDirection"
 
     value_object "EndToEndReference" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an end-to-end reference is present") { !value.to_s.empty? }
     end
 
     # A plain text holder. The VALUES it may carry are Account's business, which
     # is exactly the split `admits` exists to express: the TYPE is local, the SET
     # is named.
     value_object "MovementDirection" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a movement direction is present") { !value.to_s.empty? }
     end
 
     value_object "ExternalAmount" do
@@ -933,7 +937,8 @@ Hecks.bluebook "Banking", version: "v1" do
     attribute :max_attempts, RetryLimit
 
     value_object "InstructionReference" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an instruction reference is present") { !value.to_s.empty? }
     end
 
     value_object "ScheduledAmount" do
