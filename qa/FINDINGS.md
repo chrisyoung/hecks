@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-## Fixed Bugs (10)
+## Fixed Bugs (35)
 
 ### #1: List Attributes Not Frozen (FIXED 2026-08-11)
 - **Commit:** 8baa725
@@ -80,25 +80,18 @@ Documented bugs and findings from systematic adversarial testing.
 
 ## Critical Runtime Bugs (Silent Data Corruption)
 
-### #11: Array `in:` Values Silently Converted to String, Query Returns Nothing (FOUND 2026-08-12)
+### #11: Array `in:` Values Silently Converted to String, Query Returns Nothing (FIXED 2026-08-11)
 - **Severity:** CRITICAL - Silent data corruption
-- **Location:** lib/hecksagain/runtime/query/in_memory.rb (and other adapters)
+- **Location:** lib/hecksagain/runtime/query_interpreter.rb (members method)
 - **Discovery:** Built while testing qa/bluebook/quality_control.bluebook
-- **Reproduction:**
-  ```ruby
-  where(status: { in: %w[found reproduced] })
-  # Query stringifies the array: "[\"found\", \"reproduced\"]"
-  # Then comma-splits it: ["[\"found\"", "\"reproduced\"]"]
-  # Matches NOTHING. Query returns [] forever.
-  ```
-- **Workaround:** Pass a comma string instead
-  ```ruby
-  where(status: { in: "found,reproduced" })
-  ```
-- **Root Cause:** WhereClause value is `to_s`'d in IR, converts array to string representation
-- **Impact:** Any bluebook using array `in:` values has silent-failing queries
-- **Fix Complexity:** MEDIUM - Need to preserve array structure through IR, not stringify
-- **Status:** NEEDS INVESTIGATION - How do adapters currently handle `in:` values?
+- **Root Cause:** Arrays were stringified in render_value() during IR generation, then members() would CSV-split the string instead of recognizing it as an array
+- **Fix:** Detect stringified arrays in members() (strings matching `^\\[\".*\"\\]$`), parse them back with JSON, process normally
+- **Fix Commits:** 
+  - `5292e01` - Fix Bug #11: Array 'in:' values silently converted to string
+- **Impact:** HIGH - Any bluebook using array `in:` values was silently failing
+- **Fix Complexity:** MEDIUM - Required understanding IR serialization constraints
+- **Status:** FIXED ✅ - PR pending review
+- **Verification:** Full test suite passes, IR golden specs still pass, backwards compatible with CSV fallback
 
 ### #12: Empty String Becomes nil in `ne:` Comparison, Matches All Rows (FOUND 2026-08-12)
 - **Severity:** CRITICAL - Silent data corruption
