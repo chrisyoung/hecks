@@ -35,10 +35,31 @@ Examples:
 ## Root Cause
 [Which code is wrong and why - from your investigation]
 
-### Location
+### Framework Source (CRITICAL - Always Include)
+[This is what makes the ticket actionable. Trace to the exact boundary.]
+
+**Location:**
 - File: lib/hecksagain/runtime/...
-- Line: X
+- Line: X-Y
 - Function: method_name()
+
+**What's Wrong:**
+- Current behavior: [What the code actually does]
+- Expected behavior: [What it should do]
+- Gap: [The specific missing piece]
+
+**Code Reference:**
+```ruby
+# Show the problematic code
+# Point out what's missing or wrong
+# Explain why this causes the bug
+```
+
+**To Fix Would Require:**
+- [Design decision needed?]
+- [Architectural change needed?]
+- [Recursive logic needed?]
+- [New validation added?]
 
 ## Impact
 **Severity:** HIGH / MEDIUM / LOW

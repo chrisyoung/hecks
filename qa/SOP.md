@@ -408,6 +408,33 @@ Claude-Session: https://claude.ai/code/session_xxx"
 
 **Note:** Only reach this phase if Phase 5 didn't result in a fix.
 
+### 6.0 Find the Framework Boundary
+
+**Before filing**, trace to the **exact source** of the bug in the framework:
+
+```ruby
+# Example: Bug in nested VO invariants
+# Don't just say: "Nested VO invariants not validated"
+# Trace to: lib/hecksagain/runtime/value/coercion.rb:64
+
+# In build() method:
+admit_member(value_object, fields)
+check_admitted(value_object, fields)
+check_numeric_fields(value_object, fields)  # ← This only checks top-level!
+check_patterns(value_object, fields)
+# MISSING: Recursive validation for nested value objects
+```
+
+**What to include in ticket:**
+- [ ] Exact file path
+- [ ] Line number(s)
+- [ ] Function/method name
+- [ ] What's missing or wrong in that code
+- [ ] Why it causes the bug
+- [ ] What would need to change to fix it
+
+This makes the ticket **actionable** instead of just a complaint.
+
 ### 6.1 Create a Detailed Issue
 
 **Title:** `BUG#X: <Short description>`
@@ -429,6 +456,33 @@ domain.dispatch("Command", arg: value)
 
 ## Root Cause
 Which code is wrong and why (based on your diagnosis)
+
+### Framework Source
+**Location:** lib/hecksagain/runtime/value/coercion.rb:64-80 (build method)
+
+**The Issue:** 
+- What exists: check_numeric_fields() validates top-level fields only
+- What's missing: Recursive validation for nested value objects
+- Why it breaks: When Price is nested in Pizza, Price's invariants aren't checked
+- To fix: Make check_numeric_fields() walk nested structures recursively
+
+**Code snippet:**
+```ruby
+# Current - only validates direct attributes
+value_object.attributes.each do |attribute|
+  expected = NUMERIC[attribute.type.to_s]
+  # ... validation ...
+end
+
+# Needed - validate nested structures too
+def validate_nested(value_object, fields)
+  value_object.attributes.each do |attribute|
+    if attribute.nested_value_object?
+      validate_nested(attribute.type, fields[attribute.name])
+    end
+  end
+end
+```
 
 ## Impact
 - Severity: HIGH/MEDIUM/LOW
