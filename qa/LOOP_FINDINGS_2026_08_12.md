@@ -202,3 +202,46 @@ The standard non-whitespace pattern `[^ \t\n\r]` is insufficient:
 
 Should use negative character class like `[^\x00\t\n\r\f\v]` or use stricter patterns per field type.
 
+
+## Loop Iteration 7: Email Fix + Systemic Pattern Issue
+
+**Status:** COMPLETE
+
+### Bug #24 Fix: Email Pattern Control Characters
+✅ **FIXED** - Commit e56ba7f
+
+**Change:** Pattern `^[^@ ]+@[^@ ]+\.[^@ ]+$` → `^[^@ \t\n\r]+@[^@ \t\n\r]+\.[^@ \t\n\r]+$`
+
+**Verification:**
+- Email with newline now rejected ✓
+- Valid emails still work ✓
+- Full test suite: 35 failures (unchanged, NO REGRESSIONS) ✓
+
+### Bug #25: Null Byte in References (Systemic)
+⏸️ **DEFERRED** - Requires coordinated multi-file fix
+
+**Issue:** Pattern `[^ \t\n\r]` used in 100+ locations allows null bytes
+
+**Locations:**
+- Domain bluebooks: 48 locations
+- Framework bluebooks: 18 locations
+- Language/grammar bluebooks: 10+ locations
+- Test fixtures: 10+ locations
+- **Total: 100+ affected String VOs**
+
+**Why Deferred:**
+1. Requires changes across 10+ bluebook files
+2. Need to decide on fix approach:
+   - Option A: Update to `[^\x00 \t\n\r]` (add null byte exclusion)
+   - Option B: Switch to `\S` despite regex portability concerns
+   - Option C: Use strict character ranges (alphabetic + digits + special)
+3. Systemic architectural decision needed
+
+**Recommendation:** Coordinate pattern validation across entire codebase as one atomic change, not piecemeal fixes.
+
+### Session Summary
+
+**Bugs Fixed This Iteration:** 1 (Bug #24)
+**Bugs Deferred:** 1 (Bug #25 - systemic)
+**Total Session Progress:** 4/10 bugs (1 critical freeze fix + 2 pattern bugs + 1 email fix)
+
