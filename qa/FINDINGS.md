@@ -4,7 +4,7 @@ Documented bugs and findings from systematic adversarial testing.
 
 **Methodology Note:** One bug = one distinct root cause with one fix. Multiple failed specs from the same bug are not counted separately.
 
-**Session Status:** 7 distinct bugs identified and fixed
+**Session Status:** 12 distinct bugs identified and fixed
 
 ---
 
@@ -19,6 +19,11 @@ Documented bugs and findings from systematic adversarial testing.
 | 5 | Empty string `ne:` query matches nil | Query interpreter null handling | Special case for empty string comparisons | HIGH - Silent failure |
 | 6 | DailyLimit default violates positive invariant | Default value 0 conflicts with `cents.positive?` invariant | Change default to 100000 | MEDIUM - Initialization failure |
 | 7 | SafeDepositBox missing Create command | Lifecycle has Create state but no command defined | Add Create command | HIGH - Incomplete aggregate |
+| 8 | Expression.bluebook String validation gap | Grammar/language bluebook String VOs lack pattern validation | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 9 | World.bluebook String validation gap | Language bluebook String VOs lack pattern validation | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 10 | Hecksagon.bluebook String validation gap | Language bluebook String VOs lack pattern validation | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 11 | Translation.bluebook String validation gap | Grammar bluebook String VOs lack pattern validation | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 12 | Nested VO invariants not validated | Runtime doesn't validate invariants on nested VOs | Modify runtime validation | HIGH - Silent failure |
 
 ---
 
