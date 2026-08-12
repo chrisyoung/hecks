@@ -15,7 +15,7 @@ Hecks.bluebook "Pizzas" do
     value_object "PizzaName" do
       attribute :value, String
 
-      invariant("a pizza is named") { !value.to_s.empty? }
+      invariant("a pizza is named") { !value.to_s.strip.empty? }
     end
 
     value_object "Price" do
@@ -27,13 +27,13 @@ Hecks.bluebook "Pizzas" do
     value_object "CustomerName" do
       attribute :value, String
 
-      invariant("a customer is named") { !value.to_s.empty? }
+      invariant("a customer is named") { !value.to_s.strip.empty? }
     end
 
     value_object "ToppingName" do
       attribute :value, String
 
-      invariant("a topping is named") { !value.to_s.empty? }
+      invariant("a topping is named") { !value.to_s.strip.empty? }
     end
 
     value_object "ToppingAmount" do

@@ -45,7 +45,7 @@ module Hecksagain
           # win instead — the same fix `Facade::Handle#to_h` needed.
           # `interpret`/`reference_interpret`, below, had the identical
           # bug.
-          return records.map { |record| record.state.merge(id: record.id) }
+          return records.map { |record| record.state.merge(id: record.id).freeze }.freeze
         end
 
         interpret(repository.all, declared, args)
@@ -89,7 +89,7 @@ module Hecksagain
         ordered = ordered(matched, declared.order_by, declared.null_semantics)
         capped  = declared.limit ? ordered.first(resolve_query_value(declared.limit.value, args).to_i) : ordered
 
-        capped.map { |r| r.state.merge(id: r.id) }
+        capped.map { |r| r.state.merge(id: r.id).freeze }.freeze
       end
 
       # `interpret`'s own twin, for reference_call alone — same
@@ -103,7 +103,7 @@ module Hecksagain
         ordered = ordered(matched, declared.order_by, declared.null_semantics)
         capped  = declared.limit ? ordered.first(resolve_query_value(declared.limit.value, args).to_i) : ordered
 
-        capped.map { |r| r.state.merge(id: r.id) }
+        capped.map { |r| r.state.merge(id: r.id).freeze }.freeze
       end
 
       # THE NAIVE READING OF A HOP: not a fold, not an id set — for
