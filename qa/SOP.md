@@ -16,11 +16,41 @@ This SOP codifies how to approach QA testing as an adversarial agent breaking th
 4. Files GitHub issues only for bugs that can't be fixed
 5. Keeps living documentation (FINDINGS.md, SYSTEM_ARCHITECTURE.md) updated
 
-**Key Principle: Fix First, File Second**
+**Key Principles:**
+- **Fix First, File Second** - Always attempt to fix before filing
+- **Always use isolated worktree** - Never work directly in main checkout
+- **Always use a feature branch** - One branch per QA session or investigation
 
 **Time Investment:** Budget 2-3 hours per domain for thorough QA coverage.
 
 **Daily Reports:** Create a daily report file (qa/reports/YYYY-MM-DD.md) and update it as you work. See template below.
+
+---
+
+## Pre-Phase 0: Setup Isolated Worktree (5 min)
+
+**ALWAYS start here. Never work in the main checkout.**
+
+```bash
+# Create an isolated worktree for this QA session
+git worktree add -b feat/qa-session-YYYY-MM-DD
+
+# This creates a fresh checkout in a separate directory
+# You can work independently without affecting other agents
+# Each QA session gets its own branch
+```
+
+**Why this matters:**
+- Other agents may be working on the main checkout
+- Your test runs won't interfere with their builds
+- You can commit and push independently
+- If something breaks, it's isolated to your worktree
+
+**Clean up when done:**
+```bash
+cd ..  # Leave the worktree
+git worktree remove feat/qa-session-YYYY-MM-DD
+```
 
 ---
 
@@ -806,6 +836,8 @@ Coverage: ~25%
 
 ## Checklist: Before Pushing QA Work
 
+- [ ] Working in isolated worktree (not main checkout)
+- [ ] On feature branch (feat/qa-session-*)
 - [ ] All new tests pass locally
 - [ ] Full test suite passes (`rspec --order random`)
 - [ ] No tests skipped or marked as pending (unless pre-existing)
@@ -818,6 +850,7 @@ Coverage: ~25%
 - [ ] Commit messages are clear and include Co-Authored-By
 - [ ] No sensitive data in issues (passwords, tokens, etc.)
 - [ ] Code follows existing style (indent, naming, patterns)
+- [ ] Ready to clean up worktree when done
 
 ---
 
