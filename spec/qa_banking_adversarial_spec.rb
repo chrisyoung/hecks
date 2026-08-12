@@ -46,7 +46,7 @@ RSpec.describe "Banking domain adversarial testing" do
       }.not_to raise_error
     end
 
-    it "accepts an account with zero balance" do
+    it "rejects account with zero daily limit (positive invariant)" do
       runtime = boot_banking
 
       cust_result = runtime.dispatch("Banking::Customer.Register",
@@ -54,14 +54,14 @@ RSpec.describe "Banking domain adversarial testing" do
         name: { given: "Zero", family: "Balance" },
         email: { address: "zero@example.com" })
 
-      # Banking uses "Account.Open" command based on spec pattern
+      # Banking enforces DailyLimit.positive? invariant
       expect {
         runtime.dispatch("Banking::Account.Open",
           customer_id: cust_result.id,
           number: { value: "ACC_ZERO" },
           kind: { name: "current" },
           daily_limit: { cents: 0 })
-      }.not_to raise_error
+      }.to raise_error(Hecksagain::Runtime::InvariantViolation)
     end
 
     it "rejects customer with just whitespace in reference" do
@@ -146,7 +146,7 @@ RSpec.describe "Banking domain adversarial testing" do
       }.not_to raise_error
     end
 
-    it "cannot Reinstate when already active" do
+    it "cannot Reinstate when already active (LifecycleRefused)" do
       runtime = boot_banking
 
       cust_result = runtime.dispatch("Banking::Customer.Register",
@@ -155,9 +155,10 @@ RSpec.describe "Banking domain adversarial testing" do
         email: { address: "reinstate@test.com" })
 
       # Customer is active by default, try to reinstate anyway
+      # Should raise LifecycleRefused (not GivenNotMet)
       expect {
         runtime.dispatch("Banking::Customer.Reinstate", id: cust_result.id)
-      }.to raise_error(Hecksagain::Runtime::GivenNotMet)
+      }.to raise_error(Hecksagain::Runtime::LifecycleRefused)
     end
   end
 
@@ -186,7 +187,7 @@ RSpec.describe "Banking domain adversarial testing" do
   # ============================================================================
 
   describe "Category 5: Identity/Uniqueness Testing" do
-    it "rejects duplicate customer reference" do
+    it "rejects duplicate customer reference with AlreadyExists error" do
       runtime = boot_banking
 
       runtime.dispatch("Banking::Customer.Register",
@@ -199,7 +200,7 @@ RSpec.describe "Banking domain adversarial testing" do
           reference: { value: "UNIQUE_TEST" },
           name: { given: "Second", family: "Customer" },
           email: { address: "second@example.com" })
-      }.to raise_error(Hecksagain::Runtime::GivenNotMet)
+      }.to raise_error(Hecksagain::Runtime::AlreadyExists)
     end
   end
 
