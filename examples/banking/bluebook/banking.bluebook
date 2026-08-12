@@ -322,6 +322,7 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :amount,    PositiveMoney
       attribute :narrative, Narrative
 
+      given("customer is active") { customer.status == "active" }
       given("the account is open")       { status == "open" }
       given("the balance covers it")     { balance.cents >= amount.cents }
       given("the daily limit allows it") { daily_limit.cents >= amount.cents }
