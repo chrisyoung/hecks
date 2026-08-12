@@ -737,6 +737,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Put the money back when the credit could not be made"
 
       reference_to Transfer
+      given("source customer is active") { source.customer.status == "active" }
       given("source account is open") { source.status == "open" }
       given("transfer is debited") { status == "debited" }
       emits "TransferReversed"
