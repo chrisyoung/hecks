@@ -24,7 +24,8 @@ RSpec.describe "the DSL surface is fully covered" do
     ],
     "CommandBuilder" => [
       Hecksagain::Bluebook::DSL::CommandBuilder,
-      %i[role goal provenance reference_to given ensures then_set sets emits attribute list_of attributes]
+      %i[role goal provenance reference_to given ensures then_set sets emits attribute list_of attributes
+         redirects_native]
     ],
     "PortBuilder" => [
       Hecksagain::Bluebook::DSL::PortBuilder,

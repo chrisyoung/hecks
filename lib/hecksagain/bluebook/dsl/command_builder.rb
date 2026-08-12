@@ -255,6 +255,13 @@ module Hecksagain
           @emits << event_name.to_s
         end
 
+        # Vendored addition, not (yet) upstream hecksagain -- see
+        # IR::Command's own comment on this field. `redirects_native "Bash"`
+        # or `redirects_native "Edit", "MultiEdit", "NotebookEdit"`.
+        def redirects_native(*tools)
+          @redirects_native = tools.map(&:to_s)
+        end
+
         def build
           IR::Command.declare(
             name:       @name,
@@ -266,7 +273,8 @@ module Hecksagain
             mutations:  @mutations,
             emits:      @emits,
             references: @references,
-            provenance: @provenance
+            provenance: @provenance,
+            redirects_native: @redirects_native || []
           )
         end
 
