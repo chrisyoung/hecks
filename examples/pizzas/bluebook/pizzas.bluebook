@@ -117,6 +117,9 @@ Hecks.bluebook "Pizzas" do
       attribute :name,  PizzaName
       attribute :pizza, Pizza
 
+      then_set :name,  to: :name
+      then_set :pizza, to: :pizza
+
       emits "PizzaCreated"
     end
 
