@@ -1342,6 +1342,7 @@ Hecks.bluebook "Banking", version: "v1" do
       reference_to Customer, as: :customer
       attribute :reference,      OnboardingReference
       attribute :account_number, AccountNumber
+      given("customer is active") { customer.status == "active" }
 
       then_set :reference,      to: :reference
       then_set :account_number, to: :account_number
