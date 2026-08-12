@@ -163,9 +163,9 @@ Every chapter teaches something about the DSL. If it is not written down it
 gets rediscovered by the next engineer at the same cost.
 
 - A hazard → `modelling/MODELLING_HAZARDS.md`, with the evidence.
-- A runtime bug → the QA ledger, via the `qc_*` MCP tools. Not a markdown file:
-  `qc_discover` then `qc_reproduce`, and the reproduce gate will refuse until
-  you actually have a reproduction, which is the point.
+- A runtime bug → the QA ledger (`Hecksagain::QualityControl::Ledger`), not a
+  markdown file: `discover` then `reproduce`, and the reproduce gate will refuse
+  until you actually have a reproduction, which is the point.
 - A session → `modelling/reports/YYYY-MM-DD.md`.
 
 ---

@@ -64,7 +64,7 @@ handed over or applied.
 ## What the language taught me
 
 New hazards → `modelling/MODELLING_HAZARDS.md`.
-New runtime bugs → the ledger via `qc_discover`.
+New runtime bugs → the ledger via `Ledger#discover`.
 
 - 
 

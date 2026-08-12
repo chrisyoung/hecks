@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "hecksagain_development": {
-      "command": "./bin/hecksagain_development_mcp",
-      "args": [],
-      "env": {}
-    }
-  }
-}

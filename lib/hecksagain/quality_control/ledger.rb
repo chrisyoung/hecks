@@ -12,12 +12,12 @@ module Hecksagain
     # a model deliberately does not: how to mint the next reference, what a
     # GitHub issue body should say, and how to shell out to `gh`.
     #
-    # WHY A LIBRARY AND NOT A SCRIPT. `bin/quality_control` and the MCP
-    # server both need every one of these operations, and the last time this
-    # repository had a tool whose logic lived in `bin/` the spec suite paid
-    # for it by spawning 51 subprocesses per example (see
-    # `lib/hecksagain/interview/shape.rb`, extracted for exactly that
-    # reason). Both front ends call in-process; the spec does too.
+    # WHY A LIBRARY AND NOT A SCRIPT. Any front end put in front of this —
+    # a `bin/`, a console session, a spec — needs every one of these
+    # operations, and the last time this repository had a tool whose logic
+    # lived in `bin/` the spec suite paid for it by spawning 51 subprocesses
+    # per example (see `lib/hecksagain/interview/shape.rb`, extracted for
+    # exactly that reason). Callers call in-process; the spec does too.
     #
     # EVERY REFUSAL PROPAGATES. Nothing here rescues a
     # `Runtime::DOMAIN_REFUSALS` member and turns it into a return value: the
@@ -25,13 +25,13 @@ module Hecksagain
     # Investigate moves it only from \"reproduced\"" — is the most useful
     # thing this tool can hand an agent, and a caller that swallowed it
     # would be replacing a sentence written by the language with one written
-    # here. The MCP server turns them into tool errors at the boundary,
-    # message intact.
+    # here. A caller that wants to turn one into something else does it at
+    # its own boundary, message intact.
     class Ledger
       DOMAIN = "QualityControl".freeze
 
       # THIS REPOSITORY, FOUND FROM THE CODE RATHER THAN FROM THE WORKING
-      # DIRECTORY. An MCP server is started by an editor, with a cwd nobody
+      # DIRECTORY. A long-running tool can be started with a cwd nobody
       # chose; `__dir__` is where this file actually is. `HECKSAGAIN_ROOT`
       # overrides it for a checkout in an unusual place.
       def self.root
@@ -215,19 +215,19 @@ module Hecksagain
 
         unless status.success?
           refusal = [err, out].map(&:to_s).reject(&:empty?).first || "gh exited #{status.exitstatus}"
-          dispatch("Ticket.Failed", id: ticket, refusal: v(refusal.strip[0, 500]))
+          dispatch("Ticket.Refused", id: ticket, refusal: v(refusal.strip[0, 500]))
           return { filed: false, refusal: refusal.strip }
         end
 
         url    = out.to_s[%r{https?://\S+}] || ""
         number = url[%r{/(\d+)\s*\z}, 1].to_i
-        dispatch("Ticket.Filed", id: ticket, number: v(number, :value), url: v(url))
+        dispatch("Ticket.Open", id: ticket, number: v(number, :value), url: v(url))
         { filed: true, number: number, url: url }
       rescue Errno::ENOENT
         # `gh` is not installed. A refusal, recorded the same way any other
         # refusal from the tracker's side is — the ticket must not be left
         # sitting in `submitting` just because the failure was local.
-        dispatch("Ticket.Failed", id: ticket, refusal: v("the gh CLI is not installed on this machine"))
+        dispatch("Ticket.Refused", id: ticket, refusal: v("the gh CLI is not installed on this machine"))
         { filed: false, refusal: "the gh CLI is not installed on this machine" }
       end
 
@@ -255,7 +255,7 @@ module Hecksagain
           queue:                query("Target.Queue"),
           unresolved_remedies:  query("Remedy.Unresolved"),
           filings_unanswered:   query("Ticket.Submitting"),
-          filings_failed:       query("Ticket.Failed"),
+          filings_failed:       query("Ticket.Refused"),
           resting_on_unreproduced: query("Ticket.RestingOnUnreproduced"),
           resting_on_live_remedy:  query("Ticket.RestingOnLiveRemedy"),
           resting_on_verified:     query("Ticket.RestingOnVerified"),

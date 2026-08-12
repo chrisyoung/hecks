@@ -335,14 +335,14 @@ RSpec.describe "QualityControl" do
 
       expect(ticket.number.to_h).to eq(value: 43)
       expect(rows("Ticket.Submitting")).to be_empty
-      expect(rows("Ticket.Filed").map { |row| row[:number][:value] }).to eq([43])
+      expect(rows("Ticket.Open").map { |row| row[:number][:value] }).to eq([43])
     end
 
     it "records a refusal and lets the draft be revised before retrying" do
       ticket = drafted_ticket.submit
       ticket.failed(refusal: { value: "gh: authentication required" })
 
-      expect(rows("Ticket.Failed").map { |row| row[:refusal][:value] })
+      expect(rows("Ticket.Refused").map { |row| row[:refusal][:value] })
         .to eq(["gh: authentication required"])
       expect(ticket.retry.status).to eq("drafted")
     end

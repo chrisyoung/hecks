@@ -51,39 +51,43 @@ For: the QA engineer (`qa/MESSAGE_TO_QA_BLUEBOOK_AGENT.md`,
 |---|---|
 | chapter | `qa/bluebook/quality_control.bluebook` |
 | wiring | `qa/bluebook/quality_control.{hecksagon,world}` — Heki, `qa/data/` |
-| spec | `spec/quality_control_spec.rb` — 24 examples |
+| spec | `spec/quality_control_spec.rb` — 35 examples |
 | library | `lib/hecksagain/quality_control/ledger.rb` |
-| tools | `lib/hecksagain/development_mcp/` + `bin/hecksagain_development_mcp` |
 | handover | `qa/MESSAGE_FROM_BLUEBOOK_ENGINEER.md` |
 
-Four aggregates — `Session` (with a `TestCase` entity), `Bug`, `Remedy`,
-`Ticket`. Twenty-seven `qc_*` MCP tools, one per step of `qa/SOP.md`.
+Five aggregates — `Session` (with a `TestCase` entity), `Bug`, `Remedy`,
+`Ticket`, `Target`.
 
 ---
 
-## The development MCP
+## Using the ledger
 
-`hecksagain_development_mcp` — this repository's own tools, spoken as MCP.
-Registered in `.mcp.json`; started by the editor.
+`Hecksagain::QualityControl::Ledger` holds a booted runtime of the chapter and
+the handful of things the model deliberately does not: minting the next
+reference in sequence, composing a GitHub issue body out of a bug and the
+attempt that failed against it, shelling out to `gh`, and rendering the daily
+report from records.
 
-```bash
-# by hand, to check it
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | bin/hecksagain_development_mcp
+```ruby
+require "hecksagain/quality_control/ledger"
+
+qa  = Hecksagain::QualityControl::Ledger.open
+bug = qa.discover(session: "QA-2026-08-11", domain: "Pizzas", severity: "high",
+                  title: "…", symptom: "…", expectation: "…")
+qa.reproduce(bug: bug, how: "rspec spec/qa_bugs_spec.rb -e 'BUG#4'")
+qa.status      # the dashboard — every list in it should be empty or short
+qa.tally       # the bug count, with the share of it that turned out not to be bugs
 ```
 
-Named for the repository rather than for quality control, because QA is the
-first practice to get tools here and will not be the last. Every tool it serves
-today is prefixed `qc_`; a second practice adds a second prefix and no new
-server.
+Everything else goes through the facade the chapter installs
+(`QualityControl::Bug.discover(...)`, `bug.reproduce(...)`) — see
+`spec/quality_control_spec.rb`.
 
-**If you are doing QA work, use these instead of editing markdown.** Start with
-`qc_status`. The workflow is enforced by the model, so the tools will refuse
-you in the language's own words — `qc_investigate` on a bug nobody reproduced
-answers:
+**The workflow is enforced by the model, so it will refuse you in the
+language's own words.** Investigating a bug nobody reproduced answers:
 
 ```
-REFUSED — Investigate refused — status is "found", and Investigate moves it
-only from "reproduced"
+Investigate refused — status is "found", and Investigate moves it only from "reproduced"
 ```
 
 That refusal is the product, not an obstacle.

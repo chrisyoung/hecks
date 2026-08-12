@@ -5,7 +5,7 @@ Language and runtime gaps found while building bluebooks. Distinct from
 register of what should be fixed.
 
 **Bugs live in the ledger, not here.** Anything reproducible goes through
-`qc_discover` / `qc_reproduce`; the reference below is the handle. This file
+`Ledger#discover` / `#reproduce`; the reference below is the handle. This file
 holds the modelling-side reasoning that does not belong in a bug record.
 
 ---
@@ -90,7 +90,7 @@ on a nested door, and `Bug.unfixed` as a door method per declared query, would
 both follow from IR the surface already walks.
 
 Recorded here rather than in the bug ledger because nothing is *wrong* — a
-`qc_*` tool user never sees it. It is a cost paid by whoever writes the spec.
+`Ledger` caller never sees it. It is a cost paid by whoever writes the spec.
 
 ---
 

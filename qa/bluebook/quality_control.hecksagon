@@ -8,8 +8,8 @@
 #
 # HEKI RATHER THAN POSTGRES, deliberately. Heki is a file per aggregate
 # under `qa/data/` with a journal beside it — it needs no server, no
-# credentials and no network, so `bin/quality_control` and the MCP server
-# both work on a laptop with nothing running. It is also NOT lineage-capable
+# credentials and no network, so the ledger works on a laptop
+# with nothing running. It is also NOT lineage-capable
 # (`Adapters::Postgres` is the only adapter that declares
 # `lineage_capable?`), which means `EraCheck` does not gate a boot of this
 # domain: editing the bluebook mid-practice does not demand an era be minted

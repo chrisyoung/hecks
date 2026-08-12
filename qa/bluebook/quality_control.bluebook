@@ -1690,13 +1690,20 @@ end
       order_by :reference
     end
 
-    query "Filed" do
+    # `Open`, NOT `Filed` — the command that records the tracker taking it is
+    # already called `Filed`, and a command and a query of one name is an
+    # ambiguity waiting for whichever tool walks this chapter and has to pick.
+    # Legal in the language, which namespaces the two; confusing to every
+    # reader and to anything that flattens them into one list of verbs.
+    query "Open" do
       description "Open issues this practice is responsible for, in the outside world."
       where(status: "filed")
       order_by :number
     end
 
-    query "Failed" do
+    # `Refused` for the same reason as `Open` above — `Failed` is the verb the
+    # runner reports back with.
+    query "Refused" do
       description "Filings the tracker refused, with what it said — the queue a retry is drawn from."
       where(status: "failed")
       order_by :reference
