@@ -954,6 +954,8 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Recall" do
       reference_to ExternalTransfer
+      given("transfer is sent") { status == "sent" }
+      given("account is open") { account.status == "open" }
       emits "ExternalTransferRecalled"
     end
 
