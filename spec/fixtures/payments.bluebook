@@ -6,7 +6,8 @@ Hecks.bluebook "Payments" do
     identified_by { payment_id.value }
 
     value_object "PaymentId" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a payment ID is present") { !value.to_s.empty? }
     end
 
     value_object "Money" do
