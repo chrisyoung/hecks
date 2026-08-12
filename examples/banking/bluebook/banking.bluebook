@@ -62,8 +62,8 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "PersonName" do
-      attribute :given,  String
-      attribute :family, String
+      attribute :given,  String, pattern: '[^ \t\n\r]'
+      attribute :family, String, pattern: '[^ \t\n\r]'
 
       invariant("a given name is present")  { !given.to_s.empty? }
       invariant("a family name is present") { !family.to_s.empty? }
@@ -219,7 +219,7 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "Narrative" do
-      attribute :text, String
+      attribute :text, String, pattern: '[^ \t\n\r]'
 
       invariant("a movement explains itself") { !text.to_s.empty? }
     end
@@ -497,7 +497,7 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "Narrative" do
-      attribute :text, String
+      attribute :text, String, pattern: '[^ \t\n\r]'
 
       invariant("a withdrawal explains itself") { !text.to_s.empty? }
     end
@@ -628,7 +628,7 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "Narrative" do
-      attribute :text, String
+      attribute :text, String, pattern: '[^ \t\n\r]'
 
       invariant("a transfer explains itself") { !text.to_s.empty? }
     end
