@@ -69,12 +69,13 @@ Hecks.bluebook "ConsoleSettings" do
     attribute :attention, Flag, optional: true
 
     value_object "StateStyleText" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("names something") { !value.to_s.empty? }
     end
 
     value_object "Flag" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a flag is present") { !value.to_s.empty? }
     end
 
     command "Declare" do
@@ -135,12 +136,13 @@ Hecks.bluebook "ConsoleSettings" do
     attribute :field_formats,        list_of(FieldFormat)
 
     value_object "SettingsText" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("names something") { !value.to_s.empty? }
     end
 
     value_object "SettingsNumber" do
       attribute :value, Integer
+      invariant("a settings number is positive") { value.positive? }
     end
 
     # A list/table column. `sortable`/`sort_default` are optional — most
@@ -155,9 +157,10 @@ Hecks.bluebook "ConsoleSettings" do
     # sibling value object — PresentationConfig.validate! keeps checking
     # membership in Ruby, same as it always has.
     value_object "Column" do
-      attribute :field,        String
+      attribute :field,        String, pattern: '[^ \t\n\r]'
       attribute :sortable,     String, optional: true  # "true"/"false" — see StateStyle.attention's own comment
       attribute :sort_default, String, optional: true
+      invariant("a column field is present") { !field.to_s.empty? }
     end
 
     # One field the detail panel shows. `state_filter` only means anything
@@ -169,9 +172,10 @@ Hecks.bluebook "ConsoleSettings" do
     # `display` is a plain String for the same nested-`one_of` collision
     # reason `sort_default` is, above.
     value_object "DetailField" do
-      attribute :field,        String
+      attribute :field,        String, pattern: '[^ \t\n\r]'
       attribute :display,      String, optional: true
       attribute :state_filter, String, optional: true
+      invariant("a detail field is present") { !field.to_s.empty? }
     end
 
     # A rows-shaped detail field's own sub-column filter, FLATTENED to one
@@ -184,14 +188,18 @@ Hecks.bluebook "ConsoleSettings" do
     end
 
     value_object "Precondition" do
-      attribute :field, String
-      attribute :state, String
+      attribute :field, String, pattern: '[^ \t\n\r]'
+      attribute :state, String, pattern: '[^ \t\n\r]'
+      invariant("a precondition field is present") { !field.to_s.empty? }
+      invariant("a precondition state is present") { !state.to_s.empty? }
     end
 
     # `format` stays a plain String too — same nested-`one_of` collision.
     value_object "FieldFormat" do
-      attribute :field,  String
-      attribute :format, String
+      attribute :field,  String, pattern: '[^ \t\n\r]'
+      attribute :format, String, pattern: '[^ \t\n\r]'
+      invariant("a field format field is present") { !field.to_s.empty? }
+      invariant("a field format string is present") { !format.to_s.empty? }
     end
 
     command "Declare" do
