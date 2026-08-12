@@ -215,11 +215,13 @@ RSpec.describe "QualityControl" do
       expect(bug.commit.to_h).to eq(value: "63750a3")
       expect(references("Bug.ReadyToVerify")).to eq([bug.id])
 
-      expect(bug.verify.status).to eq("verified")
+      verified = bug.verify(evidence: { value: "rspec --order random: 1247 examples, 0 failures, seed 41022" })
+      expect(verified.status).to eq("verified")
+      expect(verified.verification.to_h[:value]).to include("seed")
     end
 
     it "cannot verify a bug that was never fixed" do
-      expect { investigated_bug.verify }
+      expect { investigated_bug.verify(evidence: { value: "rspec: 1247 examples, 0 failures" }) }
         .to raise_error(Hecksagain::Runtime::LifecycleRefused, /moves it only from "fixed"/)
     end
   end
@@ -271,7 +273,8 @@ RSpec.describe "QualityControl" do
 
       # The reason travels: what the attempt said on the day it ran out is
       # what the bug now says about why it stopped.
-      bug.pause(reason: remedy.reason.to_h)
+      bug.pause(reason: remedy.reason.to_h,
+                next_step: { value: "architecture review — should coercion recurse into nested value objects?" })
 
       expect { draft(bug, remedy) }.not_to raise_error
       expect(references("Bug.Paused")).to eq([bug.id])
@@ -347,6 +350,21 @@ RSpec.describe "QualityControl" do
       expect(ticket.retry.status).to eq("drafted")
     end
 
+    # THE POLICY THIS AGGREGATE SERVES: raise an issue only for a bug you
+    # could not fix yourself. Fixing it afterwards is legitimate and common —
+    # and leaves either a draft to withdraw or a public issue to close.
+    it "surfaces a ticket about a bug the repository went on to fix itself" do
+      ticket = drafted_ticket
+      bug    = QualityControl::Bug.find("BUG#2")
+      bug.investigate(site: { value: "coercion.rb" }, cause: { value: "recursion missing" })
+      bug.fix(commit: { value: "abc1234" })
+
+      expect(references("Ticket.RestingOnFixed")).to eq([ticket.id])
+
+      ticket.withdraw
+      expect(rows("Ticket.RestingOnFixed")).to be_empty
+    end
+
     it "will not withdraw a ticket the tracker already has" do
       ticket = drafted_ticket.submit
       ticket.filed(number: { value: 43 }, url: { value: "https://example.com/43" })
@@ -408,6 +426,80 @@ RSpec.describe "QualityControl" do
       expect(references("Bug.Doubtful")).to eq([gone.id])
       expect(rows("Bug.All").length).to eq(2)
       expect(references("Bug.Unfixed")).to eq([kept.id])
+    end
+  end
+
+  # ── two roles, and the handoff between them ────────────────────────────
+
+  # `qa/senior/HANDBOOK.md` splits the practice: a junior agent finds bugs, a
+  # senior fixes them, and the senior's first move is to read the diagnosis and
+  # decide whether to agree.
+  describe "the handoff" do
+    def reproduced_bug
+      bug = a_bug(session_with_failing_test)
+      bug.reproduce(demonstration: { value: 'rspec spec/qa_bugs_spec.rb -e "BUG#4"' })
+    end
+
+    it "sends a bug back with what would have to be shown, without withdrawing it" do
+      bug = reproduced_bug
+      bug.dispute(reason: { value: "the test asserts against CreatePizza, but the invariant it names is on Purchase" })
+
+      expect(bug.status).to eq("disputed")
+      # Still owed work — a disputed bug is not a closed one.
+      expect(references("Bug.Unfixed")).to eq([bug.id])
+      expect(rows("Bug.Doubtful")).to be_empty
+    end
+
+    it "refuses to be fixed while it is disputed — it has to be shown again first" do
+      bug = reproduced_bug
+      bug.dispute(reason: { value: "not reproducible from this test" })
+
+      expect { bug.investigate(site: { value: "x.rb:1" }, cause: { value: "y" }) }
+        .to raise_error(Hecksagain::Runtime::LifecycleRefused, /moves it only from "reproduced"/)
+
+      bug.reproduce(demonstration: { value: 'rspec spec/qa_bugs_spec.rb -e "BUG#4b" — now with the right command' })
+      expect(bug.status).to eq("reproduced")
+    end
+  end
+
+  describe "verification is evidence, not a claim" do
+    def fixed_bug
+      bug = a_bug(session_with_failing_test)
+      bug.reproduce(demonstration: { value: "rspec ..." })
+      bug.investigate(site: { value: "examples/pizzas/bluebook/pizzas.bluebook" },
+                      cause: { value: "no .strip in the sublanguage" })
+      bug.fix(commit: { value: "90b7ec1" })
+    end
+
+    it "cannot be verified with nothing behind it" do
+      expect { fixed_bug.verify }.to raise_error(Hecksagain::Runtime::AbsentArgument, /evidence/)
+    end
+
+    it "keeps what was actually run, so the claim is checkable" do
+      bug = fixed_bug.verify(evidence: { value: "rspec --order random: 1247 examples, 5 failures, seed 12345" })
+
+      expect(bug.verification.to_h[:value]).to include("seed 12345")
+    end
+  end
+
+  describe "a pause says what would move it" do
+    def paused
+      bug = a_bug(session_with_failing_test, severity: "high")
+      bug.reproduce(demonstration: { value: "rspec ..." })
+      bug
+    end
+
+    it "cannot be paused without a next step" do
+      expect { paused.pause(reason: { value: "architectural" }) }
+        .to raise_error(Hecksagain::Runtime::AbsentArgument, /next_step/)
+    end
+
+    it "keeps the question, and who has to answer it" do
+      bug = paused.pause(reason: { value: "affects the whole type system" },
+                         next_step: { value: "architecture review — should coercion recurse into nested VOs?" })
+
+      expect(bug.next_step.to_h[:value]).to include("architecture review")
+      expect(references("Bug.Paused")).to eq([bug.id])
     end
   end
 

@@ -99,8 +99,12 @@ Write the chapter. House style, which is not optional here — read
   as a sentence about *why the list matters*, not what it filters.
 
 Wire it: a `.hecksagon` naming the persistence bind and a `.world` naming where
-it lives. `Memory` for a corpus member; `Heki` for anything durable that must
-work with no server.
+it lives. `Memory` for a corpus member. For anything durable, prefer
+`Postgres`: it is the only lineage-capable adapter, so a shape change refuses
+the boot until somebody writes a translation edge. That is a real tax on a
+chapter still in motion and it is usually the right one — the alternative is
+choosing a store to dodge a discipline, which is what `Heki` was doing in the
+QA ledger until it was moved.
 
 ---
 

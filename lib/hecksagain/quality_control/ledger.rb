@@ -112,8 +112,12 @@ module Hecksagain
       def reproduce(bug:, how:)       = dispatch("Bug.Reproduce", id: bug, demonstration: v(how))
       def investigate(bug:, site:, cause:) = dispatch("Bug.Investigate", id: bug, site: v(site), cause: v(cause))
       def fix(bug:, commit:)          = dispatch("Bug.Fix", id: bug, commit: v(commit))
-      def verify(bug:)                = dispatch("Bug.Verify", id: bug)
-      def pause_bug(bug:, reason:)    = dispatch("Bug.Pause", id: bug, reason: v(reason))
+      # `evidence:` is required by the chapter, not by politeness — a
+      # `verified` with nothing behind it is the claim qa/SOP.md §5.4 was
+      # rewritten to stop.
+      def verify(bug:, evidence:)     = dispatch("Bug.Verify", id: bug, evidence: v(evidence))
+      def dispute(bug:, reason:)      = dispatch("Bug.Dispute", id: bug, reason: v(reason))
+      def pause_bug(bug:, reason:, next_step:) = dispatch("Bug.Pause", id: bug, reason: v(reason), next_step: v(next_step))
       def dismiss(bug:, reason:)      = dispatch("Bug.Dismiss", id: bug, reason: v(reason))
       def regress(bug:)               = dispatch("Bug.Regress", id: bug)
       def revisit(bug:)               = dispatch("Bug.Revisit", id: bug)
@@ -258,7 +262,7 @@ module Hecksagain
           filings_failed:       query("Ticket.Refused"),
           resting_on_unreproduced: query("Ticket.RestingOnUnreproduced"),
           resting_on_live_remedy:  query("Ticket.RestingOnLiveRemedy"),
-          resting_on_verified:     query("Ticket.RestingOnVerified"),
+          resting_on_fixed:        query("Ticket.RestingOnFixed"),
           failing_tests:        query("Session.TestCase.Failing"),
           unsettled_tests:      query("Session.TestCase.Unsettled"),
           ready_to_graduate:    query("Session.TestCase.ReadyToGraduate"),

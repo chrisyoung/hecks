@@ -1,20 +1,21 @@
 # WHERE THE LEDGER LIVES.
 #
-# `dir "data"` is resolved against the registry root, which is the PARENT
-# of the bluebook directory (`Runtime::Loader.boot` sets
-# `root: File.dirname(directory)`) — so this is `qa/data/`, one level up
-# from this file, beside the markdown documents this ledger is replacing.
-# `examples/banking/bluebook/banking.world` says `dir "data"` and means
-# `examples/banking/data` for the same reason.
+# A database of its own rather than a schema inside the storehouse the deployed
+# domains share. This is a development tool for this repository: it should be
+# creatable with one `createdb`, droppable without a change-control
+# conversation, and absent from any bill. `examples/pizzas/bluebook/pizzas.world`
+# points at a local database for the same reason.
 #
-# NO `deployed_to`. This domain is a development tool for this repository
-# and has no production. A deploy target here would be a claim that
-# somebody, somewhere, runs this — and the first thing `bin/project_deploy`
-# would do is take it seriously.
+# `hecks_quality_control`, matching the domain rather than the directory — the
+# ledger outlives whatever folder it is read from.
+#
+# NO `deployed_to`. This has no production. A deploy target here would be a
+# claim that somebody, somewhere, runs this, and the first thing
+# `bin/project_deploy` would do is take it seriously.
 Hecks.world "QualityControl" do
   realm "Development"
 
-  persisted_by("Heki") do
-    dir "data"
+  persisted_by("Postgres") do
+    database "postgres://localhost/hecks_quality_control"
   end
 end

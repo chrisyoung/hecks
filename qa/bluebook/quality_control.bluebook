@@ -617,6 +617,8 @@ end
     attribute :reason,        BugReason
     attribute :blocked_by,    BlockingBug
     attribute :duplicate_of,  DuplicateBug
+    attribute :verification,  Verification
+    attribute :next_step,     NextStep
 
     value_object "BugReference" do
       attribute :value, String, pattern: '[^ \t\n\r]'
@@ -836,6 +838,34 @@ end
       attribute :value, String, default: "none"
     end
 
+    # WHAT WAS ACTUALLY RUN — "rspec --order random, 1247 examples, 0
+    # failures, seed 12345". Prose rather than a structured record of five
+    # named checks, deliberately: `qa/senior/HANDBOOK.md`'s list will grow
+    # (it gained `bin/fuzz` and `bin/model_check` the day it was written),
+    # and a fixed set of fields would refuse the sixth check the practice
+    # adds. The rule that matters is that SOMETHING checkable is written
+    # down, and an invariant can hold that much.
+    value_object "Verification" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a verification says what was actually run") { !value.to_s.empty? }
+    end
+
+    # WHO DECIDES, AND WHAT WOULD UNBLOCK IT.
+    #
+    # `qa/senior/DEFER_LOG.md` carries four fields per deferral and this is
+    # the one with teeth. "Why deferred" is already `reason`; "blocked on" is
+    # already `blocked_by`; "estimated effort" is a guess and this chapter
+    # does not hold guesses (see `Target`). But "next step" is a question
+    # addressed to somebody — the log's own entry for the empty-string bug
+    # reads "requires architecture review: is nil == '' intended?", which is
+    # a decision nobody has been asked to make.
+    #
+    # A pause without one of these is how "deferred" becomes "forgotten".
+    value_object "NextStep" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("stopping on a bug says what would move it") { !value.to_s.empty? }
+    end
+
     value_object "SessionRef" do
       attribute :value, String
     end
@@ -871,8 +901,25 @@ end
     #                  closed, and this record should make that sentence
     #                  unsayable.
     lifecycle :status, default: "found" do
-      transition "Reproduce"   => "reproduced",    from: "found"
+      # `from: ["found", "disputed"]` — the second is the handoff coming
+      # back. See `Dispute` below.
+      transition "Reproduce"   => "reproduced",    from: ["found", "disputed"]
       transition "Investigate" => "investigating", from: "reproduced"
+      # THE HANDOFF, REFUSED.
+      #
+      # `qa/senior/HANDBOOK.md` splits the practice in two: a junior agent
+      # finds bugs and a senior fixes them, and its Phase 1 is the senior
+      # reading the junior's test and diagnosis — "do you agree? If NO,
+      # reject it back to junior QA, don't spend time."
+      #
+      # That rejection is a real outcome and none of the words this chapter
+      # already had fit it. It is not `withdrawn` (nobody has shown the
+      # report is wrong — one reader doubts it), not `dismissed` (that needs
+      # a reproduction and a rule to point at), and certainly not `paused`
+      # (nothing architectural is in the way; the evidence is thin). It is
+      # the bug going BACK, with what would have to be true to send it
+      # forward again — which is why `Reproduce` is its only exit.
+      transition "Dispute"     => "disputed",      from: ["reproduced", "investigating"]
       transition "Fix"         => "fixed",         from: "investigating"
       # "CAN ONLY MOVE TO VERIFIED FROM FIXED" — asked for verbatim, and
       # this line is the whole of it. No predicate, no field check: the
@@ -995,22 +1042,55 @@ end
       emits "BugFixed"
     end
 
+    # THE EVIDENCE IS REQUIRED, and it is what makes `verified` a record
+    # rather than a claim.
+    #
+    # As first written this command carried nothing, so "verified" meant only
+    # that somebody had dispatched `Verify`. `qa/senior/HANDBOOK.md` §5 asks
+    # for five separate things — the full suite under a random order,
+    # `bin/fuzz`, `bin/model_check`, the finder's own test re-run, and a
+    # console smoke test — and the whole value of that list is that it can be
+    # CHECKED. A count and a seed are checkable; "tests pass" is not, which
+    # is the lesson `qa/SOP.md` §5.4 was rewritten around after a commit
+    # claiming a fix took nineteen of twenty-seven pizzas examples red.
     command "Verify" do
       role "QA engineer"
-      goal "Record that the full suite passed against the fix"
+      goal "Record that the fix was actually verified, and exactly how"
 
       reference_to Bug
+      attribute :evidence, Verification
+
+      then_set :verification, to: :evidence
+
       emits "BugVerified"
     end
 
-    command "Pause" do
+    # THE HANDOFF GOING BACK. The reason is what the finder has to answer —
+    # "the test asserts against the wrong command", "this is the declared
+    # rule, read the given" — so it is required, and phrased as a demand
+    # rather than a verdict.
+    command "Dispute" do
       role "QA engineer"
-      goal "Stop work on a bug that is real and too large to fix here, and say why"
+      goal "Send a bug back to whoever found it, saying what would have to be shown"
 
       reference_to Bug
       attribute :reason, BugReason
 
       then_set :reason, to: :reason
+
+      emits "BugDisputed"
+    end
+
+    command "Pause" do
+      role "QA engineer"
+      goal "Stop on a bug that is real and too large to fix here — why, and what would move it"
+
+      reference_to Bug
+      attribute :reason,    BugReason
+      attribute :next_step, NextStep
+
+      then_set :reason,    to: :reason
+      then_set :next_step, to: :next_step
 
       emits "BugPaused"
     end
@@ -1123,7 +1203,7 @@ end
 
     query "Unfixed" do
       description "Every bug still owed work — the whole of qa/FINDINGS.md's open half, derived rather than maintained."
-      where(status: { in: "found,reproduced,investigating,paused" })
+      where(status: { in: "found,reproduced,disputed,investigating,paused" })
       order_by :sequence
     end
 
@@ -1153,7 +1233,7 @@ end
       description "Open bugs at one severity, across every session — 'show me all HIGH severity unfixed bugs', which is where a session should start."
       attribute :severity, Severity
       where(severity: :severity)
-      where(status: { in: "found,reproduced,investigating,paused" })
+      where(status: { in: "found,reproduced,disputed,investigating,paused" })
       order_by :sequence
     end
 
@@ -1166,7 +1246,7 @@ end
     query "Blocked" do
       description "Open bugs waiting on another bug — pick the blocker instead. A row naming a bug this ledger does not hold is the dangling case a reference would have refused."
       where(:"blocked_by.value" => { ne: "none" })
-      where(status: { in: "found,reproduced,investigating,paused" })
+      where(status: { in: "found,reproduced,disputed,investigating,paused" })
       order_by :sequence
     end
 
@@ -1425,6 +1505,17 @@ end
       order_by :sequence
     end
 
+    # CHURN, WHICH THE HANDBOOK NAMES AS ITS OWN FAILURE MODE: "if a fix
+    # requires 3 reverts before landing, we are doing it wrong". A revert is
+    # already a state here, so the count is a read rather than a new field —
+    # and it is per-BUG rather than global that matters, which is
+    # `ForBug` filtered by a reader.
+    query "Reverted" do
+      description "Fixes that landed and then stopped holding. A bug with several of these is not a hard bug, it is a fix nobody has understood yet."
+      where(status: "reverted")
+      order_by :sequence
+    end
+
     query "Abandoned" do
       description "What has been tried and did not work, across every bug. The most reused thing in this chapter and the least often written down anywhere else."
       where(status: "abandoned")
@@ -1447,21 +1538,41 @@ end
     description "One issue raised in a tracker outside this repository — what it says, whether the tracker actually took it, and what became of it."
 
     reference_to Bug
-    # THE RULE, AS A REFERENCE. `qa/SOP.md` §6 and the requirements both
-    # say a ticket may only be filed for something somebody tried to fix,
-    # and this line is that rule in the only enforceable form the language
-    # has: a reference must resolve at dispatch, so a ticket that cannot
-    # name an attempt cannot be drafted at all. `Interview::Proposal`'s
-    # required `reference_to Finding` is the same move for the same reason
-    # — no change without a reason, no ticket without an attempt.
+    # THE RULE, AS A REFERENCE — AND IT IS REQUIRED.
     #
-    # THE OBJECTION, AND WHY IT IS ANSWERED: §5.3 says some bugs are
-    # architectural and should NOT be attempted, which looks like a case
-    # with no remedy to point at. It is not. Recording a `Remedy` whose
-    # approach is "recursive validation in coercion.rb" and abandoning it
-    # the same minute with "requires a refactor of the coercion pipeline"
-    # IS the documentation §5.3 asks for, and requiring it is what stops
+    # The policy is: **raise an issue only for a bug you could not fix
+    # yourself.** A reference must resolve at dispatch, so a ticket that
+    # cannot name an ATTEMPT cannot be drafted at all — which makes "did
+    # anybody actually try?" a fact the record holds rather than a claim in
+    # a commit message. This is the one form of cross-aggregate rule the
+    # language genuinely enforces, and `Interview::Proposal`'s required
+    # `reference_to Finding` is the same move: no change without a reason,
+    # no ticket without an attempt.
+    #
+    # THE OBJECTION: some bugs are architectural and should not be attempted
+    # at all — `qa/senior/HANDBOOK.md`'s own defer path. That is not a
+    # counterexample. Recording a `Remedy` whose approach is "recursive
+    # validation in coercion.rb", abandoning it in the same minute with
+    # "affects the whole type system; needs an architecture review", IS the
+    # documentation the defer path asks for, and `qa/senior/DEFER_LOG.md`
+    # is already written in exactly that shape. Requiring it is what stops
     # "architectural" from becoming a word that ends conversations.
+    #
+    # THIS WAS BRIEFLY LOOSENED TO `optional: true`, and the reason is worth
+    # keeping. `qa/senior/HANDBOOK.md` had inverted the policy — file only
+    # for a bug already FIXED or confirmed never-a-bug, and close it in the
+    # same breath — and a never-a-bug finding has no attempt behind it, so
+    # the requirement would have refused half the tickets. The inversion was
+    # overruled; the requirement is back.
+    #
+    # What survives is the lesson about WHICH of the two to change. What a
+    # tracker IS — somebody else's database, which can refuse a filing and
+    # holds rows this repository does not control — is stable, and the
+    # lifecycle below models it. WHEN to file is the practice's decision,
+    # and it moved twice in two days. Where a policy can be a query it
+    # should be, because changing a `description` is cheaper than changing a
+    # required reference. This one earns the reference because it is not
+    # really about timing: it is about whether the work was done.
     reference_to Remedy
 
     identified_by { reference.value }
@@ -1742,13 +1853,24 @@ end
       order_by :reference
     end
 
-    # OPEN IN THE TRACKER, FIXED IN HERE. Every row is a stranger reading a
-    # public issue about a bug that no longer exists.
-    query "RestingOnVerified" do
-      description "Issues still open in the tracker for bugs this repository has already verified as fixed — each one owes the outside world a Close."
-      where(status: "filed")
-      where(:"bug.status" => "verified")
-      order_by :number
+    # WE FIXED IT OURSELVES AFTER ALL — the violation of the policy this
+    # aggregate exists to serve, in both directions at once.
+    #
+    # A row still `drafted` is one to WITHDRAW: the reason to raise it is
+    # gone. A row already `filed` is a debt to the outside world — a
+    # stranger reading a public issue about a bug that no longer exists —
+    # and owes a `Close`. Both are the same mistake seen at two moments,
+    # which is why they are one list rather than two.
+    #
+    # `filed` is deliberately included even though the ticket may have been
+    # entirely correct when it went out: a bug that was unfixable on Tuesday
+    # and fixed on Thursday leaves a public issue nobody has closed, and
+    # nothing else in this chapter would ever mention it again.
+    query "RestingOnFixed" do
+      description "Tickets — drafted or already public — about a bug this repository went on to fix itself. A drafted one should be withdrawn; a filed one owes the outside world a Close."
+      where(status: { in: "drafted,submitting,filed" })
+      where(:"bug.status" => { in: "fixed,verified" })
+      order_by :reference
     end
   end
 

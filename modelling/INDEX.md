@@ -50,13 +50,20 @@ For: the QA engineer (`qa/MESSAGE_TO_QA_BLUEBOOK_AGENT.md`,
 | | |
 |---|---|
 | chapter | `qa/bluebook/quality_control.bluebook` |
-| wiring | `qa/bluebook/quality_control.{hecksagon,world}` — Heki, `qa/data/` |
-| spec | `spec/quality_control_spec.rb` — 35 examples |
+| wiring | `qa/bluebook/quality_control.{hecksagon,world}` — Postgres, `hecks_quality_control` |
+| spec | `spec/quality_control_spec.rb` — 42 examples |
 | library | `lib/hecksagain/quality_control/ledger.rb` |
 | handover | `qa/MESSAGE_FROM_BLUEBOOK_ENGINEER.md` |
 
 Five aggregates — `Session` (with a `TestCase` entity), `Bug`, `Remedy`,
-`Ticket`, `Target`.
+`Ticket`, `Target`. Lineage-bearing: era 1 is minted on the first boot against
+an empty database, and every shape change after that needs a translation edge
+(`bin/scaffold_translation`, then `bin/translation_audit`) before the ledger
+will open again.
+
+```bash
+createdb hecks_quality_control   # once; the first boot mints era 1
+```
 
 ---
 

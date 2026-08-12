@@ -1,31 +1,43 @@
-# THE LEDGER IS DURABLE, WHICH IS THE WHOLE POINT.
+# THE LEDGER IS DURABLE AND LINEAGE-BEARING, WHICH IS THE WHOLE POINT.
 #
-# Every other example in this corpus binds its aggregates to `Memory`
-# because it is a corpus member, exercised by a spec and thrown away. This
-# one is not: `qa/FINDINGS.md` is a file that survives the session, and a
-# replacement for it that lived in a process would be strictly worse than
-# the markdown it replaces.
+# Every other example in this corpus binds its aggregates to `Memory` because
+# it is a corpus member, exercised by a spec and thrown away. This one is not:
+# `qa/FINDINGS.md` is a file that survives the session, and a replacement for
+# it that lived in a process would be strictly worse than the markdown it
+# replaces.
 #
-# HEKI RATHER THAN POSTGRES, deliberately. Heki is a file per aggregate
-# under `qa/data/` with a journal beside it — it needs no server, no
-# credentials and no network, so the ledger works on a laptop
-# with nothing running. It is also NOT lineage-capable
-# (`Adapters::Postgres` is the only adapter that declares
-# `lineage_capable?`), which means `EraCheck` does not gate a boot of this
-# domain: editing the bluebook mid-practice does not demand an era be minted
-# before the ledger can be opened again. That is the right trade for a tool
-# whose own shape is still moving.
+# POSTGRES, AND IT WAS HEKI FIRST. Heki is a file per aggregate with a journal
+# beside it — no server, no credentials, no network — and this file used to
+# argue for it on exactly that basis, with a second argument that reads badly
+# now: Heki is NOT lineage-capable (`Adapters::Postgres` is the only adapter
+# declaring `lineage_capable?`), so `EraCheck` never gated a boot and the
+# chapter could be edited freely while its shape was still moving.
+#
+# That second argument was choosing a store to dodge a discipline. The cost of
+# not dodging it, measured rather than guessed — add one attribute to `Bug`,
+# boot, and the ledger will not open:
+#
+#   cannot boot QualityControl: the shape changed (era 2) and no translation
+#   edge covers it — run bin/scaffold_translation to write the edge, check it
+#   with bin/translation_audit, then boot again
+#
+# That is a real tax on a chapter still in motion, and it is the right tax for
+# THIS chapter above any other in the repository. A bug ledger's whole claim is
+# that its history cannot be quietly rewritten; a store that let the shape
+# drift under the records without saying so would undercut the argument the
+# chapter spends two thousand lines making. Era 1 is minted on the first boot
+# against an empty database; every shape change after that is a translation
+# somebody writes and audits.
 #
 # NO PROJECTION. `banking.hecksagon` pairs every `persisted_by` with a
-# `projected_by("SqliteProjection")`; this does not, because nothing here
-# reads across aggregates at a volume a projection would help — the largest
-# collection this ledger will ever hold is a few hundred bugs, and every
-# query in the chapter filters on a lifecycle state the head already
-# carries.
+# `projected_by("SqliteProjection")`; this does not, because nothing here reads
+# across aggregates at a volume a projection would help — the largest
+# collection this ledger will ever hold is a few hundred bugs, and every query
+# in the chapter filters on a lifecycle state the head already carries.
 Hecks.hecksagon "QualityControl" do
-  QualityControl::Session.persisted_by("Heki")
-  QualityControl::Bug.persisted_by("Heki")
-  QualityControl::Remedy.persisted_by("Heki")
-  QualityControl::Ticket.persisted_by("Heki")
-  QualityControl::Target.persisted_by("Heki")
+  QualityControl::Session.persisted_by("Postgres")
+  QualityControl::Bug.persisted_by("Postgres")
+  QualityControl::Remedy.persisted_by("Postgres")
+  QualityControl::Ticket.persisted_by("Postgres")
+  QualityControl::Target.persisted_by("Postgres")
 end
