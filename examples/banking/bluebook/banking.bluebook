@@ -354,6 +354,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Close an account that has been emptied"
 
       reference_to Account
+      given("account is open or frozen") { ["open", "frozen"].include?(status) }
 
       given("an account closes empty") { balance.cents.zero? }
 
