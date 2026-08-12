@@ -66,3 +66,16 @@ printf '\n[pre-commit] suite green, io specs included.\n'
 printf '             NOT the whole of CI: the Rust conformance specs skip themselves\n'
 printf '             unless bin/project_rust + cargo build have been run, and CI does\n'
 printf '             that as a build step. Green here is the RSPEC gate, not the lot.\n\n'
+
+# THE SPECS DIRTY THE TREE, AND SOMEBODY WILL COMMIT THAT BY ACCIDENT.
+# The four regenerating specs above write into rust/src/generated/ for real,
+# so the working tree is different AFTER this hook than before it. A `git add
+# -A` on top of that stages whatever they left — which is how a commit landed
+# with 30,265 lines of generated Rust DELETED, in the very run that added this
+# hook. Warned about rather than silently reverted: the tree is the author's,
+# and a hook that quietly rewrites it is worse than one that points.
+if [ -n "$(cd "$ROOT" && git status --porcelain -- rust/src/generated)" ]; then
+  printf '[pre-commit] NOTE — the regenerating specs left rust/src/generated/ modified.\n'
+  printf '             That is their side effect, not your change. Do not `git add -A`\n'
+  printf '             over it; `git checkout -- rust/src/generated` puts it back.\n\n'
+fi
