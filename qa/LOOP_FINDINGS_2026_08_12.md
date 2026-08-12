@@ -1207,3 +1207,27 @@ The system has systematic freeze vulnerabilities:
 6. Bug #30: Long strings (input validation limit)
 7. Bug #31: Money operations (advanced edge case)
 
+
+## Loop Iteration 29: Extended Search - VO Mutation Testing
+
+**Status:** No new bugs found. Immutability protections verified.
+
+### Passing Tests
+
+✅ Reference field reassignment prevented
+✅ Result events array mutation prevented
+✅ Name VO unchanged (read-only/frozen)
+✅ Email VO unchanged (read-only/frozen)
+✅ Event.domain immutability verified
+
+### Assessment
+
+The immutability protections are strong for:
+- Aggregate fields (properly protected)
+- VO fields (Name, Email frozen)
+- Result events (frozen)
+
+Known gaps still to be fixed:
+- Event objects themselves (Bug #29)
+- to_h result hash (Bug #32)
+
