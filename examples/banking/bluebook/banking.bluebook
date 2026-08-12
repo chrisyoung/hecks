@@ -1075,6 +1075,7 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :due_on, PaymentDueDate
       given("customer is active") { account.customer.status == "active" }
       given("account is open") { account.status == "open" }
+      then_set :instruction, to: :instruction
       then_set :amount, to: :amount
       then_set :recipient, to: :recipient
       then_set :due_on, to: :due_on
