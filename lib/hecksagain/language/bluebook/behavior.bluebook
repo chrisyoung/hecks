@@ -202,7 +202,7 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "ArgName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an argument is named") { !value.to_s.empty? }
     end
 
@@ -354,7 +354,7 @@ Hecks.bluebook "Bluebook" do
     attribute :options,     list_of(AskOption)
 
     value_object "QueryName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a query is named") { !value.to_s.empty? }
     end
 
