@@ -30,6 +30,8 @@ Hecks.bluebook "TillRoom" do
     value_object "Mark" do
       attribute :amount,    Integer
       attribute :direction, String
+      invariant("a mark amount is positive") { amount.positive? }
+      invariant("a mark direction is in or out") { direction == "in" || direction == "out" }
     end
 
     value_object "Note" do
