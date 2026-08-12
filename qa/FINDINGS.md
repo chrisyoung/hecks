@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-**Session Status:** 86 bugs fixed (43% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
+**Session Status:** 96 bugs fixed (48% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
 
 ---
 
@@ -44,6 +44,14 @@ Documented bugs and findings from systematic adversarial testing.
 | #77-78 | identity.bluebook | 2 | Issuer, Subject |
 | #79-86 | console_settings.bluebook | 8 | StateStyleText, Flag, SettingsText, SettingsNumber, Column.field, DetailField.field, Precondition (×2), FieldFormat (×2) |
 | #87-96 | interview.bluebook | 10 | SessionReference, Subject, ChapterName, IdentityId, QuestionText, AnswerText, Topic, CatalogueRef, Slug, Prompt |
+
+### Language Bluebook Metadata VOs (10 bugs)
+| Bug | Location | Count | Details |
+|-----|----------|-------|---------|
+| #97-100 | aggregate.bluebook | 4 | AggregateName, Description, IdentityField, IdentityPath |
+| #101-102 | aggregate.bluebook | 2 | Field (name, type) |
+| #103-106 | behavior.bluebook | 4 | CommandName, Actor, Goal, EventName |
+| #107-110 | aggregate.bluebook | 2 | ValueName, Transition (command, to_state) |
 
 **Critical Query Bugs (2 - GitHub):**
 - #11: Array `in:` query bug → [GitHub #54 CLOSED](https://github.com/chrisyoung/hecksagain/issues/54) — FIXED ✅
@@ -205,6 +213,46 @@ Documented bugs and findings from systematic adversarial testing.
 - **Test Verification:** ✅ PASSES - String values correctly rejected for integer fields
 - **Conclusion:** Type checking works as designed. Code is correct.
 - **GitHub Issue:** #42 - Updated with investigation findings
+
+### #97-100: Language Bluebook Metadata VOs Without Validation (FIXED 2026-08-12)
+- **Location:** lib/hecksagain/language/bluebook/aggregate.bluebook
+- **Severity:** MEDIUM - Metadata contamination
+- **Details:** AggregateName, Description, IdentityField, IdentityPath had invariants without patterns (or no validation at all)
+- **Root Cause:** Language bluebooks define the DSL itself; their VOs weren't validated as strictly as domain VOs
+- **Fixes:**
+  - #97: AggregateName — added pattern: '[^ \t\n\r]'
+  - #98: Description — added pattern: '[^ \t\n\r]'
+  - #99: IdentityField — added pattern + invariant (was completely unvalidated)
+  - #100: IdentityPath — added pattern + invariant (was completely unvalidated)
+- **Commit:** edc43bc
+
+### #101-102: Field VO Name/Type Not Validated (FIXED 2026-08-12)
+- **Location:** lib/hecksagain/language/bluebook/aggregate.bluebook
+- **Severity:** MEDIUM - Generated code quality
+- **Details:** Field.name and Field.type could be whitespace-only, breaking code generation
+- **Fixes:**
+  - name, type, list attributes: added patterns + invariants
+- **Commit:** edc43bc
+
+### #103-106: Command Metadata VOs Without Validation (FIXED 2026-08-12)
+- **Location:** lib/hecksagain/language/bluebook/behavior.bluebook
+- **Severity:** MEDIUM - Metadata contamination
+- **Details:** CommandName, Actor, Goal, EventName lacked pattern constraints
+- **Fixes:**
+  - #103: CommandName — added pattern: '[^ \t\n\r]'
+  - #104: Actor — added pattern: '[^ \t\n\r]'
+  - #105: Goal — added pattern: '[^ \t\n\r]'
+  - #106: EventName — added pattern + invariant
+- **Commit:** edc43bc
+
+### #107-110: ValueName, Transition VOs Unvalidated (FIXED 2026-08-12)
+- **Location:** lib/hecksagain/language/bluebook/aggregate.bluebook
+- **Severity:** MEDIUM - Metadata quality
+- **Details:** ValueName.name, Transition.command, Transition.to_state lacked validation
+- **Fixes:**
+  - #107: ValueName.name — added pattern + invariant
+  - #108-110: Transition — added patterns to command, to_state; made from_state optional (nil for Create commands)
+- **Commit:** edc43bc
 
 ## Testing Coverage by Domain
 
