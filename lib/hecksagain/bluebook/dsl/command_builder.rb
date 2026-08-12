@@ -126,7 +126,49 @@ module Hecksagain
 
         public
 
-        def given(description, &predicate)
+        # Vendored default, not (yet) upstream hecksagain: hecks_nursury
+        # (375 files) writes bare `given { predicate }` with no
+        # description string -- hecksagain requires one. Given a
+        # generic fallback rather than requiring a corpus-wide text
+        # change across every nursery domain. TODO upstream via
+        # bin/evolve (migration plan task 7).
+        # Vendored guard, not (yet) upstream hecksagain (migration plan
+        # task 8): `requires "SoldOut" => false` (pigeoncoop.bluebook) --
+        # `requires`/`expects`, aliased to `given` elsewhere in this
+        # file, called with NO block at all (Ruby folds the trailing
+        # `key => value` into a single Hash positional argument, landing
+        # in `description`). `Ports::Extraction.canonical(nil)` crashed
+        # on `nil.source_location` -- a real, distinct DSL shape (a
+        # NAMED-CONDITION-EQUALS-VALUE guard, not a full predicate block)
+        # this session doesn't have real semantics for. Guarded so the
+        # file boots ; the guard is recorded as metadata only, never
+        # evaluated -- a documented gap, not silently pretended
+        # equivalent to a real given. TODO upstream via bin/evolve
+        # (migration plan task 7): a real design pass on what this shape
+        # means.
+        #
+        # `given :field, not_in: :other_field` -- vendored addition,
+        # not (yet) upstream hecksagain (migration plan task 8): a
+        # SECOND named-condition-guard shape (hecks_nursury's
+        # verbs.bluebook, `given :verb, not_in: :known_verbs`) --
+        # `:field` as the first positional instead of a description
+        # string, PLUS a trailing keyword-shaped hash Ruby folds into a
+        # SECOND positional (no `**kwargs` in this signature) -- two
+        # positionals, still no block, `ArgumentError` before reaching
+        # this guard at all until `condition` was added below. Same
+        # family, same treatment as the `requires "X" => false` guard
+        # just above : recorded as metadata only (folded into the
+        # description text), never evaluated. TODO upstream via
+        # bin/evolve (migration plan task 7), alongside the guard above
+        # -- one real design pass should cover both named-condition
+        # shapes at once.
+        def given(description = "a rule holds", condition = nil, &predicate)
+          unless predicate
+            text = condition ? "#{description.inspect} #{condition.inspect}" : description.inspect
+            @givens << IR::Given.new(description: text, canonical: "true", predicate: nil)
+            return
+          end
+
           canonical = Ports::Extraction.canonical(predicate)
 
           # moved to the language: given "a rule says what it means", on Verb.Rule
