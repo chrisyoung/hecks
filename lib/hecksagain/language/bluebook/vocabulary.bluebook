@@ -207,17 +207,22 @@ Hecks.bluebook "Bluebook" do
 
     # EntityInterpreter#call — the same shape
     # one level down, on a piece an aggregate holds rather than the aggregate
-    # itself. Shorter than AggregateDispatchOrder because an entity is never
-    # CREATED through this path (no assign_creation_attributes) and inherits
-    # its aggregate's own argument gate rather than running one of its own (no
-    # refuse_unknown_arguments) — hydrating the parent and locating the
-    # element replace a single hydrate. resolve_references stayed, though —
-    # an entity command can declare a reference-typed attribute the same way
-    # an aggregate command can (CommandRules#resolve_references is shared by
+    # itself. Shorter than AggregateDispatchOrder for one remaining reason:
+    # an entity is never CREATED through this path (no
+    # assign_creation_attributes) — hydrating the parent and locating the
+    # element replace a single hydrate. It DOES run its own argument gate:
+    # an entity command is addressed through two identities at once (the
+    # parent's and the entity's own), so refuse_unknown_arguments here checks
+    # both sets of heads rather than the aggregate's alone — see
+    # EntityInterpreter::ArgumentGate. resolve_references stayed, too — an
+    # entity command can declare a reference-typed attribute the same way an
+    # aggregate command can (CommandRules#resolve_references is shared by
     # both interpreters), even though nothing in the real corpus does yet.
     value_object "EntityDispatchOrder" do
       attribute :step, String
       one_of do
+        member step: "refuse_unknown_arguments"
+        member step: "refuse_absent_arguments"
         member step: "normalize_args"
         member step: "refuse_role_mismatch"
         member step: "resolve_references"
