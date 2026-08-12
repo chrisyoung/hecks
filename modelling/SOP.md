@@ -167,9 +167,12 @@ Every chapter teaches something about the DSL. If it is not written down it
 gets rediscovered by the next engineer at the same cost.
 
 - A hazard → `modelling/MODELLING_HAZARDS.md`, with the evidence.
-- A runtime bug → the QA ledger (`Hecksagain::QualityControl::Ledger`), not a
-  markdown file: `discover` then `reproduce`, and the reproduce gate will refuse
-  until you actually have a reproduction, which is the point.
+- A runtime bug → the QA ledger, through `qa/quality_control`, not a markdown
+  file: `write_test` then `log`, and `Log` will refuse until you hand it the
+  `demonstration` that proves the bug, which is the point. (The Ruby
+  `Ledger` class this used to name is gone — it held a second way to do
+  everything, including its own `gh` shell-out beside the `IssueTracker`
+  port. The command line is the only door.)
 - A session → `modelling/reports/YYYY-MM-DD.md`.
 
 ---

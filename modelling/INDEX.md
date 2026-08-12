@@ -51,12 +51,13 @@ For: the QA engineer (`qa/MESSAGE_TO_QA_BLUEBOOK_AGENT.md`,
 |---|---|
 | chapter | `qa/bluebook/quality_control.bluebook` |
 | wiring | `qa/bluebook/quality_control.{hecksagon,world}` — Postgres, `hecks_quality_control` |
-| spec | `spec/quality_control_spec.rb` — 42 examples |
-| library | `lib/hecksagain/quality_control/ledger.rb` |
+| spec | `spec/quality_control_spec.rb` — 40 examples |
+| cli | `qa/quality_control` — projected, not written |
+| adapters | `qa/adapters/` — github, ci, rspec_runner, fuzzer, toolchain |
 | handover | `qa/MESSAGE_FROM_BLUEBOOK_ENGINEER.md` |
 
-Five aggregates — `Session` (with a `TestCase` entity), `Bug`, `Remedy`,
-`Ticket`, `Target`. Lineage-bearing: era 1 is minted on the first boot against
+Five aggregates — `Target` (the rotation), `Sweep` (one pass, with a `Check`
+entity), `Bug`, `Ticket`, `Clearance`. Lineage-bearing: era 1 is minted on the first boot against
 an empty database, and every shape change after that needs a translation edge
 (`bin/scaffold_translation`, then `bin/translation_audit`) before the ledger
 will open again.
@@ -69,48 +70,72 @@ createdb hecks_quality_control   # once; the first boot mints era 1
 
 ## Using the ledger
 
-`qa/quality_control` is its command line — minted by `bin/project_cli` beside the domain it drives, from the
-bluebook name, and projected from the chapter — every verb, every
+`qa/quality_control` is its command line — minted by `bin/project_cli` beside
+the domain it drives, and projected from the chapter: every verb, every
 question, every argument typed, and every refusal, computed at the moment it
-prints.
+prints. Nothing about QualityControl is written into it. Add a command to the
+bluebook and it appears; the file is twenty-five lines and boots `__dir__`.
 
 ```bash
-qa/quality_control                                  # every verb and question
-qa/quality_control bug.discover --help              # what it wants, and how it refuses
-qa/quality_control bug.discover session_id=QA-1 reference=BUG#1 severity=high …
-qa/quality_control ask bug.unfixed                  # read; changes nothing
+qa/quality_control                       # every verb and question
+qa/quality_control log --help            # what it wants, and how it refuses
+qa/quality_control ask queue             # read; changes nothing
 ```
 
-It works from anywhere in the checkout, which is the point — the QA agent is
-standing wherever the bug is, not in `qa/`.
+It runs from anywhere, which is the point — the QA agent stands wherever the
+bug is, not in `qa/`.
 
+A typical pass, in the order the chapter enforces:
 
-`Hecksagain::QualityControl::Ledger` holds a booted runtime of the chapter and
-the handful of things the model deliberately does not: minting the next
-reference in sequence, composing a GitHub issue body out of a bug and the
-attempt that failed against it, shelling out to `gh`, and rendering the daily
-report from records.
-
-```ruby
-require "hecksagain/quality_control/ledger"
-
-qa  = Hecksagain::QualityControl::Ledger.open
-bug = qa.discover(session: "QA-2026-08-11", domain: "Pizzas", severity: "high",
-                  title: "…", symptom: "…", expectation: "…")
-qa.reproduce(bug: bug, how: "rspec spec/qa_bugs_spec.rb -e 'BUG#4'")
-qa.status      # the dashboard — every list in it should be empty or short
-qa.tally       # the bug count, with the share of it that turned out not to be bugs
+```bash
+qa/quality_control target.claim id=QC held_by.value=agent-one
+qa/quality_control open target_id=QC reference.value=SW-9 engineer.value=agent-one
+qa/quality_control check id=SW-9 subject.value="Banking::Account.Freeze" \
+                         expectation.value="a frozen account refuses a second freeze"
+qa/quality_control surprised id=SW-9 sequence.value=1 observation.value="the second freeze was accepted"
+qa/quality_control write_test id=SW-9 scope.value=spec/qa_bugs_spec.rb source.value="…"
+qa/quality_control log sweep_id=SW-9 reference.value=BUG#1 sequence.value=1 \
+                       title.value="…" demonstration.value=spec/qa_bugs_spec.rb \
+                       symptom.value="…" expectation.value="…" submitter.value=agent-one
+qa/quality_control conclude id=SW-9 notes.value="…"
 ```
 
-Everything else goes through the facade the chapter installs
-(`QualityControl::Bug.discover(...)`, `bug.reproduce(...)`) — see
-`spec/quality_control_spec.rb`.
+**THERE IS NO RUBY API BESIDE THIS, AND THAT IS DELIBERATE.** A
+`Hecksagain::QualityControl::Ledger` class used to live in `lib/` holding a
+booted runtime and a second way to do everything — including its own
+`gh` shell-out, competing with the `IssueTracker` port. It was deleted: two
+paths to filing an issue is one more than a ledger whose whole claim is that
+nothing reaches the outside world unrecorded can survive. Everything the
+practice can do, it does through the doors below.
+
+Ruby callers use the facade the chapter installs — `QualityControl::Bug.log(...)`,
+`bug.investigate(...)` — which is what `spec/quality_control_spec.rb` does.
+
+## The outside world, through ports
+
+The agent shells out to nothing. Every tool it needs is an `asks` on one of
+five ports, so a run becomes a record rather than terminal scrollback:
+
+| port | verbs |
+|---|---|
+| `Testing` | `run_specs`, `write_test`, `smoke_test`, `bisect` |
+| `Fuzzing` | `fuzz`, `model_check` |
+| `Toolchain` | `translation_audit`, `refresh_projections`, `structure`, `read_docs`, `run_script` |
+| `CI` | `clearance.run` |
+| `IssueTracker` | `raise` → `submit` → `poll` |
+
+`answers` versus `refuses` means "did the call work", NOT "was the news
+good". A fuzz run that finds a counterexample ANSWERED — that is the tool
+working. The one exception is `CI`, where a red suite IS a refusal, because
+that port asks a different question: not "what happens when you run this" but
+"will you vouch for this commit".
+
 
 **The workflow is enforced by the model, so it will refuse you in the
-language's own words.** Investigating a bug nobody reproduced answers:
+language's own words.** Verifying a fix nobody made answers:
 
 ```
-Investigate refused — status is "found", and Investigate moves it only from "reproduced"
+Verify refused — status is "logged", and Verify moves it only from "fixed"
 ```
 
 That refusal is the product, not an obstacle.
