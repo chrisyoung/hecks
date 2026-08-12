@@ -80,8 +80,28 @@ module Hecksagain
 
         def for_verb(verb) = @settings.fetch(verb.to_s, {})
 
+        # Vendored fix, not (yet) upstream hecksagain: the bare fallback
+        # used to be `@settings.fetch("#{verb}:#{adapter}", for_verb(verb))`
+        # unconditionally -- but `for_verb(verb)` is whichever adapter's
+        # bare top-level block was declared LAST (e.g. `persisted_by("Heki")
+        # do dir :default end`), and falling back to it for an UNRELATED
+        # adapter applies one adapter's settings to another's bind. Real,
+        # corpus-caught bug: deciderate.hecksagon binds Game/Vote to Heki
+        # and Bubble to Memory (the Cart-equivalent ephemeral aggregate) ;
+        # the world configures only Heki's `dir`, and Bubble's lookup for
+        # "persisted_by:memory" (absent, correctly -- Memory carries no
+        # values) fell back to Heki's `{adapter: "Heki", dir: ...}`, then
+        # failed check_settings with "Memory does not declare :dir". Only
+        # fall back when the generic entry's OWN adapter actually matches
+        # the one being asked about -- otherwise there is genuinely
+        # nothing configured for this bind, `{}`, exactly right for an
+        # adapter like Memory that takes no values at all.
         def for_binding(verb, adapter)
-          @settings.fetch("#{verb}:#{adapter.to_s.downcase}", for_verb(verb))
+          qualified = @settings["#{verb}:#{adapter.to_s.downcase}"]
+          return qualified if qualified
+
+          generic = for_verb(verb)
+          generic[:adapter].to_s.downcase == adapter.to_s.downcase ? generic : {}
         end
 
         def to_h = { domain: @domain, realm: @realm, latest: @latest, settings: @settings }
