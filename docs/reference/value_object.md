@@ -65,7 +65,7 @@ a command's other checks.
 `rule do ... end` — fills `invariants`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A live alias of `invariant`, not a rename — some corpora write `rule "description" do ... end` for the identical field-scoped check.
 
 ## description
 
@@ -73,5 +73,5 @@ a command's other checks.
 `description`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A no-op stub — accepted so a value object using it still boots, the value discarded. Narrative text the language does not currently hold anywhere.
 

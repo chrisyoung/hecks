@@ -37,7 +37,7 @@ Names a `lib/hecksagain/framework/bluebook/` member this domain wants attached �
 `adapter`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+Two forms. Bare — `adapter :heki`/`:memory`/`:sqlite` — is a domain-wide default: every aggregate in this bluebook persists there unless it declares its own `persisted_by`, applied last so an aggregate-level bind always wins. Bare with a different kind and options — `adapter :custom_queue, url: "..."` — records a raw, opaque adapter binding, not a bind on any one aggregate. The block form — `adapter "Name" do driving on <kind> "<arg>" do |signal| dispatch "Domain::Aggregate.Command" end end` — declares a DRIVING-side construct: an external clock/file-watch/http-post reaching IN, the inverse of `persisted_by`/`charged_by`'s driven side. Structural support only; the actual scheduler that fires these is a separate concern.
 
 ## gate
 
@@ -45,7 +45,7 @@ Names a `lib/hecksagain/framework/bluebook/` member this domain wants attached �
 `gate`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`gate "Aggregate", :role do allow :Cmd1, :Cmd2, ... end` — a centralized command allowlist. Accepted so the file boots ; not stored or enforced, since each command's own `role` (see the Command context page) already checks the same thing at dispatch time, and this would be a second, easily-stale source of truth for it.
 
 ## success
 
@@ -53,7 +53,7 @@ Names a `lib/hecksagain/framework/bluebook/` member this domain wants attached �
 `success`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+Names the command dispatched when an adapter-mediated effect succeeds — `Aggregate.verb("Adapter", on: "Event") do success "Cmd" end`, the canonical Pizzas example's own async-verdict shape. Accepted so the file boots ; no adapter-host delivery mechanism or verdict re-entry wiring exists yet, so nothing actually calls this back.
 
 ## failure
 
@@ -61,7 +61,7 @@ Names a `lib/hecksagain/framework/bluebook/` member this domain wants attached �
 `failure`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+The refusal-side sibling of `success`, naming the command dispatched when the adapter-mediated effect fails. Same structural-only status.
 
 ## port
 

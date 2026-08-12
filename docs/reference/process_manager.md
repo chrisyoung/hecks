@@ -67,7 +67,7 @@ here, or the declaration is refused at load time.
 `description`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A no-op stub — accepted so a process manager using it still boots, the value discarded. Narrative text belonging to the corpus author, not the IR.
 
 ## on
 

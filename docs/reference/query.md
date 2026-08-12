@@ -57,8 +57,6 @@ aggregate — the `:symbol` a `where` value can resolve from
 
 Names a query parameter as another aggregate's own identity — `Card.Active`'s own `Board`, scoping the result to one board's cards when given. A plain attribute typed as a reference; a query has no root of its own to act on the way a command does, so there's no "acts on itself" case to distinguish here, just a parameter. `optional:` lets the same query run unscoped too — every active card everywhere, when no board is named.
 
-<!-- TODO: document this word -->
-
 ## where
 
 <!-- generated:begin word=where -->
@@ -255,7 +253,7 @@ influence the query plan — the store still picks its own index.
 `count`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+Reduces the where-filtered set to a single scalar — how many rows match, rather than the rows themselves. Riding the same `where` clauses an ordinary query already applies.
 
 ## median
 
@@ -263,7 +261,7 @@ influence the query plan — the store still picks its own index.
 `median`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`median :field` — the same scalar-reduction shape as `count`, one field further: the median value of `field` across the where-filtered set.
 
 ## group_by
 
@@ -271,7 +269,7 @@ influence the query plan — the store still picks its own index.
 `group_by`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`group_by :field` — a third scalar-reduction shape alongside `count`/`median`, except it doesn't reduce to one scalar: it partitions the where-filtered set by `field`'s value and tallies each partition. The Query-context sibling of the ReadModel-context `group_by`, which nests a whole rootless table instead — see the ReadModel reference page.
 
 ## scope_to
 
@@ -279,5 +277,5 @@ influence the query plan — the store still picks its own index.
 `scope_to`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A no-op stub for caller-identity row authorization — the intent is a `where(actor == :caller)` injected from a reserved kwarg the runtime's own caller context would supply. Accepted and structurally captured ; no runtime learns "who is calling" yet, so nothing is actually scoped.
 

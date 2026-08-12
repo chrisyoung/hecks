@@ -109,7 +109,7 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `category` — fills `category`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A free-form second axis alongside `classification`'s fixed core/supporting/generic set — `category "framework"`, `category "world"`, whatever grouping a corpus actually uses. Unlike `classification`, nothing enforces a closed set of values here; it is a fact recorded and read back, not judged.
 
 ## glossary
 
@@ -117,7 +117,7 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `glossary`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+Accepted so a chapter using it still boots — `glossary(strict: true) do ... end` names a vocabulary lock and its preferred terms. Not yet threaded into the IR: the block body is never evaluated or stored, a documented gap rather than a silently pretended feature.
 
 ## entrypoint
 
@@ -125,7 +125,7 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `entrypoint`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+Accepted and discarded — names where a deployment or process starts, prose rather than a fact the language currently holds.
 
 ## fixture
 
@@ -133,7 +133,7 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `fixture`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`fixture "Name", on: "Aggregate" do ... end` — deploy-config seed data. Accepted so the file boots ; the block's field-setter calls have no real receiver methods and nothing seeds a real record from them yet.
 
 ## section
 
@@ -141,7 +141,7 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `section`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`section "Name" do row "key", value end` — a declarative source/template pairing. Accepted so the file boots ; `row` lines inside are captured by an inert receiver and go nowhere.
 
 ## define
 
@@ -149,7 +149,7 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `define`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`define "Term", "definition text"` — a glossary-term entry, sibling to `glossary` above. Accepted and discarded, the same documented gap.
 
 ## lifecycle
 
@@ -157,7 +157,7 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `lifecycle`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A bluebook-level, bare-string-named state-machine SUMMARY — `lifecycle "Name" do state "x" ; transition from: "a", to: "b", on: "Event" end` — disconnected from any one aggregate or field, a documentation-flavored restatement of what the real per-aggregate `lifecycle :field, default: ... do ... end` sugar (see the Aggregate context page) actually declares. Accepted so the file boots ; not wired to any aggregate's real lifecycle.
 
 ## event
 
@@ -165,7 +165,7 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `event`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`event "Name"` — a redundant vocabulary-listing sibling to `glossary`/`define`, naming an event some command elsewhere in the same file already `emits`. Accepted and discarded.
 
 ## actor
 
@@ -173,5 +173,5 @@ Opens a stateful saga spanning several events and commands — `correlates_by`, 
 `actor`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`actor "Name", description: "..."` — a prose role registry, sibling to `role "X"` already used freely inside commands. Documentation, not a new construct with runtime meaning. Accepted and discarded.
 

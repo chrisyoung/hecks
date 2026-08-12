@@ -59,7 +59,7 @@ in the same domain as the event that fired it — the ordinary case.
 `description`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A no-op stub — accepted so a policy using it still boots, the value discarded.
 
 ## where
 
@@ -67,7 +67,7 @@ in the same domain as the event that fired it — the ordinary case.
 `where`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A conditional trigger — `where field: value` — gating whether the policy fires on the triggering EVENT's own payload, equality-only against a literal hash. Distinct from an aggregate query's own `where`, which filters stored records rather than one event's fields.
 
 ## for_each
 
@@ -75,7 +75,7 @@ in the same domain as the event that fired it — the ordinary case.
 `for_each`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`for_each from: "Aggregate.query_name", where: { field: from_event(:x) }` — a policy-level fan-out, the same shape `dispatch ..., for_each:` gives a saga handler (see the Handler context page), except every `where:` value resolves against the triggering event's payload only, since a policy has no saga instance to source from.
 
 ## from_event
 
@@ -83,7 +83,7 @@ in the same domain as the event that fired it — the ordinary case.
 `from_event`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`from_event(:field)` — sugar reading a field from the triggering event's own payload, for use inside `where:`/`for_each: where:`. Returns the bare Symbol, resolved at delivery time the same way a `with:` value already is.
 
 ## with
 
@@ -91,7 +91,7 @@ in the same domain as the event that fired it — the ordinary case.
 `with`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`with(key, value)` — a literal extra argument attached to the triggered command's payload, beyond whatever the triggering event's own fields already supply.
 
 ## map
 
@@ -99,7 +99,7 @@ in the same domain as the event that fired it — the ordinary case.
 `map`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`map(**pairs)` — renames or selects an event-payload field for the triggered command's argument, folded into the same literal-argument mechanism `with` uses. Exact select-vs-merge runtime semantics are not yet verified for every shape.
 
 ## condition
 
@@ -107,7 +107,7 @@ in the same domain as the event that fired it — the ordinary case.
 `condition do ... end`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A no-op stub for a comparison/boolean expression over the triggering event's own payload via a block parameter — `condition { |event| event.severity == "critical" }`. Accepted so the file boots ; a policy using it currently fires unconditionally on its `on:` event, not gated as declared, a real and documented gap distinct from the already-real `where` above (`where` is equality-only on a literal hash ; `condition` needs the full comparison grammar wired to a named block parameter, which nothing here does yet).
 
 ## cross_domain
 
@@ -115,5 +115,5 @@ in the same domain as the event that fired it — the ordinary case.
 `cross_domain`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`cross_domain true` — a bare boolean flag marking the policy as crossing a domain boundary conceptually, distinct from the already-real `across "DomainName"` (which names the actual target domain). Accepted and discarded ; there is no domain name here to wire it to.
 

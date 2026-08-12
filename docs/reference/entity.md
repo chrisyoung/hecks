@@ -45,9 +45,7 @@ Names the field that tells one element of the list apart from another — unique
 | `optional:` | flag | false | optional |
 <!-- generated:end -->
 
-Points an entity at a real ROOT, the same way an aggregate's own `reference_to` does — a `Card` entity's own `assignee_id`, pointing at a `Team`. Never at another entity: there's no cross-piece addressing anywhere in this language to resolve one against, so this only ever reaches a head.
-
-<!-- TODO: document this word -->
+Points an entity at a real ROOT, the same way an aggregate's own `reference_to` does — a `Card` entity's own `assignee_id`, pointing at a `Team`. Never at another entity: there's no cross-piece addressing anywhere in this language to resolve one against, so this only ever reaches a head. `optional:` mirrors an aggregate's own `reference_to optional:` — the entity may be declared without ever pointing at a real record of that type.
 
 ## command
 

@@ -79,7 +79,7 @@ A precondition, read against the record BEFORE any mutation runs. The first one 
 `description` — fills `goal`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A live alias of `goal`, not a rename — some corpora write `description "..."` where this reference otherwise says `goal "..."`. Same field, same one-line statement of intent.
 
 ## expects
 
@@ -87,7 +87,7 @@ A precondition, read against the record BEFORE any mutation runs. The first one 
 `expects do ... end` — fills `givens`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A live alias of `given` — "what the command requires before it runs." Same precondition shape, same `GivenNotMet` refusal, different word some corpora write instead.
 
 ## requires
 
@@ -95,7 +95,7 @@ A precondition, read against the record BEFORE any mutation runs. The first one 
 `requires do ... end` — fills `givens`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A second live alias of `given`, the spelling another corpus convention uses for the identical precondition shape.
 
 ## sets
 
@@ -156,7 +156,7 @@ Declares an argument this command needs, scalar or value object — same word, s
 `redirects_native` — fills `redirects_native`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+Names one or more native harness tool names this command is the storehouse-door equivalent for — `redirects_native "Edit", "MultiEdit"`. Backs a governed-door lookup that decides which FQN and arguments a native tool call resolves to; a tool name that names none returns a fail-safe "no door."
 
 ## ensures
 
@@ -172,5 +172,5 @@ A postcondition, read AFTER the mutation runs but before `save` — `old` names 
 `guarantees do ... end` — fills `ensures`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A live alias of `ensures` — "what the command ensures afterward." Same postcondition shape, same `EnsuresNotMet` refusal, different word some corpora write instead.
 

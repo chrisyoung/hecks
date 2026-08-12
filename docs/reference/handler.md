@@ -31,7 +31,7 @@ separate `across` here, the qualified name carries it.
 `given do ... end`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+A dispatch-level precondition on this handler's own `dispatch`es, distinct from the transition guard — the transition and any `remember`s always happen when the event fires in the right `from_state`; `given` only decides whether the dispatches actually fire. `ctx` is a merged Hash of the triggering event's payload plus the saga instance's own remembered fields.
 
 ## remember
 
@@ -39,7 +39,7 @@ separate `across` here, the qualified name carries it.
 `remember`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`remember key: from_event(...)` — writes into the saga instance's own carried memory, for a LATER handler on the same instance to read back via `from_pm`. Fires once per handler firing, before this handler's own dispatches run, so a same-handler `dispatch ..., with: { y: from_pm(:key) }` composes in written order.
 
 ## set
 
@@ -47,7 +47,7 @@ separate `across` here, the qualified name carries it.
 `set`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`set :field, value` — the positional-argument sibling of `remember key: value`, same accumulator, same saga-memory write, just field-then-value instead of a kwarg.
 
 ## from_event
 
@@ -55,7 +55,7 @@ separate `across` here, the qualified name carries it.
 `from_event`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`from_event(field, default:)` — sugar reading a field from the triggering event's own payload, for use inside `with:`/`remember`/`set`. Returns the bare Symbol, resolved at dispatch time.
 
 ## from_iter
 
@@ -63,7 +63,7 @@ separate `across` here, the qualified name carries it.
 `from_iter`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+Same shape as `from_event`, sourcing from a `for_each` iteration row instead of the triggering event — one value per row a fanned-out dispatch enumerates.
 
 ## from_pm
 
@@ -71,7 +71,7 @@ separate `across` here, the qualified name carries it.
 `from_pm`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+Same shape again, sourcing from the process manager's own persisted state — a field an earlier handler on the same instance wrote with `remember`, rather than something the current event or iteration carries.
 
 ## template
 
@@ -79,5 +79,5 @@ separate `across` here, the qualified name carries it.
 `template`
 <!-- generated:end -->
 
-<!-- TODO: document this word -->
+`template("fmt %s", from_pm(:x, default: "y"))` — string composition inside a `with:` value, substituting resolved fields (`from_event`/`from_pm`/`from_iter`, or literals) into surrounding text via `Kernel#format`.
 
