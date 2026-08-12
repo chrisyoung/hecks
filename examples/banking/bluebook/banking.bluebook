@@ -543,6 +543,8 @@ Hecks.bluebook "Banking", version: "v1" do
         goal "Challenge a withdrawal that was not mine"
 
         attribute :narrative, Narrative
+        given("customer is active") { parent.account.customer.status == "active" }
+        given("account is open") { parent.account.status == "open" }
         given("card is not retired") { status != "retired" }
         given("withdrawal is taken") { state == "taken" }
         then_set :narrative, to: :narrative
