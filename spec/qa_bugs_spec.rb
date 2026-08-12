@@ -216,6 +216,92 @@ RSpec.describe "QA Bug Demonstrations", qa: true do
           email: { address: "not-an-email" })
       }.to raise_error
     end
+
+    it "rejects duplicate account number" do
+      cust = banking_runtime.dispatch("Banking::Customer.Register",
+        reference: { value: "cust-#{SecureRandom.hex(4)}" },
+        name: { given: "John", family: "Doe" },
+        email: { address: "john@example.com" })
+
+      acct_num = "acct-#{SecureRandom.hex(4)}"
+
+      banking_runtime.dispatch("Banking::Account.Open",
+        customer_id: cust.id,
+        number: { value: acct_num },
+        kind: { name: "current" },
+        daily_limit: { cents: 10_000 })
+
+      expect {
+        banking_runtime.dispatch("Banking::Account.Open",
+          customer_id: cust.id,
+          number: { value: acct_num },
+          kind: { name: "current" },
+          daily_limit: { cents: 10_000 })
+      }.to raise_error
+    end
+
+    it "rejects whitespace-only customer reference" do
+      expect {
+        banking_runtime.dispatch("Banking::Customer.Register",
+          reference: { value: "   " },
+          name: { given: "John", family: "Doe" },
+          email: { address: "john@example.com" })
+      }.to raise_error
+    end
+
+    it "rejects whitespace-only account number" do
+      cust = banking_runtime.dispatch("Banking::Customer.Register",
+        reference: { value: "cust-#{SecureRandom.hex(4)}" },
+        name: { given: "John", family: "Doe" },
+        email: { address: "john@example.com" })
+
+      expect {
+        banking_runtime.dispatch("Banking::Account.Open",
+          customer_id: cust.id,
+          number: { value: "   " },
+          kind: { name: "current" },
+          daily_limit: { cents: 10_000 })
+      }.to raise_error
+    end
+
+    it "allows SafeDepositBox with composite identity" do
+      box = banking_runtime.dispatch("Banking::SafeDepositBox.Create",
+        branch_code: { value: "NYC" },
+        box_number: { value: 123 })
+      expect(box.id).to be_present
+    end
+
+    it "allows same box number in different branches" do
+      box1 = banking_runtime.dispatch("Banking::SafeDepositBox.Create",
+        branch_code: { value: "NYC" },
+        box_number: { value: 123 })
+
+      box2 = banking_runtime.dispatch("Banking::SafeDepositBox.Create",
+        branch_code: { value: "LA" },
+        box_number: { value: 123 })
+
+      expect(box1.id).not_to eq(box2.id)
+    end
+
+    it "rejects duplicate SafeDepositBox" do
+      banking_runtime.dispatch("Banking::SafeDepositBox.Create",
+        branch_code: { value: "NYC" },
+        box_number: { value: 123 })
+
+      expect {
+        banking_runtime.dispatch("Banking::SafeDepositBox.Create",
+          branch_code: { value: "NYC" },
+          box_number: { value: 123 })
+      }.to raise_error
+    end
+
+    it "rejects empty branch code" do
+      expect {
+        banking_runtime.dispatch("Banking::SafeDepositBox.Create",
+          branch_code: { value: "" },
+          box_number: { value: 123 })
+      }.to raise_error
+    end
   end
 
 end
