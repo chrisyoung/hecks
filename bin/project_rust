@@ -13,8 +13,60 @@ require "hecksagain"
 require "hecksagain/bluebook/meta_validator"
 require_relative "../rust/project"
 require "fileutils"
+require "json"
+
+# A plain Ruby `require`, not a DSL `Kernel.load` below — this only
+# defines the `Hecksagain::Adapters::Postgres` CLASS constant (`lineage_
+# capable?`'s own singleton method lives there), so `registry.adapter_
+# class("Postgres")` (Runtime::EraCheck's own capability lookup, reused
+# below) can resolve it. Safe at generator time and every other time:
+# `require "pg"` is lazy, inside `Postgres.connect_for` only (that
+# file's own comment) — nothing here opens or even attempts a database
+# connection.
+require "hecksagain/adapters/driven/postgres"
 
 domain = ARGV.shift or abort "usage: bin/project_rust <domain>"
+
+# STAGE 8 OPT-IN — `HECKS_PARSER=rust HECKS_CODEGEN=rust bin/project_rust
+# <domain>` runs the ENTIRE pipeline (parse AND codegen) through
+# `rust/parser`'s `hecks-parse`/`rust/codegen`'s `hecks-codegen`
+# instead, with ZERO `Kernel.load` of any domain bluebook — see
+# `rust/project_rust_pipeline.rb`'s own header for the full contract
+# and its one deliberately-named gap (the `lineage` sidecar key).
+#
+# PAIRED, not independently toggleable: `HECKS_PARSER=rust` alone would
+# mean "parse in Rust, then hand a Rust-shaped ir.json to the STILL-Ruby
+# `RustProjection::DomainGenerator` below" — that already works today
+# (`domain_generator.rb`'s own `json_shaped` seam exists for exactly
+# this), but it is a DIFFERENT, narrower experiment than "compile
+# entirely in Rust" and isn't what this stage is verifying end-to-end.
+# `HECKS_CODEGEN=rust` alone (Ruby parses, Rust generates) has no
+# real use today either: `hecks-codegen` only reads the `ir.json` SHAPE,
+# never Ruby's own live IR objects, so there's no seam for Ruby-parsed
+# input to skip. Requiring BOTH keeps the opt-in meaning exactly one
+# thing — the plan's own "no Ruby involved at build time" — rather than
+# a matrix of half-Rust configurations nothing exercises or verifies.
+#
+# THE DEFAULT (no env vars, or only one of the two set) is the
+# ORIGINAL body below, UNCHANGED — every other concurrent session in
+# this repo calling `bin/project_rust` for unrelated work keeps getting
+# exactly what it always has.
+if ENV["HECKS_PARSER"] == "rust" && ENV["HECKS_CODEGEN"] == "rust"
+  require_relative "../rust/project_rust_pipeline"
+  RustProjectPipeline.call(domain)
+else
+
+# EVERY IR HANDED TO THE GENERATOR GOES THROUGH REAL JSON FIRST — never
+# the live Hash `Exporter.call` returns. That Hash carries real Ruby
+# Symbols (`IR::Attribute#to_h`'s `name:`, `IR::Mutation#to_h`'s
+# `op:`/`target:`); the `ir.json` sidecar the generator writes alongside
+# its .rs files — and which a Rust-side parser is being built to produce
+# directly, without booting Ruby at all — can only carry Strings. Passing
+# the live Hash straight through would let rust/project/*.rb quietly
+# depend on the Symbol spelling, and that dependency would only surface
+# the day the producer changed. This is the seam: the generator is only
+# ever exercised against the shape its future input actually has.
+def json_shaped(ir) = JSON.parse(JSON.generate(ir), symbolize_names: true)
 
 target_registry = Hecksagain::Runtime::Registry.new
 Hecksagain.with_registry(target_registry) do
@@ -22,6 +74,13 @@ Hecksagain.with_registry(target_registry) do
   Kernel.load(File.expand_path("../lib/hecksagain/ports/extraction.port", __dir__))
   Kernel.load(File.expand_path("../lib/hecksagain/adapters/driven/memory.adapter", __dir__))
   Kernel.load(File.expand_path("../lib/hecksagain/adapters/driven/prism.adapter", __dir__))
+  # The DSL declaration (name + fields), NOT the Ruby class required
+  # above — `registry.adapters["Postgres"]` (an IR::Adapter, from THIS
+  # load) and `registry.adapter_class("Postgres")` (the Ruby class, from
+  # the `require` above) are two separate lookups `EraCheck.lineage_
+  # capable?` checks in sequence; both have to be present or it silently
+  # (and correctly, for any OTHER unloaded adapter) answers false.
+  Kernel.load(File.expand_path("../lib/hecksagain/adapters/driven/postgres.adapter", __dir__))
   Kernel.load(File.join(domain, "bluebook", "#{File.basename(domain)}.bluebook"))
 
   # ALSO the .hecksagon file, not just the .bluebook — this is what
@@ -43,7 +102,16 @@ end
 # insertion order (Ruby Hash's own guarantee) already puts it first
 # regardless of how many framework chapters get pulled in after it.
 target_domain_name = target_registry.bluebooks.keys.first
-target_ir = Hecksagain::Projector::Exporter.call(target_registry).fetch(target_domain_name)
+target_ir = json_shaped(Hecksagain::Projector::Exporter.call(target_registry).fetch(target_domain_name))
+
+# MERGED IN, NOT PART OF `Exporter.call`'s OWN OUTPUT — see `Exporter.
+# lineage`'s own header: a binding fact, not a shape fact, so it rides
+# alongside the canonical per-domain IR as its own top-level key rather
+# than inside it (ADR 0001 stays true: `bluebook.to_h` itself never
+# mentions an adapter). Every consumer of `target_ir` from here on
+# (metadata.rs's embedded IR_JSON, the `ir.json` sidecar rust/host
+# already reads at runtime, manifest.json) sees it the same way.
+target_ir[:lineage] = json_shaped(Hecksagain::Projector::Exporter.lineage(target_registry, target_domain_name))
 
 # THE SELF-HOSTED LANGUAGE, COMPILED IN TOO. `lib/hecksagain/language/bluebook/`
 # declares what a bluebook IS — Bluebook, Aggregate, Command, ValueObject,
@@ -55,7 +123,7 @@ target_ir = Hecksagain::Projector::Exporter.call(target_registry).fetch(target_d
 # then judged through its own fixpoint) — reused here rather than
 # re-derived, so this can never silently drift from what MetaValidator
 # itself actually loads.
-meta_ir = Hecksagain::Projector::Exporter.call(Hecksagain::Bluebook::MetaValidator.grammar_registry).fetch("Bluebook")
+meta_ir = json_shaped(Hecksagain::Projector::Exporter.call(Hecksagain::Bluebook::MetaValidator.grammar_registry).fetch("Bluebook"))
 
 out_root = File.expand_path("../rust/src/generated", __dir__)
 FileUtils.mkdir_p(out_root)
@@ -75,8 +143,47 @@ FileUtils.rm_rf(File.join(out_root, "active"))
 
 target_mod_name = File.basename(domain)
 FileUtils.rm_rf(File.join(out_root, target_mod_name))
-RustProjection::DomainGenerator.call(meta_ir, "the self-hosted language (lib/hecksagain/language/bluebook)", File.join(out_root, "meta"), "meta")
-target_aggregates = RustProjection::DomainGenerator.call(target_ir, domain, File.join(out_root, target_mod_name), target_mod_name)
+meta_result = RustProjection::DomainGenerator.call(meta_ir, "the self-hosted language (lib/hecksagain/language/bluebook)", File.join(out_root, "meta"), "meta")
+
+# META'S OWN merged.rs — meta has always gotten full codegen (aggregates,
+# commands, queries, and now read models), but until this line nothing
+# ever gave it the ONE FILE that makes a generated module SELECTABLE as
+# its own compiled artifact (`domains`/Cargo feature detection, below,
+# both key off "does this directory have its own merged.rs" — the exact
+# same test `bin/rust_coverage`'s own header already documents for what
+# makes a directory "an independently selectable domain rather than a
+# shared framework chapter"). Meta attaches no OTHER chapter of its own
+# (`uses_framework` is a business-domain concept; the self-hosted
+# language declares nothing of the kind), so its own merged registry is
+# just its single-chapter one, restated under the same "merged.rs"
+# filename every other domain already writes — real, not a special case:
+# without this, `Bluebook::WholeBluebook` (the language's own read model)
+# could be codegen'd but never actually RUN through kernel::cli's real
+# stdin/stdout contract, which is exactly what proving it byte-for-byte
+# against Ruby (spec/rust_conformance_meta_spec.rb) needs.
+meta_merged_path = File.join(out_root, "meta", "merged.rs")
+File.open(meta_merged_path, "w") do |f|
+  f.puts RustProjection::Projector.emit_registry(meta_result[:aggregates])
+  f.puts
+  f.puts RustProjection::Projector.emit_policy_table(meta_ir[:name], meta_ir[:policies])
+  f.puts
+  f.puts RustProjection::Projector.emit_cross_domain_policy_table(meta_ir[:name], meta_ir[:policies])
+  f.puts
+  f.puts RustProjection::Projector.emit_process_manager_table(meta_ir[:process_managers])
+  f.puts
+  f.puts RustProjection::Projector.emit_reference_key_table([[meta_ir[:name], meta_result[:aggregates].map { |a| a[:name] }]])
+  f.puts
+  f.puts RustProjection::Projector.emit_query_table(meta_result[:queries])
+  f.puts
+  f.puts RustProjection::Projector.emit_read_model_table(meta_result[:read_models])
+end
+puts "wrote #{meta_merged_path}"
+File.open(File.join(out_root, "meta", "mod.rs"), "a") { |f| f.puts "pub mod merged;" }
+
+target_result = RustProjection::DomainGenerator.call(target_ir, domain, File.join(out_root, target_mod_name), target_mod_name)
+target_aggregates = target_result[:aggregates]
+target_queries = target_result[:queries]
+target_read_models = target_result[:read_models]
 
 # EVERY OTHER BLUEBOOK NOW IN THE REGISTRY — the target domain's own
 # uses_framework calls (fired by loading its .hecksagon, above) pulled
@@ -89,14 +196,23 @@ target_aggregates = RustProjection::DomainGenerator.call(target_ir, domain, File
 # Embryonaut both use Governance/Identity) and their content is a pure
 # function of the framework bluebook alone, not of who's attaching it —
 # so clearing and regenerating one here is safe and idempotent
-# regardless of which OTHER domain last touched it.
+# regardless of which OTHER domain last touched it. `framework_queries`
+# rides alongside `framework_aggregates` for the exact same reason —
+# Governance's `AssignmentsForActor`/Identity's `ResolvedBy` need to
+# reach the MERGED query table below, not just their own chapter's.
 chapter_mod_names = { target_mod_name => target_domain_name }
-framework_aggregates = (target_registry.bluebooks.keys - [target_domain_name]).flat_map do |chapter_name|
+framework_aggregates = []
+framework_queries = []
+framework_read_models = []
+(target_registry.bluebooks.keys - [target_domain_name]).each do |chapter_name|
   chapter_mod_name = chapter_name.downcase
   chapter_mod_names[chapter_mod_name] = chapter_name
-  chapter_ir = Hecksagain::Projector::Exporter.call(target_registry).fetch(chapter_name)
+  chapter_ir = json_shaped(Hecksagain::Projector::Exporter.call(target_registry).fetch(chapter_name))
   FileUtils.rm_rf(File.join(out_root, chapter_mod_name))
-  RustProjection::DomainGenerator.call(chapter_ir, "#{domain} (uses_framework #{chapter_name.inspect})", File.join(out_root, chapter_mod_name), chapter_mod_name)
+  chapter_result = RustProjection::DomainGenerator.call(chapter_ir, "#{domain} (uses_framework #{chapter_name.inspect})", File.join(out_root, chapter_mod_name), chapter_mod_name)
+  framework_aggregates.concat(chapter_result[:aggregates])
+  framework_queries.concat(chapter_result[:queries])
+  framework_read_models.concat(chapter_result[:read_models])
 end
 
 # ONE MERGED Store/dispatch_by_name, spanning the target domain AND
@@ -118,11 +234,15 @@ end
 # own output, written above) already do. `mod.rs` was already written
 # by DomainGenerator.call for this domain; appended to, not replaced.
 merged_aggregates = target_aggregates + framework_aggregates
+merged_queries = target_queries + framework_queries
+merged_read_models = target_read_models + framework_read_models
 merged_path = File.join(out_root, target_mod_name, "merged.rs")
 File.open(merged_path, "w") do |f|
   f.puts RustProjection::Projector.emit_registry(merged_aggregates)
   f.puts
   f.puts RustProjection::Projector.emit_policy_table(target_domain_name, target_ir[:policies])
+  f.puts
+  f.puts RustProjection::Projector.emit_cross_domain_policy_table(target_domain_name, target_ir[:policies])
   f.puts
   f.puts RustProjection::Projector.emit_process_manager_table(target_ir[:process_managers])
   f.puts
@@ -131,6 +251,10 @@ File.open(merged_path, "w") do |f|
       [chapter_name, (mod_name == target_mod_name ? target_aggregates : framework_aggregates.select { |a| a[:chapter_mod] == mod_name }).map { |a| a[:name] }]
     }
   )
+  f.puts
+  f.puts RustProjection::Projector.emit_query_table(merged_queries)
+  f.puts
+  f.puts RustProjection::Projector.emit_read_model_table(merged_read_models)
 end
 puts "wrote #{merged_path}"
 File.open(File.join(out_root, target_mod_name, "mod.rs"), "a") { |f| f.puts "pub mod merged;" }
@@ -202,3 +326,5 @@ end
 cargo_toml = cargo_toml.sub(/^default\s*=.*$/, "default = [#{target_mod_name.inspect}]")
 File.write(cargo_toml_path, cargo_toml)
 puts "wrote #{cargo_toml_path} (default feature: #{target_mod_name})"
+
+end

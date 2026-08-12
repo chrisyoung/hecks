@@ -22,24 +22,16 @@ A free-text label for the entity — no rules attached, read by nothing but a hu
 ## identified_by
 
 <!-- generated:begin word=identified_by -->
-`identified_by do ... end` — fills `identified_by`
-<!-- generated:end -->
-
-Names the field that tells one element of the list apart from another — unique within the parent, not globally, since a `FoyerTicketNumber` only has to be unambiguous inside its own counter. See entities.md for how this identity is carried alongside the parent's own when a command or query reaches through the aggregate.
-
-## reference_to
-
-<!-- generated:begin word=reference_to -->
-`reference_to type, as:, optional:` — fills `attributes`
+`identified_by identified_by, type, as: do ... end` / `identified_by identified_by, type, as:` — fills `identified_by`
 
 | argument | kind | required | fills |
 |---|---|---|---|
-| positional 1 | constant | true | type |
+| positional 1 | symbol | false | identified_by |
+| positional 1 | constant | false | type |
 | `as:` | symbol | false | name |
-| `optional:` | flag | false | optional |
 <!-- generated:end -->
 
-Standard DDD, not a special case: an entity may reference an aggregate root by identity exactly as its own owning aggregate can — `reference_to Item, as: :item` inside `entity "Placement" do ... end` mints `item_id` the same way it would on a head. Resolution doesn't care which construct declared the reference; `AggregateBuilder#reference_bearing_attributes` walks every entity's own attributes when stamping `declared_in`, so a piece's reference resolves the same way a head's does. What an entity's `reference_to` does NOT do: register its target in the owning aggregate's own `reference_targets` list (the bidirectional-relationship graph `bluebook_builder.rb` builds for docs) — `IR::Entity` has no such reader to populate. A real, small, deliberately deferred gap; nothing about dispatch, hydration, or querying needs it.
+Names the field that tells one element of the list apart from another — unique within the parent, not globally, since a `FoyerTicketNumber` only has to be unambiguous inside its own counter. See entities.md for how this identity is carried alongside the parent's own when a command or query reaches through the aggregate.
 
 ## command
 
@@ -81,12 +73,13 @@ Opens the same `transition` vocabulary an aggregate's `lifecycle` does, checked 
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, type, default:, optional:, pattern:, admits:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
 | positional 1 | symbol | true | name |
 | positional 2 | constant | false | type |
+| positional 2 | text | false | type |
 | `default:` | literal | false | default |
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
@@ -94,4 +87,22 @@ Opens the same `transition` vocabulary an aggregate's `lifecycle` does, checked 
 <!-- generated:end -->
 
 Declares a field on the entity, scalar or value object — same word, same modifiers, as an aggregate's own `attribute`. See the Type and ValueObject context pages for what each type position and modifier does.
+
+## reference_to
+
+<!-- generated:begin word=reference_to -->
+`reference_to type, type, as:, optional:, as:` — fills `attributes`
+
+| argument | kind | required | fills |
+|---|---|---|---|
+| positional 1 | constant | true | type |
+| `as:` | symbol | false | name |
+| `optional:` | flag | false | optional |
+| positional 1 | constant | true | type |
+| `as:` | symbol | false | name |
+<!-- generated:end -->
+
+Points an entity at a real ROOT, the same way an aggregate's own `reference_to` does — a `Card` entity's own `assignee_id`, pointing at a `Team`. Never at another entity: there's no cross-piece addressing anywhere in this language to resolve one against, so this only ever reaches a head.
+
+<!-- TODO: document this word -->
 

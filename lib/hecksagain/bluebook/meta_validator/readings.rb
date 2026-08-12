@@ -96,18 +96,24 @@ module Hecksagain
         # `filters: true` adds a read model's wheres, order_by and limit.
         #
         # THE LANGUAGE MAY HOLD MORE THAN `to_h` CARRIES, and this is where that
-        # matters. `ReadModel#to_h` omits all three — `extra_options_to_h` rejects
-        # them by name. So a read model's filtering has never been in
-        # the wire contract, and I first read that as a wall: if the wire
-        # cannot carry it, the language cannot hold it, and a graph assembled from
-        # the language must lose it.
+        # mattered. Until 2026-08-11, `ReadModel#to_h` omitted all three —
+        # `extra_options_to_h` rejects them by name, still does — so a read
+        # model's filtering had never been in the wire contract, and I first
+        # read that as a wall: if the wire cannot carry it, the language cannot
+        # hold it, and a graph assembled from the language must lose it.
         #
         # That was the wrong conclusion. `to_h` is a PROJECTION ; the language
         # is the SOURCE. They have to agree about everything
-        # to_h spells, not about everything the language knows. Held as option rows,
-        # the filters survive the round trip and the wire format does not move an
-        # inch — so read-model filtering can still become a wire
-        # contract later, deliberately, rather than as a side effect of this.
+        # to_h spells, not about everything the language knows. Held as option
+        # rows, the filters survived the round trip regardless of whether the
+        # wire carried them too — which is exactly why, when a LATER task
+        # (Rust read-model codegen) needed `wheres`/`order_by`/`limit` on the
+        # wire for an unrelated reason, `ReadModel#to_h` could be extended to
+        # spell them (the same mechanism `Query#to_h` already used) without
+        # touching this method at all: this reads `node.wheres`/`node.
+        # order_by`/`node.limit` off the live object directly below
+        # (`filter_options`), never off `to_h`, so the wire format moving did
+        # not move this.
         #
         # Named `wheres`, `order_by` and `limit` so they gather back into exactly the
         # declaration keys the assembly already reads.
@@ -152,14 +158,14 @@ module Hecksagain
             next set_row(mutation) unless mutation.op == :append
 
             mutation.source.map do |field, argument|
-              # Spelled the way IR::Mutation#appended_fields spells it: a symbol bare
-              # because it names an argument, anything else inspected because it IS
-              # the value. `then_set :marks, append: { direction: "out" }` binds a
-              # LITERAL, and storing it raw made it indistinguishable from an
-              # argument called out.
+              # Spelled the way IR::Mutation#appended_fields spells it, because
+              # Assembly::Marks reads this row back through the same reader it
+              # reads that field with. `then_set :marks, append: { direction:
+              # "out" }` binds a LITERAL, and storing it raw made it
+              # indistinguishable from an argument called out.
               { target: mutation.target, op: mutation.op, field: field,
                 kind: argument.is_a?(Symbol) ? "argument" : "literal",
-                source: argument.is_a?(Symbol) ? argument.to_s : encode_literal(argument) }
+                source: Literal.render(argument) }
             end
           end
         end
@@ -232,6 +238,13 @@ module Hecksagain
           # "#<struct LimitSpec value=3>".
           return node.limit&.to_h&.fetch(:value, nil) if "#{category}.#{field}" == "Query.limit"
 
+          # `provenance from: {...}` is a HASH offered into a text field, and
+          # handing it over raw let the runtime's own coercion spell it — which
+          # meant Ruby's `Hash#to_s`, whose spelling changed under us between
+          # 3.3 and 3.4. Encoded here, the same way `default:` already is and the
+          # same way Shapes#provenance reads it back.
+          return encode_literal(node.provenance) if field == :provenance
+
           # `identified_by` is no longer a FIELD of any declaration — it is a list,
           # filled by Identify one part at a time, so it is read through `identity_rows`
           # like every other list rather than special-cased here. What this branch
@@ -299,10 +312,13 @@ module Hecksagain
         # `to_s` threw the type away: 0.0 came back "0.0", and `{ value: "good" }`
         # came back its inspect string with nowhere to say it had been a hash. The
         # language already stores code as text — `canonical: "cents >= 0"` — so an
-        # encoding is in keeping; it simply has to be SELF-DESCRIBING. `inspect` is:
-        # a number is bare, a string is quoted, a symbol wears its colon, an object
-        # wears its braces. Shapes#decode_literal reads it back.
-        def encode_literal(value) = value.nil? ? nil : value.inspect
+        # encoding is in keeping; it simply has to be SELF-DESCRIBING. That rule is
+        # now Hecksagain::Literal's, stated once and shared with every other
+        # to_h-bound literal field ; Shapes#decode_literal reads it back.
+        #
+        # nil stays nil rather than becoming "nil": absent is a real answer here,
+        # and the language's own field is optional.
+        def encode_literal(value) = value.nil? ? nil : Literal.render(value)
 
         # The way back out: an aggregate id becomes the type the IR spells. The
         # id is a JOIN of chapter + name (Naming::IDENTITY_JOIN, the same join

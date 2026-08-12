@@ -360,11 +360,23 @@ module Hecksagain
         %(where(:"#{where[:field]}" => { #{where[:op]}: #{value} }))
       end
 
+      # `text` is ALREADY the literal comparator's exact source string —
+      # this class's own header comment on `where_line` names it: a
+      # string comparator's `where[:value]` carries its own quote marks
+      # already (`where(status: "active")`'s argument is captured
+      # VERBATIM by extraction, `"active"` complete with the quotes that
+      # made it a string literal in the first place), not a bare Ruby
+      # String this method still needs to quote. `text.inspect` here
+      # used to wrap that already-quoted text in a SECOND layer of
+      # quoting — `"active"` became `"\"active\""` — a round-trip bug
+      # no existing corpus member happened to exercise until banking's
+      # own string-valued wheres (`Customer.Suspended`'s `where(standing:
+      # "good")`, among many) went through this path for real.
       def where_value(text)
         return text if text.start_with?(":")
         return text if text.match?(/\A-?\d+\z/)
 
-        text.inspect
+        text
       end
 
       # `symbol_literal`, NOT bare interpolation — a dotted field path
@@ -422,8 +434,15 @@ module Hecksagain
         # `CustomerPortfolio`). Skipping the "already covered" include
         # was the bug this comment replaces: the reloaded report's own
         # `aggregate_heads` came back missing its first row entirely.
-        body << "reference_to #{rm[:reference_target]}"
+        # ROOTLESS reports (ConsoleSettings' own Styles/Curated) declare
+        # NO reference_to at all — bulk reads with no root record, every
+        # head arriving through `include` alone. A bare `reference_to `
+        # with nothing after it (rm[:reference_target] rendered nil)
+        # isn't just wrong, it's not even valid DSL — the builder raises
+        # on a missing positional argument.
+        body << "reference_to #{rm[:reference_target]}" if rm[:reference_target]
         Array(rm[:aggregate_heads]).each { |head| body << "include #{head[:aggregate]}" }
+        body << "group_by #{Array(rm[:group_by]).map { |g| symbol_literal(g[:field]) }.join(', ')}" if Array(rm[:group_by]).any?
         body << "" if body.any?
         body.concat(query_option_lines(rm))
         body.pop while body.last == ""

@@ -55,7 +55,30 @@ module Hecksagain
         # `number` to exist — the same reason `balance >= amount` works in a given.
         # The canonical form collapses the block's newlines to single spaces, so
         # the paths arrive here already separated and in the order written.
-        def identified_by(&path)
+        def identified_by(target = nil, as: nil, &path)
+          if target
+            raise Malformed, "#{@name}.identified_by takes a field name/value object or a block, not both" if path
+
+            # A bareword constant (`PizzaName`) and a quoted field name
+            # (`:name`) are BOTH plain Ruby Symbols by the time they reach
+            # here — `const_missing` always hands Ruby a Symbol, and this
+            # DSL's own bluebook-level resolver returns it unchanged (see
+            # ConstShim's own comment on why a Module wrapper can't be made
+            # to hold). Distinguished the same way the language already
+            # reads everywhere else: a value object is PascalCase, a field
+            # is snake_case — the FIRST CHARACTER's own case is what
+            # `reference_to`/`attribute` themselves lean on implicitly by
+            # only ever being handed one or the other.
+            if target.to_s[0] =~ /[A-Z]/
+              @identity_type_pending = [target, as, attributes.size]
+            else
+              raise Malformed, "#{@name}.identified_by :#{target} takes no as: — as: only applies to identified_by ValueObject" if as
+
+              @identity_field_pending = target
+            end
+            return
+          end
+
           raise Malformed, "#{@name}.identified_by names no field" unless path
 
           paths = Ports::Extraction.canonical(path).to_s.split(" ").reject(&:empty?)
@@ -113,11 +136,15 @@ module Hecksagain
           # `IR::Aggregate#initialize`, once the aggregate exists. Its own
           # commands were given the piece as their owner when it was declared,
           # so the chain closes as chapter -> aggregate -> entity -> command.
-          @entities << EntityBuilder.build(name, &block)
+          # `owner_value_objects:` lets a PIECE's own `identified_by :field`
+          # (see AttributeCollector#resolve_identity_field!) derive from a
+          # value object this AGGREGATE declared — a piece has none of its
+          # own — so the same bare-field form works at both levels.
+          @entities << EntityBuilder.build(name, owner_value_objects: @value_objects + closed_sets, &block)
         end
 
         def query(name, &block)
-          @queries << QueryBuilder.build(name, &block)
+          @queries << QueryBuilder.build(name, owner_attributes: attributes, &block)
         end
 
         def policy(name, &block)
@@ -139,6 +166,7 @@ module Hecksagain
         end
 
         def build
+          resolve_pending_identity!
           seal_mutation_targets
           seal_query_targets
           seal_defaults
@@ -172,6 +200,15 @@ module Hecksagain
         end
 
         private
+
+        def resolve_pending_identity!
+          if @identity_type_pending
+            type, as, insert_at = @identity_type_pending
+            @identity_paths = resolve_identity_type!(type, as, insert_at, @value_objects + closed_sets, @name)
+          elsif @identity_field_pending
+            @identity_paths = resolve_identity_field!(@identity_field_pending, @value_objects + closed_sets, @name)
+          end
+        end
 
         # Every reference is told which IR::Aggregate declares it, so it can
         # find the chapter and resolve its target.

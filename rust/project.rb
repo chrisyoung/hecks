@@ -115,50 +115,186 @@
 # refusal wording, not just `instances`/refusal verbs — the two gaps that
 # made a looser comparison the right bar are both closed.
 #
+# TWELFTH SLICE — THE INPUT IS JSON-SHAPED IR, NOT THE LIVE EXPORTER HASH —
+# bin/project_rust round-trips every IR through `JSON.parse(JSON.generate(ir),
+# symbolize_names: true)` before handing it here (see its own `json_shaped`
+# header for why). So `mutation[:op]`/`mutation[:target]`/`attribute[:name]`
+# arrive as Strings, not the Symbols `IR::Attribute#to_h` and
+# `IR::Mutation#to_h` actually build. Everything below compares them in
+# their String form (`m[:op].to_s == "set"`) — correct either way, and the
+# only spelling a Rust-produced `ir.json` could ever hand this generator.
+#
+# THIRTEENTH SLICE — the refusal-wording table itself, GENERATED rather than
+# hand-typed per call site: `bin/project_refusal_wording` reads `Hecksagain
+# ::Runtime::RefusalWording::TEMPLATES` directly and writes `rust/src/
+# kernel/refusal_wording.rs` (`RefusalSite`, one variant per (class, site)
+# pair, all 39 entries — the full table, not just the ones a real Rust call
+# site raises today). Closes every gap the ELEVENTH SLICE's own note named:
+# `LifecycleRefused`'s `transition_blocked`, `one_of` closed-set membership
+# (which was ALSO the wrong REFUSAL CLASS — `TypeMismatch`, not
+# `InvariantViolation` — not merely the wrong wording), entity-element-
+# missing `NotFound`, and `record_missing` via `Hydrate::Act` (found live,
+# previously unnamed) all now render byte-for-byte against Ruby. The
+# general VO-`invariant()` message is no longer a gap to close but a NEW
+# table entry: `InvariantViolation`/`value_object_invariant` was promoted
+# out of a hand-built string on the RUBY side too (`coercion.rb`'s own
+# `Value.build`), so both engines now render it off the exact same
+# declared template. `spec/corpus/rust_conformance/refusal_wording_*.json`
+# — one fixture per site — proves each byte-for-byte, including a
+# multi-field value object (`PersonName`) whose declaration order and
+# sorted order genuinely diverge, not a case where they'd coincidentally
+# agree.
+#
 # WHAT THIS STILL DOES NOT GENERATE — flagged, not silently skipped:
 #   - A BARE (non-`list_of`), non-entity-list attribute whose type names
 #     an entity — not a real shape any aggregate in this corpus declares.
-#   - The REST of the refusal-wording table (`refusal_wording.rb`'s own
-#     ~20 entries) — `LifecycleRefused`'s `transition_blocked` template,
-#     the general VO-`invariant()` message (missing Ruby's own `"(given
-#     {offered})"` suffix), `one_of` closed-set membership wording, and
-#     entity-element-missing `NotFound` wording all still differ from
-#     Ruby's own templates (found running the FULL `spec/corpus/
-#     banking.json` through the differential harness — 0021's own
-#     Consequences). None affect `instances` (full 35/35 parity, per
-#     0020) — pure wording, the same class of gap 0021 closes two
-#     instances of, just a longer remaining tail. A real, deliberately
-#     out-of-scope future slice, not silently skipped.
-#   - The reaction/saga LOG (`reaction_log`/`saga_log`) — `orchestrate`
-#     produces the right SIDE EFFECTS without also reproducing the log
-#     `bin/rust_conformance`'s own comparable surface never reads.
+#   - The reaction/saga LOG (`reaction_log`/`saga_log`) — NO LONGER TRUE.
+#     `kernel::orchestrate` now builds both, record shape for record
+#     shape, split into the SAME five functions Ruby's own `begin_saga`/
+#     `advance_saga`/`deliver_saga_dispatch`/`unwind`/`end_saga` are
+#     (orchestrate.rs's own header — a single merged pass used to
+#     silently produce fewer log entries than Ruby's three independently-
+#     gated methods do). `kernel::cli::run`'s own JSON output carries
+#     both as `"reactions"`/`"sagas"`, matching `Registry#reaction_log`/
+#     `#saga_log` exactly — `spec/rust_conformance_spec.rb` compares them
+#     byte-for-byte now too, for every fixture. ONE deliberate, permanent
+#     exception: Ruby's `rescue StandardError` branch (`defect: true`) has
+#     no Rust equivalent and stays unported — a genuine interpreter crash
+#     in Ruby is a compile error (or a real panic, left to propagate) in
+#     Rust, never a runtime exception to catch and log as routine
+#     (orchestrate.rs's own header has the full argument). Cross-domain
+#     policy matches ALSO don't produce a `reaction_log` entry — this
+#     kernel genuinely cannot know a cross-domain delivery's outcome, and
+#     rust/host doesn't build an equivalent entry there either yet (a
+#     real, separate, documented gap — see this file's own note on
+#     cross-domain live delivery, below).
 #   - `Correlation#saga_correlation`'s middle tier (an explicit
-#     `event.correlation` stamp) — only the first (current event's own
-#     payload) and third (`Naming.reference_key`) tiers are ported.
+#     `event.correlation` stamp) — NO LONGER TRUE either. `orchestrate`
+#     stamps every event a saga leg's own dispatch produces, exactly
+#     where `Dispatcher#dispatch` does (`announced.each { (event.
+#     correlation ||= {}).merge!(saga_correlation) }`); `correlation_of`
+#     reads it back as tier 2, between tier 1 (the dotted payload path)
+#     and tier 3 (`Naming.reference_key`). Proven directly (`orchestrate
+#     .rs`'s own `#[cfg(test)]` module — the existing corpus alone never
+#     needs tier 2 on its own, since its one real user, `AccountDebited`'s
+#     handler reaching `:destination`, always has tier 1 available too).
 #   - Cross-domain policies (`across` a domain this single-domain `Store`
-#     never generated) — omitted from the generated table entirely, a
-#     real match for Ruby's own behavior when that domain isn't loaded
-#     either, not a narrowing (0013's own Consequences).
-#   - Era/lineage support — investigated (0021's own follow-up), and
-#     confirmed to be a DIFFERENT KIND of gap than everything else on
-#     this list: not a parity bug in what THIS generator's current,
-#     single-era output produces (every item above is exactly that), but
-#     an entire missing SUBSYSTEM. Ruby's own era support (`runtime/
-#     era_check.rb`, `era_guard.rb`, `era_tamper.rb`, `ports/persistence/
-#     lineage.rb`, the Postgres adapter's own `lineage_manager/`) is a
-#     boot-time, ADAPTER-CAPABILITY-gated mechanism — "an era is a fact
-#     about STORED DATA some adapter can carry across a shape change,"
-#     co-located with that adapter's own rows, never hashed or checked
-#     for an adapter that can't translate at all. This kernel has exactly
-#     one adapter, `InMemoryRepository` — no Postgres binding, no
-#     lineage/shape-diff/tamper-detection concept, nothing "lineage_
-#     capable?" could ever answer true for. Porting era support here
-#     would mean building a Rust Postgres adapter FIRST, then the whole
-#     lineage/shape-diff system on top of it — a materially different,
-#     larger project than anything this generator does today, not a
-#     command/attribute-shaped gap to close. Query/read-model generation
-#     (never attempted at all, §8's own original scope) is the same kind
-#     of thing: a missing subsystem, not a parity gap.
+#     used to leave ungenerated) — NO LONGER TRUE, since `reactions.rb`'s
+#     own `emit_cross_domain_policy_table` (`CrossDomainPolicyRule`,
+#     `kernel::orchestrate`'s own header): every declared policy,
+#     cross-domain or not, gets a real manifest entry now
+#     (`domain_generator.rb`), matched and carried out as a
+#     `PendingCrossDomainReaction` for `rust/host`'s own `lambda_client.rs`
+#     to deliver. Left here only as a "this used to be true" marker —
+#     `bin/rust_coverage`'s own header has the fuller account of exactly
+#     what is and isn't proven about the live-delivery half.
+#
+# CROSS-DOMAIN LIVE DELIVERY — a REAL, DELIBERATELY DEFERRED gap,
+# consolidated here rather than left scattered across the three files
+# that each independently touch a piece of it. What IS proven, real,
+# and generated: a cross-domain policy match is represented (not
+# dropped), the exact function-name/payload shape `rust/host/src/
+# lambda_client.rs` computes for delivery is a direct, tested port of
+# `Adapters::Lambda::Client`'s own convention, and a domain-level
+# refusal from that delivery is recognized and swallowed the same way a
+# same-domain reaction's refusal already is (that file's own `tests`
+# module, against a hand-written mock `LambdaInvoker` — no real AWS
+# involved). What is NOT proven, and cannot be from any environment this
+# codebase's own test suite runs in: whether a REAL cross-Lambda invoke
+# — `AwsLambdaInvoker`, `lambda_client.rs`'s own one genuinely
+# unverifiable piece — actually reaches a live target Lambda end to end.
+# That needs two real domains' Lambdas deployed and invocable
+# simultaneously, which no CI run or local `cargo test`/`bundle exec
+# rspec` environment has. Two further, smaller consequences of the same
+# boundary, both real and both left open rather than papered over:
+#   - No `reaction_log` entry exists for a cross-domain match, on EITHER
+#     side of the split — this WASM kernel genuinely cannot know the
+#     delivery's outcome (that only exists once `lambda_client.rs`
+#     finishes the call, one layer up and out of this process entirely),
+#     and rust/host's own dispatch path doesn't build an equivalent log
+#     entry for its own successful/failed deliveries either. A real
+#     divergence from Ruby's own single-process `reaction_log`, which
+#     DOES contain an entry for a cross-domain match (Ruby has no Lambda
+#     boundary to begin with) — `spec/rust_conformance_spec.rb`'s own
+#     header documents this precisely, filtered out of that comparison
+#     using Rust's own `cross_domain_reactions` output as the ground
+#     truth for which policy names it declined to log.
+#   - Delivery RETRY/backoff/dead-letter — NO LONGER TRUE (a real gap the
+#     day this section was first written; closed since). `lambda_client
+#     ::deliver_with_retry` sits above the `LambdaInvoker` trait boundary
+#     `deliver` itself already respects, so it retries whatever invoker
+#     is plugged in — `AwsLambdaInvoker` today, any future non-Amazon
+#     implementer of the same trait — identically: `MAX_DELIVERY_
+#     ATTEMPTS` short, doubling-backoff attempts, ONLY on a genuine
+#     invoke fault (never on a clean `Ok(delivered: false)` domain-side
+#     refusal — retrying a real business decision would not change it,
+#     only waste the attempt). Exhausting every attempt still propagates
+#     a visible failure of the Lambda invocation exactly as before — that
+#     part of the design was correct and stays — but FIRST writes a
+#     durable row (`journal::record_dead_letter`, a plain Postgres table
+#     this crate already depends on regardless of deploy target, not an
+#     AWS-native SQS/DLQ/EventBridge construct) so the exhausted attempt
+#     survives past the one Lambda invocation that hit it. Proven end to
+#     end against a real compiled `banking.wasm` (`dispatch.rs`'s own
+#     `a_cross_domain_delivery_that_exhausts_every_retry_dead_letters_
+#     and_still_fails_the_invocation`): the local Freeze commits, the
+#     dead letter lands, and the invocation still fails visibly, all
+#     three at once. What's still NOT proven, unchanged from above: an
+#     actual reconciliation/replay tool reading `hecks_cross_domain_
+#     dead_letters` back out — the table exists and is written to for
+#     real; nothing yet consumes it. A real, separate, smaller future
+#     slice if it's ever needed.
+#
+# ERA/LINEAGE SUPPORT — investigated (0021's own follow-up) and split
+# into two genuinely different questions once `rust/host` (the deployed
+# Lambda binary, hand-written, alongside but separate from THIS
+# generator's own WASM-kernel target) grew a real Postgres binding of
+# its own:
+#   - Can a lineage-capable aggregate's CURRENT, already-translated state
+#     be READ, and a new mutation WRITTEN, from Rust? YES, as of the
+#     generalization below — `journal::read_lineage_head_all/_by_id`
+#     (read) and `journal::append_lineage_mutation` (write, already
+#     generic before this) both work for ANY aggregate `ir.json`'s own
+#     `lineage.capable_aggregates` names (`Projector::Exporter.lineage`),
+#     not just the one hand-written special case (`Embryonaut::Member`,
+#     auth.rs) that proved the shape out first. `bin/rust_coverage`'s own
+#     `lineage_aggregate` findings report this per domain, generated
+#     unconditionally — the mechanism is host-level and generic, not
+#     per-domain generated code, so there is no per-instance gap to check
+#     the way a command/query has.
+#   - Can THIS generator's own WASM kernel (`rust/src/kernel`,
+#     `InMemoryRepository`-only, still true) MINT an era, DETECT shape
+#     drift, or COMPILE a translation rule to SQL? NO, and this part of
+#     the original finding still stands, by architecture rather than by
+#     gap: `Runtime::EraGuard`/`EraTamper`/the Postgres adapter's own
+#     `lineage_manager/*` all parse bluebook/translation-rule DSL source
+#     at runtime, which ADR 0007 ("Rust generates code, not Ruby source")
+#     rules out for any Rust target, kernel or host, permanently — not
+#     something a future slice closes, the same way `IR::Bind`/adapter
+#     resolution itself never becomes a Rust concern. What makes reading
+#     THROUGH that machinery possible without reimplementing any of it:
+#     Ruby's own `HeadCompiler` already compiles every rename/move/
+#     convert/drop/compute rule into the `<storage>_head` VIEW's own SQL
+#     (`hecks_tr_*` helpers) at mint time — by the time any Rust code
+#     runs a plain `SELECT` against it, translation has already happened.
+#     A lineage-capable aggregate's commands are, exactly like Ruby's own
+#     `CommandInterpreter` already treats them, dispatched OUTSIDE this
+#     kernel's `InMemoryRepository`/flat-journal-replay path entirely —
+#     never blended into it (see journal.rs's own header on why
+#     overlaying a translated head state into a COLD REPLAY's starting
+#     seed would create a new "AlreadyExists" false refusal, not fix
+#     anything).
+#
+# FOURTEENTH SLICE — a NAMED/declared bluebook `query "X" do ... end` block
+# now generates too, for the subset expressible as one or more field-
+# comparator conditions against a single aggregate's OWN attributes
+# (`rust/project/queries.rb`'s own header has the full eligibility
+# argument). `read_model` (a cross-aggregate ask, `IR::ReadModel`) is
+# still the missing-subsystem gap the paragraph above describes — this
+# slice doesn't touch it, and a query that itself needs order_by/limit/
+# a reference hop/a type-unrecoverable literal comparator still has no
+# generated row either, refused the same clean way an unrouted command
+# already is.
 #
 # ONE CONCERN PER FILE, all reopening the SAME two module_function
 # modules (`ExprEmitter`, `Projector`) — mirrors this codebase's own
@@ -179,4 +315,6 @@ require_relative "project/commands"
 require_relative "project/ports"
 require_relative "project/registry"
 require_relative "project/reactions"
+require_relative "project/queries"
+require_relative "project/read_models"
 require_relative "project/domain_generator"

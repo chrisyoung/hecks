@@ -9,8 +9,9 @@
 # has; any other still-generated domain stays reachable via
 # `--no-default-features --features <name>`.
 [features]
-default = ["embryonautfoundersapp"]
-embryonautfoundersapp = []
+default = ["banking"]
+compliance = []
+meta = []
 pizzas = []
 embryonaut = []
 banking = []

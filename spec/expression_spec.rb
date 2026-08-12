@@ -179,6 +179,108 @@ RSpec.describe "the expression sublanguage" do
     end
   end
 
+  describe "split" do
+    it "splits a string on a literal separator, the storehouse-kernel Phrase shape" do
+      valid   = "dispatch::lexicon::query::command_bus"
+      invalid = "dispatch::lexicon"
+
+      expect(evaluate('value.split("::").length == 4', value: valid)).to be(true)
+      expect(evaluate('value.split("::").length == 4', value: invalid)).to be(false)
+    end
+
+    it "raises when the receiver is not a string" do
+      expect { evaluate('value.split("::")', value: 12) }
+        .to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /split expects a string, got 12/)
+    end
+  end
+
+  describe "last" do
+    it "reads the final segment of a split, composed the way Phrase checks its own terminal casing" do
+      matching    = "dispatch::lexicon::query::command_bus"
+      not_matching = "dispatch::lexicon::query::other"
+
+      expect(evaluate('value.split("::").last == "command_bus"', value: matching)).to be(true)
+      expect(evaluate('value.split("::").last == "command_bus"', value: not_matching)).to be(false)
+    end
+
+    it "raises when the receiver has no #last" do
+      expect { evaluate("value.last", value: 12) }
+        .to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /last expects a list, got 12/)
+    end
+  end
+
+  describe "block-taking all?/any?/none?" do
+    it "aggregates a per-element predicate over a split array" do
+      four_real_segments = "dispatch::lexicon::query::command_bus"
+      one_empty_segment  = "dispatch::::query::command_bus"
+
+      expect(evaluate('value.split("::").all? { |s| s.length > 0 }', value: four_real_segments)).to be(true)
+      expect(evaluate('value.split("::").all? { |s| s.length > 0 }', value: one_empty_segment)).to be(false)
+    end
+
+    it "does not let the block predicate's own comparison operator split the whole expression, the storehouse-kernel Phrase invariant" do
+      expression = 'value.split("::").length == 4 && value.split("::").all? { |s| s.length > 0 }'
+
+      expect(evaluate(expression, value: "dispatch::lexicon::query::command_bus")).to be(true)
+      expect(evaluate(expression, value: "dispatch::lexicon::query")).to be(false)
+      expect(evaluate(expression, value: "dispatch::::query::command_bus")).to be(false)
+    end
+
+    it "raises when the receiver is not a list" do
+      expect { evaluate('value.all? { |s| s.length > 0 }', value: "oops") }
+        .to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /all\? expects a list, got "oops"/)
+    end
+  end
+
+  describe "start_with? and end_with?" do
+    it "checks both ends of a string, the storehouse-kernel Params JSON-object shape" do
+      expression = 'value.start_with?("{") && value.end_with?("}")'
+
+      expect(evaluate(expression, value: '{"a":1}')).to be(true)
+      expect(evaluate(expression, value: "[1,2]")).to be(false)
+    end
+
+    it "raises when the receiver is not a string" do
+      expect { evaluate('value.start_with?("{")', value: 12) }
+        .to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /start_with\? expects a string, got 12/)
+      expect { evaluate('value.end_with?("}")', value: 12) }
+        .to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /end_with\? expects a string, got 12/)
+    end
+  end
+
+  describe "bare-lookup single-field VO scalar unwrap" do
+    SingleFieldDouble = Struct.new(:value) do
+      def to_h = { value: value }
+    end
+
+    it "unwraps a bare (undotted) lookup of a single-field VO to its raw scalar" do
+      wrapped = SingleFieldDouble.new("active")
+
+      expect(evaluate('status == "active"', status: wrapped)).to be(true)
+      expect(evaluate('status == "inactive"', status: wrapped)).to be(false)
+    end
+
+    it "leaves a dotted lookup walking the wrapper's own #[] untouched" do
+      wrapped = SingleFieldDouble.new("active")
+
+      expect(evaluate('status.value == "active"', status: wrapped)).to be(true)
+    end
+  end
+
+  describe "match?/present?/blank?" do
+    it "matches a receiver against a regex literal, the storehouse-kernel format-validation shape" do
+      expect(evaluate('value.match?(/\A\d{5}\z/)', value: "94103")).to be(true)
+      expect(evaluate('value.match?(/\A\d{5}\z/)', value: "not-a-zip")).to be(false)
+    end
+
+    it "treats present?/blank? by Rails-standard emptiness, not bare nil?" do
+      expect(evaluate("value.present?", value: "x")).to be(true)
+      expect(evaluate("value.present?", value: "")).to be(false)
+      expect(evaluate("value.blank?", value: "")).to be(true)
+      expect(evaluate("value.blank?", value: nil)).to be(true)
+    end
+  end
+
   describe "agreeing with Ruby itself" do
     def agrees?(expression, bindings)
       mine = begin

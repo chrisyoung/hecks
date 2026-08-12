@@ -24,9 +24,22 @@ fn tmpl_with_value_literal_fn_host() {
 // ... }` (json.rs's `closed_set_table_row_field`) already is.
 // TMPL:policy_table BEGIN
 pub const POLICIES: &[crate::kernel::PolicyRule] = &[
-crate::kernel::PolicyRule { event_name: "tmpl_event_name", event_qualifier: None, target_verb: "tmpl_target_verb" },
+crate::kernel::PolicyRule { policy_name: "tmpl_policy_name", event_name: "tmpl_event_name", event_qualifier: None, target_verb: "tmpl_target_verb" },
 ];
 // TMPL:policy_table END
+
+// A policy's cross-domain twin (`CrossDomainPolicyRule`, orchestrate.rs's
+// own header on why this is a SEPARATE table rather than one more
+// PolicyRule variant: matching it is identical, but nothing here can
+// dispatch it — kernel::cli::run carries a match out as a
+// `PendingCrossDomainReaction` instead, for rust/host's
+// `lambda_client.rs` to actually deliver). Same "literal, not a function
+// call" reasoning as `policy_table` above — `const` context.
+// TMPL:cross_domain_policy_table BEGIN
+pub const CROSS_DOMAIN_POLICIES: &[crate::kernel::CrossDomainPolicyRule] = &[
+crate::kernel::CrossDomainPolicyRule { policy_name: "tmpl_policy_name", event_name: "tmpl_event_name", event_qualifier: None, target_domain: "tmpl_target_domain", target_verb: "tmpl_target_verb" },
+];
+// TMPL:cross_domain_policy_table END
 
 // `literal_fns` (the marker's own default, `fn tmpl_literal_fns_placeholder
 // () {}`) is a real module-level ITEM, not a statement — module scope

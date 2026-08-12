@@ -562,7 +562,15 @@ RSpec.describe "the DSL surface" do
         .to raise_error(Hecksagain::Runtime::InvariantViolation, /current or savings/)
     end
 
-    it "refuses a scalar for every value object" do
+    # NOT for every value object any more. `Value::Coercion#fields_for` was
+    # deliberately widened (migration plan task 5, this split's own item 17)
+    # to auto-wrap a bare scalar into a SINGLE-field value object's sole
+    # attribute — `Kind` here has exactly one field, so `kind: "current"`
+    # now auto-wraps to `{ name: "current" }` rather than refusing. The
+    # refusal survives only for a genuinely MULTI-field value object, where
+    # the scalar cannot say which field it means — `Amount` (cents +
+    # currency) is that case here.
+    it "refuses a scalar for every multi-field value object" do
       registry = account_domain
       runtime  = Hecksagain::Runtime::Loader.bind_runtime(
         Hecksagain::Runtime::Dispatcher.new(registry.tap(&:verify!))
@@ -570,7 +578,7 @@ RSpec.describe "the DSL surface" do
 
       expect {
         runtime.dispatch("Coerced::Holding.Open", id: "h3",
-                         kind: "current", amount: { cents: 100, currency: "GBP" })
+                         kind: { name: "current" }, amount: "a lot")
       }
         .to raise_error(Hecksagain::Runtime::TypeMismatch, /pass its fields as an object/)
     end
@@ -644,13 +652,22 @@ RSpec.describe "the DSL surface" do
     end
 
     it "validates read-model reference ordering, uniqueness, and descriptions" do
-      # an include with no reference at all still refuses — but for the real
-      # reason, not for the order it was written in
+      # An include with no reference at all is now a ROOTLESS read model —
+      # a bulk view of its own included head(s), no root record required —
+      # and succeeds rather than refusing.
       expect {
         build_bluebook("BadModel") do
           read_model("Portfolio") { include Customer }
         end
-      }.to raise_error(Hecksagain::Bluebook::DSL::Malformed, /needs an aggregate-head reference/)
+      }.not_to raise_error
+
+      # A read model naming NEITHER a reference NOR any include has nothing
+      # to describe at all — the one case that still refuses.
+      expect {
+        build_bluebook("BadModel") do
+          read_model("Portfolio") { description "nothing to gather" }
+        end
+      }.to raise_error(Hecksagain::Bluebook::DSL::Malformed, /needs an aggregate-head reference or at least one include/)
 
       # a reference, so `needs an aggregate-head reference` does not fire first
       # and mask the description rule this case is about
@@ -701,7 +718,7 @@ RSpec.describe "the DSL surface" do
         end
       end.read_models.first
 
-      expect(model.wheres.first.to_h).to eq(field: "status", op: "eq", value: "active")
+      expect(model.wheres.first.to_h).to eq(field: "status", op: "eq", value: %q("active"))
       expect(model.aggregate_heads).to eq([{ aggregate: "Account", as: :accounts, many: true }])
       expect(model.offset.to_h).to eq(value: "5")
       expect(model.authorization.to_h).to eq(policy: "portfolio_access", tenant: "customer_id")
@@ -1008,6 +1025,155 @@ RSpec.describe "the DSL surface" do
       expect(undeclared.identified_by).to be_nil
     end
 
+    describe "identified_by :field — deriving the path from a single-field value object" do
+      it "derives the same path { field.value } would have written by hand" do
+        identified = build_aggregate("Community") do
+          identified_by :id
+          value_object("CommunityId") { attribute :value, String }
+          attribute :id, CommunityId
+        end
+
+        expect(identified.identity_paths).to eq(["id.value"])
+        expect(identified.identified_by).to eq(:id)
+      end
+
+      it "refuses a value object with more than one field, naming every candidate" do
+        expect do
+          build_aggregate("Thing") do
+            identified_by :ref
+            value_object("ThingRef") do
+              attribute :value, String
+              attribute :pad, Integer
+            end
+            attribute :ref, ThingRef
+          end
+        end.to raise_error(Malformed, /identified_by :ref names ThingRef, which has 2 fields \(value, pad\)/)
+      end
+
+      it "refuses a field the aggregate never declares" do
+        expect do
+          build_aggregate("Thing") { identified_by :nonexistent }
+        end.to raise_error(Malformed, /identified_by :nonexistent names no attribute Thing declares/)
+      end
+
+      it "refuses a reference — a reference has no single field to derive" do
+        expect do
+          build_bluebook("Refs") do
+            aggregate "Team" do
+              identified_by { name.value }
+              value_object("Name") { attribute :value, String }
+              attribute :name, Name
+            end
+
+            aggregate "Board" do
+              identified_by :owner
+              reference_to Team, as: :owner
+            end
+          end
+        end.to raise_error(Malformed, /identified_by :owner names a reference/)
+      end
+
+      it "refuses giving both a field name and a block" do
+        expect do
+          Hecksagain::Bluebook::DSL::AggregateBuilder.build("Both") do
+            identified_by(:id) { id.value }
+          end
+        end.to raise_error(Malformed, /identified_by takes a field name\/value object or a block, not both/)
+      end
+
+      it "works the same way on an entity, deriving from the OWNING AGGREGATE's own value object" do
+        bluebook = build_bluebook("Games") do
+          aggregate "Bracket" do
+            identified_by { bracket_id.value }
+            attribute :bracket_id, BracketId
+            value_object("BracketId") { attribute :value, String }
+            value_object("GameId")    { attribute :value, String }
+
+            entity "Game" do
+              identified_by :game_id
+              attribute :game_id, GameId
+            end
+          end
+        end
+
+        game = bluebook.aggregate("Bracket").entities.first
+        expect(game.identity_paths).to eq(["game_id.value"])
+        expect(game.identified_by).to eq(:game_id)
+      end
+    end
+
+    describe "identified_by ValueObject — minting the attribute from the type, mirroring reference_to" do
+      it "mints the attribute AND derives its path, no separate attribute call needed" do
+        found = build_aggregate("Order") do
+          identified_by PizzaName
+          value_object("PizzaName") { attribute :value, String }
+        end
+
+        expect(found.identified_by).to eq(:pizza_name)
+        expect(found.identity_paths).to eq(["pizza_name.value"])
+        expect(found.attributes.map { |a| [a.name, a.type] }).to eq([[:pizza_name, "PizzaName"]])
+      end
+
+      it "as: overrides the minted attribute's own name" do
+        found = build_aggregate("Order") do
+          identified_by PizzaName, as: :name
+          value_object("PizzaName") { attribute :value, String }
+        end
+
+        expect(found.identified_by).to eq(:name)
+        expect(found.identity_paths).to eq(["name.value"])
+        expect(found.attributes.map(&:name)).to eq([:name])
+      end
+
+      it "refuses a value object with more than one field, naming every candidate" do
+        expect do
+          build_aggregate("Thing") do
+            identified_by ThingRef
+            value_object("ThingRef") do
+              attribute :value, String
+              attribute :pad, Integer
+            end
+          end
+        end.to raise_error(Malformed, /identified_by names ThingRef, which has 2 fields \(value, pad\)/)
+      end
+
+      it "refuses a type naming no declared value object" do
+        expect do
+          build_aggregate("Thing") { identified_by Nonexistent }
+        end.to raise_error(Malformed, /identified_by names Nonexistent, which is not a declared value object/)
+      end
+
+      it "refuses as: on the bare-field-name form — as: only applies to the value-object form" do
+        expect do
+          build_aggregate("Thing") do
+            value_object("Name") { attribute :value, String }
+            attribute :name, Name
+            identified_by :name, as: :other
+          end
+        end.to raise_error(Malformed, /identified_by :name takes no as:/)
+      end
+
+      it "works the same way on an entity, minting from the OWNING AGGREGATE's own value object" do
+        bluebook = build_bluebook("Games") do
+          aggregate "Bracket" do
+            identified_by { bracket_id.value }
+            attribute :bracket_id, BracketId
+            value_object("BracketId") { attribute :value, String }
+            value_object("WinnerRef") { attribute :value, String }
+
+            entity "Game" do
+              identified_by WinnerRef, as: :winner
+            end
+          end
+        end
+
+        game = bluebook.aggregate("Bracket").entities.first
+        expect(game.identified_by).to eq(:winner)
+        expect(game.identity_paths).to eq(["winner.value"])
+        expect(game.attributes.map { |a| [a.name, a.type] }).to eq([[:winner, "WinnerRef"]])
+      end
+    end
+
     it "lifecycle records a state machine on a field" do
       machine = build_aggregate("Machined") do
         lifecycle :status, default: "pending" do
@@ -1089,7 +1255,7 @@ RSpec.describe "the DSL surface" do
       end.queries.first
 
       expect(found.name).to eq("Available")
-      expect(found.wheres.map(&:to_h)).to eq([{ field: "status", op: "eq", value: "available" }])
+      expect(found.wheres.map(&:to_h)).to eq([{ field: "status", op: "eq", value: %q("available") }])
       expect(found.order_by.to_h).to eq({ field: "name", direction: "desc" })
       expect(found.limit.to_h).to eq({ value: "10" })
       expect(found.offset.to_h).to eq({ value: "5" })
@@ -1136,6 +1302,86 @@ RSpec.describe "the DSL surface" do
           end
         end
       end.to raise_error(ArgumentError, /unknown comparator/)
+    end
+
+    describe "a query's own block parameter, derived from the owner's already-declared attribute" do
+      it "derives the block parameter's type from the aggregate's own matching attribute, no attribute call needed" do
+        found = build_aggregate("Submission") do
+          value_object("DecisionRef") { attribute :value, String }
+          attribute :decision, DecisionRef
+
+          query "ForDecision" do |decision|
+            where decision: :decision
+          end
+        end.queries.first
+
+        expect(found.attributes.map { |a| [a.name, a.type] }).to eq([[:decision, "DecisionRef"]])
+      end
+
+      it "still works when the block also declares the attribute explicitly (no duplicate)" do
+        found = build_aggregate("Submission") do
+          value_object("DecisionRef") { attribute :value, String }
+          attribute :decision, DecisionRef
+
+          query "ForDecision" do |decision|
+            attribute :decision, DecisionRef
+            where decision: :decision
+          end
+        end.queries.first
+
+        expect(found.attributes.map(&:name)).to eq([:decision])
+      end
+
+      it "carries optional: true through from the owner's own attribute" do
+        found = build_aggregate("Submission") do
+          value_object("Note") { attribute :value, String }
+          attribute :note, Note, optional: true
+
+          query "ByNote" do |note|
+            where note: :note
+          end
+        end.queries.first
+
+        expect(found.attributes.first.optional?).to eq(true)
+      end
+
+      it "leaves a block parameter alone when nothing on the owner matches it — no attribute silently invented" do
+        found = build_aggregate("Submission") do
+          value_object("Name") { attribute :value, String }
+          attribute :name, Name
+
+          query "Broken" do |nonexistent|
+            where name: "open"
+          end
+        end.queries.first
+
+        expect(found.attributes).to be_empty
+      end
+
+      it "derives from the OWNING ENTITY's own attribute too, not just an aggregate's" do
+        bluebook = build_bluebook("Games") do
+          aggregate "Bracket" do
+            identified_by { bracket_id.value }
+            attribute :bracket_id, BracketId
+            value_object("BracketId") { attribute :value, String }
+            value_object("GameId")    { attribute :value, String }
+            value_object("WinnerRef") { attribute :value, String }
+
+            entity "Game" do
+              identified_by { game_id.value }
+              attribute :game_id, GameId
+              attribute :winner, WinnerRef
+
+              query "WinsByOption" do |winner|
+                where winner: :winner
+              end
+            end
+          end
+        end
+
+        found = bluebook.aggregate("Bracket").entities.first.queries.first
+        expect(found.attributes.map { |a| [a.name, a.type] }).to eq([[:winner, "WinnerRef"]])
+      end
     end
 
     # THE QUERY SEAL — the same gate then_set gets, closing the same silence.
@@ -1715,11 +1961,55 @@ RSpec.describe "the DSL surface" do
       expect(mutation.to_h[:source]).to eq(kind: "literal", value: "sold")
     end
 
+    # Real coverage for item 12e's plumbing (migration plan task 4/7/8):
+    # then_set's UNSET-sentinel rewrite -- to: false no longer reads as
+    # absent, from: is a to:-equivalent alias, and a bare positional second
+    # argument is boolean shorthand for to:. remove:/multiply:/clamp: are
+    # covered by their own items' dispatch-level specs (13/15/16); this file
+    # only proves the DSL surface itself parses and records the right op.
+    it "then_set to: false is a real mutation, not an absent to:" do
+      mutation = build_command("CmdSetToFalse") { then_set :status, to: false }.mutations.first
+
+      expect(mutation.op).to eq(:set)
+      expect(mutation.to_h[:source]).to eq(kind: "literal", value: false)
+    end
+
+    it "then_set from: is a to:-equivalent alias" do
+      mutation = build_command("CmdSetFrom") { then_set :status, from: :status }.mutations.first
+
+      expect(mutation.op).to eq(:set)
+      expect(mutation.to_h[:source]).to eq(kind: "argument", name: "status")
+    end
+
+    it "then_set :field, true reads as to: true — a bare positional boolean shorthand" do
+      mutation = build_command("CmdSetPositional") { then_set :status, true }.mutations.first
+
+      expect(mutation.op).to eq(:set)
+      expect(mutation.to_h[:source]).to eq(kind: "literal", value: true)
+    end
+
+    it "then_set :field, true defers to an explicit to: when both are given" do
+      mutation = build_command("CmdSetPositionalLoses") { then_set :status, true, to: "explicit" }.mutations.first
+
+      expect(mutation.to_h[:source]).to eq(kind: "literal", value: "explicit")
+    end
+
+    it "then_set still refuses two operations at once with the new keyword list named" do
+      expect { build_command("CmdSetTornNew") { then_set :status, to: "a", remove: :b } }
+        .to raise_error(Hecksagain::Bluebook::DSL::Malformed, /tries to set and remove/)
+    end
+
+    it "then_set still refuses no operation, naming every keyword including the new ones" do
+      expect { build_command("CmdSetNoneNew") { then_set :status } }
+        .to raise_error(Hecksagain::Bluebook::DSL::Malformed,
+                         /give it to:, append:, increment:, decrement:, multiply:, clamp:, or remove:/)
+    end
+
     it "then_set append: pushes a built value object onto a list" do
       mutation = build_command("CmdAppend") { then_set :parts, append: { size: :size } }.mutations.first
 
       expect([mutation.target, mutation.op]).to eq([:parts, :append])
-      expect(mutation.to_h[:fields]).to eq(size: "size")
+      expect(mutation.to_h[:fields]).to eq(size: ":size")
     end
 
     it "then_set increment: reads a command argument to add" do

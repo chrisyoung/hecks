@@ -28,6 +28,7 @@
 use crate::dispatch;
 use crate::journal;
 use crate::journal::LineageConfig;
+use crate::lambda_client::LambdaInvoker;
 use serde_json::{json, Value};
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -216,16 +217,25 @@ pub fn resolve_identity(instances: &Value, issuer: &str, subject: &str) -> Optio
 // real, live "google_unlinked" for an ALREADY-linked chris@embryonaut.ai
 // caught this: `resolve_identity` correctly found his real identity_id,
 // but scanning `instances` for his Member record could never find it.
+//
+// THIN WRAPPERS, now — `journal::read_lineage_head_by_id`/`_all` are
+// the SAME two queries, generalized over `storage_name` instead of
+// hard-typed to `"member_head"`, so Member is no longer the only
+// aggregate this crate can read this way (see journal.rs's own header
+// on the generic pair, and ir.rs's `lineage_capable_aggregates` for how
+// a caller learns which OTHER aggregates qualify). Kept as named,
+// Member-specific functions here rather than inlined at each call site
+// below — every call site still reads "the Member row," not "a lineage
+// row for whichever storage name," which is the real shape of what
+// auth.rs is doing.
 async fn member_row_by_email(client: &Mutex<Client>, email: &str) -> anyhow::Result<Option<Value>> {
     let guard = client.lock().await;
-    let row = guard.query_opt("SELECT state FROM member_head WHERE id = $1", &[&email]).await?;
-    Ok(row.map(|r| r.get::<_, Value>(0)))
+    journal::read_lineage_head_by_id(&*guard, "member", email).await
 }
 
 async fn member_rows(client: &Mutex<Client>) -> anyhow::Result<Vec<(String, Value)>> {
     let guard = client.lock().await;
-    let rows = guard.query("SELECT id, state FROM member_head", &[]).await?;
-    Ok(rows.into_iter().map(|r| (r.get(0), r.get(1))).collect())
+    journal::read_lineage_head_all(&*guard, "member").await
 }
 
 // `Adapters::Postgres#append`, ported verbatim (postgres.rb:141-166) --
@@ -303,6 +313,7 @@ pub async fn session_for_member_by_identity(client: &Mutex<Client>, identity_id:
 // mints Identity/Governance facts for a Member who already has `role`
 // set (via GrantAccess) but no `identity_id` yet, matching
 // embryonaut_access_control.rb's `provision` exactly.
+#[allow(clippy::too_many_arguments)]
 pub async fn provision(
     client: &Mutex<Client>,
     wasm_path: &Path,
@@ -310,6 +321,7 @@ pub async fn provision(
     email: &str,
     issuer: &str,
     subject: &str,
+    invoker: &dyn LambdaInvoker,
 ) -> anyhow::Result<Option<Session>> {
     let member = match member_row_by_email(client, email).await? {
         Some(m) => m,
@@ -322,9 +334,15 @@ pub async fn provision(
     };
     let identity_id = uuid::Uuid::new_v4().to_string();
 
+    // `None` on all three dispatches below -- this whole function is
+    // SYSTEM-INITIATED provisioning (minting Identity/Governance facts
+    // for a Member the operator already granted access to via
+    // GrantAccess, not a command a logged-in caller is submitting), so
+    // there is no caller role to assert here -- matches what every call
+    // site in this function has always done.
     let register = dispatch::handle(
         client, wasm_path, "Identity::Identity.Register",
-        json!({"identity_id": {"value": identity_id}}), config,
+        json!({"identity_id": {"value": identity_id}}), None, config, invoker,
     ).await?;
     if !register.accepted {
         anyhow::bail!("Identity::Identity.Register refused: {}", register.result);
@@ -335,7 +353,7 @@ pub async fn provision(
         json!({
             "identity_id": identity_id, "key": {"value": format!("{issuer}:{subject}")},
             "issuer": {"value": issuer}, "subject": {"value": subject},
-        }), config,
+        }), None, config, invoker,
     ).await?;
     if !link_external.accepted {
         anyhow::bail!("Identity::ExternalIdentifier.Link refused: {}", link_external.result);
@@ -346,7 +364,7 @@ pub async fn provision(
         json!({
             "actor_id": {"value": identity_id}, "role_name": {"value": role}, "scope": {"value": "Embryonaut"},
             "starts_at": {"value": httpdate_now()},
-        }), config,
+        }), None, config, invoker,
     ).await?;
     if !assign_role.accepted {
         anyhow::bail!("Governance::RoleAssignment.Assign refused: {}", assign_role.result);

@@ -75,7 +75,7 @@ A precondition, read against the record BEFORE any mutation runs. The first one 
 ## sets
 
 <!-- generated:begin word=sets -->
-`sets target, to:, append:, increment:, decrement:` — fills `mutations`, was `then_set`
+`sets target, to:, append:, increment:, decrement:, from:, multiply:, clamp:, remove:` — fills `mutations`, was `then_set`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -84,6 +84,10 @@ A precondition, read against the record BEFORE any mutation runs. The first one 
 | `append:` | literal | false | source |
 | `increment:` | literal | false | source |
 | `decrement:` | literal | false | source |
+| `from:` | literal | false | source |
+| `multiply:` | literal | false | source |
+| `clamp:` | literal | false | source |
+| `remove:` | literal | false | source |
 <!-- generated:end -->
 
 Still spelled `then_set` in every real bluebook in this codebase — `was: "then_set"` in the language's own rename table, and the old spelling keeps booting alongside the new one. One call, one op: `to:` overwrites the field, `append:` grows a list attribute by one value object built from the pairs you name, `increment:`/`decrement:` do arithmetic on a numeric field. See commands.md's "`then_set` — one op per field" for the flattening rule `append:` applies to a single-member value object.
@@ -103,12 +107,13 @@ Names an event announced once the record is actually saved — `save` runs befor
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, type, default:, optional:, pattern:, admits:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
 | positional 1 | symbol | true | name |
 | positional 2 | constant | false | type |
+| positional 2 | text | false | type |
 | `default:` | literal | false | default |
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
@@ -120,7 +125,11 @@ Declares an argument this command needs, scalar or value object — same word, s
 ## ensures
 
 <!-- generated:begin word=ensures -->
-`ensures do ... end` — fills `ensures`
+`ensures description do ... end` — fills `ensures`
+
+| argument | kind | required | fills |
+|---|---|---|---|
+| positional 1 | text | true | description |
 <!-- generated:end -->
 
 A postcondition, read AFTER the mutation runs but before `save` — `old` names the record as it stood before, so the check can assert a relationship between the two states, not just a fact about one. A false read raises `EnsuresNotMet` and the write never reaches the store. See commands.md for why this catches what a forgotten `given` doesn't.

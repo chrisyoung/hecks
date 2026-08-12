@@ -153,7 +153,7 @@
             {
               "field": "condition",
               "op": "eq",
-              "value": "on"
+              "value": "\"on\""
             }
           ]
         }
@@ -476,6 +476,9 @@
         "max_age": "60",
         "mode": "bounded"
       },
+      "group_by": [
+
+      ],
       "index_hints": [
         {
           "name": "condition_index"
@@ -484,6 +487,7 @@
       "inspection": {
         "mode": "sql"
       },
+      "limit": null,
       "name": "Signals",
       "null_semantics": {
         "mode": "last"
@@ -491,9 +495,13 @@
       "offset": {
         "value": "5"
       },
+      "order_by": null,
       "query_name": "signals",
       "reference_name": "light",
-      "reference_target": "Light"
+      "reference_target": "Light",
+      "wheres": [
+
+      ]
     }
   ],
   "version": null,

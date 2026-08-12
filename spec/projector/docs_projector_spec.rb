@@ -142,7 +142,7 @@ RSpec.describe Hecksagain::Projector::DocsProjector do
   describe "reactions" do
     it "tabulates each policy as the dispatch it causes, and where it lands" do
       expect(banking).to include("## Reactions")
-      expect(banking).to match(/\| `Account\.AccountFrozen` \| `Compliance\.OpenReview` \| Compliance \|/)
+      expect(banking).to match(%r{\| `Account\.AccountFrozen` \| `AccountFreezeReview\.Open` \| Compliance \|})
     end
 
     it "describes a saga by where it starts, ends and correlates" do

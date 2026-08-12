@@ -188,7 +188,12 @@ RSpec.describe "the declared vocabularies" do
     used = Dir.glob(File.join(InMemoryDomain::ROOT, "spec/corpus/*.json")).flat_map { |path|
       JSON.parse(File.read(path)).fetch("steps", [])
     }
-    ops = %w[set append increment decrement]
+    # Vendored addition, not (yet) upstream hecksagain (migration plan task
+    # 4, i106 in-DSL math): multiply/clamp/remove joined set/append/
+    # increment/decrement as real, declared MutationOp members — see
+    # vocabulary.bluebook's own MutationOp comment for the arithmetic each
+    # one performs.
+    ops = %w[set append increment decrement multiply clamp remove]
     expect(declared("MutationOp")).to eq(ops)
     expect(used).not_to be_empty
   end

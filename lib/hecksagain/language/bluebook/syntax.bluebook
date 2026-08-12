@@ -218,12 +218,16 @@ Hecks.bluebook "Bluebook" do
     #            only opens something)
     #
     # ONE ROW PER (WORD, CONTEXT, FORM), so a word admitting two forms has two
-    # rows. `identified_by` used to be the one case of this — a bare-symbol
-    # form the builder accepted and the language's own `Identify` given
-    # refused, "written by nobody" per zero corpus usage — deleted from both
-    # once found, rather than kept as a form the two halves of the project
-    # disagreed about. The same word in two contexts is two rows and often two
-    # different `fills`, which is the whole reason `context` is part of the key :
+    # rows. `identified_by` is the one case of this, and has been twice over
+    # for opposite reasons. The first was a bare-symbol form the builder
+    # accepted and the language's own `Identify` given refused, "written by
+    # nobody" per zero corpus usage — deleted from both once found, rather
+    # than kept as a form the two halves of the project disagreed about. The
+    # second is the pair of blockless forms that later replaced it, which
+    # DERIVE the scalar path the deleted one never reached and so are
+    # admitted where it was not — see the rows themselves. The same word in
+    # two contexts is two rows and often two different `fills`, which is the
+    # whole reason `context` is part of the key :
     # `order_by` fills `order_field` on an ask and an option row on a read model.
     #
     # A FIELD WITH NO WORD IS REAL AND IS NOT AN OMISSION HERE.
@@ -285,6 +289,17 @@ Hecks.bluebook "Bluebook" do
         member word: "description",     context: "Aggregate", body: "none",     inner: "",              opens: "",               fills: "description"
         member word: "provenance",      context: "Aggregate", body: "none",     inner: "",              opens: "",               fills: "provenance"
         member word: "identified_by",   context: "Aggregate", body: "source",   inner: "",              opens: "",               fills: "identified_by"
+        # A SECOND ROW BECAUSE THE BODY IS WHAT DIFFERS. `identified_by
+        # :name` and `identified_by PizzaName, as: :name` take an argument
+        # and NO block ; the original takes a block and no argument. `body`
+        # is the only column that separates them, and a reader that gates on
+        # it — the fourth of a projected parser's four gates — would refuse
+        # `pizzas.bluebook` line 8 against the source row alone. The
+        # argument rows below join by (word, context) and so belong to both
+        # rows; which form is being read is decided by the body that
+        # follows, not by the arguments, which is the join's own limit
+        # showing again rather than a fact left out.
+        member word: "identified_by",   context: "Aggregate", body: "none",     inner: "",              opens: "",               fills: "identified_by"
         member word: "reference_to",    context: "Aggregate", body: "none",     inner: "",              opens: "",               fills: "attributes"
         # `has_many`, `has_one`, `belongs_to` — relationship vocabulary Hecks
         # already grew in the wild, declared in this table
@@ -309,22 +324,22 @@ Hecks.bluebook "Bluebook" do
 
         # A PIECE SAYS LESS THAN A HEAD, and the table is where that stops being
         # folklore : an entity admits no `value_object`, no `policy` and no
-        # nested `entity` of its own. `reference_to` WAS on that list too,
-        # once — not because a piece pointing at another aggregate root is
-        # wrong (standard DDD: an entity may reference a root by identity
-        # same as its own aggregate can), but because the DSL sugar to
-        # spell it had simply never been written. `AggregateBuilder
-        # #reference_bearing_attributes` was already walking `entity
-        # .attributes` looking for exactly this by the time anyone noticed —
-        # the resolution machinery was ready before the word was. Seven
-        # words now, against an aggregate's eleven.
+        # nested `entity`. `reference_to` is the one exception — a piece can
+        # point at another ROOT the same way its own head can (Card.assignee_id),
+        # just never at another piece, since there's no cross-piece addressing
+        # anywhere in this language to resolve one against. Seven words,
+        # against an aggregate's eleven.
         member word: "description",     context: "Entity", body: "none",     inner: "",           opens: "",         fills: "description"
         member word: "identified_by",   context: "Entity", body: "source",   inner: "",           opens: "",         fills: "identified_by"
-        member word: "reference_to",    context: "Entity", body: "none",     inner: "",           opens: "",         fills: "attributes"
+        # The same two rows an aggregate carries, for the same reason — a
+        # piece is identified exactly the way a head is, and EntityBuilder's
+        # own `identified_by` is the aggregate's method line for line.
+        member word: "identified_by",   context: "Entity", body: "none",     inner: "",           opens: "",         fills: "identified_by"
         member word: "command",         context: "Entity", body: "keywords", inner: "Command",    opens: "Command",  fills: ""
         member word: "query",           context: "Entity", body: "keywords", inner: "Query",      opens: "Query",    fills: ""
         member word: "lifecycle",       context: "Entity", body: "keywords", inner: "Lifecycle",  opens: "",         fills: "state_field"
         member word: "attribute",       context: "Entity", body: "none",     inner: "",           opens: "",         fills: "attributes"
+        member word: "reference_to",    context: "Entity", body: "none",     inner: "",           opens: "",         fills: "attributes"
 
         member word: "role",            context: "Command", body: "none",   inner: "", opens: "", fills: "role"
         member word: "goal",            context: "Command", body: "none",   inner: "", opens: "", fills: "goal"
@@ -366,6 +381,17 @@ Hecks.bluebook "Bluebook" do
         member word: "ends_on",         context: "ProcessManager", body: "none",     inner: "",        opens: "",        fills: "ends_on"
         member word: "state",           context: "ProcessManager", body: "none",     inner: "",        opens: "",        fills: "states"
         member word: "on",              context: "ProcessManager", body: "keywords", inner: "Handler", opens: "Handler", fills: ""
+        # THE BLOCKLESS FORM — `ProcessManagerBuilder#on(event_type,
+        # transition:, &block)` takes an OPTIONAL block ("handler.
+        # instance_eval(&block) if block"), so a leg with nothing to
+        # dispatch is legal with no `do ... end` at all: banking.bluebook's
+        # own `Onboarding` saga has no answer to "OnboardingDeclined" —
+        # nothing was ever created to undo, so the leg is a bare state
+        # transition and the SAME word needs a second row, the same
+        # reason `identified_by` carries two — `body` is the only column
+        # that tells them apart, and the argument rows below already join
+        # by (word, context) alone, so they serve both.
+        member word: "on",              context: "ProcessManager", body: "none",     inner: "",        opens: "",        fills: ""
 
         member word: "dispatch",        context: "Handler",        body: "none",     inner: "",        opens: "Dispatch", fills: ""
 
@@ -398,12 +424,24 @@ Hecks.bluebook "Bluebook" do
         member word: "description",     context: "ReadModel", body: "none", inner: "", opens: "", fills: "description"
         member word: "reference_to",    context: "ReadModel", body: "none", inner: "", opens: "", fills: "reference_target"
         member word: "include",         context: "ReadModel", body: "none", inner: "", opens: "", fills: "aggregate_heads"
+        member word: "group_by",        context: "ReadModel", body: "none", inner: "", opens: "", fills: "group_by"
         # A READ MODEL'S FILTERS ARE OPTIONS, WHERE AN ASK'S ARE FIELDS. Same
-        # three words, same builder module, different landing — `ReadModel#to_h`
-        # omits wheres/order_by/limit, so they have
-        # never been in the IR contract and the language holds them
-        # as option rows instead (Readings#option_rows, `filters: true`). The
-        # `fills` column is where that stops being a comment in one file.
+        # three words, same builder module, different landing — `fills:
+        # "options"` here, `fills: "field"`/`"direction"`/`"value"` etc. on
+        # `Query`'s own rows above. Until 2026-08-11, `ReadModel#to_h` omitted
+        # wheres/order_by/limit entirely, so the language held them ONLY as
+        # option rows (Readings#option_rows, `filters: true`) — never in the
+        # IR contract at all. `ReadModel#to_h` now spells all three
+        # explicitly, the same mechanism `Query#to_h` already used (purely
+        # additive — `extra_options_to_h` still excludes them by name, so
+        # `option_rows`'s own reconstruction path, which reads `wheres`/
+        # `order_by`/`limit` straight off the live node rather than off
+        # `to_h`, is untouched). The `fills` column is still where the
+        # landing difference stops being a comment in one file — a read
+        # model's `where`/`order_by`/`limit` land on `options` here because
+        # `ReadModelBuilder` collects them there before `seal_query_options`
+        # narrows them to the one eligible many-side head; they are visible
+        # on the wire now too.
         member word: "where",           context: "ReadModel", body: "none", inner: "", opens: "", fills: "options"
         member word: "order_by",        context: "ReadModel", body: "none", inner: "", opens: "", fills: "options"
         member word: "limit",           context: "ReadModel", body: "none", inner: "", opens: "", fills: "options"
@@ -536,6 +574,21 @@ Hecks.bluebook "Bluebook" do
       attribute :pair_value_fills, String
       attribute :pairs_shape,      String, admits: "Syntax::PairsShape"
       attribute :status,   String, default: "admitted", admits: "Syntax::Status"
+      # A REPEATABLE POSITIONAL — the one row spells the kind of MANY,
+      # the same shape `one_of`'s own Type-context row already documents
+      # ("`one_of("small", "large")` takes any number of literals. The
+      # row below spells the kind of one.") in a comment alone, since
+      # that word's own repetition is hand-parsed inside a nested
+      # Type-position expression and never reaches the generic argument
+      # gate at all. `group_by`'s own `*fields` (ReadModelBuilder#
+      # group_by) is a DIFFERENT case — a normal top-level call, so its
+      # repetition has to survive the SAME gate `at: "1"`/`at: "2"`
+      # fixed-position rows already enforce for everything else — which
+      # is what this column is for: `"true"` on a SINGLE `at: "1"` row
+      # means every positional from 1 onward is checked against that
+      # one row's own `kind`, not just the first. Empty (not variadic)
+      # for every other argument, which is every one of them but this.
+      attribute :variadic,  String
 
       one_of do
         member keyword: "bluebook",        context: "File",     at: "1", named: "",        kind: "text",     required: "true",  fills: "name"
@@ -554,6 +607,25 @@ Hecks.bluebook "Bluebook" do
         # (`kind: "literal"`, see that row below): no structure imposed
         # beyond "whatever the author wrote."
         member keyword: "provenance",      context: "Aggregate", at: "",  named: "from",     kind: "literal",  required: "true",  fills: "provenance"
+        # THE BLOCKLESS FORMS, AND NEITHER IS REQUIRED. `identified_by` takes
+        # an argument or a block and refuses both together, so the slot is
+        # genuinely omissible and both rows say so — the difference from
+        # `on`'s own two-kinds-at-one-position rows below, where the slot is
+        # mandatory and `required` sits on one row alone. Nothing here can
+        # say "an argument or a body, one of the two" ; the `body: "none"`
+        # keyword row beside the source one is as close as the table gets.
+        #
+        # A SYMBOL NAMES AN ATTRIBUTE ALREADY DECLARED and derives the path
+        # out of its own value object's single field, so the whole of what
+        # it fills is `identified_by` itself. A CONSTANT MINTS the attribute
+        # first, which is why its two rows are `reference_to`'s two rows —
+        # a target and an optional alias, filling `type` and `name`. Both
+        # arrive as plain Ruby Symbols and are told apart by the FIRST
+        # CHARACTER's case, the same reading the language already leans on
+        # everywhere else; `kind` is where that stops being implicit.
+        member keyword: "identified_by",   context: "Aggregate", at: "1", named: "",         kind: "symbol",   required: "false", fills: "identified_by"
+        member keyword: "identified_by",   context: "Aggregate", at: "1", named: "",         kind: "constant", required: "false", fills: "type"
+        member keyword: "identified_by",   context: "Aggregate", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
         # THE TARGET IS A CONSTANT AND THE FIELD IT MAKES IS MINTED. `reference_to
         # Customer` attaches an attribute spelled `customer_id` — the language
         # mints the `_id` ending itself, which is why Identify's rule can read it
@@ -598,22 +670,48 @@ Hecks.bluebook "Bluebook" do
         # `attribute :value` would too.
         member keyword: "attribute",       context: "Aggregate", at: "1", named: "",         kind: "symbol",   required: "true",  fills: "name"
         member keyword: "attribute",       context: "Aggregate", at: "2", named: "",         kind: "constant", required: "false", fills: "type"
+        # A SECOND ROW FOR THE SAME POSITION, same shape as `identified_by`'s
+        # own two `at: "1"` rows just above — one word, two lexical kinds at
+        # the SAME slot. `AttributeCollector#attribute`'s `type` parameter
+        # takes ANY object with no runtime check at all, so a plain quoted
+        # string naming a value object BY NAME (not yet defined as a Ruby
+        # constant at the point `attribute` is called) is real, confirmed
+        # live syntax: `spec/fixtures/hop_chain.bluebook`'s own `attribute
+        # :name, "Name"`, forward-referencing a `value_object("Name") do
+        # ... end` declared a few lines later in the same aggregate — a
+        # bareword `Name` would hit Ruby's own `const_missing` before the
+        # value object exists, but a quoted string sidesteps that
+        # entirely, the exact same reason `admits:` is written as text
+        # rather than a constant path (see that column's own comment,
+        # above). Renders identically to the bareword form either way —
+        # `IR::Attribute#to_h`'s own `type.to_s` doesn't care which
+        # spelling minted it.
+        member keyword: "attribute",       context: "Aggregate", at: "2", named: "",         kind: "text",     required: "false", fills: "type"
         member keyword: "attribute",       context: "Aggregate", at: "",  named: "default",  kind: "literal",  required: "false", fills: "default"
         member keyword: "attribute",       context: "Aggregate", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         member keyword: "attribute",       context: "Aggregate", at: "",  named: "pattern",  kind: "text",     required: "false", fills: "pattern"
         member keyword: "attribute",       context: "Aggregate", at: "",  named: "admits",   kind: "text",     required: "false", fills: "admits"
 
         member keyword: "description",     context: "Entity", at: "1", named: "",         kind: "text",     required: "true",  fills: "description"
+        # See Aggregate's own three rows above — the same method, one level down.
+        member keyword: "identified_by",   context: "Entity", at: "1", named: "",         kind: "symbol",   required: "false", fills: "identified_by"
+        member keyword: "identified_by",   context: "Entity", at: "1", named: "",         kind: "constant", required: "false", fills: "type"
+        member keyword: "identified_by",   context: "Entity", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
         member keyword: "command",         context: "Entity", at: "1", named: "",         kind: "text",     required: "true",  fills: "name"
         member keyword: "query",           context: "Entity", at: "1", named: "",         kind: "text",     required: "true",  fills: "name"
         member keyword: "lifecycle",       context: "Entity", at: "1", named: "",         kind: "symbol",   required: "true",  fills: "state_field"
         member keyword: "lifecycle",       context: "Entity", at: "",  named: "default",  kind: "literal",  required: "true",  fills: "state_start"
         member keyword: "attribute",       context: "Entity", at: "1", named: "",         kind: "symbol",   required: "true",  fills: "name"
         member keyword: "attribute",       context: "Entity", at: "2", named: "",         kind: "constant", required: "false", fills: "type"
+        # See Aggregate's own second `attribute` row above — the same
+        # forward-reference-by-string form, one level down.
+        member keyword: "attribute",       context: "Entity", at: "2", named: "",         kind: "text",     required: "false", fills: "type"
         member keyword: "attribute",       context: "Entity", at: "",  named: "default",  kind: "literal",  required: "false", fills: "default"
         member keyword: "attribute",       context: "Entity", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         member keyword: "attribute",       context: "Entity", at: "",  named: "pattern",  kind: "text",     required: "false", fills: "pattern"
         member keyword: "attribute",       context: "Entity", at: "",  named: "admits",   kind: "text",     required: "false", fills: "admits"
+        member keyword: "reference_to",    context: "Entity", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
+        member keyword: "reference_to",    context: "Entity", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
 
         member keyword: "role",            context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "role"
         member keyword: "goal",            context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "goal"
@@ -626,6 +724,18 @@ Hecks.bluebook "Bluebook" do
         member keyword: "reference_to",    context: "Command", at: "",  named: "as",        kind: "symbol",   required: "false", fills: "name"
         member keyword: "reference_to",    context: "Command", at: "",  named: "optional",  kind: "flag",     required: "false", fills: "optional"
         member keyword: "given",           context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "description"
+        # THE MISSING TWIN — `ensures`'s own Keyword row (`body: "source"`,
+        # above) has carried `fills: "ensures"` since `ensures` was first
+        # declared, but this Argument row — `given`'s own, one line up —
+        # was never written beside it. A parser gating on the Argument
+        # table alone (this file's WHOLE point) refused every real
+        # `ensures("...")  { ... }` outright: "'ensures' takes no
+        # arguments." Found by Stage 4 while getting banking.bluebook's
+        # own `Account.Debit`/`ScheduledPayment.Retry` to parse — both
+        # already loaded fine in Ruby (`CommandBuilder#ensures` never
+        # consulted this table at all), which is exactly the kind of
+        # staleness this file exists to make impossible to miss.
+        member keyword: "ensures",         context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "description"
         member keyword: "sets",            context: "Command", at: "1", named: "",          kind: "symbol",   required: "true",  fills: "target"
         # `to:`/`increment:`/`decrement:`/`append:` ALL SHARE ONE KIND NOW
         # (generic-bluebook-reader arc, M7) — every one of them fills
@@ -643,9 +753,15 @@ Hecks.bluebook "Bluebook" do
         member keyword: "sets",            context: "Command", at: "",  named: "append",    kind: "literal",  required: "false", fills: "source", selects: "op=append"
         member keyword: "sets",            context: "Command", at: "",  named: "increment", kind: "literal",  required: "false", fills: "source", selects: "op=increment"
         member keyword: "sets",            context: "Command", at: "",  named: "decrement", kind: "literal",  required: "false", fills: "source", selects: "op=decrement"
+        member keyword: "sets",            context: "Command", at: "",  named: "from",      kind: "literal",  required: "false", fills: "source", selects: "op=set"
+        member keyword: "sets",            context: "Command", at: "",  named: "multiply",  kind: "literal",  required: "false", fills: "source", selects: "op=multiply"
+        member keyword: "sets",            context: "Command", at: "",  named: "clamp",     kind: "literal",  required: "false", fills: "source", selects: "op=clamp"
+        member keyword: "sets",            context: "Command", at: "",  named: "remove",    kind: "literal",  required: "false", fills: "source", selects: "op=remove"
         member keyword: "emits",           context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "emits"
         member keyword: "attribute",       context: "Command", at: "1", named: "",          kind: "symbol",   required: "true",  fills: "name"
         member keyword: "attribute",       context: "Command", at: "2", named: "",          kind: "constant", required: "false", fills: "type"
+        # See Aggregate's own second `attribute` row, above — same shape.
+        member keyword: "attribute",       context: "Command", at: "2", named: "",          kind: "text",     required: "false", fills: "type"
         member keyword: "attribute",       context: "Command", at: "",  named: "default",   kind: "literal",  required: "false", fills: "default"
         member keyword: "attribute",       context: "Command", at: "",  named: "optional",  kind: "flag",     required: "false", fills: "optional"
         member keyword: "attribute",       context: "Command", at: "",  named: "pattern",   kind: "text",     required: "false", fills: "pattern"
@@ -653,6 +769,8 @@ Hecks.bluebook "Bluebook" do
 
         member keyword: "attribute",       context: "ValueObject", at: "1", named: "",         kind: "symbol",   required: "true",  fills: "name"
         member keyword: "attribute",       context: "ValueObject", at: "2", named: "",         kind: "constant", required: "false", fills: "type"
+        # See Aggregate's own second `attribute` row, above — same shape.
+        member keyword: "attribute",       context: "ValueObject", at: "2", named: "",         kind: "text",     required: "false", fills: "type"
         member keyword: "attribute",       context: "ValueObject", at: "",  named: "default",  kind: "literal",  required: "false", fills: "default"
         member keyword: "attribute",       context: "ValueObject", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         member keyword: "attribute",       context: "ValueObject", at: "",  named: "pattern",  kind: "text",     required: "false", fills: "pattern"
@@ -711,6 +829,8 @@ Hecks.bluebook "Bluebook" do
         member keyword: "description",     context: "Query", at: "1", named: "",         kind: "text",     required: "true",  fills: "description"
         member keyword: "attribute",       context: "Query", at: "1", named: "",         kind: "symbol",   required: "true",  fills: "name"
         member keyword: "attribute",       context: "Query", at: "2", named: "",         kind: "constant", required: "false", fills: "type"
+        # See Aggregate's own second `attribute` row, above — same shape.
+        member keyword: "attribute",       context: "Query", at: "2", named: "",         kind: "text",     required: "false", fills: "type"
         member keyword: "attribute",       context: "Query", at: "",  named: "default",  kind: "literal",  required: "false", fills: "default"
         member keyword: "attribute",       context: "Query", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         member keyword: "attribute",       context: "Query", at: "",  named: "pattern",  kind: "text",     required: "false", fills: "pattern"
@@ -747,6 +867,17 @@ Hecks.bluebook "Bluebook" do
         member keyword: "reference_to",    context: "ReadModel", at: "",  named: "as",      kind: "symbol",   required: "false", fills: "reference_name"
         member keyword: "include",         context: "ReadModel", at: "1", named: "",        kind: "constant", required: "true",  fills: "aggregate"
         member keyword: "include",         context: "ReadModel", at: "",  named: "as",      kind: "symbol",   required: "false", fills: "as"
+        # VARIADIC — `group_by :agg, :state` (ReadModelBuilder#group_by,
+        # `def group_by(*fields)`) names any number of bare symbol
+        # fields, not just one. `variadic: "true"` is this table's own
+        # column for exactly that shape (see `Argument`'s own comment on
+        # it, above) — confirmed real, not hypothetical:
+        # console_settings.bluebook's `Styles` report groups by TWO
+        # fields (`:agg, :state`), `Curated` by one (`:agg`), and
+        # banking.bluebook's own `Account` report groups by two more
+        # (`:kind, :number`) — a fixed `at: "1"`/`at: "2"` pair would
+        # have papered over the real cardinality rather than declaring it.
+        member keyword: "group_by",        context: "ReadModel", at: "1", named: "",        kind: "symbol",   required: "true",  fills: "group_by", variadic: "true"
         member keyword: "where",           context: "ReadModel", at: "1", named: "",        kind: "pairs",    required: "true",  fills: ""
         member keyword: "order_by",        context: "ReadModel", at: "1", named: "",        kind: "symbol",   required: "true",  fills: "field"
         member keyword: "order_by",        context: "ReadModel", at: "2", named: "",        kind: "symbol",   required: "false", fills: "direction"
@@ -779,6 +910,8 @@ Hecks.bluebook "Bluebook" do
         member keyword: "reference_to",    context: "PortOperation", at: "",  named: "as",    kind: "symbol",   required: "false", fills: "name"
         member keyword: "attribute",       context: "PortOperation", at: "1", named: "",        kind: "symbol",   required: "true",  fills: "name"
         member keyword: "attribute",       context: "PortOperation", at: "2", named: "",        kind: "constant", required: "false", fills: "type"
+        # See Aggregate's own second `attribute` row, above — same shape.
+        member keyword: "attribute",       context: "PortOperation", at: "2", named: "",        kind: "text",     required: "false", fills: "type"
         member keyword: "attribute",       context: "PortOperation", at: "",  named: "default",  kind: "literal",  required: "false", fills: "default"
         member keyword: "attribute",       context: "PortOperation", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         member keyword: "attribute",       context: "PortOperation", at: "",  named: "pattern",  kind: "text",     required: "false", fills: "pattern"

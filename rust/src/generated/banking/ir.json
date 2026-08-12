@@ -324,12 +324,12 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "active"
+              "value": "\"active\""
             },
             {
               "field": "standing",
               "op": "eq",
-              "value": "good"
+              "value": "\"good\""
             }
           ],
           "order_by": {
@@ -346,7 +346,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "suspended"
+              "value": "\"suspended\""
             }
           ],
           "order_by": {
@@ -365,7 +365,7 @@
             {
               "field": "standing",
               "op": "ne",
-              "value": "good"
+              "value": "\"good\""
             }
           ],
           "order_by": {
@@ -802,9 +802,9 @@
               "target": "ledger",
               "op": "append",
               "fields": {
-                "amount": "amount",
-                "narrative": "narrative",
-                "direction": "{:value=>\"credit\"}"
+                "amount": ":amount",
+                "narrative": ":narrative",
+                "direction": "{value: \"credit\"}"
               }
             }
           ],
@@ -875,9 +875,9 @@
               "target": "ledger",
               "op": "append",
               "fields": {
-                "amount": "amount",
-                "narrative": "narrative",
-                "direction": "{:value=>\"debit\"}"
+                "amount": ":amount",
+                "narrative": ":narrative",
+                "direction": "{value: \"debit\"}"
               }
             }
           ],
@@ -1296,7 +1296,7 @@
                 {
                   "field": "state",
                   "op": "eq",
-                  "value": "reversed"
+                  "value": "\"reversed\""
                 }
               ],
               "order_by": null,
@@ -1330,7 +1330,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "open"
+              "value": "\"open\""
             }
           ],
           "order_by": {
@@ -1466,7 +1466,7 @@
             {
               "field": "status",
               "op": "in",
-              "value": "open,frozen"
+              "value": "\"open,frozen\""
             }
           ],
           "order_by": {
@@ -1483,12 +1483,12 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "open"
+              "value": "\"open\""
             },
             {
               "field": "customer.status",
               "op": "eq",
-              "value": "suspended"
+              "value": "\"suspended\""
             }
           ],
           "order_by": {
@@ -1812,8 +1812,8 @@
               "target": "withdrawals",
               "op": "append",
               "fields": {
-                "cents": "cents",
-                "narrative": "narrative"
+                "cents": ":cents",
+                "narrative": ":narrative"
               }
             }
           ],
@@ -1952,7 +1952,7 @@
                 {
                   "field": "state",
                   "op": "eq",
-                  "value": "taken"
+                  "value": "\"taken\""
                 }
               ],
               "order_by": null,
@@ -1983,7 +1983,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "active"
+              "value": "\"active\""
             }
           ],
           "order_by": {
@@ -2000,7 +2000,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "active"
+              "value": "\"active\""
             }
           ],
           "order_by": {
@@ -2355,7 +2355,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "debited"
+              "value": "\"debited\""
             }
           ],
           "order_by": {
@@ -2775,7 +2775,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "authorized"
+              "value": "\"authorized\""
             }
           ],
           "order_by": null,
@@ -2789,7 +2789,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "disputed"
+              "value": "\"disputed\""
             }
           ],
           "order_by": null,
@@ -2803,7 +2803,7 @@
             {
               "field": "tags",
               "op": "contains",
-              "value": "high_risk"
+              "value": "\"high_risk\""
             }
           ],
           "order_by": null,
@@ -3106,7 +3106,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "sent"
+              "value": "\"sent\""
             }
           ],
           "order_by": null,
@@ -3540,7 +3540,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "scheduled"
+              "value": "\"scheduled\""
             }
           ],
           "order_by": {
@@ -3910,9 +3910,9 @@
               "target": "visits",
               "op": "append",
               "fields": {
-                "date": "date",
-                "sequence": "sequence",
-                "note": "note"
+                "date": ":date",
+                "sequence": ":sequence",
+                "note": ":note"
               }
             }
           ],
@@ -3944,7 +3944,7 @@
               "target": "keys",
               "op": "append",
               "fields": {
-                "serial": "serial"
+                "serial": ":serial"
               }
             }
           ],
@@ -4069,7 +4069,7 @@
                 {
                   "field": "state",
                   "op": "eq",
-                  "value": "logged"
+                  "value": "\"logged\""
                 }
               ],
               "order_by": null,
@@ -4161,7 +4161,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "rented"
+              "value": "\"rented\""
             }
           ],
           "order_by": {
@@ -4378,7 +4378,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "screening"
+              "value": "\"screening\""
             }
           ],
           "order_by": {
@@ -4680,6 +4680,9 @@
       "reference_name": "customer",
       "reference_target": "Customer",
       "query_name": "customer_portfolio",
+      "wheres": [],
+      "order_by": null,
+      "limit": null,
       "aggregate_heads": [
         {
           "aggregate": "Customer",
@@ -4716,7 +4719,8 @@
           "as": "scheduled_payments",
           "many": true
         }
-      ]
+      ],
+      "group_by": []
     },
     {
       "name": "ComplianceDashboard",
@@ -4724,6 +4728,20 @@
       "reference_name": "account",
       "reference_target": "Account",
       "query_name": "compliance_dashboard",
+      "wheres": [
+        {
+          "field": "status",
+          "op": "eq",
+          "value": "\"disputed\""
+        }
+      ],
+      "order_by": {
+        "field": "amount",
+        "direction": "desc"
+      },
+      "limit": {
+        "value": "5"
+      },
       "aggregate_heads": [
         {
           "aggregate": "Account",
@@ -4736,6 +4754,7 @@
           "many": true
         }
       ],
+      "group_by": [],
       "freshness": {
         "mode": "eventual",
         "max_age": "60"
@@ -4745,13 +4764,38 @@
           "name": "account_index"
         }
       ]
+    },
+    {
+      "name": "AccountsByKind",
+      "description": "Every account the bank holds, sorted into what kind it is, then by its own number.",
+      "reference_name": null,
+      "reference_target": null,
+      "query_name": "accounts_by_kind",
+      "wheres": [],
+      "order_by": null,
+      "limit": null,
+      "aggregate_heads": [
+        {
+          "aggregate": "Account",
+          "as": "accounts",
+          "many": true
+        }
+      ],
+      "group_by": [
+        {
+          "field": "kind"
+        },
+        {
+          "field": "number"
+        }
+      ]
     }
   ],
   "policies": [
     {
       "name": "ReviewOnFreeze",
       "on_event": "Account.AccountFrozen",
-      "trigger_command": "Compliance.OpenReview",
+      "trigger_command": "AccountFreezeReview.Open",
       "target_domain": "Compliance"
     },
     {
@@ -4775,7 +4819,7 @@
     {
       "name": "ReviewOnBoxSurrender",
       "on_event": "BoxSurrendered",
-      "trigger_command": "Compliance.OpenReview",
+      "trigger_command": "BoxSurrenderReview.Open",
       "target_domain": "Compliance"
     },
     {
@@ -4816,7 +4860,7 @@
                 ],
                 [
                   "narrative",
-                  "{:text=>\"transfer out\"}"
+                  "{text: \"transfer out\"}"
                 ],
                 [
                   "reference",
@@ -4853,7 +4897,7 @@
                 ],
                 [
                   "narrative",
-                  "{:text=>\"transfer in\"}"
+                  "{text: \"transfer in\"}"
                 ],
                 [
                   "reference",
@@ -4913,7 +4957,7 @@
                 ],
                 [
                   "narrative",
-                  "{:text=>\"transfer reversed\"}"
+                  "{text: \"transfer reversed\"}"
                 ]
               ]
             },
@@ -5004,11 +5048,11 @@
                 ],
                 [
                   "kind",
-                  "{:name=>\"current\"}"
+                  "{name: \"current\"}"
                 ],
                 [
                   "daily_limit",
-                  "{:cents=>0}"
+                  "{cents: 0}"
                 ]
               ]
             }
@@ -5038,5 +5082,8 @@
       "boundary": "word",
       "position": "2"
     }
-  ]
+  ],
+  "lineage": {
+    "capable_aggregates": []
+  }
 }

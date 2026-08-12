@@ -129,7 +129,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             }
@@ -369,11 +369,11 @@
               "target": "normalisations",
               "op": "append",
               "fields": {
-                "strategy": "strategy",
-                "source_token": "source_token",
-                "replacement": "replacement",
-                "boundary": "boundary",
-                "position": "position"
+                "strategy": ":strategy",
+                "source_token": ":source_token",
+                "replacement": ":replacement",
+                "boundary": ":boundary",
+                "position": ":position"
               }
             }
           ],
@@ -654,7 +654,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -706,7 +706,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -914,7 +914,7 @@
               "target": "identified_by",
               "op": "append",
               "fields": {
-                "value": "path"
+                "value": ":path"
               }
             }
           ],
@@ -1000,13 +1000,13 @@
               "target": "attributes",
               "op": "append",
               "fields": {
-                "name": "name",
-                "type": "type",
-                "list": "list",
-                "default": "default",
-                "optional": "optional",
-                "pattern": "pattern",
-                "admits": "admits"
+                "name": ":name",
+                "type": ":type",
+                "list": ":list",
+                "default": ":default",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "admits": ":admits"
               }
             }
           ],
@@ -1092,13 +1092,13 @@
               "target": "attributes",
               "op": "append",
               "fields": {
-                "name": "name",
-                "type": "points_at",
-                "list": "list",
-                "default": "default",
-                "optional": "optional",
-                "pattern": "pattern",
-                "admits": "admits"
+                "name": ":name",
+                "type": ":points_at",
+                "list": ":list",
+                "default": ":default",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "admits": ":admits"
               }
             }
           ],
@@ -1184,13 +1184,13 @@
               "target": "attributes",
               "op": "append",
               "fields": {
-                "name": "name",
-                "type": "holds",
-                "list": "list",
-                "default": "default",
-                "optional": "optional",
-                "pattern": "pattern",
-                "admits": "admits"
+                "name": ":name",
+                "type": ":holds",
+                "list": ":list",
+                "default": ":default",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "admits": ":admits"
               }
             }
           ],
@@ -1290,9 +1290,9 @@
               "target": "transitions",
               "op": "append",
               "fields": {
-                "command": "command",
-                "from_state": "from_state",
-                "to_state": "to_state"
+                "command": ":command",
+                "from_state": ":from_state",
+                "to_state": ":to_state"
               }
             }
           ],
@@ -1343,7 +1343,7 @@
               "target": "value_objects",
               "op": "append",
               "fields": {
-                "name": "name"
+                "name": ":name"
               }
             }
           ],
@@ -1657,7 +1657,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -1683,7 +1683,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -2035,13 +2035,13 @@
               "target": "attributes",
               "op": "append",
               "fields": {
-                "name": "name",
-                "type": "type",
-                "list": "list",
-                "default": "default",
-                "optional": "optional",
-                "pattern": "pattern",
-                "admits": "admits"
+                "name": ":name",
+                "type": ":type",
+                "list": ":list",
+                "default": ":default",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "admits": ":admits"
               }
             }
           ],
@@ -2127,13 +2127,13 @@
               "target": "attributes",
               "op": "append",
               "fields": {
-                "name": "name",
-                "type": "points_at",
-                "list": "list",
-                "default": "default",
-                "optional": "optional",
-                "pattern": "pattern",
-                "admits": "admits"
+                "name": ":name",
+                "type": ":points_at",
+                "list": ":list",
+                "default": ":default",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "admits": ":admits"
               }
             }
           ],
@@ -2183,8 +2183,8 @@
               "target": "givens",
               "op": "append",
               "fields": {
-                "description": "description",
-                "canonical": "canonical"
+                "description": ":description",
+                "canonical": ":canonical"
               }
             }
           ],
@@ -2234,8 +2234,8 @@
               "target": "ensures",
               "op": "append",
               "fields": {
-                "description": "description",
-                "canonical": "canonical"
+                "description": ":description",
+                "canonical": ":canonical"
               }
             }
           ],
@@ -2312,11 +2312,11 @@
               "target": "mutations",
               "op": "append",
               "fields": {
-                "target": "target",
-                "op": "op",
-                "field": "field",
-                "kind": "kind",
-                "source": "source"
+                "target": ":target",
+                "op": ":op",
+                "field": ":field",
+                "kind": ":kind",
+                "source": ":source"
               }
             }
           ],
@@ -2395,7 +2395,7 @@
               "target": "emits",
               "op": "append",
               "fields": {
-                "name": "announces"
+                "name": ":announces"
               }
             }
           ],
@@ -2675,7 +2675,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -2719,7 +2719,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -2728,7 +2728,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             }
@@ -2884,9 +2884,9 @@
               "target": "wheres",
               "op": "append",
               "fields": {
-                "field": "field",
-                "op": "op",
-                "value": "value"
+                "field": ":field",
+                "op": ":op",
+                "value": ":value"
               }
             }
           ],
@@ -2950,10 +2950,10 @@
               "target": "options",
               "op": "append",
               "fields": {
-                "option": "option",
-                "key": "key",
-                "value": "value",
-                "at": "at"
+                "option": ":option",
+                "key": ":key",
+                "value": ":value",
+                "at": ":at"
               }
             }
           ],
@@ -3039,13 +3039,13 @@
               "target": "attributes",
               "op": "append",
               "fields": {
-                "name": "name",
-                "type": "type",
-                "list": "list",
-                "default": "default",
-                "optional": "optional",
-                "pattern": "pattern",
-                "admits": "admits"
+                "name": ":name",
+                "type": ":type",
+                "list": ":list",
+                "default": ":default",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "admits": ":admits"
               }
             }
           ],
@@ -3245,7 +3245,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -3271,7 +3271,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -3444,13 +3444,13 @@
               "target": "attributes",
               "op": "append",
               "fields": {
-                "name": "name",
-                "type": "type",
-                "list": "list",
-                "default": "default",
-                "optional": "optional",
-                "pattern": "pattern",
-                "admits": "admits"
+                "name": ":name",
+                "type": ":type",
+                "list": ":list",
+                "default": ":default",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "admits": ":admits"
               }
             }
           ],
@@ -3538,8 +3538,8 @@
               "target": "invariants",
               "op": "append",
               "fields": {
-                "description": "description",
-                "canonical": "canonical"
+                "description": ":description",
+                "canonical": ":canonical"
               }
             }
           ],
@@ -3720,7 +3720,7 @@
               "type": "Position",
               "list": false,
               "default": null,
-              "optional": true,
+              "optional": false,
               "pattern": null,
               "admits": null
             }
@@ -3770,8 +3770,8 @@
               "target": "pairs",
               "op": "append",
               "fields": {
-                "key": "key",
-                "value": "value"
+                "key": ":key",
+                "value": ":value"
               }
             }
           ],
@@ -4024,7 +4024,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -4059,7 +4059,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -4184,7 +4184,7 @@
               "target": "identified_by",
               "op": "append",
               "fields": {
-                "value": "path"
+                "value": ":path"
               }
             }
           ],
@@ -4289,13 +4289,13 @@
               "target": "attributes",
               "op": "append",
               "fields": {
-                "name": "name",
-                "type": "type",
-                "list": "list",
-                "default": "default",
-                "optional": "optional",
-                "pattern": "pattern",
-                "admits": "admits"
+                "name": ":name",
+                "type": ":type",
+                "list": ":list",
+                "default": ":default",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "admits": ":admits"
               }
             }
           ],
@@ -4395,9 +4395,9 @@
               "target": "transitions",
               "op": "append",
               "fields": {
-                "command": "command",
-                "from_state": "from_state",
-                "to_state": "to_state"
+                "command": ":command",
+                "from_state": ":from_state",
+                "to_state": ":to_state"
               }
             }
           ],
@@ -4925,7 +4925,7 @@
               "target": "states",
               "op": "append",
               "fields": {
-                "name": "name"
+                "name": ":name"
               }
             }
           ],
@@ -5355,8 +5355,8 @@
               "target": "with_spec",
               "op": "append",
               "fields": {
-                "key": "key",
-                "value": "value"
+                "key": ":key",
+                "value": ":value"
               }
             }
           ],
@@ -6851,6 +6851,20 @@
               ],
               [
                 "site",
+                "value_object_invariant"
+              ],
+              [
+                "template",
+                "{name} invariant violated — {description} (given {offered})"
+              ]
+            ],
+            [
+              [
+                "refusal",
+                "InvariantViolation"
+              ],
+              [
+                "site",
                 "admits_declared_set"
               ],
               [
@@ -6922,6 +6936,98 @@
               [
                 "name",
                 "refused"
+              ]
+            ]
+          ]
+        },
+        {
+          "name": "FieldHint",
+          "attributes": [
+            {
+              "name": "name",
+              "type": "String",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
+            },
+            {
+              "name": "pattern",
+              "type": "String",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
+            },
+            {
+              "name": "resolves_to",
+              "type": "String",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
+            }
+          ],
+          "invariants": [],
+          "closed_set": true,
+          "members": [
+            [
+              [
+                "name",
+                "email"
+              ],
+              [
+                "pattern",
+                "email"
+              ],
+              [
+                "resolves_to",
+                "html_type"
+              ]
+            ],
+            [
+              [
+                "name",
+                "url"
+              ],
+              [
+                "pattern",
+                "\\b(url|uri|website|link)\\b"
+              ],
+              [
+                "resolves_to",
+                "html_type"
+              ]
+            ],
+            [
+              [
+                "name",
+                "tel"
+              ],
+              [
+                "pattern",
+                "phone|\\btel(ephone)?\\b"
+              ],
+              [
+                "resolves_to",
+                "html_type"
+              ]
+            ],
+            [
+              [
+                "name",
+                "textarea"
+              ],
+              [
+                "pattern",
+                "\\b(text|body|note|notes|description|message|comment)\\b"
+              ],
+              [
+                "resolves_to",
+                "kind"
               ]
             ]
           ]
@@ -7768,6 +7874,32 @@
             [
               [
                 "word",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "identified_by"
+              ]
+            ],
+            [
+              [
+                "word",
                 "reference_to"
               ],
               [
@@ -8106,6 +8238,32 @@
             [
               [
                 "word",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "identified_by"
+              ]
+            ],
+            [
+              [
+                "word",
                 "command"
               ],
               [
@@ -8185,6 +8343,32 @@
               [
                 "word",
                 "attribute"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "attributes"
+              ]
+            ],
+            [
+              [
+                "word",
+                "reference_to"
               ],
               [
                 "context",
@@ -8838,6 +9022,32 @@
             [
               [
                 "word",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "attributes"
+              ]
+            ],
+            [
+              [
+                "word",
                 "where"
               ],
               [
@@ -9197,6 +9407,32 @@
               [
                 "fills",
                 "aggregate_heads"
+              ]
+            ],
+            [
+              [
+                "word",
+                "group_by"
+              ],
+              [
+                "context",
+                "ReadModel"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "group_by"
               ]
             ],
             [
@@ -9935,6 +10171,15 @@
               "optional": false,
               "pattern": null,
               "admits": "Syntax::Status"
+            },
+            {
+              "name": "variadic",
+              "type": "String",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
             }
           ],
           "invariants": [],
@@ -10243,6 +10488,96 @@
             [
               [
                 "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "identified_by"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "reference_to"
               ],
               [
@@ -10298,6 +10633,36 @@
               [
                 "fills",
                 "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "optional"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
               ]
             ],
             [
@@ -10363,6 +10728,36 @@
             [
               [
                 "keyword",
+                "has_many"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "optional"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "has_one"
               ],
               [
@@ -10423,6 +10818,36 @@
             [
               [
                 "keyword",
+                "has_one"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "optional"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "belongs_to"
               ],
               [
@@ -10478,6 +10903,36 @@
               [
                 "fills",
                 "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "belongs_to"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "optional"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
               ]
             ],
             [
@@ -10903,6 +11358,96 @@
             [
               [
                 "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "identified_by"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "identified_by"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "command"
               ],
               [
@@ -11198,6 +11743,66 @@
               [
                 "fills",
                 "admits"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
               ]
             ],
             [
@@ -12721,6 +13326,96 @@
             [
               [
                 "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Query"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "optional"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "where"
               ],
               [
@@ -13328,6 +14023,40 @@
               [
                 "fills",
                 "as"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "group_by"
+              ],
+              [
+                "context",
+                "ReadModel"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "group_by"
+              ],
+              [
+                "variadic",
+                "true"
               ]
             ],
             [
@@ -14471,6 +15200,15 @@
           "admits": null
         },
         {
+          "name": "group_by",
+          "type": "GroupByField",
+          "list": true,
+          "default": null,
+          "optional": false,
+          "pattern": null,
+          "admits": null
+        },
+        {
           "name": "position",
           "type": "Position",
           "list": false,
@@ -14603,7 +15341,7 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -14612,12 +15350,34 @@
               "type": "String",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             }
           ],
           "invariants": [],
+          "closed_set": false,
+          "members": []
+        },
+        {
+          "name": "GroupByField",
+          "attributes": [
+            {
+              "name": "field",
+              "type": "String",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
+            }
+          ],
+          "invariants": [
+            {
+              "description": "a group_by field is named",
+              "canonical": "!field.to_s.empty?"
+            }
+          ],
           "closed_set": false,
           "members": []
         },
@@ -14687,7 +15447,7 @@
               "type": "ReadModelText",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -14696,7 +15456,7 @@
               "type": "ReadModelText",
               "list": false,
               "default": null,
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "admits": null
             },
@@ -14752,26 +15512,58 @@
               "admits": null
             }
           ],
-          "givens": [
-            {
-              "description": "a read model gathers heads only after its reference",
-              "canonical": "!reference_target.value.to_s.empty?"
-            }
-          ],
+          "givens": [],
           "ensures": [],
           "mutations": [
             {
               "target": "aggregate_heads",
               "op": "append",
               "fields": {
-                "aggregate": "aggregate",
-                "as": "as",
-                "many": "many"
+                "aggregate": ":aggregate",
+                "as": ":as",
+                "many": ":many"
               }
             }
           ],
           "emits": [
             "HeadGathered"
+          ],
+          "provenance": null
+        },
+        {
+          "name": "GroupBy",
+          "role": "Language",
+          "goal": "Nest one collection's own rows by one of its own fields",
+          "references": "ReadModel",
+          "attributes": [
+            {
+              "name": "field",
+              "type": "ReadModelText",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
+            }
+          ],
+          "givens": [
+            {
+              "description": "a group_by field is named",
+              "canonical": "!field.value.to_s.empty?"
+            }
+          ],
+          "ensures": [],
+          "mutations": [
+            {
+              "target": "group_by",
+              "op": "append",
+              "fields": {
+                "field": ":field"
+              }
+            }
+          ],
+          "emits": [
+            "GroupByFieldAdded"
           ],
           "provenance": null
         },
@@ -14830,10 +15622,10 @@
               "target": "options",
               "op": "append",
               "fields": {
-                "option": "option",
-                "key": "key",
-                "value": "value",
-                "at": "at"
+                "option": ":option",
+                "key": ":key",
+                "value": ":value",
+                "at": ":at"
               }
             }
           ],
@@ -14885,6 +15677,9 @@
       "reference_name": "bluebook",
       "reference_target": "Bluebook",
       "query_name": "whole_bluebook",
+      "wheres": [],
+      "order_by": null,
+      "limit": null,
       "aggregate_heads": [
         {
           "aggregate": "Bluebook",
@@ -14946,7 +15741,8 @@
           "as": "read_models",
           "many": true
         }
-      ]
+      ],
+      "group_by": []
     }
   ],
   "policies": [],

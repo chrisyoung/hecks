@@ -318,8 +318,8 @@
               "target": "toppings",
               "op": "append",
               "fields": {
-                "name": "topping",
-                "amount": "amount"
+                "name": ":topping",
+                "amount": ":amount"
               }
             }
           ],
@@ -413,7 +413,7 @@
             {
               "field": "status",
               "op": "eq",
-              "value": "available"
+              "value": "\"available\""
             }
           ],
           "order_by": {
@@ -537,5 +537,13 @@
       "boundary": "word",
       "position": "2"
     }
-  ]
+  ],
+  "lineage": {
+    "capable_aggregates": [
+      {
+        "name": "Order",
+        "storage_name": "order"
+      }
+    ]
+  }
 }

@@ -361,6 +361,7 @@ Every domain this repository's own tests and docs draw examples from:
 
 <!-- generated:begin id=corpus -->
 - **banking** — Customers hold accounts, accounts move money, and every movement is a transfer that can fail halfway. The domain that has to get it right twice — once in the rules, once in the recovery.
+- **compliance** — Something elsewhere already acted to contain a risk; this domain tracks the human review that decides what happens next.
 - **pizzas** — Put toppings on a pizza and sell it to a customer.
 <!-- generated:end -->
 
@@ -387,6 +388,10 @@ Every domain this repository's own tests and docs draw examples from:
 | `bin/project` | Refreshes every read-model projection a domain declares, by hand — the same catch-up a boot runs lazily, forced now rather than on first ... |
 | `bin/project_cli` | Mints a command-line binary for a domain, named after its bluebook. bin/project_cli # every domain in this checkout bin/project_cli qa # ... |
 | `bin/project_deploy` | The AWS DEPLOYMENT projector — docs/decisions/0018-rehydrate-replay-lambda-host.md. Generates the SAM template and build Makefile for rus... |
+| `bin/project_field_hints` | Generates rust/host/src/field_hints.rs — the four regex hints Hecksagain::Presentation::FieldShape#text_field (lib/hecksagain/ presentati... |
+| `bin/project_kernel_capabilities` | Generates the two capability enums the hand-written Rust kernel (rust/src/kernel/attribute_shapes/*.rs, rust/src/kernel/ expression_opera... |
+| `bin/project_parser_table` | Generates rust/parser/src/keywords.rs FROM syntax.bluebook — the direct mechanism for "the parser's own grammar knowledge is DERIVED from... |
+| `bin/project_refusal_wording` | Generates rust/src/kernel/refusal_wording.rs from `Hecksagain::Runtime:: RefusalWording::TEMPLATES` (lib/hecksagain/runtime/refusal_wordi... |
 | `bin/project_rust` | Generates Rust source for one domain into rust/src/generated/ — the driver for `RustProjection` (rust/project.rb, alongside the Rust crat... |
 | `bin/project_wasm` | The WASM projector — wraps THE SAME Rust binary bin/project_rust already generates, rather than a second, WASM-specific implementation (d... |
 | `bin/project_wasm_browser` | The BROWSER wasm-bindgen projector — decision docs/decisions/0015-wasm-bindgen-browser-projection.md. Deliberately a SEPARATE binary from... |
@@ -394,6 +399,8 @@ Every domain this repository's own tests and docs draw examples from:
 | `bin/reference` | Regenerates docs/reference/ from the language's own Syntax chapter — the tables from the declaration, the prose preserved from the commit... |
 | `bin/run` | Executes a step list — commands and queries, declared as JSON — and reports instances, events, refusals, reactions, sagas, and query rows... |
 | `bin/rust_conformance` | THE DIFFERENTIAL HARNESS — docs/decisions/0010-ruby-is-the-reference-implementation.md. Ruby is the oracle a second runtime is checked ag... |
+| `bin/rust_coverage` | THE COVERAGE CHECKER — a different question than bin/rust_conformance asks, deliberately, not a replacement for it. bin/rust_conformance ... |
+| `bin/rust_kernel_coverage` | THE MECHANICAL, COMMENT-TAG-FREE HALF OF THE GUARANTEE. bin/project_kernel_capabilities generates the ENUM half — the compiler already re... |
 | `bin/scaffold_translation` | The scaffold writes translations; humans resolve ambiguity. Diffs the held era against the current bluebook and writes the edge file: con... |
 | `bin/shape` | The storage-shape projection of one bluebook file, as JSON — the exact form StorageShape.mint_hash hashes to name an era, printed so a bu... |
 | `bin/smoke_test` | BOOTS A REAL DOMAIN AND ACTUALLY DISPATCHES AGAINST IT — the sibling `bin/model_check` never had. That tool proves a bluebook is STRUCTUR... |

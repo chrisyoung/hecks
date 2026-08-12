@@ -34,21 +34,25 @@ module Hecksagain
         declared = ReferenceHop.apply(declared, args, registry: @registry, domain: domain, aggregate: aggregate)
 
         repository = @registry.repository(domain, aggregate)
-        if (native = Ports::Query.execute(repository, declared, args, context: { domain: domain, aggregate: aggregate }))
+        # `registry:` is threaded through so a `none_in_state` where-clause
+        # (Runtime::QueryInterpreter#none_in_state?'s own vendored
+        # addition) can look its target aggregate up — see
+        # Ports::Query::InMemory#none_in_state?'s own comment on why an
+        # ordinary aggregate-level Memory query needs this passed
+        # explicitly rather than closing over an instance variable.
+        if (native = Ports::Query.execute(repository, declared, args, context: { domain: domain, aggregate: aggregate, registry: @registry }))
           records = native
-          # `id:` LAST — an aggregate whose identity field is ALSO a
-          # regular declared attribute (Item's own `attribute :id,
-          # ItemId`, not just its `identified_by`) means `record.state`
-          # already carries its own `:id` key, VO-wrapped, not the
-          # clean scalar `record.id` already resolved. `{id:
-          # record.id}.merge(record.state)` let that duplicate silently
-          # win instead — the same fix `Facade::Handle#to_h` needed.
-          # `interpret`/`reference_interpret`, below, had the identical
-          # bug.
+          # `record.state.merge(id: record.id)` — id LAST, not first. See
+          # Instance#to_h's own comment: an aggregate free to declare its
+          # own attribute literally named `id` has that attribute's own
+          # wrapped value sitting in `record.state[:id]` already; merging
+          # it OVER a `{id:}.merge(state)` used to let it silently
+          # clobber the correct bare identity this row is supposed to
+          # carry.
           return records.map { |record| record.state.merge(id: record.id).freeze }.freeze
         end
 
-        interpret(repository.all, declared, args)
+        interpret(repository.all, declared, args, domain: domain)
       end
 
       # The REFERENCE answer — this interpreter's own evaluation, never an
@@ -84,11 +88,13 @@ module Hecksagain
                                                     aggregate: aggregate.hecks_name, query: query_name.inspect))
       end
 
-      def interpret(records, declared, args)
-        matched = records.select { |r| declared.wheres.all? { |w| where_holds?(w, r, args) } }
+      def interpret(records, declared, args, domain: nil)
+        matched = records.select { |r| declared.wheres.all? { |w| where_holds?(w, r, args, domain: domain) } }
         ordered = ordered(matched, declared.order_by, declared.null_semantics)
         capped  = declared.limit ? ordered.first(resolve_query_value(declared.limit.value, args).to_i) : ordered
 
+        # id LAST — see the native-path comment above; same clobbering
+        # risk for the in-memory reference interpreter's own rows.
         capped.map { |r| r.state.merge(id: r.id).freeze }.freeze
       end
 
@@ -103,6 +109,7 @@ module Hecksagain
         ordered = ordered(matched, declared.order_by, declared.null_semantics)
         capped  = declared.limit ? ordered.first(resolve_query_value(declared.limit.value, args).to_i) : ordered
 
+        # id LAST — same reasoning, same fix, as interpret's own rows.
         capped.map { |r| r.state.merge(id: r.id).freeze }.freeze
       end
 
@@ -212,11 +219,11 @@ module Hecksagain
         ) { |row| comparable(QuerySpecification::FieldPath.dig(row, field)) }
       end
 
-      def where_holds?(clause, record, args)
-        holds?(clause, QuerySpecification::FieldPath.dig(record, clause.field), args)
+      def where_holds?(clause, record, args, domain: nil)
+        holds?(clause, QuerySpecification::FieldPath.dig(record, clause.field), args, record: record, domain: domain)
       end
 
-      def holds?(clause, held, args)
+      def holds?(clause, held, args, record: nil, domain: nil)
         held = comparable(held)
         want = comparable(resolve_query_value(clause.value, args))
 
@@ -229,8 +236,43 @@ module Hecksagain
         when "gte"      then ordered?(held, want) && held >= want
         when "in"       then members(want).include?(held.to_s)
         when "contains" then contains?(held, want)
+        when "none_in_state" then none_in_state?(held, want)
         else                 held == want
         end
+      end
+
+      # Vendored addition, not (yet) upstream hecksagain (migration plan
+      # task 4) -- see comparators.rb's own comment on `none_in_state`
+      # itself. `want` is "Aggregate:state" (a literal, never resolved
+      # through `resolve_query_value`'s Symbol path -- the target names a
+      # TYPE, not an argument). `held` is THIS record's own field value,
+      # already unwrapped by `comparable` -- the point-lookup key. No
+      # `domain:` qualifier on "Aggregate" because the corpus's own usage
+      # never gives one (plan.bluebook's Story reaching Conductor's Claim)
+      # -- searched by bare name across every loaded domain, the same
+      # single free-text lookup `HecksagainRuntime.state` already does for
+      # a caller-supplied aggregate FQN. Ambiguous (two domains declaring
+      # the same aggregate name) is a real, theoretical gap -- picks the
+      # first match rather than refusing, since a where-clause never
+      # raises (see `ordered?`'s own comment on the same contract).
+      def none_in_state?(held, want)
+        aggregate_name, state = want.to_s.split(":", 2)
+        target = find_aggregate_by_name(aggregate_name)
+        return true unless target
+
+        target_domain, target_ir = target
+        record = @registry.repository(target_domain, target_ir).find(held)
+        return true unless record
+
+        comparable(record.state[:state]) != state
+      end
+
+      def find_aggregate_by_name(name)
+        @registry.bluebooks.each do |domain, bluebook|
+          aggregate = bluebook.aggregates.find { |a| a.hecks_name == name }
+          return [domain, aggregate] if aggregate
+        end
+        nil
       end
 
       # gt/gte/lt/lte are numeric-only and silently false otherwise — a

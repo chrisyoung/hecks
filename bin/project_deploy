@@ -122,6 +122,115 @@ rescue *Hecksagain::Runtime::DOMAIN_REFUSALS => e
   abort "#{world_file}'s deployed_to(\"AwsLambda\") is invalid: #{e.message}"
 end
 
+# CROSS-DOMAIN LAMBDA-INVOKE TARGETS — a SEPARATE registry from `world`'s
+# own above (that one only ever loads the bare `.world` file; a policy's
+# own `across:` lives in the BLUEBOOK, which `.world` alone never pulls
+# in). Real, not aspirational: rust/host's own `lambda_client.rs`
+# (`AwsLambdaInvoker`) is the one piece of this whole cross-domain path
+# that needs live IAM to work at all, and until now nothing in this
+# generator ever granted the deploying Lambda's own execution role
+# `lambda:InvokeFunction` on ANYTHING — found live, standing up a real
+# second domain (Compliance) specifically to prove cross-domain delivery
+# end to end, the same way `WebFunctionRole`'s own missing
+# `LambdaInvokePolicy` (above) was found and fixed. Declared, not
+# deployed — the target's own Lambda need not exist yet for this grant
+# to be valid AWS policy (an ARN naming a function that doesn't exist
+# yet just means the call fails with ResourceNotFoundException instead
+# of AccessDeniedException until the target is deployed for real).
+cross_domain_registry = Hecksagain::Runtime::Registry.new
+Hecksagain.with_registry(cross_domain_registry) do
+  Kernel.load(File.expand_path("../lib/hecksagain/ports/persistence.port", __dir__))
+  Kernel.load(File.expand_path("../lib/hecksagain/ports/extraction.port", __dir__))
+  Kernel.load(File.expand_path("../lib/hecksagain/adapters/driven/memory.adapter", __dir__))
+  Kernel.load(File.expand_path("../lib/hecksagain/adapters/driven/prism.adapter", __dir__))
+  Kernel.load(File.join(domain, "bluebook", "#{domain_name}.bluebook"))
+  hecksagon_file = File.join(domain, "bluebook", "#{domain_name}.hecksagon")
+  Kernel.load(hecksagon_file) if File.exist?(hecksagon_file)
+end
+
+# Every policy in every loaded chapter, not just the target domain's
+# OWN top-level list — `uses_framework` (Compliance's own header:
+# "genuinely supports either mode") could in principle attach a chapter
+# that itself declares a cross-domain policy, and a policy nested inside
+# `aggregate "X" do ... end` is exactly as real a cross-domain trigger as
+# one declared at the bluebook's own top level (docs/guides/policies-
+# and-process-managers.md: "A policy does not care where it was
+# written"). `to_h`'s own `policies` already flattens aggregate-scoped
+# and top-level policies into one list per bluebook — read the same way
+# `rust/project/reactions.rb`'s `emit_cross_domain_policy_table` does.
+cross_domain_lambda_targets = cross_domain_registry.bluebooks.flat_map { |chapter_name, bluebook|
+  bluebook.policies.select(&:target_domain).map(&:target_domain)
+}.uniq.sort
+
+# THE ACTUAL YAML — built as one plain string here, not inline inside
+# the big template heredoc below, so the doc comment explaining it can
+# use ordinary `#{...}` Ruby interpolation without a second layer of
+# escaping fighting the template's own. Empty string (contributes
+# nothing) for the common case, a domain with no cross-domain policies
+# at all.
+# EVERY LINE HAND-INDENTED TO ITS OWN FINAL COLUMN, not built through
+# `<<~`'s squiggly-heredoc dedent + a second blanket-prefix pass —
+# stacking those two independently-computed indentation adjustments is
+# exactly what produced a real, caught-by-hand bug the first time this
+# was written (the `Resource:` list landing 8 columns deeper than every
+# sibling key, from the dedent's own remainder ADDING to the blanket
+# prefix instead of being replaced by it). One explicit column per line
+# is more to type, never ambiguous about what it renders as.
+# A FUNCTION OF THE MARKER'S OWN ACTUAL INDENTATION, not a hardcoded
+# column count — found live: the enclosing `<<~YAML` heredoc (below)
+# dedents by ITS OWN computed minimum across every line, which shifts
+# whenever the surrounding template's own baseline indentation shifts
+# (6, here — NOT the 8 a naive reading of this block's own source
+# indentation would suggest); hardcoding a column guess drifts out of
+# sync with that the next time anything upstream in the same heredoc
+# changes its own minimum. `base` is whatever whitespace the "# TMPL:
+# cross_domain_lambda_policies" marker line actually rendered at,
+# captured by regex AFTER the heredoc renders (below) — every line here
+# is built relative to it.
+def cross_domain_lambda_policies_yaml(targets, base)
+  return "" if targets.empty?
+
+  comment = [
+    "LEAST-PRIVILEGE, one ARN per declared `across:` target — the SAME",
+    "`LambdaInvokePolicy`-shaped grant WebFunctionRole's own Policies",
+    "section (below) exists for, extended to a target this stack does",
+    "not own (so no `!Ref FunctionName` to reach for — the target's",
+    "own function name is `lambda_client.rs`'s own computed",
+    '"hecksagain-#{domain}" convention, read directly, matching every',
+    "OTHER function-name computation in this whole project). Declared,",
+    "not deployed: an ARN naming a function that does not exist YET is",
+    "still valid IAM policy — the call simply fails with",
+    "ResourceNotFoundException instead of AccessDeniedException until",
+    "the target domain is deployed for real. Without this grant, EVERY",
+    "cross-domain policy match this domain ever fires refuses with a",
+    "hard invoke fault (AccessDeniedException) regardless of what the",
+    "target itself would have answered — found live, standing up a",
+    "real second domain (examples/compliance) specifically to prove",
+    "cross-domain delivery end to end for the first time; nothing",
+    "before this ever granted this domain's own Lambda role permission",
+    "to invoke ANY other function at all. Targets: #{targets.join(', ')}.",
+  ].map { |line| "#{base}# #{line}" }.join("\n")
+
+  resources = targets.map { |target|
+    "#{base}          - !Sub \"arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:hecksagain-#{target.downcase}\""
+  }.join("\n")
+
+  # Ends with exactly one trailing newline (`+ "\n"`, not a heredoc's
+  # own default) — `String#sub` (below) replaces the marker line WHOLE,
+  # including its own single trailing "\n", so this needs to supply the
+  # identical one back for "VpcConfig:" to still start its own fresh
+  # line right after.
+  [
+    comment,
+    "#{base}Policies:",
+    "#{base}  - Statement:",
+    "#{base}      - Effect: Allow",
+    "#{base}        Action: lambda:InvokeFunction",
+    "#{base}        Resource:",
+    resources,
+  ].join("\n") + "\n"
+end
+
 region   = target.state[:region].value
 memory   = target.state[:memory].value
 timeout  = target.state[:timeout].value
@@ -346,7 +455,7 @@ BASTION_PARAMETERS.each do |param|
     raise "bin/project_deploy: bastion parameter #{param[:name]} references undeclared stack output #{param[:from_output]}"
 end
 
-File.write(File.join(out_dir, "template.yaml"), <<~YAML)
+template_yaml = <<~YAML
   # GENERATED by bin/project_deploy #{domain} — re-run it to refresh
   # this file rather than hand-editing. Source: #{world_file}'s own
   # deployed_to("AwsLambda") block.
@@ -817,7 +926,15 @@ File.write(File.join(out_dir, "template.yaml"), <<~YAML)
                 "            - DbPass: !Sub \"{{resolve:secretsmanager:${#{secret_sub}}:SecretString:password}}\"\n" \
                 "              DbHost: !GetAtt #{db_ref_id}.Endpoint.Address"
               end}
-            HECKS_WASM_PATH: !Sub "/var/task/#{infra_name}.wasm"
+            # `domain_name`, NOT `infra_name` — this names the actual
+            # .wasm FILE bin/project_wasm writes (rust/dist/#{domain_name}.wasm,
+            # its own target_mod_name convention, a Rust-build-pipeline
+            # concern unrelated to AWS resource identity) and what the
+            # Makefile below actually bundles into the Lambda package
+            # under. Confirmed the hard way: pinning this to infra_name
+            # alongside the real AWS-identity fields left it looking for
+            # a file bin/project_wasm never produces.
+            HECKS_WASM_PATH: !Sub "/var/task/#{domain_name}.wasm"
             # STATIC, not a deploy-time parameter — HECKS_DOMAIN is this
             # domain's own declared name, known at generation time the
             # same way DBName/HECKS_WASM_PATH already are. HECKS_ERA is
@@ -830,7 +947,7 @@ File.write(File.join(out_dir, "template.yaml"), <<~YAML)
             # triggers that first boot; a LATER real schema evolution
             # (era 2+) is a separate, later re-generation, not this one.
             HECKS_DOMAIN: #{declared_domain_name}
-            HECKS_ERA: "1"#{hecks_schema ? %(\n          HECKS_SCHEMA: #{hecks_schema}) : ""}#{rust_web ? %(\n          HECKS_IR_PATH: !Sub "/var/task/#{infra_name}.ir.json") : ""}#{rust_web && google_oauth_present ? <<~RUSTOAUTH.each_line.with_index.map { |l, i| i.zero? ? "\n          " + l : "          " + l }.join.rstrip : ""}
+            HECKS_ERA: "1"#{hecks_schema ? %(\n          HECKS_SCHEMA: #{hecks_schema}) : ""}#{rust_web ? %(\n          HECKS_IR_PATH: !Sub "/var/task/#{domain_name}.ir.json") : ""}#{rust_web && google_oauth_present ? <<~RUSTOAUTH.each_line.with_index.map { |l, i| i.zero? ? "\n          " + l : "          " + l }.join.rstrip : ""}
             # By NAME, not `!Ref` -- same dynamic-reference pattern
             # DATABASE_URL/SESSION_SECRET already use: `make
             # sync-google-oauth` owns #{stack_name}-web-google-oauth's
@@ -842,6 +959,7 @@ File.write(File.join(out_dir, "template.yaml"), <<~YAML)
             GOOGLE_REDIRECT_URI: !Sub "${WebRedirectBaseUrl}/auth/google/callback"
             SESSION_SECRET: !Sub "{{resolve:secretsmanager:${#{logical_id}SessionSecret}:SecretString:session_secret}}"
             RUSTOAUTH
+        # TMPL:cross_domain_lambda_policies
         VpcConfig:
           #{if shared
               "SubnetIds: [!Ref OwningSubnetAId, !Ref OwningSubnetBId]\n        SecurityGroupIds: [!Ref OwningSecurityGroupId]"
@@ -1068,6 +1186,23 @@ File.write(File.join(out_dir, "template.yaml"), <<~YAML)
     # subnet instead.)
     #{STACK_OUTPUTS.map { |o| "#{o[:key]}:\n    Value: #{o[:ref]}" }.join("\n  ")}
 YAML
+
+# SPLICED IN AFTER THE HEREDOC RENDERS, not interpolated inside it —
+# found live, the hard way: `<<~`'s own dedent strips whatever the
+# SHALLOWEST leading-whitespace line in the RAW SOURCE TEXT has, computed
+# BEFORE any `#{...}` interpolation runs. `cross_domain_lambda_policies`
+# is "" for the overwhelmingly common case (no cross-domain policies at
+# all), and a `#{...}` marker written at column 0 in the source (so it
+# renders flush when empty) is ITSELF a zero-indent line by that same
+# raw-text measure — dragging the whole heredoc's computed dedent down to
+# zero and leaving EVERY OTHER line's original leading whitespace
+# un-stripped, a real, generated-then-caught-by-spec bug (`bin/
+# project_deploy`'s own contract spec: "Outputs only declares []" — not
+# actually empty, just re-indented into structural nonsense by this).
+# A plain, unconditional `String#sub` after the fact has no such
+# interaction with the text it's replacing INTO.
+template_yaml = template_yaml.sub(/^([ \t]*)# TMPL:cross_domain_lambda_policies\n/) { cross_domain_lambda_policies_yaml(cross_domain_lambda_targets, $1) }
+File.write(File.join(out_dir, "template.yaml"), template_yaml)
 
 # THE EPHEMERAL ERA-MINTING BASTION — a SEPARATE, sibling stack
 # (`#{stack_name}-bastion`), never merged into template.yaml itself.
@@ -1317,6 +1452,19 @@ mint_era_recipe =
     # file's own adapter choice entirely, the same targeted pattern
     # spec/adapters/driven/postgres/lineage_spec.rb's own `check!` helper
     # already uses.
+    #
+    # THE WHOLE TUNNEL IS RESTARTED PER ATTEMPT, not just the boot
+    # check retried through one long-lived tunnel — confirmed live,
+    # the hard way: an SSM port-forwarding session can start and then
+    # exit again within the first few seconds (visible in its own log
+    # as a session ID that both starts AND exits before the retries
+    # even finish), not merely "slow to become ready". Retrying a
+    # Postgres connection five times against a tunnel process that has
+    # already died is retrying against a corpse — it fails identically
+    # every time, for a different reason than the one the retry was
+    # built for. Each attempt below kills whatever tunnel the LAST
+    # attempt opened (a no-op the first time) and opens a fresh one,
+    # so a dead session gets a real replacement, not just more patience.
     \t@INSTANCE_ID=$$(aws cloudformation describe-stacks --stack-name $(BASTION_STACK) --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text); \\
     \techo "Waiting for $$INSTANCE_ID to register with SSM..."; \\
     \tfor i in $$(seq 1 30); do \\
@@ -1324,19 +1472,25 @@ mint_era_recipe =
     \t\tif [ "$$STATUS" = "Online" ]; then break; fi; \\
     \t\tsleep 5; \\
     \tdone; \\
-    \techo "Opening an SSM tunnel to $(DB_HOST):5432 and minting era 1..."; \\
-    \taws ssm start-session --target $$INSTANCE_ID \\
-    \t\t--document-name AWS-StartPortForwardingSessionToRemoteHost \\
-    \t\t--parameters "{\\"host\\":[\\"$(DB_HOST)\\"],\\"portNumber\\":[\\"5432\\"],\\"localPortNumber\\":[\\"15432\\"]}" \\
-    \t\t>/tmp/$(BASTION_STACK)-tunnel.log 2>&1 & \\
-    \tTUNNEL_PID=$$!; \\
-    \tfor i in $$(seq 1 30); do \\
-    \t\tnc -z localhost 15432 2>/dev/null && break; \\
-    \t\tsleep 1; \\
-    \tdone; \\
     \tDB_PASS=$$(aws secretsmanager get-secret-value --secret-id $(DB_SECRET_ARN) --query SecretString --output text | ruby -rjson -e 'print JSON.parse(STDIN.read)["password"]'); \\
-    \tcd $(ROOT) && DATABASE_URL="postgres://postgres:$$DB_PASS@localhost:15432/#{infra_name}" ruby -Ilib -e 'require "hecksagain"; require "hecksagain/presentation"; loading = Hecksagain::Ports::Loading.bootstrap; directory = loading.bluebook_directory(ARGV[0]); root = loading.shared_root(nil, directory); registry = Hecksagain::Runtime::Registry.new(root: File.dirname(directory)); Hecksagain.with_registry(registry) { loading.load_library; loading.load_project(root); loading.load_domain(directory) }; bluebook = registry.bluebooks.values.first; current_text = Hecksagain::Runtime::EraCheck.source_text_for(bluebook, directory); Hecksagain::Adapters::Postgres::LineageManager.check!(registry: registry, bluebook: bluebook, current_text: current_text, settings: { database: ENV["DATABASE_URL"]#{hecks_schema ? ", schema: #{hecks_schema.inspect}" : ""} }); puts "booted OK — era resolution ran"' $(DOMAIN); \\
-    \tBOOT_STATUS=$$?; \\
+    \tBOOT_STATUS=1; \\
+    \tfor attempt in 1 2 3 4 5; do \\
+    \t\tkill $$TUNNEL_PID 2>/dev/null; \\
+    \t\techo "Opening an SSM tunnel to $(DB_HOST):5432 and minting era 1 (attempt $$attempt/5)..."; \\
+    \t\taws ssm start-session --target $$INSTANCE_ID \\
+    \t\t\t--document-name AWS-StartPortForwardingSessionToRemoteHost \\
+    \t\t\t--parameters "{\\"host\\":[\\"$(DB_HOST)\\"],\\"portNumber\\":[\\"5432\\"],\\"localPortNumber\\":[\\"15432\\"]}" \\
+    \t\t\t>/tmp/$(BASTION_STACK)-tunnel-$$attempt.log 2>&1 & \\
+    \t\tTUNNEL_PID=$$!; \\
+    \t\tfor i in $$(seq 1 15); do \\
+    \t\t\tnc -z localhost 15432 2>/dev/null && break; \\
+    \t\t\tsleep 1; \\
+    \t\tdone; \\
+    \t\tcd $(ROOT) && DATABASE_URL="postgres://postgres:$$DB_PASS@localhost:15432/#{infra_name}" ruby -Ilib -e 'require "hecksagain"; require "hecksagain/presentation"; loading = Hecksagain::Ports::Loading.bootstrap; directory = loading.bluebook_directory(ARGV[0]); root = loading.shared_root(nil, directory); registry = Hecksagain::Runtime::Registry.new(root: File.dirname(directory)); Hecksagain.with_registry(registry) { loading.load_library; loading.load_project(root); loading.load_domain(directory) }; bluebook = registry.bluebooks.values.first; current_text = Hecksagain::Runtime::EraCheck.source_text_for(bluebook, directory); Hecksagain::Adapters::Postgres::LineageManager.check!(registry: registry, bluebook: bluebook, current_text: current_text, settings: { database: ENV["DATABASE_URL"]#{hecks_schema ? ", schema: #{hecks_schema.inspect}" : ""} }); puts "booted OK — era resolution ran"' $(DOMAIN) && { BOOT_STATUS=0; break; }; \\
+    \t\tBOOT_STATUS=$$?; \\
+    \t\techo "boot check attempt $$attempt/5 failed (exit $$BOOT_STATUS) -- restarting the tunnel and retrying in 3s..."; \\
+    \t\tsleep 3; \\
+    \tdone; \\
     \tkill $$TUNNEL_PID 2>/dev/null; \\
     \techo "Tearing down the temporary bastion stack..."; \\
     \taws cloudformation delete-stack --stack-name $(BASTION_STACK); \\
@@ -1345,6 +1499,91 @@ mint_era_recipe =
     \texit $$BOOT_STATUS
     OWNMINT
   end
+
+# `scaffold-translation`/`translation-audit` — the two-step fix
+# minter.rb's own refusal names ("run bin/scaffold_translation to write
+# the edge, check it with bin/translation_audit, then boot again") when
+# a deploy's own pre-flight boot check refuses a shape change with no
+# translation edge covering it. Same bastion/tunnel/retry/teardown
+# chain mint_era_recipe already uses — only the one thing done over the
+# tunnel differs: these run the scaffold/audit SCRIPTS (hecksagain's
+# own bin/, not a Ruby -e one-liner) instead of a boot check, since
+# both scripts already do their own registry-loading internally.
+# HECKS_SCHEMA is exported because neither script takes a settings
+# override the way mint_era_recipe's inline `LineageManager.check!`
+# call does — they resolve their own DB connection purely off the
+# domain's `.world` file, which reads that same env var.
+# `cwd:`/`run_prefix:` — every existing caller runs a hecksagain-owned
+# script from hecksagain's own $(ROOT) with `-Ilib` (source, not the
+# installed gem); `migrate_console_settings_recipe` below is the one
+# exception, an APP-owned script that needs the app's own Gemfile
+# context instead — `cd $(DOMAIN) && bundle exec ruby`, not `-Ilib`.
+translation_recipe = lambda do |verb, script, extra_args = "", cwd: "$(ROOT)", run_prefix: "ruby -Ilib"|
+  if shared
+    <<~SHAREDTRANSLATION.rstrip
+    \t@echo "#{verb} isn't automated yet for a Shared-mode domain (database \\"Shared\\") -- see mint-era's own comment in the generated Makefile for the manual path through #{owner_domain_name}'s own tunnel."; \\
+    \texit 1
+    SHAREDTRANSLATION
+  else
+    <<~OWNTRANSLATION.rstrip
+    \t@echo "Looking up $(STACK)'s VPC/security group..."
+    \t#{STACK_OUTPUTS.map { |o| %($(eval #{o[:var]} := $(shell aws cloudformation describe-stacks --stack-name $(STACK) --query "Stacks[0].Outputs[?OutputKey=='#{o[:key]}'].OutputValue" --output text))) }.join("\n\t")}
+    \t@echo "Deploying the temporary bastion stack $(BASTION_STACK)..."
+    \taws cloudformation deploy --template-file bastion.yaml --stack-name $(BASTION_STACK) \\
+    \t\t--parameter-overrides #{BASTION_PARAMETERS.map { |p| "#{p[:name]}=$(#{STACK_OUTPUTS.find { |o| o[:key] == p[:from_output] }[:var]})" }.join(" ")} \\
+    \t\t--capabilities CAPABILITY_IAM
+    \t@INSTANCE_ID=$$(aws cloudformation describe-stacks --stack-name $(BASTION_STACK) --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text); \\
+    \techo "Waiting for $$INSTANCE_ID to register with SSM..."; \\
+    \tfor i in $$(seq 1 30); do \\
+    \t\tSTATUS=$$(aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$$INSTANCE_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null); \\
+    \t\tif [ "$$STATUS" = "Online" ]; then break; fi; \\
+    \t\tsleep 5; \\
+    \tdone; \\
+    \tDB_PASS=$$(aws secretsmanager get-secret-value --secret-id $(DB_SECRET_ARN) --query SecretString --output text | ruby -rjson -e 'print JSON.parse(STDIN.read)["password"]'); \\
+    \tRUN_STATUS=1; \\
+    \tfor attempt in 1 2 3 4 5; do \\
+    \t\tkill $$TUNNEL_PID 2>/dev/null; \\
+    \t\techo "Opening an SSM tunnel to $(DB_HOST):5432 and running #{verb} (attempt $$attempt/5)..."; \\
+    \t\taws ssm start-session --target $$INSTANCE_ID \\
+    \t\t\t--document-name AWS-StartPortForwardingSessionToRemoteHost \\
+    \t\t\t--parameters "{\\"host\\":[\\"$(DB_HOST)\\"],\\"portNumber\\":[\\"5432\\"],\\"localPortNumber\\":[\\"15432\\"]}" \\
+    \t\t\t>/tmp/$(BASTION_STACK)-tunnel-$$attempt.log 2>&1 & \\
+    \t\tTUNNEL_PID=$$!; \\
+    \t\tfor i in $$(seq 1 15); do \\
+    \t\t\tnc -z localhost 15432 2>/dev/null && break; \\
+    \t\t\tsleep 1; \\
+    \t\tdone; \\
+    \t\tcd #{cwd} && DATABASE_URL="postgres://postgres:$$DB_PASS@localhost:15432/#{infra_name}" HECKS_SCHEMA="#{hecks_schema}" #{run_prefix} #{script} #{cwd == "$(ROOT)" ? "$(DOMAIN) " : ""}#{extra_args}&& { RUN_STATUS=0; break; }; \\
+    \t\tRUN_STATUS=$$?; \\
+    \t\techo "#{verb} attempt $$attempt/5 failed (exit $$RUN_STATUS) -- restarting the tunnel and retrying in 3s..."; \\
+    \t\tsleep 3; \\
+    \tdone; \\
+    \tkill $$TUNNEL_PID 2>/dev/null; \\
+    \techo "Tearing down the temporary bastion stack..."; \\
+    \taws cloudformation delete-stack --stack-name $(BASTION_STACK); \\
+    \taws cloudformation wait stack-delete-complete --stack-name $(BASTION_STACK); \\
+    \techo "$(BASTION_STACK) deleted."; \\
+    \texit $$RUN_STATUS
+    OWNTRANSLATION
+  end
+end
+
+scaffold_translation_recipe = translation_recipe.call("scaffold-translation", "bin/scaffold_translation")
+translation_audit_recipe = translation_recipe.call("translation-audit", "bin/translation_audit")
+
+# `make migrate-console-settings` — the SAME bastion/tunnel/retry/
+# teardown chain as scaffold-translation/translation-audit, running an
+# APP-owned one-time migration script instead of one of hecksagain's
+# own bin/ tools (see translation_recipe's own `cwd:`/`run_prefix:`
+# comment). Only meaningful for a domain that actually has one — most
+# domains don't, so this target is generated unconditionally but simply
+# has nothing to run for them; harmless (`bundle exec ruby` on a
+# missing file just fails loudly, same as any other missing script
+# would).
+migrate_console_settings_recipe = translation_recipe.call(
+  "migrate-console-settings", "bin/migrate_console_settings", "",
+  cwd: "$(DOMAIN)", run_prefix: "bundle exec ruby"
+)
 
 # `rename-schema`'s own recipe body — same top-level-variable-not-inlined
 # reasoning as `mint_era_recipe` just above (recipe lines need a literal
@@ -1377,6 +1616,18 @@ rename_schema_recipe =
     SHAREDRENAME
   else
     <<~OWNRENAME.rstrip
+    # THE WHOLE TUNNEL IS RESTARTED PER ATTEMPT, not just probed once
+    # through a single long-lived session — confirmed live, the hard
+    # way: an SSM port-forwarding session can start and then exit
+    # again within seconds, not merely "slow to become ready". Probing
+    # the same dead tunnel five times fails identically every time,
+    # for a different reason than the retry was built for. Without
+    # this restart, a still-dead tunnel also doesn't just fail loudly
+    # — `EXISTS_OLD`/`EXISTS_NEW` would both come back empty, which the
+    # branch below reads as "neither schema exists" and reports as if
+    # that were the real answer, not a connectivity failure wearing
+    # its name — which is exactly why `TUNNEL_READY` gates that branch
+    # explicitly rather than trusting empty results at face value.
     \t@[ -n "$(OLD)" ] && [ -n "$(NEW)" ] || { echo "usage: make rename-schema OLD=<old-schema> NEW=<new-schema>"; exit 1; }
     \t@echo "Looking up $(STACK)'s VPC/security group..."
     \t#{STACK_OUTPUTS.map { |o| %($(eval #{o[:var]} := $(shell aws cloudformation describe-stacks --stack-name $(STACK) --query "Stacks[0].Outputs[?OutputKey=='#{o[:key]}'].OutputValue" --output text))) }.join("\n\t")}
@@ -1391,20 +1642,30 @@ rename_schema_recipe =
     \t\tif [ "$$STATUS" = "Online" ]; then break; fi; \\
     \t\tsleep 5; \\
     \tdone; \\
-    \techo "Opening an SSM tunnel to $(DB_HOST):5432..."; \\
-    \taws ssm start-session --target $$INSTANCE_ID \\
-    \t\t--document-name AWS-StartPortForwardingSessionToRemoteHost \\
-    \t\t--parameters "{\\"host\\":[\\"$(DB_HOST)\\"],\\"portNumber\\":[\\"5432\\"],\\"localPortNumber\\":[\\"15432\\"]}" \\
-    \t\t>/tmp/$(BASTION_STACK)-tunnel.log 2>&1 & \\
-    \tTUNNEL_PID=$$!; \\
-    \tfor i in $$(seq 1 30); do \\
-    \t\tnc -z localhost 15432 2>/dev/null && break; \\
-    \t\tsleep 1; \\
-    \tdone; \\
     \tDB_PASS=$$(aws secretsmanager get-secret-value --secret-id $(DB_SECRET_ARN) --query SecretString --output text | ruby -rjson -e 'print JSON.parse(STDIN.read)["password"]'); \\
+    \tTUNNEL_READY=1; \\
+    \tfor attempt in 1 2 3 4 5; do \\
+    \t\tkill $$TUNNEL_PID 2>/dev/null; \\
+    \t\techo "Opening an SSM tunnel to $(DB_HOST):5432 (attempt $$attempt/5)..."; \\
+    \t\taws ssm start-session --target $$INSTANCE_ID \\
+    \t\t\t--document-name AWS-StartPortForwardingSessionToRemoteHost \\
+    \t\t\t--parameters "{\\"host\\":[\\"$(DB_HOST)\\"],\\"portNumber\\":[\\"5432\\"],\\"localPortNumber\\":[\\"15432\\"]}" \\
+    \t\t\t>/tmp/$(BASTION_STACK)-tunnel-$$attempt.log 2>&1 & \\
+    \t\tTUNNEL_PID=$$!; \\
+    \t\tfor i in $$(seq 1 15); do \\
+    \t\t\tnc -z localhost 15432 2>/dev/null && break; \\
+    \t\t\tsleep 1; \\
+    \t\tdone; \\
+    \t\tPGPASSWORD=$$DB_PASS psql -h localhost -p 15432 -U postgres -d #{infra_name} -tAc "SELECT 1" >/dev/null 2>&1 && { TUNNEL_READY=0; break; }; \\
+    \t\techo "tunnel not carrying real traffic yet (attempt $$attempt/5) -- restarting the tunnel and retrying in 3s..."; \\
+    \t\tsleep 3; \\
+    \tdone; \\
     \tEXISTS_OLD=$$(PGPASSWORD=$$DB_PASS psql -h localhost -p 15432 -U postgres -d #{infra_name} -tAc "SELECT 1 FROM pg_namespace WHERE nspname = '$(OLD)'"); \\
     \tEXISTS_NEW=$$(PGPASSWORD=$$DB_PASS psql -h localhost -p 15432 -U postgres -d #{infra_name} -tAc "SELECT 1 FROM pg_namespace WHERE nspname = '$(NEW)'"); \\
-    \tif [ "$$EXISTS_NEW" = "1" ]; then \\
+    \tif [ "$$TUNNEL_READY" != "0" ]; then \\
+    \t\techo "tunnel never carried a real connection -- aborting without touching either schema"; \\
+    \t\tBOOT_STATUS=1; \\
+    \telif [ "$$EXISTS_NEW" = "1" ]; then \\
     \t\techo "schema $(NEW) already exists -- already renamed, no-op"; \\
     \t\tBOOT_STATUS=0; \\
     \telif [ "$$EXISTS_OLD" = "1" ]; then \\
@@ -1436,7 +1697,10 @@ File.write(File.join(out_dir, "Makefile"), <<~MAKE)
   # `brew install cargo-lambda`.
 
   HOST_DIR := #{File.join(root, "rust", "host")}
-  WASM     := #{File.join(root, "rust", "dist", "#{infra_name}.wasm")}
+  # `domain_name`, matching bin/project_wasm's own target_mod_name
+  # (a Rust-build-pipeline naming convention, not AWS resource
+  # identity — see HECKS_WASM_PATH's own comment above).
+  WASM     := #{File.join(root, "rust", "dist", "#{domain_name}.wasm")}
 
   build-#{logical_id}:
   \t@command -v cargo-lambda >/dev/null 2>&1 || { \\
@@ -1462,7 +1726,7 @@ File.write(File.join(out_dir, "Makefile"), <<~MAKE)
   # `rustup target list --installed` reports it present.
   \tcd $(HOST_DIR) && rustup run stable cargo lambda build --release --arm64
   \tcp $(HOST_DIR)/target/lambda/bootstrap/bootstrap $(ARTIFACTS_DIR)/bootstrap
-  \tcp $(WASM) $(ARTIFACTS_DIR)/#{infra_name}.wasm#{rust_web ? %(\n\tcp #{File.join(root, "rust", "dist", "#{infra_name}.ir.json")} $(ARTIFACTS_DIR)/#{infra_name}.ir.json) : ""}
+  \tcp $(WASM) $(ARTIFACTS_DIR)/#{domain_name}.wasm#{rust_web ? %(\n\tcp #{File.join(root, "rust", "dist", "#{domain_name}.ir.json")} $(ARTIFACTS_DIR)/#{domain_name}.ir.json) : ""}
 
   # `sam build <resource>` WIPES .aws-sam/build/ entirely before
   # building just the one resource named -- confirmed live: building
@@ -1486,7 +1750,7 @@ File.write(File.join(out_dir, "Makefile"), <<~MAKE)
   restore-#{logical_id}-build:
   \t@mkdir -p .aws-sam/build/#{logical_id}
   \tcp $(HOST_DIR)/target/lambda/bootstrap/bootstrap .aws-sam/build/#{logical_id}/bootstrap
-  \tcp $(WASM) .aws-sam/build/#{logical_id}/#{infra_name}.wasm#{rust_web ? %(\n\tcp #{File.join(root, "rust", "dist", "#{infra_name}.ir.json")} .aws-sam/build/#{logical_id}/#{infra_name}.ir.json) : ""}
+  \tcp $(WASM) .aws-sam/build/#{logical_id}/#{domain_name}.wasm#{rust_web ? %(\n\tcp #{File.join(root, "rust", "dist", "#{domain_name}.ir.json")} .aws-sam/build/#{logical_id}/#{domain_name}.ir.json) : ""}
   \truby -e 'lines = File.readlines(".aws-sam/build/template.yaml"); start = lines.index { |l| l.strip == "#{logical_id}:" } or raise "restore-#{logical_id}-build: #{logical_id} resource not found in built template"; idx = (start+1...lines.length).find { |i| lines[i] =~ /CodeUri:/ } or raise "restore-#{logical_id}-build: no CodeUri line found under #{logical_id}"; lines[idx] = lines[idx].sub(/CodeUri:.*/, "CodeUri: #{logical_id}"); File.write(".aws-sam/build/template.yaml", lines.join)'
 
   # `make mint-era` — takes #{stack_name}'s RDS instance from freshly
@@ -1506,6 +1770,38 @@ File.write(File.join(out_dir, "Makefile"), <<~MAKE)
 
   mint-era:
   #{mint_era_recipe}
+
+  # `make scaffold-translation` — run this when a deploy's own
+  # pre-flight boot check (or `make mint-era` directly) refuses with
+  # "the shape changed (era N) and no translation edge covers it".
+  # Diffs the held era against the current bluebook over the same
+  # bastion tunnel mint-era uses and WRITES a translations/*.bluebook
+  # edge file into this domain's own repo — confident rules inline,
+  # genuine ambiguities as `unresolved` lines a human has to resolve by
+  # hand (a rename, a drop, a compute — never guessed). Review the
+  # written file, then `make translation-audit`.
+  scaffold-translation:
+  #{scaffold_translation_recipe}
+
+  # `make translation-audit` — verifies a written (or still-pending)
+  # translation edge over the same tunnel: every translated state
+  # against the new era's own types/invariants/lifecycle, the compiled
+  # SQL against the port's own reference transform, and a before/after
+  # sample of real records printed for human review. Re-run
+  # `make deploy` (or `make mint-era`) once this passes — that's what
+  # actually applies the edge; this only checks it.
+  translation-audit:
+  #{translation_audit_recipe}
+
+  # `make migrate-console-settings` — runs this domain's own
+  # bin/migrate_console_settings (if it has one) over the same bastion
+  # tunnel every other Postgres-touching target here uses, against the
+  # real deployed database instead of local dev. A one-time data
+  # migration, not a repeatable ops procedure like mint-era/scaffold-
+  # translation — generated the same way regardless, per this
+  # project's own standing rule against hand-run ops steps.
+  migrate-console-settings:
+  #{migrate_console_settings_recipe}
 
   # `make rename-schema OLD=<old> NEW=<new>` — a native `ALTER SCHEMA
   # ... RENAME TO ...` over the same bastion tunnel mint-era uses,

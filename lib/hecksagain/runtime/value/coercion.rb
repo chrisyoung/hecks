@@ -11,6 +11,28 @@ module Hecksagain
       # typed Value. Extended into Value, so every method here reads as
       # `Value.for`, `Value.build`, … — `self` is the Value class.
       module Coercion
+        # THE FOUR SHAPES AN ATTRIBUTE'S VALUE CAN TAKE — named here because
+        # `for_attribute` immediately below is the one place that actually
+        # branches on all four, and nowhere else in the language collects
+        # them into a single closed list. `Attribute#list?`/`#optional?`
+        # are real predicates on the IR node itself (bluebook/ir/attribute.rb);
+        # `:scalar` and `:composite` are not named predicates there — they
+        # fall out of whether `aggregate.value_object(attribute.type)`
+        # resolves to something, read directly in the `coerced =` line
+        # below — but the branch is exactly as real, so it gets a name here
+        # too rather than staying anonymous.
+        #
+        # A SECOND RUNTIME'S KERNEL PORTS THIS METHOD BY HAND (rust/src/
+        # kernel/attribute_shapes/*.rs — one file per name in this array,
+        # generated into a Rust enum by bin/project_kernel_capabilities so
+        # every match over it is compiler-checked exhaustive). If a fifth
+        # branch is ever added to `for_attribute`, add its name here in the
+        # same breath — this list is that port's only source of truth for
+        # "which shapes exist," and a shape missing from it is a shape the
+        # generated Rust enum, and therefore the kernel, can never learn
+        # about no matter how correct the Ruby below is.
+        SHAPES = %i[scalar list optional composite].freeze
+
         def for(aggregate, name, value)
           attribute = aggregate.attribute(name)
           return value unless attribute
@@ -18,9 +40,17 @@ module Hecksagain
           for_attribute(aggregate, attribute, value)
         end
 
+        # The four `SHAPES` above, in the order this method actually checks
+        # them: `optional`/nil-passthrough first (a value that isn't there
+        # has no shape left to branch on), `list` second (a list of
+        # elements, hydrated as entities), then — inside `coerced =` —
+        # `composite` (the type names a declared value object, rebuilt
+        # recursively via `build`) with `scalar` as what's left once
+        # neither of those applies (the raw value, passed through
+        # unchanged).
         def for_attribute(aggregate, attribute, value)
-          return value if attribute.nil? || value.nil?
-          return hydrate_entity_list(aggregate, attribute, value) if attribute.list?
+          return value if attribute.nil? || value.nil? # :optional
+          return hydrate_entity_list(aggregate, attribute, value) if attribute.list? # :list
           return value unless aggregate.respond_to?(:value_object)
 
           # THE SET THE ATTRIBUTE NAMES IS CHECKED WHERE THE ATTRIBUTE IS KNOWN.
@@ -55,6 +85,27 @@ module Hecksagain
           # supply an object rather than a scalar.
           return value.to_h if value.is_a?(self)
 
+          # Vendored addition, not (yet) upstream hecksagain (migration
+          # plan task 5): a bare scalar auto-wraps into a single-field
+          # value object's sole attribute -- the SAME shape
+          # #from_identifier already establishes for identity coercion
+          # (`build(value_object, { fields.first.name => identifier }) if
+          # fields.size == 1`), made consistent here for MUTATION
+          # coercion too. Real, corpus-wide gap: a synthesised single-
+          # field wrapper (Part 3a's bare-primitive auto-synthesis, the
+          # norm for a VO-typed aggregate field) is exactly the shape
+          # #rewrap_arithmetic_result hands back a raw scalar RESULT to
+          # -- without this, every phantom-field increment/multiply on a
+          # single-field-wrapped attribute refused with "pass its fields
+          # as an object, not <scalar>" the instant it tried to re-wrap
+          # its own correctly-computed result. Multi-field VOs still
+          # refuse below, unchanged -- only the genuinely unambiguous
+          # single-field case auto-wraps, matching from_identifier's own
+          # precedent exactly.
+          if value_object.attributes.size == 1
+            return { value_object.attributes.first.name => value }
+          end
+
           raise TypeMismatch,
                 RefusalWording.render("TypeMismatch", "value_object_shape",
                                       name: name, type: value_object.hecks_name,
@@ -73,8 +124,9 @@ module Hecksagain
             next if Bluebook::Expression::Evaluator.call(invariant.canonical, fields)
 
             raise InvariantViolation,
-                  "#{value_object.hecks_name} invariant violated — #{invariant.description} " \
-                  "(given #{canonical_fields(fields)})"
+                  RefusalWording.render("InvariantViolation", "value_object_invariant",
+                                        name: value_object.hecks_name, description: invariant.description,
+                                        offered: canonical_fields(fields))
           end
           new(value_object, fields)
         end
@@ -242,9 +294,49 @@ module Hecksagain
           return identifier unless value_object
 
           fields = value_object.attributes
-          return build(value_object, { fields.first.name => identifier }) if fields.size == 1
+          if fields.size == 1
+            field = fields.first
+            return build(value_object, { field.name => coerce_identifier(field, identifier) })
+          end
 
           raise TypeMismatch, RefusalWording.render("TypeMismatch", "composite_identity", type: value_object.hecks_name)
+        end
+
+        # Vendored fix, not (yet) upstream hecksagain (migration plan
+        # task 9): `identifier` here is always the DERIVED IDENTITY
+        # STRING -- `Identity.of`/`Identity.from` intentionally return
+        # one (correct for naming a repository key), and
+        # `Runtime::Instance#materialize_identity!` calls `from_identifier`
+        # with exactly that string on every fresh hydration -- but when
+        # the identity field's OWN declared type is Integer/Float (not
+        # the overwhelmingly common String), seeding it straight from
+        # that string round-trips a correctly-derived identity back in
+        # as the WRONG Ruby type -- and #build's own
+        # `check_numeric_fields` (added specifically to catch a genuine
+        # CALLER mismatch) then refused the runtime's OWN internal
+        # identity seed instead, on every dispatch, valid input or not.
+        #
+        # Reuses THIS SAME FILE's own `NUMERIC` table (declared-type ->
+        # expected-Ruby-class, already read by `check_numeric_fields`)
+        # to decide WHICH declared types need converting, and
+        # Kernel#Integer/#Float to do the converting. A genuinely
+        # malformed identifier (should never happen, since an identity
+        # is always derived FROM a correctly-typed field in the first
+        # place, but this stays defensive rather than assume it) passes
+        # back unconverted, and `check_numeric_fields` refuses it
+        # exactly as it always has -- preserving its real job of
+        # catching a genuine caller mismatch, not just this migration's
+        # own runtime-internal one.
+        private def coerce_identifier(field, identifier)
+          return identifier unless identifier.is_a?(String) && NUMERIC.key?(field.type.to_s)
+
+          case field.type.to_s
+          when "Integer" then Integer(identifier)
+          when "Float"   then Float(identifier)
+          else identifier
+          end
+        rescue ArgumentError
+          identifier
         end
 
         def canonical_fields(fields)
