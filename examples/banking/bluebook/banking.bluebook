@@ -175,7 +175,7 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "DailyLimit" do
-      attribute :cents, Integer, default: 0
+      attribute :cents, Integer, default: 100000
       invariant("a daily limit is positive") { cents.positive? }
     end
 
