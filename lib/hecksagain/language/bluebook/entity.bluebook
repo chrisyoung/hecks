@@ -24,36 +24,43 @@ Hecks.bluebook "Bluebook" do
     attribute :transitions, list_of(PieceTransition)
 
     value_object "EntityName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an entity is named") { !value.to_s.empty? }
     end
 
     value_object "EntityText" do
       attribute :value, String
+      # EntityText is free-form serialized text (like state names), allowed empty
     end
 
     # A piece's identity is made of parts the same way a head's is, so it holds
     # the same shape. Declared here rather than shared because a value object
     # belongs to the aggregate that uses it.
     value_object "IdentityPath" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an identity path is present") { !value.to_s.empty? }
     end
 
     value_object "PieceField" do
-      attribute :name,    String
-      attribute :type,    String
-      attribute :list,    String
+      attribute :name,    String, pattern: '[^ \t\n\r]'
+      attribute :type,    String, pattern: '[^ \t\n\r]'
+      attribute :list,    String, pattern: '[^ \t\n\r]'
       attribute :optional, String, optional: true
       attribute :pattern,  String, optional: true
       attribute :default, String
       # The closed set this value must belong to — see Aggregate::Field.
       attribute :admits, String, optional: true
+      invariant("a field is named") { !name.to_s.empty? }
+      invariant("a field has a type") { !type.to_s.empty? }
+      invariant("a field's list mode is specified") { !list.to_s.empty? }
     end
 
     value_object "PieceTransition" do
-      attribute :command,    String
-      attribute :from_state, String
-      attribute :to_state,   String
+      attribute :command,    String, pattern: '[^ \t\n\r]'
+      attribute :from_state, String, optional: true  # nil for Create commands
+      attribute :to_state,   String, pattern: '[^ \t\n\r]'
+      invariant("a command is named") { !command.to_s.empty? }
+      invariant("a to state is named") { !to_state.to_s.empty? }
     end
 
     # The way back: everything DECLARED IN the aggregate above. The parent
