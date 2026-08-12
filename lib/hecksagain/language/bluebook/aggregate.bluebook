@@ -32,17 +32,17 @@ Hecks.bluebook "Bluebook" do
     attribute :transitions,   list_of(Transition)
 
     value_object "AggregateName" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("an aggregate is named") { !value.to_s.empty? }
     end
 
     value_object "Description" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("a description says something") { !value.to_s.empty? }
     end
 
     value_object "IdentityField" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("an identity field is present") { !value.to_s.empty? }
     end
 
@@ -55,14 +55,14 @@ Hecks.bluebook "Bluebook" do
     # `path` made `path.path` read nothing, and a given that reads nothing does not
     # fail — it refuses everything, which is a far quieter way to be wrong.
     value_object "IdentityPath" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("an identity path is present") { !value.to_s.empty? }
     end
 
     value_object "Field" do
-      attribute :name,    String, pattern: '[^ \t\n\r]'
-      attribute :type,    String, pattern: '[^ \t\n\r]'
-      attribute :list,    String, pattern: '[^ \t\n\r]'
+      attribute :name,    String
+      attribute :type,    String
+      attribute :list,    String
       attribute :optional, String, optional: true
       attribute :pattern,  String, optional: true
       # Held as a LITERAL, written so its type survives — 0.0 rather than "0.0".
@@ -83,14 +83,14 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "ValueName" do
-      attribute :name, String, pattern: '[^ \t\n\r]'
+      attribute :name, String
       invariant("a value object name is present") { !name.to_s.empty? }
     end
 
     value_object "Transition" do
-      attribute :command,    String, pattern: '[^ \t\n\r]'
+      attribute :command,    String
       attribute :from_state, String, optional: true  # nil for Create (initial) commands
-      attribute :to_state,   String, pattern: '[^ \t\n\r]'
+      attribute :to_state,   String
       invariant("a command is named") { !command.to_s.empty? }
       invariant("a to state is named") { !to_state.to_s.empty? }
     end
@@ -277,12 +277,12 @@ Hecks.bluebook "Bluebook" do
     # Three rules that read as rules and were decoration. A predicate cannot
     # guard what a type already guards.
     value_object "FieldName" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("an attribute is named") { !value.to_s.empty? }
     end
 
     value_object "TypeName" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("a type is named") { !value.to_s.empty? }
     end
 
@@ -305,7 +305,7 @@ Hecks.bluebook "Bluebook" do
     # lists. It is `LiteralText` now, which is what the other four element
     # builders already say a pattern is: free text.
     value_object "ListFlag" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("list is true or false") { value.to_s == "true" || value.to_s == "false" }
     end
 

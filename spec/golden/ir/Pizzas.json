@@ -72,7 +72,22 @@
           ],
           "goal": "Put a new pizza on the menu",
           "mutations": [
-
+            {
+              "op": "set",
+              "source": {
+                "kind": "argument",
+                "name": "name"
+              },
+              "target": "name"
+            },
+            {
+              "op": "set",
+              "source": {
+                "kind": "argument",
+                "name": "pizza"
+              },
+              "target": "pizza"
+            }
           ],
           "name": "CreatePizza",
           "provenance": null,
@@ -417,7 +432,7 @@
               "list": false,
               "name": "name",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             },
             {
@@ -432,7 +447,14 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a topping name is present"
+            },
+            {
+              "canonical": "amount.positive?",
+              "description": "a topping amount is positive"
+            }
           ],
           "members": [
 
@@ -447,7 +469,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],

@@ -236,13 +236,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "a till number is present"
+            }
           ],
           "members": [
 
@@ -290,13 +293,20 @@
               "list": false,
               "name": "direction",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "amount.positive?",
+              "description": "a mark amount is positive"
+            },
+            {
+              "canonical": "direction == \"in\" || direction == \"out\"",
+              "description": "a mark direction is in or out"
+            }
           ],
           "members": [
 
@@ -311,13 +321,16 @@
               "list": false,
               "name": "text",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!text.to_s.empty?",
+              "description": "a note is present"
+            }
           ],
           "members": [
 

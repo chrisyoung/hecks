@@ -58,7 +58,7 @@ Hecks.bluebook "Bluebook" do
     attribute :name, SyntaxName
 
     value_object "SyntaxName" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("a syntax is named") { !value.to_s.empty? }
     end
 
@@ -76,7 +76,7 @@ Hecks.bluebook "Bluebook" do
     # `Type` is the second argument of `attribute`, which is a place words are
     # spelled (`list_of`, `one_of`) and so is a context like any other.
     value_object "Context" do
-      attribute :name, String, pattern: '[^ \t\n\r]'
+      attribute :name, String
       one_of do
         member name: "File"
         member name: "Bluebook"
@@ -115,7 +115,7 @@ Hecks.bluebook "Bluebook" do
     # rule's canonical text, `identified_by`'s body is the identity paths. A
     # `keywords` or `rows` body fills the record the word opens.
     value_object "Body" do
-      attribute :name, String, pattern: '[^ \t\n\r]'
+      attribute :name, String
       one_of do
         member name: "none"
         member name: "keywords"
@@ -136,7 +136,7 @@ Hecks.bluebook "Bluebook" do
     # every projected reader it simply does not exist — the operator rule,
     # at the syntax layer.
     value_object "Status" do
-      attribute :name, String, pattern: '[^ \t\n\r]'
+      attribute :name, String
       one_of do
         member name: "proposed"
         member name: "admitted"
@@ -154,7 +154,7 @@ Hecks.bluebook "Bluebook" do
     # rather than `"0"`, `0.0` rather than `"0.0"` — which is what LiteralText is
     # about, and why it is not `text`.
     value_object "ArgumentKind" do
-      attribute :name, String, pattern: '[^ \t\n\r]'
+      attribute :name, String
       one_of do
         member name: "text"
         member name: "symbol"
@@ -198,7 +198,7 @@ Hecks.bluebook "Bluebook" do
     #             domain) — named here so a reader knows to resolve
     #             dynamically rather than assume an omission.
     value_object "PairsShape" do
-      attribute :name, String, pattern: '[^ \t\n\r]'
+      attribute :name, String
       one_of do
         member name: "fields"
         member name: "elements"
@@ -238,13 +238,13 @@ Hecks.bluebook "Bluebook" do
     # below, either it is derived or the surface cannot say it, and the second
     # kind is a finding.
     value_object "Keyword" do
-      attribute :word,    String, pattern: '[^ \t\n\r]'
-      attribute :context, String, pattern: '[^ \t\n\r]', admits: "Syntax::Context"
-      attribute :body,    String, pattern: '[^ \t\n\r]', admits: "Syntax::Body"
+      attribute :word,    String
+      attribute :context, String, admits: "Syntax::Context"
+      attribute :body,    String, admits: "Syntax::Body"
       attribute :inner,   String, optional: true  # Empty for no body or source body
       attribute :opens,   String, optional: true  # Empty when only opens something
       attribute :fills,   String, optional: true  # Empty when no field filled
-      attribute :status,  String, default: "admitted", pattern: '[^ \t\n\r]', admits: "Syntax::Status"
+      attribute :status,  String, default: "admitted", admits: "Syntax::Status"
       # THE RENAME COLUMN — the language's own `was:`, one level up from the
       # data translations that taught it the shape. A row whose word was
       # respelled keeps the old spelling here; the old spelling stays
@@ -523,14 +523,14 @@ Hecks.bluebook "Bluebook" do
       # could carry, since `fills` already names where the ARGUMENT'S OWN
       # value lands. Empty for every argument that isn't one of a closed set
       # of named alternatives feeding a sibling field this way.
-      attribute :selects,          String, pattern: '[^ \t\n\r]'
+      attribute :selects,          String
       # THE TWO ROLES A `pairs` ARGUMENT'S OWN PAIR PLAYS, read together with
       # `pairs_shape` below — see that value object's own comment for the
       # four shapes. Empty for anything that is not `kind: "pairs"`, and for
       # a `sibling`-shaped pairs argument (the target field varies per pair,
       # per domain — nothing here could name it).
-      attribute :pair_key_fills,   String, pattern: '[^ \t\n\r]'
-      attribute :pair_value_fills, String, pattern: '[^ \t\n\r]'
+      attribute :pair_key_fills,   String
+      attribute :pair_value_fills, String
       attribute :pairs_shape,      String, admits: "Syntax::PairsShape"
       attribute :status,   String, default: "admitted", admits: "Syntax::Status"
 

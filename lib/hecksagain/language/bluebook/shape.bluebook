@@ -22,14 +22,14 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "ValueObjectName" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("a value object is named") { !value.to_s.empty? }
     end
 
     value_object "ShapeField" do
-      attribute :name,    String, pattern: '[^ \t\n\r]'
-      attribute :type,    String, pattern: '[^ \t\n\r]'
-      attribute :list,    String, pattern: '[^ \t\n\r]'
+      attribute :name,    String
+      attribute :type,    String
+      attribute :list,    String
       attribute :optional, String, optional: true
       attribute :pattern,  String, optional: true
       attribute :default, String
@@ -41,8 +41,8 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "Assertion" do
-      attribute :description, String, pattern: '[^ \t\n\r]'
-      attribute :canonical,   String, pattern: '[^ \t\n\r]'
+      attribute :description, String
+      attribute :canonical,   String
       invariant("an assertion description is present") { !description.to_s.empty? }
       invariant("an assertion canonical form is present") { !canonical.to_s.empty? }
     end
@@ -168,7 +168,7 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "Pair" do
-      attribute :key,   String, pattern: '[^ \t\n\r]'
+      attribute :key,   String
       attribute :value, String
       # Pair keys must be named, but values can be empty strings or numeric literals
       invariant("a pair key is present") { !key.to_s.empty? }

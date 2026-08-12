@@ -105,7 +105,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -129,7 +129,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -153,7 +153,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -356,7 +356,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -377,7 +377,7 @@
               "list": false,
               "name": "key",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             },
             {
@@ -386,7 +386,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],

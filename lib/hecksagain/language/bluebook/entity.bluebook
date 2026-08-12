@@ -24,7 +24,7 @@ Hecks.bluebook "Bluebook" do
     attribute :transitions, list_of(PieceTransition)
 
     value_object "EntityName" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("an entity is named") { !value.to_s.empty? }
     end
 
@@ -37,14 +37,14 @@ Hecks.bluebook "Bluebook" do
     # the same shape. Declared here rather than shared because a value object
     # belongs to the aggregate that uses it.
     value_object "IdentityPath" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("an identity path is present") { !value.to_s.empty? }
     end
 
     value_object "PieceField" do
-      attribute :name,    String, pattern: '[^ \t\n\r]'
-      attribute :type,    String, pattern: '[^ \t\n\r]'
-      attribute :list,    String, pattern: '[^ \t\n\r]'
+      attribute :name,    String
+      attribute :type,    String
+      attribute :list,    String
       attribute :optional, String, optional: true
       attribute :pattern,  String, optional: true
       attribute :default, String
@@ -56,9 +56,9 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "PieceTransition" do
-      attribute :command,    String, pattern: '[^ \t\n\r]'
+      attribute :command,    String
       attribute :from_state, String, optional: true  # nil for Create commands
-      attribute :to_state,   String, pattern: '[^ \t\n\r]'
+      attribute :to_state,   String
       invariant("a command is named") { !command.to_s.empty? }
       invariant("a to state is named") { !to_state.to_s.empty? }
     end

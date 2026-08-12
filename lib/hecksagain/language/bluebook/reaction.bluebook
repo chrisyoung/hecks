@@ -26,7 +26,7 @@ Hecks.bluebook "Bluebook" do
     attribute :target_domain,   PolicyText
 
     value_object "PolicyName" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("a policy is named") { !value.to_s.empty? }
     end
 
@@ -89,7 +89,7 @@ Hecks.bluebook "Bluebook" do
     attribute :states,    list_of(SagaState)
 
     value_object "ProcessManagerName" do
-      attribute :value, String, pattern: '[^ \t\n\r]'
+      attribute :value, String
       invariant("a process manager is named") { !value.to_s.empty? }
     end
 
@@ -99,7 +99,7 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "SagaState" do
-      attribute :name, String, pattern: '[^ \t\n\r]'
+      attribute :name, String
       invariant("a state is named") { !name.to_s.empty? }
     end
 

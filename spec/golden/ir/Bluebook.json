@@ -305,14 +305,21 @@
               "default": null,
               "list": false,
               "name": "position",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!strategy.to_s.empty?",
+              "description": "a rule has a strategy"
+            },
+            {
+              "canonical": "!boundary.to_s.empty?",
+              "description": "a rule has a boundary"
+            }
           ],
           "members": [
 
@@ -1215,7 +1222,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "an identity field is present"
+            }
           ],
           "members": [
 
@@ -1236,7 +1246,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "an identity path is present"
+            }
           ],
           "members": [
 
@@ -1311,7 +1324,18 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a field is named"
+            },
+            {
+              "canonical": "!type.to_s.empty?",
+              "description": "a field has a type"
+            },
+            {
+              "canonical": "!list.to_s.empty?",
+              "description": "a field's list mode is specified"
+            }
           ],
           "members": [
 
@@ -1332,7 +1356,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a value object name is present"
+            }
           ],
           "members": [
 
@@ -1355,7 +1382,7 @@
               "default": null,
               "list": false,
               "name": "from_state",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "String"
             },
@@ -1371,7 +1398,14 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!command.to_s.empty?",
+              "description": "a command is named"
+            },
+            {
+              "canonical": "!to_state.to_s.empty?",
+              "description": "a to state is named"
+            }
           ],
           "members": [
 
@@ -2288,7 +2322,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "an event name is present"
+            }
           ],
           "members": [
 
@@ -2309,7 +2346,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "an announcement name is present"
+            }
           ],
           "members": [
 
@@ -3775,7 +3815,18 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a field is named"
+            },
+            {
+              "canonical": "!type.to_s.empty?",
+              "description": "a field has a type"
+            },
+            {
+              "canonical": "!list.to_s.empty?",
+              "description": "a field's list mode is specified"
+            }
           ],
           "members": [
 
@@ -3805,7 +3856,14 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!description.to_s.empty?",
+              "description": "an assertion description is present"
+            },
+            {
+              "canonical": "!canonical.to_s.empty?",
+              "description": "an assertion canonical form is present"
+            }
           ],
           "members": [
 
@@ -4082,7 +4140,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!key.to_s.empty?",
+              "description": "a pair key is present"
+            }
           ],
           "members": [
 
@@ -4646,7 +4707,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "an identity path is present"
+            }
           ],
           "members": [
 
@@ -4721,7 +4785,18 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a field is named"
+            },
+            {
+              "canonical": "!type.to_s.empty?",
+              "description": "a field has a type"
+            },
+            {
+              "canonical": "!list.to_s.empty?",
+              "description": "a field's list mode is specified"
+            }
           ],
           "members": [
 
@@ -4744,7 +4819,7 @@
               "default": null,
               "list": false,
               "name": "from_state",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "String"
             },
@@ -4760,7 +4835,14 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!command.to_s.empty?",
+              "description": "a command is named"
+            },
+            {
+              "canonical": "!to_state.to_s.empty?",
+              "description": "a to state is named"
+            }
           ],
           "members": [
 
@@ -5336,7 +5418,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a state is named"
+            }
           ],
           "members": [
 
@@ -7485,7 +7570,10 @@
           ],
           "closed_set": true,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a context is named"
+            }
           ],
           "members": [
             [
@@ -7613,7 +7701,10 @@
           ],
           "closed_set": true,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a body type is named"
+            }
           ],
           "members": [
             [
@@ -7657,7 +7748,10 @@
           ],
           "closed_set": true,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a status is named"
+            }
           ],
           "members": [
             [
@@ -7701,7 +7795,10 @@
           ],
           "closed_set": true,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "an argument kind is named"
+            }
           ],
           "members": [
             [
@@ -7769,7 +7866,10 @@
           ],
           "closed_set": true,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a pairs shape is named"
+            }
           ],
           "members": [
             [
@@ -7833,7 +7933,7 @@
               "default": null,
               "list": false,
               "name": "inner",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "String"
             },
@@ -7842,7 +7942,7 @@
               "default": null,
               "list": false,
               "name": "opens",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "String"
             },
@@ -7851,7 +7951,7 @@
               "default": null,
               "list": false,
               "name": "fills",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "String"
             },
@@ -7869,14 +7969,29 @@
               "default": null,
               "list": false,
               "name": "was",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "String"
             }
           ],
           "closed_set": true,
           "invariants": [
-
+            {
+              "canonical": "!word.to_s.empty?",
+              "description": "a keyword is named"
+            },
+            {
+              "canonical": "!context.to_s.empty?",
+              "description": "a keyword context is present"
+            },
+            {
+              "canonical": "!body.to_s.empty?",
+              "description": "a keyword body type is present"
+            },
+            {
+              "canonical": "!status.to_s.empty?",
+              "description": "a keyword status is present"
+            }
           ],
           "members": [
             [
@@ -15690,7 +15805,18 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!aggregate.to_s.empty?",
+              "description": "a head aggregate is named"
+            },
+            {
+              "canonical": "!as.to_s.empty?",
+              "description": "a head alias is named"
+            },
+            {
+              "canonical": "!many.to_s.empty?",
+              "description": "a head cardinality is specified"
+            }
           ],
           "members": [
 
@@ -15731,14 +15857,21 @@
               "default": null,
               "list": false,
               "name": "at",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!option.to_s.empty?",
+              "description": "an option name is present"
+            },
+            {
+              "canonical": "!key.to_s.empty?",
+              "description": "an option key is present"
+            }
           ],
           "members": [
 
