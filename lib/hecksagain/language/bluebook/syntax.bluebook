@@ -308,11 +308,19 @@ Hecks.bluebook "Bluebook" do
         member word: "attribute",       context: "Aggregate", body: "none",     inner: "",              opens: "",               fills: "attributes"
 
         # A PIECE SAYS LESS THAN A HEAD, and the table is where that stops being
-        # folklore : an entity admits no `reference_to`, no `value_object`, no
-        # `policy` and no nested `entity`. Six words, against an aggregate's
-        # eleven.
+        # folklore : an entity admits no `value_object`, no `policy` and no
+        # nested `entity` of its own. `reference_to` WAS on that list too,
+        # once — not because a piece pointing at another aggregate root is
+        # wrong (standard DDD: an entity may reference a root by identity
+        # same as its own aggregate can), but because the DSL sugar to
+        # spell it had simply never been written. `AggregateBuilder
+        # #reference_bearing_attributes` was already walking `entity
+        # .attributes` looking for exactly this by the time anyone noticed —
+        # the resolution machinery was ready before the word was. Seven
+        # words now, against an aggregate's eleven.
         member word: "description",     context: "Entity", body: "none",     inner: "",           opens: "",         fills: "description"
         member word: "identified_by",   context: "Entity", body: "source",   inner: "",           opens: "",         fills: "identified_by"
+        member word: "reference_to",    context: "Entity", body: "none",     inner: "",           opens: "",         fills: "attributes"
         member word: "command",         context: "Entity", body: "keywords", inner: "Command",    opens: "Command",  fills: ""
         member word: "query",           context: "Entity", body: "keywords", inner: "Query",      opens: "Query",    fills: ""
         member word: "lifecycle",       context: "Entity", body: "keywords", inner: "Lifecycle",  opens: "",         fills: "state_field"
@@ -541,11 +549,17 @@ Hecks.bluebook "Bluebook" do
         member keyword: "reference_to",    context: "Aggregate", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
         member keyword: "reference_to",    context: "Aggregate", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
         # AN AGGREGATE MAY POINT AT ONE OF SEVERAL TARGETS, NEVER BOTH —
-        # `optional: true` on two sibling `reference_to` calls (Item's
-        # own `personal_list_id`/`camping_list_id`) is how that's said:
-        # each field genuinely absent, not present-but-empty, whenever
-        # the OTHER one is set instead.
+        # `optional: true` on two sibling `reference_to` calls (a head
+        # that may point at one of two possible parents, never both) is
+        # how that's said: each field genuinely absent, not
+        # present-but-empty, whenever the OTHER one is set instead.
         member keyword: "reference_to",    context: "Aggregate", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
+        # THE SAME THREE ARGUMENTS, ONE CONTEXT OVER — an entity's own
+        # `reference_to` mints the identical `_id`-suffixed attribute a
+        # head's does; only which construct is doing the pointing differs.
+        member keyword: "reference_to",    context: "Entity", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
+        member keyword: "reference_to",    context: "Entity", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
+        member keyword: "reference_to",    context: "Entity", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         # THE SAME TWO ARGUMENTS `reference_to` TAKES — a target and an
         # optional alias. What `as:` fills differs in the Ruby builder (no
         # `_id` mint), but that default-naming rule is not a fact this table

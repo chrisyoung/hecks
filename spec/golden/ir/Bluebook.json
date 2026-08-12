@@ -8614,6 +8614,32 @@
             [
               [
                 "word",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "attributes"
+              ]
+            ],
+            [
+              [
+                "word",
                 "command"
               ],
               [
@@ -10844,6 +10870,96 @@
               [
                 "context",
                 "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "optional"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "as"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
               ],
               [
                 "at",

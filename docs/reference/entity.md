@@ -27,6 +27,20 @@ A free-text label for the entity — no rules attached, read by nothing but a hu
 
 Names the field that tells one element of the list apart from another — unique within the parent, not globally, since a `FoyerTicketNumber` only has to be unambiguous inside its own counter. See entities.md for how this identity is carried alongside the parent's own when a command or query reaches through the aggregate.
 
+## reference_to
+
+<!-- generated:begin word=reference_to -->
+`reference_to type, as:, optional:` — fills `attributes`
+
+| argument | kind | required | fills |
+|---|---|---|---|
+| positional 1 | constant | true | type |
+| `as:` | symbol | false | name |
+| `optional:` | flag | false | optional |
+<!-- generated:end -->
+
+Standard DDD, not a special case: an entity may reference an aggregate root by identity exactly as its own owning aggregate can — `reference_to Item, as: :item` inside `entity "Placement" do ... end` mints `item_id` the same way it would on a head. Resolution doesn't care which construct declared the reference; `AggregateBuilder#reference_bearing_attributes` walks every entity's own attributes when stamping `declared_in`, so a piece's reference resolves the same way a head's does. What an entity's `reference_to` does NOT do: register its target in the owning aggregate's own `reference_targets` list (the bidirectional-relationship graph `bluebook_builder.rb` builds for docs) — `IR::Entity` has no such reader to populate. A real, small, deliberately deferred gap; nothing about dispatch, hydration, or querying needs it.
+
 ## command
 
 <!-- generated:begin word=command -->

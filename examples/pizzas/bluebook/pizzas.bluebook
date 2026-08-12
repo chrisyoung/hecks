@@ -21,7 +21,7 @@ Hecks.bluebook "Pizzas" do
     value_object "Price" do
       attribute :cents, Integer
 
-      invariant("a price is never negative") { cents >= 0 }
+      invariant("a price is never negative") { cents > 0 }
     end
 
     value_object "CustomerName" do

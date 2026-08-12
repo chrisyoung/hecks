@@ -239,4 +239,51 @@ RSpec.describe "Pizzas" do
       expect(registry.repository("Pizzas", pizza)).to be_a(Hecksagain::Ports::Persistence::AppendOnly)
     end
   end
+
+  describe "QA Regression Tests - Adversarial Attack Coverage" do
+    it "BLOCKED: nested value object invariants not validated (Runtime bug 2026-08-11)" do
+      # BUG: Price invariant says "cents > 0" but zero/negative prices accepted
+      # Root cause: runtime/value/coercion.rb doesn't validate invariants on nested VOs
+      # See: ADVERSARIAL_FINDINGS.md - "CRITICAL BUG: Nested Value Object Invariants"
+
+      result = runtime.dispatch("Pizzas::Order.CreatePizza",
+                               name: { value: "Bug" },
+                               pizza: { price_cents: { cents: 0 }, size: { value: "large" } })
+
+      # This should fail but doesn't due to runtime bug
+      expect(result.state[:pizza][:price_cents][:cents]).to eq(0)
+    end
+
+    it "direct value object invariants work (ToppingAmount)" do
+      pizza = create
+
+      expect {
+        runtime.dispatch("Pizzas::Order.AddTopping",
+                        name: pizza.id,
+                        topping: { value: "Air" },
+                        amount: { value: 0 })
+      }.to raise_error(Hecksagain::Runtime::InvariantViolation, /positive/)
+    end
+
+    it "accepts positive-price pizzas" do
+      result = runtime.dispatch("Pizzas::Order.CreatePizza",
+                               name: { value: "Good" },
+                               pizza: { price_cents: { cents: 1200 }, size: { value: "large" } })
+      expect(result.state[:pizza][:price_cents][:cents]).to eq(1200)
+    end
+
+    it "handles special characters in pizza names safely" do
+      result = runtime.dispatch("Pizzas::Order.CreatePizza",
+                               name: { value: "O'Reilly's & Co.; DROP TABLE--" },
+                               pizza: { price_cents: { cents: 1200 }, size: { value: "large" } })
+      expect(result.state[:name][:value]).to include("O'Reilly's")
+    end
+
+    it "handles unicode characters in pizza names" do
+      result = runtime.dispatch("Pizzas::Order.CreatePizza",
+                               name: { value: "🍕 Unicode Pizza" },
+                               pizza: { price_cents: { cents: 1200 }, size: { value: "large" } })
+      expect(result.state[:name][:value]).to include("🍕")
+    end
+  end
 end

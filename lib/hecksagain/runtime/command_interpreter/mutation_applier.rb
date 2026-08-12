@@ -38,8 +38,27 @@ module Hecksagain
           end
         end
 
+        # A CALLER-SUPPLIED ARG, FIRST — unchanged from before this
+        # existed, and still how every appended field is sourced today.
+        # But an append's own field can also name something the SUBJECT
+        # ALREADY KNOWS about itself — a running counter (`next_position`)
+        # this same command bumps via a sibling `increment:` mutation, so
+        # "append at the end" needs nothing external computed and passed
+        # in: the aggregate carries its own next value, reads it into the
+        # new element, and moves it forward for the next append, all in
+        # one dispatch. Symmetric with `increment`/`decrement`, which
+        # already read `instance[mutation.target]` as part of their own
+        # arithmetic — appending was the one mutation op that couldn't
+        # see the record it was appending TO.
+        def resolve_append_source(source, instance, args)
+          return source unless source.is_a?(Symbol)
+          return args[source] if args.key?(source)
+
+          instance[source]
+        end
+
         def appended(instance, aggregate, mutation, args)
-          fields       = mutation.source.transform_values { |source| source.is_a?(Symbol) ? args[source] : source }
+          fields       = mutation.source.transform_values { |source| resolve_append_source(source, instance, args) }
           element_type = aggregate.attribute(mutation.target)&.type
           value_object = aggregate.value_object(element_type)
           if value_object

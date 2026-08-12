@@ -137,8 +137,7 @@ module Hecksagain
         spec.with_spec.to_h do |key, value|
           resolved = if !value.is_a?(Symbol) then value
                      elsif value == pm.correlation_head then correlation
-                     elsif event.payload.key?(value) then event.payload[value]
-                     else instance[:memory][value]
+                     else resolve_with_value(value, event, instance)
                      end
           # A process manager carries facts between aggregate boundaries.  It
           # must carry a value object's state, not its source aggregate's
@@ -146,6 +145,25 @@ module Hecksagain
           # without being the same domain object.
           [key.to_sym, Value.materialize(resolved)]
         end
+      end
+
+      # A DOTTED SOURCE READS THE ONE SCALAR, the same "a path names a
+      # field, not a whole value object" idiom `identified_by`/
+      # `correlates_by` already hold every other declaration to —
+      # `with: { item_id: :"id.value" }` reaches into a VO-wrapped
+      # payload field (Item.Add's own `id: ItemId`) for the bare scalar
+      # a reference-typed target argument (Place's own `item_id`)
+      # actually needs, rather than handing it the whole `{value: "..."}`
+      # shape a plain top-level key would. A bare (undotted) source is
+      # unchanged from before this existed — reads the field whole,
+      # exactly as every existing `with:` mapping in the corpus already
+      # does.
+      def resolve_with_value(value, event, instance)
+        head, *rest = value.to_s.split(".").map(&:to_sym)
+        base = event.payload.key?(head) ? event.payload[head] : instance[:memory][head]
+        return base if rest.empty?
+
+        rest.reduce(Value.materialize(base)) { |held, segment| held.is_a?(Hash) ? held[segment] : held }
       end
 
       def qualified(command_name, domain)

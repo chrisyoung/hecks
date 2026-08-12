@@ -8,7 +8,7 @@ survives regeneration.
 - [File](file.md) — 3 words
 - [Bluebook](bluebook.md) — 9 words
 - [Aggregate](aggregate.md) — 14 words
-- [Entity](entity.md) — 6 words
+- [Entity](entity.md) — 7 words
 - [Command](command.md) — 9 words
 - [ValueObject](value_object.md) — 3 words
 - [OneOf](one_of.md) — 1 word

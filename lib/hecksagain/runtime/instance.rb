@@ -65,7 +65,13 @@ module Hecksagain
         @state.key?(name) || super
       end
 
-      def to_h = { id: @id }.merge(@state)
+      # IDENTITY WINS THE MERGE, not whatever's in state — the same fix
+      # `Handle#to_h`/`query_interpreter.rb`'s own row-building needed:
+      # an aggregate whose identity field is ALSO a regular declared
+      # attribute (Item.id, say) would otherwise have its clean scalar
+      # id silently clobbered by state's own (possibly VO-wrapped) copy,
+      # `{id: X}.merge(state)` losing to whatever `state[:id]` held.
+      def to_h = @state.merge(id: @id)
 
       # A COPY A MUTATION MAY TOUCH. Every adapter but Memory hands `find`
       # a freshly-decoded Instance already; Memory's holds the record it

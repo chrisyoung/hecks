@@ -28,6 +28,25 @@ module Hecksagain
           @identity_paths = paths
         end
 
+        # NOT MISSING BY DESIGN — just never written. `attribute()`
+        # (AttributeCollector, shared with AggregateBuilder) already
+        # accepts an `IR::Reference` typed attribute fine, and
+        # `AggregateBuilder#reference_bearing_attributes` already walks
+        # `entity.attributes` looking for exactly this when it stamps
+        # `declared_in` for resolution — an entity-declared reference was
+        # always going to resolve correctly once one existed to stamp.
+        # This is the sugar to actually declare one, mirroring
+        # `AggregateBuilder#reference_to` field-for-field. What it does
+        # NOT do: register the target in the owning aggregate's own
+        # `reference_targets` (the bidirectional-relationship list
+        # `bluebook_builder.rb` builds for docs) — `IR::Entity` has no
+        # such reader to populate. A real, small, deliberately deferred
+        # gap; nothing about dispatch, hydration, or querying needs it.
+        def reference_to(type, as: nil, optional: false)
+          target = Naming.demodulise(type)
+          attribute(as || :"#{Naming.snake(target)}_id", IR::Reference.new(target), optional: optional)
+        end
+
         def command(name, &block)
           @commands << CommandBuilder.build(name, owner: @name, &block)
         end
