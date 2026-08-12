@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-**Session Status:** 151/200 bugs fixed (75.5% of goal) — 3/4 of the way there! Active loops: 1m bug monitor (5e548ed2) + 15m doc updater (ffaa4d0f)
+**Session Status:** 142/200 bugs fixed (71% of goal)
 
 ---
 
@@ -65,7 +65,7 @@ Documented bugs and findings from systematic adversarial testing.
 | #157 | model_check/policy_findings.bluebook | 1 | Number |
 | #158 | model_check/saga_findings.bluebook | 1 | Reference |
 | #159-162 | eras/*.bluebook | 4 | FullName.value, AccountNumber.value, Money.currency, Tag.value |
-| #165-174 | vocabulary.bluebook | 10 | Comparison (symbol, compares_less_than, compares_equal, negated), SignTest (name, compares_via), IncludeHaystack (type, strategy) |
+| #165 | vocabulary.bluebook | 1 | Closed-set VOs lack pattern validation on String attributes (Comparison, SignTest, IncludeHaystack, ToStringType, SizedType, Primitive, NormalisationStrategy, MutationOp, QueryComparator, LoadOrder) |
 
 **Critical Query Bugs (2 - GitHub):**
 - #11: Array `in:` query bug → [GitHub #54 CLOSED](https://github.com/chrisyoung/hecksagain/issues/54) — FIXED ✅
@@ -366,20 +366,20 @@ Documented bugs and findings from systematic adversarial testing.
 
 - **Commit:** be17a73
 
-### #165-174: Vocabulary.bluebook Closed-Set VO Validation (FIXED 2026-08-11)
+### #165: Vocabulary.bluebook Closed-Set VO Validation (FIXED 2026-08-11)
 - **Severity:** MEDIUM - Vocabulary integrity
 - **Details:** Vocabulary closed-set value objects lacked pattern validation on String attributes
-- **Affected VOs:**
-  - #165: Comparison.symbol, Comparison.compares_less_than, Comparison.compares_equal, Comparison.negated
-  - #166: SignTest.name, SignTest.compares_via
-  - #167: IncludeHaystack.type, IncludeHaystack.strategy
-  - #168: ToStringType.type
-  - #169: SizedType.type
-  - #170: Primitive.name
-  - #171: NormalisationStrategy.name
-  - #172: MutationOp.name
-  - #173: QueryComparator.name
-  - #174: LoadOrder.glob
+- **Affected VOs (10):**
+  - Comparison (symbol, compares_less_than, compares_equal, negated)
+  - SignTest (name, compares_via)
+  - IncludeHaystack (type, strategy)
+  - ToStringType (type)
+  - SizedType (type)
+  - Primitive (name)
+  - NormalisationStrategy (name)
+  - MutationOp (name)
+  - QueryComparator (name)
+  - LoadOrder (glob)
 - **Root Cause:** Closed-set VOs in vocabulary aggregate declared one_of members but didn't validate that attribute names matched the enumerated values
 - **Fix:** Added `pattern: '[^ \t\n\r]'` to all String attributes in closed-set VOs to prevent whitespace-only values
 - **Impact:** Vocabulary declarations now guaranteed non-empty, preventing silent vocabulary drift
