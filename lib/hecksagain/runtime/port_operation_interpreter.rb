@@ -1,6 +1,8 @@
 require_relative "interpreting"
 require_relative "command_interpreter/argument_gate"
 require_relative "event"
+require_relative "value"
+require_relative "../naming"
 
 module Hecksagain
   module Runtime
@@ -53,7 +55,69 @@ module Hecksagain
       end
 
       def step_emit(ctx)
-        ctx.result = step(:emit) { emit(ctx) }
+        ctx.result = step(:emit) { ctx.operation.outbound? ? ask(ctx) : emit(ctx) }
+      end
+
+      # THE DOMAIN CALLING OUT, AND BOTH ENDINGS RECORDED.
+      #
+      # The adapter is found the same way every other port's is — by name,
+      # across whatever adapters this boot loaded (`Ports::Extraction#adapter`
+      # is the same lookup, one port up) — so an `asks` is bound by an adapter
+      # declaring `port "IssueTracker"` and nothing new to learn.
+      #
+      # EVERY FAILURE IS AN ANSWER. A raise from the far side of a boundary is
+      # not an exception in this domain's terms, it is the outside saying no,
+      # and the chapter already named the word for that. So the rescue is
+      # deliberately wide: a timeout, a bad credential, an adapter that does
+      # not exist, a nil where a number was wanted — all of them become the
+      # `refuses` event, carrying what was said. A policy reacts to it, a
+      # retry counter reads it, and nothing has to catch anything.
+      def ask(ctx)
+        answer = adapter_for(ctx).public_send(Naming.snake(ctx.operation.hecks_name), **materialise(ctx.args))
+        announce(ctx, ctx.operation.answers, ctx.args.merge(answered: answer))
+      rescue StandardError => e
+        announce(ctx, ctx.operation.refuses, ctx.args.merge(refusal: "#{e.class}: #{e.message}"))
+      end
+
+      # THE PORT THIS OPERATION BELONGS TO, found by asking the aggregate
+      # rather than threading it through the call — the dispatcher already
+      # resolved it once to get here, and a second parameter carried purely so
+      # this method can read it would be a parameter every OTHER step ignores.
+      def port_name_for(ctx)
+        owning = ctx.aggregate.ports.find { |port| port.operations.any? { |op| op.equal?(ctx.operation) } }
+        owning&.name or raise WiringError,
+                             "#{ctx.operation.hecks_name} belongs to no port on #{ctx.aggregate.hecks_name}"
+      end
+
+      def adapter_for(ctx)
+        name = port_name_for(ctx)
+        implementations = @registry.adapters.values.select { |adapter| adapter.port == name }
+
+        case implementations.size
+        when 1 then Adapters.const_get(implementations.first.name).new
+        when 0 then raise WiringError, "no adapter implements the #{name} port — nothing can answer #{ctx.operation.hecks_name}"
+        else raise WiringError,
+                   "#{implementations.size} adapters implement the #{name} port " \
+                   "(#{implementations.map(&:name).sort.join(', ')}) — the runtime will not choose for you"
+        end
+      end
+
+      # A Value never crosses the boundary — an adapter is somebody else's
+      # code and should be handed plain data, the same reasoning `JsonDoor`
+      # gives for materialising before it hands anything to an HTTP caller.
+      def materialise(args) = Value.materialize(args)
+
+      def announce(ctx, event_name, payload)
+        identity_attribute = ctx.operation.identity_attribute(ctx.aggregate.hecks_name)
+        event = Event.new(
+          name:        event_name,
+          aggregate:   "#{ctx.domain}::#{ctx.aggregate.hecks_name}",
+          id:          ctx.args[identity_attribute.name],
+          payload:     payload,
+          occurred_at: Time.now.utc.iso8601
+        )
+        @registry.event_log << event
+        [event]
       end
 
       # THE ONE PLACE THIS DIFFERS FROM CommandRules::Emission — there is no

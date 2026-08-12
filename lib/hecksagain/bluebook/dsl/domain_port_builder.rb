@@ -8,8 +8,30 @@ module Hecksagain
           @operations = []
         end
 
-        def operation(name, &block)
-          @operations << PortOperationBuilder.build(name, owner: @owner, &block)
+        # WHAT THE OUTSIDE TELLS US — an external fact arriving, translated
+        # into this domain's own word for it. Spelled `operation` before it
+        # had a twin, and `operation` still works: pizzas' `PaymentGateway`
+        # says it, the corpus is full of it, and renaming a word costs every
+        # chapter that uses it for no gain a reader can feel.
+        def tells(name, &block)
+          @operations << PortOperationBuilder.build(name, owner: @owner, direction: :inbound, &block)
+        end
+        alias operation tells
+
+        # WHAT WE ASK OF THE OUTSIDE — the direction this language did not
+        # have. Before this, a domain could be CALLED by an adapter and never
+        # call one: `Ports::Extraction.adapter.canonical(...)` is library code
+        # reaching for an adapter, and `MockStripeAdapter#create_session` is
+        # an application doing the same. Neither is the domain asking, and
+        # neither leaves a trace in the record.
+        #
+        # An `asks` does. It is dispatched like any other port operation, so
+        # a `policy` can trigger it off an event, and it comes back as one of
+        # the two events it named — which is what makes the outside world
+        # something the model can reason about rather than a place exceptions
+        # come from.
+        def asks(name, &block)
+          @operations << PortOperationBuilder.build(name, owner: @owner, direction: :outbound, &block)
         end
 
         # THE DRIVEN HALF OF THE SAME WORD. `operation`/`emits` translates an

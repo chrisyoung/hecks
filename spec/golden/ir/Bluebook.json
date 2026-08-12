@@ -10230,6 +10230,58 @@
             [
               [
                 "word",
+                "tells"
+              ],
+              [
+                "context",
+                "DomainPort"
+              ],
+              [
+                "body",
+                "keywords"
+              ],
+              [
+                "inner",
+                "PortOperation"
+              ],
+              [
+                "opens",
+                "PortOperation"
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "asks"
+              ],
+              [
+                "context",
+                "DomainPort"
+              ],
+              [
+                "body",
+                "keywords"
+              ],
+              [
+                "inner",
+                "PortOperation"
+              ],
+              [
+                "opens",
+                "PortOperation"
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
                 "verb"
               ],
               [
@@ -10329,6 +10381,58 @@
               [
                 "fills",
                 "emits"
+              ]
+            ],
+            [
+              [
+                "word",
+                "answers"
+              ],
+              [
+                "context",
+                "PortOperation"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "answers"
+              ]
+            ],
+            [
+              [
+                "word",
+                "refuses"
+              ],
+              [
+                "context",
+                "PortOperation"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "refuses"
               ]
             ],
             [
@@ -14885,6 +14989,66 @@
             [
               [
                 "keyword",
+                "tells"
+              ],
+              [
+                "context",
+                "DomainPort"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "asks"
+              ],
+              [
+                "context",
+                "DomainPort"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "verb"
               ],
               [
@@ -15180,6 +15344,66 @@
               [
                 "fills",
                 "emits"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "answers"
+              ],
+              [
+                "context",
+                "PortOperation"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "answers"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "refuses"
+              ],
+              [
+                "context",
+                "PortOperation"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "refuses"
               ]
             ],
             [
