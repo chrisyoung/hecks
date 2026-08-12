@@ -801,6 +801,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Capture" do
       reference_to CardPayment
+      given("account is open") { account.status == "open" }
       given("payment is authorized") { status == "authorized" }
       emits "CardCaptured"
     end
