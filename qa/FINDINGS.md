@@ -4,7 +4,7 @@ Documented bugs and findings from systematic adversarial testing.
 
 **Methodology Note:** One bug = one distinct root cause with one fix. Multiple failed specs from the same bug are not counted separately.
 
-**Session Status:** 36 distinct bugs identified and fixed (12 original + 24 new in this loop)
+**Session Status:** 49 distinct bugs identified and fixed (12 original + 37 new in this loop)
 
 ---
 
@@ -40,6 +40,9 @@ Documented bugs and findings from systematic adversarial testing.
 | 26 | Expression.Form.value lacks pattern | VO String attribute not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 27 | Expression.Reading attributes lack pattern | VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 28-36 | Expression aggregate VOs lack pattern | 9 VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 37-38 | Governance.RoleName/Timestamp lack pattern | VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 39-44 | ConsoleSettings attributes lack pattern | 6 VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 45-49 | Interview VOs lack pattern | 5 VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 
 ---
 
