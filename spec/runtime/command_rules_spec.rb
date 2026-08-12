@@ -312,6 +312,34 @@ RSpec.describe "the rules a command obeys" do
                          reference: { value: "case-3" }, account_number: { value: "a4" })
       end.to raise_error(Hecksagain::Runtime::NotFound)
     end
+
+    # An ENTITY command's given/ensures reaching its own PARENT aggregate
+    # (`parent.status`) and, through it, the parent's OWN reference
+    # (`parent.customer.status`) — a third shape none of the above cover:
+    # `parent` names a structural relationship (EntityInterpreter's own
+    # `ctx.instance`), not a declared reference attribute, so it needs its
+    # own hydration path rather than reusing `dereference`'s attribute
+    # scan directly.
+    it "resolves an entity command's parent.customer.status, live" do
+      runtime = funded_account(boot_banking)
+      runtime.dispatch("Banking::Account.Debit", number: { value: "a1" },
+                       amount: { cents: 100, currency: "USD" }, narrative: { text: "second" })
+      runtime.dispatch("Banking::Account.Debit", number: { value: "a1" },
+                       amount: { cents: 100, currency: "USD" }, narrative: { text: "third" })
+
+      expect do
+        runtime.dispatch("Banking::Account.LedgerEntry.Reverse",
+                         number: { value: "a1" }, sequence: { value: 2 }, narrative: { text: "before" })
+      end.not_to raise_error
+
+      runtime.dispatch("Banking::Customer.Suspend", reference: { value: "c" },
+                       standing: { value: "chargeback investigation" })
+
+      expect do
+        runtime.dispatch("Banking::Account.LedgerEntry.Reverse",
+                         number: { value: "a1" }, sequence: { value: 3 }, narrative: { text: "after" })
+      end.to raise_error(Hecksagain::Runtime::GivenNotMet, "Reverse refused — customer is active")
+    end
   end
 
   describe "the rules have one home" do
