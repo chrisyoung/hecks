@@ -1005,6 +1005,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Cancel" do
       reference_to ScheduledPayment
+      given("payment is scheduled") { status == "scheduled" }
       emits "ScheduledPaymentCancelled"
     end
 
