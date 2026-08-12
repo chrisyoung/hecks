@@ -794,6 +794,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Reverse" do
       reference_to CardPayment
+      given("payment is captured") { status == "captured" }
       emits "CardReversed"
     end
 
