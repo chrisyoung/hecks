@@ -1,3 +1,5 @@
+require_relative "../../naming"
+
 module Hecksagain
   module Bluebook
     module IR
@@ -30,12 +32,46 @@ module Hecksagain
         def initialize(name:, type:, list: false, default: nil, optional: false, pattern: nil,
                        admits: nil)
           @name     = name.to_sym
-          @type     = type.is_a?(Reference) ? type : type.to_s
+          @type     = spell(type)
           @list     = list
           @default  = default
           @optional = optional
           @pattern  = pattern
           @admits   = admits&.to_s
+        end
+
+        # A BARE CONSTANT IN A BLUEBOOK IS A NAME, EVEN WHEN RUBY HAS HEARD OF IT.
+        #
+        # `BluebookBuilder.build` says exactly this and installs a `const_missing`
+        # resolver that hands back the symbol — `attribute :target, Target` becomes
+        # the name "Target" and nothing looks Target up. That works only while the
+        # lookup FAILS, and `Facade::Surface` installs every aggregate name as a
+        # TOP-LEVEL constant (its own comment, and `ConstShim`'s, both say so).
+        #
+        # So in one process: boot a domain with an aggregate named `Target`, then
+        # load a chapter whose own value object is called `Target`, and Ruby
+        # resolves the constant before the hook is ever asked. The chapter is then
+        # built against somebody else's aggregate — silently, with no refusal —
+        # and the attribute stops meaning what the file plainly says.
+        #
+        # It was found by two grammar chapters that each declare `value_object
+        # "Target"`: with `QualityControl` (which has an `aggregate "Target"`)
+        # booted first, `Expression:Operator:Render#attributes[0]` turned into a
+        # cross-aggregate reference and the meta-domain refused the chapter for
+        # naming an aggregate that does not exist. Nothing about the failure
+        # pointed here, and it moved with spec ORDER, which is what a shared
+        # top-level namespace does to a language embedded in Ruby.
+        #
+        # DEMODULISED, so both paths spell it the same: `:Target` and
+        # `QualityControl::Target` are both "Target". A plain class stays itself —
+        # `String` demodulises to "String" — so the ordinary case is untouched.
+        # This does not undo the constant leak; it makes the leak unable to change
+        # what a chapter MEANS, which is the part that has to hold.
+        def spell(type)
+          return type if type.is_a?(Reference)
+          return Naming.demodulise(type) if type.is_a?(Module)
+
+          type.to_s
         end
 
         def list?   = @list

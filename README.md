@@ -145,12 +145,21 @@ declared alongside it and read in full there.)
 
 A creating command is a module method; a mutating command is a method on the
 record it references, and never mutates without being asked to justify
-itself first — `given` refuses before `then_set` ever runs, and `PizzaName`'s
-invariant refuses before either does, on the same booted domain from above:
+itself first — `given` refuses before `then_set` ever runs, and `PizzaName`
+refuses before either does, on the same booted domain from above:
 
 ```ruby
-Order.create_pizza(name: { value: "" }, pizza: { price_cents: { cents: 900 }, size: { value: "small" } })   # ~> InvariantViolation: a pizza is named
+Order.create_pizza(name: { value: "" }, pizza: { price_cents: { cents: 900 }, size: { value: "small" } })   # ~> TypeMismatch: PizzaName.value must match
 ```
+
+A value object is checked in a fixed order — the declared type, then the
+`pattern:`, then the `invariant`s — so the first rule an argument breaks is
+the one you hear about. `PizzaName` declares both a pattern (`[^ \t\n\r]`,
+which is how a chapter says "not blank": the sublanguage has no `.strip`) and
+an invariant reading `a pizza is named`, and for `""` the pattern gets there
+first. That ordering is the reason to reach for a pattern when a rule is
+about the SHAPE of a value and an `invariant` when it is about what the value
+means.
 
 Pizzas' own mutations either replace a field (`then_set :status, to: "sold"`,
 on `Purchase`) or append to a list (`then_set :toppings, append: ...`,
