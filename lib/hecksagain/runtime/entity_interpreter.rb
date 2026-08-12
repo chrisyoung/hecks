@@ -6,11 +6,13 @@ require_relative "identity"
 require_relative "instance"
 require_relative "value"
 require_relative "refusal_wording"
+require_relative "entity_interpreter/argument_gate"
 
 module Hecksagain
   module Runtime
     class EntityInterpreter
       include Interpreting
+      include ArgumentGate
 
       attr_reader :registry
 
@@ -19,13 +21,15 @@ module Hecksagain
       # spec/vocabulary_conformance_spec.rb the same way CommandInterpreter's
       # own DISPATCH_ORDER is; see that constant's doc comment for why this is
       # hand-typed rather than read live off the meta-domain at every dispatch.
-      # Shorter than the aggregate order for the same reasons the declaration
-      # itself gives : no refuse_unknown_arguments/refuse_absent_arguments (an
-      # entity inherits its aggregate's own gate) and no
-      # assign_creation_attributes (an entity is never created through this
-      # path).
+      # Shorter than the aggregate order for the one reason that still holds:
+      # no assign_creation_attributes (an entity is never created through
+      # this path). It DOES run its own refuse_unknown_arguments /
+      # refuse_absent_arguments — entity_interpreter/argument_gate.rb — the
+      # comment that used to excuse their absence here was wrong; see H1 in
+      # docs/audits/2026-08-10-main-bug-audit.md.
       DISPATCH_ORDER = %i[
-        normalize_args refuse_role_mismatch resolve_references hydrate_parent
+        refuse_unknown_arguments refuse_absent_arguments normalize_args
+        refuse_role_mismatch resolve_references hydrate_parent
         locate_element enforce_givens admissible_transition apply_mutations
         advance_lifecycle enforce_ensures save emit
       ].freeze
@@ -58,6 +62,14 @@ module Hecksagain
       end
 
       private
+
+      def step_refuse_unknown_arguments(ctx)
+        step(:refuse_unknown_arguments) { refuse_unknown_arguments(ctx.aggregate, ctx.entity, ctx.command, ctx.args) }
+      end
+
+      def step_refuse_absent_arguments(ctx)
+        step(:refuse_absent_arguments) { refuse_absent_arguments(ctx.command, ctx.args) }
+      end
 
       def step_normalize_args(ctx)
         ctx.args = step(:normalize_args) { normalize_args(ctx.aggregate, ctx.command, ctx.args) }
