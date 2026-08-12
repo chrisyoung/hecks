@@ -6,3 +6,4 @@
 {"operation":"save","id":"CUST-0002","state":{"reference":{"value":"CUST-0002"},"name":{"given":"Grace","family":"Hopper"},"email":{"address":"grace@example.com"},"standing":{"value":"under review"},"status":"suspended"},"mirrors":null}
 {"operation":"save","id":"CUST-0002","state":{"reference":{"value":"CUST-0002"},"name":{"given":"Grace","family":"Hopper"},"email":{"address":"grace@example.com"},"standing":{"value":"under review"},"status":"closed"},"mirrors":null}
 {"operation":"save","id":"CUST-0001","state":{"reference":{"value":"CUST-0001"},"name":{"given":"Someone","family":"Else"},"email":{"address":"else@example.com"},"standing":{"value":"good"},"status":"active"},"mirrors":null}
+{"operation":"save","id":"CUST001","state":{"reference":{"value":"CUST001"},"name":{"given":"John","family":"Doe"},"email":{"address":"john@example.com"},"standing":{"value":"good"},"status":"active"},"mirrors":null}
