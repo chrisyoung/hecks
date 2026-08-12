@@ -121,6 +121,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Let a cleared customer transact again"
 
       reference_to Customer
+      given("customer is suspended") { status == "suspended" }
       then_set :standing, to: { value: "good" }
 
       emits "CustomerReinstated"
