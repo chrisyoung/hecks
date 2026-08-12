@@ -211,6 +211,109 @@ RSpec.describe "the rules a command obeys" do
     end
   end
 
+  # A `given`/`ensures` reading a RELATED record's own field —
+  # `customer.status`, not just the dispatching record's own attributes.
+  # The pure expression evaluator never gained repository access for
+  # this: CommandRules::References#dereference resolves it BEFORE
+  # evaluation, once, into a plain Hash `Resolver#lookup` digs into
+  # exactly as it always has. Covers both shapes that reach it —
+  # an aggregate's OWN declared reference (Account's `reference_to
+  # Customer`, read off the record's stored state) and a COMMAND's own
+  # reference-typed argument (CardPayment.Authorize's `reference_to
+  # Account`, read off the dispatch payload) — plus the two-hop chain
+  # that composes them.
+  describe "dereferencing a related record's field in given/ensures" do
+    it "reads a stored aggregate-level reference's field, live — not a snapshot taken at dispatch time" do
+      runtime = funded_account(boot_banking)
+
+      expect do
+        runtime.dispatch("Banking::Account.Credit", number: { value: "a1" },
+                         amount: { cents: 100, currency: "USD" }, narrative: { text: "before" })
+      end.not_to raise_error
+
+      runtime.dispatch("Banking::Customer.Suspend", reference: { value: "c" },
+                       standing: { value: "chargeback investigation" })
+
+      expect do
+        runtime.dispatch("Banking::Account.Credit", number: { value: "a1" },
+                         amount: { cents: 100, currency: "USD" }, narrative: { text: "after" })
+      end.to raise_error(Hecksagain::Runtime::GivenNotMet, "Credit refused — customer is active")
+    end
+
+    it "reads a command-level reference argument's field (one hop)" do
+      runtime = funded_account(boot_banking)
+
+      expect do
+        runtime.dispatch("Banking::ATMCard.Issue", account_id: "a1",
+                         serial: { value: "s1" }, daily_fee: { cents: 100 })
+      end.not_to raise_error
+    end
+
+    it "chains through a command-level reference into ITS OWN aggregate-level reference (two hops)" do
+      runtime = funded_account(boot_banking)
+
+      expect do
+        runtime.dispatch("Banking::CardPayment.Authorize", account_id: "a1",
+                         authorisation: { value: "auth1" }, amount: { cents: 500, currency: "USD" },
+                         merchant: { value: "Merchant" })
+      end.not_to raise_error
+
+      runtime.dispatch("Banking::Customer.Suspend", reference: { value: "c" },
+                       standing: { value: "chargeback investigation" })
+
+      expect do
+        runtime.dispatch("Banking::CardPayment.Authorize", account_id: "a1",
+                         authorisation: { value: "auth2" }, amount: { cents: 500, currency: "USD" },
+                         merchant: { value: "Merchant" })
+      end.to raise_error(Hecksagain::Runtime::GivenNotMet, "Authorize refused — customer is active")
+    end
+
+    it "leaves a command with no reference-typed attributes at all untouched" do
+      runtime = boot_till
+      expect { runtime.dispatch("TillRoom::Till.OpenTill", number: { value: "till-1" }) }.not_to raise_error
+    end
+
+    # Found by the fuzzer, not by hand: an ALIASED command-level reference
+    # (`reference_to Customer, as: :customer`) hydrates under the SAME name
+    # its raw id argument already holds — unlike an unaliased one
+    # (`account_id` the argument, `account` the hydrated key, no
+    # collision). The dereferenced Hash must win that collision, or
+    # `customer.status` digs into the raw id string instead — a TypeError,
+    # not a refusal, the moment the id doesn't resolve to a real record.
+    it "resolves an ALIASED command-level reference over its own raw id argument" do
+      runtime = funded_account(boot_banking)
+
+      expect do
+        runtime.dispatch("Banking::OnboardingCase.Open", customer: "c",
+                         reference: { value: "case-1" }, account_number: { value: "a2" })
+      end.not_to raise_error
+
+      runtime.dispatch("Banking::Customer.Suspend", reference: { value: "c" },
+                       standing: { value: "chargeback investigation" })
+
+      expect do
+        runtime.dispatch("Banking::OnboardingCase.Open", customer: "c",
+                         reference: { value: "case-2" }, account_number: { value: "a3" })
+      end.to raise_error(Hecksagain::Runtime::GivenNotMet, "Open refused — customer is active")
+    end
+
+    # The other half of the same bug: an id that does NOT resolve to a real
+    # record must be a clean refusal (whatever the aggregate's own gates
+    # say — here NotFound, from a plain `reference_to Customer, as:
+    # :customer` failing existence at resolve_references, BEFORE givens
+    # ever run) — never the dereferencer's problem to raise a TypeError
+    # over. This is what the fuzzer actually found: a garbage id string
+    # reaching `customer.status` and blowing up on `String#[]`.
+    it "refuses a dangling aliased reference by name, not with a TypeError from inside the guard" do
+      runtime = funded_account(boot_banking)
+
+      expect do
+        runtime.dispatch("Banking::OnboardingCase.Open", customer: "no-such-customer",
+                         reference: { value: "case-3" }, account_number: { value: "a4" })
+      end.to raise_error(Hecksagain::Runtime::NotFound)
+    end
+  end
+
   describe "the rules have one home" do
     it "leaves each interpreter with one verb" do
       surface = lambda do |klass|
