@@ -222,6 +222,30 @@ end
 
 ## Phase 4: Bug Discovery & Diagnosis (20-40 min)
 
+### 4.0 Write a Failing Test First
+
+Before investigating or filing an issue, **write a test that demonstrates the bug**:
+
+```ruby
+# In spec/qa_bugs_spec.rb, add a describe block:
+describe "BUG#X: [Bug Title]", qa: true do
+  it "should [expected behavior] (currently fails)" do
+    # Setup
+    result = domain.dispatch("Command", args)
+    
+    # Expectation that's currently violated
+    expect { ... }.to raise_error(ExpectedError)
+  end
+end
+```
+
+Tag with `qa: true` so it's excluded from normal runs. This test serves as:
+- Documentation of the bug
+- A way to verify when the fix works
+- A regression test after it's moved to the main suite
+
+See spec/qa_bugs_spec.rb for examples.
+
 ### 4.1 When a Test Fails Unexpectedly
 
 If a test fails that you expected to pass (or vice versa), you've found a bug:
@@ -502,6 +526,62 @@ Always freeze at materialization points.
 3. Test Compliance and Settlement domains
 EOF
 ```
+
+---
+
+## Managing Your QA Bug Test Suite
+
+The QA engineer maintains **spec/qa_bugs_spec.rb** - a suite of tests that demonstrate known bugs.
+
+### Running QA Bug Tests
+
+```bash
+# Run all QA bug tests
+rspec spec/qa_bugs_spec.rb
+
+# Run only QA-tagged tests
+rspec --tag qa
+
+# Run a specific bug
+rspec spec/qa_bugs_spec.rb -e "BUG#7"
+
+# See which tests are pending (known architectural issues)
+rspec spec/qa_bugs_spec.rb --format documentation
+```
+
+### Adding a New Bug Test
+
+When you discover a bug:
+
+1. Write a failing test demonstrating it:
+```ruby
+describe "BUG#N: [Title]", qa: true do
+  it "should [expected behavior] (currently fails)" do
+    # Test that demonstrates the bug
+    expect { action }.to raise_error(ExpectedError)
+  end
+end
+```
+
+2. Tag with `qa: true` (automatically excluded from CI and normal runs)
+
+3. Reference it in FINDINGS.md
+
+### When a Bug is Fixed
+
+1. Verify the test passes locally
+2. Move the test to the appropriate spec file (e.g., spec/pizzas_spec.rb)
+3. Remove the `qa: true` tag
+4. Delete from spec/qa_bugs_spec.rb
+5. Update FINDINGS.md to mark it as FIXED
+
+### Test Exclusion
+
+QA bug tests are automatically excluded from:
+- Normal local runs: `rspec` or `rspec spec/`
+- CI runs: `.github/workflows/ci.yml`
+
+This keeps the main test suite clean while maintaining QA documentation.
 
 ---
 

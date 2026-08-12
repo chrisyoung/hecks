@@ -85,6 +85,21 @@ rspec qa/qa_adversarial_fixed.rb --format progress
 - Can test any domain
 - Finds boundary violations, state corruption, etc.
 
+### [../spec/qa_bugs_spec.rb](../spec/qa_bugs_spec.rb)
+QA bug demonstration suite (owned by QA engineer).
+```bash
+# Run QA tests
+rspec --tag qa
+rspec spec/qa_bugs_spec.rb
+
+# Run a specific bug
+rspec spec/qa_bugs_spec.rb -e "BUG#7"
+```
+- Tests that demonstrate known bugs
+- Tagged `qa: true` (excluded from normal runs and CI)
+- Shows expected behavior and where it fails
+- When a bug is fixed, test is moved to appropriate spec file
+
 ---
 
 ## 🚀 Quick Start
