@@ -63,12 +63,26 @@ current_shape = Hecksagain::Runtime::StorageShape.project(bluebook)
 held_shape = Hecksagain::Runtime::StorageShape.project(manager.shadow(latest[:held_text]))
 
 if held_shape == current_shape
-  era = latest[:ordinal]
-  if era == 1
-    puts "#{bluebook.name} stands at era 1 — no edge to audit."
-    exit 0
-  end
-  chain = manager.edge_chain(registry, bluebook, eras, latest[:label])
+  # NOTHING IS PENDING, WHICH IS NOT AN ERROR. The held shape matching the
+  # current one means the chapter has not moved since the era was minted —
+  # there is no edge waiting to be checked, at ANY era.
+  #
+  # Era 1 said so plainly and every later era fell through to `edge_chain`
+  # asking for a path from the latest label to itself, which there is no such
+  # thing as:
+  #
+  #   cannot boot QualityControl: the edge chain is broken at era 5 — no
+  #   translation leads 30706a to 30706a; restore bluebook/translations/
+  #
+  # A WiringError, a backtrace, and an instruction to restore files that were
+  # never missing — for the ordinary case of running the audit twice. Somebody
+  # reading that reasonably concludes their lineage is damaged.
+  #
+  # Re-checking an edge already minted is `bin/reattest_era`'s job, not this
+  # one's: this exists to audit a change BEFORE it is minted.
+  puts "#{bluebook.name} stands at era #{latest[:ordinal]} and its shape has not moved — " \
+       "no pending edge to audit."
+  exit 0
 else
   # a pending edge: audit it BEFORE any mint
   manager.ensure_named!(lineage, latest)
