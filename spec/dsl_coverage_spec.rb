@@ -11,17 +11,17 @@ RSpec.describe "the DSL surface is fully covered" do
     "BluebookBuilder" => [
       Hecksagain::Bluebook::DSL::BluebookBuilder,
       %i[vision formerly_known_as core supporting generic aggregate report read_model policy process_manager classification
-         category]
+         category glossary entrypoint fixture section define lifecycle event actor]
     ],
     "AggregateBuilder" => [
       Hecksagain::Bluebook::DSL::AggregateBuilder,
       %i[description provenance identified_by reference_to has_many has_one belongs_to value_object command lifecycle
          entity query policy attribute list_of attributes synthesise_primitive_wrapper
-         specification specifications invariant rule validation aggregate_invariants]
+         specification specifications invariant rule validation aggregate_invariants fixture]
     ],
     "ValueObjectBuilder" => [
       Hecksagain::Bluebook::DSL::ValueObjectBuilder,
-      %i[invariant one_of member attribute list_of attributes]
+      %i[invariant rule one_of member attribute list_of attributes description]
     ],
     "CommandBuilder" => [
       Hecksagain::Bluebook::DSL::CommandBuilder,
@@ -60,7 +60,7 @@ RSpec.describe "the DSL surface is fully covered" do
       Hecksagain::Bluebook::DSL::HecksagonBuilder,
       %i[binds subscribe subscriptions port uses_framework framework_members
          adapter raw_adapters driving_handlers domain_wide_persisted_by apply_domain_wide_defaults!
-         success failure]
+         success failure gate method_missing]
     ],
     "TranslationBuilder" => [
       Hecksagain::Bluebook::DSL::TranslationBuilder,
@@ -108,7 +108,8 @@ RSpec.describe "the DSL surface is fully covered" do
       Hecksagain::Bluebook::DSL::WorldBuilder,
       Hecksagain::Bluebook::DSL::SettingsCollector,
       Hecksagain::Bluebook::DSL::BindingProxy,
-      Hecksagain::Bluebook::DSL::WorldConstProxy
+      Hecksagain::Bluebook::DSL::WorldConstProxy,
+      Hecksagain::Bluebook::DSL::HecksagonBuilder
     ].each do |klass|
       expect(klass.public_instance_methods(false)).to include(:method_missing),
                                                       "#{klass} should answer to anything"

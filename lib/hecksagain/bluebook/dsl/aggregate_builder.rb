@@ -264,6 +264,35 @@ module Hecksagain
           @value_objects << ValueObjectBuilder.build(name, &block)
         end
 
+        # Vendored no-op stub, not (yet) upstream hecksagain (migration
+        # plan task 8): `fixture "Name" do field value ... end` declared
+        # INSIDE an aggregate block -- a THIRD fixture shape hecks_nursury
+        # uses (328 occurrences, 32 files) besides its 312 dedicated
+        # `.fixtures` files and BluebookBuilder's already-stubbed
+        # bluebook-level `fixture "Name", on: "Aggregate" do ... end`
+        # (deciderate). Same documented gap, same reasoning as that
+        # sibling stub's own comment : the field-setter calls inside
+        # (`name "House Battery Bank"`, `voltage 12.8`) have no real
+        # receiver methods, one per the aggregate's own attribute names,
+        # varying per file -- executing the block for real needs an
+        # actual seeding mechanism (dispatch a Declare-equivalent at
+        # boot, or write straight into the repository bypassing command
+        # validation), a real design question not attempted here.
+        # Accepted so the file boots ; block body captured via a tiny
+        # inert `method_missing` receiver (field names vary too widely
+        # per aggregate to enumerate), NOT stored or seeded anywhere.
+        # TODO upstream via bin/evolve (migration plan task 7): a real
+        # aggregate-fixture seeding mechanism, one design covering all
+        # three shapes at once.
+        class InlineFixtureFieldStub
+          def method_missing(*, **, &) = nil
+          def respond_to_missing?(*) = true
+        end
+
+        def fixture(*, **, &block)
+          InlineFixtureFieldStub.new.instance_eval(&block) if block
+        end
+
         def command(name, &block)
           # The verb is declared ON this aggregate — the owner `acts_on` answers
           # with — stamped by `IR::Aggregate#initialize` once the aggregate
@@ -274,6 +303,20 @@ module Hecksagain
 
         def build
           resolve_pending_identity!
+
+          # Vendored default, not (yet) upstream hecksagain: hecks_nursury
+          # (375 files) declares no identified_by anywhere -- hecksagain
+          # refuses an aggregate with none ("an aggregate says what it
+          # is known by"). Falls back to the FIRST declared attribute's
+          # own .value path rather than requiring a corpus-wide add-a-
+          # line pass across every nursery domain -- either exactly
+          # right (most nursery aggregates have one obviously-primary
+          # field) or a visible wrong guess a real boot/dispatch
+          # surfaces immediately, not a silent one. TODO upstream via
+          # bin/evolve (migration plan task 7).
+          if @identity_paths.empty? && attributes.any?
+            @identity_paths = ["#{attributes.first.name}.value"]
+          end
 
           resolve_bare_primitive_collisions
 
@@ -303,8 +346,17 @@ module Hecksagain
           ir
         end
 
-        def self.build(name, &block)
+        # inline_description -- vendored addition, not (yet) upstream
+        # hecksagain. hecks_conception writes `aggregate "Name", "desc" do
+        # ... end` (a second positional string) rather than a
+        # `description "desc"` call inside the block -- syntactic sugar
+        # over the same information, so this just calls #description
+        # first rather than duplicating what it does. TODO upstream via
+        # hecksagain's own bin/evolve word-admission process (migration
+        # plan task 7).
+        def self.build(name, inline_description = nil, &block)
           builder = new(name)
+          builder.description(inline_description) if inline_description
           builder.instance_eval(&block) if block
           builder.build
         end

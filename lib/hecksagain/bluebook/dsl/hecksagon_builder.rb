@@ -196,6 +196,51 @@ module Hecksagain
         def success(*) = nil
         def failure(*) = nil
 
+        # Vendored no-op stub, not (yet) upstream hecksagain: hecksagon-
+        # level `gate "Aggregate", :role do allow :Cmd1, :Cmd2, ... end`
+        # (found in miette's circuit_breaker.hecksagon). Investigated, not
+        # just stubbed blind: every command in circuit_breaker.bluebook
+        # already declares its OWN `role "..."` individually, which
+        # hecksagain's `Runtime.as_caller(role:)` already checks at
+        # dispatch time — so `gate`/`allow` looks like a duplicate,
+        # centralized restatement of the same authorization from an older
+        # convention, not new capability. It's also STALE where checked:
+        # the bluebook says `Trip`/`Reset` are role "Creator", but this
+        # gate block claims :system covers them too — a real disagreement,
+        # not just redundancy, which is one more reason not to silently
+        # promote it to enforcement without reconciling the conflict
+        # first. Accepted so the file boots ; not stored or enforced.
+        # TODO upstream via bin/evolve (migration plan task 7): decide
+        # whether `gate` is retired in favor of per-command `role`, or
+        # kept as an intentional stricter allowlist — and if kept,
+        # reconcile circuit_breaker's own conflicting statement.
+        class GateStub
+          def allow(*) = nil
+        end
+
+        def gate(*, &block)
+          GateStub.new.instance_eval(&block) if block
+        end
+
+        # Vendored catch-all no-op, not (yet) upstream hecksagain
+        # (migration plan task 8): bin-buddy's portal `.hecksagon` files
+        # (driver_portal/admin_portal/homeowner_portal) are a genuinely
+        # DIFFERENT genre of content from aggregate-wiring — app-surface
+        # branding and UI config (`capabilities :webapp`, `brand_color
+        # "#..."`, `task_colors do out "#..." end`, `refund_thresholds do
+        # role :support, cents: 2500 end`) — not persistence/payment
+        # binds at all. Real methods (`adapter`/`success`/`failure`/etc
+        # above) still win over method_missing, so this only absorbs
+        # whatever this vendored port doesn't know, same pattern as
+        # DrivingAdapterBuilder's own catch-all just above it in this
+        # migration. A block passed to an absorbed call is never
+        # yielded to, so its own inner calls (`out "#..."`, `role :x,
+        # cents: n`) never need to exist either — structurally captured,
+        # not wired to any real portal/branding concept. TODO upstream
+        # via bin/evolve (migration plan task 8).
+        def method_missing(*) = nil
+        def respond_to_missing?(*) = true
+
         def build
           apply_domain_wide_defaults!
           IR::Hecksagon.new(domain: @domain, binds: @binds, subscriptions: @subscriptions,

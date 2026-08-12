@@ -391,20 +391,23 @@ Banking::SafeDepositBox.rent(customer_id: customer.id, branch_code: { value: "up
 Reach for this one when the set is small, local, and not worth a name
 anyone else will ever reuse.
 
-The trap: the inline shorthand desugars by calling `one_of` on
+A onetime trap: the inline shorthand desugars by calling `one_of` on
 whichever builder currently has `self` — and a nested `value_object`
-block already defines its own `one_of`, for closed-set members. Writing
-the shorthand inside a `value_object` block does not synthesize a
-closed set — it calls the wrong `one_of`, with the wrong arity, and the
-bluebook does not load:
+block already defines its own `one_of`, for closed-set members. Since
+both spellings share the bare word, `ValueObjectBuilder#one_of`
+disambiguates by call shape: values with no block is the inline
+shorthand (delegated to the same synthesis every other builder uses),
+a block with no values is the closed-set-body form. Writing the
+shorthand inside a `value_object` block now synthesizes a closed set
+correctly, the same as anywhere else:
 
 ```ruby
-def banking_bad_one_of
+def banking_nested_one_of
   Hecksagain.with_registry(Hecksagain::Runtime::Registry.new) do
     Kernel.load(InMemoryDomain::EXTRACTION_PORT)
     Kernel.load(InMemoryDomain::PRISM_ADAPTER)
     code = <<~RUBY
-      Hecks.bluebook("BankingBadOneOf") do
+      Hecks.bluebook("BankingNestedOneOf") do
         aggregate "Thing" do
           identified_by { thing_id.value }
           attribute :box, Box
@@ -415,14 +418,15 @@ def banking_bad_one_of
         end
       end
     RUBY
-    file = Tempfile.new(["banking-bad-one-of-", ".bluebook"])
+    file = Tempfile.new(["banking-nested-one-of-", ".bluebook"])
     file.write(code)
     file.flush
     Kernel.eval(code, TOPLEVEL_BINDING, file.path, 1)
   end
+  true
 end
 
-banking_bad_one_of   # ~> ArgumentError: wrong number of arguments
+banking_nested_one_of   # => true
 ```
 
 ## A field that grows
