@@ -534,6 +534,21 @@ Hecks.bluebook "QualityControl" do
     attribute :reason,        BugReason
     attribute :next_step,     NextStep
     attribute :waived,        WaiverCount
+    # A BUG IS WORK, AND WORK GETS CLAIMED.
+    #
+    # Sweeping is not the only way an agent gets something to do — it can
+    # take the next open bug off the queue and fix that instead, which is
+    # most of what a second agent does once a first has been round the
+    # chapters. Two agents on one bug is the same waste two agents on one
+    # chapter is, so it wants the same protection.
+    #
+    # NOT A LIFECYCLE HERE, where `Target` uses one. A target's whole state IS
+    # whose turn it is; a bug's state is how far the fix got, and holding it
+    # is orthogonal to that — an agent picks up an `investigating` bug
+    # without moving it. So the race is a `given` rather than an edge, and
+    # the serialisation is the same either way: one dispatch per record wins.
+    attribute :held_by,       Engineer
+    attribute :claimed_at,    Instant
 
     value_object "BugReference" do
       attribute :value, String, pattern: '[^ \t\n\r]'
@@ -623,6 +638,20 @@ Hecks.bluebook "QualityControl" do
       attribute :value, String
     end
 
+    value_object "Engineer" do
+      attribute :value, String, default: "nobody"
+    end
+
+    value_object "Instant" do
+      attribute :value, Integer, default: 0
+      invariant("an instant is not before the epoch") { !value.negative? }
+    end
+
+    value_object "StaleAfter" do
+      attribute :value, Integer, default: 900
+      invariant("a staleness window is positive") { value.positive? }
+    end
+
     # A bug is born PROVEN. There is no state for "somebody thinks something
     # is wrong" — that is a check, and it lives on the sweep.
     lifecycle :status, default: "logged" do
@@ -651,6 +680,41 @@ Hecks.bluebook "QualityControl" do
       attribute :expectation,   Expectation
 
       emits "BugLogged"
+    end
+
+    # THE SAME RULE AS A TARGET'S, IN THE SAME ARITHMETIC. Held by nobody, or
+    # held long enough ago that the holder has gone quiet. `+` rather than `-`
+    # because that is the operator the sublanguage has, and `now` arrives as
+    # an argument because a predicate cannot ask the time.
+    command "Claim" do
+      role "QA engineer"
+      goal "Take the next bug off the queue, or one whose holder has gone quiet"
+
+      reference_to Bug
+      attribute :held_by, Engineer
+      attribute :now,     Instant
+      attribute :window,  StaleAfter
+
+      given("a live claim is not taken from the agent holding it") do
+        held_by.value == "nobody" || claimed_at.value + window.value <= now.value
+      end
+
+      then_set :held_by,    to: :held_by
+      then_set :claimed_at, to: :now
+
+      emits "BugClaimed"
+    end
+
+    command "Drop" do
+      role "QA engineer"
+      goal "Put a bug back on the queue without finishing it"
+
+      reference_to Bug
+      attribute :held_by, Engineer
+
+      then_set :held_by, to: :held_by
+
+      emits "BugDropped"
     end
 
     command "Investigate" do
@@ -749,6 +813,23 @@ Hecks.bluebook "QualityControl" do
       description "Every bug still owed work — the open ledger, derived rather than maintained."
       where(status: { in: "logged,investigating,paused" })
       order_by :sequence
+    end
+
+    # THE OTHER WAY TO GET WORK. Sweeping finds new bugs; this is the pile of
+    # ones already found and not yet in anybody's hands, oldest first — which
+    # is what an agent that is not sweeping picks from.
+    query "Queue" do
+      description "Open bugs nobody is holding, oldest first. The queue an agent takes from when it is fixing rather than sweeping."
+      where(status: { in: "logged,investigating" })
+      where(:"held_by.value" => "nobody")
+      order_by :sequence
+    end
+
+    query "InHand" do
+      description "Open bugs somebody is holding, and since when. A claim older than the window is free for the taking — read claimed_at before assuming somebody is on it."
+      where(status: { in: "logged,investigating" })
+      where(:"held_by.value" => { ne: "nobody" })
+      order_by :claimed_at
     end
 
     query "FoundIn" do

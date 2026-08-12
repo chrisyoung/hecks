@@ -153,6 +153,66 @@ RSpec.describe "QualityControl" do
     end
   end
 
+  # ── the other queue ──────────────────────────────────────────────────
+
+  # SWEEPING IS NOT THE ONLY WAY TO GET WORK. An agent that is not sweeping
+  # takes the next open bug off the queue and fixes that instead — so a bug
+  # is claimed for the same reason a chapter is.
+  describe "taking a bug off the queue" do
+    it "offers open bugs nobody is holding, oldest first" do
+      sweep = a_sweep
+      a_bug(sweep, reference: "BUG#2", sequence: 2)
+      a_bug(sweep, reference: "BUG#1", sequence: 1)
+
+      expect(references("Bug.Queue")).to eq(["BUG#1", "BUG#2"])
+      expect(rows("Bug.InHand")).to be_empty
+    end
+
+    it "takes it out of the queue and into somebody's hands" do
+      bug = a_bug(a_sweep)
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+
+      expect(rows("Bug.Queue")).to be_empty
+      expect(references("Bug.InHand")).to eq([bug.id])
+    end
+
+    it "refuses a second agent while the first is still on it" do
+      bug = a_bug(a_sweep)
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+
+      expect {
+        bug.claim(held_by: { value: "agent-two" }, now: { value: 1_060 }, window: { value: 900 })
+      }.to raise_error(Hecksagain::Runtime::GivenNotMet, /not taken from the agent holding it/)
+    end
+
+    it "lets the next agent take one whose holder has gone quiet" do
+      bug = a_bug(a_sweep)
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+      bug.claim(held_by: { value: "agent-two" }, now: { value: 1_900 }, window: { value: 900 })
+
+      expect(bug.held_by.to_h).to eq(value: "agent-two")
+    end
+
+    # HOLDING IS ORTHOGONAL TO THE FIX. An agent picks up a bug that is
+    # already `investigating` without moving it, which is why the claim is a
+    # `given` here and a lifecycle edge on Target.
+    it "does not move the fix along" do
+      bug = a_bug(a_sweep)
+      bug.investigate(site: { value: "x.rb:1" }, cause: { value: "y" })
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+
+      expect(bug.status).to eq("investigating")
+    end
+
+    it "puts it back on the queue when somebody gives up on it" do
+      bug = a_bug(a_sweep)
+      bug.claim(held_by: { value: "agent-one" }, now: { value: 1_000 }, window: { value: 900 })
+      bug.drop(held_by: { value: "nobody" })
+
+      expect(references("Bug.Queue")).to eq([bug.id])
+    end
+  end
+
   # ── the check ────────────────────────────────────────────────────────
 
   describe "a check" do
