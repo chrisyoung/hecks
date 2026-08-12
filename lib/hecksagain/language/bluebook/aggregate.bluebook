@@ -277,12 +277,12 @@ Hecks.bluebook "Bluebook" do
     # Three rules that read as rules and were decoration. A predicate cannot
     # guard what a type already guards.
     value_object "FieldName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an attribute is named") { !value.to_s.empty? }
     end
 
     value_object "TypeName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a type is named") { !value.to_s.empty? }
     end
 
