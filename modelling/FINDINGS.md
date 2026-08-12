@@ -69,6 +69,31 @@ later reader mistakes for a modelling decision. Hence the comment in
 
 ---
 
+### The facade stops one level short — entity commands and queries have no door
+**Severity:** low · **Status:** open, not filed as a bug (it is a gap, not a defect)
+
+`Facade::Surface` makes aggregate work read as Ruby — `Bug.discover(...)`,
+`bug.reproduce(...)`, `bug.status`. Two things fall outside it:
+
+- an **entity command** (`Session.TestCase.Pass`), because `Surface` installs a
+  module per aggregate and `Handle#define_verb_methods` walks `ir.commands`;
+- a **query** (`Bug.Unfixed`), which has no door at all.
+
+Both stay `runtime.dispatch` / `runtime.query` strings, and every spec in the
+corpus carries the same two exceptions.
+
+**The modelling point:** it pushes authors away from entities. An entity is
+already the harder sell (it cannot be referenced, cannot hold a list); making
+it the only shape whose commands read worse in a spec adds a reason to reach
+for a head that has nothing to do with the domain. `Session::TestCase.pass(...)`
+on a nested door, and `Bug.unfixed` as a door method per declared query, would
+both follow from IR the surface already walks.
+
+Recorded here rather than in the bug ledger because nothing is *wrong* — a
+`qc_*` tool user never sees it. It is a cost paid by whoever writes the spec.
+
+---
+
 ## Accepted limitations — no fix wanted
 
 These are refusals of the language, not bugs. Recorded so they are not

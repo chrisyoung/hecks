@@ -238,6 +238,56 @@ else. Known and documented in `in_memory.rb`, still surprising.
 
 ---
 
+## E0. Write specs through the facade, not through dispatch strings
+
+`Runtime::Loader.bind_runtime` installs a door per aggregate. Use it — a spec
+full of `runtime.dispatch("Domain::Agg.Verb", id: ..., ...)` spends half its
+assertions proving the spec passed the right id to the right verb, which is a
+fact about the spec.
+
+```ruby
+runtime = Hecksagain::Runtime::Loader.bind_runtime(dispatcher)   # not the bare dispatcher
+
+bug = QualityControl::Bug.discover(session_id: session.id, ...)  # creating verb → module method
+bug.reproduce(demonstration: { value: "rspec ..." })             # every other verb → on the handle
+bug.status                                                        # lifecycle state
+bug.commit.to_h                                                   # attribute reader
+```
+
+`Handle#run` builds the identity from `identity_heads` and its own state, so a
+non-creating verb never takes an id — composite identities included. Verbs
+return the handle, so they chain.
+
+**A value object is always `{ field: value }`, never a bare scalar** — even
+when it has one field. `bug.pause(reason: "x")` raises `TypeMismatch: reason is
+a BugReason — pass its fields as an object`. `remedy.reason.to_h` is the
+round-trip.
+
+### The facade's edges — measured, not assumed
+
+An aggregate door carries exactly: `all`, `commands`, `count`, `events`,
+`find`, `fqn`, `ir`, `port`, `repository`, and one method per **creating**
+verb. That is the whole list. So:
+
+- **Entity commands have no door.** `Surface` installs one module per
+  *aggregate*, and `Handle#define_verb_methods` walks `ir.commands`, which does
+  not include an entity's. `session.pass(...)` does not exist —
+  `runtime.dispatch("Domain::Aggregate.Entity.Command", id:, sequence:, ...)`.
+- **Queries have no door.** `QualityControl::Bug.unfixed` does not exist —
+  `runtime.query("Domain::Aggregate.QueryName", **args)`.
+
+Wrap both in one helper each at the top of the spec and the rest of the file
+reads as ordinary Ruby.
+
+### A command and an attribute cannot share a name
+
+The door defines an attribute reader and a verb method on the same handle, so
+`attribute :plan` plus `command "Plan"` both want `target.plan` and whichever
+is defined last silently wins. Rename one. (`Target.Plan` became `Target.Rank`
+for exactly this.) Nothing warns.
+
+---
+
 ## E. Verb and row shapes worth writing down
 
 Not hazards exactly — just things that cost an hour to rediscover.

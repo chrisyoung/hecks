@@ -27,4 +27,5 @@ Hecks.hecksagon "QualityControl" do
   QualityControl::Bug.persisted_by("Heki")
   QualityControl::Remedy.persisted_by("Heki")
   QualityControl::Ticket.persisted_by("Heki")
+  QualityControl::Target.persisted_by("Heki")
 end

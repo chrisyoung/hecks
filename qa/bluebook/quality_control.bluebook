@@ -24,7 +24,7 @@
 # means is the runtime that dispatches it, and a second model of it here
 # would be a second place to be wrong.
 #
-# WHAT IT ALSO DOES NOT MODEL: coverage. `qa/BLUEBOOK_REQUIREMENTS.md`
+# WHAT IT ALSO DOES NOT MODEL: coverage-as-a-total. `qa/BLUEBOOK_REQUIREMENTS.md`
 # asks for a fourth aggregate, `TestCoverage`, holding `test_count`,
 # `bug_count` and `last_tested_date` per domain — and its own question 1
 # asks whether that should be rebuilt from the other aggregates or
@@ -38,6 +38,24 @@
 # honest version of that aggregate. `TestCase.ForDomain`,
 # `TestCase.InCategory` and `Bug.ForDomain` answer every coverage question
 # the requirements list, by counting rows that cannot be wrong.
+#
+# WHAT IT DOES MODEL, AND THE DISTINCTION IS THE WHOLE ARGUMENT: `Target`,
+# the list of things that EXIST to be swept. "How much has Banking been
+# tested" is derivable. "What have I not tested at all" is not — an
+# untested thing has no rows anywhere in this ledger and is invisible by
+# construction. That is not a total; it is an inventory, and an inventory
+# is data. See `Target`'s own header.
+#
+# THE PRACTICE HAS SINCE SET ITSELF A TARGET OF 200 BUGS
+# (`qa/NEXT_SESSION_PRIORITIES.md`), and this chapter deliberately does not
+# hold it. A count is not a bad thing to want; a count held as a RECORD, in
+# the same ledger that mints the things being counted, is — it makes the
+# number the ledger's business, and the ledger's business is what happened.
+# The one contribution a record can honestly make to a target is to publish
+# the number that says whether the count is real, which is why `Doubtful`
+# exists and why `Withdraw` and `Duplicate` were added at all. Three of the
+# practice's first ten entries turned out to be correct code, and all three
+# reached a public tracker before anybody checked.
 #
 # THE COUNTER RULE THIS CHAPTER HOLDS, stated once here because it is the
 # reason three requested fields are missing: A COUNTER IS ONLY HONEST IF
@@ -598,6 +616,7 @@ end
     attribute :commit,        CommitRef
     attribute :reason,        BugReason
     attribute :blocked_by,    BlockingBug
+    attribute :duplicate_of,  DuplicateBug
 
     value_object "BugReference" do
       attribute :value, String, pattern: '[^ \t\n\r]'
@@ -795,6 +814,28 @@ end
       attribute :value, String, default: "none"
     end
 
+    # THE SAME BUG, ALREADY RECORDED SOMEWHERE ELSE.
+    #
+    # Added on evidence, on the day the ledger was built. Two records of the
+    # same practice — this ledger and `qa/FINDINGS.md` — assigned the numbers
+    # `#11` and `#12` to DIFFERENT bugs within hours of each other, and both
+    # are now cited in commit messages and in GitHub issues #54 and #55. That
+    # is not a filing mistake; it is what happens whenever two people are
+    # finding bugs at once and the reference is minted by whoever is typing.
+    #
+    # `duplicate` is a real disposition and not a synonym for `dismissed` or
+    # `withdrawn`: the bug is REAL, it is not correct behaviour, and it is
+    # not unreproducible — it is simply already being tracked under another
+    # name, and the work belongs there. A count of open bugs that includes
+    # both copies is wrong by one, which is the whole reason to have the word.
+    #
+    # Text rather than a self-reference, for the reason `BlockingBug` gives —
+    # and here the case is stronger still, since the thing pointed at is
+    # routinely a record in ANOTHER system (`FINDINGS.md #11`, `gh #54`).
+    value_object "DuplicateBug" do
+      attribute :value, String, default: "none"
+    end
+
     value_object "SessionRef" do
       attribute :value, String
     end
@@ -850,6 +891,35 @@ end
       # ticket finally being actioned turns into — and the verb
       # `qa/FINDINGS.md` #3 needs the day #2 lands.
       transition "Revisit"     => "investigating", from: "paused"
+      # THE WAY OUT OF `found` FOR A REPORT THAT WAS WRONG — and the gap that
+      # reading `qa/FINDINGS.md` a second time exposed in this chapter.
+      #
+      # #7, #8 and #9 were logged, filed as GitHub issues #40, #41 and #42,
+      # and are now all three marked "RESOLVED - NOT A BUG": the overdraft
+      # guard was there all along, and `check_numeric_fields` was rejecting
+      # floats and strings correctly the whole time. Nobody ever reproduced
+      # any of them, because there was nothing to reproduce.
+      #
+      # As first written this chapter could not represent that. `found` had
+      # exactly one exit, `Reproduce`, so a mistaken `Discover` was immortal —
+      # which would have been a worse record than the markdown it replaces.
+      #
+      # `withdrawn` IS NOT `dismissed`, and collapsing them loses the only
+      # lesson either one carries:
+      #
+      #   withdrawn — it never happened. The TEST was wrong, or the reader
+      #               was. Next time, reproduce before filing.
+      #   dismissed — it happens exactly as described, and that is correct
+      #               behaviour. The EXPECTATION was wrong. Next time, read
+      #               the rule before calling it a bug.
+      #
+      # `qa/FINDINGS.md` writes both as "NOT A BUG ✅" and so records neither.
+      transition "Withdraw"    => "withdrawn",     from: "found"
+      # ALREADY TRACKED SOMEWHERE ELSE — see `DuplicateBug` for the collision
+      # that made this necessary. Reachable from every live state, because a
+      # duplicate is usually discovered when somebody goes to fix one of the
+      # two and finds the other, which can be at any point.
+      transition "Duplicate"   => "duplicate",     from: ["found", "reproduced", "investigating", "paused"]
     end
 
     command "Discover" do
@@ -1002,6 +1072,35 @@ end
       emits "BugRegressed"
     end
 
+    # THE REASON IS REQUIRED, and it is the useful half. "Could not reproduce"
+    # is not a reason; "the given was already there and the test was asserting
+    # against the wrong command" is. Three of this practice's first ten bugs
+    # ended here and every one of them had a specific, learnable cause that
+    # `qa/FINDINGS.md`'s "NOT A BUG ✅" throws away.
+    command "Withdraw" do
+      role "QA engineer"
+      goal "Take back a report that could not be made to happen at all"
+
+      reference_to Bug
+      attribute :reason, BugReason
+
+      then_set :reason, to: :reason
+
+      emits "BugWithdrawn"
+    end
+
+    command "Duplicate" do
+      role "QA engineer"
+      goal "Point at the record that is already tracking this, and stop tracking it twice"
+
+      reference_to Bug
+      attribute :duplicate_of, DuplicateBug
+
+      then_set :duplicate_of, to: :duplicate_of
+
+      emits "BugFoundToBeDuplicate"
+    end
+
     command "Revisit" do
       role "QA engineer"
       goal "Pick a paused bug back up, investigation intact"
@@ -1075,6 +1174,47 @@ end
       description "Every bug ever found in one domain. Counted against TestCase.ForDomain, this is the bug density the requirements' TestCoverage wanted to hold as a field."
       attribute :domain, AffectedDomain
       where(domain: :domain)
+      order_by :sequence
+    end
+
+    query "Dismissed" do
+      description "Reproduced, and correct behaviour after all — the expectation was wrong. Read the reasons: a run of these in one area means the practice does not yet understand that area's rules."
+      where(status: "dismissed")
+      order_by :sequence
+    end
+
+    query "Withdrawn" do
+      description "Reported and never made to happen. The test was wrong, or the reader was. qa/FINDINGS.md #7, #8 and #9 all belong here, and all three were filed as public GitHub issues first."
+      where(status: "withdrawn")
+      order_by :sequence
+    end
+
+    # THE COUNTER-METRIC, AND IT EXISTS BECAUSE OF A NUMBER.
+    #
+    # `qa/NEXT_SESSION_PRIORITIES.md` sets the practice a target of 200 bugs
+    # and works backwards to a per-file yield estimate. This chapter does not
+    # model that target — see the closing note for why — but a ledger that
+    # can be counted UP can be counted up wrongly, and the responsible thing
+    # is to publish the number that says whether the count is real.
+    #
+    # Every row here was once counted as a bug and is not one now: it never
+    # happened (`withdrawn`), it was correct behaviour (`dismissed`), or it
+    # was already being tracked (`duplicate`). Three of this practice's first
+    # ten entries were withdrawals, and all three reached a public tracker
+    # before anybody checked. Against a target of 200, that ratio is the only
+    # thing standing between a bug count and a filing count.
+    #
+    # Read as a fraction of `Bug.All`. A practice whose withdrawal rate is
+    # climbing is not finding more bugs, it is reporting faster.
+    query "Doubtful" do
+      description "Everything once counted as a bug that turned out not to be one — withdrawn, dismissed, or already tracked elsewhere. Read as a fraction of Bug.All; it is the honesty check on any bug count."
+      where(status: { in: "withdrawn,dismissed,duplicate" })
+      order_by :sequence
+    end
+
+    query "Duplicates" do
+      description "Bugs being tracked under another name, and which name. Each row is one the open count would otherwise double."
+      where(status: "duplicate")
       order_by :sequence
     end
   end
@@ -1602,6 +1742,301 @@ end
       where(status: "filed")
       where(:"bug.status" => "verified")
       order_by :number
+    end
+  end
+
+  # WHAT IS LEFT TO SWEEP.
+  #
+  # THE ONE THING THIS CHAPTER CANNOT DERIVE, AND THE REASON IT IS A HEAD.
+  #
+  # `TestCoverage` was refused above and stays refused: every field on it is a
+  # count of rows these aggregates already hold. This is the opposite case, and
+  # the distinction is the whole argument.
+  #
+  # "How much has Banking been tested?" is derivable — `TestCase.ForDomain`
+  # answers it by counting. **"What have I not tested at all?" is not.** An
+  # untested domain has no rows anywhere in this ledger; it is invisible by
+  # construction. `TestCase.ForDomain("Compliance") == []` only means something
+  # to a reader who already knows Compliance exists, and knowing that is
+  # exactly the fact nothing here holds.
+  #
+  # The practice worked this out the hard way and reached for markdown, twice:
+  # `qa/SYSTEM_ARCHITECTURE.md` grew a hand-kept "Complete Bluebook Inventory
+  # (60+ files)", and `qa/NEXT_SESSION_PRIORITIES.md` is a hand-ranked list of
+  # seven of them. Both are the same artefact class the ledger exists to
+  # replace — a list somebody maintains, which will be right until the day a
+  # new bluebook lands and nobody remembers to add it.
+  #
+  # WHAT IS DELIBERATELY NOT HERE: an estimate. `NEXT_SESSION_PRIORITIES.md`
+  # carries one per target ("Banking comprehensive: 20-30 bugs") and sums them
+  # toward a goal. A prediction of how many bugs a file contains is a number
+  # nobody can be right about, and holding it as a record converts a guess into
+  # a target that a later reader will measure the sweep against. `priority`
+  # says what to do next, which is a decision and is real. How much is in there
+  # is found out by looking.
+  aggregate "Target" do
+    description "One thing that can be swept — a bluebook, a domain, a subsystem — what the practice intends to do to it, and when it was last done."
+
+    identified_by { reference.value }
+
+    attribute :reference,  TargetReference
+    attribute :path,       TargetPath
+    attribute :kind,       TargetKind
+    attribute :rationale,  TargetRationale
+    attribute :priority,   TargetPriority
+    attribute :plan,       list_of(PlannedCategory)
+    attribute :last_swept, SweptIn
+    attribute :reason,     TargetReason
+
+    value_object "TargetReference" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a target is referenced") { !value.to_s.empty? }
+    end
+
+    # WHERE IT ACTUALLY IS — `examples/banking/bluebook/banking.bluebook`,
+    # `spec/fixtures/till.bluebook`, `lib/hecksagain/runtime`. Required,
+    # because "Banking" is a name two people can disagree about and a path is
+    # a thing you can open. It is also what makes the inventory checkable: a
+    # runner can walk the repository and ask which paths are not here.
+    value_object "TargetPath" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a target says where it is") { !value.to_s.empty? }
+    end
+
+    # `domain`, `fixture`, `framework`, `language`, `runtime` — the grouping
+    # `qa/SYSTEM_ARCHITECTURE.md`'s own inventory already uses, and NOT a
+    # closed set, for the reason `TestCategory` gives at length. The inventory
+    # grew a `runtime` group the moment three bugs turned up in `lib/` rather
+    # than in any bluebook, and it will grow again.
+    value_object "TargetKind" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a target says what kind of thing it is") { !value.to_s.empty? }
+    end
+
+    # WHY IT IS WORTH SWEEPING. Required, and the same discipline
+    # `Remedy#approach` and `TestCase#expectation` hold: a backlog whose
+    # entries cannot each be defended is a list of everything, which is a list
+    # of nothing. `NEXT_SESSION_PRIORITIES.md` gets this right already — every
+    # priority on it carries a sentence — and this is that sentence, kept.
+    value_object "TargetRationale" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a target says why it is worth sweeping") { !value.to_s.empty? }
+    end
+
+    # LOWER IS SOONER, and 0 means unranked. An Integer rather than a closed
+    # set of high/medium/low: the practice's own list is ORDERED, seven deep,
+    # and collapsing an order into three buckets loses the only information it
+    # carries.
+    value_object "TargetPriority" do
+      attribute :value, Integer, default: 0
+      invariant("a priority is not negative") { !value.negative? }
+    end
+
+    # ONE CATEGORY THE PRACTICE INTENDS TO APPLY HERE.
+    #
+    # This is the planned half of coverage, and it is the half `qa/sessions/
+    # TEMPLATE.md` invented for itself — a checklist of the eight (now nine)
+    # categories, ticked as a session works through them. Held here rather
+    # than on `Session` because the intent belongs to the TARGET and outlives
+    # any one sitting: a session that ran out of time leaves its remaining
+    # checkboxes on a document nobody reads again, where an unswept category
+    # on a target is still there next week.
+    #
+    # The gap that matters — what was planned and never applied — is this list
+    # read against `TestCase.InCategory` for the same domain. Neither half can
+    # answer it alone, which is why the plan cannot be derived and the
+    # application cannot be declared.
+    value_object "PlannedCategory" do
+      attribute :name, String
+      attribute :why,  String
+    end
+
+    value_object "CategoryName" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a planned category is named") { !value.to_s.empty? }
+    end
+
+    value_object "CategoryReason" do
+      attribute :value, String
+    end
+
+    # WHICH SESSION LAST SWEPT IT — a session reference as text, defaulting to
+    # the word "never". Text for `BlockingBug`'s reason, and the default for
+    # `BUG#13`'s: `Untouched` below has to ask "has this ever been swept", and
+    # a comparison against the empty string silently matches every row.
+    #
+    # "never" also reads as an assertion rather than as an absence, which is
+    # the point of a sentinel — a target whose `last_swept` says "never" has
+    # been looked at by somebody who decided nobody has looked at it.
+    value_object "SweptIn" do
+      attribute :value, String, default: "never"
+    end
+
+    value_object "TargetReason" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("shelving or exhausting a target says why") { !value.to_s.empty? }
+    end
+
+    lifecycle :status, default: "identified" do
+      # `Rank`, NOT `Plan`, AND THE FACADE DECIDED IT. This aggregate holds
+      # an ATTRIBUTE called `plan` (the intended categories), and
+      # `Facade::Surface` installs an attribute reader and a verb method on
+      # the same Handle — so a command called `Plan` and a field called
+      # `plan` would both want `target.plan`, with whichever is defined last
+      # silently winning. `Rank` is also the better word: what this verb
+      # actually does is put a number on the thing.
+      transition "Rank"    => "planned",    from: ["identified", "swept"]
+      # A SELF-TRANSITION, so a plan can only grow while the target is still
+      # planned — the trick `Session#Test` and `Remedy#Touch` both use. A
+      # target that gains a category after it was swept did not have that
+      # category swept.
+      transition "Intend"  => "planned",    from: "planned"
+      transition "Sweep"   => "swept",      from: ["identified", "planned"]
+      # NOTHING MORE TO FIND HERE — a real terminal, and a different fact from
+      # "not worth sweeping". `exhausted` is a claim about the target;
+      # `shelved` is a decision about the practice's time. Only one of them
+      # should ever be doubted when a bug turns up here anyway.
+      transition "Exhaust" => "exhausted",  from: "swept"
+      transition "Shelve"  => "shelved",    from: ["identified", "planned", "swept"]
+      # NEW CODE LANDED. Back to `identified` rather than to `planned`,
+      # deliberately: the plan that was right for the old shape is exactly
+      # what a change invalidates, and re-planning is the work. `last_swept`
+      # survives, which is what tells `Stale` apart from `Untouched`.
+      transition "Restore" => "identified", from: ["shelved", "exhausted", "swept"]
+    end
+
+    command "Identify" do
+      role "QA engineer"
+      goal "Write down that a thing exists which nobody has swept"
+
+      attribute :reference, TargetReference
+      attribute :path,      TargetPath
+      attribute :kind,      TargetKind
+      attribute :rationale, TargetRationale
+
+      emits "TargetIdentified"
+    end
+
+    command "Rank" do
+      role "QA engineer"
+      goal "Put a number on a target and say what makes it worth doing next"
+
+      reference_to Target
+      attribute :priority,  TargetPriority
+      attribute :rationale, TargetRationale
+
+      then_set :priority,  to: :priority
+      then_set :rationale, to: :rationale
+
+      emits "TargetRanked"
+    end
+
+    # ONE CATEGORY AT A TIME, which is how every list in this language is
+    # filled — a list cannot be carried by one argument.
+    command "Intend" do
+      role "QA engineer"
+      goal "Say which adversarial category this target is going to get, and why it is the right one"
+
+      reference_to Target
+      attribute :name, CategoryName
+      attribute :why,  CategoryReason
+
+      then_set :plan, append: { name: :name, why: :why }
+
+      emits "CategoryIntended"
+    end
+
+    command "Sweep" do
+      role "QA engineer"
+      goal "Record that a session actually went at this target"
+
+      reference_to Target
+      attribute :last_swept, SweptIn
+
+      then_set :last_swept, to: :last_swept
+
+      emits "TargetSwept"
+    end
+
+    command "Exhaust" do
+      role "QA engineer"
+      goal "Claim there is nothing further to find here, and say what makes that credible"
+
+      reference_to Target
+      attribute :reason, TargetReason
+
+      then_set :reason, to: :reason
+
+      emits "TargetExhausted"
+    end
+
+    command "Shelve" do
+      role "QA engineer"
+      goal "Decide this is not worth the practice's time, and say why"
+
+      reference_to Target
+      attribute :reason, TargetReason
+
+      then_set :reason, to: :reason
+
+      emits "TargetShelved"
+    end
+
+    command "Restore" do
+      role "QA engineer"
+      goal "Put a target back in play because what it points at has changed"
+
+      reference_to Target
+      emits "TargetRestored"
+    end
+
+    # THE QUERY THIS AGGREGATE EXISTS FOR. Nothing else in the chapter can
+    # answer it, because an unswept target leaves no trace anywhere else.
+    # `identified,planned` AND NOT `identified` ALONE — caught by running it,
+    # which is the only way this class of mistake is ever caught. Planning a
+    # target does not sweep it, so a query keyed on `identified` alone goes
+    # empty the moment somebody prioritises the thing, and the targets it
+    # stops reporting are exactly the ones the practice has decided it cares
+    # about most. It would have read as "nothing left untested" while the
+    # whole ranked queue sat unswept.
+    query "Untouched" do
+      description "Never swept, whether or not anybody has got round to ranking it — the gap no count of test cases can show you, because an untested thing has no rows to count."
+      where(status: { in: "identified,planned" })
+      where(:"last_swept.value" => "never")
+      order_by :priority
+    end
+
+    # SWEPT ONCE, AND CHANGED SINCE. Distinguished from `Untouched` only by
+    # `last_swept`, which is why `Restore` leaves it alone.
+    query "Stale" do
+      description "Swept before, and back in play because the code moved. Cheaper than a first sweep and easier to skip — which is why it is a list of its own."
+      where(status: { in: "identified,planned" })
+      where(:"last_swept.value" => { ne: "never" })
+      order_by :priority
+    end
+
+    query "Queue" do
+      description "Planned and waiting, in priority order — qa/NEXT_SESSION_PRIORITIES.md, derived instead of maintained. Lower is sooner."
+      where(status: "planned")
+      order_by :priority
+    end
+
+    query "ForKind" do
+      description "Everything of one kind — domain, fixture, framework, language, runtime. The inventory qa/SYSTEM_ARCHITECTURE.md keeps by hand, sliced the way it slices it."
+      attribute :kind, TargetKind
+      where(kind: :kind)
+      order_by :priority
+    end
+
+    query "Shelved" do
+      description "Deliberately not being swept, each with the reason. The list to re-read before anybody claims a coverage number."
+      where(status: "shelved")
+      order_by :reference
+    end
+
+    query "All" do
+      description "Every target ever identified — the whole inventory, and what a runner walking the repository checks its findings against."
+      order_by :priority
     end
   end
 
