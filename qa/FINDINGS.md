@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-**Session Status:** 131 bugs fixed (65.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
+**Session Status:** 141 bugs fixed (70.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
 
 ---
 
@@ -46,6 +46,8 @@ Documented bugs and findings from systematic adversarial testing.
 | #87-96 | interview.bluebook | 10 | SessionReference, Subject, ChapterName, IdentityId, QuestionText, AnswerText, Topic, CatalogueRef, Slug, Prompt |
 
 ### Language Bluebook Metadata VOs (45 bugs)
+
+### Fixture + Era Bluebook Test VOs (10 bugs)
 | Bug | Location | Count | Details |
 |-----|----------|-------|---------|
 | #97-100 | aggregate.bluebook | 4 | AggregateName, Description, IdentityField, IdentityPath |
@@ -337,6 +339,27 @@ Documented bugs and findings from systematic adversarial testing.
   - Whitespace-only names would silently break chapter identity
 
 - **Commit:** c42854f
+
+### #155-164: Fixture + Era Bluebook Test VOs (FIXED 2026-08-12)
+- **Location:** spec/fixtures/model_check/*.bluebook, spec/fixtures/eras/*.bluebook
+- **Severity:** MEDIUM - Test fixture quality
+- **Details:** Test bluebooks for model checking and era evolution lacked pattern validation
+
+**Model check bluebooks (4 bugs):**
+  - #155: Number (lifecycle_findings) — added pattern + invariant
+  - #156: Serial (lifecycle_findings) — added pattern + invariant
+  - #157: Number (policy_findings) — added pattern + invariant
+  - #158: Reference (saga_findings) — added pattern + invariant
+
+**Era test fixtures (6 bugs, applied across base.bluebook + bump_new_attribute.bluebook + bump_identity.bluebook):**
+  - #159: FullName — added pattern + invariant
+  - #160: AccountNumber — added pattern + invariant
+  - #161: Money.currency — added pattern + invariant
+  - #162: Tag — added pattern + invariant
+
+**Impact:** Test fixtures should follow same validation as production bluebooks to ensure tests catch real issues, not fixture gaps. Era tests verify evolution safety — invalid VOs undermine confidence in that verification.
+
+- **Commit:** be17a73
 
 ## Testing Coverage by Domain
 
