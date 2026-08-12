@@ -1,0 +1,13 @@
+# The declaration the loader reads as data. `Folder#load_project` globs
+# `qa/adapters/*.adapter` on every boot of this domain — deliberately here
+# rather than in `lib/hecksagain/adapters/driven/`, which loads into every
+# registry and would make the IssueTracker port permanently ambiguous with
+# the stub the spec binds.
+#
+# The class is required from here because a `.adapter` file is `Kernel.load`ed
+# as DSL and nothing else pulls it in.
+require_relative "github"
+
+Hecks.adapter "Github" do
+  port "IssueTracker"
+end

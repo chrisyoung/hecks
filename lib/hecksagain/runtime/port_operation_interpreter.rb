@@ -72,8 +72,27 @@ module Hecksagain
       # not exist, a nil where a number was wanted — all of them become the
       # `refuses` event, carrying what was said. A policy reacts to it, a
       # retry counter reads it, and nothing has to catch anything.
+      #
+      # AN ASK IS HANDED THE RECORD IT IS ABOUT.
+      #
+      # An INBOUND operation deliberately cannot read state — it is the
+      # anti-corruption boundary, translating a fact from outside, and letting
+      # it read the aggregate would make it a second place rules live. That
+      # rule was written for that direction and does not survive the crossing.
+      #
+      # An outbound one almost always needs the record. `asks "File"` names
+      # `reference_to Ticket` and the adapter needs the ticket's repository,
+      # title and body — which are ON the ticket, and which the policy that
+      # triggered this cannot supply because a command's event payload is its
+      # ARGUMENTS, not its state. Without this, every ask would have to have
+      # its data re-passed through the command that fired it, so the same text
+      # would live in two places and could differ.
+      #
+      # ARGUMENTS WIN over state, because an argument is what THIS call said
+      # and state is what the record happens to hold.
       def ask(ctx)
-        answer = adapter_for(ctx).public_send(Naming.snake(ctx.operation.hecks_name), **materialise(ctx.args))
+        payload = held_state(ctx).merge(materialise(ctx.args))
+        answer  = adapter_for(ctx).public_send(Naming.snake(ctx.operation.hecks_name), **payload)
         announce(ctx, ctx.operation.answers, ctx.args.merge(spread(answer)))
       rescue StandardError => e
         announce(ctx, ctx.operation.refuses, ctx.args.merge(refusal: { value: "#{e.class}: #{e.message}" }))
@@ -106,6 +125,19 @@ module Hecksagain
         when Array then value.map { |element| deep_symbolize(element) }
         else value
         end
+      end
+
+      # THE RECORD, IF THERE IS ONE. A record that does not exist yet is not
+      # an error here — the ask still goes, carrying only its arguments, and
+      # whatever the adapter makes of that is its own business. Refusing
+      # would put a second existence check behind the one `resolve_references`
+      # already performed.
+      def held_state(ctx)
+        identity = ctx.operation.identity_attribute(ctx.aggregate.hecks_name) or return {}
+        found    = @registry.repository(ctx.domain, ctx.aggregate).find(ctx.args[identity.name])
+        found ? Value.materialize(found.state) : {}
+      rescue StandardError
+        {}
       end
 
       # THE PORT THIS OPERATION BELONGS TO, found by asking the aggregate
