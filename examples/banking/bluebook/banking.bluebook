@@ -586,6 +586,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
       reference_to ATMCard
       attribute :nickname, CardNickname
+      given("customer is active") { account.customer.status == "active" }
       given("card is issued or active") { ["issued", "active"].include?(status) }
       then_set :nickname, to: :nickname
 
