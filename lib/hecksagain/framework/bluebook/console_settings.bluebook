@@ -158,8 +158,8 @@ Hecks.bluebook "ConsoleSettings" do
     # membership in Ruby, same as it always has.
     value_object "Column" do
       attribute :field,        String, pattern: '[^ \t\n\r]'
-      attribute :sortable,     String, optional: true  # "true"/"false" — see StateStyle.attention's own comment
-      attribute :sort_default, String, optional: true
+      attribute :sortable,     String, pattern: '[^ \t\n\r]', optional: true  # "true"/"false" — see StateStyle.attention's own comment
+      attribute :sort_default, String, pattern: '[^ \t\n\r]', optional: true
       invariant("a column field is present") { !field.to_s.empty? }
     end
 
@@ -173,8 +173,8 @@ Hecks.bluebook "ConsoleSettings" do
     # reason `sort_default` is, above.
     value_object "DetailField" do
       attribute :field,        String, pattern: '[^ \t\n\r]'
-      attribute :display,      String, optional: true
-      attribute :state_filter, String, optional: true
+      attribute :display,      String, pattern: '[^ \t\n\r]', optional: true
+      attribute :state_filter, String, pattern: '[^ \t\n\r]', optional: true
       invariant("a detail field is present") { !field.to_s.empty? }
     end
 
@@ -183,8 +183,8 @@ Hecks.bluebook "ConsoleSettings" do
     # grouped back by `field` on the way out. The same flattening
     # Query::AskOption already uses for a compound option's own parts.
     value_object "DetailFieldColumn" do
-      attribute :field,  String
-      attribute :column, String
+      attribute :field,  String, pattern: '[^ \t\n\r]'
+      attribute :column, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Precondition" do

@@ -160,7 +160,7 @@ Hecks.bluebook "Interview" do
     # `value_object` that is the value object's OWN `one_of` — a real
     # wrong-arity collision pizzas.bluebook hit while being written.
     value_object "QuestionSource" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
 
       one_of do
         member value: "mechanical"
@@ -447,7 +447,7 @@ Hecks.bluebook "Interview" do
     end
 
     value_object "Topic" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a topic is named") { !value.to_s.empty? }
     end
 
@@ -455,7 +455,7 @@ Hecks.bluebook "Interview" do
     # catalogue nobody can defend entry by entry becomes a checklist, and a
     # checklist is what an interview is supposed to replace.
     value_object "Rationale" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a standing question says why it is asked") { !value.to_s.empty? }
     end
 
@@ -561,7 +561,7 @@ Hecks.bluebook "Interview" do
     attribute :reason,    Reason
 
     value_object "FindingReference" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a finding is referenced") { !value.to_s.empty? }
     end
 
@@ -571,7 +571,7 @@ Hecks.bluebook "Interview" do
     end
 
     value_object "Topic" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a topic is named") { !value.to_s.empty? }
     end
 

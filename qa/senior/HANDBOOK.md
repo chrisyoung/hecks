@@ -19,6 +19,12 @@
 
 ## Quick Start: What to Do Right Now
 
+**BEFORE YOU START:**
+1. Create an isolated worktree: `git worktree add -b qa/session-YYYY-MM-DD ../hecksagain-qa-YYYY-MM-DD`
+2. Move into it: `cd ../hecksagain-qa-YYYY-MM-DD`
+3. Run tests to establish baseline: `bundle exec rspec --order random 2>&1 | tail -60` 
+4. Document pre-existing failures — **do not attempt to fix them**
+
 **If you're seeing this because you need to fix bugs:**
 
 1. Open `qa/FINDINGS.md` — this is your bug queue
@@ -65,6 +71,24 @@ Is it a confirmed bug (test case fails)?
 6. If YES — continue to Phase 2
 
 **Output:** A failing test that demonstrates the bug
+
+### Phase 1.5: Understand Testing Methodology (15 min, read once per session)
+
+Read these to understand how to find bugs systematically:
+- `qa/SYSTEM_ARCHITECTURE.md` — how commands/queries/events flow through the runtime
+- `qa/BUG_FINDING_METHODOLOGY.md` — the 8 systematic testing categories
+- `qa/FINDINGS.md` — what's been found, fixed, deferred already
+
+**The 8 Categories (apply to every domain):**
+1. **Boundary** — min/max values, edge cases
+2. **Empty/Null** — empty strings, nil values, whitespace-only strings
+3. **State Violations** — invalid transitions, breaking invariants
+4. **Mutation** — verify immutability, frozen collections
+5. **Identity** — uniqueness constraints, composite keys
+6. **Type Coercion** — wrong types, implicit conversions
+7. **Rapid Mutation** — high-volume changes, consistency checks
+8. **Special Characters** — unicode, emoji, SQL injection attempts
+9. **Fix Verification** — test valid inputs after any fix to ensure it doesn't break them
 
 ### Phase 2: Understand Root Cause (30-60 min)
 
