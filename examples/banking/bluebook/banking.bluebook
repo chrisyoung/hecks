@@ -1289,6 +1289,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
       reference_to SafeDepositBox
       attribute :serial, KeySerial
+      given("box is rented") { status == "rented" }
 
       then_set :keys, append: { serial: :serial }
 
