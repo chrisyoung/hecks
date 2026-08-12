@@ -79,7 +79,10 @@ Hecks.bluebook "Banking", version: "v1" do
       # flip between ASCII and Unicode across regex engines — see
       # PatternSubset, which refuses them when the bluebook is declared rather
       # than letting readers disagree about a customer later.
-      attribute :address, String, pattern: '^[^@ ]+@[^@ ]+\.[^@ ]+$'
+      #
+      # BUG FIX: [^@ ] was too permissive (allowed newlines/tabs).
+      # Now uses [^@ \t\n\r] to exclude control characters like other String VOs.
+      attribute :address, String, pattern: '^[^@ \t\n\r]+@[^@ \t\n\r]+\.[^@ \t\n\r]+$'
     end
 
     lifecycle :status, default: "active" do
