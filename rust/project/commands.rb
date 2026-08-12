@@ -91,6 +91,26 @@ module RustProjection
     # "leave the target non-optional and lose the omission" and "generate
     # something this domain's OWN declarations never asked for" — skipped,
     # loudly, the same as every other ungenerable shape above.
+    # The `transition:` argument `dispatch`/`dispatch_entity` take —
+    # `Some(TransitionCheck)` for a constrained transition, `None` when
+    # there is nothing to check. Shared by the aggregate and entity emit
+    # paths, which build the identical argument from the identical hash.
+    #
+    # `None` covers two different "no check" cases on purpose: no
+    # transition row at all (the command never touches the lifecycle),
+    # and an UNCONSTRAINED row (`from: nil` — admits from any state, so a
+    # check that refuses anything would be wrong). The kernel refuses
+    # whatever `from_states` does not contain, so an unconstrained
+    # transition emitted as an EMPTY slice would refuse every state
+    # instead of admitting every state — the exact inversion of what the
+    # declaration says. See lifecycle_transition_for's own comment.
+    def transition_check_arg(transition)
+      return "None" if transition.nil? || transition[:unconstrained]
+
+      "Some(crate::kernel::TransitionCheck { field: #{transition[:field].inspect}, " \
+        "from_states: &[#{transition[:from_states].map(&:inspect).join(', ')}] })"
+    end
+
     def optional_source_mismatches(command, aggregate, value_objects_by_name)
       lifecycle_field = aggregate[:lifecycle] && aggregate[:lifecycle][:field].to_sym
       problems = []
@@ -253,12 +273,7 @@ module RustProjection
       end
 
       transition = lifecycle_transition_for(command, aggregate)
-      transition_arg =
-        if transition
-          "Some(crate::kernel::TransitionCheck { field: #{transition[:field].inspect}, from_states: &[#{transition[:from_states].map(&:inspect).join(', ')}] })"
-        else
-          "None"
-        end
+      transition_arg = transition_check_arg(transition)
 
       mutation_lines = command[:mutations].map { |m| emit_mutation_line(m, aggregate, command, value_objects_by_name) }
       # advance_lifecycle: unconditional once a transition applies at all —
@@ -405,12 +420,7 @@ module RustProjection
       # `entity` here is exactly that, not a special case either helper
       # needs to know about.
       transition = lifecycle_transition_for(command, entity)
-      transition_arg =
-        if transition
-          "Some(crate::kernel::TransitionCheck { field: #{transition[:field].inspect}, from_states: &[#{transition[:from_states].map(&:inspect).join(', ')}] })"
-        else
-          "None"
-        end
+      transition_arg = transition_check_arg(transition)
 
       mutation_lines = command[:mutations].map { |m| emit_mutation_line(m, entity, command, value_objects_by_name, optional: false) }
       mutation_lines << "        record.#{rust_ident_field(transition[:field])} = #{transition[:to_state].inspect}.to_string();" if transition
