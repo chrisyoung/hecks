@@ -1221,6 +1221,7 @@ Hecks.bluebook "Banking", version: "v1" do
       reference_to SafeDepositBox
       reference_to Customer
       attribute :size, Size
+      given("box is vacant") { status == "vacant" }
 
       then_set :size, to: :size
 
