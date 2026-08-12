@@ -1536,6 +1536,12 @@ Hecks.bluebook "Banking", version: "v1" do
       given("customer is active") { account.customer.status == "active" }
       given("account is open") { account.status == "open" }
 
+      then_set :period, to: :period
+      then_set :opening_balance, to: :opening_balance
+      then_set :closing_balance, to: :closing_balance
+      then_set :generated_on, to: :generated_on
+      then_set :frequency, to: :frequency
+
       emits "StatementGenerated"
     end
   end
