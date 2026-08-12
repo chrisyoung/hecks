@@ -129,4 +129,93 @@ RSpec.describe "QA Bug Demonstrations", qa: true do
     end
   end
 
+  describe "Banking Domain - Additional Adversarial Tests", qa: true do
+    it "rejects empty customer name" do
+      expect {
+        banking_runtime.dispatch("Banking::Customer.Register",
+          reference: { value: "cust-#{SecureRandom.hex(4)}" },
+          name: { given: "", family: "Doe" },
+          email: { address: "test@example.com" })
+      }.to raise_error
+    end
+
+    it "rejects empty account number" do
+      cust = banking_runtime.dispatch("Banking::Customer.Register",
+        reference: { value: "cust-#{SecureRandom.hex(4)}" },
+        name: { given: "John", family: "Doe" },
+        email: { address: "john@example.com" })
+
+      expect {
+        banking_runtime.dispatch("Banking::Account.Open",
+          customer_id: cust.id,
+          number: { value: "" },
+          kind: { name: "current" },
+          daily_limit: { cents: 10_000 })
+      }.to raise_error
+    end
+
+    it "rejects invalid account kind" do
+      cust = banking_runtime.dispatch("Banking::Customer.Register",
+        reference: { value: "cust-#{SecureRandom.hex(4)}" },
+        name: { given: "John", family: "Doe" },
+        email: { address: "john@example.com" })
+
+      expect {
+        banking_runtime.dispatch("Banking::Account.Open",
+          customer_id: cust.id,
+          number: { value: "acct-#{SecureRandom.hex(4)}" },
+          kind: { name: "invalid_kind" },
+          daily_limit: { cents: 10_000 })
+      }.to raise_error
+    end
+
+    it "rejects negative daily limit" do
+      cust = banking_runtime.dispatch("Banking::Customer.Register",
+        reference: { value: "cust-#{SecureRandom.hex(4)}" },
+        name: { given: "John", family: "Doe" },
+        email: { address: "john@example.com" })
+
+      expect {
+        banking_runtime.dispatch("Banking::Account.Open",
+          customer_id: cust.id,
+          number: { value: "acct-#{SecureRandom.hex(4)}" },
+          kind: { name: "current" },
+          daily_limit: { cents: -1000 })
+      }.to raise_error
+    end
+
+    it "rejects zero daily limit" do
+      cust = banking_runtime.dispatch("Banking::Customer.Register",
+        reference: { value: "cust-#{SecureRandom.hex(4)}" },
+        name: { given: "John", family: "Doe" },
+        email: { address: "john@example.com" })
+
+      expect {
+        banking_runtime.dispatch("Banking::Account.Open",
+          customer_id: cust.id,
+          number: { value: "acct-#{SecureRandom.hex(4)}" },
+          kind: { name: "current" },
+          daily_limit: { cents: 0 })
+      }.to raise_error
+    end
+
+    it "rejects empty email address" do
+      expect {
+        banking_runtime.dispatch("Banking::Customer.Register",
+          reference: { value: "cust-#{SecureRandom.hex(4)}" },
+          name: { given: "John", family: "Doe" },
+          email: { address: "" })
+      }.to raise_error
+    end
+
+    it "rejects invalid email format" do
+      expect {
+        banking_runtime.dispatch("Banking::Customer.Register",
+          reference: { value: "cust-#{SecureRandom.hex(4)}" },
+          name: { given: "John", family: "Doe" },
+          email: { address: "not-an-email" })
+      }.to raise_error
+    end
+  end
+
 end
