@@ -704,6 +704,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Record that the source account has given up the money"
 
       reference_to Transfer
+      given("source customer is active") { source.customer.status == "active" }
       given("source account is open") { source.status == "open" }
       given("transfer is requested") { status == "requested" }
       emits "TransferDebited"
