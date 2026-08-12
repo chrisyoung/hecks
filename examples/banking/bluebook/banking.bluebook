@@ -109,6 +109,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
       reference_to Customer
       attribute :standing, CustomerStanding
+      given("customer is active") { status == "active" }
 
       then_set :standing, to: :standing
 
