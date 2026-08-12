@@ -242,9 +242,23 @@ Hecks.bluebook "Bluebook" do
 
     # THE HANDLER IT IS IN, AND THE COMMAND IT SENDS — keyed by position before,
     # for the same want of a way to say this.
+    #
+    # Vendored correction (migration plan task 4): (handler_id, command_name)
+    # alone collides on a real, legitimate pattern — one handler fanning the
+    # SAME command out several times with different `with:` bindings each
+    # time (miette's body/pulse_organs/bluebook: one BodyPulse handler
+    # dispatching "Signal.FireSignal" once per organ, same command name,
+    # different args). Unlike Handler's from_state (a real business value),
+    # position here is not a stand-in for missing meaning — it names WHICH
+    # send this is, and each Dispatch is declared once, at load time, never
+    # re-addressed by identity afterward (the "way back" is always
+    # DeclaredIn + order_by :position, never a Dispatch looked up by its own
+    # id). So folding position into identity is safe exactly where it was
+    # unsafe for Handler's legs. TODO upstream via bin/evolve.
     identified_by do
       handler_id
       command_name.value
+      position.value
     end
 
     attribute :handler,      DispatchText

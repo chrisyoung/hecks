@@ -5925,7 +5925,8 @@
       ],
       "identified_by": [
         "handler_id",
-        "command_name.value"
+        "command_name.value",
+        "position.value"
       ],
       "lifecycle": null,
       "name": "Dispatch",
