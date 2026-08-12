@@ -35,12 +35,12 @@ Hecks.bluebook "Expression" do
     end
 
     value_object "OperatorSymbol" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an operator is written as something") { !value.to_s.empty? }
     end
 
     value_object "Category" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an operator belongs to a category") { !value.to_s.empty? }
     end
 
@@ -71,7 +71,7 @@ Hecks.bluebook "Expression" do
     # to is not derivable from its symbol alone (`+` reads like it could be
     # either), so it is its own column rather than inferred.
     value_object "Grammar" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an operator belongs to one of the two stacked grammars") { !value.to_s.empty? }
     end
 
@@ -82,7 +82,7 @@ Hecks.bluebook "Expression" do
     # suffix (`.empty?`), or match a call-with-argument pattern
     # (`.include?(needle)`).
     value_object "Strategy" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an operator names how its check recognizes it") { !value.to_s.empty? }
     end
 

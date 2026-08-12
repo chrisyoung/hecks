@@ -1,33 +1,51 @@
-# QA Senior Handbook
+# Bug-Fixing Workflow Handbook
 
-**Role:** Fix bugs that junior QA agents discovered but couldn't resolve. Own the fix-path strategy, avoid churn, and document the approach so other agents can follow.
+**For:** QA agents, senior developers, Level 2 developers, and anyone fixing bugs in the QA queue.
 
-**Non-Goal:** Find bugs. That's the junior agent's job. We fix them.
+**Goal:** Systematic, reproducible bug-fixing that avoids churn, documents decisions, and makes patterns visible to future agents.
 
 ---
 
 ## Philosophy
 
-1. **Fix it or defer it permanently** — half-fixed bugs create tech debt that haunts future sessions
-2. **Understand root cause** — a surface fix that doesn't address the architecture is a trap
-3. **Avoid churn** — if a fix requires 3 reverts before landing, we're doing it wrong
-4. **Document the fix path** — so the next senior engineer doesn't re-investigate the same bug
+1. **Fix it or defer it permanently** — half-fixed bugs create tech debt
+2. **Understand root cause** — surface fixes don't address architecture
+3. **Avoid churn** — if a fix requires 3 reverts, we're doing it wrong
+4. **Document the fix path** — future agents shouldn't re-investigate
 5. **Test verification first** — every fix must pass the full suite before committing
+6. **One source of truth** — qa/FINDINGS.md is the authoritative queue, not scattered tickets
+
+---
+
+## Quick Start: What to Do Right Now
+
+**If you're seeing this because you need to fix bugs:**
+
+1. Open `qa/FINDINGS.md` — this is your bug queue
+2. Pick the next bug marked `NEW` or `UNDER INVESTIGATION`
+3. Follow the **6-Phase Workflow** below (Phases 1-6)
+4. Update `qa/FINDINGS.md` when done
+5. Commit to main with a clear message explaining the fix
+
+**If you're integrating this into daily work (Level 2 workflow):**
+
+- Keep GitHub issues for **escalations only** (bugs you can't fix)
+- Fixed bugs: update `qa/FINDINGS.md` + commit to main, no GitHub issue needed
+- Unfixable bugs: create GitHub issue + add to `DEFER_LOG.md`
+- Run the 1m monitoring loop: `loop 1m keep pulling tickets and trying to solve bugs`
 
 ---
 
 ## Decision Tree: Fix or Defer?
 
-When the junior agent hands off a bug:
-
 ```
 Is it a confirmed bug (test case fails)?
-├─ NO → Reject it. Junior agent's job to verify.
+├─ NO → Reject it. Verification is not your job.
 └─ YES → Can you fix it in < 4 hours without major refactor?
-   ├─ YES → Fix it now (this session)
-   └─ NO → Defer it with a permanent record
-      ├─ Add to FINDINGS.md with "PAUSED" status
-      ├─ Create a GitHub issue (label: architectural)
+   ├─ YES → Fix it now (this session, this workflow)
+   └─ NO → Defer it permanently
+      ├─ Add to qa/FINDINGS.md with "PAUSED" status
+      ├─ Create GitHub issue if it blocks other work
       └─ Document why in DEFER_LOG.md
 ```
 
@@ -35,25 +53,26 @@ Is it a confirmed bug (test case fails)?
 
 ---
 
-## Workflow: Fix a Bug
+## The 6-Phase Workflow
 
 ### Phase 1: Verify the Bug (15 min)
 
-1. Read the junior agent's test case
-2. Run it locally — confirm it fails
-3. Read their diagnosis — do you agree?
-4. If NO — reject it back to junior QA, don't spend time
-5. If YES → continue
+1. Read the bug report in qa/FINDINGS.md
+2. Read any test case provided
+3. Run the test locally — **confirm it fails**
+4. Read the diagnosis provided — do you agree?
+5. If NO — reject it back to QA, don't spend time
+6. If YES — continue to Phase 2
 
 **Output:** A failing test that demonstrates the bug
 
 ### Phase 2: Understand Root Cause (30-60 min)
 
 1. **Trace the execution path** — where does the bug manifest?
-2. **Read the code** — understand what it's supposed to do
-3. **Check git blame** — when was this code written? What was the intent?
+2. **Read the code** — what's it supposed to do?
+3. **Check git blame** — when was this written? What was the intent?
 4. **Look for similar patterns** — is this bug in multiple places?
-5. **Document findings** in SENIOR_SESSION_LOG.md
+5. **Document findings** in qa/senior/SESSION_*.md
 
 **Output:** Clear understanding of root cause, not just symptoms
 
@@ -62,23 +81,23 @@ Is it a confirmed bug (test case fails)?
 Before writing code:
 
 1. **List all affected call sites** — where else does this code run?
-2. **Check for dependencies** — what other code relies on the current (buggy) behavior?
+2. **Check for dependencies** — what relies on the current (buggy) behavior?
 3. **Outline the fix** — what will change? How much code?
-4. **Estimate risk** — is this a low-risk local fix or a high-risk structural change?
-5. **Plan the test** — how will we verify the fix and prevent regression?
+4. **Estimate risk** — low-risk local fix or high-risk structural change?
+5. **Plan the test** — how will we verify and prevent regression?
 
 If risk is high:
-- Check if it's already deferred in FINDINGS.md → respect that decision
+- Check if already deferred in FINDINGS.md → respect that decision
 - If not → consider deferring instead of shipping a risky fix
 
 **Output:** A fix outline that other engineers could understand
 
 ### Phase 4: Implement (varies)
 
-1. **Write the test first** — the failing test case from Phase 1
+1. **Write the test first** — the failing test from Phase 1
 2. **Make the fix** — as narrow as possible, no refactoring
 3. **Run related tests** — make sure you didn't break neighbors
-4. **Commit with context**:
+4. **Commit with context:**
    ```
    Fix Bug #XX: [bug title]
    
@@ -87,16 +106,11 @@ If risk is high:
    
    Verification:
    - [test case that now passes]
-   - [manual verification steps]
+   - [manual verification steps if applicable]
    
-   GitHub Issue: #XX
+   Fixes qa/FINDINGS.md Bug #XX
    
    Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
-   ```
-5. **Create a PR** — push your fix branch and open a PR on GitHub
-   ```
-   git push origin [fix-branch]
-   # Open PR on GitHub, link to issue in description
    ```
 
 ### Phase 5: Full Verification (30+ min)
@@ -104,37 +118,29 @@ If risk is high:
 **Before pushing, you must:**
 
 1. Run full test suite: `rspec --order random`
-2. Run property tests: `bin/fuzz` (if applicable to this domain)
+2. Run property tests: `bin/fuzz` (if applicable)
 3. Run static checks: `bin/model_check` (if applicable)
-4. Re-run the junior agent's test explicitly
+4. Re-run the bug's test explicitly
 5. Manual smoke test in `bin/console` if applicable
 
 If ANY test fails:
 - Don't push. Revert.
-- Understand why. Is it your fix or a pre-existing issue?
-- If pre-existing → document and continue. If your fix → fix it.
+- Understand why. Is it your fix or pre-existing?
+- If pre-existing → document and continue
+- If your fix → fix it before pushing
 
 **Output:** Green test suite, documented verification
 
 **After verification:**
 
-1. Push the PR: `git push origin [fix-branch]`
-2. Open/update PR on GitHub
-   - Title: `Fix Bug #XX: [bug title]`
-   - Description: Reference GitHub issue: `Fixes #XX` or `Closes #XX`
-   - Link commit hash in description
-3. Merge if safe (all tests green, narrow fix)
-   - Use squash/rebase if applicable
-   - Delete branch after merge
-4. Close GitHub issue only after PR is merged
-   - Add comment with PR link: `Fixed in PR #YYY`
-   - Link to commit in FINDINGS.md
+1. Push to main: `git push origin HEAD:main`
+2. Update `qa/FINDINGS.md` — mark bug as FIXED with commit hash
 
 ### Phase 6: Document (15 min)
 
-1. **Update FINDINGS.md** — mark bug as FIXED with commit hash
-2. **Update SENIOR_SESSION_LOG.md** — add fix summary
-3. **Close or update GitHub issue** — if one exists
+1. **Update qa/FINDINGS.md** — mark bug FIXED, link commit
+2. **Update qa/senior/SESSION_*.md** — add fix summary
+3. **Update DEFER_LOG.md** — only if you deferred a bug
 4. **Commit the documentation** separately from the fix (good practice)
 
 **Output:** Future engineers can find the fix and understand the decision
@@ -146,28 +152,62 @@ If ANY test fails:
 ✅ **A real fix:**
 - Test goes from RED → GREEN
 - Full test suite still passes
-- Root cause is addressed, not just symptoms
-- Decision is documented (why this approach?)
-- Manual verification confirms the behavior
+- Root cause addressed, not just symptoms
+- Decision documented
+- Manual verification confirms behavior
 
 ❌ **Not a fix:**
 - Disabling/skipping the test
-- Adding a `.try` or `.present?` to hide the error
+- Adding `.try` or `.present?` to hide the error
 - Reverting to "simpler" code that's still wrong
-- Fixing it in one place but leaving the bug in 5 others
+- Fixing one place but leaving bug in 5 others
 - "We'll refactor this later"
 
 ---
 
-## Checklist Before Every Push
+## Daily Workflow (Level 2 Integration)
+
+Use this if you're a Level 2 developer integrating bug-fixing into your daily work.
+
+### Morning (Start of Day)
+
+- Open `qa/FINDINGS.md` — check for new bugs
+- Run the 1m monitoring loop (if authorized): `loop 1m keep pulling tickets and trying to solve bugs`
+- Check GitHub issues — but remember:
+  - GitHub = escalations/unresolved problems only
+  - Fixed bugs don't get GitHub issues
+  - Investigating bugs don't get GitHub issues
+
+### When You Fix a Bug
+
+1. Follow the 6-Phase Workflow above (15 min to 2 hours depending on complexity)
+2. Update `qa/FINDINGS.md` with FIXED status + commit hash
+3. Push to main
+4. **Do NOT create a GitHub issue** — the fix is done
+
+### When You Can't Fix a Bug
+
+1. Follow Phases 1-3 to understand it deeply
+2. Add to `qa/FINDINGS.md` with PAUSED status + reason
+3. **Create a GitHub issue** for escalation
+4. Add to `qa/senior/DEFER_LOG.md` with full context
+5. Leave a comment on the GitHub issue explaining why it's deferred
+
+### GitHub Policy (Important!)
+
+- ✅ Create GitHub issue ONLY if: You cannot fix it (escalation needed)
+- ❌ Do NOT create issue if: You fixed it (just update FINDINGS.md)
+- ✅ Close GitHub issue ONLY if: You merge a fix PR
+- Result: GitHub = escalations/open problems, not completed work
+
+### Before Pushing Any Commit
 
 - [ ] Test I'm fixing is now GREEN
 - [ ] Full test suite passes: `rspec --order random`
 - [ ] No `.skip`, `.pending`, or commented-out tests
 - [ ] All affected call sites handled
 - [ ] Commit message has root cause explanation
-- [ ] FINDINGS.md updated with fix commit hash
-- [ ] SENIOR_SESSION_LOG.md has fix summary
+- [ ] qa/FINDINGS.md updated with fix commit hash
 - [ ] No console.log, .byebug, or debug code left
 - [ ] Git diff makes sense (no accidental changes)
 
@@ -182,41 +222,35 @@ If ANY test fails:
 **Fix Pattern:**
 1. Add invariant/pattern constraint to `.bluebook`
 2. Test with boundary values
-3. Check if this pattern exists elsewhere
-
-**Examples:** Bugs #4 (whitespace), Pizza name validation
+3. Check if pattern exists elsewhere
 
 ### Pattern 2: State Mutation
 
 **Symptom:** Frozen list is modified, breaking immutability  
 **Root Cause:** Code returns mutable array/hash without freezing  
 **Fix Pattern:**
-1. Locate where the collection is returned
+1. Locate where collection is returned
 2. Add `.freeze` to array/hash AND each element if nested
 3. Test that modifications now raise `FrozenError`
-
-**Examples:** Bugs #1, #5, #10 (list/query/event freezing)
 
 ### Pattern 3: Silent Data Loss
 
 **Symptom:** Query returns no results or wrong results  
 **Root Cause:** Data type conversion, stringification, or nil coercion  
 **Fix Pattern:**
-1. Trace the value through the entire pipeline
+1. Trace the value through entire pipeline
 2. Identify where it changes type or disappears
 3. Fix at the source, not symptomatically
 4. Test with the exact value that was lost
-
-**Examples:** Bugs #11, #12 (array stringification, empty string → nil)
 
 ### Pattern 4: State Violations
 
 **Symptom:** Lifecycle allows invalid transitions or multiple final states  
 **Root Cause:** Missing or incorrect `given` guards  
 **Fix Pattern:**
-1. Map out all valid transitions in the domain
+1. Map out all valid transitions
 2. Test each invalid transition (should refuse)
-3. Add `given` guard if missing or fix it if wrong
+3. Add `given` guard if missing or fix if wrong
 
 ### Pattern 5: Architectural Gaps
 
@@ -227,8 +261,6 @@ If ANY test fails:
 - Document in FINDINGS.md with PAUSED status
 - Add to DEFER_LOG.md with reasoning
 - Don't ship a workaround
-
-**Examples:** Bug #2 (nested VO validation architecture)
 
 ---
 
@@ -265,12 +297,12 @@ Add to DEFER_LOG.md if:
 **Investigation:**
 - `git log -p -- [file]` — trace code history
 - `git blame [file]` — see when/why each line was added
-- `git show [commit]` — read the full commit message (often has context)
+- `git show [commit]` — read the full commit message
 
-**Documentation:**
-- `qa/FINDINGS.md` — bug registry
+**Files:**
+- `qa/FINDINGS.md` — bug registry (source of truth)
 - `qa/senior/DEFER_LOG.md` — deferred bugs with reasoning
-- `qa/senior/SENIOR_SESSION_LOG.md` — session summary (start fresh each session)
+- `qa/senior/SESSION_*.md` — session summaries (new file each session)
 
 ---
 
@@ -278,9 +310,9 @@ Add to DEFER_LOG.md if:
 
 At the end of your session:
 
-1. **Commit all work** — fixes should be separate commits from documentation
-2. **Update SENIOR_SESSION_LOG.md** — summary of what you fixed and why
-3. **Update FINDINGS.md** — mark bugs as FIXED or PAUSED
+1. **Commit all work** — fixes separate from documentation
+2. **Update qa/senior/SESSION_*.md** — summary of what you fixed and why
+3. **Update qa/FINDINGS.md** — mark bugs as FIXED or PAUSED
 4. **Update DEFER_LOG.md** — add any new deferred bugs
 5. **Leave a note** — what's the highest priority for the next session?
 
@@ -293,20 +325,19 @@ At the end of your session:
 **Approach:** Traced query pipeline, found stringification of array values
 
 ### Bug #11: Array `in:` values silently converted
-- **Fix:** Preserve array structure through WhereClause IR, don't stringify
-- **Affected:** All adapters (in_memory.rb, postgres.rb, sqlite.rb)
-- **Commits:** abc1234, abc1235
+- **Fix:** Preserve array structure through WhereClause IR
+- **Affected:** All adapters
+- **Commits:** abc1234
 
 ### Bug #12: Empty string coerced to nil in `ne:`
-- **Fix:** Distinguish between empty string and null in value coercion
+- **Fix:** Distinguish between empty string and null
 - **Affected:** value/coercion.rb, query pipeline
-- **Commits:** abc1236
+- **Commits:** abc1235
 
 **Deferred:** Bug #2 (nested VO validation)
 - Requires recursive validation architecture change
-- Added to DEFER_LOG.md
 
-**Next Priority:** Banking comprehensive testing (20-30 bugs waiting)
+**Next Priority:** Banking comprehensive testing
 ```
 
 ---
@@ -317,28 +348,28 @@ At the end of your session:
 
 ❌ **The Shotgun Surgery** — fix one bug by changing 10 files instead of 1
 
-❌ **The False Equivalence** — "this test is like that test, so they must fail for the same reason" (they don't)
+❌ **The False Equivalence** — assume bugs that look similar fail for the same reason (they don't)
 
-❌ **The Premature Optimization** — "let's refactor the whole query system while we're here" (ship the bug fix first)
+❌ **The Premature Optimization** — refactor the whole system while fixing one bug
 
 ❌ **The Silent Defer** — remove a test and commit it without updating DEFER_LOG.md
 
-❌ **The Hope and Push** — "the test passed on my machine, so it should pass everywhere" (run the full suite)
+❌ **The Hope and Push** — "test passed on my machine, so it should pass everywhere"
+
+❌ **Two Source of Truths** — using GitHub issues AND qa/FINDINGS.md inconsistently
 
 ---
 
 ## How Other Agents Can Use This
 
-If you're a QA agent (junior or future senior) and you see this handbook:
+If you're a QA agent, junior developer, or future agent and you see this handbook:
 
 1. **Follow the workflow** — Phases 1-6 are sequential, don't skip
 2. **Reference the checklists** — before every push, verify all boxes
 3. **Use the decision tree** — Fix or Defer? Let it guide you
-4. **Check DEFER_LOG.md** — don't re-investigate bugs we've already decided to defer
-5. **Update SENIOR_SESSION_LOG.md** — every session (new file, add to this handbook)
+4. **Check DEFER_LOG.md** — don't re-investigate already-deferred bugs
+5. **Update qa/senior/SESSION_*.md** — every session (new file each time)
 6. **Respect the philosophy** — avoid churn, fix it or defer it, never ship half-fixed bugs
-
-Other senior agents: this handbook is yours to improve. If you find a better pattern, add it. If something doesn't work, remove it.
 
 ---
 
@@ -348,7 +379,9 @@ Update it when:
 - You find a pattern that works reliably (add it to "Bug Categories")
 - You find a pattern that doesn't work (remove it or flag it)
 - You discover a new tool or command that helps (add it)
-- You defer a bug for a reason not listed above (update "When to Defer")
+- You defer a bug for a reason not listed (update "When to Defer")
+- You discover a new anti-pattern (add it to "Anti-Patterns")
 
-**Last updated:** 2026-08-11  
-**By:** QA Senior role (Claude)
+**Last updated:** 2026-08-12  
+**Contributors:** QA Senior role, Level 2 Developer workflow  
+**Status:** Unified workflow for all bug fixers

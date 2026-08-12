@@ -12,12 +12,12 @@ Hecks.bluebook "Hecksagon" do
     attribute :framework_members,  list_of(FrameworkMember)
 
     value_object "HecksagonName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a hecksagon names its domain") { !value.to_s.empty? }
     end
 
     value_object "Subscription" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a subscription names an event") { !value.to_s.empty? }
     end
 
@@ -25,7 +25,7 @@ Hecks.bluebook "Hecksagon" do
     # Identity, whatever else lands beside them. Same shape as
     # `Subscription` beside it, one word over.
     value_object "FrameworkMember" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a framework member is named") { !value.to_s.empty? }
     end
 
