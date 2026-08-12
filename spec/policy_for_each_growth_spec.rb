@@ -10,23 +10,21 @@ require "tempfile"
 # the shape `PolicyInterpreter#deliver_for_each` reads, independent of
 # whether a real dispatch can reach that shape at all.
 #
-# A REAL dispatch finds two further, separate, genuine runtime gaps,
-# both fixed by a later-landing item in this split:
+# GAPS CLOSED (item 48, `c028843`): a real dispatch used to find two
+# further, separate, genuine runtime gaps.
 # `PolicyInterpreter#deliver_for_each` hands `QueryInterpreter#call` the
 # bare aggregate NAME it split out of `from:`, never resolved to the
 # aggregate object `#call` needs (`Dispatcher#resolve_aggregate` always
-# does this resolution first for an ordinary query) -- that alone raises
+# does this resolution first for an ordinary query) -- that alone raised
 # a plain `NoMethodError: undefined method 'query' for a String`. But
-# `deliver`'s own `return deliver_for_each(...) if policy.for_each` runs
+# `deliver`'s own `return deliver_for_each(...) if policy.for_each` ran
 # BEFORE `record` (the reaction-log entry both of `deliver`'s own rescue
-# clauses call `.merge` on) is assigned, so the SAME method's own defect
-# handling then raises a SECOND, different `NoMethodError: undefined
-# method 'merge' for nil` trying to record the first one -- the one this
-# example actually observes and pins, since Ruby's own exception-in-
-# rescue replaces the original. Pinned here as the current, real
-# behaviour -- the later fix should turn this red, which is the point:
-# it is the signal to replace this example with the positive one (one
-# dispatch per matching row) this construct is actually meant to prove.
+# clauses call `.merge` on) was assigned, so the SAME method's own defect
+# handling then raised a SECOND, different `NoMethodError: undefined
+# method 'merge' for nil` trying to record the first one. Both fixed at
+# the root -- the examples below now prove the positive shape (one
+# dispatch per matching row) this construct is actually meant to prove,
+# plus the honest undelivered-reaction case for an unloaded target.
 RSpec.describe "a policy's own for_each fan-out" do
   def boot(source, hecksagon_name, &binds)
     file = Tempfile.new(["policy-for-each-growth-", ".bluebook"])
@@ -118,14 +116,39 @@ RSpec.describe "a policy's own for_each fan-out" do
     end
   BLUEBOOK
 
-  it "currently crashes on dispatch -- deliver_for_each never resolves the aggregate it queries" do
+  # GAP CLOSED (item 48, `c028843`): a real dispatch now fires one trigger
+  # per matching row, exactly the shape `for_each` is meant to prove --
+  # `deliver_for_each` resolves the aggregate it queries and `deliver`
+  # itself computes `record` before branching to it.
+  it "fires the triggered command once per matching row, real dispatch end to end" do
     runtime = boot(FOR_EACH_SOURCE, "FanoutGrowth") do
       ::FanoutGrowth::GrowthBoard.persisted_by("Memory")
       ::FanoutGrowth::GrowthTicket.persisted_by("Memory")
     end
     runtime.dispatch("FanoutGrowth::GrowthTicket.Create", id: { value: "t1" }, board_id: "b1")
+    runtime.dispatch("FanoutGrowth::GrowthTicket.Create", id: { value: "t2" }, board_id: "b1")
+    # a different board's own ticket must NOT be pinged
+    runtime.dispatch("FanoutGrowth::GrowthTicket.Create", id: { value: "t3" }, board_id: "b2")
 
-    expect { runtime.dispatch("FanoutGrowth::GrowthBoard.Open", id: { value: "b1" }) }
-      .to raise_error(NoMethodError, /undefined method [`']merge['`]? for nil/)
+    runtime.dispatch("FanoutGrowth::GrowthBoard.Open", id: { value: "b1" })
+
+    statuses = %w[t1 t2 t3].to_h do |id|
+      status = runtime.registry.repository("FanoutGrowth", runtime.registry.bluebook("FanoutGrowth").aggregate("GrowthTicket")).find(id).state[:status]
+      [id, status.respond_to?(:to_h) ? status.to_h[:value] : status]
+    end
+    expect(statuses).to eq("t1" => "pinged", "t2" => "pinged", "t3" => "open")
+  end
+
+  it "an unloaded for_each aggregate is recorded as an undelivered reaction, not a crash" do
+    source = FOR_EACH_SOURCE.sub('for_each from: "GrowthTicket.ForBoard"', 'for_each from: "GhostAggregate.ForBoard"')
+    runtime = boot(source, "FanoutGrowth") do
+      ::FanoutGrowth::GrowthBoard.persisted_by("Memory")
+      ::FanoutGrowth::GrowthTicket.persisted_by("Memory")
+    end
+
+    expect { runtime.dispatch("FanoutGrowth::GrowthBoard.Open", id: { value: "b1" }) }.not_to raise_error
+
+    entry = runtime.registry.reaction_log.find { |row| row[:policy] == "PingGrowthTicketsOnOpen" }
+    expect(entry[:delivered]).to be(false)
   end
 end
