@@ -162,6 +162,40 @@ module Hecksagain
           bluebook_ir.add_port(built)
         end
 
+        # Vendored no-op stub, not (yet) upstream hecksagain — and a
+        # MAJOR finding, not a small one (migration plan task 4): the
+        # `Aggregate.verb("Adapter", on: "Event") do success "Cmd"
+        # failure "Cmd" end` shape — the EFFECT-family async-verdict
+        # pattern the Pizzas example itself documents as canonical
+        # (`Order.charged_by("Stripe", on: "OrderPlaced") do success
+        # "Order.Authorize" failure "Order.Decline" end`) — has NO
+        # implementation ANYWHERE in hecksagain: confirmed by grepping
+        # both the vendored copy AND the untouched original
+        # ~/Projects/hecksagain repo for `def success`/`def failure` —
+        # zero hits in either. `IR::Bind` itself
+        # (bluebook/ir/hexagon.rb) has no `on`/`success`/`failure`
+        # fields at all, only `aggregate`/`verb`/`adapter`/`role`. Found
+        # live via miette's dream.hecksagon (`BodyDream::Dream.
+        # imaged_by("DreamImage", on: "DreamImageRequested") do success
+        # "Dream.RecordImage" end`) — a block whose `success`/`failure`
+        # calls land on THIS builder (BindingProxy#method_missing just
+        # `block&.call`s the block in its ORIGINAL lexical scope, never
+        # instance_eval's it against the bind), so they need to exist
+        # here regardless of who resolves them.
+        #
+        # Stubbed structurally so the file boots — NOT a real fix. A
+        # real fix means: `on:` threaded onto IR::Bind, an actual async
+        # delivery mechanism (there is no adapter-host process in this
+        # runtime the way the Pizzas narrative implies), and genuine
+        # verdict re-entry wiring (a refused/succeeded response
+        # dispatching the named command back in). That is a whole
+        # subsystem, not a missing keyword — deliberately not attempted
+        # under this session's time pressure. TODO upstream via
+        # bin/evolve (migration plan task 7): this is the single
+        # highest-value remaining gap this migration surfaced.
+        def success(*) = nil
+        def failure(*) = nil
+
         def build
           apply_domain_wide_defaults!
           IR::Hecksagon.new(domain: @domain, binds: @binds, subscriptions: @subscriptions,
