@@ -238,8 +238,8 @@ Hecks.bluebook "Expression" do
     end
 
     value_object "Reading" do
-      attribute :target, String
-      attribute :form,   String
+      attribute :target, String, pattern: '[^ \t\n\r]'
+      attribute :form,   String, pattern: '[^ \t\n\r]'
 
       invariant("a reading must name its target") { !target.to_s.empty? }
       invariant("a reading must have a form")     { !form.to_s.empty? }
@@ -319,48 +319,48 @@ Hecks.bluebook "Expression" do
     end
 
     value_object "Description" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a predicate says what it is for") { !value.to_s.empty? }
     end
 
     value_object "Source" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Canonical" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Subject" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a predicate reads against something") { !value.to_s.empty? }
     end
 
     value_object "ExpressionRole" do
-      attribute :value, String, default: "given"
+      attribute :value, String, pattern: '[^ \t\n\r]', default: "given"
       invariant("a predicate plays a role") { !value.to_s.empty? }
     end
 
     value_object "ReferenceName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a reference must be named") { !value.to_s.empty? }
     end
 
     value_object "Kind" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a reference is either an attribute or an argument") do
         value.to_s == "attribute" || value.to_s == "argument"
       end
     end
 
     value_object "Reason" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a refusal gives a reason") { !value.to_s.empty? }
     end
 
     value_object "Reference" do
-      attribute :name, String
-      attribute :kind, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
+      attribute :kind, String, pattern: '[^ \t\n\r]'
 
       invariant("a reference must be named") { !name.to_s.empty? }
       invariant("a reference is either an attribute or an argument") do
