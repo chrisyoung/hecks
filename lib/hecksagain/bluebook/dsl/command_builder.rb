@@ -33,13 +33,54 @@ module Hecksagain
         # otherwise silently win while the first still looked declared,
         # exactly the failure mode `reference_to`'s own duplicate guard
         # (below) already exists to prevent for a command's root.
-        def role(value)
+        # Vendored addition, not (yet) upstream hecksagain (migration plan
+        # task 4, i483): `role Role, as: Agent` -- a STRUCTURED role
+        # declaration, deliberate and documented (framework/agent/bluebook/
+        # role.bluebook's own vision: "Role is the type ; Agent is the
+        # role-bearer... reads as 'this command runs in the role of Role,
+        # and the role-bearer is referenced as Agent in the command's
+        # attribute scope'. Same type-plus-alias pattern as `attribute
+        # Role, as: :role`.") -- confirmed real by reading role.bluebook in
+        # full, NOT a mistake (an earlier pass in this same migration
+        # wrongly downgraded one occurrence to a bare string before this
+        # was understood; caught and reverted -- see dispatch_audit.
+        # bluebook's own comments for which occurrence that was and why
+        # THAT one specific command genuinely doesn't need a bearer).
+        #
+        # Synthesises a reference_to the role-bearer type (`as: Agent` ->
+        # an `agent` attribute referencing Agent, via CommandBuilder's own
+        # `reference_to`) and keeps `@role` set to the role TYPE's own
+        # name as a string, so existing string-role authorization code
+        # (Runtime.as_caller(role:)) still has something to compare
+        # against. Extra kwargs (`kind:`, seen in the corpus) are recorded
+        # but NOT enforced -- role.bluebook itself calls this "the first
+        # chapter," a documented gap, not silently pretended complete.
+        # TODO upstream via bin/evolve (migration plan task 7).
+        def role(value, as: nil, **extra)
           raise Malformed,
                 "#{@name} declares role twice — a command carries ONE " \
                 "responsibility; the second would silently win and the " \
                 "first would still look declared" if @role
 
-          @role = value
+          if as
+            # NOT `reference_to` (revised after the first attempt hit
+            # exactly the single-domain wall documented on
+            # conductor/lease.bluebook and demo.bluebook): Agent is a
+            # framework-wide concept referenced from MANY different
+            # domains' commands, so a structural reference back to it
+            # would fail from every domain except Agent's own. A plain
+            # opaque identity field is the same cross-domain convention
+            # already established there -- bare String is fine HERE
+            # because the "primitives live in value objects only" rule
+            # (Part 3a) targets an AGGREGATE's own PERSISTED schema; a
+            # command's ephemeral input isn't that.
+            bearer = Naming.demodulise(as)
+            attribute(Naming.snake(bearer).to_sym, String)
+            @role_kind = extra[:kind]
+            @role = Naming.demodulise(value).to_s
+          else
+            @role = value
+          end
         end
 
         def goal(value) = @goal = value
