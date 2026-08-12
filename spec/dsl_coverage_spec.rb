@@ -104,7 +104,8 @@ RSpec.describe "the DSL surface is fully covered" do
     [
       Hecksagain::Bluebook::DSL::WorldBuilder,
       Hecksagain::Bluebook::DSL::SettingsCollector,
-      Hecksagain::Bluebook::DSL::BindingProxy
+      Hecksagain::Bluebook::DSL::BindingProxy,
+      Hecksagain::Bluebook::DSL::WorldConstProxy
     ].each do |klass|
       expect(klass.public_instance_methods(false)).to include(:method_missing),
                                                       "#{klass} should answer to anything"
