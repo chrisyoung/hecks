@@ -258,7 +258,11 @@ Hecks.bluebook "QualityControl" do
 
     value_object "SweepNotes" do
       attribute :value, String, pattern: '[^ \t\n\r]'
-      invariant("a sweep says what it learned") { value.to_s.size >= 40 }
+      # THE NUMBER IS IN THE SENTENCE, because the sentence IS the refusal.
+      # "a sweep says what it learned" told a caller their note was wrong and
+      # not one thing about what would make it right, which is the exact
+      # failure this chapter opens by naming.
+      invariant("a sweep says what it learned, in at least 40 characters") { value.to_s.size >= 40 }
     end
 
     value_object "WaiverReason" do
