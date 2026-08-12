@@ -1308,6 +1308,7 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :sequence, VisitSequence
       attribute :note,     VisitNote, optional: true
 
+      given("customer is active") { customer.status == "active" }
       given("only a rented box is opened") { status == "rented" }
 
       then_set :visits, append: { date: :date, sequence: :sequence, note: :note }
