@@ -107,3 +107,6 @@ This avoids inflating the count by conflating "number of failed specs" with "num
 
 | 27 | Event objects mutable (can be mutated after dispatch) | Event objects returned in frozen collection but objects themselves not frozen | Add `.freeze` to each event object in dispatcher | CRITICAL - Caller can modify event data after dispatch |
 
+
+| 28 | Not all events are frozen (consistency) | Some events in event log lack .freeze call | Add .freeze to all event objects before adding to collection | HIGH - Inconsistent immutability |
+

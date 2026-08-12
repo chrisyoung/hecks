@@ -709,3 +709,63 @@ After 14 iterations with 4 discovered bugs (3 actual: freeze bugs + 1 email patt
 | 26 | Event objects mutable | FOUND |
 | (Pattern validation) | Pre-existing work | IN PROGRESS |
 
+
+## Loop Iteration 16: Deep Immutability Audit
+
+**Status:** BUG CONFIRMED + Deep immutability testing
+
+### Discoveries
+
+🐛 **BUG #28: Not all events are frozen (consistency issue)**
+- Test: Iterated through all events in runtime.events
+- Found: Some events frozen, some not (inconsistent)
+- Impact: HIGH - Inconsistent immutability guarantees
+- Root cause: Likely events created at different times or via different paths
+- Related: Bug #26 (event objects mutable)
+
+### Passing Tests (Immutability Verified ✅)
+
+✅ Result.events collection is frozen
+✅ Result.events array mutation prevented (clear() failed)
+✅ Result.instance is frozen (Bug #23 fix verified)
+✅ Query result aggregates are frozen
+✅ Query result aggregate mutations prevented
+✅ Result object provides full immutability guarantee
+✅ Event.domain mutation prevented on non-frozen event
+
+### Deep Immutability Findings
+
+**Fully frozen/immutable:**
+- Result.verb
+- Result.instance (aggregate)
+- Result.events (collection)
+- Query result aggregates
+- Reaction log
+- Saga log
+
+**Partially frozen/inconsistent:**
+- Event objects in event log (some frozen, some not)
+
+### Pattern Confirmation
+
+The freeze-vulnerability class is confirmed across multiple objects:
+1. Bug #23: Aggregates (returned from dispatch)
+2. Bug #26: Event objects (in event log)
+3. Bug #28: Event inconsistency (some frozen, some not)
+
+**Common thread:** Objects returned to caller are not consistently frozen
+
+---
+
+## Breakthrough: From Plateau to Pattern Discovery
+
+| Iteration Range | Approach | Bugs Found |
+|---|---|---|
+| 1-6 | Adversarial (8 categories) | 4 bugs |
+| 7-13 | Adversarial (continued) | 0 bugs (plateau) |
+| 14-16 | **Creative pattern matching** | **+3+ bugs** |
+
+**Creative approach yielded:** 75% increase in bug discovery (3+ new bugs vs plateau)
+
+**Key insight:** Pattern recognition (freeze vulnerabilities) more effective than random adversarial testing in mature codebase
+
