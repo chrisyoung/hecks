@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-**Session Status:** 111 bugs fixed (55.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
+**Session Status:** 121 bugs fixed (60.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
 
 ---
 
@@ -45,7 +45,7 @@ Documented bugs and findings from systematic adversarial testing.
 | #79-86 | console_settings.bluebook | 8 | StateStyleText, Flag, SettingsText, SettingsNumber, Column.field, DetailField.field, Precondition (×2), FieldFormat (×2) |
 | #87-96 | interview.bluebook | 10 | SessionReference, Subject, ChapterName, IdentityId, QuestionText, AnswerText, Topic, CatalogueRef, Slug, Prompt |
 
-### Language Bluebook Metadata VOs (25 bugs)
+### Language Bluebook Metadata VOs (35 bugs)
 | Bug | Location | Count | Details |
 |-----|----------|-------|---------|
 | #97-100 | aggregate.bluebook | 4 | AggregateName, Description, IdentityField, IdentityPath |
@@ -56,6 +56,8 @@ Documented bugs and findings from systematic adversarial testing.
 | #116-121 | syntax.bluebook | 6 | SyntaxName, Context/Body/Status/ArgumentKind/PairsShape (all .name) |
 | #122-125 | syntax.bluebook | 4 | Keyword (word, context, body, status) |
 | #126-134 | entity.bluebook | 9 | EntityName, IdentityPath, PieceField (name, type, list), PieceTransition (command, to_state) |
+| #135-141 | projection.bluebook | 7 | ReadModelName, ProjectionPurpose, Head (aggregate, as, many), ProjectionOption (option, key) |
+| #142-144 | reaction.bluebook | 3 | PolicyName, ProcessManagerName, SagaState.name |
 
 **Critical Query Bugs (2 - GitHub):**
 - #11: Array `in:` query bug → [GitHub #54 CLOSED](https://github.com/chrisyoung/hecksagain/issues/54) — FIXED ✅
@@ -290,6 +292,27 @@ Documented bugs and findings from systematic adversarial testing.
 
 **Impact:** These VOs define the DSL surface syntax itself. Whitespace-only names would corrupt parser metadata.
 - **Commit:** a31d2a2
+
+### #135-144: Projection + Reaction Bluebook Read Model + Policy VOs (FIXED 2026-08-12)
+- **Location:** lib/hecksagain/language/bluebook/{projection,reaction}.bluebook
+- **Severity:** MEDIUM - Read model and reaction metadata validation
+- **Details:** Language-level projection and reaction metadata lacked patterns
+
+**Projection.bluebook fixes (7 bugs):**
+  - #135: ReadModelName — added pattern
+  - #136: ProjectionPurpose — added pattern
+  - #137-139: Head (aggregate, as, many) — added patterns + invariants (all required)
+  - #140-141: ProjectionOption (option, key) — added patterns + invariants (all required)
+    - value kept flexible (can be empty or serialized literals)
+    - at made optional (nested path)
+
+**Reaction.bluebook fixes (3 bugs):**
+  - #142: PolicyName — added pattern
+  - #143: ProcessManagerName — added pattern
+  - #144: SagaState.name — added pattern + invariant
+
+**Impact:** Policy and read model metadata defines integration points. Invalid names break query declaration and event handling.
+- **Commit:** 31fdbd3
 
 ## Testing Coverage by Domain
 
