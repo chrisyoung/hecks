@@ -106,14 +106,41 @@ module Hecksagain
 
       # Parses held source into its own IR, in a scratch registry so a past
       # era's text never touches the one actually booting.
+      # RECONSTRUCTING HISTORY, NOT AUTHORING IT — and the difference has to be
+      # visible to the DSL, because a rule added TODAY must not be applied to a
+      # chapter minted last week.
+      #
+      # A held era text is a record of what was legal when it was minted. The
+      # boot re-parses it to compute that era's shape, so every refusal the
+      # language has ever grown is applied, retroactively, to text nobody may
+      # edit — the ledger's whole claim is that its history cannot be quietly
+      # rewritten. Tighten one word and a domain that booted yesterday will not
+      # open at all, with a refusal about a line the author cannot reach.
+      #
+      # Found the hard way: `order_by :order, :sequence` was refused (rightly —
+      # the second field was being read as a direction and thrown away), and
+      # era 4 of the QA ledger had that exact call frozen in its held text. The
+      # fix made the ledger unopenable.
+      #
+      # SO THE FLAG IS READ ONLY BY RULES ADDED AFTER THE FACT. It is not a
+      # licence to skip validation — a shadow parse still has to produce the
+      # same SHAPE, which is the only thing it is consulted for. It says "this
+      # text is already history", and a rule that did not exist when it was
+      # written has no standing over it. `MetaValidator.bootstrapping?` is the
+      # same shape of flag for the same kind of reason.
+      def replaying? = @replaying == true
+
       def shadow_parse(source, path)
         scratch = Registry.new
         loading = Ports::Loading.bootstrap
+        was, @replaying = @replaying, true
         Hecksagain.with_registry(scratch) do
           loading.load_library
           Kernel.eval(source, TOPLEVEL_BINDING, path, 1)
         end
         scratch.bluebooks.values.first
+      ensure
+        @replaying = was
       end
     end
   end

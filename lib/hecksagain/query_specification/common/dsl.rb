@@ -45,7 +45,13 @@ module Hecksagain
         ORDER_DIRECTIONS = %i[asc desc].freeze
 
         def order_by(field, direction = :asc)
-          unless ORDER_DIRECTIONS.include?(direction.to_s.downcase.to_sym)
+          # NOT AGAINST HISTORY. A held era text is re-parsed on every boot to
+          # compute that era's shape, and it may legally contain a call this
+          # rule was invented to stop — era 4 of the QA ledger holds the exact
+          # mistake that prompted the rule. Refusing there makes a ledger that
+          # booted yesterday unopenable, over a line nobody is allowed to edit.
+          unless Runtime::EraGuard.replaying? ||
+                 ORDER_DIRECTIONS.include?(direction.to_s.downcase.to_sym)
             raise Bluebook::DSL::Malformed,
                   "order_by #{field.inspect}, #{direction.inspect} — the second argument is a " \
                   "DIRECTION (:asc or :desc), not a second field. Ordering by more than one " \
