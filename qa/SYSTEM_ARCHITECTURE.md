@@ -370,3 +370,135 @@ Add an entry under "Architecture Changes Over Time" when:
 - A known issue is identified
 
 Keep it as a **living reference** - update immediately when the system changes so future QA work stays accurate.
+
+---
+
+## Complete Bluebook Inventory (2026-08-11 Updated)
+
+### Domain Examples (Testable with Real Data)
+1. **Pizzas** - examples/pizzas/bluebook/pizzas.bluebook
+   - Status: ✅ Heavily tested (8 categories)
+   - Aggregates: Order
+   - Value Objects: PizzaName, CustomerName, ToppingName, Pizza, Price, Topping, Size
+   - Queries: Available, CostingLessThan, Expensive
+   - Key Patterns: Nested VO, lifecycle (available→sold), pricing
+
+2. **Banking** - examples/banking/bluebook/banking.bluebook
+   - Status: ⏳ Partially tested (needs comprehensive 8-category testing)
+   - Aggregates: Account, Transfer, SafeDepositBox
+   - Value Objects: Holder, Price (shared with pizzas), Cents
+   - Key Patterns: Composite identity (SafeDepositBox), frozen account checks, daily limits
+   - State Violations: Transfer rules, overdraft prevention
+
+3. **Compliance** - examples/compliance/ (STUB - no files yet)
+   - Status: ❌ Not implemented
+   - Would likely test: Cross-domain sagas, approval workflows, audit trails
+
+### Language & Framework Bluebooks (Meta-Domains)
+
+**Core Language (Critical for parsing all domains):**
+- lib/hecksagain/language/bluebook/bluebook.bluebook
+- lib/hecksagain/language/bluebook/aggregate.bluebook
+- lib/hecksagain/language/bluebook/entity.bluebook
+- lib/hecksagain/language/bluebook/behavior.bluebook
+- lib/hecksagain/language/bluebook/reaction.bluebook
+- lib/hecksagain/language/bluebook/projection.bluebook
+- lib/hecksagain/language/bluebook/shape.bluebook
+- lib/hecksagain/language/bluebook/syntax.bluebook
+- lib/hecksagain/language/bluebook/vocabulary.bluebook
+- lib/hecksagain/language/hecksagon.bluebook
+- lib/hecksagain/language/world.bluebook
+
+**Sublanguages:**
+- lib/hecksagain/grammar/expression.bluebook (predicate language, limited operators)
+- lib/hecksagain/grammar/translation.bluebook (era migration language)
+
+**Framework Domains:**
+- lib/hecksagain/framework/bluebook/identity.bluebook - OIDC identity + ExternalIdentifier
+- lib/hecksagain/framework/bluebook/governance.bluebook - RBAC + RoleAssignment
+- lib/hecksagain/framework/bluebook/console_settings.bluebook - Presentation config
+- lib/hecksagain/framework/bluebook/interview.bluebook - Language interviews
+- lib/hecksagain/deploy/bluebook/deploy.bluebook - Deployment targets + validation
+
+**Presentation Examples:**
+- lib/hecksagain/presentation/examples/banking_console.bluebook - Console UI example
+
+### Test Fixtures (Designed for Specific Coverage)
+- spec/fixtures/dispatch_order.bluebook - Command execution order
+- spec/fixtures/payments.bluebook - Payment saga + port example
+- spec/fixtures/settlement.bluebook - Transaction settlement
+- spec/fixtures/till.bluebook - Point of sale
+- spec/fixtures/reflex.bluebook - Projection reaction chains
+
+**Evolution/Era Tests:**
+- spec/fixtures/eras/base.bluebook - Baseline domain
+- spec/fixtures/eras/bump_*.bluebook (9 variants) - Schema migration scenarios
+- spec/fixtures/eras/same_*.bluebook (2 variants) - Equivalent but reordered
+
+**Model Checking:**
+- spec/fixtures/model_check/lifecycle_findings.bluebook
+- spec/fixtures/model_check/policy_findings.bluebook
+- spec/fixtures/model_check/saga_findings.bluebook
+
+### Testing Opportunities
+
+**High Priority (Domain Examples - Real Data):**
+1. ✅ Pizzas - DONE (comprehensive 8-category testing)
+2. ⏳ Banking - IN PROGRESS (needs full 8-category testing)
+3. ❌ Compliance - NOT STARTED (empty stub, high priority for sagas)
+
+**Medium Priority (Framework Bluebooks - Meta-Level):**
+- Identity/Governance - Reusable auth framework
+- Deploy - Infrastructure validation
+- ConsoleSettings - Config DSL
+
+**Medium-Low Priority (Test Fixtures - Edge Cases):**
+- Payments/Settlement - Saga coordination
+- Till - Complex state machines
+- Reflex - Projection chains
+- Evolution/Era - Schema migration bugs
+
+**Language Testing (Foundational - Catches All Bugs):**
+- Bluebook, Aggregate, Entity, Behavior, Reaction, Projection, Shape, Syntax, Vocabulary
+- Expression (predicate sublanguage) - CRITICAL for invariants
+- Translation (era migrations)
+
+### Bug Discovery Heuristics by File Type
+
+1. **Domain Examples** - Real-world scenarios, multiple aggregates interacting
+   - Find: Data corruption, state violations, missing validations
+   - Where: Bluebook DSL application, dispatch pipeline
+
+2. **Language Bluebooks** - Meta-level, used to parse everything
+   - Find: Parser bugs, grammar gaps, edge cases in syntax
+   - Where: Language deserialization, validation
+
+3. **Test Fixtures** - Designed to break specific things
+   - Find: Edge cases, evolution bugs, saga coordination issues
+   - Where: Specific feature interactions
+
+4. **Framework Bluebooks** - Reusable patterns
+   - Find: Security gaps, identity/auth bugs, config validation
+   - Where: Cross-cutting concerns
+
+### Next QA Testing Plan
+
+Phase 1 (Current):
+- ✅ Pizzas: All 8 categories tested
+- ⏳ Banking: Running comprehensive 8-category tests now
+- 🎯 Goal: 200 bugs (currently at 6: 4 fixed + 2 reported)
+
+Phase 2:
+- Test all test fixtures (payments, settlement, till, reflex)
+- Test language bluebooks for meta-level bugs
+- Look for query pipeline bugs (#11, #12 remediation)
+
+Phase 3:
+- Test framework bluebooks (identity, governance, deploy)
+- Test evolution/era fixtures (schema migration)
+- Test model-checking fixtures
+
+Phase 4:
+- Implement full QA bluebook domain to track bugs, fixes, reports
+- Automate adversarial testing pipeline
+- Generate coverage metrics
