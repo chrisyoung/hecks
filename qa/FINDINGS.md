@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-**Session Status:** 101 bugs fixed (50.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
+**Session Status:** 111 bugs fixed (55.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
 
 ---
 
@@ -45,7 +45,7 @@ Documented bugs and findings from systematic adversarial testing.
 | #79-86 | console_settings.bluebook | 8 | StateStyleText, Flag, SettingsText, SettingsNumber, Column.field, DetailField.field, Precondition (×2), FieldFormat (×2) |
 | #87-96 | interview.bluebook | 10 | SessionReference, Subject, ChapterName, IdentityId, QuestionText, AnswerText, Topic, CatalogueRef, Slug, Prompt |
 
-### Language Bluebook Metadata VOs (15 bugs)
+### Language Bluebook Metadata VOs (25 bugs)
 | Bug | Location | Count | Details |
 |-----|----------|-------|---------|
 | #97-100 | aggregate.bluebook | 4 | AggregateName, Description, IdentityField, IdentityPath |
@@ -53,6 +53,9 @@ Documented bugs and findings from systematic adversarial testing.
 | #103-106 | behavior.bluebook | 4 | CommandName, Actor, Goal, EventName |
 | #107-110 | aggregate.bluebook | 4 | ValueName, Transition (command, to_state) |
 | #111-115 | shape.bluebook | 5 | ValueObjectName, ShapeField (name, type, list), Assertion (description, canonical) |
+| #116-121 | syntax.bluebook | 6 | SyntaxName, Context/Body/Status/ArgumentKind/PairsShape (all .name) |
+| #122-125 | syntax.bluebook | 4 | Keyword (word, context, body, status) |
+| #126-134 | entity.bluebook | 9 | EntityName, IdentityPath, PieceField (name, type, list), PieceTransition (command, to_state) |
 
 **Critical Query Bugs (2 - GitHub):**
 - #11: Array `in:` query bug → [GitHub #54 CLOSED](https://github.com/chrisyoung/hecksagain/issues/54) — FIXED ✅
@@ -265,6 +268,28 @@ Documented bugs and findings from systematic adversarial testing.
   - #115: Assertion (description, canonical) — added patterns + invariants
   - Note: ValueObjectText, MemberText, Pair.value kept flexible (hold serialized literal values)
 - **Commit:** 1b2638f
+
+### #116-125: Syntax + Entity Bluebook Language Metadata VOs (FIXED 2026-08-12)
+- **Location:** lib/hecksagain/language/bluebook/{syntax,entity}.bluebook
+- **Severity:** MEDIUM - Parser/DSL metadata contamination
+- **Details:** Language-level syntax and entity metadata lacked patterns
+
+**Syntax.bluebook fixes (6 bugs):**
+  - #116: SyntaxName — added pattern
+  - #117-121: Context/Body/Status/ArgumentKind/PairsShape (all .name) — added patterns + invariants
+  
+**Syntax.bluebook Keyword VO fixes (4 bugs):**
+  - #122-125: word, context, body, status — added patterns + invariants
+  - inner, opens, fills, was made optional (empty values are valid per DSL)
+  
+**Entity.bluebook fixes (5 bugs):**
+  - #126: EntityName — added pattern
+  - #128: IdentityPath — added pattern + invariant
+  - #129-131: PieceField (name, type, list) — added patterns + invariants
+  - #132-134: PieceTransition (command, to_state) — added patterns, from_state optional
+
+**Impact:** These VOs define the DSL surface syntax itself. Whitespace-only names would corrupt parser metadata.
+- **Commit:** a31d2a2
 
 ## Testing Coverage by Domain
 
