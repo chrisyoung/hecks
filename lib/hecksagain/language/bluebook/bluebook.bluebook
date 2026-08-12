@@ -75,37 +75,39 @@ Hecks.bluebook "Bluebook", version: "1" do
     end
 
     value_object "NormalisationRule" do
-      attribute :strategy,     String
-      attribute :source_token, String
-      attribute :replacement,  String
-      attribute :boundary,     String
-      attribute :position,     String
+      attribute :strategy,     String, pattern: '[^ \t\n\r]'
+      attribute :source_token, String  # Can be empty for collapse_whitespace
+      attribute :replacement,  String  # Can be empty for collapse_whitespace
+      attribute :boundary,     String, pattern: '[^ \t\n\r]'
+      attribute :position,     String, optional: true
+      invariant("a rule has a strategy") { !strategy.to_s.empty? }
+      invariant("a rule has a boundary") { !boundary.to_s.empty? }
     end
 
     value_object "BluebookName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a chapter is named") { !value.to_s.empty? }
     end
 
     value_object "Vision" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a vision says something") { !value.to_s.empty? }
     end
 
     value_object "Classification" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a chapter is core, supporting, or generic") do
         value.to_s == "core" || value.to_s == "supporting" || value.to_s == "generic"
       end
     end
 
     value_object "Version" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a version says something") { !value.to_s.empty? }
     end
 
     value_object "FormerlyKnownAs" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a formerly_known_as says something") { !value.to_s.empty? }
     end
 
