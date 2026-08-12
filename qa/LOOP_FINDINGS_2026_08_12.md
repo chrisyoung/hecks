@@ -584,3 +584,75 @@ The loop has comprehensively validated the system across:
 
 Continuing iterations will have diminishing returns.
 
+
+## Loop Iteration 14: Event Log Discovery + Creative Testing Plan
+
+**Status:** BUG FOUND! + Creative exploration
+
+### Discovery
+
+🐛 **BUG #26: Event objects are not frozen**
+- Root cause: Dispatcher returns event array that is frozen, but individual events are not
+- Impact: HIGH - Callers can mutate event objects after dispatch
+- Similar to Bug #23 (aggregates not frozen)
+- Fix location: lib/hecksagain/runtime/dispatcher.rb (line 105 area)
+- Fix approach: Freeze each event object in the announced collection
+
+### Other Findings
+
+✅ Event log is frozen (collection)
+✅ Reaction log is frozen
+✅ Reaction log is frozen
+✅ Default values set correctly
+✅ String validation working (empty/whitespace rejected)
+✅ Sequential operations handled correctly
+
+### Creative Testing Opportunities (Not Yet Explored)
+
+**Functional approach (not adversarial):**
+1. **Cross-domain coordination** - if multiple domains interact, do they maintain consistency?
+2. **Event causality chains** - do events reference their parent commands correctly?
+3. **Projection lag scenarios** - if a projection hasn't caught up, does the query return stale data?
+4. **Adapter switching** - behavior differences between Memory and Prism adapters?
+5. **DSL parsing edge cases** - unusual but valid bluebook syntax combinations?
+
+**Performance/scale approach:**
+1. **Large data sets** - 1000 customers, 10000 transactions, does query still work?
+2. **Deep nesting** - deeply nested VOs with invariants, do they all validate?
+3. **Complex queries** - multiple joins/filters, do they return correct results?
+4. **Long event chains** - 100 events on one aggregate, does state remain consistent?
+
+**Concurrency/timing approach:**
+1. **Event ordering** - if events arrive out of order, is causality maintained?
+2. **Race conditions** - rapid concurrent commands, does state diverge?
+3. **Query during mutation** - query while command is running, what happens?
+4. **Reaction timing** - do reactions fire in the right order?
+
+**DSL/compilation approach:**
+1. **DSL syntax combinations** - valid but unusual syntax (nested one_of, multiple queries, etc.)
+2. **Bluebook inheritance** - do values in included files behave correctly?
+3. **Reference resolution** - complex cross-aggregate references, resolved correctly?
+4. **Lifecycle combinations** - multiple lifecycles, all states reachable?
+
+**Data consistency approach:**
+1. **Idempotency** - same command run twice, state same both times?
+2. **Rollback semantics** - if command fails mid-execution, what's the state?
+3. **Aggregate roots** - deeply nested data, saved/retrieved correctly?
+4. **VO equality** - two VOs with same data, are they equal?
+
+---
+
+## Creative Testing Strategy
+
+After 14 iterations with 4 discovered bugs (3 actual: freeze bugs + 1 email pattern), focus on:
+
+**High-probability areas:**
+1. **Other immutability gaps** - we found aggregates and events; are there other unfrozen collections?
+2. **Event object mutation** - test mutating event fields after dispatch
+3. **Projection consistency** - test stale read scenarios
+4. **Cross-aggregate references** - test foreign key behavior under stress
+
+**Emerging pattern:**
+- Freeze bugs found: aggregates, now events
+- Other objects that might not be frozen: query results, reactions, projections?
+

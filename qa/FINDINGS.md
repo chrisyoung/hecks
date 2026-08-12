@@ -101,3 +101,6 @@ Documented bugs and findings from systematic adversarial testing.
 Each bug represents one distinct problem with one logical fix. When a fix applies to multiple locations (e.g., adding the same pattern validation to 76 attributes), it counts as 1 bug with 76 affected sites, not 76 bugs.
 
 This avoids inflating the count by conflating "number of failed specs" with "number of distinct root causes."
+
+| 26 | Event objects not frozen | Dispatcher returns unfrozen event objects | Add `.freeze` to events in dispatcher result | HIGH - Data mutation vulnerability |
+
