@@ -268,9 +268,43 @@ end
 
 The cheapest adversarial test is always: "does my fix still let valid inputs through?"
 
-### 3.2 Document Tests
+### 3.2 Create Missing Specs When Needed
 
-As you write tests, add them to qa/qa_adversarial_fixed.rb:
+**If no tests exist for a domain you're testing, create them.**
+
+When you find a domain or fixture that should be tested but has no spec file:
+1. Create `spec/qa_<domain>_adversarial_spec.rb` 
+2. Load the domain in `let` block
+3. Add tests for all 9 categories
+4. Use `qa: true` tag so tests run only on demand
+
+This is not extra work - it's how you find bugs. Testing forces you to understand the
+domain and expose edge cases. The tests become the bug discovery mechanism.
+
+Example pattern:
+```ruby
+require "spec_helper"
+
+describe "DomainName - Adversarial Testing", qa: true do
+  let(:boot) do
+    runtime = boot_in_memory
+    Hecksagain.with_registry(runtime.registry) do
+      Kernel.load(File.join(InMemoryDomain::ROOT, "path/to/domain.bluebook"))
+    end
+    runtime
+  end
+
+  describe "Category 1: Boundary" do
+    it "test case" do
+      # test here
+    end
+  end
+end
+```
+
+### 3.4 Document Tests
+
+As you write tests, add them to qa/qa_adversarial_fixed.rb or create new qa_<domain>_spec.rb files:
 
 ```ruby
 describe "Domain Name - Adversarial Attacks" do
