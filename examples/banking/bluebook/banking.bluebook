@@ -698,6 +698,8 @@ Hecks.bluebook "Banking", version: "v1" do
       # would not say it that way either.
       given("source customer is active") { source.customer.status == "active" }
       given("source account is open") { source.status == "open" }
+      given("destination customer is active") { destination.customer.status == "active" }
+      given("destination account is open") { destination.status == "open" }
       given("a transfer names its source")  { !source.to_s.empty? }
       given("a transfer goes somewhere")    { !destination.to_s.empty? }
       given("a transfer moves BETWEEN accounts") { source != destination }
