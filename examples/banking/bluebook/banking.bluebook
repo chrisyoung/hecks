@@ -1352,6 +1352,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Refuse a customer who does not clear screening — no account was ever opened, so nothing is undone"
 
       reference_to OnboardingCase
+      given("case is screening") { status == "screening" }
 
       emits "OnboardingDeclined"
     end
