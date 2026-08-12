@@ -11,11 +11,13 @@ Hecks.bluebook "Reflex" do
     attribute :condition, LightCondition
 
     value_object "LightName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a light name is present") { !value.to_s.empty? }
     end
 
     value_object "LightCondition" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a light condition is present") { !value.to_s.empty? }
     end
 
     command "Flip" do
@@ -90,11 +92,13 @@ Hecks.bluebook "Reflex" do
     attribute :rings, RingCount
 
     value_object "BellName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a bell name is present") { !value.to_s.empty? }
     end
 
     value_object "RingCount" do
       attribute :value, Integer
+      invariant("a ring count is positive") { value.positive? }
     end
 
     command "Install" do
@@ -135,7 +139,8 @@ Hecks.bluebook "Reflex" do
     attribute :signal, SignalName
 
     value_object "SignalName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a signal name is present") { !value.to_s.empty? }
     end
 
     command "Raise" do
