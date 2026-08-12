@@ -915,6 +915,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Send" do
       reference_to ExternalTransfer
+      given("transfer is requested") { status == "requested" }
       emits "ExternalTransferSent"
     end
 
