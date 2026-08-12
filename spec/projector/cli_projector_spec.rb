@@ -101,7 +101,28 @@ RSpec.describe Hecksagain::Projector::CliProjector do
     it "lists verbs and questions separately, with what each is for" do
       expect(banking[:usage]).to include("verbs:")
       expect(banking[:usage]).to include("questions (nothing here changes anything):")
-      expect(banking[:usage]).to include("account.freeze")
+      expect(banking[:usage]).to include("freeze")
+    end
+
+    # THE SHORT SPELLING, WHERE IT CANNOT BE AMBIGUOUS. `pizzas create_pizza`
+    # rather than `pizzas order.create_pizza`; the aggregate is worth typing
+    # only when two of them declare the same word.
+    it "shortens a verb no other aggregate declares, and keeps both spellings" do
+      expect(pizzas[:verbs]["order.create_pizza"][:short]).to eq("create_pizza")
+      expect(pizzas[:names][:command]["create_pizza"]).to eq("order.create_pizza")
+      expect(pizzas[:names][:command]["order.create_pizza"]).to eq("order.create_pizza")
+    end
+
+    it "keeps the aggregate when two of them share a verb, rather than choosing" do
+      shared = banking[:verbs].values.group_by { |spec| spec[:verb].split(".").last }
+                              .find { |_, specs| specs.length > 1 }
+      skip "banking declares no verb on two aggregates" unless shared
+
+      expect(shared.last.map { |spec| spec[:short] }).to all(include("."))
+    end
+
+    it "lists the short spelling and says the long one still works" do
+      expect(banking[:usage]).to include("a verb can always be spelled in full")
     end
 
     it "shows one verb's arguments and every way it refuses" do
@@ -121,7 +142,7 @@ RSpec.describe Hecksagain::Projector::CliProjector do
                                       options: { verb: "account.open", ask: true })[:usage]
 
       expect(question).to include("reads Banking::Account.Open")
-      expect(question).to include("bin/run ask account.open")
+      expect(question).to include("bin/run ask open")
     end
   end
 end

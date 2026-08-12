@@ -20,13 +20,24 @@ RSpec.describe Hecksagain::Facade::CliRunner do
   describe "the usage" do
     it "answers with the projected surface when asked for nothing" do
       expect(text).to include("Pizzas —")
-      expect(text).to include("order.create_pizza")
+      expect(text).to include("create_pizza")
       expect(status).to eq(0)
     end
 
     it "answers one verb's help without dispatching it" do
       expect(text("order.create_pizza", "--help")).to include("dispatches Pizzas::Order.CreatePizza")
       expect(runtime.events).to be_empty
+    end
+  end
+
+  # BOTH SPELLINGS REACH THE SAME VERB.
+  describe "naming" do
+    it "takes the short form when no other aggregate declares that verb" do
+      expect(run("create_pizza", "name=X", "pizza.price_cents.cents=900", "pizza.size.value=small").last).to eq(0)
+    end
+
+    it "still takes the aggregate-qualified form" do
+      expect(run("order.create_pizza", "name=Y", "pizza.price_cents.cents=900", "pizza.size.value=small").last).to eq(0)
     end
   end
 

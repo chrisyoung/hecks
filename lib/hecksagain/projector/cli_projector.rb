@@ -59,7 +59,37 @@ module Hecksagain
           end
         end
 
-        { verbs: verbs, questions: questions, usage: usage(bluebook, verbs, questions, options) }
+        # THE SHORT SPELLING, WHERE IT CANNOT BE AMBIGUOUS. `pizzas
+        # create_pizza` rather than `pizzas order.create_pizza` — the
+        # aggregate is worth typing only when two of them declare the same
+        # verb, and in a one-aggregate domain it never is. Both spellings are
+        # always accepted; `names` maps every accepted one to its canonical
+        # key, and the display name is the shortest that is unambiguous.
+        shorten(verbs)
+        shorten(questions)
+
+        { verbs: verbs, questions: questions,
+          names: { command: aliases(verbs), question: aliases(questions) },
+          usage: usage(bluebook, verbs, questions, options) }
+      end
+
+      # A last segment is claimed only if exactly one verb ends in it. Two
+      # aggregates declaring `Close` keep `customer.close` and `account.close`,
+      # which is the honest answer — a CLI that picked one would be choosing
+      # for the caller.
+      def shorten(specs)
+        tails = specs.keys.group_by { |name| name.split(".").last }
+        specs.each do |name, spec|
+          tail = name.split(".").last
+          spec[:short] = tails[tail].length == 1 ? tail : name
+        end
+      end
+
+      def aliases(specs)
+        specs.each_with_object({}) do |(name, spec), map|
+          map[name]         = name
+          map[spec[:short]] = name
+        end
       end
 
       # A NAME IS CLAIMED ONCE. A command and a query of one name are legal in
@@ -221,23 +251,31 @@ module Hecksagain
         # without it a `--help` for a question would print the command that
         # shares its name, which banking has and which is how this was found.
         if only
-          spec = options[:ask] ? questions[only] : (verbs[only] || questions[only])
-          return verb_help(program, only, spec, ask: options[:ask]) if spec
+          pool = options[:ask] ? questions : verbs
+          key  = aliases(pool)[only] || (options[:ask] ? nil : aliases(questions)[only])
+          spec = pool[key] || questions[key]
+          return verb_help(program, spec[:short], spec, ask: options[:ask]) if spec
         end
 
-        width = (verbs.keys + questions.keys).map(&:length).max.to_i
+        width = (verbs.values + questions.values).map { |spec| spec[:short].length }.max.to_i
         out = ["#{bluebook.name} — #{bluebook.vision}", "",
                "  #{program} <verb> [name=value …]        do something",
                "  #{program} ask <question> [name=value …]  read something", ""]
 
         out << "verbs:"
-        verbs.each { |name, spec| out << "  #{name.ljust(width)}  #{spec[:summary]}" }
+        verbs.each_value { |spec| out << "  #{spec[:short].ljust(width)}  #{spec[:summary]}" }
         out << ""
         out << "questions (nothing here changes anything):"
-        questions.each { |name, spec| out << "  #{name.ljust(width)}  #{first_sentence(spec[:summary])}" }
+        questions.each_value { |spec| out << "  #{spec[:short].ljust(width)}  #{first_sentence(spec[:summary])}" }
         out << ""
         out << "  #{program} <verb> --help       what one verb wants, and every way it refuses"
+        out << "  a verb can always be spelled in full — #{example_qualified(verbs)}"
         out.join("\n")
+      end
+
+      def example_qualified(verbs)
+        name, spec = verbs.find { |key, value| key != value[:short] } || verbs.first
+        name ? "#{spec[:short]} is also #{name}" : ""
       end
 
       # A QUERY's `description` is written as a paragraph — it argues for why

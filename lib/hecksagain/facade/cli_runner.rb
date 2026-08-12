@@ -36,7 +36,12 @@ module Hecksagain
         name   = argv.first
         return [cli[:usage], 1] if name.nil?
 
-        spec = (asking ? cli[:questions] : cli[:verbs])[name]
+        # RESOLVED THROUGH THE ALIAS MAP, so `pizzas create_pizza` and
+        # `pizzas order.create_pizza` reach the same verb — the aggregate is
+        # worth typing only when two of them declare the same word.
+        pool = asking ? cli[:questions] : cli[:verbs]
+        key  = cli[:names][asking ? :question : :command][name]
+        spec = pool[key]
         return [unknown(cli, name, asking, program), 1] unless spec
 
         rest = argv[1..]
@@ -82,7 +87,11 @@ module Hecksagain
       # letter, `order.create_piza`, which is a substring of nothing. Prefix
       # length survives an error anywhere after it, which is where errors are.
       def unknown(cli, name, asking, program)
-        pool = (asking ? cli[:questions] : cli[:verbs]).keys
+        # BOTH SPELLINGS ARE CANDIDATES. A caller who typed the qualified
+        # form with a typo — `order.create_piza` — shares no prefix with the
+        # short name `create_pizza`, so pooling only one of them suggests
+        # nothing for half the mistakes anybody makes.
+        pool = cli[:names][asking ? :question : :command].keys
         near = pool.map    { |candidate| [shared_prefix(candidate, name), candidate] }
                    .select { |shared, _| shared >= [name.length / 2, 3].max }
                    .sort_by { |shared, candidate| [-shared, candidate] }
