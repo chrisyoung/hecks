@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+# The QA ledger's own command line, projected from
+# `qa/bluebook/quality_control.bluebook`.
+#
+#   bin/qc                                  every verb, and every question
+#   bin/qc bug.discover --help              what it wants, and how it refuses
+#   bin/qc bug.discover session_id=QA-1 reference=BUG#1 severity=high …
+#   bin/qc ask bug.unfixed                  read; changes nothing
+#
+# Nothing here knows what quality control is. It pins the domain and hands
+# over to the same projection and runner `bin/run` uses — which is the point:
+# a practice gets its own front door for the cost of naming its directory, and
+# the help stays correct because it is computed from the chapter at the moment
+# it prints.
+#
+# WHY A PINNED ENTRY POINT AT ALL, when `cd qa && ../bin/run` already works.
+# Because the QA agent is not standing in `qa/`; it is standing wherever the
+# bug is, which is the whole nature of the job. A tool that needs you to leave
+# the thing you are looking at is a tool you reach for less.
+
+$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+
+require "hecksagain"
+
+DOMAIN = File.expand_path("../qa", __dir__)
+
+runtime = begin
+  Hecks.boot(DOMAIN, install_facade: false)
+rescue StandardError => e
+  # The ledger is Postgres-backed and lineage-gated, so the two ordinary
+  # failures are "no database yet" and "the chapter moved and no translation
+  # covers it". Both already say what to do; this only keeps the backtrace off.
+  abort "cannot open the QA ledger: #{e.message.lines.first.strip}"
+end
+
+text, status = Hecksagain::Facade::CliRunner.call(runtime: runtime, argv: ARGV, program: "bin/qc")
+status.zero? ? puts(text) : abort(text)

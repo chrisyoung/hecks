@@ -69,6 +69,21 @@ createdb hecks_quality_control   # once; the first boot mints era 1
 
 ## Using the ledger
 
+`bin/qc` is its command line, projected from the chapter — every verb, every
+question, every argument typed, and every refusal, computed at the moment it
+prints.
+
+```bash
+bin/qc                                  # every verb and question
+bin/qc bug.discover --help              # what it wants, and how it refuses
+bin/qc bug.discover session_id=QA-1 reference=BUG#1 severity=high …
+bin/qc ask bug.unfixed                  # read; changes nothing
+```
+
+It works from anywhere in the checkout, which is the point — the QA agent is
+standing wherever the bug is, not in `qa/`.
+
+
 `Hecksagain::QualityControl::Ledger` holds a booted runtime of the chapter and
 the handful of things the model deliberately does not: minting the next
 reference in sequence, composing a GitHub issue body out of a bug and the

@@ -42,61 +42,13 @@ USAGE = "usage: bin/run [domain] <verb [name=value …] | script.json | - | '{\"
 # not name a projected verb — which is what keeps `bin/run <domain> <script>`
 # working exactly as it did.
 def cli_form(domain, argv)
-  runtime  = Hecks.boot(domain, install_facade: false)
-  bluebook = runtime.registry.bluebooks.values.first
-  cli      = Hecksagain::Projector.call(:cli, bluebook: bluebook, options: { program: "bin/run" })
-
-  name = argv.first
-  if name.nil? || %w[--help -h help].include?(name)
-    puts cli[:usage]
-    exit 0
-  end
-
-  # `ask` PUTS A QUESTION IN ITS OWN NAMESPACE. See the projector: a chapter
-  # may declare a command and a query of one name, and banking does.
-  asking = name == "ask"
-  if asking
-    argv = argv[1..]
-    name = argv.first or abort cli[:usage]
-  end
-
-  spec = (asking ? cli[:questions] : cli[:verbs])[name]
-  return nil unless spec
-
-  if argv[1..].include?("--help")
-    puts Hecksagain::Projector.call(
-      :cli, bluebook: bluebook, options: { program: "bin/run", verb: name, ask: asking }
-    )[:usage]
-    exit 0
-  end
-
-  begin
-    args = Hecksagain::Facade::CliDoor.arguments(spec, argv[1..])
-  rescue Hecksagain::Runtime::NotFound, Hecksagain::Runtime::TypeMismatch => e
-    abort "#{e.message}\n\n  bin/run #{name} --help"
-  end
-
-  # THE ANSWER IS SCOPED TO WHAT WAS ASKED. The step-list form below reports
-  # the whole store because a corpus run is judged on all of it; a caller who
-  # issued one verb wants that verb's outcome, and on a Postgres-backed domain
-  # the full dump is every record there has ever been.
-  begin
-    if spec[:kind] == :query
-      rows = runtime.query(spec[:verb], **args)
-      puts JSON.pretty_generate(rows.map { |row| Hecksagain::Facade::JsonDoor.materialize(row) })
-    else
-      handle = runtime.dispatch(spec[:verb], **args)
-      puts JSON.pretty_generate(
-        id:     handle.id,
-        state:  Hecksagain::Facade::JsonDoor.materialize(handle.state),
-        events: handle.events.map(&:name)
-      )
-    end
-  rescue *Hecksagain::Runtime::DOMAIN_REFUSALS => e
-    # THE REFUSAL IS THE PRODUCT. In the chapter's own words, on stderr so a
-    # pipeline can tell it from an answer, and a non-zero exit so a script can.
-    abort e.message
-  end
+  runtime = Hecks.boot(domain, install_facade: false)
+  # NO FALL-THROUGH. This is only reached when the argument is not
+  # script-shaped — not `-`, not inline JSON, not a file that exists — so
+  # there is nothing else it could have meant, and a near miss deserves the
+  # runner's "did you mean" rather than the step-list form's "no such script".
+  text, status = Hecksagain::Facade::CliRunner.call(runtime: runtime, argv: argv, program: "bin/run")
+  status.zero? ? puts(text) : abort(text)
   exit 0
 end
 

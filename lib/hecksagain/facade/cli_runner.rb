@@ -1,0 +1,103 @@
+require "json"
+require_relative "cli_door"
+require_relative "json_door"
+require_relative "../projector"
+
+module Hecksagain
+  module Facade
+    # THE RUNNER BEHIND A PROJECTED CLI.
+    #
+    # `Projector::CliProjector` answers what a domain's command line LOOKS
+    # like; this is the twenty lines that parse against it and dispatch. It
+    # lives in `lib/` rather than in a `bin/` because more than one front door
+    # wants it — `bin/run` for whichever domain you are standing in, `bin/qc`
+    # pinned to the QA ledger — and a second copy of the parse-and-dispatch
+    # would be the exact duplication the projection exists to avoid.
+    #
+    # NO IO. It answers `[text, status]` and never prints or exits, so a spec
+    # can call it without capturing streams or trapping SystemExit. The `bin/`
+    # scripts do the printing, the same division `Router` and `JsonDoor`
+    # already keep against HTTP.
+    module CliRunner
+      module_function
+
+      # `[text, status]` — status 0 answered, 1 refused or misused.
+      def call(runtime:, argv:, program: "bin/run")
+        bluebook = runtime.registry.bluebooks.values.first
+        cli      = Projector.call(:cli, bluebook: bluebook, options: { program: program })
+
+        name = argv.first
+        return [cli[:usage], 0] if name.nil? || %w[--help -h help].include?(name)
+
+        # `ask` PUTS A QUESTION IN ITS OWN NAMESPACE — a chapter may declare a
+        # command and a query of one name, and banking does.
+        asking = name == "ask"
+        argv   = argv[1..] if asking
+        name   = argv.first
+        return [cli[:usage], 1] if name.nil?
+
+        spec = (asking ? cli[:questions] : cli[:verbs])[name]
+        return [unknown(cli, name, asking, program), 1] unless spec
+
+        rest = argv[1..]
+        if rest.include?("--help")
+          help = Projector.call(:cli, bluebook: bluebook,
+                                      options: { program: program, verb: name, ask: asking })[:usage]
+          return [help, 0]
+        end
+
+        dispatch(runtime, spec, name, rest, program, asking)
+      end
+
+      def dispatch(runtime, spec, name, rest, program, asking)
+        args = CliDoor.arguments(spec, rest)
+
+        if spec[:kind] == :query
+          rows = runtime.query(spec[:verb], **args)
+          return [JSON.pretty_generate(rows.map { |row| JsonDoor.materialize(row) }), 0]
+        end
+
+        # THE ANSWER IS SCOPED TO WHAT WAS ASKED. `bin/run`'s step-list form
+        # reports the whole store because a corpus run is judged on all of it;
+        # somebody who issued one verb wants that verb's outcome, and against a
+        # Postgres-backed domain the full dump is every record there has been.
+        handle = runtime.dispatch(spec[:verb], **args)
+        [JSON.pretty_generate(id: handle.id,
+                              state: JsonDoor.materialize(handle.state),
+                              events: handle.events.map(&:name)), 0]
+      rescue Runtime::NotFound, Runtime::TypeMismatch => e
+        # A BAD ARGUMENT AND A MISSING RECORD BOTH LAND HERE, and both want the
+        # same next step: read what the verb actually takes.
+        ["#{e.message}\n\n  #{program} #{asking ? 'ask ' : ''}#{name} --help", 1]
+      rescue *Runtime::DOMAIN_REFUSALS => e
+        # THE REFUSAL IS THE PRODUCT — the chapter's own sentence, verbatim.
+        [e.message, 1]
+      end
+
+      # A NEAR MISS IS WORTH MORE THAN A LIST. Somebody who typed
+      # `bug.discovr` wants one line, not eighty-seven of them.
+      #
+      # RANKED BY SHARED PREFIX, not by substring. Substring was the first
+      # attempt and it finds nothing for the commonest typo of all — a dropped
+      # letter, `order.create_piza`, which is a substring of nothing. Prefix
+      # length survives an error anywhere after it, which is where errors are.
+      def unknown(cli, name, asking, program)
+        pool = (asking ? cli[:questions] : cli[:verbs]).keys
+        near = pool.map    { |candidate| [shared_prefix(candidate, name), candidate] }
+                   .select { |shared, _| shared >= [name.length / 2, 3].max }
+                   .sort_by { |shared, candidate| [-shared, candidate] }
+                   .map(&:last)
+
+        lines = ["no such #{asking ? 'question' : 'verb'}: #{name}"]
+        lines += ["", "did you mean:", *near.first(5).map { |candidate| "  #{candidate}" }] unless near.empty?
+        lines += ["", "  #{program}#{asking ? ' ask' : ''}   for the full list"]
+        lines.join("\n")
+      end
+
+      def shared_prefix(one, other)
+        length = [one.length, other.length].min
+        (0...length).find { |index| one[index] != other[index] } || length
+      end
+    end
+  end
+end
