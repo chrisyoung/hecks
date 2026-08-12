@@ -46,12 +46,12 @@ Hecks.bluebook "Bluebook" do
     attribute :provenance, CommandText
 
     value_object "CommandName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a command is named") { !value.to_s.empty? }
     end
 
     value_object "Actor" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       # RELAXED for the experiment : banking leaves 19 of 40 commands without a
       # role, and the hand-written CommandBuilder never required one. Whether
       # role/goal are mandatory is a language decision — the meta-domain found
@@ -59,16 +59,18 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "Goal" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       # RELAXED — see Actor above.
     end
 
     value_object "EventName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an event name is present") { !value.to_s.empty? }
     end
 
     value_object "Announcement" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
+      invariant("an announcement name is present") { !name.to_s.empty? }
     end
 
     value_object "Argument" do
