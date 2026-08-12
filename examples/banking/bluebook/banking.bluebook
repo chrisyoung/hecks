@@ -57,7 +57,7 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "CustomerStanding" do
-      attribute :value, String, default: "good"
+      attribute :value, String, pattern: '[^ \t\n\r]', default: "good"
       invariant("a standing is named") { !value.to_s.empty? }
     end
 
@@ -185,7 +185,7 @@ Hecks.bluebook "Banking", version: "v1" do
     end
 
     value_object "LedgerDirection" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
 
       one_of do
         member value: "credit"
@@ -195,21 +195,21 @@ Hecks.bluebook "Banking", version: "v1" do
 
     value_object "Money" do
       attribute :cents,    Integer, default: 0
-      attribute :currency, String,  default: "USD"
+      attribute :currency, String, pattern: '[^ \t\n\r]', default: "USD"
 
       invariant("a currency is a three-letter code") { currency.to_s.size == 3 }
     end
 
     value_object "PositiveMoney" do
       attribute :cents,    Integer
-      attribute :currency, String, default: "USD"
+      attribute :currency, String, pattern: '[^ \t\n\r]', default: "USD"
 
       invariant("an amount is positive") { cents.positive? }
       invariant("a currency is a three-letter code") { currency.to_s.size == 3 }
     end
 
     value_object "AccountKind" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
 
       one_of do
         member name: "current"
@@ -1385,7 +1385,7 @@ Hecks.bluebook "Banking", version: "v1" do
     # fields in for you, so a command dispatching this always states
     # every field, the same as `AddTopping`'s own append fields do.
     value_object "StatementFrequency" do
-      attribute :cadence,          String
+      attribute :cadence,          String, pattern: '[^ \t\n\r]'
       attribute :retention_months, Integer
       attribute :paper_fee_cents,  Integer
 
