@@ -782,6 +782,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Void" do
       reference_to CardPayment
+      given("payment is authorized") { status == "authorized" }
       emits "CardVoided"
     end
 
