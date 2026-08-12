@@ -967,6 +967,8 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Send" do
       reference_to ExternalTransfer
+      given("customer is active") { account.customer.status == "active" }
+      given("account is open") { account.status == "open" }
       given("transfer is requested") { status == "requested" }
       emits "ExternalTransferSent"
     end
