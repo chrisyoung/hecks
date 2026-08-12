@@ -35,7 +35,8 @@ Hecks.bluebook "TillRoom" do
     end
 
     value_object "Note" do
-      attribute :text, String
+      attribute :text, String, pattern: '[^ \t\n\r]'
+      invariant("a note is present") { !text.to_s.empty? }
     end
 
     command "OpenTill" do

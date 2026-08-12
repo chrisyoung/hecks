@@ -43,8 +43,10 @@ Hecks.bluebook "Pizzas" do
     end
 
     value_object "Topping" do
-      attribute :name,   String
+      attribute :name,   String, pattern: '[^ \t\n\r]'
       attribute :amount, Integer
+      invariant("a topping name is present") { !name.to_s.empty? }
+      invariant("a topping amount is positive") { amount.positive? }
     end
 
     # A closed set written the long way (`one_of do member ... end`), not the

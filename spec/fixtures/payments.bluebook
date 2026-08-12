@@ -12,6 +12,7 @@ Hecks.bluebook "Payments" do
 
     value_object "Money" do
       attribute :cents, Integer
+      invariant("a money amount is non-negative") { cents >= 0 }
     end
 
     value_object "DeclineReason" do
