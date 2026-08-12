@@ -700,6 +700,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Put the money back when the credit could not be made"
 
       reference_to Transfer
+      given("transfer is debited") { status == "debited" }
       emits "TransferReversed"
     end
 
