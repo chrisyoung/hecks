@@ -6598,6 +6598,36 @@
                 "sign",
                 "-1"
               ]
+            ],
+            [
+              [
+                "name",
+                "multiply"
+              ],
+              [
+                "sign",
+                ""
+              ]
+            ],
+            [
+              [
+                "name",
+                "clamp"
+              ],
+              [
+                "sign",
+                ""
+              ]
+            ],
+            [
+              [
+                "name",
+                "remove"
+              ],
+              [
+                "sign",
+                ""
+              ]
             ]
           ],
           "name": "MutationOp"
@@ -6665,6 +6695,12 @@
               [
                 "name",
                 "contains"
+              ]
+            ],
+            [
+              [
+                "name",
+                "none_in_state"
               ]
             ]
           ],
