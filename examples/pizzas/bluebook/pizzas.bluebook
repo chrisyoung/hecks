@@ -60,7 +60,7 @@ Hecks.bluebook "Pizzas" do
     # declared as its own sibling value object, the same pattern LedgerDirection
     # and AccountKind already use, and `Pizza` below just holds one by name.
     value_object "Size" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
 
       one_of do
         member value: "small"

@@ -523,14 +523,14 @@ Hecks.bluebook "Bluebook" do
       # could carry, since `fills` already names where the ARGUMENT'S OWN
       # value lands. Empty for every argument that isn't one of a closed set
       # of named alternatives feeding a sibling field this way.
-      attribute :selects,          String
+      attribute :selects,          String, pattern: '[^ \t\n\r]'
       # THE TWO ROLES A `pairs` ARGUMENT'S OWN PAIR PLAYS, read together with
       # `pairs_shape` below — see that value object's own comment for the
       # four shapes. Empty for anything that is not `kind: "pairs"`, and for
       # a `sibling`-shaped pairs argument (the target field varies per pair,
       # per domain — nothing here could name it).
-      attribute :pair_key_fills,   String
-      attribute :pair_value_fills, String
+      attribute :pair_key_fills,   String, pattern: '[^ \t\n\r]'
+      attribute :pair_value_fills, String, pattern: '[^ \t\n\r]'
       attribute :pairs_shape,      String, admits: "Syntax::PairsShape"
       attribute :status,   String, default: "admitted", admits: "Syntax::Status"
 
