@@ -1202,10 +1202,9 @@ Hecks.bluebook "Banking", version: "v1" do
       role "Branch clerk"
       goal "Assign the box to a customer"
 
+      reference_to SafeDepositBox
       reference_to Customer
-      attribute :branch_code, BranchCode
-      attribute :box_number,  BoxNumber
-      attribute :size,        Size
+      attribute :size, Size
 
       then_set :size, to: :size
 
