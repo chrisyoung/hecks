@@ -597,6 +597,7 @@ Hecks.bluebook "Banking", version: "v1" do
       reference_to ATMCard
       attribute :cents,     WithdrawalAmount
       attribute :narrative, Narrative
+      given("customer is active") { account.customer.status == "active" }
       given("account is open") { account.status == "open" }
 
       then_set :withdrawals, append: { cents: :cents, narrative: :narrative }
