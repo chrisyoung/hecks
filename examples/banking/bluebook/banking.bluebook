@@ -827,6 +827,7 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :tags, list_of(Tag), optional: true
       given("customer is active") { account.customer.status == "active" }
       given("account is open") { account.status == "open" }
+      then_set :authorisation, to: :authorisation
       then_set :amount, to: :amount
       then_set :merchant, to: :merchant
       then_set :tags, to: :tags
