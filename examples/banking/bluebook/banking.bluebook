@@ -400,6 +400,7 @@ Hecks.bluebook "Banking", version: "v1" do
     command "CorrectInterest" do
       reference_to Account
       attribute :amount, PositiveMoney
+      given("customer is active") { customer.status == "active" }
       given("account is open") { status == "open" }
       given("a correction cannot exceed accrued interest") { interest_cents.cents >= amount.cents }
       given("the balance covers an interest correction") { balance.cents >= amount.cents }
