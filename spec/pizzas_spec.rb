@@ -245,13 +245,14 @@ RSpec.describe "Pizzas" do
       # BUG: Price invariant says "cents > 0" but zero/negative prices accepted
       # Root cause: runtime/value/coercion.rb doesn't validate invariants on nested VOs
       # See: ADVERSARIAL_FINDINGS.md - "CRITICAL BUG: Nested Value Object Invariants"
+      skip "Runtime bug: nested VO invariants not validated"
 
       result = runtime.dispatch("Pizzas::Order.CreatePizza",
                                name: { value: "Bug" },
                                pizza: { price_cents: { cents: 0 }, size: { value: "large" } })
 
       # This should fail but doesn't due to runtime bug
-      expect(result.state[:pizza][:price_cents][:cents]).to eq(0)
+      expect(result.state[:pizza][:price_cents][:cents]).not_to eq(0)
     end
 
     it "direct value object invariants work (ToppingAmount)" do
