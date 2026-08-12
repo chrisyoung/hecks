@@ -899,6 +899,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "RejectDispute" do
       reference_to CardPayment
+      given("customer is active") { account.customer.status == "active" }
       given("account is open") { account.status == "open" }
       given("payment is disputed") { status == "disputed" }
       emits "CardDisputeRejected"
