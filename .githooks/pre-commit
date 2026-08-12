@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# pre-commit — the suite CI runs must pass before anything is recorded.
+#
+# WHY BEFORE THE COMMIT AND NOT ONLY BEFORE THE PUSH. A commit is the unit
+# somebody reads back, bisects through and cites in a bug's `commit` field. A
+# red one that "gets fixed in the next commit" is a lie told to `git bisect`
+# forever after, and the message beside it — which claims what was verified —
+# is written at commit time, when nobody has run anything yet.
+#
+# `CI=1`, WHICH IS THE WHOLE POINT OF THIS FILE.
+#
+# spec_helper excludes `io: true` unless CI is set, and the pre-push hook has
+# always run without it. So the local gate and the real gate ran DIFFERENT
+# suites, and every adapter spec that talks to Postgres or SQLite — the ones
+# most likely to break and least likely to be reasoned about correctly — was
+# invisible until GitHub said so.
+#
+# That is not hypothetical. `spec/adapters/driven/postgres_spec.rb`'s
+# "round-trips a list of value objects through jsonb" broke under a coercion
+# change, stayed green through a local suite, a local pre-push, and four
+# commits, and only surfaced when the CI suite was finally run by hand. Its
+# SQLite twin had been caught days earlier purely because that one is not
+# io-tagged.
+#
+# Install:  git config core.hooksPath .githooks   (relative — see pre-push)
+# Bypass:   git commit --no-verify   (say why — a red suite is a real answer)
+#
+# ROOT via `git rev-parse --show-toplevel`, never `dirname "$0"` — see
+# pre-push's own note on why, which this file has exactly the same exposure to.
+
+#
+# FOUR SPECS CANNOT RUN BESIDE ANYTHING, and they have to be named here.
+# hecks_build_pipeline, project_rust_pipeline, codegen_parity and
+# rust_conformance all regenerate into the REAL
+# rust/src/generated/ tree — not a tmpdir — then snapshots it, regenerates
+# again through the other pipeline, and compares the two. Any other worker
+# touching that directory in between makes the comparison read a foreign
+# state, and it fails with a file list that differs by whatever the other
+# process happened to leave (`manifest.json`, in the run that found this).
+# They are `io: true`, so none ran here until this hook started setting CI.
+# `--single` puts all four in ONE process (sequential within it, which is
+# safe) and `--isolate` keeps everything else out of that process. Isolating
+# only the first one was not enough — the second then raced the third.
+#
+# THEY ALSO DEPEND ON EACH OTHER'S LEAVINGS, which is worth knowing before
+# trusting a green. rust_conformance skips itself unless rust/Cargo.toml
+# already carries the banking feature — something ANOTHER of these four
+# happens to generate. CI does not have that problem because it runs
+# bin/project_rust and cargo build as explicit steps first; this hook does
+# not, so those specs are pending here and the closing line says so.
+
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+
+printf '\n[pre-commit] rspec (parallel, CI=1 — includes the io-tagged adapter specs)\n\n'
+
+if ! (cd "$ROOT" && CI=1 bundle exec parallel_rspec --single '(hecks_build_pipeline|project_rust_pipeline|codegen_parity|rust_conformance)' --isolate spec); then
+  printf '\n[pre-commit] BLOCKED — the suite is red.\n'
+  printf '             Fix it, or commit with --no-verify and say why.\n\n'
+  exit 1
+fi
+
+printf '\n[pre-commit] suite green, io specs included.\n'
+printf '             NOT the whole of CI: the Rust conformance specs skip themselves\n'
+printf '             unless bin/project_rust + cargo build have been run, and CI does\n'
+printf '             that as a build step. Green here is the RSPEC gate, not the lot.\n\n'

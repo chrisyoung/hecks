@@ -12,6 +12,11 @@
 # itself never checks at dispatch time, the same reason it existed
 # alongside parity before).
 #
+# `CI=1` BECAUSE THE LOCAL GATE MUST BE THE REAL GATE. spec_helper excludes
+# `io: true` unless CI is set, so without it this hook ran a strictly smaller
+# suite than GitHub does — every Postgres and SQLite adapter spec invisible
+# until after the push. pre-commit carries the long-form note.
+#
 # Install:  git config core.hooksPath .githooks   (relative — see below)
 # Bypass:   git push --no-verify   (say why — a red suite is a real answer)
 #
@@ -24,13 +29,34 @@
 # reflects the invoking worktree's own root regardless of how hooksPath is
 # configured, so this stays correct even if that drifts again.
 
+#
+# FOUR SPECS CANNOT RUN BESIDE ANYTHING, and they have to be named here.
+# hecks_build_pipeline, project_rust_pipeline, codegen_parity and
+# rust_conformance all regenerate into the REAL
+# rust/src/generated/ tree — not a tmpdir — then snapshots it, regenerates
+# again through the other pipeline, and compares the two. Any other worker
+# touching that directory in between makes the comparison read a foreign
+# state, and it fails with a file list that differs by whatever the other
+# process happened to leave (`manifest.json`, in the run that found this).
+# They are `io: true`, so none ran here until this hook started setting CI.
+# `--single` puts all four in ONE process (sequential within it, which is
+# safe) and `--isolate` keeps everything else out of that process. Isolating
+# only the first one was not enough — the second then raced the third.
+#
+# THEY ALSO DEPEND ON EACH OTHER'S LEAVINGS, which is worth knowing before
+# trusting a green. rust_conformance skips itself unless rust/Cargo.toml
+# already carries the banking feature — something ANOTHER of these four
+# happens to generate. CI does not have that problem because it runs
+# bin/project_rust and cargo build as explicit steps first; this hook does
+# not, so those specs are pending here and the closing line says so.
+
 set -e
 
 ROOT=$(git rev-parse --show-toplevel)
 
-printf '\n[pre-push] rspec (parallel)\n\n'
+printf '\n[pre-push] rspec (parallel, CI=1 — the same suite CI runs)\n\n'
 
-if ! (cd "$ROOT" && bundle exec parallel_rspec spec); then
+if ! (cd "$ROOT" && CI=1 bundle exec parallel_rspec --single '(hecks_build_pipeline|project_rust_pipeline|codegen_parity|rust_conformance)' --isolate spec); then
   printf '\n[pre-push] BLOCKED — the suite is red.\n'
   printf '           Fix it, or push with --no-verify and say why.\n\n'
   exit 1
@@ -44,4 +70,7 @@ if ! "$ROOT/bin/model_check"; then
   exit 1
 fi
 
-printf '\n[pre-push] suite green, model checks clean.\n\n'
+printf '\n[pre-push] suite green, io specs included.\n'
+printf '             NOT the whole of CI: the Rust conformance specs skip themselves\n'
+printf '             unless bin/project_rust + cargo build have been run, and CI does\n'
+printf '             that as a build step. Green here is the RSPEC gate, not the lot.\n\n'
