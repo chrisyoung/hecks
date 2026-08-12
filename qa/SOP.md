@@ -12,11 +12,15 @@ This SOP codifies how to approach QA testing as an adversarial agent breaking th
 
 1. Studies the system architecture
 2. Applies systematic testing categories to find edge cases
-3. Files GitHub issues with reproducible evidence
-4. Attempts fixes (when possible) rather than just reporting bugs
+3. **Attempts fixes first** (don't file tickets without trying to fix)
+4. Files GitHub issues only for bugs that can't be fixed
 5. Keeps living documentation (FINDINGS.md, SYSTEM_ARCHITECTURE.md) updated
 
+**Key Principle: Fix First, File Second**
+
 **Time Investment:** Budget 2-3 hours per domain for thorough QA coverage.
+
+**Daily Reports:** Create a daily report file (qa/reports/YYYY-MM-DD.md) and update it as you work. See template below.
 
 ---
 
@@ -216,7 +220,7 @@ end
 
 ---
 
-## Phase 4: Bug Discovery (20-40 min)
+## Phase 4: Bug Discovery & Diagnosis (20-40 min)
 
 ### 4.1 When a Test Fails Unexpectedly
 
@@ -234,10 +238,10 @@ expect {
 
 ### 4.2 Diagnose the Bug
 
-Before filing an issue, understand:
+Before attempting a fix, understand:
 - What is the bug exactly? (Wrong behavior, missing validation, etc.)
 - Where does it live? (Which file, which function?)
-- Is it architectural or a simple fix?
+- Is it a simple fix or architectural?
 - Can you reproduce it reliably?
 
 Example diagnosis flow:
@@ -249,57 +253,19 @@ Bug: Float values accepted for Integer fields
 └─ Location:   Likely in lib/hecksagain/runtime/value/coercion.rb
 ```
 
-### 4.3 File a GitHub Issue
+### 4.3 Assess Fix Complexity
 
-Create a detailed issue with:
-
-**Title:** `BUG#X: <Short description>`
-
-**Issue Body:**
-```markdown
-## Problem
-[One-liner statement of the bug]
-
-## Expectation
-[What should happen]
-
-## Actual Behavior
-```ruby
-# Reproducible code example
-domain.dispatch("Command", arg: value)
-```
-
-## Root Cause
-[Your diagnosis - which code is wrong and why]
-
-## Impact
-[How severe: HIGH (breaks business logic), MEDIUM (edge case), LOW (cosmetic)]
-
-## Fix Required
-[Your proposed solution, if known]
-
-## Test Evidence
-[Link to test that exposes the bug]
-```
-
-### 4.4 Document in FINDINGS.md
-
-Add to the unfixed bugs section:
-
-```markdown
-### #N: Bug Title (UNFIXED)
-- **Severity:** HIGH/MEDIUM/LOW
-- **Root Cause:** [Brief description]
-- **Impact:** [What breaks]
-- **GitHub Issue:** #XX
-- **Status:** Awaiting investigation / Blocked on X / Fixable
-```
+Can you fix this in ~30 minutes?
+- **YES** → Go to Phase 5 (Bug Fixing)
+- **NO** → Go to Phase 4.4 (File a GitHub Issue)
 
 ---
 
-## Phase 5: Bug Fixing (60-120 min, if possible)
+## Phase 5: Attempt to Fix the Bug (30-60 min)
 
-### 5.1 Attempt Simple Fixes
+**Priority:** Always try to fix before filing a GitHub issue.
+
+### 5.1 Simple Fixes (1-30 min)
 
 For straightforward bugs (like #4 whitespace validation), fix immediately:
 
@@ -310,56 +276,137 @@ invariant("a pizza is named") { !value.to_s.strip.empty? }
 
 Changes:
 1. Edit the file
-2. Run tests to verify fix: `rspec spec/pizzas_spec.rb --format progress`
-3. Commit with clear message: `Fix: Whitespace-only strings now rejected`
+2. Run relevant tests: `rspec spec/pizzas_spec.rb --format progress`
+3. If tests pass, move to 5.4 (Pre-Push Verification)
+4. If tests pass there, commit with clear message
 
-### 5.2 Avoid Architectural Fixes
+### 5.2 Medium Fixes (30-60 min)
 
-For bugs requiring major refactors (like nested VO validation), document and defer:
+For bugs in the runtime (like #5 query freezing):
 
-```markdown
-### #2: Nested Value Object Invariants Not Validated (UNFIXED)
-- **Status:** Requires runtime architecture change
-- **Fix Complexity:** High - would need recursive validation in coercion.rb
+1. Locate the code (use SYSTEM_ARCHITECTURE.md to find critical files)
+2. Make minimal change
+3. Add `.freeze` to boundary points, add validation checks, etc.
+4. Test immediately
+5. If working, proceed to 5.4
+
+Example:
+```ruby
+# In lib/hecksagain/runtime/query_interpreter.rb
+capped.map { |r| r.state.merge(id: r.id).freeze }.freeze
 ```
 
-### 5.3 Commit Fixes Locally
+### 5.3 Skip Architectural Fixes
 
-Never push without testing:
+For bugs requiring major refactors (like nested VO validation), **do not attempt**:
 
-```bash
-# Run full test suite locally (fast - excludes io: true)
-rspec spec/ qa/ --format progress
+Document and skip to Phase 6.2 (File a GitHub Issue):
 
-# Commit only when all tests pass
-git add -A
-git commit -m "Fix: <Brief description of fix>
-
-Details of what was changed and why.
-
-Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_xxx"
+```markdown
+### #2: Nested Value Object Invariants Not Validated (SKIP)
+- **Why Skip:** Requires recursive validation refactor in coercion.rb
+- **Fix Complexity:** High (architectural change)
+- **Action:** File GitHub issue instead
 ```
 
 ### 5.4 Pre-Push Verification
 
-Before pushing, run the full test suite including slow I/O tests:
+Before committing, verify fix works:
 
 ```bash
-# Full verification
+# Run affected domain tests
+rspec spec/<domain>_spec.rb --format progress
+
+# Run full suite locally (fast - excludes io: true)
+rspec spec/ qa/ --format progress
+
+# Full verification before push
 rspec --order random
 
 # Or in parallel (same as CI)
 parallel_test spec/
 ```
 
-**DO NOT PUSH** until all tests pass.
+**Only commit if ALL tests pass.**
+
+### 5.5 Commit Fixes
+
+```bash
+git add -A
+git commit -m "Fix: <Brief description>
+
+What was broken:
+- Specific problem
+
+How it was fixed:
+- File changed, line changed, what changed
+
+Why it works:
+- Brief explanation
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_xxx"
+```
 
 ---
 
-## Phase 6: Documentation Updates (20 min)
+## Phase 6: File GitHub Issue (Only If Fix Wasn't Possible) (20 min)
 
-### 6.1 Update FINDINGS.md
+**Note:** Only reach this phase if Phase 5 didn't result in a fix.
+
+### 6.1 Create a Detailed Issue
+
+**Title:** `BUG#X: <Short description>`
+
+**Issue Body:**
+```markdown
+## Problem
+One-liner statement of the bug
+
+## Expectation
+What should happen
+
+## Actual Behavior
+```ruby
+# Reproducible code example
+domain.dispatch("Command", arg: value)
+# Shows: wrong result
+```
+
+## Root Cause
+Which code is wrong and why (based on your diagnosis)
+
+## Impact
+- Severity: HIGH/MEDIUM/LOW
+- Affects: Which domains/aggregates
+- Example: What data is corrupted or what rule is broken
+
+## Why Not Fixed
+- Reason: architectural gap / requires investigation / blocked by X
+- Estimated effort: if known
+
+## Test Evidence
+Link to test that exposes the bug
+```
+
+### 6.2 Document in FINDINGS.md
+
+Add to the appropriate section:
+
+```markdown
+### #N: Bug Title (UNFIXED)
+- **Severity:** HIGH/MEDIUM/LOW
+- **Root Cause:** [Brief description]
+- **Impact:** [What breaks]
+- **GitHub Issue:** #XX
+- **Status:** Needs investigation / Blocked on X / Architectural
+```
+
+---
+
+## Phase 7: Documentation Updates (20 min)
+
+### 7.1 Update FINDINGS.md
 
 Mark fixed bugs:
 
@@ -370,9 +417,9 @@ Mark fixed bugs:
 - **Details:** Changed invariant to `.strip().empty?`
 ```
 
-### 6.2 Update SYSTEM_ARCHITECTURE.md
+### 7.2 Update SYSTEM_ARCHITECTURE.md
 
-If you discovered a gap or learned something new about the system:
+If you discovered a gap or learned something new:
 
 ```markdown
 ### Critical Discovery: Query Results Must Be Frozen
@@ -382,7 +429,7 @@ Fix: Return `.freeze` on both individual hashes and result arrays
 Impact: Prevents state corruption bugs in any code using queries
 ```
 
-### 6.3 Update INDEX.md
+### 7.3 Update INDEX.md
 
 Update the "Bugs Found" section with new totals:
 
@@ -395,19 +442,19 @@ Update the "Bugs Found" section with new totals:
 
 ---
 
-## Phase 7: Session Handoff (10 min)
+## Phase 8: Session Handoff (10 min)
 
 At the end of your QA session:
 
-### 7.1 Commit All Documentation
+### 8.1 Commit All Work
 
 ```bash
 git add qa/FINDINGS.md qa/SYSTEM_ARCHITECTURE.md qa/INDEX.md
-git commit -m "QA: Session wrap-up - bugs found, fixes attempted, docs updated
+git commit -m "QA: Session wrap-up - bugs found & fixed, docs updated
 
 Found X bugs across Y domains.
 Fixed Z bugs with a total impact of HIGH.
-Deferred N architectural issues.
+Deferred N bugs (architectural / needs investigation).
 
 Key learnings:
 - Learning 1
@@ -419,12 +466,11 @@ Next QA priorities:
 "
 ```
 
-### 7.2 Update Memory
+### 8.2 Update Memory
 
-Record what you learned for future sessions:
+Record what you learned:
 
 ```bash
-# Example memory entry
 cat > ~/.claude/projects/.../memory/qa_session_findings.md << 'EOF'
 ---
 name: qa-session-findings-2026-08-11
@@ -447,7 +493,8 @@ metadata:
 3. Type coercion gaps (needs investigation)
 
 ### Key Learning
-Immutability bugs are widespread at boundary points - anywhere data leaves the runtime (queries, events, lists). Always freeze at materialization points.
+Immutability bugs are widespread at boundary points.
+Always freeze at materialization points.
 
 ### Next Priorities
 1. Investigate type coercion in value/coercion.rb
@@ -500,6 +547,102 @@ The check happens in `Value.build()`. Make sure your test is actually hitting th
 1. Argument coercion (arg_gate.rb)
 2. Value object building (value/coercion.rb:build)
 3. Type checking (value/coercion.rb:check_numeric_fields)
+
+---
+
+## Daily Reports
+
+Create a report for each QA session and update it as you work.
+
+### Template: qa/reports/YYYY-MM-DD.md
+
+```markdown
+# QA Report - 2026-08-12
+
+**Status:** IN PROGRESS  
+**Session Start:** 14:00  
+**Expected End:** 17:00
+
+---
+
+## Plan for Today
+- [ ] Test Compliance domain (boundary + empty values)
+- [ ] Fix any bugs found
+- [ ] File issues for unfixable bugs
+- [ ] Update FINDINGS.md
+
+---
+
+## Progress Log (Update throughout day)
+
+### 14:00 - Started Compliance Testing
+- Loaded compliance domain successfully
+- Beginning boundary testing on Account aggregate...
+
+### 14:30 - Found Bug #11
+- **Issue:** Negative balance accepted in Compliance::Account.Debit
+- **Status:** Attempting fix...
+
+### 15:00 - Bug #11 Fixed
+- **Commit:** abc123d
+- **Impact:** HIGH - Financial invariant
+- Continuing with empty value testing...
+
+### 15:45 - Found Bug #12
+- **Issue:** Empty narrative accepted (should be required)
+- **Status:** Can't fix (architectural - validation happens later)
+- **Action:** Filing GitHub issue...
+
+### 16:00 - Bug #12 Filed
+- **GitHub Issue:** #45
+- Continuing to empty value tests...
+
+---
+
+## Summary
+
+### Bugs Found
+1. ✅ Bug #11 - Negative balance (FIXED)
+2. ❌ Bug #12 - Empty narrative (FILED - architectural)
+
+### Bugs Fixed (1)
+- Bug #11 - commit abc123d
+
+### Bugs Filed (1)
+- Bug #12 - GitHub issue #45
+
+### Tests Written
+- 12 adversarial tests covering boundaries, empty values, state violations
+
+### Files Modified
+- lib/hecksagain/runtime/command_interpreter/mutation_applier.rb (line 42)
+- qa/FINDINGS.md
+- qa/qa_adversarial_fixed.rb
+
+### Next Steps
+1. Complete empty/null value testing on remaining aggregates
+2. Move to state violation testing
+3. Start mutation testing if time permits
+
+---
+
+## Commits Made
+- abc123d Fix: Prevent negative balance in Compliance::Account.Debit
+
+---
+
+## Issues Filed
+- #45 BUG: Empty narrative accepted in Compliance transfers
+```
+
+### How to Use
+
+1. **Start of session:** Create the report with your plan
+2. **Throughout session:** Update the "Progress Log" section hourly
+3. **When you find a bug:** Record it immediately with status
+4. **When you fix a bug:** Update the log and move it to "Bugs Fixed"
+5. **When you file an issue:** Record the GitHub issue number
+6. **End of session:** Complete the summary and commit
 
 ---
 
@@ -586,10 +729,12 @@ Coverage: ~25%
 - [ ] All new tests pass locally
 - [ ] Full test suite passes (`rspec --order random`)
 - [ ] No tests skipped or marked as pending (unless pre-existing)
+- [ ] All attempted fixes committed
 - [ ] FINDINGS.md updated with new bugs and fixes
 - [ ] SYSTEM_ARCHITECTURE.md updated with discoveries
 - [ ] INDEX.md updated with new totals
-- [ ] GitHub issues filed for bugs found
+- [ ] GitHub issues filed ONLY for unfixable bugs
+- [ ] Daily report created/updated
 - [ ] Commit messages are clear and include Co-Authored-By
 - [ ] No sensitive data in issues (passwords, tokens, etc.)
 - [ ] Code follows existing style (indent, naming, patterns)

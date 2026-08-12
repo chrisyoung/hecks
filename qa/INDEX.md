@@ -49,6 +49,22 @@ Quick start guide.
 
 ---
 
+## 📊 Daily Reports
+
+### [reports/](reports/)
+Track progress and findings for each QA session.
+
+**Template:** [reports/TEMPLATE.md](reports/TEMPLATE.md) - Copy this for each new session  
+**Today's Report:** [reports/2026-08-11.md](reports/2026-08-11.md) - Example of completed report
+
+Create a new report for each QA session:
+```bash
+cp qa/reports/TEMPLATE.md qa/reports/YYYY-MM-DD.md
+# Update throughout the day as you work
+```
+
+---
+
 ## 🔧 Scripts
 
 ### [qa_runner.rb](qa_runner.rb)
