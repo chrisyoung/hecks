@@ -31,20 +31,19 @@ require "json"
 RSpec.describe "every nullable field the wire carries, actually filled" do
   # An entry here is a claim that some field is not worth a fixture, and
   # it must say why.
-  ALLOWED_UNSET = {
-    # `dispatch ..., for_each: { from: "Aggregate.query" }` (docs/hecks-
-    # migration-findings.md's #12) — a real, dispatch-time fan-out, but
-    # proving it needs a fixture with a genuine multi-row query wired to
-    # a saga that consumes it end to end, verified through a real
-    # dispatch, not merely a parsed declaration — exactly the discipline
-    # this migration's own findings doc names as the difference between
-    # `validate`-clean and actually working. That verification is real,
-    # separate work (Runtime::SagaInterpreter#deliver_saga_dispatch's own
-    # `@door.query` call is untested against a live for_each corpus
-    # member as of this pass), not a side effect of closing this gate.
-    "for_each" => "for_each fan-out has no corpus member exercising a real multi-row dispatch yet — " \
-                  "building and verifying one through a real dispatch is separate work"
-  }.freeze
+  #
+  # `for_each`'s own entry (removed, item 46b): Policy's own `for_each`
+  # (WatchlistEntry's FlagZoneOnSweep, banking.bluebook) now genuinely
+  # fills the field somewhere in the wire, verified through a real
+  # dispatch (item 48 closed the runtime crash that blocked it) — the
+  # claim this entry made is obsolete, not a side effect of a different
+  # gate. Note: this specifically proves POLICY's own for_each ; a saga
+  # Handler's dispatch-level for_each (item 12,
+  # SagaInterpreter#deliver_saga_dispatch) is a DIFFERENT field sharing
+  # the same wire key name and may still want its own corpus exercise —
+  # this gate cannot distinguish the two by name alone, and does not
+  # claim to have closed that one too.
+  ALLOWED_UNSET = {}.freeze
 
   # SET and NULL counts for every key in every frozen IR. An object or a list
   # counts as SET: `lifecycle` is a Hash when it is there and null when it is

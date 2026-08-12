@@ -52,6 +52,10 @@ RSpec.describe "Banking across persistence adapters" do
         Banking::OnboardingCase.projected_by("SqliteProjection") if projected
         Banking::Statement.persisted_by(adapter)
         Banking::Statement.projected_by("SqliteProjection") if projected
+        Banking::WatchlistEntry.persisted_by(adapter)
+        Banking::WatchlistEntry.projected_by("SqliteProjection") if projected
+        Banking::ComplianceSweep.persisted_by(adapter)
+        Banking::ComplianceSweep.projected_by("SqliteProjection") if projected
       end
       if adapter != "Memory"
         adapter_name = adapter

@@ -2869,6 +2869,33 @@
         {
           "admits": null,
           "default": null,
+          "list": false,
+          "name": "count",
+          "optional": false,
+          "pattern": null,
+          "type": "QueryText"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "median_field",
+          "optional": false,
+          "pattern": null,
+          "type": "QueryText"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "group_by_field",
+          "optional": false,
+          "pattern": null,
+          "type": "QueryText"
+        },
+        {
+          "admits": null,
+          "default": null,
           "list": true,
           "name": "wheres",
           "optional": false,
@@ -2965,6 +2992,33 @@
               "default": null,
               "list": false,
               "name": "limit",
+              "optional": true,
+              "pattern": null,
+              "type": "QueryText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "count",
+              "optional": true,
+              "pattern": null,
+              "type": "QueryText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "median_field",
+              "optional": true,
+              "pattern": null,
+              "type": "QueryText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "group_by_field",
               "optional": true,
               "pattern": null,
               "type": "QueryText"
@@ -5068,6 +5122,42 @@
         {
           "admits": null,
           "default": null,
+          "list": true,
+          "name": "wheres",
+          "optional": false,
+          "pattern": null,
+          "type": "Pair"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": true,
+          "name": "with_literals",
+          "optional": false,
+          "pattern": null,
+          "type": "Pair"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "for_each_from",
+          "optional": false,
+          "pattern": null,
+          "type": "PolicyText"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": true,
+          "name": "for_each_where",
+          "optional": false,
+          "pattern": null,
+          "type": "Pair"
+        },
+        {
+          "admits": null,
+          "default": null,
           "list": false,
           "name": "position",
           "optional": false,
@@ -5136,6 +5226,15 @@
               "admits": null,
               "default": null,
               "list": false,
+              "name": "for_each_from",
+              "optional": true,
+              "pattern": null,
+              "type": "PolicyText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
               "name": "position",
               "optional": true,
               "pattern": null,
@@ -5161,6 +5260,153 @@
 
           ],
           "references": null,
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "key",
+              "optional": false,
+              "pattern": null,
+              "type": "PolicyText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "PolicyText"
+            }
+          ],
+          "emits": [
+            "PolicyWhereAttached"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": "Attach one where-condition to the policy",
+          "mutations": [
+            {
+              "fields": {
+                "key": ":key",
+                "value": ":value"
+              },
+              "op": "append",
+              "target": "wheres"
+            }
+          ],
+          "name": "Where",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": "Policy",
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "key",
+              "optional": false,
+              "pattern": null,
+              "type": "PolicyText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "PolicyText"
+            }
+          ],
+          "emits": [
+            "PolicyWithAttached"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": "Attach one literal argument to the policy's own trigger",
+          "mutations": [
+            {
+              "fields": {
+                "key": ":key",
+                "value": ":value"
+              },
+              "op": "append",
+              "target": "with_literals"
+            }
+          ],
+          "name": "With",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": "Policy",
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "key",
+              "optional": false,
+              "pattern": null,
+              "type": "PolicyText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "PolicyText"
+            }
+          ],
+          "emits": [
+            "PolicyForEachAttached"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": "Attach one for_each where-condition to the policy",
+          "mutations": [
+            {
+              "fields": {
+                "key": ":key",
+                "value": ":value"
+              },
+              "op": "append",
+              "target": "for_each_where"
+            }
+          ],
+          "name": "ForEach",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": "Policy",
           "role": "Language"
         }
       ],
@@ -5252,6 +5498,36 @@
 
           ],
           "name": "PolicyText"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "key",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "Pair"
         },
         {
           "attributes": [

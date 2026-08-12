@@ -1431,6 +1431,93 @@ Hecks.bluebook "Banking", version: "v1" do
     across  "Notifications"
   end
 
+  # THE JUDGED CORPUS'S OWN EXERCISE OF A POLICY'S `where`/`with`/
+  # `for_each` (docs/hecks-migration-findings.md findings #11/#12) —
+  # same reason `Command.Freeze`'s own comment gives for
+  # `redirects_native`: Banking is the one flagship domain
+  # `spec/judge_coverage_spec.rb` reads to decide whether the judge
+  # ever OFFERS a self-hosted verb, so a construct exercised only in a
+  # fixture (reflex.bluebook) is a verb the judge never offers there.
+  # A standing note on a customer, escalated when its own severity
+  # says so (`where`, `with`) or swept zone-wide at once (`for_each`).
+  # Self-contained — nothing else in this chapter dispatches into it —
+  # so it changes nothing about how any existing aggregate behaves.
+  aggregate "WatchlistEntry" do
+    description "One name on a compliance watchlist, escalated individually or swept zone-wide at once."
+
+    identified_by { id.value }
+
+    value_object "EntryId" do
+      attribute :value, String
+    end
+
+    attribute :id,       EntryId
+    attribute :zone,     String
+    attribute :severity, String, default: "normal"
+    attribute :status,   String, default: "clear"
+
+    command "Add" do
+      attribute :id,       EntryId
+      attribute :zone,     String
+      attribute :severity, String
+
+      emits "EntryAdded"
+    end
+
+    command "Flag" do
+      role "Compliance officer"
+      goal "Mark one watchlist entry flagged"
+
+      reference_to WatchlistEntry
+      attribute :note,       String, optional: true
+      attribute :flagged_by, String, optional: true
+
+      then_set :status, to: "flagged"
+
+      emits "EntryFlagged"
+    end
+
+    query "InZone" do
+      attribute :zone, String
+      where zone: :zone
+    end
+
+    policy "EscalateOnCriticalEntry" do
+      on      "EntryAdded"
+      where   severity: "critical"
+      with    "note", "auto-flagged — critical on arrival"
+      with    "flagged_by", "policy"
+      trigger "WatchlistEntry.Flag"
+    end
+
+    policy "FlagZoneOnSweep" do
+      on       "SweepStarted"
+      for_each from: "WatchlistEntry.InZone", where: { zone: from_event(:zone) }
+      trigger  "WatchlistEntry.Flag"
+    end
+  end
+
+  # THE for_each TRIGGER FOR FlagZoneOnSweep ABOVE — its own aggregate
+  # because a sweep names a ZONE, not an entry, and has no watchlist
+  # identity of its own to reference.
+  aggregate "ComplianceSweep" do
+    description "One zone-wide compliance sweep, flagging every watchlist entry the zone currently holds."
+
+    identified_by { zone.value }
+
+    value_object "SweepZone" do
+      attribute :value, String
+    end
+
+    attribute :zone, SweepZone
+
+    command "Start" do
+      attribute :zone, SweepZone
+
+      emits "SweepStarted"
+    end
+  end
+
   process_manager "Settlement" do
     # THE FIELD, NAMED — Transfer.Request declares `attribute :reference,
     # TransferReference`, which is also what Transfer's own `identified_by

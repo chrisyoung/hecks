@@ -5333,6 +5333,360 @@
           "name": "StatementFrequency"
         }
       ]
+    },
+    {
+      "attributes": [
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "id",
+          "optional": false,
+          "pattern": null,
+          "type": "EntryId"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "zone",
+          "optional": false,
+          "pattern": null,
+          "type": "Zone"
+        },
+        {
+          "admits": null,
+          "default": "normal",
+          "list": false,
+          "name": "severity",
+          "optional": false,
+          "pattern": null,
+          "type": "Severity"
+        },
+        {
+          "admits": null,
+          "default": "clear",
+          "list": false,
+          "name": "status",
+          "optional": false,
+          "pattern": null,
+          "type": "Status"
+        }
+      ],
+      "commands": [
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "id",
+              "optional": false,
+              "pattern": null,
+              "type": "EntryId"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "zone",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "severity",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "emits": [
+            "EntryAdded"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": null,
+          "mutations": [
+
+          ],
+          "name": "Add",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": null,
+          "role": null
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "note",
+              "optional": true,
+              "pattern": null,
+              "type": "String"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "flagged_by",
+              "optional": true,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "emits": [
+            "EntryFlagged"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": "Mark one watchlist entry flagged",
+          "mutations": [
+            {
+              "op": "set",
+              "source": {
+                "kind": "literal",
+                "value": "flagged"
+              },
+              "target": "status"
+            }
+          ],
+          "name": "Flag",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": "WatchlistEntry",
+          "role": "Compliance officer"
+        }
+      ],
+      "description": "One name on a compliance watchlist, escalated individually or swept zone-wide at once.",
+      "entities": [
+
+      ],
+      "identified_by": [
+        "id.value"
+      ],
+      "lifecycle": null,
+      "name": "WatchlistEntry",
+      "ports": [
+
+      ],
+      "provenance": null,
+      "queries": [
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "zone",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "description": null,
+          "limit": null,
+          "name": "InZone",
+          "order_by": null,
+          "wheres": [
+            {
+              "field": "zone",
+              "op": "eq",
+              "value": ":zone"
+            }
+          ]
+        }
+      ],
+      "value_objects": [
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "EntryId"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "Zone"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "Severity"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "Status"
+        }
+      ]
+    },
+    {
+      "attributes": [
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "zone",
+          "optional": false,
+          "pattern": null,
+          "type": "SweepZone"
+        }
+      ],
+      "commands": [
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "zone",
+              "optional": false,
+              "pattern": null,
+              "type": "SweepZone"
+            }
+          ],
+          "emits": [
+            "SweepStarted"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": null,
+          "mutations": [
+
+          ],
+          "name": "Start",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": null,
+          "role": null
+        }
+      ],
+      "description": "One zone-wide compliance sweep, flagging every watchlist entry the zone currently holds.",
+      "entities": [
+
+      ],
+      "identified_by": [
+        "zone.value"
+      ],
+      "lifecycle": null,
+      "name": "ComplianceSweep",
+      "ports": [
+
+      ],
+      "provenance": null,
+      "queries": [
+
+      ],
+      "value_objects": [
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "SweepZone"
+        }
+      ]
     }
   ],
   "canonical_form": [
@@ -5357,40 +5711,126 @@
   "name": "Banking",
   "policies": [
     {
+      "for_each": null,
       "name": "ReviewOnFreeze",
       "on_event": "Account.AccountFrozen",
       "target_domain": "Compliance",
-      "trigger_command": "Compliance.OpenReview"
+      "trigger_command": "Compliance.OpenReview",
+      "wheres": [
+
+      ],
+      "with_literals": [
+
+      ]
     },
     {
+      "for_each": null,
       "name": "RetryOnPaymentFailure",
       "on_event": "ScheduledPayment.ScheduledPaymentFailed",
       "target_domain": null,
-      "trigger_command": "ScheduledPayment.Retry"
+      "trigger_command": "ScheduledPayment.Retry",
+      "wheres": [
+
+      ],
+      "with_literals": [
+
+      ]
     },
     {
+      "for_each": null,
+      "name": "EscalateOnCriticalEntry",
+      "on_event": "EntryAdded",
+      "target_domain": null,
+      "trigger_command": "WatchlistEntry.Flag",
+      "wheres": [
+        [
+          "severity",
+          "\"critical\""
+        ]
+      ],
+      "with_literals": [
+        [
+          "note",
+          "\"auto-flagged — critical on arrival\""
+        ],
+        [
+          "flagged_by",
+          "\"policy\""
+        ]
+      ]
+    },
+    {
+      "for_each": {
+        "from": "WatchlistEntry.InZone",
+        "where": [
+          [
+            "zone",
+            ":zone"
+          ]
+        ]
+      },
+      "name": "FlagZoneOnSweep",
+      "on_event": "SweepStarted",
+      "target_domain": null,
+      "trigger_command": "WatchlistEntry.Flag",
+      "wheres": [
+
+      ],
+      "with_literals": [
+
+      ]
+    },
+    {
+      "for_each": null,
       "name": "FreezeAccountsOnSuspension",
       "on_event": "CustomerSuspended",
       "target_domain": null,
-      "trigger_command": "Account.Freeze"
+      "trigger_command": "Account.Freeze",
+      "wheres": [
+
+      ],
+      "with_literals": [
+
+      ]
     },
     {
+      "for_each": null,
       "name": "NotifyOnClosure",
       "on_event": "AccountClosed",
       "target_domain": "Notifications",
-      "trigger_command": "Notifications.Send"
+      "trigger_command": "Notifications.Send",
+      "wheres": [
+
+      ],
+      "with_literals": [
+
+      ]
     },
     {
+      "for_each": null,
       "name": "ReviewOnBoxSurrender",
       "on_event": "BoxSurrendered",
       "target_domain": "Compliance",
-      "trigger_command": "Compliance.OpenReview"
+      "trigger_command": "Compliance.OpenReview",
+      "wheres": [
+
+      ],
+      "with_literals": [
+
+      ]
     },
     {
+      "for_each": null,
       "name": "FlagKeyReturn",
       "on_event": "KeyReturnDue",
       "target_domain": "Notifications",
-      "trigger_command": "Notifications.Send"
+      "trigger_command": "Notifications.Send",
+      "wheres": [
+
+      ],
+      "with_literals": [
+
+      ]
     }
   ],
   "process_managers": [
