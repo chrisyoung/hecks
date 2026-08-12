@@ -4,9 +4,18 @@ Quick reference for all QA guides and scripts.
 
 ## 📚 Guides
 
-### [SOP.md](SOP.md) - **START HERE**
+### [BLUEBOOK_REQUIREMENTS.md](BLUEBOOK_REQUIREMENTS.md) - **For Agent Building QA Domain**
+Comprehensive requirements for a QA bluebook domain.
+- 4 core aggregates: Bug, QASession, TestCase, TestCoverage
+- Workflow enforcement (can't file without fix attempt)
+- Queries for coverage and status
+- Cross-aggregate relationships
+- Vision: QA work through domain dispatch, not file edits
+- Questions for the building agent
+
+### [SOP.md](SOP.md) - **For QA Engineers**
 Standard operating procedure for QA engineers.
-- 7-phase workflow for systematic testing
+- 8-phase workflow for systematic testing
 - How to discover bugs (8 adversarial categories)
 - How to file GitHub issues
 - When to fix vs. defer
@@ -176,15 +185,17 @@ When you push, the pre-push hook runs the full test suite. If you've already ver
   - **Commit:** 63750a3
   - **Impact:** HIGH
 
-### 🟡 Known Issues (Require Architecture Changes)
-- Nested value object invariants not validated
-  - **Impact:** HIGH
-  - **Domains affected:** Any with nested VOs
-  - **Fix complexity:** Medium
-
-- Invalid closed-set values accepted (cascades from above)
-  - **Impact:** HIGH
-  - **Status:** Blocked on above issue
+### ⏸ Paused Bugs (Architectural - Deferred)
+- **#2: Nested value object invariants not validated**
+  - Impact: HIGH
+  - Domains affected: Any with nested VOs
+  - Fix complexity: HIGH (needs type system refactor)
+  - **Why paused:** Not a quick fix - requires recursive validation refactor
+  
+- **#3: Invalid closed-set values accepted**
+  - Impact: HIGH
+  - Dependency: Blocked on #2
+  - **Why paused:** Cascades from #2 - fixing parent fixes this automatically
 
 ---
 
