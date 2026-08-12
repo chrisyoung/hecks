@@ -26,12 +26,13 @@ Hecks.bluebook "Bluebook" do
     attribute :target_domain,   PolicyText
 
     value_object "PolicyName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a policy is named") { !value.to_s.empty? }
     end
 
     value_object "PolicyText" do
       attribute :value, String
+      # PolicyText is free-form text (event names, domain names, etc), allowed empty
     end
 
     # The way back: everything DECLARED IN the chapter above. The parent
@@ -88,16 +89,18 @@ Hecks.bluebook "Bluebook" do
     attribute :states,    list_of(SagaState)
 
     value_object "ProcessManagerName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a process manager is named") { !value.to_s.empty? }
     end
 
     value_object "ProcessManagerText" do
       attribute :value, String
+      # ProcessManagerText is free-form text (state names, field names, etc), allowed empty
     end
 
     value_object "SagaState" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
+      invariant("a state is named") { !name.to_s.empty? }
     end
 
     # The way back: everything DECLARED IN the chapter above. The parent

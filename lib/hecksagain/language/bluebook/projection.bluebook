@@ -21,7 +21,7 @@ Hecks.bluebook "Bluebook" do
     attribute :options,          list_of(ProjectionOption)
 
     value_object "ReadModelName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a read model is named") { !value.to_s.empty? }
     end
 
@@ -32,21 +32,26 @@ Hecks.bluebook "Bluebook" do
     end
 
     value_object "ProjectionPurpose" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a description says something") { !value.to_s.empty? }
     end
 
     value_object "Head" do
-      attribute :aggregate, String
-      attribute :as,        String
-      attribute :many,      String
+      attribute :aggregate, String, pattern: '[^ \t\n\r]'
+      attribute :as,        String, pattern: '[^ \t\n\r]'
+      attribute :many,      String, pattern: '[^ \t\n\r]'
+      invariant("a head aggregate is named") { !aggregate.to_s.empty? }
+      invariant("a head alias is named") { !as.to_s.empty? }
+      invariant("a head cardinality is specified") { !many.to_s.empty? }
     end
 
     value_object "ProjectionOption" do
-      attribute :option, String
-      attribute :key,    String
-      attribute :value,  String
-      attribute :at,     String
+      attribute :option, String, pattern: '[^ \t\n\r]'
+      attribute :key,    String, pattern: '[^ \t\n\r]'
+      attribute :value,  String  # Values can be empty or serialized literals
+      attribute :at,     String, optional: true  # Optional nested path
+      invariant("an option name is present") { !option.to_s.empty? }
+      invariant("an option key is present") { !key.to_s.empty? }
     end
 
     # The way back: everything DECLARED IN the chapter above. The parent
