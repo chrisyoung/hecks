@@ -69,16 +69,16 @@ createdb hecks_quality_control   # once; the first boot mints era 1
 
 ## Using the ledger
 
-`bin/quality_control` is its command line — minted by `bin/project_cli` from the
+`qa/quality_control` is its command line — minted by `bin/project_cli` beside the domain it drives, from the
 bluebook name, and projected from the chapter — every verb, every
 question, every argument typed, and every refusal, computed at the moment it
 prints.
 
 ```bash
-bin/quality_control                                  # every verb and question
-bin/quality_control bug.discover --help              # what it wants, and how it refuses
-bin/quality_control bug.discover session_id=QA-1 reference=BUG#1 severity=high …
-bin/quality_control ask bug.unfixed                  # read; changes nothing
+qa/quality_control                                  # every verb and question
+qa/quality_control bug.discover --help              # what it wants, and how it refuses
+qa/quality_control bug.discover session_id=QA-1 reference=BUG#1 severity=high …
+qa/quality_control ask bug.unfixed                  # read; changes nothing
 ```
 
 It works from anywhere in the checkout, which is the point — the QA agent is

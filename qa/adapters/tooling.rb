@@ -45,10 +45,36 @@ module Hecksagain
 
       def initialize(aggregate: nil, settings: {}, root: nil)
         @settings = settings
-        @root     = root || Dir.pwd
+        @root     = root || checkout
       end
 
       private
+
+      # THE CHECKOUT, FOUND RATHER THAN ASSUMED.
+      #
+      # This was `Dir.pwd`, which was true exactly as long as the only way in
+      # was `bin/quality_control` typed at the repository root. The launcher
+      # now lives beside its domain and boots `__dir__`, so it runs from
+      # anywhere — and from anywhere, `bin/model_check` is not a file:
+      #
+      #   FuzzingRefused: cannot run bin/model_check: No such file or directory
+      #
+      # A refusal, correctly channelled, and completely misleading: the tool is
+      # installed and working, the adapter was just looking in somebody's home
+      # directory.
+      #
+      # WALKED UP TO, NOT COUNTED. `../..` from here would be right today and
+      # wrong the moment this file moves — the same brittleness the launcher
+      # just shed. Climbing until `lib/hecksagain` appears asks the question
+      # directly, and `git rev-parse` was the alternative: a subprocess, and
+      # nothing here needs the checkout to be a git one.
+      def checkout
+        @checkout ||= begin
+          dir = __dir__
+          dir = File.dirname(dir) while !File.directory?(File.join(dir, "lib", "hecksagain")) && File.dirname(dir) != dir
+          File.directory?(File.join(dir, "lib", "hecksagain")) ? dir : Dir.pwd
+        end
+      end
 
       # THE ONE PLACE A TOOL IS ACTUALLY RUN, and the one place the
       # ran/succeeded distinction is made. `Open3` rather than backticks

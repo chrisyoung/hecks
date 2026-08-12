@@ -90,7 +90,7 @@ module Hecksagain
       # does not. So `now` stays an ARGUMENT the predicate merely reads, and
       # the question becomes who types it. Before this, the caller did:
       #
-      #   bin/quality_control target.claim id=QC held_by.value=me \
+      #   qa/quality_control target.claim id=QC held_by.value=me \
       #     now.value=$(date +%s) window.value=900
       #
       # which is a shell incantation in front of every claim, and one an agent
