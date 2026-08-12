@@ -8,18 +8,14 @@ require "spec_helper"
 # `category: [:category, :plain]` read -- the same three-part shape
 # `redirects_native` already used to close this exact gap on Command.
 #
-# HONEST, VERIFIED-STILL-OPEN GAP: this makes `category` a real field the
+# GAP CLOSED (item 39, `d39d5c1`): this makes `category` a real field the
 # Judge's own Plan offers when dispatching a bluebook's Declare command
-# (confirmed directly below), and a real read Assembly::Contracts knows
-# about -- but the FINAL leg, `Reconstruction#to_h`'s own TOP-LEVEL chapter
-# read, is hand-written rather than table-driven (its own comment: "there
-# were eleven methods here... the keys come from the table now" describes
-# the PER-ROW `#declaration` method further down, not this outer `#to_h`)
-# and still hard-codes its chapter-level key list without `category`. So a
+# (confirmed directly below), a real read Assembly::Contracts knows about,
+# AND now the FINAL leg too -- `Reconstruction#to_h`'s own TOP-LEVEL
+# chapter read (hand-written rather than table-driven, unlike every OTHER
+# category's `#declaration` method) gained its own `category:` line, so a
 # real dispatch through the full Judge round-trip (meta-validation ON)
-# still returns `category: nil` -- confirmed live below, not assumed.
-# `Reconstruction#to_h`'s own fix is outside this migration's 31-commit
-# range and not invented here.
+# now returns the real value -- confirmed live below, not assumed.
 RSpec.describe "the self-hosted grammar's own Bluebook.category field" do
   it "the self-hosted Bluebook aggregate's Declare command now offers category" do
     plan = Hecksagain::Bluebook::MetaValidator::Plan.for(Hecksagain::Bluebook::MetaValidator.grammar_registry)
@@ -40,15 +36,14 @@ RSpec.describe "the self-hosted grammar's own Bluebook.category field" do
     expect(judge.refusals).to be_empty
   end
 
-  it "HONEST GAP, confirmed live: Reconstruction#to_h still does not carry category through" do
+  it "GAP CLOSED (item 39): Reconstruction#to_h now carries category through" do
     bluebook = Hecksagain::Bluebook::IR::Bluebook.new(name: "CategorySelfHostGapGrowth", category: "framework")
     judge = Hecksagain::Bluebook::MetaValidator::Judge.new(bluebook)
 
     reconstructed = Hecksagain::Bluebook::MetaValidator::Reconstruction.of(judge.runtime, "CategorySelfHostGapGrowth")
 
-    # Documented here, not silently dodged -- Reconstruction#to_h's own
-    # hand-written chapter-level key list is the remaining piece, not yet
-    # fixed anywhere in this migration's 31-commit range.
-    expect(reconstructed).not_to have_key(:category)
+    # Reconstruction#to_h's own hand-written chapter-level key list gained
+    # a `category:` line (item 39) -- the round trip is complete now.
+    expect(reconstructed[:category]).to eq("framework")
   end
 end

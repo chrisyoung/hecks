@@ -1,6 +1,11 @@
 Hecks.bluebook "Reflex" do
   vision "An event arrives and a command fires — the whole of a policy, in one aggregate."
   core
+  # Exercises `category` (docs/hecks-migration-findings.md, migration
+  # plan task 4) somewhere in the corpus — spec/optionality_coverage_spec
+  # holds every nullable field the wire carries to actually being filled
+  # somewhere, and no fixture called this keyword before it existed.
+  category "test-fixture"
 
   aggregate "Light" do
     description "A light that logs its own flip"

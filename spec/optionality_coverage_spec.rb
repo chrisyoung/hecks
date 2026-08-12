@@ -29,10 +29,22 @@ require "json"
 # keeps finding quietly wrong. The wire is self-describing here, so it is the
 # honest source.
 RSpec.describe "every nullable field the wire carries, actually filled" do
-  # UNSET ON PURPOSE. Nothing is here, and that is the point — the corpus
-  # currently fills every nullable field it carries. An entry would be a claim
-  # that some field is not worth a fixture, and it would need to say why.
-  ALLOWED_UNSET = {}.freeze
+  # An entry here is a claim that some field is not worth a fixture, and
+  # it must say why.
+  ALLOWED_UNSET = {
+    # `dispatch ..., for_each: { from: "Aggregate.query" }` (docs/hecks-
+    # migration-findings.md's #12) — a real, dispatch-time fan-out, but
+    # proving it needs a fixture with a genuine multi-row query wired to
+    # a saga that consumes it end to end, verified through a real
+    # dispatch, not merely a parsed declaration — exactly the discipline
+    # this migration's own findings doc names as the difference between
+    # `validate`-clean and actually working. That verification is real,
+    # separate work (Runtime::SagaInterpreter#deliver_saga_dispatch's own
+    # `@door.query` call is untested against a live for_each corpus
+    # member as of this pass), not a side effect of closing this gate.
+    "for_each" => "for_each fan-out has no corpus member exercising a real multi-row dispatch yet — " \
+                  "building and verifying one through a real dispatch is separate work"
+  }.freeze
 
   # SET and NULL counts for every key in every frozen IR. An object or a list
   # counts as SET: `lifecycle` is a Hash when it is there and null when it is

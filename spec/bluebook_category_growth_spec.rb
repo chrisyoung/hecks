@@ -13,21 +13,16 @@ require "spec_helper"
 # plumbing -- without it, `BluebookBuilder#build`'s `category:
 # @category` argument would have nowhere real to land.
 #
-# HONEST, ALREADY-CATALOGUED GAP (this repo's own split-plan Ground
-# Truth section names it explicitly: "category not surviving
-# Reconstruction#to_h"): `BluebookBuilder#build`'s real return value is
-# `MetaValidator.call(bluebook)`, which -- when meta-validation is ON
-# -- dispatches the built IR through the self-hosted grammar's own
-# Judge and rebuilds it via `Assembly.call(Reconstruction.of(...))`,
-# NOT the original object this DSL builder constructed. Since
-# `category` is not yet a word the self-hosted grammar's own Bluebook
-# vocabulary declares (that lands later, item 35's grammar-word
-# registration), Reconstruction silently drops it on that round-trip.
-# `HECKSAGAIN_META_VALIDATION=off` (the same escape hatch this whole
-# migration's own spec suite already leans on for constructs ahead of
-# their own grammar registration) is needed to observe `category`
-# surviving all the way through; a real, in-suite test below proves
-# the gap exists WITH validation on, rather than dodging it silently.
+# GAP CLOSED (item 39, `d39d5c1`): `BluebookBuilder#build`'s real return
+# value is `MetaValidator.call(bluebook)`, which -- when meta-validation
+# is ON -- dispatches the built IR through the self-hosted grammar's own
+# Judge and rebuilds it via `Assembly.call(Reconstruction.of(...))`, NOT
+# the original object this DSL builder constructed. `category` now
+# survives that round-trip: item 35a self-hosted the field on the
+# meta-grammar's own Bluebook aggregate, item 35 registered the grammar
+# word, and item 39's `Reconstruction#to_h` fix (its own hand-written
+# top-level chapter reader, which predates the generic contract-table
+# path every OTHER category uses) was the final piece.
 RSpec.describe "BluebookBuilder#category" do
   def build_bluebook(name, &block)
     previous = ENV["HECKSAGAIN_META_VALIDATION"]
@@ -62,15 +57,14 @@ RSpec.describe "BluebookBuilder#category" do
     expect(bluebook.to_h[:category]).to eq("meta")
   end
 
-  it "HONEST GAP: does not yet survive the self-hosted grammar's own Judge round-trip (meta-validation ON)" do
+  it "GAP CLOSED (item 39): survives the self-hosted grammar's own Judge round-trip (meta-validation ON)" do
     bluebook = Hecksagain::Bluebook::DSL::BluebookBuilder.build("CategoryReconstructionGapGrowth") do
       category "framework"
     end
 
-    # The DSL builder captured it (proven above) -- but MetaValidator's
-    # real ON-path return value went through Assembly/Reconstruction,
-    # which the self-hosted grammar's Bluebook vocabulary does not yet
-    # carry `category` through. Documented here, not silently dodged.
-    expect(bluebook.category).to be_nil
+    # Reconstruction#to_h (item 39) now carries `category` through its own
+    # hand-written top-level chapter read -- MetaValidator's real ON-path
+    # return value survives Assembly/Reconstruction intact.
+    expect(bluebook.category).to eq("framework")
   end
 end

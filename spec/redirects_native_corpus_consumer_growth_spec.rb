@@ -25,7 +25,10 @@ RSpec.describe "redirects_native's real corpus consumer" do
 
   it "Account.Freeze declares redirects_native ComplianceHold" do
     freeze = banking_bluebook.aggregate("Account").commands.find { |c| c.hecks_name == "Freeze" }
-    expect(freeze.redirects_native).to eq(["ComplianceHold"])
+    # Two tools, not one (item 39, migration plan task 4) — a corpus that
+    # only ever fills a list-shaped field once is indistinguishable from
+    # a scalar, spec/plurality_coverage_spec's own concern.
+    expect(freeze.redirects_native).to include("ComplianceHold")
   end
 
   it "the self-hosted grammar's Judge now offers Bluebook::Command.Redirect" do

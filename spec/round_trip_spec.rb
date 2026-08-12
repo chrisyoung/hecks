@@ -129,7 +129,11 @@ RSpec.describe "a bluebook dispatched in and read back out" do
     # names what is compared, so dropping one is a failure and not a silence.
     back, = read_back(load_corpus(ROUND_TRIP_CORPUS["Banking"]).bluebook("Banking"))
 
-    expect(back.keys).to eq(%i[name version vision classification formerly_known_as aggregates read_models policies process_managers])
+    # `category` joined the list this session (migration plan task 4) —
+    # see Reconstruction#to_h's own comment on why it needed a line here
+    # even after the contract/self-hosted-schema halves were both wired.
+    expect(back.keys).to eq(%i[name version vision classification formerly_known_as category
+                                aggregates read_models policies process_managers])
     expect(Hecksagain::Bluebook::IR::Bluebook.instance_method(:to_h).owner).to be_truthy
   end
 

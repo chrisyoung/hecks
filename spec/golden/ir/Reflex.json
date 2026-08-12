@@ -447,7 +447,7 @@
       "strategy": "replace"
     }
   ],
-  "category": null,
+  "category": "test-fixture",
   "classification": "core",
   "ir_version": 1,
   "name": "Reflex",

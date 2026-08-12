@@ -743,7 +743,8 @@
           "name": "Freeze",
           "provenance": null,
           "redirects_native": [
-            "ComplianceHold"
+            "ComplianceHold",
+            "AccountLock"
           ],
           "references": "Account",
           "role": "Compliance officer"
@@ -5429,6 +5430,10 @@
             [
               "destination_account",
               ":destination"
+            ],
+            [
+              "source_account",
+              ":source"
             ]
           ],
           "to_state": "requested"
