@@ -1392,6 +1392,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Pass a customer's identity and screening checks"
 
       reference_to OnboardingCase
+      given("customer is active") { customer.status == "active" }
       given("case is screening") { status == "screening" }
 
       emits "OnboardingCleared"
