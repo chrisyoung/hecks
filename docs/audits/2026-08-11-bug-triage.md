@@ -35,13 +35,13 @@ divergences.
 Silent, unrecoverable, or hard-to-detect data corruption. The source audit's
 own #1 priority; nothing supersedes it.
 
-| ID | One-line | File | Confidence |
-| --- | --- | --- | --- |
-| H1 | Entity commands run no argument gate — unknown args silently accepted, absent required args silently overwrite stored data with `nil` | `runtime/entity_interpreter.rb:27` | confirmed |
-| H2 | Era mint isn't atomic — inner `@db.transaction` commits the whole mint early, releasing the advisory lock mid-flight; a later raise leaves a half-born era committed | `adapters/driven/postgres/lineage/head_compiler.rb:38` | confirmed |
-| H3 | Deleting an era-migrated record resurrects it in the head view — the ancestor era's `save` row outranks the (untombstoned) delete forever | `adapters/driven/postgres.rb:192` | likely (static) |
-| H4 | Rekey SQL is invisible to the human-approval digest — two different rekey SQLs produce the identical digest; an approved rekey can be edited post-approval and still mint | `translation/audit/approval_digest.rb` | confirmed |
-| H5 | A dotted-member `compute` (e.g. `price.cents`) exempts the whole attribute from Layer-2's cross-execution equivalence gate — the gate whose entire purpose is to catch silent migration data loss produces zero violations on it | `translation/audit/layer_two.rb:56` | confirmed |
+| ID | One-line | File | Confidence | Status |
+| --- | --- | --- | --- | --- |
+| H1 | Entity commands run no argument gate — unknown args silently accepted, absent required args silently overwrite stored data with `nil` | `runtime/entity_interpreter.rb:27` | confirmed | **Fixed** — PR [#105](https://github.com/chrisyoung/hecksagain/pull/105), issue [#104](https://github.com/chrisyoung/hecksagain/issues/104) |
+| H2 | Era mint isn't atomic — inner `@db.transaction` commits the whole mint early, releasing the advisory lock mid-flight; a later raise leaves a half-born era committed | `adapters/driven/postgres/lineage/head_compiler.rb:38` | confirmed | open |
+| H3 | Deleting an era-migrated record resurrects it in the head view — the ancestor era's `save` row outranks the (untombstoned) delete forever | `adapters/driven/postgres.rb:192` | likely (static) | open |
+| H4 | Rekey SQL is invisible to the human-approval digest — two different rekey SQLs produce the identical digest; an approved rekey can be edited post-approval and still mint | `translation/audit/approval_digest.rb` | confirmed | open |
+| H5 | A dotted-member `compute` (e.g. `price.cents`) exempts the whole attribute from Layer-2's cross-execution equivalence gate — the gate whose entire purpose is to catch silent migration data loss produces zero violations on it | `translation/audit/layer_two.rb:56` | confirmed | open |
 
 H1 and H2 are flagged in the source as the cheapest fixes (two missing
 dispatch-order steps; drop or savepoint the inner transaction).
