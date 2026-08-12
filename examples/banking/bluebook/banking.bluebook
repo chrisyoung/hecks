@@ -1197,6 +1197,7 @@ Hecks.bluebook "Banking", version: "v1" do
         attribute :date,     VisitDate
         attribute :sequence, VisitSequence
         attribute :note,     VisitNote
+        given("box is rented") { parent.status == "rented" }
         given("visit is logged") { state == "logged" }
 
         then_set :note, to: :note
