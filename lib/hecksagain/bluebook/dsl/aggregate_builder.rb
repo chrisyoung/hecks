@@ -75,6 +75,67 @@ module Hecksagain
           wrapper_name
         end
 
+        # Vendored addition, not (yet) upstream hecksagain: miette's
+        # consciousness.bluebook (and others) declare NAMED, reusable
+        # boolean predicates over the aggregate's own state --
+        # `specification :in_lucid_rem do |body| body.state == "sleeping" && ... end`
+        # -- distinct from a command's `given` (precondition) or a VO's
+        # `invariant` (field rule): a specification belongs to the
+        # AGGREGATE, named, presumably referenced elsewhere by name.
+        # Stored structurally (captured via the same canonical-source
+        # extraction `given`/`invariant` use) so the corpus boots; NOT
+        # yet threaded into IR::Aggregate or referenceable by name
+        # elsewhere -- a real, documented gap, not silently pretended
+        # complete. TODO upstream via bin/evolve (migration plan task 7).
+        attr_reader :specifications
+        def specification(name, &predicate)
+          canonical = Ports::Extraction.canonical(predicate)
+          (@specifications ||= []) << { name: name.to_s, canonical: canonical, predicate: predicate }
+        end
+
+        # Vendored addition, not (yet) upstream hecksagain (migration plan
+        # task 4): an AGGREGATE-level `invariant "description" do ... end`
+        # — a whole-record rule (miette's mind/awareness/witness.bluebook:
+        # "WitnessedMoments are append-only — never updated, never
+        # deleted"), distinct from a value object's field-scoped
+        # `invariant` (ValueObjectBuilder#invariant, which this mirrors)
+        # and a command's `given` precondition. Same documented-gap shape
+        # as `specification` right above: captured structurally so the
+        # corpus boots, NOT yet threaded into IR::Aggregate or walked at
+        # dispatch time — the corpus's own comment already says as much
+        # ("once the runtime walks specifications + invariants in
+        # production... until then, the antibody at commit time scans").
+        # TODO upstream via bin/evolve (migration plan task 7).
+        attr_reader :aggregate_invariants
+        def invariant(description = "an invariant holds", &predicate)
+          canonical = Ports::Extraction.canonical(predicate)
+          (@aggregate_invariants ||= []) << { description: description, canonical: canonical, predicate: predicate }
+        end
+        # Vendored alias, not (yet) upstream hecksagain (migration plan
+        # task 8): `rule` at the AGGREGATE level too, not just inside a
+        # value_object (ValueObjectBuilder's own alias) -- bin-buddy's
+        # add_on.bluebook writes a whole-aggregate `rule` the same way
+        # macrophage.bluebook writes a whole-aggregate `invariant`.
+        alias_method :rule, :invariant
+
+        # Vendored no-op stub, not (yet) upstream hecksagain (migration
+        # plan task 8): `validation :field, presence: true` -- a Rails-
+        # style field-presence declaration (pigeoncoop.bluebook, 5
+        # occurrences, always `presence: true`). Genuinely a field-level
+        # invariant in spirit ("this field must always be present"), but
+        # NOT synthesized as a real `invariant` call here : `invariant`'s
+        # predicate is canonicalized from its OWN literal source text
+        # (Ports::Extraction.canonical reads the block's actual bluebook-
+        # file location), and a dynamically-built predicate standing in
+        # for a `validation` call has no real source line to extract from
+        # -- attempting it risked a subtly wrong canonical form rather
+        # than an honest gap. Structurally captured so the file boots,
+        # not enforced -- same documented-gap pattern as `gate`/
+        # `success`/`failure` elsewhere in this migration. TODO upstream
+        # via bin/evolve (migration plan task 7): a real field-presence
+        # sugar, not a one-off stub.
+        def validation(*) = nil
+
         # ORIGIN, not runtime identity — a concept adopted from a canonical
         # source (§28) names where it came from without that fact ever
         # touching `hecks_fqn`/dispatch. Captured raw, the same way
