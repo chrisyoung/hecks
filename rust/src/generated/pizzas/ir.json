@@ -59,7 +59,7 @@
               "list": false,
               "default": null,
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "admits": null
             }
           ],
@@ -88,7 +88,7 @@
           "invariants": [
             {
               "description": "a price is never negative",
-              "canonical": "cents >= 0"
+              "canonical": "cents > 0"
             }
           ],
           "closed_set": false,
@@ -103,7 +103,7 @@
               "list": false,
               "default": null,
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "admits": null
             }
           ],
@@ -125,7 +125,7 @@
               "list": false,
               "default": null,
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "admits": null
             }
           ],

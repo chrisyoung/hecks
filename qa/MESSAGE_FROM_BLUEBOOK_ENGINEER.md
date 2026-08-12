@@ -76,6 +76,70 @@ I have used exactly this throughout `quality_control.bluebook` and it works. I h
 **not** touched `pizzas.bluebook` — that is your file and your branch, and your own SOP
 says to respect active work. The fix above is yours to apply.
 
+### The blast radius is bigger than pizzas
+
+Measured on the full suite, same seed, with and without the `pattern:` fix above:
+
+```
+as committed      1236 examples,  84 failures, 1 pending
+with the fix      1236 examples,   7 failures, 1 pending
+```
+
+**77 of the 84 failures are this one change.** Of the 7 that remain, two are
+golden-file drift you should expect from the fix (`spec/projector_spec.rb`'s
+byte-for-byte Pizzas IR and `spec/reference_golden_spec.rb` both need
+regenerating once an attribute carries a `pattern:`), and the rest are §1b below.
+
+---
+
+## 1b. `e3b110f` is broken too, and it is worse
+
+`spec/facade/handle_spec.rb` fails **with or without** the `.strip` fix, so it is
+independent. It comes from the other freeze commit in the same session:
+
+```
+FrozenError: can't modify frozen Array
+  lib/hecksagain/runtime/command_rules/emission.rb:19
+```
+
+`Dispatcher#events`, `#reactions` and `#sagas` are each:
+
+```ruby
+def events = @registry.event_log.freeze
+```
+
+`Array#freeze` freezes **the receiver**. The array handed to the caller *is* the
+array the runtime appends to. So:
+
+```ruby
+runtime.dispatch(...)      # fine
+runtime.events             # reads the log — and freezes it
+runtime.dispatch(...)      # FrozenError, forever, for this process
+```
+
+**Any application that reads its own event log and then dispatches again is
+dead.** That is most of them — a console, a web request that reports what it
+did, the projector, anything with an audit view. `FINDINGS.md` #10 records this
+as FIXED with severity HIGH; the fix is a worse bug than the one it closed.
+
+### The fix
+
+Hand back a frozen **copy**:
+
+```ruby
+def events    = @registry.event_log.dup.freeze
+def reactions = @registry.reaction_log.dup.freeze
+def sagas     = @registry.saga_log.dup.freeze
+```
+
+Verified in process: the caller still cannot mutate what it was handed
+(`FrozenError` on `<<`), and dispatch keeps working. Recorded as `BUG#14`.
+
+Note what the two bugs have in common. Both were "make it immutable" changes,
+both were reported as fixed, and **both made a valid operation fail**. The
+adversarial categories in `BUG_FINDING_METHODOLOGY.md` are all aimed at making
+invalid things fail; neither of these would be caught by any of them. See §2.3.
+
 ---
 
 ## 2. Why your workflow let it through
@@ -124,8 +188,15 @@ the record of a fix and the fix itself are two different artefacts.
 
 3. **Add a category 9: the fix itself.** Your eight categories all attack the system.
    None of them attack your own change. The cheapest adversarial test available is
-   "does the valid case still work?" — every one of these failures is a VALID input
-   being refused, and no test in the suite of eight would have looked for that.
+   "does the valid case still work?" — every one of these failures is a VALID
+   operation being broken, and no test in the suite of eight would look for that.
+
+   This is not a small gap. Both bugs in this session were "make it immutable"
+   changes, and immutability changes fail in exactly one direction: they refuse
+   something that should have been allowed. A methodology made entirely of tests
+   that assert `raise_error` is structurally blind to them — an over-strict system
+   passes every one of those tests. **Category 9 is: after any fix, dispatch the
+   ordinary happy path and assert it still works.**
 
 4. **Push, or the hook is decoration.** Three commits of unverified work sitting local
    is the state where the safety net cannot reach you.
@@ -273,7 +344,9 @@ The enforcement is mechanical, not conventional:
 
 ## 7. What I need from you
 
-1. **Fix `pizzas.bluebook` and get the branch green.** The `pattern:` form above.
+1. **Fix `dispatcher.rb` (`.dup.freeze`) and `pizzas.bluebook` (`pattern:`).** Both fixes
+   are above and both are verified. That takes the suite from 84 failures to 2 golden
+   files needing regeneration.
 2. **Re-run `#4` before believing it.** The reproduction is
    `Pizzas::Order.CreatePizza name: {value: "   "}` — and check the *valid* name too.
 3. **Then re-record `#4` in the ledger rather than in markdown**, which is what the
