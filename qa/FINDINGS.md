@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-**Session Status:** 121 bugs fixed (60.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
+**Session Status:** 131 bugs fixed (65.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
 
 ---
 
@@ -45,7 +45,7 @@ Documented bugs and findings from systematic adversarial testing.
 | #79-86 | console_settings.bluebook | 8 | StateStyleText, Flag, SettingsText, SettingsNumber, Column.field, DetailField.field, Precondition (×2), FieldFormat (×2) |
 | #87-96 | interview.bluebook | 10 | SessionReference, Subject, ChapterName, IdentityId, QuestionText, AnswerText, Topic, CatalogueRef, Slug, Prompt |
 
-### Language Bluebook Metadata VOs (35 bugs)
+### Language Bluebook Metadata VOs (45 bugs)
 | Bug | Location | Count | Details |
 |-----|----------|-------|---------|
 | #97-100 | aggregate.bluebook | 4 | AggregateName, Description, IdentityField, IdentityPath |
@@ -58,6 +58,7 @@ Documented bugs and findings from systematic adversarial testing.
 | #126-134 | entity.bluebook | 9 | EntityName, IdentityPath, PieceField (name, type, list), PieceTransition (command, to_state) |
 | #135-141 | projection.bluebook | 7 | ReadModelName, ProjectionPurpose, Head (aggregate, as, many), ProjectionOption (option, key) |
 | #142-144 | reaction.bluebook | 3 | PolicyName, ProcessManagerName, SagaState.name |
+| #145-154 | bluebook.bluebook | 10 | BluebookName, Vision, Classification, NormalisationRule (strategy, boundary), Version, FormerlyKnownAs |
 
 **Critical Query Bugs (2 - GitHub):**
 - #11: Array `in:` query bug → [GitHub #54 CLOSED](https://github.com/chrisyoung/hecksagain/issues/54) — FIXED ✅
@@ -313,6 +314,29 @@ Documented bugs and findings from systematic adversarial testing.
 
 **Impact:** Policy and read model metadata defines integration points. Invalid names break query declaration and event handling.
 - **Commit:** 31fdbd3
+
+### #145-154: Bluebook.bluebook Chapter Root Metadata VOs (FIXED 2026-08-12)
+- **Location:** lib/hecksagain/language/bluebook/bluebook.bluebook
+- **Severity:** HIGH - Chapter identity and normalization rules
+- **Details:** Chapter-level metadata VOs (root of all chapters) lacked pattern validation
+
+**Bluebook root aggregate fixes (10 bugs):**
+  - #145: BluebookName — added pattern (CRITICAL: defines chapter identity)
+  - #146: Vision — added pattern (chapter description)
+  - #147: Classification — added pattern (core/supporting/generic closed-set)
+  - #148-149: NormalisationRule.strategy/boundary — added patterns + invariants
+    - source_token, replacement kept flexible (empty is valid per DSL for collapse_whitespace)
+    - position made optional
+  - #150: Version — added pattern (domain version pin)
+  - #151: FormerlyKnownAs — added pattern (domain rename history)
+
+**Impact:** CRITICAL - BluebookName is THE identity anchor for:
+  - Chapter identification in queries
+  - Read model dispatch
+  - Cross-domain reference resolution
+  - Whitespace-only names would silently break chapter identity
+
+- **Commit:** c42854f
 
 ## Testing Coverage by Domain
 
