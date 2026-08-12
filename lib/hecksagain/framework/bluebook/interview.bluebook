@@ -66,12 +66,12 @@ Hecks.bluebook "Interview" do
     attribute :questions,  list_of(Question)
 
     value_object "SessionReference" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a session is referenced") { !value.to_s.empty? }
     end
 
     value_object "Subject" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an interview names what it is about") { !value.to_s.empty? }
     end
 
@@ -81,7 +81,7 @@ Hecks.bluebook "Interview" do
     # chapter, and a proposal naming a different one would be a proposal
     # from a different interview.
     value_object "ChapterName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an interview names the chapter it is building") { !value.to_s.empty? }
     end
 
@@ -92,7 +92,7 @@ Hecks.bluebook "Interview" do
     # members would be a load-order requirement stated nowhere and
     # discovered at a caller's first dispatch.
     value_object "IdentityId" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an identity id is present") { !value.to_s.empty? }
     end
 
@@ -107,12 +107,12 @@ Hecks.bluebook "Interview" do
     end
 
     value_object "QuestionText" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a question asks something") { !value.to_s.empty? }
     end
 
     value_object "AnswerText" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an answer says something") { !value.to_s.empty? }
     end
 
@@ -124,7 +124,7 @@ Hecks.bluebook "Interview" do
     # value object belongs to one aggregate, and three aggregates that each
     # need the shape each say it.
     value_object "Topic" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a topic is named") { !value.to_s.empty? }
     end
 
@@ -134,7 +134,8 @@ Hecks.bluebook "Interview" do
     # supplied does not refuse — it fails to resolve. The field is always
     # present and may be the empty string, and the rule reads it.
     value_object "CatalogueRef" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a catalogue reference is present") { !value.to_s.empty? }
     end
 
     # THE THREE PLACES A QUESTION CAN COME FROM, and there is no fourth.
@@ -436,12 +437,12 @@ Hecks.bluebook "Interview" do
     # gets reworded, and `Question#catalogue_ref` must keep pointing at the
     # same entry when it does.
     value_object "Slug" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a standing question is slugged") { !value.to_s.empty? }
     end
 
     value_object "Prompt" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a standing question asks something") { !value.to_s.empty? }
     end
 
