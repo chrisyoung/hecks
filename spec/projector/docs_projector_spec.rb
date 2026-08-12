@@ -154,6 +154,15 @@ RSpec.describe Hecksagain::Projector::DocsProjector do
     end
   end
 
+  # A MISSPELLING SHOULD COST A SENTENCE, NOT A PUZZLE. This returned "" and
+  # exit 0 on the first pass, which is the silent-wrong-answer shape this
+  # repository has already been bitten by twice in its query engine — a caller
+  # cannot tell an empty document from an empty domain.
+  it "refuses an aggregate name that names nothing, and says what is there" do
+    expect { described_class.call(bluebook: registry.bluebook("Banking"), options: { aggregate: "Acount" }) }
+      .to raise_error(Hecksagain::Runtime::NotFound, /no aggregate named "Acount".*it declares .*Account/m)
+  end
+
   describe "options" do
     it "narrows to one aggregate, dropping the chapter frame" do
       only = described_class.call(bluebook: registry.bluebook("Banking"), options: { aggregate: "Account" })

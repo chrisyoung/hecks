@@ -50,16 +50,23 @@ module Hecksagain
 
         out = []
         out << chapter_header(bluebook, depth) unless only
-        aggregates(bluebook, only).each { |aggregate| out << aggregate_section(aggregate, only ? depth : depth + 1) }
+        Array(aggregates(bluebook, only)).each { |aggregate| out << aggregate_section(aggregate, only ? depth : depth + 1) }
         out << closing(bluebook, depth + 1) unless only
         out.compact.join("\n").rstrip + "\n"
       end
 
+      # A NAME THAT NAMES NOTHING IS REFUSED, not answered with an empty
+      # document. Shipped the other way first: `options[:aggregate]` that
+      # matched no head returned "" and exit 0, which is the silent-wrong-
+      # answer shape this repository has already been bitten by twice in the
+      # query engine. A misspelling should cost a sentence, not a puzzle.
       def aggregates(bluebook, only)
         return bluebook.aggregates unless only
 
-        found = bluebook.aggregates.find { |aggregate| aggregate.hecks_name == only.to_s }
-        found ? [found] : []
+        bluebook.aggregates.find { |aggregate| aggregate.hecks_name == only.to_s } ||
+          raise(Runtime::NotFound,
+                "#{bluebook.name} declares no aggregate named #{only.to_s.inspect} — " \
+                "it declares #{bluebook.aggregates.map(&:hecks_name).sort.join(', ')}")
       end
 
       def h(depth, text) = "#{'#' * depth} #{text}"
