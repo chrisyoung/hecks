@@ -702,6 +702,7 @@ Hecks.bluebook "Banking", version: "v1" do
       given("a transfer goes somewhere")    { !destination.to_s.empty? }
       given("a transfer moves BETWEEN accounts") { source != destination }
 
+      then_set :reference,   to: :reference
       then_set :amount,      to: :amount
       then_set :narrative,   to: :narrative
       then_set :source,      to: :source
