@@ -16,8 +16,10 @@ Hecks.bluebook "Payments" do
     end
 
     value_object "DeclineReason" do
-      attribute :code, String
-      attribute :message, String
+      attribute :code, String, pattern: '[^ \t\n\r]'
+      attribute :message, String, pattern: '[^ \t\n\r]'
+      invariant("a decline code is present") { !code.to_s.empty? }
+      invariant("a decline message is present") { !message.to_s.empty? }
     end
 
     attribute :payment_id, PaymentId

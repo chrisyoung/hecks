@@ -16,6 +16,7 @@ Hecks.bluebook "Wire" do
 
     value_object "Money" do
       attribute :cents, Integer
+      invariant("money is non-negative") { cents >= 0 }
     end
 
     lifecycle :status, default: "open" do
@@ -81,6 +82,7 @@ Hecks.bluebook "Wire" do
 
     value_object "Money" do
       attribute :cents, Integer
+      invariant("money is non-negative") { cents >= 0 }
     end
 
     lifecycle :status, default: "asked" do
