@@ -341,6 +341,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Stop an account moving while something is investigated"
 
       reference_to Account
+      given("customer is active") { customer.status == "active" }
       given("account is open") { status == "open" }
       emits "AccountFrozen"
     end
