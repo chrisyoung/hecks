@@ -682,6 +682,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Record that the destination has received it"
 
       reference_to Transfer
+      given("transfer is credited") { status == "credited" }
       emits "TransferSettled"
     end
 
