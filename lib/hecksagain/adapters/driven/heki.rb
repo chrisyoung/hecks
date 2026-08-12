@@ -106,8 +106,17 @@ module Hecksagain
         replay_journal(snapshot)
       end
 
+      # Vendored fix, not (yet) upstream hecksagain: `dir :default` (a
+      # bare Symbol, hecks_conception/miette's own convention -- "a
+      # DECLARED value that resolves by convention, never a silent
+      # fallback") crashed File.join outright (TypeError: no implicit
+      # conversion of Symbol into String). Treated the same as no
+      # setting at all -- falls back to the existing "data" default,
+      # not a new special case. TODO upstream via bin/evolve (migration
+      # plan task 7).
       def resolve_path(settings, root)
-        declared = settings[:dir] || settings["dir"] || "data"
+        raw      = settings[:dir] || settings["dir"]
+        declared = (raw.nil? || raw == :default) ? "data" : raw.to_s
         dir      = declared.start_with?("/") ? declared : File.join(root || Dir.pwd, declared)
 
         File.join(dir, "#{@aggregate.storage_name}.heki")
