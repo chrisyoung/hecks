@@ -1248,6 +1248,7 @@ Hecks.bluebook "Banking", version: "v1" do
         attribute :date,     VisitDate
         attribute :sequence, VisitSequence
         attribute :note,     VisitNote
+        given("customer is active") { parent.customer.status == "active" }
         given("box is rented") { parent.status == "rented" }
         given("visit is logged") { state == "logged" }
 
