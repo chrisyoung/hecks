@@ -305,7 +305,7 @@ Hecks.bluebook "Bluebook" do
     # lists. It is `LiteralText` now, which is what the other four element
     # builders already say a pattern is: free text.
     value_object "ListFlag" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("list is true or false") { value.to_s == "true" || value.to_s == "false" }
     end
 

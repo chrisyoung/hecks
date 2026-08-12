@@ -4,7 +4,7 @@ Documented bugs and findings from systematic adversarial testing.
 
 **Methodology Note:** One bug = one distinct root cause with one fix. Multiple failed specs from the same bug are not counted separately.
 
-**Session Status:** 62 distinct bugs identified and fixed (12 original + 50 new in this loop)
+**Session Status:** 64 distinct bugs identified and fixed (12 original + 52 new in this loop)
 
 ---
 
@@ -44,6 +44,8 @@ Documented bugs and findings from systematic adversarial testing.
 | 39-44 | ConsoleSettings attributes lack pattern | 6 VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 45-49 | Interview VOs lack pattern | 5 VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 50-62 | Interview aggregates lack pattern | 13 VO String attributes not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 63 | TillRoom.Mark.direction lacks pattern | Closed-set VO String not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 64 | Interview.Proposal.CorrectionReason.value lacks pattern | VO String attribute with invariant not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 
 ---
 
