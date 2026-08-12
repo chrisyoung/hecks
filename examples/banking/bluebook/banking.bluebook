@@ -289,6 +289,7 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :number,      AccountNumber
       attribute :kind,        AccountKind
       attribute :daily_limit, DailyLimit
+      given("customer is active") { customer.status == "active" }
 
       then_set :number,      to: :number
       then_set :kind,        to: :kind
