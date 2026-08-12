@@ -1,3 +1,4 @@
+require "json"
 require_relative "../naming"
 require_relative "../ports/query"
 require_relative "../ports/query/ordering"
@@ -246,10 +247,26 @@ module Hecksagain
       # caller may legitimately pass "a,b,c" meaning "any of these") —
       # unrelated to `contains`, which reads the STORED field. See
       # `contains?`.
+      #
+      # BUG#11 FIX: When arrays are passed to queries through the DSL, they
+      # are stringified in the IR (to_h), becoming strings like "[\"a\", \"b\"]".
+      # Detect this pattern and parse it back to an array before processing.
       def members(value)
         return value.map { |element| comparable(element).to_s } if value.is_a?(Array)
 
-        value.to_s.split(",").map(&:strip)
+        string_value = value.to_s
+        # Detect stringified array: starts with [" and ends with "]
+        if string_value.start_with?('["') && string_value.end_with?('"]')
+          # This looks like a stringified array from render_value. Parse it.
+          begin
+            parsed = JSON.parse(string_value)
+            return parsed.map(&:to_s) if parsed.is_a?(Array)
+          rescue JSON::ParserError
+            # Not valid JSON, treat as CSV
+          end
+        end
+
+        string_value.split(",").map(&:strip)
       end
 
       # `contains` means two different things depending on what is HELD —
