@@ -2,7 +2,35 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-## Fixed Bugs (35)
+**Session Status:** 44 bugs fixed (23% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
+
+---
+
+## Quick Reference: All 44 Bugs Fixed
+
+| Bug | Category | Fix | Location |
+|-----|----------|-----|----------|
+| #1 | Immutability | Freeze lists at materialization | lib/hecksagain/runtime/instance.rb |
+| #4-5, #10 | Immutability | Freeze query results, event logs | lib/hecksagain/runtime/query_interpreter.rb, dispatcher.rb |
+| #13-15 | Design Conflict | DailyLimit default→invariant | examples/banking/bluebook/banking.bluebook |
+| #16 | Structural | SafeDepositBox.Create command | examples/banking/bluebook/banking.bluebook |
+| #17-26 | Whitespace Validation | pattern: '[^ \t\n\r]' added | examples/banking/bluebook/banking.bluebook |
+| #27-31 | Whitespace Validation | pattern added to nested/text fields | examples/banking/bluebook/banking.bluebook |
+| #32-33 | Numeric Validation | Mark.amount/direction invariants | spec/fixtures/till.bluebook |
+| #34-38 | Whitespace Validation | pattern + invariant on unvalidated VOs | examples/banking/bluebook/banking.bluebook |
+| #39-43 | Whitespace Validation | pattern on Tag, VisitDate, Statement* | examples/banking/bluebook/banking.bluebook |
+| #44-46 | Whitespace Validation | Settlement, Payments fixture VOs | spec/fixtures/{settlement,payments}.bluebook |
+| #47-50 | Validation | dispatch_order: Label, Note, Amount, Sequence | spec/fixtures/dispatch_order.bluebook |
+| #51-55 | Validation | reflex: Light*, Bell*, Signal*, Ring* | spec/fixtures/reflex.bluebook |
+| #56 | Whitespace Validation | WireTransfer::AccountNumber pattern | examples/banking/bluebook/banking.bluebook |
+
+**Reported (Not Fixed):**
+- #11: Array `in:` query bug → [GitHub #54](https://github.com/chrisyoung/hecksagain/issues/54)
+- #12: Empty string `ne:` query bug → [GitHub #55](https://github.com/chrisyoung/hecksagain/issues/55)
+
+---
+
+## Fixed Bugs - Detailed Documentation
 
 ### #1: List Attributes Not Frozen (FIXED 2026-08-11)
 - **Commit:** 8baa725
