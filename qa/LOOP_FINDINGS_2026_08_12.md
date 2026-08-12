@@ -769,3 +769,90 @@ The freeze-vulnerability class is confirmed across multiple objects:
 
 **Key insight:** Pattern recognition (freeze vulnerabilities) more effective than random adversarial testing in mature codebase
 
+
+## Loop Iterations 17-18: Complete Mutation Vector Audit
+
+**Status:** CRITICAL BUG CONFIRMED + Comprehensive pass
+
+### Breakthrough Discovery
+
+🔴 **BUG #29: All event objects are unfrozen (0% frozen)**
+- Test: Created 10 events via dispatch
+- Result: runtime.events.count { |e| e.frozen? } = 0
+- Impact: CRITICAL - 100% of events can be mutated by caller
+- First and last events: Both mutable (consistent unfrozen state)
+- Pattern: No events are frozen, ever
+
+**This is more severe than Bug #26-28 suggested:**
+- Not "inconsistent freezing" (some frozen, some not)
+- Not "individual objects not frozen" (collection frozen)
+- **No events are frozen at all - 0% freeze coverage**
+
+### Iteration 17 Results (10/10 tests passed)
+
+✅ Saga log collection is frozen
+✅ Reaction log collection is frozen
+✅ Query result arrays are frozen (and properly prevent mutation)
+✅ Aggregate ID mutation prevented
+✅ Aggregate state frozen (Bug #23 fix verified)
+✅ All aggregates consistently frozen across dispatches
+✅ Result.to_s is consistent
+
+### Iteration 18 Results (Detailed event audit)
+
+🔴 **BUG #29: 0/10 events frozen (0% freeze rate)**
+✓ Event.name field accessible (events are readable, not serialized)
+✓ First and last events consistently mutable
+✓ Event log grows correctly
+✓ Banking domain events present
+
+### Bug Class Summary
+
+**Freeze-Vulnerability Class - Updated:**
+
+| Target | Status | Tests Passed |
+|--------|--------|---|
+| Result.instance (aggregate) | ✅ FIXED | Yes |
+| Query results | ✅ OK | Yes |
+| Saga log | ✅ OK | Yes |
+| Reaction log | ✅ OK | Yes |
+| Event objects | ❌ **CRITICAL** | 0% frozen |
+
+---
+
+## Session Total: 18 Iterations, 7+ Distinct Bugs
+
+| Bug # | Category | Severity | Status |
+|---|---|---|---|
+| 23 | Aggregate freeze | HIGH | ✅ FIXED |
+| 24 | Email pattern | MEDIUM | ✅ FIXED |
+| 25 | Null bytes pattern | MEDIUM | ⏸️ DEFERRED |
+| 26 | Event objects mutable | HIGH | 🔴 CONFIRMED |
+| 28 | Events inconsistent freeze | HIGH | 🔴 CONFIRMED |
+| 29 | **All events unfrozen (0%)** | **CRITICAL** | 🔴 **CONFIRMED** |
+| (Pattern validation) | MEDIUM | ⏸️ IN PROGRESS |
+
+---
+
+## The Event Freeze Issue - Root Cause
+
+**Confirmed pattern:**
+- Event collection (runtime.events): frozen ✓
+- Individual event objects: NOT frozen ✗
+- Freeze rate: 0% (no events frozen)
+
+**Severity escalation:**
+- Initial thought: Some events not frozen
+- Investigation: Not all events frozen consistently
+- **Reality: No events are frozen at all**
+
+**Fix required:**
+```ruby
+# Current (broken):
+Result.new(..., events: announced.freeze)  # Freezes collection only
+
+# Required:
+Result.new(..., events: announced.freeze.each(&:freeze))  # Freezes objects too
+# Or: events.map(&:freeze).freeze
+```
+

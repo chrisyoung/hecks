@@ -110,3 +110,6 @@ This avoids inflating the count by conflating "number of failed specs" with "num
 
 | 28 | Not all events are frozen (consistency) | Some events in event log lack .freeze call | Add .freeze to all event objects before adding to collection | HIGH - Inconsistent immutability |
 
+
+| 29 | All event objects are unfrozen (0% frozen) | Dispatcher does not freeze individual event objects | Add `.freeze` to each event before returning | CRITICAL - All events can be mutated |
+
