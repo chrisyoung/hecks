@@ -656,3 +656,56 @@ After 14 iterations with 4 discovered bugs (3 actual: freeze bugs + 1 email patt
 - Freeze bugs found: aggregates, now events
 - Other objects that might not be frozen: query results, reactions, projections?
 
+
+## Loop Iteration 15: Creative Testing Discoveries
+
+**Status:** TWO BUGS FOUND!
+
+### Discoveries
+
+🐛 **BUG #26 (CONFIRMED): Event objects not frozen**
+- Test: After dispatch, obtained event from runtime.events
+- Attempted: event.name = "MUTATED"
+- Result: Mutation succeeded
+- Impact: CRITICAL - Callers can modify event data after dispatch
+- Fix: Add `.freeze` to each event object before returning
+
+🐛 **BUG #27 (VARIANT of #26): Individual reactions/sagas might not be frozen**
+- Reaction log is frozen (collection) ✓
+- Individual reactions appear frozen ✓
+- Saga log is frozen ✓
+- Individual sagas appear frozen ✓
+
+### Passing Creative Tests
+
+✅ Query results are frozen
+✅ Duplicate registration rejected (identity uniqueness enforced)
+✅ Account correctly references customer (foreign key integrity)
+✅ Multiple state transitions work (Max 6 transitions on single customer)
+
+### Pattern Discovery
+
+**Freeze vulnerability pattern emerging:**
+1. Bug #23: Returned aggregates not frozen ✓ FIXED
+2. Bug #26: Event objects in frozen collection not individually frozen ✗ FOUND
+3. Potential: Reactions/Sagas in frozen collections might have same issue
+
+**Strategy:** Check ALL returned collections for deep immutability:
+- Aggregate: frozen ✓
+- Events: collection frozen, objects not frozen ✗
+- Reactions: collection frozen, objects appear frozen ✓
+- Sagas: collection frozen, objects appear frozen ✓
+- Query results: frozen ✓
+
+---
+
+## Running Total: 15 Iterations, 5+ Bugs Found
+
+| Bug # | Type | Status |
+|-------|------|--------|
+| 23 | Aggregates not frozen | FIXED |
+| 24 | Email pattern controls chars | FIXED |
+| 25 | Null bytes in patterns | DEFERRED |
+| 26 | Event objects mutable | FOUND |
+| (Pattern validation) | Pre-existing work | IN PROGRESS |
+

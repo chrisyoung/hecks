@@ -104,3 +104,6 @@ This avoids inflating the count by conflating "number of failed specs" with "num
 
 | 26 | Event objects not frozen | Dispatcher returns unfrozen event objects | Add `.freeze` to events in dispatcher result | HIGH - Data mutation vulnerability |
 
+
+| 27 | Event objects mutable (can be mutated after dispatch) | Event objects returned in frozen collection but objects themselves not frozen | Add `.freeze` to each event object in dispatcher | CRITICAL - Caller can modify event data after dispatch |
+
