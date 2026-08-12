@@ -673,6 +673,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Record that the source account has given up the money"
 
       reference_to Transfer
+      given("transfer is requested") { status == "requested" }
       emits "TransferDebited"
     end
 
