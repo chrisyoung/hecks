@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# hecksagain_development_mcp — this repository's own tools, spoken as MCP.
+#
+# Registered in .mcp.json; started by the editor, never by hand. Speaks
+# JSON-RPC over stdin/stdout, so ANYTHING printed to stdout that is not a
+# response corrupts the stream — every diagnostic below goes to stderr, and
+# so must anything added later.
+#
+#   HECKSAGAIN_ROOT   the checkout to open the ledger against. Defaults to
+#                     this script's own repository, which is right whenever
+#                     the editor's cwd is not.
+#
+# Try it by hand:
+#   echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | bin/hecksagain_development_mcp
+
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+
+require "hecksagain/development_mcp/server"
+
+warn "[hecksagain_development_mcp] ready (root: #{Hecksagain::QualityControl::Ledger.root})"
+
+Hecksagain::DevelopmentMcp::Server.new.run

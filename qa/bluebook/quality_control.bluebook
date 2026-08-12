@@ -1,0 +1,1648 @@
+# QUALITY CONTROL, HELD AS A RECORD.
+#
+# `qa/SOP.md` is a seven-phase workflow written as prose: probe a domain
+# across eight adversarial categories, log what broke, TRY TO FIX IT
+# FIRST, file a ticket only for what could not be fixed, and keep three
+# markdown files current so the next session does not rediscover last
+# week's bug. Every one of those phases is real work in a real order, and
+# none of it is enforced by anything — the order lives in a document, the
+# state of each bug lives in a hand-typed heading in `qa/FINDINGS.md`, and
+# "did anybody actually try to fix this before filing it?" is answerable
+# only by reading git log and believing what it says.
+#
+# That is the problem `interview.bluebook` opens with, one floor down. A
+# discovery session is a conversation nobody keeps; a QA session is an
+# investigation nobody keeps. Both produce an artefact — a bluebook there,
+# a bug ledger here — whose provenance evaporates when the session ends.
+# This chapter is the session itself, modelled: what was tested, what
+# broke, what was tried against it, whether it worked, and what got told
+# to the outside world.
+#
+# WHAT THIS CHAPTER DOES NOT MODEL: the system under test. There is no
+# `Domain`, `Aggregate` or `Command` here. A TestCase NAMES its subject as
+# text and stops; the thing that knows what `Pizzas::Order.CreatePizza`
+# means is the runtime that dispatches it, and a second model of it here
+# would be a second place to be wrong.
+#
+# WHAT IT ALSO DOES NOT MODEL: coverage. `qa/BLUEBOOK_REQUIREMENTS.md`
+# asks for a fourth aggregate, `TestCoverage`, holding `test_count`,
+# `bug_count` and `last_tested_date` per domain — and its own question 1
+# asks whether that should be rebuilt from the other aggregates or
+# maintained by hand. It should be neither: it should not exist. Every
+# field on it is already a fact these aggregates hold, and an aggregate
+# whose whole content is a running total of somebody else's records is a
+# second copy that drifts the first time a dispatch is missed. Worse, it
+# could not be maintained even in principle — a TestCase's commands are
+# ENTITY commands and a Bug's commands land on Bug, so nothing in this
+# language could increment a counter sitting on a third head. There is no
+# honest version of that aggregate. `TestCase.ForDomain`,
+# `TestCase.InCategory` and `Bug.ForDomain` answer every coverage question
+# the requirements list, by counting rows that cannot be wrong.
+#
+# THE COUNTER RULE THIS CHAPTER HOLDS, stated once here because it is the
+# reason three requested fields are missing: A COUNTER IS ONLY HONEST IF
+# THE AGGREGATE'S OWN COMMANDS ARE THE ONLY THING THAT MOVES IT.
+# `Session#tested` survives that test — `Session.Test` is what increments
+# it. `bugs_found`, `bugs_fixed` and `bugs_filed` do not, and the invariant
+# the requirements want over them (`bugs_found >= bugs_fixed + bugs_filed`)
+# would be checked against numbers no rule could keep true. They are
+# queries — `Bug.FoundIn` — not fields.
+#
+# WHY EVERY REQUIRED STRING CARRIES `pattern: '[^ \t\n\r]'` AS WELL AS AN
+# `invariant`, and it is the single most expensive thing this chapter
+# learned. The obvious spelling of "not blank" is
+# `!value.to_s.strip.empty?`, and it is exactly what `qa/FINDINGS.md` #4
+# records as a FIXED bug — the fix that was applied to
+# `examples/pizzas/bluebook/pizzas.bluebook` in commit `63750a3`.
+#
+# THE PREDICATE SUBLANGUAGE HAS NO `.strip`. Its whole vocabulary is
+# `lib/hecksagain/grammar/expression.bluebook`: addition, modulo, sign
+# tests, `.empty?`, `.to_s`, `.size` (with `.length` read as `.size`),
+# comparators, and dotted attribute lookup. A method it does not know is
+# not refused — `Expression::Resolver#lookup` falls through and reads
+# `value.to_s.strip` as a THREE-SEGMENT PATH, walks into a String, and
+# raises `TypeError: no implicit conversion of Symbol into Integer` from
+# inside the runtime. Every dispatch touching that value object dies,
+# valid ones included, with an error that names neither the predicate nor
+# the word it did not know.
+#
+# Measured on this branch, not reasoned about: with that invariant in
+# place, `Pizzas::Order.CreatePizza` refuses `"Margherita"` exactly as
+# hard as it refuses `"   "`, and `spec/pizzas_spec.rb` fails 19 of its
+# 27 examples. The whitespace bug is genuinely closed — by breaking the
+# command.
+#
+# `pattern:` is the facility that actually does this job. It is checked
+# during coercion, it is portable (`Bluebook::PatternSubset` admits
+# explicit ranges and refuses `\s` precisely so two engines cannot
+# disagree), and unanchored it reads "contains at least one character
+# that is not a space, tab, newline or carriage return" — which refuses
+# the empty string and the whitespace-only string together. The
+# `invariant` stays beside it for the sentence it puts in the refusal.
+Hecks.bluebook "QualityControl" do
+  vision "A bug is not a line in a document somebody remembered to update — it is a record. Every bug keeps the test that found it, every fix keeps whether it was verified or abandoned, and nothing is filed to the outside world that nobody first tried to fix."
+
+  # SUPPORTING, where `interview.bluebook` says `core` and says why.
+  # Discovery is where a product is won or lost; quality control is where
+  # it is kept. Every practice needs one, no practice is judged on the
+  # elegance of its bug tracker, and a chapter claiming otherwise would be
+  # flattering itself.
+  supporting
+
+  # THE SESSION — one QA engineer, one sitting.
+  #
+  # `QASession` in the requirements; `Session` here, because the "QA"
+  # prefix is already carried by the chapter and `QualityControl::QASession`
+  # says it twice. `Interview::Interview` accepts a doubling only where the
+  # aggregate IS what the chapter is about, and here it is not: what this
+  # chapter is about is the BUG. The session is the sitting that found it.
+  aggregate "Session" do
+    description "One QA sitting — who ran it, what was put to the system, and what it concluded."
+
+    identified_by { reference.value }
+
+    attribute :reference,  SessionReference
+    attribute :engineer,   Engineer
+    # WHY A COUNTER, when the test cases are right there in a list. The
+    # predicate sublanguage has no quantifier and cannot see inside a list
+    # element — `test_cases.any? { ... }` is not a thing a `given` can say,
+    # because there are no blocks in it at all. `Complete` needs to know
+    # whether anything was actually tested, so the number is HELD. The same
+    # trade `Interview#asked` and `ScheduledPayment#attempts` already make,
+    # and the only counter in this chapter that passes the honesty rule in
+    # the header.
+    attribute :tested,     TestCount
+    attribute :notes,      SessionNotes
+    attribute :test_cases, list_of(TestCase)
+
+    value_object "SessionReference" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a session is referenced") { !value.to_s.empty? }
+    end
+
+    # WHO RAN IT. Plain text rather than a `reference_to` into the
+    # `Identity` framework chapter: this domain is booted on its own, by a
+    # tool, and a reference across chapters would be a load-order
+    # requirement stated nowhere and discovered at the first dispatch —
+    # the same reasoning `governance.bluebook` and `interview.bluebook`
+    # both give for redeclaring an id rather than reaching for one.
+    #
+    # It matters that this is per-SESSION and per-REMEDY rather than
+    # global: `qa/BLUEBOOK_REQUIREMENTS.md` question 5 asks whether a bug
+    # should track who fixed it, given it may not be who found it. It
+    # should, and this is how — the session names who found it, the remedy
+    # names who tried to fix it, and neither has to be the same agent.
+    value_object "Engineer" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a session says who ran it") { !value.to_s.empty? }
+    end
+
+    value_object "TestCount" do
+      attribute :value, Integer, default: 0
+      invariant("a test count is not negative") { !value.negative? }
+    end
+
+    # WHAT WAS LEARNED, and the length rule is deliberate. The requirements
+    # list "session notes are at least 50 characters (meaningful, not
+    # empty)" under "nice to enforce"; 40 is the number here, because the
+    # rule that matters is "a sentence, not a word" and a threshold high
+    # enough to be gamed by padding buys nothing. A session concluded with
+    # "done" is a session whose only durable output is a number.
+    value_object "SessionNotes" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a session says what it learned") { value.to_s.size >= 40 }
+    end
+
+    value_object "TestSequence" do
+      attribute :value, Integer
+      invariant("a test sequence is positive") { value.positive? }
+    end
+
+    value_object "TestedDomain" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a test names the domain it is aimed at") { !value.to_s.empty? }
+    end
+
+    # THE EIGHT CATEGORIES, AND DELIBERATELY NOT A CLOSED SET.
+    #
+    # `qa/BLUEBOOK_REQUIREMENTS.md` asks for a `one_of` over exactly eight
+    # — boundary, empty, state, mutation, identity, coercion, rapid,
+    # special_chars — under the principle "closed sets for safety", and
+    # that is the one requested rule this chapter declines. `qa/SOP.md`'s
+    # own maintenance clause says out loud why: "This SOP should be updated
+    # when new testing categories are discovered." A category the practice
+    # LEARNS is among the most valuable things a session can produce, and a
+    # closed set refuses it until somebody edits this file — which, on the
+    # day it happens, is a bug that goes unrecorded rather than a bluebook
+    # that gets edited.
+    #
+    # `Severity` below is the contrast that makes this precise, and the two
+    # sit in one chapter on purpose. A triage scale is fixed BY DESIGN: a
+    # fourth level does not extend it, it replaces it with a different
+    # scale, and that is a decision worth making in source. A methodology
+    # is a PRACTICE, and a practice is a table. Banking's `Tag` carries the
+    # identical comment for the identical reason.
+    #
+    # The typo risk the requirements are actually worried about is real and
+    # is answered elsewhere: `TestCase.InCategory` returns nothing for a
+    # misspelled category, loudly, the first time anyone asks.
+    value_object "TestCategory" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a test names the category it comes from") { !value.to_s.empty? }
+    end
+
+    # WHAT WAS ATTACKED — `Pizzas::Order.CreatePizza`, `Banking::Account`.
+    value_object "TestSubject" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a test names what it attacked") { !value.to_s.empty? }
+    end
+
+    # WHAT WAS SUPPOSED TO HAPPEN, WRITTEN BEFORE IT DID.
+    #
+    # Required, and it is the load-bearing rule of this aggregate.
+    # `qa/SOP.md` §4.1 defines a bug as a test that failed when you
+    # expected it to pass, or passed when you expected it to fail — which
+    # is only a definition if the expectation existed FIRST. A test whose
+    # expectation is filled in afterwards is a test that can never have
+    # been surprised, and surprise is the entire product of this chapter.
+    value_object "Expectation" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a test says what it expected") { !value.to_s.empty? }
+    end
+
+    # WHERE THE TEST LIVES — `spec/qa_bugs_spec.rb -e "BUG#7"`. Required
+    # at the moment the test case is recorded, which is `qa/SOP.md` tip 5
+    # ("Automate everything — don't hand-test") made mechanical: a check
+    # this record cannot tell you how to re-run is a check nobody will
+    # ever re-run.
+    value_object "TestLocation" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a test says where it can be re-run") { !value.to_s.empty? }
+    end
+
+    # WHAT ACTUALLY CAME BACK. No invariant: the outcome verbs below fill
+    # it, and a passing test legitimately has nothing to say.
+    value_object "Observation" do
+      attribute :value, String
+    end
+
+    # ONE ADVERSARIAL TEST CASE.
+    #
+    # AN ENTITY, and the test is the one `docs/guides/entities.md` states:
+    # a test case has its own identity, its own commands and its own
+    # lifecycle, but never makes sense apart from the session that wrote
+    # it. Nobody looks up test 7 without already knowing which session ran
+    # it — the same sentence that makes a bank's key an entity of the box
+    # it was cut for, and `Interview::Question` an entity of its session.
+    #
+    # `qa/BLUEBOOK_REQUIREMENTS.md` asks for `TestCase` as a fourth
+    # AGGREGATE, and the thing that would argue for that — "but I need
+    # every failing test across every session" — is not an argument: an
+    # entity `query` answers with every element matching, across every
+    # parent, each row stamped with the parent it came from. `Failing`,
+    # `InCategory` and `ForDomain` below are exactly those asks, and they
+    # work because this is an entity, not despite it.
+    #
+    # WHAT IT COSTS, stated plainly: an entity cannot be pointed at. A Bug
+    # cites its test cases by NUMBER (see `Evidence`), not by reference,
+    # and nothing checks that the number names a real one. That is the
+    # trade, and it is the right way round — the alternative is a fourth
+    # head whose identity is a session id plus a sequence, which is a
+    # composite-identity reference target, a shape nothing in this corpus
+    # exercises.
+    entity "TestCase" do
+      description "One adversarial check put to the system, what it expected, where it lives, and what actually came back."
+
+      # ONE PATH, where the session needs its own. The session is already
+      # known by the time anyone is looking at a test case, so the number
+      # within it is the whole identity.
+      #
+      # NOT SUPPLIED BY THE CALLER. `Session.Test` does not pass
+      # `sequence`, and `MutationApplier#entity_element` mints it as
+      # `size + 1` when an append omits the identity. A session numbers its
+      # tests in the order it ran them, which is the only order that could
+      # be right, and no caller can collide with itself by guessing.
+      identified_by { sequence.value }
+
+      attribute :sequence,    TestSequence
+      attribute :domain,      TestedDomain
+      attribute :category,    TestCategory
+      attribute :subject,     TestSubject
+      attribute :expectation, Expectation
+      attribute :location,    TestLocation
+      attribute :observation, Observation, optional: true
+
+      # `written` IS NOT `pending`. The requirements name four states —
+      # passing, failing, pending, fixed — and "pending" there means two
+      # different things at once: a test that has not been run, and a test
+      # deliberately parked. Only the first is a state a record can know it
+      # is in. "fixed" is not a state of a TEST at all; it is a state of
+      # the BUG, and it lives there.
+      lifecycle :outcome, default: "written" do
+        transition "Pass"         => "passing",      from: "written"
+        transition "Fail"         => "failing",      from: "written"
+        # THE THIRD OUTCOME, AND IT IS NOT A HEDGE. `qa/FINDINGS.md`
+        # currently carries three entries reading "LIKELY NOT A BUG /
+        # needs a concrete test case to verify" — a real, recurring state
+        # in which something looked wrong and the run did not settle it.
+        # Folding that into `failing` manufactures bugs nobody can
+        # reproduce; folding it into `passing` throws away the only note
+        # saying where to look next.
+        transition "Inconclusive" => "inconclusive", from: "written"
+        # RE-RUN AFTER A FIX, and the second run is the SAME test, not a
+        # new one — which is what makes it a regression check rather than
+        # a coincidence. Its expectation survives; its observation is
+        # overwritten by whichever outcome verb follows.
+        transition "Rerun"        => "written",      from: ["passing", "failing", "inconclusive"]
+        # GRADUATION — `qa/SOP.md`'s "When a Bug is Fixed" step 2: move the
+        # test out of `spec/qa_bugs_spec.rb` and into the real suite, and
+        # drop the `qa: true` tag that keeps it out of CI. Only from
+        # `passing`, because graduating a failing test into the main suite
+        # is how a suite stops being trusted.
+        #
+        # The rule this WANTED to be — "and only if its bug is verified" —
+        # cannot be written: a test case does not point at a bug (see the
+        # entity note above), and even if it did, a reference is an id at
+        # dispatch time, not the record it names. `Bug.ReadyToVerify` is
+        # where a reader answers it.
+        transition "Graduate"     => "graduated",    from: "passing"
+      end
+
+      command "Pass" do
+        role "QA engineer"
+        goal "Record that the system held under this check"
+
+        attribute :sequence,    TestSequence
+        attribute :observation, Observation
+
+        then_set :observation, to: :observation
+
+        emits "TestPassed"
+      end
+
+      command "Fail" do
+        role "QA engineer"
+        goal "Record that the system did something other than what was expected"
+
+        attribute :sequence,    TestSequence
+        attribute :observation, Observation
+
+        then_set :observation, to: :observation
+
+        emits "TestFailed"
+      end
+
+      command "Inconclusive" do
+        role "QA engineer"
+        goal "Record a run that did not settle whether the system is wrong"
+
+        attribute :sequence,    TestSequence
+        attribute :observation, Observation
+
+        then_set :observation, to: :observation
+
+        emits "TestInconclusive"
+      end
+
+      command "Rerun" do
+        role "QA engineer"
+        goal "Run a settled test again, against a system that has since changed"
+
+        attribute :sequence, TestSequence
+
+        emits "TestRerun"
+      end
+
+      command "Graduate" do
+        role "QA engineer"
+        goal "Move a passing test out of the bug suite and into the real one"
+
+        attribute :sequence, TestSequence
+        attribute :location, TestLocation
+
+        then_set :location, to: :location
+
+        emits "TestGraduated"
+      end
+
+      query "Failing" do
+        description "Every test the system did not survive, across every session — the raw material a bug is discovered from, and the live contents of spec/qa_bugs_spec.rb."
+        where(outcome: "failing")
+        order_by :sequence
+      end
+
+      query "Unsettled" do
+        description "Written and never run, plus the runs that settled nothing. A session completed with rows here completed early."
+        where(outcome: { in: "written,inconclusive" })
+        order_by :sequence
+      end
+
+      query "ReadyToGraduate" do
+        description "Passing tests still sitting in the bug suite — each one is CI coverage this practice has already written and is not yet getting."
+        where(outcome: "passing")
+        order_by :sequence
+      end
+
+      # COVERAGE, ANSWERED BY COUNTING ROWS. These two queries plus
+      # `Bug.ForDomain` are what the requirements' `TestCoverage`
+      # aggregate wanted to be — "which domains have I tested, how many
+      # times, where are the gaps" — with no second copy to keep true. See
+      # the chapter header.
+      query "ForDomain" do
+        description "Every check ever aimed at one domain, across every session. Count the rows and that is its coverage; an empty answer names an untested domain."
+        attribute :domain, TestedDomain
+        where(domain: :domain)
+        order_by :sequence
+      end
+
+      query "InCategory" do
+        description "What one adversarial category has actually been pointed at, across every session — the gap analysis qa/INDEX.md keeps by hand."
+        attribute :category, TestCategory
+        where(category: :category)
+        order_by :sequence
+      end
+    end
+
+    lifecycle :status, default: "testing" do
+      # A SELF-TRANSITION, so "you cannot add a test to a paused or
+      # completed session" costs no predicate. The lifecycle already
+      # refuses it, naming the states `Test` moves from, and a `given`
+      # restating that would be decoration. `Interview.Ask` uses the
+      # identical trick.
+      transition "Test"     => "testing",   from: "testing"
+      transition "Pause"    => "paused",    from: "testing"
+      transition "Resume"   => "testing",   from: "paused"
+      transition "Complete" => "completed", from: ["testing", "paused"]
+      transition "Abandon"  => "abandoned", from: ["testing", "paused"]
+    end
+
+    # NO `then_set` ON A CREATING COMMAND — the shape every chapter in this
+    # corpus uses. `assign_creation_attributes` writes every argument that
+    # names a head attribute, so restating them is a list to keep in sync
+    # for no gain.
+    command "Start" do
+      role "QA engineer"
+      goal "Begin a QA sitting"
+
+      attribute :reference, SessionReference
+      attribute :engineer,  Engineer
+
+      emits "SessionStarted"
+    end
+
+    command "Test" do
+      role "QA engineer"
+      goal "Put one adversarial check to the system and keep what it expected"
+
+      reference_to Session
+      attribute :domain,      TestedDomain
+      attribute :category,    TestCategory
+      attribute :subject,     TestSubject
+      attribute :expectation, Expectation
+      attribute :location,    TestLocation
+
+      # `sequence` IS ABSENT ON PURPOSE — see TestCase's own identity. The
+      # runtime numbers it.
+      #
+      # `observation` IS ABSENT FOR A DIFFERENT REASON, and it is the rule
+      # this whole aggregate exists to hold: a test case is written down at
+      # the moment it is WRITTEN, carrying only what it expected. What
+      # actually happened arrives afterwards, through `Pass`/`Fail`/
+      # `Inconclusive`. Allowing both halves in one dispatch would allow a
+      # test to be invented after the fact with its expectation written to
+      # match the outcome — the one thing a QA record must make
+      # impossible, since it is also the easiest mistake to make in good
+      # faith.
+      then_set :test_cases, append: { domain: :domain, category: :category, subject: :subject,
+                                      expectation: :expectation, location: :location }
+      then_set :tested,     increment: { value: 1 }
+
+      ensures("testing never loses a test case") { tested.value == old.tested.value + 1 }
+
+      emits "TestWritten"
+    end
+
+    command "Pause" do
+      role "QA engineer"
+      goal "Stop a session that will be picked back up"
+
+      reference_to Session
+      emits "SessionPaused"
+    end
+
+    command "Resume" do
+      role "QA engineer"
+      goal "Pick a paused session back up"
+
+      reference_to Session
+      emits "SessionResumed"
+    end
+
+    command "Complete" do
+      role "QA engineer"
+      goal "End a session and say what it learned"
+
+      reference_to Session
+      attribute :notes, SessionNotes
+
+      # THE ONE RULE THE COUNTER EXISTS FOR, and the requirements' "must
+      # have at least one domain tested" in the only form that can be
+      # checked. A session that ran nothing tested nothing, and completing
+      # it would put a sitting in the record that a later reader — or
+      # `qa/INDEX.md`'s own coverage table — would take as evidence the
+      # system had been attacked. It has not been.
+      #
+      # "And nothing is still unsettled" is the rule this WANTED to be, and
+      # it cannot be written: it needs a count over the elements of a list
+      # filtered by their own lifecycle state, and the sublanguage has no
+      # quantifier and no blocks. A second counter would not rescue it —
+      # a TestCase's outcome verbs are ENTITY commands, and an entity
+      # command's mutations land on the entity, never on the head that
+      # holds it, so nothing could decrement one. `TestCase.Unsettled` is
+      # where a reader answers that, before completing.
+      given("a session that tested nothing tested nothing") { tested.value.positive? }
+
+      then_set :notes, to: :notes
+
+      emits "SessionCompleted"
+    end
+
+    command "Abandon" do
+      role "QA engineer"
+      goal "End a session whose output should not be trusted"
+
+      reference_to Session
+      emits "SessionAbandoned"
+    end
+
+# THE WHOLE LEDGER, UNFILTERED — and it exists for one mechanical
+# reason: `qa/BLUEBOOK_REQUIREMENTS.md` requires bug references to be
+# assigned in sequence ("BUG#1, BUG#2, not BUG#999"), and nothing can
+# mint the next number without seeing every number already used. Every
+# other query here filters on a lifecycle state, so a runner asking
+# "what is the highest sequence" through one of those would skip the
+# dismissed and verified records and reissue a reference.
+#
+# It is also the read a tool needs to render a report or a dashboard
+# over the whole practice rather than over one slice of it.
+query "All" do
+  description "Every session ever held, in reference order — the read a runner mints the next reference from."
+  order_by :reference
+end
+
+    query "Testing" do
+      description "Sessions live right now — the ones a runner may still write tests into."
+      where(status: "testing")
+      order_by :reference
+    end
+
+    query "ForEngineer" do
+      description "Every session one engineer ever ran — the requirements' ByEngineer, and half of its coverage question."
+      attribute :engineer, Engineer
+      where(engineer: :engineer)
+      order_by :reference
+    end
+  end
+
+  # THE BUG.
+  #
+  # AN AGGREGATE, AND `reference_to` DECIDED IT — the identical argument
+  # `Interview::Finding` makes. A bug looks exactly like a TestCase does:
+  # established inside a session, meaningless without it, which is the
+  # entity case. It is not one, for a mechanical reason that overrides the
+  # taste: a Remedy and a Ticket must both POINT AT the bug they are about,
+  # and a reference reaches heads only (`entity_builder` declares no
+  # `reference_to` at all). Anything that must be pointed at is a head.
+  #
+  # The taste agrees once it is pushed. A bug OUTLIVES its session — that
+  # is the entire content of `qa/FINDINGS.md`, a list still open from
+  # sittings that ended weeks ago. A test case does not survive its
+  # session; a bug does. This is also the requirements' Principle 3, and it
+  # comes for free: `reference_to Session` is written at `Discover` and
+  # there is no verb in this chapter that changes it.
+  aggregate "Bug" do
+    description "One thing now known to be wrong, the tests it was seen in, how far the diagnosis got, and what closed it."
+
+    reference_to Session
+
+    # ONE PATH, not `session_id` plus a sequence. A Remedy and a Ticket
+    # both reference this, and a reference to a composite-identity head is
+    # a shape nothing in this corpus exercises. The caller mints
+    # `reference` — "BUG#11" — before dispatching, which is also where the
+    # requirements' "bug ids are sequentially assigned" lives: `sequence`
+    # below is held so the ledger reads back in order, and a runner that
+    # counts existing bugs before minting the next reference is the only
+    # thing that can make them consecutive. The same concern,
+    # `identity.bluebook`'s `Register` leaves to its caller for the same
+    # reason.
+    identified_by { reference.value }
+
+    attribute :reference,   BugReference
+    attribute :sequence,    BugSequence
+    attribute :domain,      AffectedDomain
+    attribute :title,       BugTitle
+    attribute :symptom,     Symptom
+    attribute :expectation, Expectation
+    attribute :severity,    Severity
+    attribute :evidence,    list_of(Evidence)
+    # THE FIVE FIELDS THAT ARRIVE LATE, each filled by the transition that
+    # earns it: `demonstration` by `Reproduce`, `site`/`cause` by
+    # `Investigate`, `commit` by `Fix`, `reason` by `Pause` or `Dismiss`.
+    # Declared here because a head holds its own state, and declared
+    # WITHOUT `optional:` on purpose — a creating command that does not
+    # supply an attribute simply does not write it, and an invariant that
+    # never sees a value never fires. `Proposal#refusal` is the precedent.
+    attribute :demonstration, Demonstration
+    attribute :site,          BugSite
+    attribute :cause,         BugCause
+    attribute :commit,        CommitRef
+    attribute :reason,        BugReason
+    attribute :blocked_by,    BlockingBug
+
+    value_object "BugReference" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a bug is referenced") { !value.to_s.empty? }
+    end
+
+    value_object "BugSequence" do
+      attribute :value, Integer
+      invariant("a bug sequence is positive") { value.positive? }
+    end
+
+    # ONE DOMAIN, WHERE THE REQUIREMENTS ASK FOR `affected_domains`.
+    #
+    # A list was written and taken back. Every entry in `qa/FINDINGS.md`
+    # that reaches for more than one names not a set but a SENTENCE —
+    # "Any domain with nested value objects", "Any domain with a
+    # `list_of`" — and a list of domain names cannot hold that, so the
+    # honest place for it is `symptom`. A single field is what `ForDomain`
+    # can actually be trusted to answer, and the bugs this practice
+    # records are, in fact, found in one place at a time.
+    value_object "AffectedDomain" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a bug names where it was found") { !value.to_s.empty? }
+    end
+
+    # `BugTitle`, NOT `Title`, AND THE PREFIX IS LOAD-BEARING.
+    #
+    # `Facade::Surface.install` installs EVERY aggregate name as a
+    # TOP-LEVEL constant on Object (see const_shim.rb's own note,
+    # documenting the same hazard from the other side). The moment any
+    # other chapter in the process declares an aggregate by a name a value
+    # object here also uses, the bare constant resolves to THAT class — a
+    # real Ruby constant — instead of reaching `const_missing` and being
+    # read as a name, and this chapter refuses with "no ValueObject …
+    # named QualityControl:Bug:Banking::Whatever". It goes red only when
+    # some other domain happens to have booted first: green alone, red in
+    # the suite.
+    #
+    # Measured, not feared — `Interview::Finding` documents having gone red
+    # exactly this way on a value object it had called `Statement`, which
+    # banking declares as an aggregate. So every value object here sharing
+    # a word with a plausible aggregate name anywhere (`Title`, `Site`,
+    # `Cause`, `Change`, `Repository`, `Resolution`) is prefixed with its
+    # own aggregate's noun.
+    value_object "BugTitle" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a bug is titled") { !value.to_s.empty? }
+    end
+
+    # WHAT WAS SEEN — the "Actual Behavior" block of `qa/SOP.md` §6.1.
+    value_object "Symptom" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a bug says what actually happened") { !value.to_s.empty? }
+    end
+
+    # WHAT SHOULD HAVE HAPPENED — the "Expectation" block, and the half a
+    # bug report is useless without. Required at discovery, not later: an
+    # expectation written after the diagnosis is an expectation fitted to
+    # the diagnosis.
+    value_object "Expectation" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a bug says what should have happened") { !value.to_s.empty? }
+    end
+
+    # A CLOSED SET, AND THE CONTRAST WITH `TestCategory` IS THE POINT — see
+    # that value object for the full argument. This is the requirements'
+    # `HIGH | MEDIUM | LOW`, lowercased to match every other closed set and
+    # lifecycle state in this language; nothing else about it is changed.
+    #
+    # Declared the long way rather than the inline `one_of(...)` shorthand:
+    # the shorthand calls `one_of` on the ENCLOSING builder, and inside a
+    # `value_object` that is the value object's OWN `one_of` — a real
+    # wrong-arity collision `pizzas.bluebook` hit while being written.
+    value_object "Severity" do
+      attribute :value, String
+
+      one_of do
+        member value: "high"
+        member value: "medium"
+        member value: "low"
+      end
+    end
+
+    # WHICH TEST CASES THIS RESTS ON — sequence numbers within the session
+    # above, so a reader can walk from a bug back to the runs that produced
+    # it. A list, because the interesting bugs are the ones where two tests
+    # in different categories turn out to be the same fault, and the pair
+    # is the evidence, not either half.
+    #
+    # A plain value object, not an entity: nothing addresses one citation,
+    # changes it, or gives it a lifecycle. Appended and read back.
+    value_object "Evidence" do
+      attribute :test_case, Integer
+    end
+
+    value_object "TestNumber" do
+      attribute :value, Integer
+      invariant("a cited test is numbered from one") { value.positive? }
+    end
+
+    # THE FAILING TEST. `qa/SOP.md` §4.0 — "Before investigating or filing
+    # an issue, write a test that demonstrates the bug" — is the practice's
+    # single most load-bearing rule, and this field plus the `reproduced`
+    # state is that rule made mechanical. It holds how to re-run it, because
+    # a demonstration nobody can re-run is a claim.
+    value_object "Demonstration" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a demonstration says how to re-run it") { !value.to_s.empty? }
+    end
+
+    # WHERE IT LIVES — `lib/hecksagain/runtime/value/coercion.rb:118`.
+    # Filled by `Investigate` and by nothing else, which is what makes
+    # `investigating` mean something: the state is not a claim to
+    # understand the bug, it is the file and line the claim can be checked
+    # against.
+    value_object "BugSite" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an investigation names where the bug lives") { !value.to_s.empty? }
+    end
+
+    value_object "BugCause" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an investigation says why the code is wrong") { !value.to_s.empty? }
+    end
+
+    # THE COMMIT, AND THE REQUIREMENTS' FIRST SUCCESS CRITERION.
+    #
+    # "Can't mark a bug fixed without a commit reference" is asked for four
+    # separate times across `qa/MESSAGE_TO_QA_BLUEBOOK_AGENT.md` and
+    # `qa/BLUEBOOK_REQUIREMENTS.md`, and here it is not a `given` but an
+    # ARGUMENT: `Fix` cannot be dispatched without one, and this invariant
+    # refuses it during coercion, before any predicate is reached. A rule
+    # spelled as a required argument cannot be forgotten by a caller the
+    # way a rule spelled as a nullable field plus a check can.
+    #
+    # THE SHAPE IS CHECKED, per "commit SHAs are valid (7+ characters,
+    # alphanumeric)". Explicit ranges rather than `\w`, because the perl
+    # classes flip between ASCII and Unicode across regex engines — see
+    # `PatternSubset`, which refuses them when the bluebook is declared
+    # rather than letting two readers disagree about a record later.
+    #
+    # HELD HERE AND NOT ON `Remedy`, which is where it first went. One
+    # commit routinely closes several bugs — `63750a3` in `qa/FINDINGS.md`
+    # closes #4 and #5 — so the relation is commit-to-many-bugs, and the
+    # bug is the end that can hold it exactly once.
+    value_object "CommitRef" do
+      attribute :value, String, pattern: '^[0-9a-fA-F]{7,40}$'
+    end
+
+    # WHY IT STOPPED HERE — carried by `Pause` and by `Dismiss`, two verbs
+    # that mean opposite things and both need one. Required, so "paused"
+    # can never mean "somebody got bored": this text IS the "Why Paused"
+    # line `qa/FINDINGS.md` now carries on every architectural entry, and
+    # the "Why Not Fixed" section of the ticket that follows.
+    value_object "BugReason" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("stopping on a bug says why") { !value.to_s.empty? }
+    end
+
+    # WHICH OTHER BUG IS IN THE WAY.
+    #
+    # `qa/FINDINGS.md` #3 reads "Blocked on #2 (cascades from nested VO
+    # validation gap)" with a "Dependency: fixing #2 would automatically
+    # fix #3" beneath it, and that is a real relation between two records
+    # that was previously only a sentence. It is worth holding because it
+    # changes what a reader should DO: #3 needs no attempt of its own, and
+    # a session that spends an hour on it has spent an hour on #2 without
+    # meaning to.
+    #
+    # A BUG REFERENCE AS TEXT, NOT A `reference_to Bug`. The obvious move
+    # is a self-reference, and it is refused on evidence rather than taste:
+    # every `reference_to` in this corpus crosses aggregates, and an
+    # aggregate referencing ITSELF is a shape nothing here exercises —
+    # `reference_to Bug` inside a Bug command already means "the bug being
+    # acted on", so a second one under an alias is at best ambiguous at the
+    # dispatch boundary. Text costs the existence check; `Blocked` below
+    # makes the dangling case visible instead, and a blocker naming a bug
+    # from before this ledger existed stays recordable.
+    #
+    # "none" IS A WORD, NOT AN EMPTY STRING, and the reason is measured.
+    #
+    # `where(:"blocked_by.value" => { ne: "" })` is the natural spelling of
+    # "is blocked by something", and it does not work: the DSL drops the
+    # empty string on the way into the `WhereClause`, which comes out
+    # holding `value=nil` — so the clause asks `!= nil`, every row
+    # satisfies it, and the query answers with the whole ledger. Nothing
+    # errors. (Recorded as a bug against the runtime in this very ledger;
+    # see the seeded entries.)
+    #
+    # A default of "none" sidesteps it without waiting on a fix, and reads
+    # better in the record besides — `blocked_by: "none"` is a fact
+    # somebody asserted, where an empty string is indistinguishable from a
+    # field nobody filled in. `Unblock` writes it back.
+    value_object "BlockingBug" do
+      attribute :value, String, default: "none"
+    end
+
+    value_object "SessionRef" do
+      attribute :value, String
+    end
+
+    # THE STATE MACHINE IS THE REQUIREMENTS' OWN — found → investigating →
+    # fixed → verified, or deferred — WITH ONE STATE INSERTED.
+    #
+    #   found        — §4.1. A test did something surprising.
+    #   reproduced   — §4.0, and it is the gate everything else stands on:
+    #                  a failing test exists. This is the one addition to
+    #                  the requested lifecycle, and it is the requested
+    #                  workflow's own most-repeated instruction promoted
+    #                  from prose into the machine. Nothing may be
+    #                  investigated, fixed, paused, dismissed or filed
+    #                  from `found`, because a bug that cannot be made to
+    #                  happen twice is not yet a bug — which is exactly what
+    #                  `qa/FINDINGS.md` #7, #8 and #9 turned out to be.
+    #   investigating— §4.2. The file and the reason are named.
+    #   fixed        — §5. A commit exists.
+    #   verified     — §5.4. The full suite passed against it.
+    #   paused       — §5.3. Real, and too large to fix here. The input to a
+    #                  ticket. The SOP calls this "deferred" and
+    #                  `qa/FINDINGS.md` and `qa/INDEX.md` now both call it
+    #                  PAUSED, with a "Why Paused" line; the record follows
+    #                  the ledger's word rather than the procedure's,
+    #                  because the ledger is what a reader reads.
+    #   dismissed    — the state `qa/FINDINGS.md` writes as "LIKELY NOT A
+    #                  BUG" and has no word for. Reachable from
+    #                  `reproduced` and `investigating` and NOT from
+    #                  `found`, which is the sharpest rule in this chapter:
+    #                  "it's probably fine", said about something nobody
+    #                  ever reproduced, is exactly how a real bug gets
+    #                  closed, and this record should make that sentence
+    #                  unsayable.
+    lifecycle :status, default: "found" do
+      transition "Reproduce"   => "reproduced",    from: "found"
+      transition "Investigate" => "investigating", from: "reproduced"
+      transition "Fix"         => "fixed",         from: "investigating"
+      # "CAN ONLY MOVE TO VERIFIED FROM FIXED" — asked for verbatim, and
+      # this line is the whole of it. No predicate, no field check: the
+      # machine simply has no other edge into `verified`.
+      transition "Verify"      => "verified",      from: "fixed"
+      transition "Pause"       => "paused",        from: ["reproduced", "investigating"]
+      transition "Dismiss"     => "dismissed",     from: ["reproduced", "investigating"]
+      # A FIX THAT DID NOT HOLD IS NOT A NEW BUG. It is this one, with its
+      # evidence, its diagnosis and its history intact, back in play — and
+      # landing in `reproduced` rather than `investigating` on purpose: the
+      # investigation is exactly what a regression disproves, so it has to
+      # be done again. `Remedy#Revert` is the other half of this.
+      transition "Regress"     => "reproduced",    from: ["fixed", "verified"]
+      # A PAUSED BUG PICKED BACK UP keeps its investigation, because
+      # nothing about waiting made it wrong. This is the verb a filed
+      # ticket finally being actioned turns into — and the verb
+      # `qa/FINDINGS.md` #3 needs the day #2 lands.
+      transition "Revisit"     => "investigating", from: "paused"
+    end
+
+    command "Discover" do
+      role "QA engineer"
+      goal "Write down that something is wrong, before knowing what"
+
+      reference_to Session
+      attribute :reference,   BugReference
+      attribute :sequence,    BugSequence
+      attribute :domain,      AffectedDomain
+      attribute :title,       BugTitle
+      attribute :symptom,     Symptom
+      attribute :expectation, Expectation
+      attribute :severity,    Severity
+
+      emits "BugDiscovered"
+    end
+
+    # NOT A LIFECYCLE TRANSITION, on purpose — citing another test against
+    # an investigated bug must not un-investigate it, so this cannot be a
+    # transition. Left off the machine entirely it could fire against a
+    # dismissed bug, so the rule is a `given` instead — the shape
+    # `Finding#Cite` and `SafeDepositBox#LogVisit` both use.
+    command "Cite" do
+      role "QA engineer"
+      goal "Name another test case this bug was seen in"
+
+      reference_to Bug
+      attribute :test_case, TestNumber
+
+      given("evidence is cited against a bug that still stands") { status != "dismissed" }
+
+      then_set :evidence, append: { test_case: :test_case }
+
+      emits "TestCited"
+    end
+
+    command "Reproduce" do
+      role "QA engineer"
+      goal "Show the bug happening on demand, which is what makes it a bug"
+
+      reference_to Bug
+      attribute :demonstration, Demonstration
+
+      then_set :demonstration, to: :demonstration
+
+      emits "BugReproduced"
+    end
+
+    command "Investigate" do
+      role "QA engineer"
+      goal "Name the code that is wrong and say why"
+
+      reference_to Bug
+      attribute :site,  BugSite
+      attribute :cause, BugCause
+
+      then_set :site,  to: :site
+      then_set :cause, to: :cause
+
+      emits "BugInvestigated"
+    end
+
+    command "Fix" do
+      role "QA engineer"
+      goal "Record the commit that makes the bug stop happening"
+
+      reference_to Bug
+      attribute :commit, CommitRef
+
+      then_set :commit, to: :commit
+
+      emits "BugFixed"
+    end
+
+    command "Verify" do
+      role "QA engineer"
+      goal "Record that the full suite passed against the fix"
+
+      reference_to Bug
+      emits "BugVerified"
+    end
+
+    command "Pause" do
+      role "QA engineer"
+      goal "Stop work on a bug that is real and too large to fix here, and say why"
+
+      reference_to Bug
+      attribute :reason, BugReason
+
+      then_set :reason, to: :reason
+
+      emits "BugPaused"
+    end
+
+    # NOT A LIFECYCLE TRANSITION. A bug learning that it is blocked has not
+    # changed state — #3 is exactly as reproduced and as investigated after
+    # somebody notices it cascades from #2 as it was before. What changes is
+    # what a reader should do with it, and that is a field, not a state.
+    #
+    # No `given` against `blocked_by` naming this bug itself: the caller
+    # would have to pass its own reference, which is a mistake the record
+    # can survive and `Blocked` makes visible. A predicate comparing an
+    # argument to an identity head is not a shape the sublanguage reaches.
+    command "Block" do
+      role "QA engineer"
+      goal "Record that another bug has to be fixed before this one can be"
+
+      reference_to Bug
+      attribute :blocked_by, BlockingBug
+
+      then_set :blocked_by, to: :blocked_by
+
+      emits "BugBlocked"
+    end
+
+    # THE SAME VERB WITH AN EMPTY ARGUMENT WOULD DO THIS, and a separate
+    # word is worth the duplication: "this is no longer blocked" is a
+    # finding, and a log line reading `Block(blocked_by: "")` is a finding
+    # nobody will read as one.
+    command "Unblock" do
+      role "QA engineer"
+      goal "Record that the thing in the way is gone"
+
+      reference_to Bug
+      attribute :blocked_by, BlockingBug
+
+      then_set :blocked_by, to: :blocked_by
+
+      emits "BugUnblocked"
+    end
+
+    command "Dismiss" do
+      role "QA engineer"
+      goal "Close out a reproduced bug that turned out to be correct behaviour"
+
+      reference_to Bug
+      attribute :reason, BugReason
+
+      then_set :reason, to: :reason
+
+      emits "BugDismissed"
+    end
+
+    command "Regress" do
+      role "QA engineer"
+      goal "Put a bug back in play when its fix stopped holding"
+
+      reference_to Bug
+      emits "BugRegressed"
+    end
+
+    command "Revisit" do
+      role "QA engineer"
+      goal "Pick a paused bug back up, investigation intact"
+
+      reference_to Bug
+      emits "BugRevisited"
+    end
+
+query "All" do
+  description "Every bug ever found, in the order it was found — see Session.All for why an unfiltered read has to exist."
+  order_by :sequence
+end
+
+    query "FoundIn" do
+      description "Everything one session turned up, in the order it was discovered — the requirements' bugs_found, counted rather than tallied."
+      attribute :session_id, SessionRef
+      where(session_id: :session_id)
+      order_by :sequence
+    end
+
+    query "Unfixed" do
+      description "Every bug still owed work — the whole of qa/FINDINGS.md's open half, derived rather than maintained."
+      where(status: { in: "found,reproduced,investigating,paused" })
+      order_by :sequence
+    end
+
+    # THE LIST THAT MUST ALWAYS BE SHORT, and the one `qa/SOP.md` §4.0
+    # exists to keep short. Anything sitting here is a claim about the
+    # system that nobody has made happen twice — and this record refuses to
+    # let it be investigated, fixed, dismissed or filed until somebody does.
+    query "Unreproduced" do
+      description "Discovered, never made to happen on demand. qa/FINDINGS.md #7, #8 and #9 all spent a week here without the record having a word for it."
+      where(status: "found")
+      order_by :sequence
+    end
+
+    query "ReadyToVerify" do
+      description "Fixed and not yet re-run — the requirements' 'which bugs are ready to verify', and the queue a full-suite run empties."
+      where(status: "fixed")
+      order_by :sequence
+    end
+
+    query "Paused" do
+      description "Real, unfixed, and stopped on, each with the reason it stopped — qa/FINDINGS.md's 'Known Issues (Paused - Architectural)' section, and the only queue a ticket should ever be drafted from."
+      where(status: "paused")
+      order_by :sequence
+    end
+
+    query "BySeverity" do
+      description "Open bugs at one severity, across every session — 'show me all HIGH severity unfixed bugs', which is where a session should start."
+      attribute :severity, Severity
+      where(severity: :severity)
+      where(status: { in: "found,reproduced,investigating,paused" })
+      order_by :sequence
+    end
+
+    # WAITING ON ANOTHER BUG, NOT ON A PERSON. Every row here is work that
+    # would be wasted if somebody picked it up: `qa/FINDINGS.md` #3 needs no
+    # attempt of its own, and a session that starts on it is really starting
+    # on #2 without having decided to. Read alongside `BySeverity`, this is
+    # what stops "highest severity first" from sending an engineer at a
+    # symptom.
+    query "Blocked" do
+      description "Open bugs waiting on another bug — pick the blocker instead. A row naming a bug this ledger does not hold is the dangling case a reference would have refused."
+      where(:"blocked_by.value" => { ne: "none" })
+      where(status: { in: "found,reproduced,investigating,paused" })
+      order_by :sequence
+    end
+
+    query "ForDomain" do
+      description "Every bug ever found in one domain. Counted against TestCase.ForDomain, this is the bug density the requirements' TestCoverage wanted to hold as a field."
+      attribute :domain, AffectedDomain
+      where(domain: :domain)
+      order_by :sequence
+    end
+  end
+
+  # WHAT WAS TRIED, AND WHETHER IT WORKED.
+  #
+  # NOT IN THE REQUIREMENTS, AND THE ONE ADDITION THIS CHAPTER ARGUES FOR.
+  #
+  # `qa/SOP.md`'s governing principle is FIX FIRST, FILE SECOND, and its
+  # §6 opens "Only reach this phase if Phase 5 didn't result in a fix." The
+  # requirements ask for that as a rule — "Can't file a GitHub issue
+  # without first attempting a fix" — and then, in the same document,
+  # sketch it as a `given` reading a field on another aggregate, which this
+  # language cannot do: a reference is an id at dispatch time, not the
+  # record it points at.
+  #
+  # It CAN be done, and this aggregate is how. A Ticket takes
+  # `reference_to Remedy`, and a reference must resolve to a real record at
+  # dispatch. So a ticket that cannot name an attempt cannot be drafted —
+  # not because a predicate checked, but because there is nothing to point
+  # at. That is the strongest form a rule takes in this language, and it is
+  # only available if the attempt is a HEAD.
+  #
+  # It earns its place a second way. A failed attempt is worth as much as a
+  # successful one: the ticket's "Why Not Fixed" section is not a sentence
+  # somebody composes at filing time, it is `Remedy#reason`, written on the
+  # day the attempt ran out. Folding this into a field on `Bug` would keep
+  # only the attempt that worked, which is precisely the half nobody needs
+  # to be told about.
+  #
+  # AND THE LIST DECIDED THE REST. A remedy carries the places it touched,
+  # and an entity cannot hold a `list_of` at all
+  # (`Coercion.hydrate_entity_list` reaches for `aggregate.entities`, which
+  # an entity has none of). Anything holding a list is a head anyway.
+  aggregate "Remedy" do
+    description "One attempt at fixing a bug — who tried it, what they were trying, the files it touched, and whether it landed or ran out."
+
+    reference_to Bug
+
+    identified_by { reference.value }
+
+    attribute :reference, RemedyReference
+    attribute :sequence,  RemedySequence
+    attribute :engineer,  Engineer
+    attribute :approach,  Approach
+    attribute :changes,   list_of(RemedyChange)
+    attribute :reason,    AbandonmentReason
+
+    value_object "RemedyReference" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a remedy is referenced") { !value.to_s.empty? }
+    end
+
+    value_object "RemedySequence" do
+      attribute :value, Integer
+      invariant("a remedy sequence is positive") { value.positive? }
+    end
+
+    # WHO TRIED IT, and it need not be who found the bug — the direct
+    # answer to `qa/BLUEBOOK_REQUIREMENTS.md` question 5. Declared again
+    # here rather than reached for across aggregates, the way banking
+    # declares `Narrative` three times: a value object belongs to one
+    # aggregate, and two aggregates that each need the shape each say it.
+    value_object "Engineer" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an attempt says who made it") { !value.to_s.empty? }
+    end
+
+    # WHAT IS BEING TRIED, WRITTEN BEFORE IT IS TRIED. The same discipline
+    # `TestCase#expectation` holds one aggregate up: an approach recorded
+    # after the fact is an approach fitted to the outcome, and the whole
+    # value of an abandoned remedy is that it says what did NOT work.
+    value_object "Approach" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a remedy says what it is trying") { !value.to_s.empty? }
+    end
+
+    # ONE PLACE THE FIX TOUCHED. `RemedyChange` rather than `Change` for
+    # the constant-collision reason `BugTitle` spells out at length.
+    #
+    # An open pair as a row — the shape this language reaches for whenever
+    # a map is wanted, since no value object can hold one.
+    value_object "RemedyChange" do
+      attribute :path, String
+      attribute :note, String
+    end
+
+    value_object "ChangePath" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a change names the file it touched") { !value.to_s.empty? }
+    end
+
+    value_object "ChangeNote" do
+      attribute :value, String
+    end
+
+    # WHERE IT RAN OUT. The most reused field in this chapter: it is what a
+    # ticket's "Why Not Fixed" is composed from, and `qa/SOP.md` §5.3's
+    # whole instruction — "do not attempt architectural fixes; document and
+    # skip" — only produces something useful if the documenting lands
+    # somewhere a later reader can find it.
+    value_object "AbandonmentReason" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an abandoned attempt says where it ran out") { !value.to_s.empty? }
+    end
+
+    value_object "BugRef" do
+      attribute :value, String
+    end
+
+    lifecycle :status, default: "attempted" do
+      # A SELF-TRANSITION so changes can only be attached while the attempt
+      # is still open — the trick `Session#Test` and `Proposal#Supply` both
+      # use, for the same reason: a remedy that grows a touched file after
+      # it landed is not the remedy that landed.
+      transition "Touch"   => "attempted", from: "attempted"
+      transition "Land"    => "landed",    from: "attempted"
+      transition "Abandon" => "abandoned", from: "attempted"
+      # A LANDED REMEDY THAT LATER STOPPED WORKING. Terminal here on
+      # purpose: the next attempt is a NEW remedy, not a rewriting of this
+      # one. `Bug#Regress` is the head-side half.
+      transition "Revert"  => "reverted",  from: "landed"
+    end
+
+    command "Attempt" do
+      role "QA engineer"
+      goal "Start a fix, saying what is being tried before trying it"
+
+      reference_to Bug
+      attribute :reference, RemedyReference
+      attribute :sequence,  RemedySequence
+      attribute :engineer,  Engineer
+      attribute :approach,  Approach
+
+      emits "RemedyAttempted"
+    end
+
+    # ONE FILE AT A TIME, which is how every list in this language is
+    # filled — a list cannot be carried by one argument, so a verb of its
+    # own attaches each row.
+    command "Touch" do
+      role "QA engineer"
+      goal "Record one place the fix changed"
+
+      reference_to Remedy
+      attribute :path, ChangePath
+      attribute :note, ChangeNote
+
+      then_set :changes, append: { path: :path, note: :note }
+
+      emits "RemedyTouched"
+    end
+
+    # NO COMMIT HERE — see `Bug#CommitRef`. This says the approach worked;
+    # `Bug.Fix` says which commit made it so, and one commit closes several
+    # bugs often enough that the bug is the only end that can hold it once.
+    command "Land" do
+      role "QA engineer"
+      goal "Record that this approach worked"
+
+      reference_to Remedy
+      emits "RemedyLanded"
+    end
+
+    command "Abandon" do
+      role "QA engineer"
+      goal "Give up on an approach and say exactly where it ran out"
+
+      reference_to Remedy
+      attribute :reason, AbandonmentReason
+
+      then_set :reason, to: :reason
+
+      emits "RemedyAbandoned"
+    end
+
+    command "Revert" do
+      role "QA engineer"
+      goal "Take back a fix that stopped holding"
+
+      reference_to Remedy
+      attribute :reason, AbandonmentReason
+
+      then_set :reason, to: :reason
+
+      emits "RemedyReverted"
+    end
+
+query "All" do
+  description "Every attempt ever made, in order — see Session.All."
+  order_by :sequence
+end
+
+    query "ForBug" do
+      description "Every attempt ever made at one bug, in order — the history a ticket is written from, and the answer to 'has anybody tried this yet'."
+      attribute :bug_id, BugRef
+      where(bug_id: :bug_id)
+      order_by :sequence
+    end
+
+    # THE LIST THAT MUST ALWAYS EMPTY. A remedy sitting in `attempted` is a
+    # working tree somebody walked away from: the fix was neither landed
+    # nor written off, and the bug it belongs to is still open with no
+    # record of why.
+    query "Unresolved" do
+      description "Attempts nobody ruled on — each row is an edit in a working tree that this record cannot account for."
+      where(status: "attempted")
+      order_by :sequence
+    end
+
+    query "Abandoned" do
+      description "What has been tried and did not work, across every bug. The most reused thing in this chapter and the least often written down anywhere else."
+      where(status: "abandoned")
+      order_by :sequence
+    end
+  end
+
+  # WHAT GETS TOLD TO THE OUTSIDE WORLD.
+  #
+  # A SEPARATE AGGREGATE, WHERE THE REQUIREMENTS ASK FOR A `github_issue`
+  # FIELD ON `Bug`. The split is the one `Interview::Proposal` draws
+  # against the meta-domain: the record of an intent is not the effect of
+  # acting on it. A bug is a fact about this repository; a ticket is a row
+  # in GitHub's database, under someone else's control, which can be
+  # refused, closed by a stranger, or filed twice by accident. A field
+  # would make all three invisible — and would have no way to represent the
+  # most common state of all, which is "we composed the report and have not
+  # sent it".
+  aggregate "Ticket" do
+    description "One issue raised in a tracker outside this repository — what it says, whether the tracker actually took it, and what became of it."
+
+    reference_to Bug
+    # THE RULE, AS A REFERENCE. `qa/SOP.md` §6 and the requirements both
+    # say a ticket may only be filed for something somebody tried to fix,
+    # and this line is that rule in the only enforceable form the language
+    # has: a reference must resolve at dispatch, so a ticket that cannot
+    # name an attempt cannot be drafted at all. `Interview::Proposal`'s
+    # required `reference_to Finding` is the same move for the same reason
+    # — no change without a reason, no ticket without an attempt.
+    #
+    # THE OBJECTION, AND WHY IT IS ANSWERED: §5.3 says some bugs are
+    # architectural and should NOT be attempted, which looks like a case
+    # with no remedy to point at. It is not. Recording a `Remedy` whose
+    # approach is "recursive validation in coercion.rb" and abandoning it
+    # the same minute with "requires a refactor of the coercion pipeline"
+    # IS the documentation §5.3 asks for, and requiring it is what stops
+    # "architectural" from becoming a word that ends conversations.
+    reference_to Remedy
+
+    identified_by { reference.value }
+
+    attribute :reference,  TicketReference
+    attribute :repository, TicketRepository
+    attribute :title,      TicketTitle
+    attribute :body,       TicketBody
+    attribute :number,     IssueNumber
+    attribute :url,        IssueUrl
+    attribute :refusal,    RefusalText
+    attribute :resolution, TicketResolution
+
+    value_object "TicketReference" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a ticket is referenced") { !value.to_s.empty? }
+    end
+
+    # `owner/name`, SHAPED RATHER THAN CHECKED. The pattern is what can
+    # honestly be said here — whether the repository exists, and whether
+    # this account may write to it, are facts only GitHub holds, and
+    # `Failed` below is where they arrive.
+    value_object "TicketRepository" do
+      attribute :value, String, pattern: '^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$'
+    end
+
+    value_object "TicketTitle" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a ticket is titled") { !value.to_s.empty? }
+    end
+
+    value_object "TicketBody" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a ticket says something") { !value.to_s.empty? }
+    end
+
+    # ZERO UNTIL FILED, and zero is not a number GitHub ever issues — the
+    # invariant is "not negative" rather than "positive" for exactly that
+    # reason, so an unfiled ticket is representable and a filed one carries
+    # a real number. The requirements' "GitHub issue numbers are positive
+    # integers" holds where it means something: after `Filed`. `filed` is
+    # the state that says which of the two this is; nobody should be
+    # reading the number to find out.
+    value_object "IssueNumber" do
+      attribute :value, Integer, default: 0
+      invariant("an issue number is not negative") { !value.negative? }
+    end
+
+    value_object "IssueUrl" do
+      attribute :value, String
+    end
+
+    # WHAT THE TRACKER SAID WHEN IT REFUSED — no auth, no such repository,
+    # rate limited, issues disabled. No `given` on `Failed` asking whether
+    # this is present: the invariant fires during coercion, before any
+    # given is reached, so a predicate here could never be the one to
+    # refuse.
+    value_object "RefusalText" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a refusal says what was wrong") { !value.to_s.empty? }
+    end
+
+    value_object "TicketResolution" do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("closing a ticket says what became of it") { !value.to_s.empty? }
+    end
+
+    value_object "BugRef" do
+      attribute :value, String
+    end
+
+    value_object "RemedyRef" do
+      attribute :value, String
+    end
+
+    lifecycle :status, default: "drafted" do
+      transition "Revise"   => "drafted",    from: "drafted"
+      # THE SPLIT THAT MATTERS MOST HERE. `Submit` is a decision made
+      # inside this process; `Filed`/`Failed` is another company's API
+      # answering. A single `File` verb collapsing both would make every
+      # network failure indistinguishable from a successful filing — and
+      # the recovery, retrying, would then duplicate real issues in a
+      # public tracker rather than resuming a failed attempt.
+      # `Interview::Proposal`'s accepted → written | refused is the same
+      # shape against the meta-domain.
+      transition "Submit"   => "submitting", from: "drafted"
+      transition "Filed"    => "filed",      from: "submitting"
+      transition "Failed"   => "failed",     from: "submitting"
+      # RETRY GOES BACK TO `drafted`, NOT STRAIGHT TO `submitting` — a
+      # failure that was about the CONTENT (a title the tracker rejected, a
+      # label that does not exist) must be revisable before it is sent
+      # again, and a shape that skipped `drafted` would resend the
+      # identical body by default.
+      transition "Retry"    => "drafted",    from: "failed"
+      transition "Close"    => "closed",     from: "filed"
+      # WITHDRAWABLE FROM `drafted` — a ticket composed for a bug that then
+      # got fixed — and NOT from `filed`: a filed issue is public, and
+      # making it vanish from this record while it still sits in someone
+      # else's tracker is the one thing this aggregate exists to prevent. A
+      # filed ticket that should not have been filed gets `Close`d, with a
+      # resolution saying so.
+      transition "Withdraw" => "withdrawn",  from: "drafted"
+    end
+
+    command "Draft" do
+      role "QA engineer"
+      goal "Compose what the outside world will be told about a bug"
+
+      reference_to Bug
+      reference_to Remedy
+      attribute :reference,  TicketReference
+      attribute :repository, TicketRepository
+      attribute :title,      TicketTitle
+      attribute :body,       TicketBody
+
+      emits "TicketDrafted"
+    end
+
+    command "Revise" do
+      role "QA engineer"
+      goal "Change what an unsent ticket says"
+
+      reference_to Ticket
+      attribute :title, TicketTitle
+      attribute :body,  TicketBody
+
+      then_set :title, to: :title
+      then_set :body,  to: :body
+
+      emits "TicketRevised"
+    end
+
+    command "Submit" do
+      role "QA engineer"
+      goal "Decide this goes to the tracker, which is the last reversible moment"
+
+      reference_to Ticket
+      emits "TicketSubmitted"
+    end
+
+    # THE RUNNER REPORTING BACK. This chapter does not call GitHub and
+    # cannot — see the closing note. The caller makes the call and says
+    # which way it went, the way `identity.bluebook` leaves minting an id
+    # to its caller and says so rather than pretending otherwise.
+    command "Filed" do
+      role "System"
+      goal "Record that the tracker took it, and where it landed"
+
+      reference_to Ticket
+      attribute :number, IssueNumber
+      attribute :url,    IssueUrl
+
+      then_set :number, to: :number
+      then_set :url,    to: :url
+
+      emits "TicketFiled"
+    end
+
+    command "Failed" do
+      role "System"
+      goal "Record that the tracker refused it, and what it said"
+
+      reference_to Ticket
+      attribute :refusal, RefusalText
+
+      then_set :refusal, to: :refusal
+
+      emits "TicketFilingFailed"
+    end
+
+    command "Retry" do
+      role "QA engineer"
+      goal "Put a failed filing back in the drafting queue"
+
+      reference_to Ticket
+      emits "TicketRetried"
+    end
+
+    command "Close" do
+      role "QA engineer"
+      goal "Record what became of an issue the tracker is holding"
+
+      reference_to Ticket
+      attribute :resolution, TicketResolution
+
+      then_set :resolution, to: :resolution
+
+      emits "TicketClosed"
+    end
+
+    command "Withdraw" do
+      role "QA engineer"
+      goal "Take back a ticket that was never sent"
+
+      reference_to Ticket
+      emits "TicketWithdrawn"
+    end
+
+query "All" do
+  description "Every ticket ever drafted, in reference order — see Session.All."
+  order_by :reference
+end
+
+    query "ForBug" do
+      description "Every ticket ever raised about one bug — the duplicate check, before a second one is drafted."
+      attribute :bug_id, BugRef
+      where(bug_id: :bug_id)
+      order_by :reference
+    end
+
+    query "ForRemedy" do
+      description "Which attempt a ticket was written out of — the 'Why Not Fixed' section, traced back to the day it was written."
+      attribute :remedy_id, RemedyRef
+      where(remedy_id: :remedy_id)
+      order_by :reference
+    end
+
+    # THE LIST THAT MUST ALWAYS EMPTY, and the reason `Submit` and `Filed`
+    # are two verbs. A row here is a call that went out and never came
+    # back: the issue may exist in the tracker or may not, and only a human
+    # looking at GitHub can say which. Retrying without looking files a
+    # duplicate.
+    query "Submitting" do
+      description "Sent and never answered. Each row is a call whose outcome nobody recorded — check the tracker before retrying."
+      where(status: "submitting")
+      order_by :reference
+    end
+
+    query "Filed" do
+      description "Open issues this practice is responsible for, in the outside world."
+      where(status: "filed")
+      order_by :number
+    end
+
+    query "Failed" do
+      description "Filings the tracker refused, with what it said — the queue a retry is drawn from."
+      where(status: "failed")
+      order_by :reference
+    end
+
+    # A DOTTED WHERE, HOPPING THROUGH A REFERENCE — and it is here because
+    # the rule it enforces CANNOT be a `given`. "A ticket may only be filed
+    # for a bug somebody reproduced" reads exactly like a precondition, but
+    # a reference is an id at dispatch time, not the record it points at:
+    # `bug.status` resolves to nothing inside a predicate. Only a
+    # where-clause hops.
+    #
+    # So the rule is not enforced, it is SURFACED — which is the honest
+    # thing anyway, since drafting ahead of the reproduction is legitimate
+    # (composing the report is often how you work out what the reproduction
+    # even is) and merely must not be SUBMITTED while it stands there.
+    # `Interview::Proposal::RestingOnUnconfirmed` is the same shape for the
+    # same reason.
+    query "RestingOnUnreproduced" do
+      description "Unsent tickets about a bug nobody has made happen twice — filing one puts a claim in a public tracker that this repository cannot back up."
+      where(status: "drafted")
+      where(:"bug.status" => "found")
+      order_by :reference
+    end
+
+    # THE OTHER HALF OF `qa/SOP.md` §6. The `reference_to Remedy` above
+    # guarantees an attempt EXISTS; it cannot guarantee the attempt is
+    # OVER. A ticket drafted against a remedy still sitting in `attempted`
+    # is a report written while somebody is mid-fix — which is the
+    # practice's own governing principle inverted, and the easiest of these
+    # mistakes to make when the fix is taking a while.
+    query "RestingOnLiveRemedy" do
+      description "Unsent tickets whose attempt nobody has landed or abandoned yet — fix first, file second, and this is the list where that gets skipped."
+      where(status: "drafted")
+      where(:"remedy.status" => "attempted")
+      order_by :reference
+    end
+
+    # OPEN IN THE TRACKER, FIXED IN HERE. Every row is a stranger reading a
+    # public issue about a bug that no longer exists.
+    query "RestingOnVerified" do
+      description "Issues still open in the tracker for bugs this repository has already verified as fixed — each one owes the outside world a Close."
+      where(status: "filed")
+      where(:"bug.status" => "verified")
+      order_by :number
+    end
+  end
+
+  # NO POLICY, AND NO PROCESS MANAGER. `interview.bluebook` declares none
+  # either and treats that as a decision rather than an absence; the same
+  # applies here, and `qa/BLUEBOOK_REQUIREMENTS.md` asks for three of them
+  # by name under "Workflow Triggers". All three were written out and taken
+  # back.
+  #
+  # "WHEN A BUG IS DISCOVERED, AUTOMATICALLY CREATE A TESTCASE." Backwards.
+  # A test case is written BEFORE the bug is discovered — it is the thing
+  # that discovers it — and a session that dispatched `Bug.Discover` first
+  # has, by definition, skipped `qa/SOP.md` §4.0. Automating this would
+  # make the skip invisible and generate an empty test case to cover it.
+  #
+  # ON "RemedyLanded", TRIGGER "Bug.Fix". The most correct-looking of the
+  # three, and the one that hides the most: a policy delivers ONE dispatch
+  # carrying arguments written statically into the source, and `Bug.Fix`
+  # requires a COMMIT, which is not knowable when this file is written. It
+  # could only fire with a placeholder, which is the exact rule the
+  # requirements asked four times to have enforced, defeated by the
+  # automation meant to serve it.
+  #
+  # ON "SessionCompleted", GENERATE THE DAILY REPORT. Not a policy at all —
+  # a policy triggers a COMMAND, and rendering markdown is not one. The
+  # report is a read of `Bug.FoundIn` plus `TestCase.Failing`, performed by
+  # whatever is holding the runtime, and `qa/reports/YYYY-MM-DD.md` is its
+  # output rather than its source.
+  #
+  # A SAGA OVER submitting -> filed | failed is a genuine multi-step
+  # protocol and exactly the shape `Settlement` has — except the middle
+  # step is an HTTP call to another company, and a saga's `with:` is
+  # written into the source, one key at a time. `Ticket#number` and `#url`
+  # are not knowable when the source is written; they are the RESPONSE. A
+  # saga that cannot carry the payload can only pretend to be driving.
+  #
+  # NO DOMAIN PORT EITHER, and it is the same call. A `domain_port
+  # "IssueTracker"` is the language's own way to say "something outside
+  # answers this", and it is a real option — but every port in this corpus
+  # is dispatched INTO by a reaction, and this chapter has just established
+  # it has none. A port nothing triggers is a declaration with nothing
+  # behind it. The runner calls GitHub and reports back through
+  # `Filed`/`Failed`, and this chapter stays a record.
+end

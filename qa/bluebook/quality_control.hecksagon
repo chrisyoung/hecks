@@ -1,0 +1,30 @@
+# THE LEDGER IS DURABLE, WHICH IS THE WHOLE POINT.
+#
+# Every other example in this corpus binds its aggregates to `Memory`
+# because it is a corpus member, exercised by a spec and thrown away. This
+# one is not: `qa/FINDINGS.md` is a file that survives the session, and a
+# replacement for it that lived in a process would be strictly worse than
+# the markdown it replaces.
+#
+# HEKI RATHER THAN POSTGRES, deliberately. Heki is a file per aggregate
+# under `qa/data/` with a journal beside it — it needs no server, no
+# credentials and no network, so `bin/quality_control` and the MCP server
+# both work on a laptop with nothing running. It is also NOT lineage-capable
+# (`Adapters::Postgres` is the only adapter that declares
+# `lineage_capable?`), which means `EraCheck` does not gate a boot of this
+# domain: editing the bluebook mid-practice does not demand an era be minted
+# before the ledger can be opened again. That is the right trade for a tool
+# whose own shape is still moving.
+#
+# NO PROJECTION. `banking.hecksagon` pairs every `persisted_by` with a
+# `projected_by("SqliteProjection")`; this does not, because nothing here
+# reads across aggregates at a volume a projection would help — the largest
+# collection this ledger will ever hold is a few hundred bugs, and every
+# query in the chapter filters on a lifecycle state the head already
+# carries.
+Hecks.hecksagon "QualityControl" do
+  QualityControl::Session.persisted_by("Heki")
+  QualityControl::Bug.persisted_by("Heki")
+  QualityControl::Remedy.persisted_by("Heki")
+  QualityControl::Ticket.persisted_by("Heki")
+end
