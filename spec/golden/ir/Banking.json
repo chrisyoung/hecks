@@ -743,7 +743,7 @@
           "name": "Freeze",
           "provenance": null,
           "redirects_native": [
-
+            "ComplianceHold"
           ],
           "references": "Account",
           "role": "Compliance officer"

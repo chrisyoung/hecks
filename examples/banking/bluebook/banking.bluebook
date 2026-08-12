@@ -347,6 +347,13 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Stop an account moving while something is investigated"
 
       reference_to Account
+      # Exercises `redirects_native` (docs/hecks-migration-findings.md
+      # finding #1) somewhere in the judged corpus — Banking is the one
+      # flagship domain that carries every category at once, and a
+      # compliance freeze is exactly the shape of command a governed-door
+      # tool substitution stands in for (a native "hold" action gated the
+      # same way a native tool call would be).
+      redirects_native "ComplianceHold"
       emits "AccountFrozen"
     end
 
