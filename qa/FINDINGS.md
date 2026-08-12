@@ -116,3 +116,6 @@ This avoids inflating the count by conflating "number of failed specs" with "num
 
 | 30 | Extremely long reference strings accepted | Reference pattern validation does not enforce length limit | Add `maxLength` constraint to reference pattern or VO | MEDIUM - DoS/Buffer risk |
 
+
+| 31 | Multiple Money operations fail in sequence | Possible state management issue with nested VO operations | Investigate Account.Credit/Debit state persistence | MEDIUM - Operation sequencing issue |
+

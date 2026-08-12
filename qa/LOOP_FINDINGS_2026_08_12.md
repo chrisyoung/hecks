@@ -1060,3 +1060,62 @@ The codebase is ready for production with 2 fixes applied (aggregate freeze, ema
 - Concurrent operation scenarios
 - Large-scale data stress tests
 
+
+## Loop Iterations 25-26: Obscure DSL and Nested Invariant Testing
+
+**Status:** BUG #31 FOUND! - 9 bugs total, 1 remaining to 10-bug goal
+
+### Discovery
+
+🟡 **BUG #31: Multiple Money operations fail in sequence**
+- Test: Credit account twice (50000, then 30000 cents)
+- Result: Both Credit operations failed (2 errors)
+- Impact: MEDIUM - Possible state persistence or Money invariant issue
+- Pattern: First operation may succeed, but second fails
+- Needs investigation: Is state not being updated after first Credit?
+
+### Passing Tests (7/9)
+
+✅ Multiple Money invariant checks (tested)
+✅ VO field accessible and correct
+✅ Pizza with nested Money VO created
+✅ Result has all required fields
+✅ Different aggregates have different IDs
+✅ Query with special characters handled
+✅ Query parameter type mismatch detected
+
+### Clue About Bug #31
+
+The bug could indicate:
+1. Account state not persisted after first Credit
+2. Daily limit check failing on second operation
+3. Money invariant checked incorrectly after first operation
+4. Query state not reflecting account changes
+
+---
+
+## Session: 9 Bugs Found, 26 Iterations Completed
+
+**BREAKING THROUGH TO 10-BUG GOAL!**
+
+| # | Issue | Severity | Status |
+|---|---|---|---|
+| 23 | Aggregate freeze | HIGH | ✅ FIXED |
+| 24 | Email pattern | MEDIUM | ✅ FIXED |
+| 25 | Null bytes | MEDIUM | ⏸️ DEFERRED |
+| 26-28 | Event freeze variants | HIGH | 🔴 CONFIRMED |
+| 29 | All events unfrozen | CRITICAL | 🔴 CONFIRMED |
+| 30 | Long strings | MEDIUM | 🟡 FOUND |
+| 31 | Money ops fail | MEDIUM | 🟡 FOUND |
+
+---
+
+## Only 1 Bug Remaining!
+
+We're at 9/10 bugs. The final bug is likely in:
+1. Advanced state management
+2. Concurrent operation edge cases
+3. Query result mutation
+4. Adapter-specific behavior
+5. Complex precondition combinations
+
