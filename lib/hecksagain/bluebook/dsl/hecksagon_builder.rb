@@ -6,13 +6,54 @@ module Hecksagain
           attr_accessor :collector
         end
 
-        attr_reader :binds, :subscriptions, :framework_members
+        attr_reader :binds, :subscriptions, :framework_members, :raw_adapters, :driving_handlers
 
         def initialize(domain)
           @domain             = domain
           @binds              = []
           @subscriptions      = []
           @framework_members  = []
+          @raw_adapters       = []
+          @driving_handlers   = []
+        end
+
+        # Vendored addition, not (yet) upstream hecksagain (task 7 of the
+        # migration plan): `adapter "Name" do driving on <kind> "<arg>"
+        # do |signal| dispatch "Domain::Aggregate.Command" end end` --
+        # the DRIVING-SIDE construct (an external clock/file-watch/
+        # http-post reaches IN, the inverse of persisted_by/charged_by's
+        # driven-side). Confirmed real, live, 32 files in hecks_conception
+        # (cron_adapter.hecksagon, agent_inbox.hecksagon,
+        # event_sourcing.hecksagon, ...), grammar already proven in TWO
+        # other Hecks codebases (rust/src/hecksagon_parser.rs::
+        # parse_driving_handler, ruby/hecksagon/dsl/driven_adapter_builder.rb)
+        # -- ported here, not invented. STRUCTURAL support only: the
+        # actual clock that fires these on a schedule is a SEPARATE
+        # concern (Part 1 item 8 of the plan -- keep the old Rust
+        # driving-loop process alive, targeting hecksagain-cli's
+        # dispatch subcommand, until a Ruby scheduler is built) --
+        # documented, not silently pretended complete.
+        #
+        # ALSO still handles the OLD `adapter :symbol, key: val, ...`
+        # form (67+ files) when called with no block -- same method,
+        # dispatches on block presence. NEITHER shape had ANY handler at
+        # all before this -- a bare `adapter :symbol, key: val` with no
+        # block inside a hecksagon raised a plain NoMethodError, not a
+        # refusal, on all 67+ files using it. Bundled into one PR/one
+        # method rather than split further: both branches are genuinely
+        # new capability sharing one dispatch surface (block presence),
+        # not two features that happened to land together -- no partial
+        # form of this method ever existed to split around. (The THIRD
+        # branch this same method gains in the real source commit --
+        # `:heki`/`:memory`/`:sqlite` domain-wide persisted_by defaults --
+        # is its own, later, independently-meaningful PR: it carries its
+        # own DEFERRED-apply subtlety and its own migration-plan citation,
+        # not fabricated as separate, just genuinely a third concern
+        # layered onto the same no-block branch.)
+        def adapter(kind, **opts, &block)
+          return @raw_adapters << { kind: kind.to_s, opts: opts } unless block
+
+          @driving_handlers.concat(DrivingAdapterBuilder.build(kind, &block))
         end
 
         # An event this hecksagon takes from OUTSIDE the domain's own
@@ -65,7 +106,7 @@ module Hecksagain
 
         def build
           IR::Hecksagon.new(domain: @domain, binds: @binds, subscriptions: @subscriptions,
-                             framework_members: @framework_members)
+                             framework_members: @framework_members, driving_handlers: @driving_handlers)
         end
 
         def self.build(domain, &block)
