@@ -306,6 +306,7 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :amount,    PositiveMoney
       attribute :narrative, Narrative
 
+      given("customer is active") { customer.status == "active" }
       given("the account is open")      { status == "open" }
       then_set :balance, increment: :amount
       then_set :ledger,  append: { amount: :amount, narrative: :narrative, direction: { value: "credit" } }
