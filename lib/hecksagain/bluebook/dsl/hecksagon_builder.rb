@@ -43,17 +43,75 @@ module Hecksagain
         # method rather than split further: both branches are genuinely
         # new capability sharing one dispatch surface (block presence),
         # not two features that happened to land together -- no partial
-        # form of this method ever existed to split around. (The THIRD
-        # branch this same method gains in the real source commit --
-        # `:heki`/`:memory`/`:sqlite` domain-wide persisted_by defaults --
-        # is its own, later, independently-meaningful PR: it carries its
-        # own DEFERRED-apply subtlety and its own migration-plan citation,
-        # not fabricated as separate, just genuinely a third concern
-        # layered onto the same no-block branch.)
+        # form of this method ever existed to split around.
+        #
+        # Vendored addition, not (yet) upstream hecksagain (migration plan
+        # task 8): `:sqlite` alongside the original `:heki`/`:memory`
+        # domain-wide-default kinds -- the CANONICAL PIZZAS EXAMPLE itself
+        # (pizzeria/domain/pizzas.hecksagon) writes `adapter :sqlite, db:
+        # "..." ` as a context-wide default with its own documented
+        # PRECEDENCE rule ("an aggregate-level persisted_by(...) binding
+        # is applied LAST and would OVERRIDE this wiring — exactly how
+        # Cart stays in Memory"). Unlike heki/memory, sqlite is written
+        # WITH opts (a real inline db path, not a .world-file value), so
+        # the trigger condition widens to tolerate opts for a KNOWN
+        # backend kind -- opts are accepted structurally but not yet
+        # wired to real per-deployment config (a documented, narrower
+        # gap: inline hecksagon-level adapter config bypassing .world
+        # entirely is a genuinely separate feature this migration didn't
+        # build). DOMAIN_WIDE_KINDS maps the DSL's bare kind symbol to
+        # its real registered adapter name (Sqlite's own .adapter file
+        # names it "SqlitePersistence", not "Sqlite").
+        DOMAIN_WIDE_KINDS = { heki: "Heki", memory: "Memory", sqlite: "SqlitePersistence" }.freeze
+
         def adapter(kind, **opts, &block)
+          return domain_wide_persisted_by(kind) if !block && DOMAIN_WIDE_KINDS.key?(kind)
           return @raw_adapters << { kind: kind.to_s, opts: opts } unless block
 
           @driving_handlers.concat(DrivingAdapterBuilder.build(kind, &block))
+        end
+
+        # Vendored addition, not (yet) upstream hecksagain: `adapter
+        # :heki` / `adapter :memory` / `adapter :sqlite` bare (no
+        # aggregate qualifier, no block) is a DOMAIN-WIDE default --
+        # "every aggregate in this bluebook persists here unless
+        # overridden" -- widespread across miette's organ/memory domains
+        # (i728 Phase B, "durable-by-default") and the canonical pizzas
+        # example's sqlite context, which states the precedence
+        # explicitly: "an aggregate-level persisted_by(...) binding is
+        # applied LAST and would OVERRIDE this wiring." hecksagain has no
+        # domain-wide default; every aggregate needs its own explicit
+        # persisted_by bind.
+        #
+        # DEFERRED, not immediate -- pizzeria's own file declares the
+        # domain-wide `adapter :sqlite` FIRST and Cart's overriding
+        # `Cart.persisted_by("Memory")` AFTER it, so resolving the
+        # default immediately (as this used to) saw an empty @binds and
+        # synthesized a bind for Cart too, colliding with Cart's own
+        # explicit one two lines later ("2 authoritative persisted_by
+        # bindings"). Recorded here, applied once in #build once every
+        # explicit bind in THIS FILE is known -- scoped to this
+        # hecksagon file only, the known, narrower gap a multi-file-per-
+        # domain override in a DIFFERENT file wouldn't be caught by ;
+        # pizzeria is single-file, so this is exact there. TODO upstream
+        # via bin/evolve (migration plan task 7).
+        def domain_wide_persisted_by(kind)
+          (@domain_wide_defaults ||= []) << DOMAIN_WIDE_KINDS.fetch(kind)
+        end
+
+        def apply_domain_wide_defaults!
+          return if @domain_wide_defaults.nil? || @domain_wide_defaults.empty?
+
+          bluebook_ir = Hecksagain.current_registry.bluebook(@domain) or return
+          already_bound = @binds.select { |b| b.verb == "persisted_by" }.map(&:aggregate_name).to_set
+          @domain_wide_defaults.each do |backend|
+            bluebook_ir.aggregates.each do |agg|
+              next if already_bound.include?(agg.hecks_name)
+
+              @binds << IR::Bind.new(aggregate: agg.hecks_name, verb: "persisted_by", adapter: backend, role: nil)
+              already_bound << agg.hecks_name
+            end
+          end
         end
 
         # An event this hecksagon takes from OUTSIDE the domain's own
@@ -105,6 +163,7 @@ module Hecksagain
         end
 
         def build
+          apply_domain_wide_defaults!
           IR::Hecksagon.new(domain: @domain, binds: @binds, subscriptions: @subscriptions,
                              framework_members: @framework_members, driving_handlers: @driving_handlers)
         end
