@@ -248,6 +248,8 @@ Hecks.bluebook "Banking", version: "v1" do
 
         attribute :adjustment, Money
         attribute :narrative,  Narrative
+        given("customer is active") { parent.customer.status == "active" }
+        given("account is open") { parent.status == "open" }
         given("entry is posted") { state == "posted" }
 
         given("an amendment leaves a non-negative amount") { amount.cents + adjustment.cents >= 0 }
