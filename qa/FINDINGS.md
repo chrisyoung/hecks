@@ -30,6 +30,50 @@ Documented bugs and findings from systematic adversarial testing.
 - **Details:** runtime.events, .reactions, .sagas were mutable arrays
 - **Root Cause:** Dispatcher returned logs directly without freezing
 
+## Critical Runtime Bugs (Silent Data Corruption)
+
+### #11: Array `in:` Values Silently Converted to String, Query Returns Nothing (FOUND 2026-08-12)
+- **Severity:** CRITICAL - Silent data corruption
+- **Location:** lib/hecksagain/runtime/query/in_memory.rb (and other adapters)
+- **Discovery:** Built while testing qa/bluebook/quality_control.bluebook
+- **Reproduction:**
+  ```ruby
+  where(status: { in: %w[found reproduced] })
+  # Query stringifies the array: "[\"found\", \"reproduced\"]"
+  # Then comma-splits it: ["[\"found\"", "\"reproduced\"]"]
+  # Matches NOTHING. Query returns [] forever.
+  ```
+- **Workaround:** Pass a comma string instead
+  ```ruby
+  where(status: { in: "found,reproduced" })
+  ```
+- **Root Cause:** WhereClause value is `to_s`'d in IR, converts array to string representation
+- **Impact:** Any bluebook using array `in:` values has silent-failing queries
+- **Fix Complexity:** MEDIUM - Need to preserve array structure through IR, not stringify
+- **Status:** NEEDS INVESTIGATION - How do adapters currently handle `in:` values?
+
+### #12: Empty String Becomes nil in `ne:` Comparison, Matches All Rows (FOUND 2026-08-12)
+- **Severity:** CRITICAL - Silent data corruption
+- **Location:** lib/hecksagain/runtime/query/in_memory.rb (and other adapters)
+- **Discovery:** Built while testing qa/bluebook/quality_control.bluebook
+- **Reproduction:**
+  ```ruby
+  where(blocked_by: { ne: "" })
+  # Empty string dropped between DSL and WhereClause
+  # WhereClause value becomes nil
+  # Query asks: != nil
+  # Every row matches (nothing is truly nil if it was meant to be "")
+  ```
+- **Workaround:** Use a sentinel value
+  ```ruby
+  blocked_by: { default: "none" }  # In attribute definition
+  where(blocked_by: { ne: "none" }) # In query
+  ```
+- **Root Cause:** Empty string handling between DSL and query execution
+- **Impact:** Any domain using empty string as a valid value for ne: comparisons
+- **Fix Complexity:** MEDIUM - Need to distinguish between "empty string" and "null"
+- **Status:** NEEDS INVESTIGATION - Check where empty strings are being dropped
+
 ## Known Issues (Paused - Architectural)
 
 ### #2: Nested Value Object Invariants Not Validated (PAUSED)

@@ -227,6 +227,47 @@ dispatch("Domain::Aggregate.Register", name: "'; DROP TABLE", ...)
 dispatch("Domain::Aggregate.Register", name: "x" * 10_000, ...)
 ```
 
+#### Category 9: Test the Fix Itself
+
+**NEW: This is the most important category after you apply a fix.**
+
+When you fix a bug, your adversarial test must attack the fix, not the bug. The
+whitespace fix broke Pizza because the pattern used a method that doesn't exist in
+predicates. This should have been caught by testing VALID inputs after the fix:
+
+```ruby
+# After you fix Bug #4 (whitespace), test VALID inputs to ensure fix doesn't break them
+
+it "still accepts valid pizza names after fix" do
+  # CRITICAL: This broke the first time
+  expect { dispatch("Pizzas::Order.CreatePizza", name: "Margherita") }
+    .not_to raise_error
+end
+
+it "still rejects truly empty names after fix" do
+  expect { dispatch("Pizzas::Order.CreatePizza", name: "") }
+    .to raise_error(InvariantViolation)
+end
+
+it "still rejects whitespace-only names after fix" do
+  expect { dispatch("Pizzas::Order.CreatePizza", name: "   ") }
+    .to raise_error(InvariantViolation)
+end
+```
+
+**How to apply this:**
+1. Identify what VALID inputs your fix might have broken
+2. Test them immediately after applying the fix
+3. Do this BEFORE running the full suite (but include it in the full suite run)
+4. Include these tests in your committed regression suite
+
+**Why this catches bugs:**
+- Your fix to one invariant might remove a required method from the grammar
+- Your fix might change the validation order and accidentally allow invalid states
+- Your runtime fix might break a domain that relied on the old (buggy) behavior
+
+The cheapest adversarial test is always: "does my fix still let valid inputs through?"
+
 ### 3.2 Document Tests
 
 As you write tests, add them to qa/qa_adversarial_fixed.rb:
@@ -363,25 +404,44 @@ Document and skip to Phase 6.2 (File a GitHub Issue):
 - **Action:** File GitHub issue instead
 ```
 
-### 5.4 Pre-Push Verification
+### 5.4 Pre-Commit Test Verification (MANDATORY GATE)
 
-Before committing, verify fix works:
+**🚨 THIS IS A GATE. DO NOT SKIP. DO NOT COMMIT WITHOUT RUNNING TESTS.**
+
+Your own fix can break things you didn't intend to touch. The whitespace fix broke
+every Pizza command because `.strip` doesn't exist in the predicate language. This
+was caught instantly by running tests.
+
+**Verification step (required):**
 
 ```bash
-# Run affected domain tests
-rspec spec/<domain>_spec.rb --format progress
+# 1. Run ONLY the affected domain's tests first
+bundle exec rspec spec/<domain>_spec.rb --order random
 
-# Run full suite locally (fast - excludes io: true)
-rspec spec/ qa/ --format progress
+# 2. If that passes, run the full suite
+bundle exec rspec --order random
 
-# Full verification before push
-rspec --order random
-
-# Or in parallel (same as CI)
-parallel_test spec/
+# 3. Capture the results in your commit message
+# Example output to include:
+# "Verified: bundle exec rspec --order random
+#  (1212 examples, 0 failures, 1 pending, seed 18831)"
 ```
 
-**Only commit if ALL tests pass.**
+**Conditions:**
+- ✅ All tests pass (or known-pending tests from before your change)
+- ✅ No new failures introduced
+- ✅ Test run summary in commit message (seed and counts)
+
+**If tests fail:**
+- Do NOT commit
+- Revert your changes: `git checkout -- .`
+- Fix the actual bug, not the symptom
+- Re-test and try again
+
+**Why this matters:**
+- A runtime fix can silently break an unrelated domain that uses the same code
+- A pattern change breaks every invariant that used the old method name
+- The fix is only proven to work if the tests actually run and pass
 
 ### 5.5 Commit Fixes (Push to Main Immediately)
 
