@@ -266,6 +266,28 @@ RSpec.describe "Pizzas" do
       }.to raise_error(Hecksagain::Runtime::InvariantViolation, /positive/)
     end
 
+    it "list attributes (toppings) are immutable after creation (Bug fix 2026-08-11)" do
+      pizza = create
+
+      runtime.dispatch("Pizzas::Order.AddTopping",
+                      name: pizza.id,
+                      topping: { value: "Basil" },
+                      amount: { value: 3 })
+
+      purchased = runtime.dispatch("Pizzas::Order.Purchase",
+                                  name: pizza.id,
+                                  customer_name: { value: "Chris" },
+                                  amount: { cents: 1200 })
+
+      # Toppings array should be frozen
+      expect(purchased.state[:toppings]).to be_frozen
+
+      # Attempt to mutate should raise FrozenError
+      expect {
+        purchased.state[:toppings] << { name: "Injected", amount: 99 }
+      }.to raise_error(FrozenError)
+    end
+
     it "accepts positive-price pizzas" do
       result = runtime.dispatch("Pizzas::Order.CreatePizza",
                                name: { value: "Good" },

@@ -99,7 +99,7 @@ module Hecksagain
               field = entity.attribute(key)
               hydrated[key] = field ? for_attribute(aggregate, field, field_value) : field_value
             end
-          end
+          end.freeze
         end
 
         # `Value.identifier` used to live here: hand it a one-field value object

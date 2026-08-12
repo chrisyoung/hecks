@@ -29,7 +29,7 @@ module Hecksagain
 
       def self.defaults(aggregate)
         state = aggregate.attributes.each_with_object({}) do |attr, acc|
-          acc[attr.name] = attr.list? ? [] : default_for(aggregate, attr)
+          acc[attr.name] = attr.list? ? [].freeze : default_for(aggregate, attr)
         end
         state[aggregate.lifecycle.field.to_sym] = aggregate.lifecycle.default if aggregate.lifecycle
         state

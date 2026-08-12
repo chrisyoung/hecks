@@ -68,7 +68,7 @@ module Hecksagain
           end
           element      = value_object ? Value.build(value_object, fields) : entity_element(aggregate, element_type, instance[mutation.target], fields)
 
-          Array(instance[mutation.target]) + [element]
+          (Array(instance[mutation.target]) + [element]).freeze
         end
 
         def entity_element(aggregate, element_type, current, fields)
