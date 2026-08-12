@@ -53,6 +53,12 @@ module Hecksagain
         # argument became indistinguishable from one carrying a literal string.
         def with_spec_rows(node) = pair_rows(node.to_h[:with_spec])
 
+        # Same shape as `with_spec_rows` above, one construct up — a
+        # handler's own remembered key/value pairs, through `to_h` for the
+        # same reason (`IR.render_value` spells a symbol argument with its
+        # leading colon, which the raw `remembers` array does not).
+        def remembers_rows(node) = pair_rows(node.to_h[:remembers])
+
         # A read model carries the same options an ask does, plus its filters — see
         # option_rows.
         def read_model_option_rows(node) = option_rows(node, filters: true)

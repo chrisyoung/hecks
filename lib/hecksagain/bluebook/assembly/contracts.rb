@@ -221,8 +221,21 @@ module Hecksagain
           fields: {
             event_type: [:event_type, :plain],
             from_state: [:from_state, :plain],
-            to_state:   [:to_state,   :plain]
+            to_state:   [:to_state,   :plain],
+            # Vendored addition, not (yet) upstream hecksagain (migration
+            # plan task 4): same open-map shape Dispatch's own `with_spec`
+            # already is — `remember key: from_event(...)` has no value
+            # object that can hold it, so it rides as rows.
+            remembers:  [:remembers,  :bindings],
+            # `guard_count` is now a real seventh member of IR::
+            # ProcessManagerHandler (its own comment explains why) — only
+            # the COUNT survives the round trip, never the predicates
+            # themselves (raw Procs). `:plain`, the same as every other
+            # scalar here.
+            guard_count: [:guard_count, :plain]
           },
+          rows: { remembers: :remembers_rows },
+          reads: { remembers: [:from, :remembers] },
           derived: { position: :walk }
         ),
 

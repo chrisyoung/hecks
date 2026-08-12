@@ -5426,7 +5426,10 @@
           "from_state": "requested",
           "guard_count": 0,
           "remembers": [
-
+            [
+              "destination_account",
+              ":destination"
+            ]
           ],
           "to_state": "requested"
         },

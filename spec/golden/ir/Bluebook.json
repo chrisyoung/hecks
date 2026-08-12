@@ -5635,6 +5635,24 @@
         {
           "admits": null,
           "default": null,
+          "list": true,
+          "name": "remembers",
+          "optional": false,
+          "pattern": null,
+          "type": "Remembered"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "guard_count",
+          "optional": false,
+          "pattern": null,
+          "type": "GuardCount"
+        },
+        {
+          "admits": null,
+          "default": null,
           "list": false,
           "name": "position",
           "optional": false,
@@ -5685,6 +5703,15 @@
               "admits": null,
               "default": null,
               "list": false,
+              "name": "guard_count",
+              "optional": true,
+              "pattern": null,
+              "type": "GuardCount"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
               "name": "position",
               "optional": true,
               "pattern": null,
@@ -5710,6 +5737,55 @@
 
           ],
           "references": null,
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "key",
+              "optional": false,
+              "pattern": null,
+              "type": "HandlerText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "HandlerText"
+            }
+          ],
+          "emits": [
+            "RememberedAttached"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": "Attach one remembered key/value pair to the handler",
+          "mutations": [
+            {
+              "fields": {
+                "key": ":key",
+                "value": ":value"
+              },
+              "op": "append",
+              "target": "remembers"
+            }
+          ],
+          "name": "Remember",
+          "provenance": null,
+          "redirects_native": [
+
+          ],
+          "references": "Handler",
           "role": "Language"
         }
       ],
@@ -5778,6 +5854,60 @@
 
           ],
           "name": "HandlerText"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "key",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+
+          ],
+          "members": [
+
+          ],
+          "name": "Remembered"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "type": "Integer"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+            {
+              "canonical": "value >= 0",
+              "description": "a guard count is never negative"
+            }
+          ],
+          "members": [
+
+          ],
+          "name": "GuardCount"
         },
         {
           "attributes": [
