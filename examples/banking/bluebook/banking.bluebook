@@ -132,6 +132,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "End the relationship"
 
       reference_to Customer
+      given("customer is active or suspended") { ["active", "suspended"].include?(status) }
       emits "CustomerClosed"
     end
 
