@@ -86,13 +86,34 @@ RSpec.describe "1855be0-g catch-all: DSL builder stubs and small real fixes" do
   end
 
   describe "ValueObjectBuilder#one_of's real disambiguation fix" do
-    it "the inline shorthand (values, no block) now synthesizes a closed set instead of raising ArgumentError" do
-      vo = Hecksagain::Bluebook::DSL::ValueObjectBuilder.build("InlineOneOfCatchallGrowth") do
-        attribute :size, one_of("small", "large")
+    it "the inline shorthand (values, no block) no longer raises the wrong-arity ArgumentError" do
+      error = begin
+        Hecksagain::Bluebook::DSL::ValueObjectBuilder.build("InlineOneOfCatchallGrowth") do
+          attribute :size, one_of("small", "large")
+        end
+        nil
+      rescue StandardError => e
+        e
       end
 
-      field = vo.attributes.find { |a| a.name == :size }
-      expect(field.type.to_s).to eq("Size")
+      expect(error).not_to be_a(ArgumentError)
+    end
+
+    # GAP CLOSED (item 40, `bfbd513`): the disambiguation fix above no
+    # longer raises the wrong-arity ArgumentError, but a value object
+    # still cannot HOLD a nested one -- IR::ValueObject has no member for
+    # a value object inside a value object. Silently dropping the
+    # synthesised closed set left `:size` typed as a reference to a shape
+    # that was NEVER REGISTERED anywhere ("field.type.to_s == 'Size'"
+    # looked correct while `aggregate.value_object("Size")` returned nil
+    # the first time anything looked) -- loads clean, silently broken,
+    # worse than the ArgumentError it replaced. Refused honestly now.
+    it "still refuses honestly -- a value object cannot hold an inline one_of" do
+      expect do
+        Hecksagain::Bluebook::DSL::ValueObjectBuilder.build("InlineOneOfNestingCatchallGrowth") do
+          attribute :size, one_of("small", "large")
+        end
+      end.to raise_error(Hecksagain::Bluebook::DSL::Malformed, /value objects do not nest/)
     end
 
     it "the closed-set-body form (block, no values) still works exactly as before" do
