@@ -2,7 +2,7 @@
 
 Documented bugs and findings from systematic adversarial testing.
 
-**Session Status:** 96 bugs fixed (48% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
+**Session Status:** 101 bugs fixed (50.5% of 200-goal), 2 bugs reported → [Full summary](SESSION_2026_08_11_SUMMARY.md)
 
 ---
 
@@ -45,13 +45,14 @@ Documented bugs and findings from systematic adversarial testing.
 | #79-86 | console_settings.bluebook | 8 | StateStyleText, Flag, SettingsText, SettingsNumber, Column.field, DetailField.field, Precondition (×2), FieldFormat (×2) |
 | #87-96 | interview.bluebook | 10 | SessionReference, Subject, ChapterName, IdentityId, QuestionText, AnswerText, Topic, CatalogueRef, Slug, Prompt |
 
-### Language Bluebook Metadata VOs (10 bugs)
+### Language Bluebook Metadata VOs (15 bugs)
 | Bug | Location | Count | Details |
 |-----|----------|-------|---------|
 | #97-100 | aggregate.bluebook | 4 | AggregateName, Description, IdentityField, IdentityPath |
 | #101-102 | aggregate.bluebook | 2 | Field (name, type) |
 | #103-106 | behavior.bluebook | 4 | CommandName, Actor, Goal, EventName |
-| #107-110 | aggregate.bluebook | 2 | ValueName, Transition (command, to_state) |
+| #107-110 | aggregate.bluebook | 4 | ValueName, Transition (command, to_state) |
+| #111-115 | shape.bluebook | 5 | ValueObjectName, ShapeField (name, type, list), Assertion (description, canonical) |
 
 **Critical Query Bugs (2 - GitHub):**
 - #11: Array `in:` query bug → [GitHub #54 CLOSED](https://github.com/chrisyoung/hecksagain/issues/54) — FIXED ✅
@@ -253,6 +254,17 @@ Documented bugs and findings from systematic adversarial testing.
   - #107: ValueName.name — added pattern + invariant
   - #108-110: Transition — added patterns to command, to_state; made from_state optional (nil for Create commands)
 - **Commit:** edc43bc
+
+### #111-115: Shape Bluebook Metadata VOs Without Patterns (FIXED 2026-08-12)
+- **Location:** lib/hecksagain/language/bluebook/shape.bluebook
+- **Severity:** MEDIUM - Metadata validation
+- **Details:** ValueObjectName, ShapeField, Assertion VOs had invariants without patterns
+- **Fixes:**
+  - #111: ValueObjectName — added pattern: '[^ \t\n\r]'
+  - #112-114: ShapeField (name, type, list) — added patterns + invariants
+  - #115: Assertion (description, canonical) — added patterns + invariants
+  - Note: ValueObjectText, MemberText, Pair.value kept flexible (hold serialized literal values)
+- **Commit:** 1b2638f
 
 ## Testing Coverage by Domain
 
