@@ -203,11 +203,11 @@ Hecks.bluebook "Expression" do
     end
 
     value_object "Replacement" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Boundary" do
-      attribute :value, String, default: "none"
+      attribute :value, String, pattern: '[^ \t\n\r]', default: "none"
       invariant("a boundary condition is named") { !value.to_s.empty? }
     end
 
@@ -217,11 +217,11 @@ Hecks.bluebook "Expression" do
     end
 
     value_object "Target" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Form" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Rule" do
