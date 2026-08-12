@@ -387,6 +387,7 @@ Hecks.bluebook "Banking", version: "v1" do
     command "AccrueInterest" do
       reference_to Account
       attribute :amount, PositiveMoney
+      given("account is open") { status == "open" }
       then_set :balance, increment: :amount
       then_set :interest_cents, increment: :amount
       emits "InterestAccrued"
