@@ -623,6 +623,7 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Take a card out of service"
 
       reference_to ATMCard
+      given("customer is active") { account.customer.status == "active" }
       given("card is issued or active") { ["issued", "active"].include?(status) }
       emits "ATMCardRetired"
     end
