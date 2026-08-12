@@ -157,12 +157,20 @@ module Hecksagain
           Array(node.mutations).flat_map do |mutation|
             next set_row(mutation) unless mutation.op == :append
 
-            mutation.source.map do |field, argument|
-              # Spelled the way IR::Mutation#appended_fields spells it, because
-              # Assembly::Marks reads this row back through the same reader it
-              # reads that field with. `then_set :marks, append: { direction:
-              # "out" }` binds a LITERAL, and storing it raw made it
-              # indistinguishable from an argument called out.
+            # Vendored addition, not (yet) upstream hecksagain: a bare-symbol
+            # append (`then_set :list, append: :single_value`, appending a
+            # scalar directly rather than a hash of named fields) has no
+            # "field" to iterate -- treat it as one field named :value,
+            # mirroring IR::Command::Mutation#appended_fields's own
+            # vendored fallback. TODO upstream (migration plan task 7).
+            source = mutation.source.is_a?(Hash) ? mutation.source : { value: mutation.source }
+
+            source.map do |field, argument|
+              # Spelled the way IR::Mutation#appended_fields spells it: a symbol bare
+              # because it names an argument, anything else inspected because it IS
+              # the value. `then_set :marks, append: { direction: "out" }` binds a
+              # LITERAL, and storing it raw made it indistinguishable from an
+              # argument called out.
               { target: mutation.target, op: mutation.op, field: field,
                 kind: argument.is_a?(Symbol) ? "argument" : "literal",
                 source: Literal.render(argument) }
