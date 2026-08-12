@@ -980,6 +980,7 @@ Hecks.bluebook "Banking", version: "v1" do
       # aggregate holds, this is where a caller hands one in, and a set that is
       # only named where it is stored is not refusing anybody.
       attribute :direction, MovementDirection, admits: "Account::LedgerDirection"
+      then_set :end_to_end, to: :end_to_end
       then_set :amount, to: :amount
       then_set :beneficiary, to: :beneficiary
       then_set :direction, to: :direction
