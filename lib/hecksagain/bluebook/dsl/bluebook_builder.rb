@@ -222,10 +222,57 @@ module Hecksagain
           # meta-domain sees a fully built IR — the whole-document rules need
           # every declaration present, which is why they cannot be givens fired
           # at declaration time.
-          MetaValidator.call(bluebook)
+          judged = MetaValidator.call(bluebook)
+
+          # THE META-DOMAIN HOLDS DATA, NOT RUBY. A handler-level `given`
+          # predicate is a real Proc — nothing a data-only meta-domain could
+          # ever store — and `ProcessManagerHandler#to_h` already says so
+          # (`guard_count`, not the guard itself: see its own comment).
+          # `remembers` and a `with_spec` value built by `template(...)`
+          # (`IR::TemplateSpec`) are the same shape of problem: the
+          # self-hosted "Handler"/"Dispatch" contracts (assembly/
+          # contracts.rb) declare no field for the raw guard Procs
+          # themselves, so `Reconstruction` silently drops `guards` to
+          # `nil` (a handler-level `given` gate then always passes — `nil
+          # guards` reads the same as no guard at all). Reattached here, by
+          # declared position — handlers and dispatches keep the author's
+          # order (`Reconstruction`'s own doc comment already guarantees
+          # it) — from the pre-judge graph the DSL builder actually
+          # produced.
+          reattach_saga_runtime_state!(judged.process_managers, @process_managers)
+
+          judged
         end
 
         private
+
+        # See `build`'s own comment just above. Struct-backed IR
+        # (`ProcessManagerHandler`, `DispatchSpec`) already exposes writers —
+        # no need to rebuild either object, just restore the fields the
+        # meta-domain cannot carry.
+        def reattach_saga_runtime_state!(judged_pms, original_pms)
+          judged_pms.each_with_index do |pm, i|
+            original_pm = original_pms[i]
+            pm.handlers.each_with_index do |handler, j|
+              original_handler = original_pm.handlers[j]
+              # `remembers` is NOT reattached here — the self-hosted
+              # "Handler" contract (assembly/contracts.rb) already carries
+              # it correctly (a real field, added separately from this
+              # fix), and reattaching the pre-judge graph's own raw
+              # `[[key, value], ...]` accumulator shape here would CLOBBER
+              # that correct, judged Hash with the wrong shape. Only
+              # `guards` (real Procs — never data, by construction, so the
+              # meta-domain can hold no more than a `guard_count`) and a
+              # `with_spec` value built by `template(...)` (`IR::
+              # TemplateSpec`, no Literal spelling of its own) still need
+              # restoring from the pre-judge graph.
+              handler.guards = original_handler.guards
+              handler.dispatches.each_with_index do |dispatch, k|
+                dispatch.with_spec = original_handler.dispatches[k].with_spec
+              end
+            end
+          end
+        end
 
         # AN ENTITY COMMAND MAY NOT NAME ITSELF AS ITS ROOT.
         #
