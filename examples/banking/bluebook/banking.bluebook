@@ -368,6 +368,7 @@ Hecks.bluebook "Banking", version: "v1" do
       reference_to Account
       attribute :amount, PositiveMoney
       attribute :narrative, Narrative
+      given("customer is active") { customer.status == "active" }
       given("account is open") { status == "open" }
       given("the balance covers a fee") { balance.cents >= amount.cents }
       then_set :balance, decrement: :amount
