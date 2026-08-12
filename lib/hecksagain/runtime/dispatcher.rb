@@ -49,11 +49,24 @@ module Hecksagain
         @sagas    = SagaInterpreter.new(registry, door: self)
       end
 
-      def events = @registry.event_log.freeze
+      # A FROZEN COPY, NOT THE FROZEN LOG — and the difference is not
+      # pedantry. `Array#freeze` freezes the RECEIVER, so handing back
+      # `@registry.event_log.freeze` froze the very array this runtime
+      # appends to: one read of the log and `CommandRules::Emission#emit`
+      # raised `FrozenError` on the next dispatch, for the rest of the
+      # process. Any app that reports what it just did and then does
+      # something else was dead — a console, a request that renders its own
+      # audit trail, the projector.
+      #
+      # The caller's guarantee is unchanged: what comes back still refuses
+      # `<<`. `spec/facade/handle_spec.rb`'s Kernel-collision example is the
+      # one that caught it, because it is the only spec that dispatches
+      # AFTER reading events.
+      def events = @registry.event_log.dup.freeze
 
-      def reactions = @registry.reaction_log.freeze
+      def reactions = @registry.reaction_log.dup.freeze
 
-      def sagas = @registry.saga_log.freeze
+      def sagas = @registry.saga_log.dup.freeze
       def verbs = @registry.verbs
 
       def dispatch(verb, saga_correlation: nil, **args)
