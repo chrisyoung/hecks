@@ -113,3 +113,6 @@ This avoids inflating the count by conflating "number of failed specs" with "num
 
 | 29 | All event objects are unfrozen (0% frozen) | Dispatcher does not freeze individual event objects | Add `.freeze` to each event before returning | CRITICAL - All events can be mutated |
 
+
+| 30 | Extremely long reference strings accepted | Reference pattern validation does not enforce length limit | Add `maxLength` constraint to reference pattern or VO | MEDIUM - DoS/Buffer risk |
+

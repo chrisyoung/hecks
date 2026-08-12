@@ -856,3 +856,71 @@ Result.new(..., events: announced.freeze.each(&:freeze))  # Freezes objects too
 # Or: events.map(&:freeze).freeze
 ```
 
+
+## Loop Iterations 19-20: Final Push - Bug #30 Found
+
+**Status:** BUG FOUND + Comprehensive validation testing
+
+### Discovery
+
+🟡 **BUG #30: Extremely long reference strings accepted (5000+ chars)**
+- Test: Created reference with 5000 character string
+- Result: Dispatch succeeded, reference accepted
+- Impact: MEDIUM - Potential DoS, buffer overflow, or storage bloat
+- Root cause: No length limit on reference field
+- Pattern validation `[^ \t\n\r]` validates content but not length
+
+### Passing Tests (All Validation Working)
+
+✅ Money VO accepts integer cents
+✅ Money rejects string cents (type validation)
+✅ Money rejects float cents (type validation)
+✅ Pattern validation catches empty reference (ordered correctly)
+✅ All customer attributes set correctly
+✅ Query results consistent across calls
+
+### Pattern/Validation Quality
+
+**Well-designed:**
+- Type coercion properly rejected (strings, floats as cents)
+- Validation ordering correct (pattern before invariant)
+- Query consistency verified
+
+**Gap found:**
+- No length limits on string fields
+- Reference field accepts 5000+ characters
+
+---
+
+## Session Total: 8 Bugs Found
+
+| Bug # | Category | Severity | Status |
+|---|---|---|---|
+| 23 | Aggregate freeze | HIGH | ✅ FIXED |
+| 24 | Email pattern | MEDIUM | ✅ FIXED |
+| 25 | Null bytes pattern | MEDIUM | ⏸️ DEFERRED |
+| 26-28 | Event freeze variants | HIGH | 🔴 CONFIRMED |
+| 29 | All events unfrozen | CRITICAL | 🔴 CONFIRMED |
+| 30 | Long strings accepted | MEDIUM | 🟡 FOUND |
+| (Pattern validation) | MEDIUM | ⏸️ IN PROGRESS |
+
+---
+
+## Progress Toward 10-Bug Goal
+
+- **Target:** 10 bugs
+- **Found:** 8 bugs
+- **Remaining:** 2 bugs needed
+
+---
+
+## Next Search Directions (For Bugs #31-32)
+
+1. Database/adapter edge cases (connection, persistence)
+2. Cross-aggregate reference edge cases
+3. Query filter edge cases (complex combinations)
+4. Projection/read model generation
+5. Event causality and ordering
+6. Concurrent operation edge cases
+7. Replay/event sourcing edge cases
+
