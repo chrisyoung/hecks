@@ -16309,6 +16309,7 @@
       "strategy": "replace"
     }
   ],
+  "category": null,
   "classification": "core",
   "ir_version": 1,
   "name": "Bluebook",

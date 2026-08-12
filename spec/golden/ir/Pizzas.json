@@ -529,6 +529,7 @@
       "strategy": "replace"
     }
   ],
+  "category": null,
   "classification": "supporting",
   "ir_version": 1,
   "name": "Pizzas",

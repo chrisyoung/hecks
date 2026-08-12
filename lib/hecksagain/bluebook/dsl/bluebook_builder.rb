@@ -28,6 +28,17 @@ module Hecksagain
         def supporting = @classification = :supporting
         def generic    = @classification = :generic
 
+        # Vendored addition, not (yet) upstream hecksagain. hecks_conception
+        # uses a free-form `category "framework"` (119 files, 12 distinct
+        # values: framework/world/language/discipline/meta/body/library/plan/
+        # memory/drafting/demo/correspondence) alongside the fixed 3-value
+        # core/supporting/generic classification -- a different axis, not a
+        # synonym, so it gets its own field rather than overloading
+        # @classification. TODO upstream via hecksagain's own bin/evolve
+        # word-admission process (migration plan task 7).
+        attr_reader :category
+        def category(value) = @category = value.to_s
+
         def aggregate(name, &block)
           @aggregates << AggregateBuilder.build(name, &block)
         end
@@ -73,7 +84,8 @@ module Hecksagain
                                       policies: policies,
                                       process_managers: @process_managers,
                                       classification: @classification,
-                                      formerly_known_as: @formerly_known_as)
+                                      formerly_known_as: @formerly_known_as,
+                                      category: @category)
 
           # Every hop AggregateBuilder#seal_query_field recognised and
           # deferred gets checked for real here — the earliest point a
