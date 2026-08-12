@@ -729,6 +729,8 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Refuse a transfer before any money moved"
 
       reference_to Transfer
+      given("transfer is requested") { status == "requested" }
+      given("source account is open") { source.status == "open" }
       emits "TransferRejected"
     end
 
