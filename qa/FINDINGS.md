@@ -30,42 +30,91 @@ Documented bugs and findings from systematic adversarial testing.
 - **Details:** runtime.events, .reactions, .sagas were mutable arrays
 - **Root Cause:** Dispatcher returned logs directly without freezing
 
-## Known Issues
+## Critical Runtime Bugs (Silent Data Corruption)
 
-### #2: Nested Value Object Invariants Not Validated (UNFIXED)
+### #11: Array `in:` Values Silently Converted to String, Query Returns Nothing (FOUND 2026-08-12)
+- **Severity:** CRITICAL - Silent data corruption
+- **Location:** lib/hecksagain/runtime/query/in_memory.rb (and other adapters)
+- **Discovery:** Built while testing qa/bluebook/quality_control.bluebook
+- **Reproduction:**
+  ```ruby
+  where(status: { in: %w[found reproduced] })
+  # Query stringifies the array: "[\"found\", \"reproduced\"]"
+  # Then comma-splits it: ["[\"found\"", "\"reproduced\"]"]
+  # Matches NOTHING. Query returns [] forever.
+  ```
+- **Workaround:** Pass a comma string instead
+  ```ruby
+  where(status: { in: "found,reproduced" })
+  ```
+- **Root Cause:** WhereClause value is `to_s`'d in IR, converts array to string representation
+- **Impact:** Any bluebook using array `in:` values has silent-failing queries
+- **Fix Complexity:** MEDIUM - Need to preserve array structure through IR, not stringify
+- **Status:** NEEDS INVESTIGATION - How do adapters currently handle `in:` values?
+
+### #12: Empty String Becomes nil in `ne:` Comparison, Matches All Rows (FOUND 2026-08-12)
+- **Severity:** CRITICAL - Silent data corruption
+- **Location:** lib/hecksagain/runtime/query/in_memory.rb (and other adapters)
+- **Discovery:** Built while testing qa/bluebook/quality_control.bluebook
+- **Reproduction:**
+  ```ruby
+  where(blocked_by: { ne: "" })
+  # Empty string dropped between DSL and WhereClause
+  # WhereClause value becomes nil
+  # Query asks: != nil
+  # Every row matches (nothing is truly nil if it was meant to be "")
+  ```
+- **Workaround:** Use a sentinel value
+  ```ruby
+  blocked_by: { default: "none" }  # In attribute definition
+  where(blocked_by: { ne: "none" }) # In query
+  ```
+- **Root Cause:** Empty string handling between DSL and query execution
+- **Impact:** Any domain using empty string as a valid value for ne: comparisons
+- **Fix Complexity:** MEDIUM - Need to distinguish between "empty string" and "null"
+- **Status:** NEEDS INVESTIGATION - Check where empty strings are being dropped
+
+## Known Issues (Paused - Architectural)
+
+### #2: Nested Value Object Invariants Not Validated (PAUSED)
 - **Severity:** HIGH
 - **Root Cause:** Value::Coercion.build() doesn't validate nested VOs
 - **Examples:**
   - Price { cents: 0 } accepted (invariant says > 0)
   - Size "medium" accepted (only small/large valid)
 - **Impact:** Any domain with nested value objects
-- **Status:** Requires runtime architecture change
-- **Fix Complexity:** Medium - needs recursive validation in coercion.rb
+- **Status:** PAUSED - Requires runtime architecture change
+- **Fix Complexity:** HIGH - needs recursive validation in coercion.rb, affects entire type system
+- **Why Paused:** Not a quick fix. Would require refactoring how Value.build() validates invariants to work recursively on nested structures. Deferred until next major runtime refactor.
 
-### #3: Invalid Closed-Set Values Accepted (UNFIXED)
+### #3: Invalid Closed-Set Values Accepted (PAUSED)
 - **Severity:** HIGH
-- **Status:** Blocked on #2 (cascades from nested VO validation gap)
+- **Status:** PAUSED - Blocked on #2 (cascades from nested VO validation gap)
+- **Dependency:** Fixing #2 would automatically fix #3
 
-### #7: Negative Account Balance Allowed (INVESTIGATION NEEDED)
-- **Severity:** HIGH - Financial invariant violation
+### #7: Negative Account Balance Allowed (RESOLVED - NOT A BUG ✅)
+- **Severity:** HIGH (initially thought)
 - **Issue:** Banking::Account.Debit allows balance < 0 (overdraft)
-- **Impact:** Accounts can go unlimited negative
-- **GitHub Issue:** #40
-- **Status:** Existing code has `given("the balance covers it") { balance.cents >= amount.cents }` - appears to be in place. Needs concrete test case to verify if truly broken.
+- **Investigation Result:** Code correctly has `given("the balance covers it") { balance.cents >= amount.cents }`
+- **Test Verification:** ✅ PASSES - Debit correctly refuses when balance insufficient
+- **Conclusion:** Overdraft prevention works as designed. Code is correct.
+- **GitHub Issue:** #40 - Updated with investigation findings
 
-### #8: Float Cents Value Accepted and Coerced (LIKELY NOT A BUG)
-- **Severity:** MEDIUM - Data loss via truncation
+### #8: Float Cents Value Accepted and Coerced (RESOLVED - NOT A BUG ✅)
+- **Severity:** MEDIUM (initially thought)
 - **Issue:** Integer field accepts float 12.5 → becomes 12
-- **Impact:** Silent data loss in financial amounts
-- **GitHub Issue:** #41
-- **Status:** check_numeric_fields() in value/coercion.rb maps "Integer" → Integer class and rejects non-Integer values. Code logic appears correct - needs test case to verify if this is truly a code path issue.
+- **Investigation Result:** check_numeric_fields() in value/coercion.rb correctly validates types
+- **Test Verification:** ✅ PASSES - Float values correctly rejected for integer fields
+- **Conclusion:** Type checking works as designed. Code is correct.
+- **GitHub Issue:** #41 - Updated with investigation findings
 
-### #9: String Cents Value Accepted and Coerced (LIKELY NOT A BUG)
-- **Severity:** MEDIUM - Type safety issue
+### #9: String Cents Value Accepted and Coerced (RESOLVED - NOT A BUG ✅)
+- **Severity:** MEDIUM (initially thought)
 - **Issue:** Integer field accepts string "1200" → coerced to 1200
-- **Impact:** Type confusion, unclear coercion semantics
-- **GitHub Issue:** #42
-- **Status:** Same check_numeric_fields() logic should reject strings for Integer fields. Needs actual test case to confirm.
+- **Investigation Result:** check_numeric_fields() validates all numeric types strictly
+- **Test Verification:** ✅ PASSES - String values correctly rejected for integer fields
+- **Conclusion:** Type checking works as designed. Code is correct.
+- **GitHub Issue:** #42 - Updated with investigation findings
 
 ## Testing Coverage by Domain
 

@@ -16,11 +16,41 @@ This SOP codifies how to approach QA testing as an adversarial agent breaking th
 4. Files GitHub issues only for bugs that can't be fixed
 5. Keeps living documentation (FINDINGS.md, SYSTEM_ARCHITECTURE.md) updated
 
-**Key Principle: Fix First, File Second**
+**Key Principles:**
+- **Fix First, File Second** - Always attempt to fix before filing
+- **Always use isolated worktree** - Never work directly in main checkout
+- **Always use a feature branch** - One branch per QA session or investigation
 
 **Time Investment:** Budget 2-3 hours per domain for thorough QA coverage.
 
 **Daily Reports:** Create a daily report file (qa/reports/YYYY-MM-DD.md) and update it as you work. See template below.
+
+---
+
+## Pre-Phase 0: Setup Isolated Worktree (5 min)
+
+**ALWAYS start here. Never work in the main checkout.**
+
+```bash
+# Create an isolated worktree for this QA session
+git worktree add -b feat/qa-session-YYYY-MM-DD
+
+# This creates a fresh checkout in a separate directory
+# You can work independently without affecting other agents
+# Each QA session gets its own branch
+```
+
+**Why this matters:**
+- Other agents may be working on the main checkout
+- Your test runs won't interfere with their builds
+- You can commit and push independently
+- If something breaks, it's isolated to your worktree
+
+**Clean up when done:**
+```bash
+cd ..  # Leave the worktree
+git worktree remove feat/qa-session-YYYY-MM-DD
+```
 
 ---
 
@@ -197,9 +227,84 @@ dispatch("Domain::Aggregate.Register", name: "'; DROP TABLE", ...)
 dispatch("Domain::Aggregate.Register", name: "x" * 10_000, ...)
 ```
 
-### 3.2 Document Tests
+#### Category 9: Test the Fix Itself
 
-As you write tests, add them to qa/qa_adversarial_fixed.rb:
+**NEW: This is the most important category after you apply a fix.**
+
+When you fix a bug, your adversarial test must attack the fix, not the bug. The
+whitespace fix broke Pizza because the pattern used a method that doesn't exist in
+predicates. This should have been caught by testing VALID inputs after the fix:
+
+```ruby
+# After you fix Bug #4 (whitespace), test VALID inputs to ensure fix doesn't break them
+
+it "still accepts valid pizza names after fix" do
+  # CRITICAL: This broke the first time
+  expect { dispatch("Pizzas::Order.CreatePizza", name: "Margherita") }
+    .not_to raise_error
+end
+
+it "still rejects truly empty names after fix" do
+  expect { dispatch("Pizzas::Order.CreatePizza", name: "") }
+    .to raise_error(InvariantViolation)
+end
+
+it "still rejects whitespace-only names after fix" do
+  expect { dispatch("Pizzas::Order.CreatePizza", name: "   ") }
+    .to raise_error(InvariantViolation)
+end
+```
+
+**How to apply this:**
+1. Identify what VALID inputs your fix might have broken
+2. Test them immediately after applying the fix
+3. Do this BEFORE running the full suite (but include it in the full suite run)
+4. Include these tests in your committed regression suite
+
+**Why this catches bugs:**
+- Your fix to one invariant might remove a required method from the grammar
+- Your fix might change the validation order and accidentally allow invalid states
+- Your runtime fix might break a domain that relied on the old (buggy) behavior
+
+The cheapest adversarial test is always: "does my fix still let valid inputs through?"
+
+### 3.2 Create Missing Specs When Needed
+
+**If no tests exist for a domain you're testing, create them.**
+
+When you find a domain or fixture that should be tested but has no spec file:
+1. Create `spec/qa_<domain>_adversarial_spec.rb` 
+2. Load the domain in `let` block
+3. Add tests for all 9 categories
+4. Use `qa: true` tag so tests run only on demand
+
+This is not extra work - it's how you find bugs. Testing forces you to understand the
+domain and expose edge cases. The tests become the bug discovery mechanism.
+
+Example pattern:
+```ruby
+require "spec_helper"
+
+describe "DomainName - Adversarial Testing", qa: true do
+  let(:boot) do
+    runtime = boot_in_memory
+    Hecksagain.with_registry(runtime.registry) do
+      Kernel.load(File.join(InMemoryDomain::ROOT, "path/to/domain.bluebook"))
+    end
+    runtime
+  end
+
+  describe "Category 1: Boundary" do
+    it "test case" do
+      # test here
+    end
+  end
+end
+```
+
+### 3.4 Document Tests
+
+As you write tests, add them to qa/qa_adversarial_fixed.rb or create new qa_<domain>_spec.rb files:
 
 ```ruby
 describe "Domain Name - Adversarial Attacks" do
@@ -333,50 +438,130 @@ Document and skip to Phase 6.2 (File a GitHub Issue):
 - **Action:** File GitHub issue instead
 ```
 
-### 5.4 Pre-Push Verification
+### 5.4 Pre-Commit Test Verification (MANDATORY GATE)
 
-Before committing, verify fix works:
+**🚨 THIS IS A GATE. DO NOT SKIP. DO NOT COMMIT WITHOUT RUNNING TESTS.**
+
+Your own fix can break things you didn't intend to touch. The whitespace fix broke
+every Pizza command because `.strip` doesn't exist in the predicate language. This
+was caught instantly by running tests.
+
+**Verification step (required):**
 
 ```bash
-# Run affected domain tests
-rspec spec/<domain>_spec.rb --format progress
+# 1. Run ONLY the affected domain's tests first
+bundle exec rspec spec/<domain>_spec.rb --order random
 
-# Run full suite locally (fast - excludes io: true)
-rspec spec/ qa/ --format progress
+# 2. If that passes, run the full suite
+bundle exec rspec --order random
 
-# Full verification before push
-rspec --order random
-
-# Or in parallel (same as CI)
-parallel_test spec/
+# 3. Capture the results in your commit message
+# Example output to include:
+# "Verified: bundle exec rspec --order random
+#  (1212 examples, 0 failures, 1 pending, seed 18831)"
 ```
 
-**Only commit if ALL tests pass.**
+**Conditions:**
+- ✅ All tests pass (or known-pending tests from before your change)
+- ✅ No new failures introduced
+- ✅ Test run summary in commit message (seed and counts)
 
-### 5.5 Commit Fixes
+**If tests fail:**
+- Do NOT commit
+- Revert your changes: `git checkout -- .`
+- Fix the actual bug, not the symptom
+- Re-test and try again
 
+**Why this matters:**
+- A runtime fix can silently break an unrelated domain that uses the same code
+- A pattern change breaks every invariant that used the old method name
+- The fix is only proven to work if the tests actually run and pass
+
+### 5.5 Commit Fixes (Push to Main Immediately)
+
+**CRITICAL:** Bug fixes go straight to **main**, not to the QA branch.
+
+**Workflow:**
 ```bash
-git add -A
-git commit -m "Fix: <Brief description>
+# You're on feat/qa-infrastructure
+# Switch to main to commit the actual fix
+git checkout main
+git pull origin main
+
+# Make the fix
+# Example: Edit lib/hecksagain/runtime/query_interpreter.rb
+# Then run tests to verify
+
+git add lib/hecksagain/runtime/query_interpreter.rb
+git commit -m "Fix: Query results mutable
 
 What was broken:
-- Specific problem
+- Query results returned mutable hashes, allowing accidental corruption
 
 How it was fixed:
-- File changed, line changed, what changed
+- query_interpreter.rb lines 92, 106: Added .freeze to result materialization
+- Freezes both individual hashes and the result array
 
 Why it works:
-- Brief explanation
+- Frozen objects raise FrozenError on mutation attempts
+- Protects read model output from accidental changes
 
 Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_xxx"
+
+# Push to main immediately
+git push origin main
+
+# Then return to QA branch to continue documenting
+git checkout feat/qa-infrastructure
 ```
+
+**Separation of Concerns:**
+- 🔧 **Bug fixes** (actual code) → Commit to main, push immediately
+- 📚 **QA infrastructure** (SOP, docs, templates) → Stay on feat/qa-infrastructure
+- 🧪 **Regression tests** (tests that demo the bug) → Stay on QA branch
 
 ---
 
-## Phase 6: File GitHub Issue (Only If Fix Wasn't Possible) (20 min)
+## Phase 6: File GitHub Issue (Only If Bug is Confirmed) (20 min)
 
-**Note:** Only reach this phase if Phase 5 didn't result in a fix.
+**Note:** Only reach this phase if:
+- ✅ You've confirmed the bug is real (not a false positive)
+- ✅ You've investigated the root cause
+- ✅ You've created a test that demonstrates it
+- ✅ You can't fix it in Phase 5
+
+**Do NOT file if:**
+- ❌ You're uncertain whether it's a bug (mark as "Investigation Needed" in FINDINGS.md instead)
+- ❌ The code check already exists but hasn't been tested (add test, don't file)
+- ❌ It might be user error or a misunderstanding of the rules
+
+### 6.0 Find the Framework Boundary
+
+**Before filing**, trace to the **exact source** of the bug in the framework:
+
+```ruby
+# Example: Bug in nested VO invariants
+# Don't just say: "Nested VO invariants not validated"
+# Trace to: lib/hecksagain/runtime/value/coercion.rb:64
+
+# In build() method:
+admit_member(value_object, fields)
+check_admitted(value_object, fields)
+check_numeric_fields(value_object, fields)  # ← This only checks top-level!
+check_patterns(value_object, fields)
+# MISSING: Recursive validation for nested value objects
+```
+
+**What to include in ticket:**
+- [ ] Exact file path
+- [ ] Line number(s)
+- [ ] Function/method name
+- [ ] What's missing or wrong in that code
+- [ ] Why it causes the bug
+- [ ] What would need to change to fix it
+
+This makes the ticket **actionable** instead of just a complaint.
 
 ### 6.1 Create a Detailed Issue
 
@@ -399,6 +584,33 @@ domain.dispatch("Command", arg: value)
 
 ## Root Cause
 Which code is wrong and why (based on your diagnosis)
+
+### Framework Source
+**Location:** lib/hecksagain/runtime/value/coercion.rb:64-80 (build method)
+
+**The Issue:** 
+- What exists: check_numeric_fields() validates top-level fields only
+- What's missing: Recursive validation for nested value objects
+- Why it breaks: When Price is nested in Pizza, Price's invariants aren't checked
+- To fix: Make check_numeric_fields() walk nested structures recursively
+
+**Code snippet:**
+```ruby
+# Current - only validates direct attributes
+value_object.attributes.each do |attribute|
+  expected = NUMERIC[attribute.type.to_s]
+  # ... validation ...
+end
+
+# Needed - validate nested structures too
+def validate_nested(value_object, fields)
+  value_object.attributes.each do |attribute|
+    if attribute.nested_value_object?
+      validate_nested(attribute.type, fields[attribute.name])
+    end
+  end
+end
+```
 
 ## Impact
 - Severity: HIGH/MEDIUM/LOW
@@ -806,6 +1018,8 @@ Coverage: ~25%
 
 ## Checklist: Before Pushing QA Work
 
+- [ ] Working in isolated worktree (not main checkout)
+- [ ] On feature branch (feat/qa-session-*)
 - [ ] All new tests pass locally
 - [ ] Full test suite passes (`rspec --order random`)
 - [ ] No tests skipped or marked as pending (unless pre-existing)
@@ -818,6 +1032,7 @@ Coverage: ~25%
 - [ ] Commit messages are clear and include Co-Authored-By
 - [ ] No sensitive data in issues (passwords, tokens, etc.)
 - [ ] Code follows existing style (indent, naming, patterns)
+- [ ] Ready to clean up worktree when done
 
 ---
 
