@@ -1283,6 +1283,7 @@ Hecks.bluebook "Banking", version: "v1" do
         goal "Take a key back when a holder is done with it"
 
         attribute :serial, KeySerial
+        given("customer is active") { parent.customer.status == "active" }
         given("box is rented") { parent.status == "rented" }
         given("only an issued key is returned") { status == "issued" }
 
