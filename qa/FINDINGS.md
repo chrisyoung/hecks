@@ -4,7 +4,7 @@ Documented bugs and findings from systematic adversarial testing.
 
 **Methodology Note:** One bug = one distinct root cause with one fix. Multiple failed specs from the same bug are not counted separately.
 
-**Session Status:** 69 distinct bugs identified and fixed (12 original + 50 from previous loop + 7 from this current iteration)
+**Session Status:** 70 distinct bugs identified and fixed (12 original + 50 from previous loop + 8 from this current iteration)
 
 **Framework Feature Work:** String pattern validation should be made a default framework behavior (GitHub issue #75). All 69 bugs identified so far are validation gaps that could be eliminated with a framework-level pattern default for String attributes.
 
@@ -71,6 +71,7 @@ Documented bugs and findings from systematic adversarial testing.
 | 67 | Aggregate.TypeName.value lacks pattern | VO String attribute with invariant not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 68 | Command.ArgName.value lacks pattern | VO String attribute with invariant not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 69 | Query.QueryName.value lacks pattern | VO String attribute with invariant not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 70 | Pizzas.Order.CreatePizza missing mutations | Command accepts name and pizza but never sets them | Add `then_set :name, to: :name` and `then_set :pizza, to: :pizza` | HIGH - Business logic |
 
 ---
 
