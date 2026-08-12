@@ -18,7 +18,8 @@ Hecks.bluebook "TillRoom" do
     attribute :note,    Note
 
     value_object "TillNumber" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a till number is present") { !value.to_s.empty? }
     end
 
     value_object "Money" do

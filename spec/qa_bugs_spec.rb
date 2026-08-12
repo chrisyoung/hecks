@@ -19,11 +19,20 @@ require "spec_helper"
 
 RSpec.describe "QA Bug Demonstrations", qa: true do
   let(:banking_runtime) { boot_in_memory_for(:banking) }
+  let(:till_runtime) { boot_in_memory_for_fixture(:till) }
 
   def boot_in_memory_for(domain)
     runtime = boot_in_memory
     Hecksagain.with_registry(runtime.registry) do
       Kernel.load(File.join(InMemoryDomain::ROOT, "examples/#{domain}/bluebook/#{domain}.bluebook"))
+    end
+    runtime
+  end
+
+  def boot_in_memory_for_fixture(fixture)
+    runtime = boot_in_memory
+    Hecksagain.with_registry(runtime.registry) do
+      Kernel.load(File.join(InMemoryDomain::ROOT, "spec/fixtures/#{fixture}.bluebook"))
     end
     runtime
   end
@@ -300,6 +309,120 @@ RSpec.describe "QA Bug Demonstrations", qa: true do
         banking_runtime.dispatch("Banking::SafeDepositBox.Create",
           branch_code: { value: "" },
           box_number: { value: 123 })
+      }.to raise_error
+    end
+  end
+
+  describe "Till Fixture - Adversarial Testing" do
+    it "accepts valid till opening" do
+      result = till_runtime.dispatch("TillRoom::Till.OpenTill",
+        number: { value: "TILL1" })
+      expect(result.state[:number][:value]).to eq("TILL1")
+    end
+
+    it "rejects empty till number" do
+      expect {
+        till_runtime.dispatch("TillRoom::Till.OpenTill",
+          number: { value: "" })
+      }.to raise_error
+    end
+
+    it "rejects whitespace-only till number" do
+      expect {
+        till_runtime.dispatch("TillRoom::Till.OpenTill",
+          number: { value: "   " })
+      }.to raise_error
+    end
+
+    it "accepts zero amount in TakeIn" do
+      till = till_runtime.dispatch("TillRoom::Till.OpenTill",
+        number: { value: "TILL2" })
+
+      result = till_runtime.dispatch("TillRoom::Till.TakeIn",
+        id: till.id,
+        amount: { cents: 0 },
+        note: nil)
+
+      expect(result.state[:balance][:cents]).to eq(0)
+    end
+
+    it "rejects negative amount in TakeIn" do
+      till = till_runtime.dispatch("TillRoom::Till.OpenTill",
+        number: { value: "TILL3" })
+
+      expect {
+        till_runtime.dispatch("TillRoom::Till.TakeIn",
+          id: till.id,
+          amount: { cents: -100 },
+          note: nil)
+      }.to raise_error
+    end
+
+    it "rejects PayOut more than balance" do
+      till = till_runtime.dispatch("TillRoom::Till.OpenTill",
+        number: { value: "TILL4" })
+
+      expect {
+        till_runtime.dispatch("TillRoom::Till.PayOut",
+          id: till.id,
+          amount: { cents: 1000 })
+      }.to raise_error
+    end
+
+    it "allows Bump command" do
+      till = till_runtime.dispatch("TillRoom::Till.OpenTill",
+        number: { value: "TILL5" })
+
+      result = till_runtime.dispatch("TillRoom::Till.Bump",
+        id: till.id)
+
+      expect(result.state[:balance][:cents]).to eq(500)
+    end
+
+    it "freezes marks list after TakeIn" do
+      till = till_runtime.dispatch("TillRoom::Till.OpenTill",
+        number: { value: "TILL6" })
+
+      result = till_runtime.dispatch("TillRoom::Till.TakeIn",
+        id: till.id,
+        amount: { cents: 1000 },
+        note: nil)
+
+      expect {
+        result.state[:marks] << { amount: 999, direction: "fake" }
+      }.to raise_error(FrozenError)
+    end
+
+    it "allows multiple TakeIn operations" do
+      till = till_runtime.dispatch("TillRoom::Till.OpenTill",
+        number: { value: "TILL7" })
+
+      till_runtime.dispatch("TillRoom::Till.TakeIn",
+        id: till.id,
+        amount: { cents: 1000 },
+        note: nil)
+
+      result = till_runtime.dispatch("TillRoom::Till.TakeIn",
+        id: till.id,
+        amount: { cents: 500 },
+        note: nil)
+
+      expect(result.state[:balance][:cents]).to eq(1500)
+    end
+
+    it "rejects negative amount in PayOut" do
+      till = till_runtime.dispatch("TillRoom::Till.OpenTill",
+        number: { value: "TILL8" })
+
+      till_runtime.dispatch("TillRoom::Till.TakeIn",
+        id: till.id,
+        amount: { cents: 1000 },
+        note: nil)
+
+      expect {
+        till_runtime.dispatch("TillRoom::Till.PayOut",
+          id: till.id,
+          amount: { cents: -500 })
       }.to raise_error
     end
   end
