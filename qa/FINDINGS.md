@@ -4,7 +4,7 @@ Documented bugs and findings from systematic adversarial testing.
 
 **Methodology Note:** One bug = one distinct root cause with one fix. Multiple failed specs from the same bug are not counted separately.
 
-**Session Status:** 22 distinct bugs identified and fixed (12 original + 10 new in this loop)
+**Session Status:** 23 distinct bugs identified and fixed (22 original + 1 systemic in 2026-08-12 loop)
 
 ---
 
@@ -34,6 +34,7 @@ Documented bugs and findings from systematic adversarial testing.
 | 20 | Banking.AccountKind.name lacks pattern | Closed-set VO String not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 21 | Banking.StatementFrequency.cadence lacks pattern | Closed-set VO String not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
 | 22 | Expression.SourceToken.value lacks pattern | VO String attribute not validated | Add `pattern: '[^ \t\n\r]'` | MEDIUM - Data quality |
+| 23 | Returned aggregates not frozen | Dispatcher returns mutable results | Add `.freeze` to instance at return | CRITICAL - Data mutation/corruption |
 
 ---
 
