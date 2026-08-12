@@ -265,6 +265,8 @@ Hecks.bluebook "Banking", version: "v1" do
         goal "Undo a movement that should not have been posted"
 
         attribute :narrative, Narrative
+        given("customer is active") { parent.customer.status == "active" }
+        given("account is open") { parent.status == "open" }
         given("entry is posted") { state == "posted" }
         then_set :narrative, to: :narrative
 
