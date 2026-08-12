@@ -203,6 +203,7 @@ pub static ARGUMENTS: &[ArgumentRow] = &[
     ArgumentRow { keyword: "attribute", context: "Entity", at: "", named: "admits", kind: "text", required: "false", fills: "admits", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "" },
     ArgumentRow { keyword: "reference_to", context: "Entity", at: "1", named: "", kind: "constant", required: "true", fills: "type", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "" },
     ArgumentRow { keyword: "reference_to", context: "Entity", at: "", named: "as", kind: "symbol", required: "false", fills: "name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "" },
+    ArgumentRow { keyword: "reference_to", context: "Entity", at: "", named: "optional", kind: "flag", required: "false", fills: "optional", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "" },
     ArgumentRow { keyword: "role", context: "Command", at: "1", named: "", kind: "text", required: "true", fills: "role", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "" },
     ArgumentRow { keyword: "goal", context: "Command", at: "1", named: "", kind: "text", required: "true", fills: "goal", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "" },
     ArgumentRow { keyword: "provenance", context: "Command", at: "", named: "from", kind: "literal", required: "true", fills: "provenance", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "" },

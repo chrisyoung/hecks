@@ -12388,6 +12388,36 @@
             [
               [
                 "keyword",
+                "reference_to"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "optional"
+              ],
+              [
+                "kind",
+                "flag"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "optional"
+              ]
+            ],
+            [
+              [
+                "keyword",
                 "role"
               ],
               [

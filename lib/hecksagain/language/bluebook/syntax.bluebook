@@ -633,6 +633,11 @@ Hecks.bluebook "Bluebook" do
         member keyword: "attribute",       context: "Entity", at: "",  named: "admits",   kind: "text",     required: "false", fills: "admits"
         member keyword: "reference_to",    context: "Entity", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
         member keyword: "reference_to",    context: "Entity", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
+        # THE SAME THIRD ARGUMENT an aggregate's own `reference_to` takes —
+        # a piece free to point at one of several possible targets, never
+        # more than one at a time, same as an aggregate's own sibling
+        # `reference_to` calls.
+        member keyword: "reference_to",    context: "Entity", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
 
         member keyword: "role",            context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "role"
         member keyword: "goal",            context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "goal"
