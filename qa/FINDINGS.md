@@ -119,3 +119,6 @@ This avoids inflating the count by conflating "number of failed specs" with "num
 
 | 31 | Multiple Money operations fail in sequence | Possible state management issue with nested VO operations | Investigate Account.Credit/Debit state persistence | MEDIUM - Operation sequencing issue |
 
+
+| 32 | to_h result hash is mutable | Aggregate#to_h returns unfrozen hash that can be modified | Freeze the hash before returning from to_h | HIGH - Data mutation vulnerability |
+
