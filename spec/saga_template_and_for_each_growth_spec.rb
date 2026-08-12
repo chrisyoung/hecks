@@ -80,7 +80,12 @@ RSpec.describe "saga template composition and for_each dispatch fan-out" do
       runtime = boot(TEMPLATE_SOURCE, "TemplateGrowth") { ::TemplateGrowth::GrowthNote.persisted_by("Memory") }
       runtime.dispatch("TemplateGrowth::GrowthNote.Open", id: { value: "n1" }, target: "the archive")
 
-      expect(TemplateGrowth::GrowthNote.find("n1").last_text.to_s).to eq("going deeper into the archive")
+      # `last_text` is a bare `String` attribute on the aggregate, so it
+      # auto-wraps into a single-field synthesised value object
+      # (Hecksagain::Runtime::Value) -- unwrap via Value.scalar the same
+      # way any bare-primitive aggregate field reads back.
+      last_text = Hecksagain::Runtime::Value.scalar(TemplateGrowth::GrowthNote.find("n1").last_text)
+      expect(last_text).to eq("going deeper into the archive")
     end
   end
 
@@ -169,8 +174,11 @@ RSpec.describe "saga template composition and for_each dispatch fan-out" do
 
       runtime.dispatch("SagaFanoutGrowth::GrowthCart.Checkout", cart_key: { value: "c1" })
 
-      expect(SagaFanoutGrowth::GrowthLine.find("l1").status).to eq("confirmed")
-      expect(SagaFanoutGrowth::GrowthLine.find("l2").status).to eq("confirmed")
+      # `status` is a bare `String` attribute on the aggregate, so it
+      # auto-wraps into a single-field synthesised value object -- see
+      # the same note on the template example above.
+      expect(Hecksagain::Runtime::Value.scalar(SagaFanoutGrowth::GrowthLine.find("l1").status)).to eq("confirmed")
+      expect(Hecksagain::Runtime::Value.scalar(SagaFanoutGrowth::GrowthLine.find("l2").status)).to eq("confirmed")
     end
   end
 end

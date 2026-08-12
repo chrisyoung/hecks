@@ -252,9 +252,27 @@ RSpec.describe "the DSL surface" do
     # `identified_by`, which is the SINGLE head and goes nil the moment an
     # identity has two parts. The quoted id was always the JOIN of those two
     # ("Primitive:Thing" and "String"); now the message says so.
+    # `attribute :code, String` no longer reaches here: bare Ruby-primitive
+    # types (String/Integer/Float/TrueClass/FalseClass/Numeric) are now
+    # deliberately auto-wrapped into a synthesised single-field value object
+    # (AggregateBuilder#synthesise_primitive_wrapper, migration's
+    # "bare-primitive VO synthesis" — see aggregate_builder.rb's own
+    # PRIMITIVE_CLASSES comment), preserving "primitives only live in VOs"
+    # rather than relaxing it. What still hits this Malformed is a type name
+    # that is neither a declared value object NOR one of those primitive
+    # classes — an undeclared bare constant, resolved through ConstShim to a
+    # Symbol nothing declares a ValueObject under.
+    #
+    # NOT `Widget` — spec/fixtures/dispatch_order.bluebook declares a real
+    # aggregate under that name, and once any spec builds its facade
+    # `Widget` resolves as a genuine top-level constant for the rest of the
+    # process (ConstShim's own `const_missing` hook only fires for a name
+    # nothing already answers to) — a real, order-dependent collision this
+    # example hit BEFORE this comment existed. A name no fixture anywhere
+    # declares is the only spelling that reaches ConstShim reliably.
     it "refuses an aggregate attribute that is not a value object" do
-      expect { build_aggregate("Primitive") { attribute :code, String } }
-        .to raise_error(Malformed, %r{no ValueObject with aggregate_id, name "Primitive:Thing:String"})
+      expect { build_aggregate("Primitive") { attribute :code, UtterlyUndeclaredValueObjectType } }
+        .to raise_error(Malformed, %r{no ValueObject with aggregate_id, name "Primitive:Thing:UtterlyUndeclaredValueObjectType"})
     end
 
     # A PIECE IS REACHED THROUGH ITS AGGREGATE, so a command on one addresses

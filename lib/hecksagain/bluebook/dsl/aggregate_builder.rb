@@ -21,6 +21,60 @@ module Hecksagain
           @description = value
         end
 
+        # Vendored addition, not (yet) upstream hecksagain: hecksagain's
+        # own named principle is "primitives live in value objects
+        # only" (lib/hecksagain/language/bluebook/vocabulary.bluebook) --
+        # a bare `attribute :x, String` directly on an aggregate is
+        # refused by the self-hosted meta-validator. hecks_conception +
+        # miette's own convention does this 260+ times at the aggregate
+        # level (value_object-internal bare types were always fine and
+        # are untouched here). DECISION, documented not hidden: rather
+        # than a corpus-wide rewrite touching every declaration AND
+        # every call site that constructs these attributes, this
+        # transparently AUTO-SYNTHESISES a single-field wrapper value
+        # object per bare-primitive aggregate attribute -- the exact
+        # same mechanism `one_of(...)`'s `synthesise_closed_set` already
+        # uses for inline closed sets, just triggered by a bare
+        # primitive Class instead of a OneOf. Preserves hecksagain's own
+        # "primitives only live in VOs" invariant (the VO now just has
+        # an author of "the runtime" instead of "the corpus") rather
+        # than relaxing it. TODO upstream via bin/evolve (migration plan
+        # task 7) -- or supersede with the real corpus-wide VO-wrapping
+        # pass if Chris prefers that path instead.
+        PRIMITIVE_CLASSES = [String, Integer, Float, TrueClass, FalseClass, Numeric].freeze
+
+        def attribute(name, type = String, **kwargs)
+          # Vendored fix, not (yet) upstream hecksagain (migration plan task
+          # 4): apply the SAME inverted-form correction AttributeCollector#
+          # attribute makes -- but BEFORE the primitive-wrapper check below,
+          # not after. `super` (which is where the base correction actually
+          # lived) runs LAST, so a bare `attribute App` (no `as:`) used to
+          # reach the primitive check below still shaped `name: :App, type:
+          # String` (the un-fixed positional default) -- String IS a
+          # PRIMITIVE_CLASS, so it synthesised a wrapper VO NAMED "App",
+          # colliding with a real hand-written `value_object "App"` a few
+          # lines above it in the same file. See AttributeCollector.
+          # resolve_inverted's own comment for why the check is reliable.
+          name, type = AttributeCollector.resolve_inverted(name, type, kwargs[:as])
+          type = AttributeCollector.normalize_boolean_alias(type)
+
+          if PRIMITIVE_CLASSES.include?(type)
+            type = synthesise_primitive_wrapper(name, type)
+          elsif type.is_a?(ListOf) && PRIMITIVE_CLASSES.include?(type.type)
+            type = ListOf.new(synthesise_primitive_wrapper(name, type.type))
+          end
+          super(name, type, **kwargs)
+        end
+
+        def synthesise_primitive_wrapper(name, primitive_class)
+          wrapper_name = Naming.pascal(name)
+          (@closed_sets ||= closed_sets) << IR::ValueObject.declare(
+            name:       wrapper_name,
+            attributes: [IR::Attribute.new(name: :value, type: primitive_class.name)]
+          )
+          wrapper_name
+        end
+
         # ORIGIN, not runtime identity — a concept adopted from a canonical
         # source (§28) names where it came from without that fact ever
         # touching `hecks_fqn`/dispatch. Captured raw, the same way
@@ -159,6 +213,9 @@ module Hecksagain
 
         def build
           resolve_pending_identity!
+
+          resolve_bare_primitive_collisions
+
           seal_mutation_targets
           seal_query_targets
           seal_defaults
@@ -199,6 +256,61 @@ module Hecksagain
             @identity_paths = resolve_identity_type!(type, as, insert_at, @value_objects + closed_sets, @name)
           elsif @identity_field_pending
             @identity_paths = resolve_identity_field!(@identity_field_pending, @value_objects + closed_sets, @name)
+          end
+        end
+
+        # Vendored fix, not (yet) upstream hecksagain (migration plan task
+        # 8): `synthesise_primitive_wrapper` (above) mints an auto-wrapper
+        # VO named after a bare attribute's own field (PascalCase) with NO
+        # check for whether an EXPLICIT, hand-written `value_object` of
+        # that same name already exists elsewhere in the same aggregate,
+        # for an entirely unrelated purpose. hecks_nursury's own
+        # biology.bluebook: `Neuron`'s bare `attribute :neurotransmitter,
+        # String` (a plain field on the neuron itself) shares its
+        # PascalCased name with a hand-written `value_object
+        # "Neurotransmitter" do ... end` (an embedded shape `Synapse`'s
+        # OWN `neurotransmitter` field uses) -- same English word, two
+        # unrelated, both CORRECTLY-authored concepts, an ordinary domain-
+        # modeling coincidence, not a corpus bug to rewrite around. This
+        # is the same FAMILY of bug as the earlier "App" collision
+        # (AttributeCollector's own comment) but not the same CAUSE --
+        # that one was a misparse ; this is two independently-intended
+        # declarations. And unlike the App case, attribute-call-time could
+        # not have caught this even with a perfect check : the bare
+        # attribute here is declared BEFORE the value_object it collides
+        # with, so @value_objects is not yet populated when the wrapper is
+        # synthesised. Deferred to build time on purpose, once
+        # @value_objects holds everything the block declared. Resolved by
+        # disambiguating the SYNTHESISED wrapper only -- the hand-written
+        # VO's name is real authorial intent and is never touched -- and
+        # re-pointing the bare attribute's own type string at the
+        # disambiguated name, so both concepts keep their own, non-
+        # colliding IR entry rather than the second Declare crashing the
+        # boot. TODO upstream via bin/evolve (migration plan task 7).
+        def resolve_bare_primitive_collisions
+          return if closed_sets.empty?
+
+          handwritten = @value_objects.map { |vo| vo.hecks_name.to_s }
+          taken       = handwritten + closed_sets.map { |c| c.hecks_name.to_s }
+
+          closed_sets.each do |synthesised|
+            old_name = synthesised.hecks_name.to_s
+            next unless handwritten.include?(old_name)
+
+            new_name = "#{old_name}Value"
+            new_name = "#{old_name}Value#{taken.count(new_name) + 1}" while taken.include?(new_name)
+            taken << new_name
+            synthesised.hecks_name = new_name
+
+            attributes.each_with_index do |attr, i|
+              next unless attr.type.to_s == old_name
+
+              attributes[i] = IR::Attribute.new(
+                name: attr.name, type: new_name, list: attr.list?, default: attr.default,
+                optional: attr.optional?, pattern: attr.pattern, admits: attr.admits,
+                logged: attr.logged
+              )
+            end
           end
         end
 
