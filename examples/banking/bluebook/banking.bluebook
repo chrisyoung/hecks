@@ -1451,6 +1451,7 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :closing_balance, StatementAmount
       attribute :generated_on,    StatementDate
       attribute :frequency,       StatementFrequency
+      given("account is open") { account.status == "open" }
 
       emits "StatementGenerated"
     end
