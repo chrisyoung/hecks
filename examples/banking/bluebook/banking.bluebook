@@ -377,6 +377,7 @@ Hecks.bluebook "Banking", version: "v1" do
     command "CorrectFee" do
       reference_to Account
       attribute :amount, PositiveMoney
+      given("account is open") { status == "open" }
       given("a correction cannot exceed collected fees") { fees_cents.cents >= amount.cents }
       then_set :balance, increment: :amount
       then_set :fees_cents, decrement: :amount
