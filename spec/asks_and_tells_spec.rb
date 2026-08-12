@@ -158,8 +158,10 @@ RSpec.describe "asks and tells" do
       filed = runtime.events.find { |event| event.name == "IssueFiled" }
       expect(filed).not_to be_nil
       expect(filed.id).to eq("TK-1")
-      expect(filed.payload[:answered]["number"]).to eq(43)
-      expect(filed.payload[:answered]["number"]).to eq(43)
+      # SPREAD, NOT NESTED — the adapter's own keys become the payload, which
+      # is what lets a policy re-enter a command with them.
+      expect(filed.payload[:number]).to eq(43)
+      expect(filed.payload[:url]).to eq("https://example.com/issues/43")
     end
 
     # A RAISE FROM THE FAR SIDE IS NOT AN EXCEPTION IN THIS DOMAIN'S TERMS —
@@ -174,7 +176,7 @@ RSpec.describe "asks and tells" do
 
       refused = runtime.events.find { |event| event.name == "IssueFilingFailed" }
       expect(refused.id).to eq("TK-2")
-      expect(refused.payload[:refusal]).to include("the token expired")
+      expect(refused.payload[:refusal][:value]).to include("the token expired")
     end
 
     it "leaves the drafting command's own event intact either way" do

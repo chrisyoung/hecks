@@ -74,9 +74,38 @@ module Hecksagain
       # retry counter reads it, and nothing has to catch anything.
       def ask(ctx)
         answer = adapter_for(ctx).public_send(Naming.snake(ctx.operation.hecks_name), **materialise(ctx.args))
-        announce(ctx, ctx.operation.answers, ctx.args.merge(answered: answer))
+        announce(ctx, ctx.operation.answers, ctx.args.merge(spread(answer)))
       rescue StandardError => e
-        announce(ctx, ctx.operation.refuses, ctx.args.merge(refusal: "#{e.class}: #{e.message}"))
+        announce(ctx, ctx.operation.refuses, ctx.args.merge(refusal: { value: "#{e.class}: #{e.message}" }))
+      end
+
+      # THE ANSWER IS SPREAD, NOT NESTED — and that is what makes the loop
+      # close. A policy re-enters its target with the event payload VERBATIM;
+      # it cannot reach inside a key. So an answer tucked under `answered:`
+      # can be read by a human and by nothing else, and the command that
+      # should record the issue number never gets one.
+      #
+      # Spread, the adapter's own keys ARE the arguments of whatever command
+      # reacts to the answering event. Which is a real contract on the adapter
+      # — it must return what that command takes, in the shape the runtime
+      # coerces (`{ number: { value: 43 } }`, not `43`) — and naming it here
+      # is cheaper than a mapping layer nobody could see into.
+      #
+      # A non-Hash answer keeps the old shape: a port that returns a URL
+      # string has nothing to spread, and `answered:` is the honest word for
+      # a single unnamed value.
+      def spread(answer)
+        return { answered: answer } unless answer.is_a?(Hash)
+
+        answer.to_h { |key, value| [key.to_sym, deep_symbolize(value)] }
+      end
+
+      def deep_symbolize(value)
+        case value
+        when Hash  then value.to_h { |k, v| [k.to_sym, deep_symbolize(v)] }
+        when Array then value.map { |element| deep_symbolize(element) }
+        else value
+        end
       end
 
       # THE PORT THIS OPERATION BELONGS TO, found by asking the aggregate

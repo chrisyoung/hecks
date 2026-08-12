@@ -35,9 +35,32 @@
 # collection this ledger will ever hold is a few hundred bugs, and every query
 # in the chapter filters on a lifecycle state the head already carries.
 Hecks.hecksagon "QualityControl" do
-  QualityControl::Session.persisted_by("Postgres")
-  QualityControl::Bug.persisted_by("Postgres")
-  QualityControl::Remedy.persisted_by("Postgres")
-  QualityControl::Ticket.persisted_by("Postgres")
   QualityControl::Target.persisted_by("Postgres")
+  QualityControl::Sweep.persisted_by("Postgres")
+  QualityControl::Bug.persisted_by("Postgres")
+  QualityControl::Ticket.persisted_by("Postgres")
+  QualityControl::Clearance.persisted_by("Postgres")
+
+  # THE PORT LIVES HERE, NOT IN THE CHAPTER — the same place pizzas declares
+  # its own `PaymentGateway`, and for the same reason: a port is where the
+  # domain meets a swappable adapter, so its shape is vocabulary but its
+  # existence is wiring, and wiring lives with the binds.
+  #
+  # BOTH DIRECTIONS THROUGH ONE DOOR. `asks` is the domain calling out and
+  # naming both endings it can live with; `tells` is the outside calling in.
+  # The adapter is bound by NAME — anything declaring `port "IssueTracker"`
+  # answers this — so a fake one answers in a spec and a real one answers in
+  # anger, and nothing in the chapter knows which.
+  QualityControl::Ticket.port "IssueTracker" do
+    asks "File" do
+      reference_to Ticket, as: :id
+      answers "IssueFiled"
+      refuses "IssueFilingRefused"
+    end
+
+    tells "Closed" do
+      reference_to Ticket, as: :id
+      emits "IssueClosedUpstream"
+    end
+  end
 end
