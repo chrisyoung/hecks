@@ -22,7 +22,7 @@ A free-text label for the query — no rules attached, read by nothing but a hum
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, default:, optional:, pattern:, admits:, as:, required:, logged:, enum:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -32,6 +32,10 @@ A free-text label for the query — no rules attached, read by nothing but a hum
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
 | `admits:` | text | false | admits |
+| `as:` | symbol | false | name |
+| `required:` | flag | false | optional |
+| `logged:` | flag | false | logged |
+| `enum:` | literal | false | type |
 <!-- generated:end -->
 
 Declares an argument this query accepts at ask-time, not a field on the
@@ -244,4 +248,36 @@ back; it can only ever refuse.
 Names an index hint. It's recorded on the specification and
 round-trips through the IR, but no adapter here reads it back to
 influence the query plan — the store still picks its own index.
+
+## count
+
+<!-- generated:begin word=count -->
+`count`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## median
+
+<!-- generated:begin word=median -->
+`median`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## group_by
+
+<!-- generated:begin word=group_by -->
+`group_by`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## scope_to
+
+<!-- generated:begin word=scope_to -->
+`scope_to`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
 

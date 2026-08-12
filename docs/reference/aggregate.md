@@ -181,7 +181,7 @@ Opens what this aggregate may be asked to do — what it needs, what it refuses,
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, default:, optional:, pattern:, admits:, as:, required:, logged:, enum:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -191,7 +191,51 @@ Opens what this aggregate may be asked to do — what it needs, what it refuses,
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
 | `admits:` | text | false | admits |
+| `as:` | symbol | false | name |
+| `required:` | flag | false | optional |
+| `logged:` | flag | false | logged |
+| `enum:` | literal | false | type |
 <!-- generated:end -->
 
 Declares a field, scalar or value object. `pattern:` checks a String attribute against a regex the moment the bluebook loads, not the day a bad value reaches production — and only admits regexes every engine reads identically (no lookahead, no `\d`/`\w`). `admits:` points a field at a closed vocabulary declared elsewhere (a `one_of` on another value object) rather than restating its members, so two fields can't drift out of sync on what's allowed. `default:` fills the field when the record is built; for a value-object-typed attribute the default must fill that type's own fields (`default: { cents: 0 }`), not a bare scalar — a bare scalar loads cleanly and then refuses every create at dispatch. `optional:` lets a caller omit the argument entirely with no refusal, distinct from `default:`, which still fills the field either way.
+
+## invariant
+
+<!-- generated:begin word=invariant -->
+`invariant do ... end`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## rule
+
+<!-- generated:begin word=rule -->
+`rule do ... end`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## specification
+
+<!-- generated:begin word=specification -->
+`specification do ... end`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## fixture
+
+<!-- generated:begin word=fixture -->
+`fixture`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## validation
+
+<!-- generated:begin word=validation -->
+`validation`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
 

@@ -103,3 +103,75 @@ The same word as inside an `aggregate` — a reaction to an event, `on`/`trigger
 
 Opens a stateful saga spanning several events and commands — `correlates_by`, `starts_on`/`ends_on`, its `handler`s. Chapter-level only, like `report` and top-level `policy`, since it belongs to no single aggregate. See the ProcessManager reference page.
 
+## category
+
+<!-- generated:begin word=category -->
+`category` — fills `category`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## glossary
+
+<!-- generated:begin word=glossary -->
+`glossary`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## entrypoint
+
+<!-- generated:begin word=entrypoint -->
+`entrypoint`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## fixture
+
+<!-- generated:begin word=fixture -->
+`fixture`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## section
+
+<!-- generated:begin word=section -->
+`section`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## define
+
+<!-- generated:begin word=define -->
+`define`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## lifecycle
+
+<!-- generated:begin word=lifecycle -->
+`lifecycle`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## event
+
+<!-- generated:begin word=event -->
+`event`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## actor
+
+<!-- generated:begin word=actor -->
+`actor`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+

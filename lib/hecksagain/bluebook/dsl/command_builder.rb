@@ -85,6 +85,14 @@ module Hecksagain
 
         def goal(value) = @goal = value
 
+        # LIVE ALIAS, not a rename (no `was:` on its syntax.bluebook row --
+        # both spellings are typed freely, undecided which becomes
+        # canonical). hecksagain writes `description "..."` on commands
+        # where hecks_conception writes `goal "..."` -- the "THREE WORDS
+        # FOR ONE FIELD" shape core/supporting/generic already established
+        # for Bluebook. Fills the SAME field `goal` does.
+        alias_method :description, :goal
+
         # See AggregateBuilder#provenance's own comment — identical shape,
         # one level down.
         def provenance(from:) = @provenance = from
@@ -187,12 +195,24 @@ module Hecksagain
           )
         end
 
+        # LIVE ALIASES, not renames -- both `expects`/`requires` type as
+        # freely as `given` itself, undecided which becomes canonical.
+        # "expects — what the command requires before it runs ; guarantees
+        # — what the command ensures afterward" (account.bluebook's own
+        # comment) ; pigeoncoop.bluebook uses `requires` for the identical
+        # concept. Fill the SAME field `given` does.
+        alias_method :expects, :given
+        alias_method :requires, :given
+
         # The POSTCONDITION — a given for the far side of the mutations,
         # evaluated against the settled record with `old` naming the state
         # as it stood before them: `ensures("...") { old.balance.cents ==
         # balance.cents + amount.cents }`. Same extraction, same Rule
         # shape, same refusal form; EnsuresNotMet instead of GivenNotMet.
-        def ensures(description, &predicate)
+        #
+        # Defaulted the same way `given` above is -- a bare `ensures { ... }`
+        # with no description string is real, live corpus content.
+        def ensures(description = "a postcondition holds", &predicate)
           canonical = Ports::Extraction.canonical(predicate)
 
           if canonical.to_s.empty?
@@ -208,6 +228,11 @@ module Hecksagain
             predicate:   predicate
           )
         end
+
+        # LIVE ALIAS -- the postcondition counterpart to expects/requires
+        # above, same account.bluebook comment ("guarantees — what the
+        # command ensures afterward"). Fills the SAME field `ensures` does.
+        alias_method :guarantees, :ensures
 
         # `sets` is the word; `then_set` is the spelling every existing
         # bluebook was written under (Syntax::Keyword carries the rename as

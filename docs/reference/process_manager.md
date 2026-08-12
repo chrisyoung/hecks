@@ -61,6 +61,14 @@ Declares one state this saga's instances may be in, repeated once per
 state. Every `from`/`to` a handler's `transition:` names must appear
 here, or the declaration is refused at load time.
 
+## description
+
+<!-- generated:begin word=description -->
+`description`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
 ## on
 
 <!-- generated:begin word=on -->

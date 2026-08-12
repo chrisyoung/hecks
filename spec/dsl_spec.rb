@@ -1927,6 +1927,10 @@ RSpec.describe "the DSL surface" do
       expect(build_command("CmdGoal") { goal "feed people" }.goal).to eq("feed people")
     end
 
+    it "description is a live alias for goal, filling the same field" do
+      expect(build_command("CmdDescription") { description "feed people" }.goal).to eq("feed people")
+    end
+
     it "provenance records where a concept came from, as a literal Hash" do
       origin = { source: "HecksCanonical", source_id: "command:thing.do", source_version: "1.0" }
       command = build_command("CmdProvenance") { provenance from: origin }
@@ -1959,6 +1963,24 @@ RSpec.describe "the DSL surface" do
 
       expect(given.description).to eq("must be open")
       expect(given.canonical).to eq('status == "open"')
+    end
+
+    it "expects/requires are live aliases for given, filling the same field" do
+      via_expects = build_command("CmdExpects") { expects("must be open") { status == "open" } }.givens.first
+      via_requires = build_command("CmdRequires") { requires("must be open") { status == "open" } }.givens.first
+
+      expect(via_expects.description).to eq("must be open")
+      expect(via_requires.description).to eq("must be open")
+    end
+
+    it "ensures defaults its description the same way given does" do
+      command = build_command("CmdEnsuresDefault") { ensures { old.status != status } }
+      expect(command.ensures.first.description).to eq("a postcondition holds")
+    end
+
+    it "guarantees is a live alias for ensures, filling the same field" do
+      command = build_command("CmdGuarantees") { guarantees("it landed") { old.balance.cents <= balance.cents } }
+      expect(command.ensures.first.description).to eq("it landed")
     end
 
     it "then_set to: a symbol reads a command argument" do

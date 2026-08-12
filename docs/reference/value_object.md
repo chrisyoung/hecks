@@ -10,7 +10,7 @@ between them is hand-written and survives regeneration.*
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, default:, optional:, pattern:, admits:, as:, required:, logged:, enum:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -20,6 +20,10 @@ between them is hand-written and survives regeneration.*
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
 | `admits:` | text | false | admits |
+| `as:` | symbol | false | name |
+| `required:` | flag | false | optional |
+| `logged:` | flag | false | logged |
+| `enum:` | literal | false | type |
 <!-- generated:end -->
 
 Declares a field on the value object: a name, a type (scalar or another
@@ -54,4 +58,20 @@ A rule that travels with the value, not with any one command — it fires
 in every command that carries this value object, not just the one where
 it was declared. See command.md for where an invariant sits relative to
 a command's other checks.
+
+## rule
+
+<!-- generated:begin word=rule -->
+`rule do ... end` — fills `invariants`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## description
+
+<!-- generated:begin word=description -->
+`description`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
 

@@ -53,3 +53,67 @@ Names the domain a `trigger` reaches into when it lives outside this
 policy's own. Leave it off and `trigger` is assumed to name a command
 in the same domain as the event that fired it — the ordinary case.
 
+## description
+
+<!-- generated:begin word=description -->
+`description`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## where
+
+<!-- generated:begin word=where -->
+`where`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## for_each
+
+<!-- generated:begin word=for_each -->
+`for_each`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## from_event
+
+<!-- generated:begin word=from_event -->
+`from_event`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## with
+
+<!-- generated:begin word=with -->
+`with`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## map
+
+<!-- generated:begin word=map -->
+`map`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## condition
+
+<!-- generated:begin word=condition -->
+`condition do ... end`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## cross_domain
+
+<!-- generated:begin word=cross_domain -->
+`cross_domain`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+

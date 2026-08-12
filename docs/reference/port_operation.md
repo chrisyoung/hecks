@@ -25,7 +25,7 @@ policy will later forward it to.
 ## attribute
 
 <!-- generated:begin word=attribute -->
-`attribute name, type, default:, optional:, pattern:, admits:` — fills `attributes`
+`attribute name, type, default:, optional:, pattern:, admits:, as:, required:, logged:, enum:` — fills `attributes`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -35,6 +35,10 @@ policy will later forward it to.
 | `optional:` | flag | false | optional |
 | `pattern:` | text | false | pattern |
 | `admits:` | text | false | admits |
+| `as:` | symbol | false | name |
+| `required:` | flag | false | optional |
+| `logged:` | flag | false | logged |
+| `enum:` | literal | false | type |
 <!-- generated:end -->
 
 An extra field the external fact carries, declared the same way a

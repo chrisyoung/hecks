@@ -31,6 +31,38 @@ Names an event this hecksagon takes in from outside its own bluebook. It is decl
 
 Names a `lib/hecksagain/framework/bluebook/` member this domain wants attached — `uses_framework "Governance"`, say. Attaching one is a deployment decision, the same kind `persisted_by`/`projected_by` already are, so it lives in the hecksagon rather than as a fact stated in the domain's own bluebook. Loads that member's own bluebook into whatever registry this one is loading into — always from its own real location, never a copy, so it keeps working even when this domain is itself copied somewhere else first (a fuzz run's isolated tmp boot, for instance). Persistence is NOT part of what this loads — a member's aggregates need their own `Hecks.hecksagon "Governance" do ... end` block, declared by whoever is attaching it, the same as any other binding decision.
 
+## adapter
+
+<!-- generated:begin word=adapter -->
+`adapter`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## gate
+
+<!-- generated:begin word=gate -->
+`gate`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## success
+
+<!-- generated:begin word=success -->
+`success`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
+## failure
+
+<!-- generated:begin word=failure -->
+`failure`
+<!-- generated:end -->
+
+<!-- TODO: document this word -->
+
 ## port
 
 <!-- generated:begin word=port -->
