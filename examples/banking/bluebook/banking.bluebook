@@ -825,6 +825,7 @@ Hecks.bluebook "Banking", version: "v1" do
 
     command "Chargeback" do
       reference_to CardPayment
+      given("payment is disputed") { status == "disputed" }
       emits "CardChargedBack"
     end
 
