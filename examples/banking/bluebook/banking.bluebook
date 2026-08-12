@@ -1309,6 +1309,9 @@ Hecks.bluebook "Banking", version: "v1" do
       attribute :branch_code, BranchCode
       attribute :box_number,  BoxNumber
 
+      then_set :branch_code, to: :branch_code
+      then_set :box_number, to: :box_number
+
       emits "BoxCreated"
     end
 
