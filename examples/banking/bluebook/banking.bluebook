@@ -1114,6 +1114,8 @@ Hecks.bluebook "Banking", version: "v1" do
       goal "Re-present a failed payment, up to the limit the schedule names"
 
       reference_to ScheduledPayment
+      given("customer is active") { account.customer.status == "active" }
+      given("account is open") { account.status == "open" }
       given("payment is failed") { status == "failed" }
 
       given("a retry is still allowed") { attempts.value < max_attempts.value }
