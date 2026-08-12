@@ -851,7 +851,7 @@ Hecks.bluebook "Interview" do
     # effect stops reaching the model without a line of source ever being
     # hand-edited again.
     value_object "CorrectionReason" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a correction says what was wrong") { !value.to_s.empty? }
     end
 
