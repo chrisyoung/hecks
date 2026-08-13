@@ -37,6 +37,7 @@ impl CardSerial {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "CardSerial.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -76,7 +77,22 @@ impl crate::kernel::Fielded for CardNickname {
 
 impl CardNickname {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("value"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "CardNickname"),
+            ("description", "a card nickname is present"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "CardNickname.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -99,7 +115,7 @@ impl CardNickname {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DailyFee {
-    pub amount: f64,
+    pub amount: i64,
 }
 
 impl crate::kernel::Fielded for DailyFee {
@@ -107,7 +123,7 @@ impl crate::kernel::Fielded for DailyFee {
         use crate::kernel::Field;
         use crate::kernel::Value;
         match name {
-            "amount" => Some(Field::Value(Value::Float(self.amount))),
+            "amount" => Some(Field::Value(Value::Int(self.amount))),
             _ => None,
         }
     }
@@ -138,7 +154,7 @@ impl DailyFee {
 impl DailyFee {
     pub fn to_json(&self) -> crate::kernel::Json {
         crate::kernel::Json::Object(vec![
-        ("amount".to_string(), crate::kernel::Json::Num(self.amount)),
+        ("amount".to_string(), crate::kernel::Json::int(self.amount)),
         ])
     }
 }
@@ -146,7 +162,7 @@ impl DailyFee {
 impl DailyFee {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
         Ok(Self {
-        amount: match v.get("amount") { Some(x) => x.as_f64().ok_or_else(|| crate::kernel::Refusal::TypeMismatch(format!("DailyFee.amount expects Float, got {}", x.inspect())))?, None => 0.0 },
+        amount: match v.get("amount") { Some(x) => x.as_i64().ok_or_else(|| crate::kernel::Refusal::TypeMismatch(format!("DailyFee.amount expects Integer, got {}", x.inspect())))?, None => 0 },
         })
     }
 }
@@ -293,6 +309,7 @@ impl Narrative {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.text) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Narrative.text must match [^ \\t\\n\\r], got ", self.text))); }
         Ok(())
     }
 }

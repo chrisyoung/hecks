@@ -41,25 +41,25 @@ Hecks.bluebook "Translation" do
     end
 
     value_object "SourcePath" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a rule reads from somewhere") { !value.to_s.empty? }
     end
 
     value_object "DestinationPath" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Target" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Form" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Execution" do
-      attribute :target, String
-      attribute :form,   String
+      attribute :target, String, pattern: '[^ \t\n\r]'
+      attribute :form,   String, pattern: '[^ \t\n\r]'
 
       invariant("an execution must name its target") { !target.to_s.empty? }
       invariant("an execution must have a form")     { !form.to_s.empty? }

@@ -18,7 +18,8 @@ Hecks.bluebook "TillRoom" do
     attribute :note,    Note
 
     value_object "TillNumber" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a till number is present") { !value.to_s.empty? }
     end
 
     value_object "Money" do
@@ -29,10 +30,13 @@ Hecks.bluebook "TillRoom" do
     value_object "Mark" do
       attribute :amount,    Integer
       attribute :direction, String
+      invariant("a mark amount is positive") { amount.positive? }
+      invariant("a mark direction is in or out") { direction == "in" || direction == "out" }
     end
 
     value_object "Note" do
-      attribute :text, String
+      attribute :text, String, pattern: '[^ \t\n\r]'
+      invariant("a note is present") { !text.to_s.empty? }
     end
 
     command "OpenTill" do

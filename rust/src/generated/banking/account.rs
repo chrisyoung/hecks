@@ -37,6 +37,7 @@ impl AccountNumber {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "AccountNumber.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -78,7 +79,7 @@ impl DailyLimit {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
 {
     let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
-    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::SignTest { op: crate::kernel::Comparison { less_than: true, equal: false, negated: false }, receiver: Box::new(Expr::Lookup("cents")) })), &ctx)?.truthy() {
+    if !crate::kernel::interpret(&Expr::SignTest { op: crate::kernel::Comparison { less_than: true, equal: true, negated: true }, receiver: Box::new(Expr::Lookup("cents")) }, &ctx)?.truthy() {
         let mut offered = self.to_json();
         if let crate::kernel::Json::Object(fields) = &mut offered {
             fields.sort_by(|a, b| a.0.cmp(&b.0));
@@ -86,7 +87,7 @@ impl DailyLimit {
         let offered = offered.to_json_string();
         return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
             ("name", "DailyLimit"),
-            ("description", "a daily limit is non-negative"),
+            ("description", "a daily limit is positive"),
             ("offered", offered.as_str()),
         ])));
     }
@@ -106,7 +107,7 @@ impl DailyLimit {
 impl DailyLimit {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
         Ok(Self {
-        cents: match v.get("cents") { Some(x) => x.as_i64().ok_or_else(|| crate::kernel::Refusal::TypeMismatch(format!("DailyLimit.cents expects Integer, got {}", x.inspect())))?, None => 0 },
+        cents: match v.get("cents") { Some(x) => x.as_i64().ok_or_else(|| crate::kernel::Refusal::TypeMismatch(format!("DailyLimit.cents expects Integer, got {}", x.inspect())))?, None => 100000 },
         })
     }
 }
@@ -231,6 +232,7 @@ impl Money {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.currency) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Money.currency must match [^ \\t\\n\\r], got ", self.currency))); }
         Ok(())
     }
 }
@@ -304,6 +306,7 @@ impl PositiveMoney {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.currency) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "PositiveMoney.currency must match [^ \\t\\n\\r], got ", self.currency))); }
         Ok(())
     }
 }
@@ -393,6 +396,7 @@ impl Narrative {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.text) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Narrative.text must match [^ \\t\\n\\r], got ", self.text))); }
         Ok(())
     }
 }

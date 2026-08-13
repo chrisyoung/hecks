@@ -37,6 +37,7 @@ impl IdentityId {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "IdentityId.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -91,6 +92,7 @@ impl RoleName {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "RoleName.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -145,6 +147,7 @@ impl Scope {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Scope.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -199,6 +202,7 @@ impl Timestamp {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Timestamp.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }

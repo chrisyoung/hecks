@@ -37,6 +37,7 @@ impl VocabularyName {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "VocabularyName.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -308,6 +309,9 @@ pub const MUTATION_OP: &[MutationOp] = &[
     MutationOp { name: "append", sign: "" },
     MutationOp { name: "increment", sign: "1" },
     MutationOp { name: "decrement", sign: "-1" },
+    MutationOp { name: "multiply", sign: "" },
+    MutationOp { name: "clamp", sign: "" },
+    MutationOp { name: "remove", sign: "" },
 ];
 
 impl MutationOp {
@@ -338,6 +342,7 @@ pub enum QueryComparator {
     Lte,
     In,
     Contains,
+    NoneInState,
 }
 
 impl QueryComparator {
@@ -351,6 +356,7 @@ impl QueryComparator {
             QueryComparator::Lte => "lte",
             QueryComparator::In => "in",
             QueryComparator::Contains => "contains",
+            QueryComparator::NoneInState => "none_in_state",
         };
         crate::kernel::Json::obj(vec![("name", crate::kernel::Json::str(member))])
     }
@@ -367,9 +373,10 @@ impl QueryComparator {
             "lte" => Ok(QueryComparator::Lte),
             "in" => Ok(QueryComparator::In),
             "contains" => Ok(QueryComparator::Contains),
+            "none_in_state" => Ok(QueryComparator::NoneInState),
             other => Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationClosedSetMember.render(&[
                 ("type", "QueryComparator"),
-                ("admitted", "\"eq\", \"ne\", \"gt\", \"gte\", \"lt\", \"lte\", \"in\", \"contains\""),
+                ("admitted", "\"eq\", \"ne\", \"gt\", \"gte\", \"lt\", \"lte\", \"in\", \"contains\", \"none_in_state\""),
                 ("offered", &format!("{:?}", other)),
             ]))),
         }

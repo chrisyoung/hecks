@@ -37,6 +37,7 @@ impl IdentityId {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "IdentityId.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }

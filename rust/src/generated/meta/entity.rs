@@ -37,6 +37,7 @@ impl EntityName {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "EntityName.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -116,7 +117,22 @@ impl crate::kernel::Fielded for IdentityPath {
 
 impl IdentityPath {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("value"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "IdentityPath"),
+            ("description", "an identity path is present"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "IdentityPath.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -168,7 +184,54 @@ impl crate::kernel::Fielded for PieceField {
 
 impl PieceField {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("name"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "PieceField"),
+            ("description", "a field is named"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("type"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "PieceField"),
+            ("description", "a field has a type"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("list"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "PieceField"),
+            ("description", "a field's list mode is specified"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.name) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "PieceField.name must match [^ \\t\\n\\r], got ", self.name))); }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.r#type) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "PieceField.type must match [^ \\t\\n\\r], got ", self.r#type))); }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.list) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "PieceField.list must match [^ \\t\\n\\r], got ", self.list))); }
         Ok(())
     }
 }
@@ -224,7 +287,38 @@ impl crate::kernel::Fielded for PieceTransition {
 
 impl PieceTransition {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("command"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "PieceTransition"),
+            ("description", "a command is named"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("to_state"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "PieceTransition"),
+            ("description", "a to state is named"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.command) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "PieceTransition.command must match [^ \\t\\n\\r], got ", self.command))); }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.to_state) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "PieceTransition.to_state must match [^ \\t\\n\\r], got ", self.to_state))); }
         Ok(())
     }
 }

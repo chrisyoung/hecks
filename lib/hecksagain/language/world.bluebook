@@ -12,17 +12,17 @@ Hecks.bluebook "World" do
     attribute :latest, Latest
 
     value_object "WorldName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a world names its domain") { !value.to_s.empty? }
     end
 
     value_object "Realm" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a realm says something") { !value.to_s.empty? }
     end
 
     value_object "Latest" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a latest version says something") { !value.to_s.empty? }
     end
 
@@ -57,12 +57,12 @@ Hecks.bluebook "World" do
     attribute :settings, list_of(Setting)
 
     value_object "WiringText" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     value_object "Setting" do
-      attribute :key,   String
-      attribute :value, String
+      attribute :key,   String, pattern: '[^ \t\n\r]'
+      attribute :value, String, pattern: '[^ \t\n\r]'
     end
 
     command "Declare" do

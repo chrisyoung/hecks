@@ -517,6 +517,12 @@ pub fn dispatch_by_name(
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
               crate::generated::banking::scheduledpayment::dispatch_abandon(&mut store.scheduledpayment, &id, args, mutations).map(|(_, events)| stamp_payload(events, &payload))
           }
+          "Banking::SafeDepositBox.Create" => {
+              let args = crate::generated::banking::safedepositbox::CreateArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Branch manager"), "Create", caller_role)?;
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::safedepositbox::dispatch_create(&mut store.safedepositbox, args, mutations).map(|(_, events)| stamp_payload(events, &payload))
+          }
           "Banking::SafeDepositBox.Rent" => {
               let args = crate::generated::banking::safedepositbox::RentArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Branch clerk"), "Rent", caller_role)?;

@@ -37,6 +37,7 @@ impl ExternalIdentifierKey {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "ExternalIdentifierKey.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -91,6 +92,7 @@ impl Issuer {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Issuer.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -145,6 +147,7 @@ impl Subject {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Subject.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }

@@ -37,6 +37,7 @@ impl BranchCode {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "BranchCode.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -199,6 +200,7 @@ impl VisitDate {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "VisitDate.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -238,7 +240,22 @@ impl crate::kernel::Fielded for VisitNote {
 
 impl VisitNote {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("text"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "VisitNote"),
+            ("description", "a visit note is present"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.text) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "VisitNote.text must match [^ \\t\\n\\r], got ", self.text))); }
         Ok(())
     }
 }
@@ -293,6 +310,7 @@ impl KeySerial {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "KeySerial.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -717,6 +735,92 @@ impl SafeDepositBox {
 
         by_identity.or(by_id_key).or(by_reference_key).ok_or_else(|| {
             crate::kernel::Refusal::TypeMismatch("SafeDepositBox: no identity found (tried branch_code.value, box_number.value, id, safe_deposit_box)".to_string())
+        })
+    }
+}
+
+impl crate::kernel::Fielded for CreateArgs {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::Field;
+        
+        match name {
+            "branch_code" => Some(Field::Nested(&self.branch_code)),
+            "box_number" => Some(Field::Nested(&self.box_number)),
+            _ => None,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct CreateArgs {
+    pub branch_code: BranchCode,
+    pub box_number: BoxNumber,
+}
+
+pub fn dispatch_create(
+    repo: &mut impl crate::kernel::Repository<SafeDepositBox>, args: CreateArgs, mutations: &mut Vec<crate::kernel::MutationRecord>,
+) -> crate::kernel::DispatchResult<SafeDepositBox> {
+        args.branch_code.check_invariants()?;
+        args.box_number.check_invariants()?;
+
+    crate::kernel::dispatch(
+        repo,
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", args.branch_code.value.to_string(), args.box_number.value.to_string()),
+        build: Box::new(|| SafeDepositBox {
+            customer_id: None,
+            branch_code: Some(args.branch_code.clone()),
+            box_number: Some(args.box_number.clone()),
+            size: Some(Size::Small),
+            visits: vec![],
+            keys: vec![],
+            status: "vacant".to_string(),
+        }),
+    },
+        "Create",
+        "Banking::SafeDepositBox",
+        "SafeDepositBox",
+        "branch_code.value, box_number.value",
+        &args,
+        &[
+
+        ],
+        None,
+        |record| {
+        record.status = "vacant".to_string();
+            Ok(())
+        },
+        &[
+
+        ],
+        &["BoxCreated"],
+        args.to_json(),
+        mutations,
+    )
+}
+
+impl CreateArgs {
+    pub fn to_json(&self) -> crate::kernel::Json {
+        crate::kernel::Json::Object(vec![
+        ("branch_code".to_string(), self.branch_code.to_json()),
+        ("box_number".to_string(), self.box_number.to_json()),
+        ])
+    }
+}
+
+impl CreateArgs {
+    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
+let unknown = v.unknown_keys(&["branch_code", "box_number", "id", "reference", "end_to_end"]);
+if !unknown.is_empty() {
+    return Err(crate::kernel::Refusal::UnknownArgument(format!(
+        "Create does not declare {} — it takes branch_code, box_number",
+        unknown.join(", ")
+    )));
+}
+        Ok(Self {
+        branch_code: BranchCode::from_json(v.require("branch_code", "CreateArgs")?)?,
+        box_number: BoxNumber::from_json(v.require("box_number", "CreateArgs")?)?,
         })
     }
 }

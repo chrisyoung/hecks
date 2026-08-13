@@ -167,13 +167,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "a light name is present"
+            }
           ],
           "members": [
 
@@ -188,13 +191,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "a light condition is present"
+            }
           ],
           "members": [
 
@@ -303,13 +309,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "a bell name is present"
+            }
           ],
           "members": [
 
@@ -330,7 +339,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "value.positive?",
+              "description": "a ring count is positive"
+            }
           ],
           "members": [
 
@@ -400,13 +412,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "a signal name is present"
+            }
           ],
           "members": [
 

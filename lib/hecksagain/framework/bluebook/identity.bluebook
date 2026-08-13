@@ -8,7 +8,7 @@ Hecks.bluebook "Identity" do
     identified_by IdentityId, as: :identity_id
 
     value_object "IdentityId" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an identity id is present") { !value.to_s.empty? }
     end
 
@@ -34,17 +34,17 @@ Hecks.bluebook "Identity" do
     attribute :subject, Subject
 
     value_object "ExternalIdentifierKey" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a key is present") { !value.to_s.empty? }
     end
 
     value_object "Issuer" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("an issuer is present") { !value.to_s.empty? }
     end
 
     value_object "Subject" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a subject is present") { !value.to_s.empty? }
     end
 

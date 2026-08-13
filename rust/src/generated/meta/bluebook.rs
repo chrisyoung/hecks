@@ -70,7 +70,38 @@ impl crate::kernel::Fielded for NormalisationRule {
 
 impl NormalisationRule {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("strategy"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "NormalisationRule"),
+            ("description", "a rule has a strategy"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("boundary"))))))), &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "NormalisationRule"),
+            ("description", "a rule has a boundary"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.strategy) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "NormalisationRule.strategy must match [^ \\t\\n\\r], got ", self.strategy))); }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.boundary) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "NormalisationRule.boundary must match [^ \\t\\n\\r], got ", self.boundary))); }
         Ok(())
     }
 }
@@ -133,6 +164,7 @@ impl BluebookName {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "BluebookName.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -187,6 +219,7 @@ impl Vision {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Vision.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -241,6 +274,7 @@ impl Classification {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Classification.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -295,6 +329,7 @@ impl Version {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "Version.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -349,6 +384,7 @@ impl FormerlyKnownAs {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "FormerlyKnownAs.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }

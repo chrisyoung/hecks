@@ -37,6 +37,7 @@ impl CustomerNumber {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "CustomerNumber.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -91,6 +92,7 @@ impl CustomerStanding {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "CustomerStanding.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -162,6 +164,8 @@ impl PersonName {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.given) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "PersonName.given must match [^ \\t\\n\\r], got ", self.given))); }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.family) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "PersonName.family must match [^ \\t\\n\\r], got ", self.family))); }
         Ok(())
     }
 }
@@ -203,7 +207,7 @@ impl crate::kernel::Fielded for EmailAddress {
 
 impl EmailAddress {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-        if !crate::kernel::pattern::matches("^[^@ ]+@[^@ ]+\\.[^@ ]+$", &self.address) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "EmailAddress.address must match ^[^@ ]+@[^@ ]+\\.[^@ ]+$, got ", self.address))); }
+        if !crate::kernel::pattern::matches("^[^@ \\t\\n\\r]+@[^@ \\t\\n\\r]+\\.[^@ \\t\\n\\r]+$", &self.address) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "EmailAddress.address must match ^[^@ \\t\\n\\r]+@[^@ \\t\\n\\r]+\\.[^@ \\t\\n\\r]+$, got ", self.address))); }
         Ok(())
     }
 }

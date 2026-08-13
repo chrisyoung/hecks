@@ -6,16 +6,20 @@ Hecks.bluebook "Payments" do
     identified_by { payment_id.value }
 
     value_object "PaymentId" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a payment ID is present") { !value.to_s.empty? }
     end
 
     value_object "Money" do
       attribute :cents, Integer
+      invariant("a money amount is non-negative") { cents >= 0 }
     end
 
     value_object "DeclineReason" do
-      attribute :code, String
-      attribute :message, String
+      attribute :code, String, pattern: '[^ \t\n\r]'
+      attribute :message, String, pattern: '[^ \t\n\r]'
+      invariant("a decline code is present") { !code.to_s.empty? }
+      invariant("a decline message is present") { !message.to_s.empty? }
     end
 
     attribute :payment_id, PaymentId

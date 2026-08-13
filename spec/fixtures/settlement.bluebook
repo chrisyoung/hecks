@@ -10,11 +10,13 @@ Hecks.bluebook "Wire" do
     attribute :cents, Money, default: { cents: 0 }
 
     value_object "DrawerNumber" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a drawer number is present") { !value.to_s.empty? }
     end
 
     value_object "Money" do
       attribute :cents, Integer
+      invariant("money is non-negative") { cents >= 0 }
     end
 
     lifecycle :status, default: "open" do
@@ -72,13 +74,15 @@ Hecks.bluebook "Wire" do
     attribute :amount,      Money, default: { cents: 0 }
 
     value_object "WireReference" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a wire reference is present") { !value.to_s.empty? }
     end
     reference_to Drawer, as: :source
     reference_to Drawer, as: :destination
 
     value_object "Money" do
       attribute :cents, Integer
+      invariant("money is non-negative") { cents >= 0 }
     end
 
     lifecycle :status, default: "asked" do

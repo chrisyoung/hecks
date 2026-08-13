@@ -1,3 +1,4 @@
+require "json"
 require_relative "../naming"
 require_relative "../ports/query"
 require_relative "../ports/query/ordering"
@@ -78,8 +79,14 @@ module Hecksagain
         declared = declared_query(aggregate, query_name)
         args = normalize_args(aggregate, declared, args)
         declared = TenantScope.apply(declared, args)
-        reference_interpret(@registry.repository(domain, aggregate).all, declared, args,
-                             domain: domain, shape: aggregate)
+        # SAME FREEZE AS #call's OWN interpret PATH, applied at the same
+        # seam (the outer call, not inside reference_interpret) — a row
+        # off this path is exactly as much "an answer, not a handle" as
+        # one off the native/interpret paths, and had gone without the
+        # rest of this file's own freeze policy until a caller mutating a
+        # reference_query result was found to reach straight through.
+        Freezer.deep(reference_interpret(@registry.repository(domain, aggregate).all, declared, args,
+                                         domain: domain, shape: aggregate))
       end
 
       private
@@ -147,13 +154,17 @@ module Hecksagain
         declared = entity.query(query_name) ||
                    raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_query_missing",
                                                              entity: entity_name, query: query_name.inspect))
+        args = normalize_args(aggregate, declared, args)
         declared = TenantScope.apply(declared, args)
         list_attr = aggregate.attributes.find { |a| a.list? && a.type.to_s == entity_name } ||
                     raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_holds_no_list",
                                                               aggregate: aggregate.hecks_name, entity: entity_name))
 
-        parent_key = Naming.reference_key(aggregate.hecks_name)
-        rows = @registry.repository(domain, aggregate).all.flat_map do |record|
+        parent_key     = Naming.reference_key(aggregate.hecks_name)
+        repository     = @registry.repository(domain, aggregate)
+        parent_records = scoped_parents(aggregate, declared, args, repository)
+
+        rows = parent_records.flat_map do |record|
           Array(record[list_attr.name])
             .select { |el| declared.wheres.all? { |w| element_where_holds?(w, el, args) } }
             .map    { |el| { parent_key => record.id }.merge(el) }
@@ -162,6 +173,26 @@ module Hecksagain
         ordered = ordered_elements(rows, declared.order_by, declared.null_semantics,
                                    parent_key, entity.identity_heads)
         declared.limit ? ordered.first(resolve_query_value(declared.limit.value, args).to_i) : ordered
+      end
+
+      # ONE PARENT, NOT EVERY PARENT — an entity query that declares
+      # `reference_to <ItsOwnAggregate>` (PersonalList.Item.OnList's own
+      # `reference_to PersonalList`, say) is asking to be scoped the
+      # same way an ordinary query's `where(field: :arg)` already scopes
+      # a plain aggregate query — this is that same ask, one level down,
+      # answered by finding the ONE named record directly rather than
+      # flat-mapping every record's own list and filtering afterward.
+      # Absent the argument, or absent a matching reference_to on the
+      # query at all, every parent is still walked — unchanged from
+      # before this existed, and still how a query meant to span every
+      # list (an admin's "everything on every list," if one existed)
+      # keeps working.
+      def scoped_parents(aggregate, declared, args, repository)
+        parent_ref = declared.attributes.find { |a| a.reference? && a.type.target_name == aggregate.hecks_name }
+        return repository.all unless parent_ref && args.key?(parent_ref.name)
+
+        record = repository.find(args[parent_ref.name])
+        record ? [record] : []
       end
 
       def element_where_holds?(clause, element, args)
@@ -266,10 +297,26 @@ module Hecksagain
       # caller may legitimately pass "a,b,c" meaning "any of these") —
       # unrelated to `contains`, which reads the STORED field. See
       # `contains?`.
+      #
+      # BUG#11 FIX: When arrays are passed to queries through the DSL, they
+      # are stringified in the IR (to_h), becoming strings like "[\"a\", \"b\"]".
+      # Detect this pattern and parse it back to an array before processing.
       def members(value)
         return value.map { |element| comparable(element).to_s } if value.is_a?(Array)
 
-        value.to_s.split(",").map(&:strip)
+        string_value = value.to_s
+        # Detect stringified array: starts with [" and ends with "]
+        if string_value.start_with?('["') && string_value.end_with?('"]')
+          # This looks like a stringified array from render_value. Parse it.
+          begin
+            parsed = JSON.parse(string_value)
+            return parsed.map(&:to_s) if parsed.is_a?(Array)
+          rescue JSON::ParserError
+            # Not valid JSON, treat as CSV
+          end
+        end
+
+        string_value.split(",").map(&:strip)
       end
 
       # `contains` means two different things depending on what is HELD —

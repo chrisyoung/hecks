@@ -349,6 +349,12 @@
   },
   {
     "kind": "command",
+    "id": "Banking::SafeDepositBox.Create",
+    "generated": true,
+    "routed": true
+  },
+  {
+    "kind": "command",
     "id": "Banking::SafeDepositBox.Rent",
     "generated": true,
     "routed": true

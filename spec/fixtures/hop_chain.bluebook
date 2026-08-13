@@ -7,7 +7,10 @@ Hecks.bluebook "HopChain" do
   aggregate "Client" do
     identified_by { name.value }
     attribute :name, "Name"
-    value_object("Name") { attribute :value, String }
+    value_object("Name") do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a client name is present") { !value.to_s.empty? }
+    end
 
     lifecycle :status, default: "active" do
       transition "Churn" => "churned", from: "active"
@@ -29,7 +32,10 @@ Hecks.bluebook "HopChain" do
     identified_by { reference.value }
     reference_to Client
     attribute :reference, "Reference"
-    value_object("Reference") { attribute :value, String }
+    value_object("Reference") do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("an engagement reference is present") { !value.to_s.empty? }
+    end
 
     lifecycle :stage, default: "started" do
       transition "Demo" => "demo_shown", from: "started"
@@ -56,7 +62,10 @@ Hecks.bluebook "HopChain" do
     identified_by { number.value }
     reference_to Engagement
     attribute :number, "Number"
-    value_object("Number") { attribute :value, String }
+    value_object("Number") do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a proposal number is present") { !value.to_s.empty? }
+    end
 
     lifecycle :status, default: "drafted" do
       transition "Send" => "sent", from: "drafted"
@@ -115,7 +124,10 @@ Hecks.bluebook "HopChain" do
     # as a second self-reference, refused as naming two roots.
     reference_to Node, as: :parent
     attribute :label, "Label"
-    value_object("Label") { attribute :value, String }
+    value_object("Label") do
+      attribute :value, String, pattern: '[^ \t\n\r]'
+      invariant("a node label is present") { !value.to_s.empty? }
+    end
 
     command "Plant" do
       reference_to Node, as: :parent, optional: true

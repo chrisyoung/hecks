@@ -315,7 +315,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -339,7 +339,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -363,7 +363,7 @@
               "list": false,
               "name": "given",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             },
             {
@@ -372,7 +372,7 @@
               "list": false,
               "name": "family",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -400,7 +400,7 @@
               "list": false,
               "name": "address",
               "optional": false,
-              "pattern": "^[^@ ]+@[^@ ]+\\.[^@ ]+$",
+              "pattern": "^[^@ \\t\\n\\r]+@[^@ \\t\\n\\r]+\\.[^@ \\t\\n\\r]+$",
               "type": "String"
             }
           ],
@@ -1382,7 +1382,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -1402,7 +1402,7 @@
           "attributes": [
             {
               "admits": null,
-              "default": 0,
+              "default": 100000,
               "list": false,
               "name": "cents",
               "optional": false,
@@ -1413,8 +1413,8 @@
           "closed_set": false,
           "invariants": [
             {
-              "canonical": "!cents.negative?",
-              "description": "a daily limit is non-negative"
+              "canonical": "cents.positive?",
+              "description": "a daily limit is positive"
             }
           ],
           "members": [
@@ -1454,7 +1454,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -1495,7 +1495,7 @@
               "list": false,
               "name": "currency",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -1528,7 +1528,7 @@
               "list": false,
               "name": "currency",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -1556,7 +1556,7 @@
               "list": false,
               "name": "name",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -1594,7 +1594,7 @@
               "list": false,
               "name": "text",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -2041,7 +2041,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -2065,13 +2065,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "a card nickname is present"
+            }
           ],
           "members": [
 
@@ -2082,12 +2085,12 @@
           "attributes": [
             {
               "admits": null,
-              "default": 0.0,
+              "default": 0,
               "list": false,
               "name": "amount",
               "optional": false,
               "pattern": null,
-              "type": "Float"
+              "type": "Integer"
             }
           ],
           "closed_set": false,
@@ -2158,7 +2161,7 @@
               "list": false,
               "name": "text",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -2517,7 +2520,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -2565,7 +2568,7 @@
               "list": false,
               "name": "text",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -3017,13 +3020,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "an authorisation code is present"
+            }
           ],
           "members": [
 
@@ -3062,7 +3068,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -3086,7 +3092,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -3369,13 +3375,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "an end-to-end reference is present"
+            }
           ],
           "members": [
 
@@ -3390,13 +3399,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "a movement direction is present"
+            }
           ],
           "members": [
 
@@ -3435,7 +3447,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -3811,13 +3823,16 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!value.to_s.empty?",
+              "description": "an instruction reference is present"
+            }
           ],
           "members": [
 
@@ -3856,7 +3871,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -3880,7 +3895,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -4006,6 +4021,45 @@
         }
       ],
       "commands": [
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "branch_code",
+              "optional": false,
+              "pattern": null,
+              "type": "BranchCode"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "box_number",
+              "optional": false,
+              "pattern": null,
+              "type": "BoxNumber"
+            }
+          ],
+          "emits": [
+            "BoxCreated"
+          ],
+          "ensures": [
+
+          ],
+          "givens": [
+
+          ],
+          "goal": "Register a new safe deposit box in the vault",
+          "mutations": [
+
+          ],
+          "name": "Create",
+          "provenance": null,
+          "references": null,
+          "role": "Branch manager"
+        },
         {
           "attributes": [
             {
@@ -4396,6 +4450,11 @@
         "field": "status",
         "transitions": [
           {
+            "command": "Create",
+            "from_state": null,
+            "to_state": "vacant"
+          },
+          {
             "command": "Rent",
             "from_state": "vacant",
             "to_state": "rented"
@@ -4450,7 +4509,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -4522,7 +4581,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -4546,13 +4605,16 @@
               "list": false,
               "name": "text",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!text.to_s.empty?",
+              "description": "a visit note is present"
+            }
           ],
           "members": [
 
@@ -4567,7 +4629,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -4820,7 +4882,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -4844,7 +4906,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -5022,7 +5084,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -5052,7 +5114,10 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "cents >= 0",
+              "description": "a statement amount is non-negative"
+            }
           ],
           "members": [
 
@@ -5067,7 +5132,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -5091,7 +5156,7 @@
               "list": false,
               "name": "cadence",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             },
             {

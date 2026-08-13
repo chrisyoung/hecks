@@ -21,7 +21,7 @@ Hecks.bluebook "Bluebook" do
     attribute :name, VocabularyName
 
     value_object "VocabularyName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a vocabulary is named") { !value.to_s.empty? }
     end
 
@@ -31,10 +31,10 @@ Hecks.bluebook "Bluebook" do
     # together, negated inverts the result. `compare` reads this table instead of
     # hardcoding a six-way case statement — see Evaluator::COMPARISONS.
     value_object "Comparison" do
-      attribute :symbol,             String
-      attribute :compares_less_than, String
-      attribute :compares_equal,     String
-      attribute :negated,            String
+      attribute :symbol,             String, pattern: '[^ \t\n\r]'
+      attribute :compares_less_than, String, pattern: '[^ \t\n\r]'
+      attribute :compares_equal,     String, pattern: '[^ \t\n\r]'
+      attribute :negated,            String, pattern: '[^ \t\n\r]'
 
       one_of do
         member symbol: ">=", compares_less_than: "true",  compares_equal: "false", negated: "true"
@@ -53,8 +53,8 @@ Hecks.bluebook "Bluebook" do
     # beside it. `positive?` = value > 0, `negative?` = value < 0, `zero?` =
     # value == 0.
     value_object "SignTest" do
-      attribute :name,         String
-      attribute :compares_via, String
+      attribute :name,         String, pattern: '[^ \t\n\r]'
+      attribute :compares_via, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "positive?", compares_via: ">"
         member name: "negative?", compares_via: "<"
@@ -68,8 +68,8 @@ Hecks.bluebook "Bluebook" do
     # else is always false — not declared here, since it is the fallback
     # every OTHER haystack type shares, not a case of its own.
     value_object "IncludeHaystack" do
-      attribute :type,     String
-      attribute :strategy, String
+      attribute :type,     String, pattern: '[^ \t\n\r]'
+      attribute :strategy, String, pattern: '[^ \t\n\r]'
       one_of do
         member type: "Array",  strategy: "membership"
         member type: "String", strategy: "substring"
@@ -81,7 +81,7 @@ Hecks.bluebook "Bluebook" do
     # number its digits, a string itself) — a closed set to admit into, not a
     # table of different rules per type.
     value_object "ToStringType" do
-      attribute :type, String
+      attribute :type, String, pattern: '[^ \t\n\r]'
       one_of do
         member type: "String"
         member type: "Integer"
@@ -97,7 +97,7 @@ Hecks.bluebook "Bluebook" do
     # already named for it. One declaration for both, since the set itself is
     # the only thing either needed to say.
     value_object "SizedType" do
-      attribute :type, String
+      attribute :type, String, pattern: '[^ \t\n\r]'
       one_of do
         member type: "Array"
         member type: "String"
@@ -107,7 +107,7 @@ Hecks.bluebook "Bluebook" do
 
     # Attribute::PRIMITIVES — the scalars a value object may bottom out in
     value_object "Primitive" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "String"
         member name: "Integer"
@@ -119,7 +119,7 @@ Hecks.bluebook "Bluebook" do
 
     # Expression::CanonicalForm::STRATEGIES
     value_object "NormalisationStrategy" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "collapse_whitespace"
         member name: "replace"
@@ -133,7 +133,7 @@ Hecks.bluebook "Bluebook" do
     # so they carry no sign — ABSENT IS NOT EMPTY, same reading as elsewhere in
     # this file.
     value_object "MutationOp" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       attribute :sign, String
       one_of do
         member name: "set",       sign: ""
@@ -160,7 +160,7 @@ Hecks.bluebook "Bluebook" do
     # test membership in opposite directions), so this stays a flat closed set —
     # the same shape MutationOp had before it grew a sign.
     value_object "QueryComparator" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "eq"
         member name: "ne"
@@ -182,7 +182,7 @@ Hecks.bluebook "Bluebook" do
 
     # Adapters::Driven::Folder::DOMAIN_ORDER — declarations load in this order
     value_object "LoadOrder" do
-      attribute :glob, String
+      attribute :glob, String, pattern: '[^ \t\n\r]'
       one_of do
         member glob: "*.port"
         member glob: "*.adapter"

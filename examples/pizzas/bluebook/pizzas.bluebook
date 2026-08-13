@@ -12,7 +12,7 @@ Hecks.bluebook "Pizzas" do
     attribute :customer_name, CustomerName
 
     value_object "PizzaName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
 
       invariant("a pizza is named") { !value.to_s.empty? }
     end
@@ -20,17 +20,17 @@ Hecks.bluebook "Pizzas" do
     value_object "Price" do
       attribute :cents, Integer
 
-      invariant("a price is never negative") { cents >= 0 }
+      invariant("a price is never negative") { cents > 0 }
     end
 
     value_object "CustomerName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
 
       invariant("a customer is named") { !value.to_s.empty? }
     end
 
     value_object "ToppingName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
 
       invariant("a topping is named") { !value.to_s.empty? }
     end
@@ -42,8 +42,10 @@ Hecks.bluebook "Pizzas" do
     end
 
     value_object "Topping" do
-      attribute :name,   String
+      attribute :name,   String, pattern: '[^ \t\n\r]'
       attribute :amount, Integer
+      invariant("a topping name is present") { !name.to_s.empty? }
+      invariant("a topping amount is positive") { amount.positive? }
     end
 
     # A closed set written the long way (`one_of do member ... end`), not the
@@ -57,7 +59,7 @@ Hecks.bluebook "Pizzas" do
     # declared as its own sibling value object, the same pattern LedgerDirection
     # and AccountKind already use, and `Pizza` below just holds one by name.
     value_object "Size" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
 
       one_of do
         member value: "small"

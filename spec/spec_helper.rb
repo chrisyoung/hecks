@@ -60,4 +60,16 @@ RSpec.configure do |config|
   # these unfiltered; run them locally on demand with
   # `CI=true bundle exec rspec` or `bundle exec rspec --tag io`.
   config.filter_run_excluding io: true unless ENV["CI"]
+
+  # `qa: true` marks tests that demonstrate known bugs. These are owned
+  # by the QA engineer and demonstrate issues that haven't been fixed yet.
+  # They are excluded from normal test runs and CI.
+  #
+  # To run QA bug tests:
+  #   rspec --tag qa
+  #   rspec spec/qa_bugs_spec.rb
+  #
+  # As bugs are fixed, tests are moved to the appropriate spec file
+  # and the qa: true tag is removed.
+  config.filter_run_excluding qa: true
 end

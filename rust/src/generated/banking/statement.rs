@@ -37,6 +37,7 @@ impl StatementPeriod {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "StatementPeriod.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }
@@ -76,7 +77,21 @@ impl crate::kernel::Fielded for StatementAmount {
 
 impl StatementAmount {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::Compare { op: crate::kernel::Comparison { less_than: true, equal: false, negated: true }, left: Box::new(Expr::Lookup("cents")), right: Box::new(Expr::Int(0)) }, &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "StatementAmount"),
+            ("description", "a statement amount is non-negative"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
         Ok(())
     }
 }
@@ -131,6 +146,7 @@ impl StatementDate {
         ])));
     }
 }
+        if !crate::kernel::pattern::matches("[^ \\t\\n\\r]", &self.value) { return Err(crate::kernel::Refusal::TypeMismatch(format!("{}{:?}", "StatementDate.value must match [^ \\t\\n\\r], got ", self.value))); }
         Ok(())
     }
 }

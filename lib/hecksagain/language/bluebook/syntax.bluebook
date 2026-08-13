@@ -58,7 +58,7 @@ Hecks.bluebook "Bluebook" do
     attribute :name, SyntaxName
 
     value_object "SyntaxName" do
-      attribute :value, String
+      attribute :value, String, pattern: '[^ \t\n\r]'
       invariant("a syntax is named") { !value.to_s.empty? }
     end
 
@@ -76,7 +76,7 @@ Hecks.bluebook "Bluebook" do
     # `Type` is the second argument of `attribute`, which is a place words are
     # spelled (`list_of`, `one_of`) and so is a context like any other.
     value_object "Context" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "File"
         member name: "Bluebook"
@@ -97,6 +97,7 @@ Hecks.bluebook "Bluebook" do
         member name: "DomainPort"
         member name: "PortOperation"
       end
+      invariant("a context is named") { !name.to_s.empty? }
     end
 
     # WHAT A WORD'S BLOCK IS, and the three answers are genuinely different
@@ -114,13 +115,14 @@ Hecks.bluebook "Bluebook" do
     # rule's canonical text, `identified_by`'s body is the identity paths. A
     # `keywords` or `rows` body fills the record the word opens.
     value_object "Body" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "none"
         member name: "keywords"
         member name: "source"
         member name: "rows"
       end
+      invariant("a body type is named") { !name.to_s.empty? }
     end
 
     # WHERE A WORD STANDS IN ITS OWN LIFE. The same shape the expression
@@ -134,13 +136,14 @@ Hecks.bluebook "Bluebook" do
     # every projected reader it simply does not exist — the operator rule,
     # at the syntax layer.
     value_object "Status" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "proposed"
         member name: "admitted"
         member name: "deprecated"
         member name: "retired"
       end
+      invariant("a status is named") { !name.to_s.empty? }
     end
 
     # WHAT AN ARGUMENT LOOKS LIKE WHEN IT IS TYPED. Lexical, not semantic — two
@@ -151,7 +154,7 @@ Hecks.bluebook "Bluebook" do
     # rather than `"0"`, `0.0` rather than `"0.0"` — which is what LiteralText is
     # about, and why it is not `text`.
     value_object "ArgumentKind" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "text"
         member name: "symbol"
@@ -162,6 +165,7 @@ Hecks.bluebook "Bluebook" do
         member name: "pairs"
         member name: "list"
       end
+      invariant("an argument kind is named") { !name.to_s.empty? }
     end
 
     # WHAT A `pairs` ARGUMENT'S OWN PAIR(S) DO. Found by tracing every real
@@ -194,13 +198,14 @@ Hecks.bluebook "Bluebook" do
     #             domain) — named here so a reader knows to resolve
     #             dynamically rather than assume an omission.
     value_object "PairsShape" do
-      attribute :name, String
+      attribute :name, String, pattern: '[^ \t\n\r]'
       one_of do
         member name: "fields"
         member name: "elements"
         member name: "verbatim"
         member name: "sibling"
       end
+      invariant("a pairs shape is named") { !name.to_s.empty? }
     end
 
     # EVERY WORD THE BLUEBOOK SURFACE ADMITS.
@@ -237,13 +242,13 @@ Hecks.bluebook "Bluebook" do
     # below, either it is derived or the surface cannot say it, and the second
     # kind is a finding.
     value_object "Keyword" do
-      attribute :word,    String
-      attribute :context, String, admits: "Syntax::Context"
-      attribute :body,    String, admits: "Syntax::Body"
-      attribute :inner,   String
-      attribute :opens,   String
-      attribute :fills,   String
-      attribute :status,  String, default: "admitted", admits: "Syntax::Status"
+      attribute :word,    String, pattern: '[^ \t\n\r]'
+      attribute :context, String, pattern: '[^ \t\n\r]', admits: "Syntax::Context"
+      attribute :body,    String, pattern: '[^ \t\n\r]', admits: "Syntax::Body"
+      attribute :inner,   String, optional: true  # Empty for no body or source body
+      attribute :opens,   String, optional: true  # Empty when only opens something
+      attribute :fills,   String, optional: true  # Empty when no field filled
+      attribute :status,  String, default: "admitted", pattern: '[^ \t\n\r]', admits: "Syntax::Status"
       # THE RENAME COLUMN — the language's own `was:`, one level up from the
       # data translations that taught it the shape. A row whose word was
       # respelled keeps the old spelling here; the old spelling stays
@@ -251,7 +256,11 @@ Hecks.bluebook "Bluebook" do
       # bluebook written under it keeps booting —
       # forever. One hop only: renaming an already-renamed word refuses
       # until the language grows real eras for its own words.
-      attribute :was,     String
+      attribute :was,     String, optional: true  # Null for non-renamed words
+      invariant("a keyword is named") { !word.to_s.empty? }
+      invariant("a keyword context is present") { !context.to_s.empty? }
+      invariant("a keyword body type is present") { !body.to_s.empty? }
+      invariant("a keyword status is present") { !status.to_s.empty? }
 
       one_of do
         # The outside of every body. `Hecks.bluebook` is reached through the
@@ -552,14 +561,14 @@ Hecks.bluebook "Bluebook" do
       # could carry, since `fills` already names where the ARGUMENT'S OWN
       # value lands. Empty for every argument that isn't one of a closed set
       # of named alternatives feeding a sibling field this way.
-      attribute :selects,          String
+      attribute :selects,          String, pattern: '[^ \t\n\r]'
       # THE TWO ROLES A `pairs` ARGUMENT'S OWN PAIR PLAYS, read together with
       # `pairs_shape` below — see that value object's own comment for the
       # four shapes. Empty for anything that is not `kind: "pairs"`, and for
       # a `sibling`-shaped pairs argument (the target field varies per pair,
       # per domain — nothing here could name it).
-      attribute :pair_key_fills,   String
-      attribute :pair_value_fills, String
+      attribute :pair_key_fills,   String, pattern: '[^ \t\n\r]'
+      attribute :pair_value_fills, String, pattern: '[^ \t\n\r]'
       attribute :pairs_shape,      String, admits: "Syntax::PairsShape"
       attribute :status,   String, default: "admitted", admits: "Syntax::Status"
       # A REPEATABLE POSITIONAL — the one row spells the kind of MANY,
@@ -621,11 +630,17 @@ Hecks.bluebook "Bluebook" do
         member keyword: "reference_to",    context: "Aggregate", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
         member keyword: "reference_to",    context: "Aggregate", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
         # AN AGGREGATE MAY POINT AT ONE OF SEVERAL TARGETS, NEVER BOTH —
-        # `optional: true` on two sibling `reference_to` calls (Item's
-        # own `personal_list_id`/`camping_list_id`) is how that's said:
-        # each field genuinely absent, not present-but-empty, whenever
-        # the OTHER one is set instead.
+        # `optional: true` on two sibling `reference_to` calls (a head
+        # that may point at one of two possible parents, never both) is
+        # how that's said: each field genuinely absent, not
+        # present-but-empty, whenever the OTHER one is set instead.
         member keyword: "reference_to",    context: "Aggregate", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
+        # THE SAME THREE ARGUMENTS, ONE CONTEXT OVER — an entity's own
+        # `reference_to` mints the identical `_id`-suffixed attribute a
+        # head's does; only which construct is doing the pointing differs.
+        member keyword: "reference_to",    context: "Entity", at: "1", named: "",         kind: "constant", required: "true",  fills: "type"
+        member keyword: "reference_to",    context: "Entity", at: "",  named: "as",       kind: "symbol",   required: "false", fills: "name"
+        member keyword: "reference_to",    context: "Entity", at: "",  named: "optional", kind: "flag",     required: "false", fills: "optional"
         # THE SAME TWO ARGUMENTS `reference_to` TAKES — a target and an
         # optional alias. What `as:` fills differs in the Ruby builder (no
         # `_id` mint), but that default-naming rule is not a fact this table

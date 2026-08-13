@@ -297,7 +297,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -328,7 +328,7 @@
           "closed_set": false,
           "invariants": [
             {
-              "canonical": "cents >= 0",
+              "canonical": "cents > 0",
               "description": "a price is never negative"
             }
           ],
@@ -345,7 +345,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -369,7 +369,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
@@ -417,7 +417,7 @@
               "list": false,
               "name": "name",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             },
             {
@@ -432,7 +432,14 @@
           ],
           "closed_set": false,
           "invariants": [
-
+            {
+              "canonical": "!name.to_s.empty?",
+              "description": "a topping name is present"
+            },
+            {
+              "canonical": "amount.positive?",
+              "description": "a topping amount is positive"
+            }
           ],
           "members": [
 
@@ -447,7 +454,7 @@
               "list": false,
               "name": "value",
               "optional": false,
-              "pattern": null,
+              "pattern": "[^ \\t\\n\\r]",
               "type": "String"
             }
           ],
