@@ -226,6 +226,15 @@ else
   framework_aggregates = []
   framework_queries = []
   framework_read_models = []
+  framework_process_managers = []
+  # ONE ENTRY PER CHAPTER (target first — see below), each carrying
+  # exactly what emit_merged_policy_table/emit_merged_cross_domain_
+  # policy_table need to qualify THAT chapter's own policies against
+  # ITS OWN domain_name/aggregates, never the target's. See
+  # reactions.rb's own header on emit_merged_policy_table for why this
+  # exists at all — recovers a documented, deliberate gap, not a new
+  # capability invented speculatively.
+  policy_sources = [{ domain_name: target_domain_name, policies: target_ir[:policies], aggregates: target_ir[:aggregates] }]
   (target_registry.bluebooks.keys - [target_domain_name]).each do |chapter_name|
     chapter_mod_name = chapter_name.downcase
     chapter_mod_names[chapter_mod_name] = chapter_name
@@ -236,6 +245,8 @@ else
     framework_aggregates.concat(chapter_result[:aggregates])
     framework_queries.concat(chapter_result[:queries])
     framework_read_models.concat(chapter_result[:read_models])
+    framework_process_managers.concat(chapter_ir[:process_managers])
+    policy_sources << { domain_name: chapter_name, policies: chapter_ir[:policies], aggregates: chapter_ir[:aggregates] }
   end
 
   # ONE MERGED Store/dispatch_by_name, spanning the target domain AND
@@ -244,11 +255,17 @@ else
   # aggregate's own chapter_mod:/domain_name: fields, so this is just
   # "call them once more over the union" (domain_generator.rb's own
   # header on why this is safe: nothing about a single-chapter call was
-  # privileged in the first place). Policies/process managers do NOT
-  # merge across chapters here — Governance/Identity declare none today,
-  # and real cross-chapter policy routing is registry.rb's own
-  # documented, still-open gap (emit_policy_table's header), not
-  # attempted by this pass.
+  # privileged in the first place). Policies/process managers DO merge
+  # across chapters now — RECOVERED, not new: this used to only compile
+  # in the target domain's own (the comment here used to read
+  # "Governance/Identity declare none today... not attempted by this
+  # pass"), invisible for exactly that reason until lifeadelics vendored
+  # a chapter (embryonaut_bluebooks/payments) that DOES declare real
+  # ones — found live, its own PaymentGateway.Succeeded port operation
+  # dispatching cleanly but never triggering the Payment.Succeed its own
+  # declared policy names, because the MERGED table those policies need
+  # to live in was empty. See reactions.rb's own emit_merged_policy_
+  # table header for the full story.
   #
   # Written into the TARGET DOMAIN'S OWN directory as `merged.rs` — never
   # a separate shared `active/` module — so it lives and dies with that
@@ -265,11 +282,11 @@ else
     f.puts
     f.puts RustProjection::Projector.emit_reference_lookup(merged_aggregates)
     f.puts
-    f.puts RustProjection::Projector.emit_policy_table(target_domain_name, target_ir[:policies], target_ir[:aggregates])
+    f.puts RustProjection::Projector.emit_merged_policy_table(policy_sources)
     f.puts
-    f.puts RustProjection::Projector.emit_cross_domain_policy_table(target_domain_name, target_ir[:policies])
+    f.puts RustProjection::Projector.emit_merged_cross_domain_policy_table(policy_sources)
     f.puts
-    f.puts RustProjection::Projector.emit_process_manager_table(target_ir[:process_managers])
+    f.puts RustProjection::Projector.emit_process_manager_table(target_ir[:process_managers] + framework_process_managers)
     f.puts
     f.puts RustProjection::Projector.emit_reference_key_table(
       chapter_mod_names.map { |mod_name, chapter_name|

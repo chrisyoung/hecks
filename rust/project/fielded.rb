@@ -45,7 +45,7 @@ module RustProjection
           )
         elsif attr[:optional]
           nested = value_objects_by_name[attr[:type]]
-          next nil unless nested && !nested[:closed_set]
+          next nil unless nested && fielded_capable_nested?(nested)
 
           Exemplar.render("fielded_arm_optional_nested", '"tmpl_field"' => key.inspect, "tmpl_ident" => ident)
         elsif scalar
@@ -56,7 +56,7 @@ module RustProjection
           )
         else
           nested = value_objects_by_name[attr[:type]]
-          next nil unless nested && !nested[:closed_set]
+          next nil unless nested && fielded_capable_nested?(nested)
 
           Exemplar.render("fielded_arm_nested", '"tmpl_field"' => key.inspect, "tmpl_ident" => ident)
         end
@@ -107,7 +107,7 @@ module RustProjection
           )
         else
           nested = value_objects_by_name[attr[:type]]
-          next nil unless nested && !nested[:closed_set]
+          next nil unless nested && fielded_capable_nested?(nested)
 
           Exemplar.render("fielded_arm_optional_nested", '"tmpl_field"' => key.inspect, "tmpl_ident" => ident)
         end

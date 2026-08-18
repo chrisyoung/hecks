@@ -138,12 +138,16 @@ module RustProjection
         return emit_closed_set_table(vo) if vo[:attributes].size > 1
 
         variants = vo[:members].map { |row| closed_set_variant(row) }
-        return Exemplar.compose(
+        enum_part = Exemplar.compose(
           "closed_set_enum",
           { "TmplKind" => name },
           field_id: "closed_set_enum:VARIANT",
           field_subs_list: variants.map { |v| { "TmplMemberA" => v } }
         )
+        # `fielded_capable_nested?`'s own real consumer — see its header
+        # (naming.rb) for the full story. Purely additive alongside the
+        # enum itself; nothing about `enum_part`'s own generation changed.
+        return "#{enum_part}\n\n#{emit_closed_set_fielded_impl(vo)}"
       end
 
       field_subs_list = vo[:attributes].map do |attr|
