@@ -18,6 +18,7 @@
 
 use crate::auth;
 use crate::auth::Session;
+use crate::checkout;
 use crate::dispatch;
 use crate::field_hints::{EMAIL_HINT, TEL_HINT, TEXTAREA_HINT, URL_HINT};
 use crate::ir::ir;
@@ -40,19 +41,41 @@ pub async fn render(
     invoker: &dyn LambdaInvoker,
 ) -> Option<Value> {
     let http_event = body.get("requestContext")?.get("http")?;
-    let Some(domain_ir) = ir() else {
-        return Some(respond(500, "text/plain", "HECKS_IR_PATH not set or unreadable — this domain has no web layer configured"));
-    };
 
     let method = http_event.get("method").and_then(|v| v.as_str()).unwrap_or("GET");
     let path = body.get("rawPath").and_then(|v| v.as_str()).unwrap_or("/");
-    let query = parse_form(body.get("rawQueryString").and_then(|v| v.as_str()).unwrap_or(""));
     let raw_body = body.get("body").and_then(|v| v.as_str()).unwrap_or("");
     let raw_body = if body.get("isBase64Encoded").and_then(|v| v.as_bool()) == Some(true) {
         String::from_utf8(base64_decode(raw_body)).unwrap_or_default()
     } else {
         raw_body.to_string()
     };
+
+    // LIFEADELICS-SPECIFIC GLUE, MARKED — same convention auth.rs's own
+    // header uses for its Embryonaut-specific glue: checkout_route
+    // hardcodes verb strings against Lifeadelics' own aggregates
+    // (Registration, and vendored Payments::Payment's PaymentGateway
+    // port), the pragmatic working version for lifeadelics today rather
+    // than a new IR-driven "outbound port"/"webhook signature scheme"
+    // capability with no second domain to prove it against (checkout.rs's
+    // own header has the fuller reasoning). Checked BEFORE the ir()/
+    // HECKS_IR_PATH gate below, deliberately: lifeadelics declares no
+    // `web "Rust"` (Shared mode, no generic FieldShape UI — the same
+    // shape Banking's own Shared-mode deploy already uses), so
+    // HECKS_IR_PATH is never set for it and `ir()` always returns None
+    // here; neither of these two routes needs a domain_ir at all.
+    if config.domain == "Lifeadelics" {
+        let stripe_signature = body.get("headers").and_then(|h| h.get("stripe-signature")).and_then(|v| v.as_str()).unwrap_or("");
+        if let Some(response) = checkout_route(method, path, &raw_body, stripe_signature, client, wasm_path, config, invoker).await {
+            return Some(response);
+        }
+    }
+
+    let Some(domain_ir) = ir() else {
+        return Some(respond(500, "text/plain", "HECKS_IR_PATH not set or unreadable — this domain has no web layer configured"));
+    };
+
+    let query = parse_form(body.get("rawQueryString").and_then(|v| v.as_str()).unwrap_or(""));
     let cookies = extract_cookies(body);
 
     Some(route(domain_ir, method, path, &query, &raw_body, &cookies, client, wasm_path, config, invoker).await)
@@ -963,13 +986,7 @@ async fn submit(
         return redirect(&format!("/{domain_name}/{agg}/{id}.html"));
     }
 
-    let refusal = outcome
-        .result
-        .get("refusals")
-        .and_then(|r| r.as_array())
-        .and_then(|rs| rs.last())
-        .cloned()
-        .unwrap_or_else(|| json!({"error": "Refused"}));
+    let refusal = last_refusal(&outcome.result);
 
     if json_mode {
         return respond(422, "application/json", &refusal.to_string());
@@ -977,6 +994,239 @@ async fn submit(
 
     let action = format!("/{domain_name}/{agg}/{cname}.html");
     html(422, &page(&format!("{domain_name}::{agg}.{cname}"), &form_body(domain_name, aggregate, command, &action, fields, raw, Some(&refusal))))
+}
+
+// A refused command's own MOST RECENT refusal — `.last()` because
+// `dispatch::handle` reruns the whole rehydrated history, and every
+// step before this call's own already succeeded once (dispatch.rs's own
+// header on why); shared by `submit` above and `registrations_route`
+// below rather than each keeping its own copy.
+fn last_refusal(result: &Value) -> Value {
+    result
+        .get("refusals")
+        .and_then(|r| r.as_array())
+        .and_then(|rs| rs.last())
+        .cloned()
+        .unwrap_or_else(|| json!({"error": "Refused"}))
+}
+
+// ---- lifeadelics: /registrations, /webhooks/stripe ---------------------
+// See `render`'s own "LIFEADELICS-SPECIFIC GLUE" header and checkout.rs's
+// own header for why this is hardcoded rather than IR-driven. Ported
+// from adapters/http_server.rb (the Ruby app, lifeadelics repo) —
+// same two routes, same status codes, same dispatch order, Rust.
+
+// Env vars read ONCE here, at the routing layer, passed down as plain
+// parameters — the same shape `route`'s own `session_secret()` already
+// reads once and hands `auth_route` rather than each auth_route arm
+// reading it independently. Keeps `registrations_route`/`webhook_route`
+// themselves free of hidden global state, the same reason `checkout::
+// verify_signature` takes `now` as a parameter instead of reading the
+// clock internally — a test can pass an explicit secret/key instead of
+// mutating a PROCESS-WIDE env var, which `cargo test`'s default
+// parallelism would otherwise race between tests.
+fn stripe_api_key() -> String {
+    std::env::var("STRIPE_API_KEY").unwrap_or_default()
+}
+
+fn stripe_webhook_secret() -> String {
+    std::env::var("STRIPE_WEBHOOK_SECRET").unwrap_or_default()
+}
+
+fn site_url() -> String {
+    std::env::var("SITE_URL").unwrap_or_else(|_| "http://localhost:4321".to_string())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn checkout_route(
+    method: &str,
+    path: &str,
+    raw_body: &str,
+    stripe_signature: &str,
+    client: &Mutex<Client>,
+    wasm_path: &Path,
+    config: &LineageConfig,
+    invoker: &dyn LambdaInvoker,
+) -> Option<Value> {
+    match (method, path) {
+        ("POST", "/registrations") => {
+            Some(registrations_route(raw_body, &stripe_api_key(), &site_url(), client, wasm_path, config, invoker).await)
+        }
+        ("POST", "/webhooks/stripe") => {
+            Some(webhook_route(raw_body, stripe_signature, &stripe_webhook_secret(), client, wasm_path, config, invoker).await)
+        }
+        _ => None,
+    }
+}
+
+// THE SITE DRIVING IN — http_server.rb's own `POST /registrations`.
+// Payment first, then Registration, sharing ONE reference minted here
+// (lifeadelics.bluebook's own Registration comment has the full
+// reasoning: a Registration with no Payment behind it is meaningless,
+// a Payment with no Registration just needs cleaning up eventually).
+// `role: None` throughout — this route has no notion of an
+// authenticated caller's role any more than web.rs's own generic
+// `submit` does (that function's own comment); the Astro site calls in
+// server-to-server, not as a signed-in user.
+#[allow(clippy::too_many_arguments)]
+async fn registrations_route(
+    raw_body: &str,
+    api_key: &str,
+    site_url: &str,
+    client: &Mutex<Client>,
+    wasm_path: &Path,
+    config: &LineageConfig,
+    invoker: &dyn LambdaInvoker,
+) -> Value {
+    let body: Value = match serde_json::from_str(raw_body) {
+        Ok(v) => v,
+        Err(e) => return respond(400, "application/json", &json!({"error": format!("invalid JSON: {e}")}).to_string()),
+    };
+    let Some(event_slug) = body.get("event_slug").and_then(|v| v.as_str()) else {
+        return respond(400, "application/json", &json!({"error": "missing event_slug"}).to_string());
+    };
+    let Some(name) = body.get("name").and_then(|v| v.as_str()) else {
+        return respond(400, "application/json", &json!({"error": "missing name"}).to_string());
+    };
+    let Some(email) = body.get("email").and_then(|v| v.as_str()) else {
+        return respond(400, "application/json", &json!({"error": "missing email"}).to_string());
+    };
+
+    let read = match dispatch::read(client, wasm_path).await {
+        Ok(r) => r,
+        Err(e) => return respond(500, "text/plain", &format!("{e:#}")),
+    };
+    let events = instances_for(&read, "Lifeadelics::Event#");
+    let Some((_, event)) = events.iter().find(|(id, _)| id == event_slug) else {
+        return respond(404, "application/json", &json!({"error": "no such event"}).to_string());
+    };
+    if event.get("status").and_then(|v| v.as_str()) != Some("open") {
+        return respond(422, "application/json", &json!({"error": "registration is closed for this event"}).to_string());
+    }
+    let price_cents = event.get("price").and_then(|p| p.get("cents")).and_then(|v| v.as_i64()).unwrap_or(0);
+    let event_name = event.get("name").and_then(|n| n.get("value")).and_then(|v| v.as_str()).unwrap_or("");
+
+    let reference = uuid::Uuid::new_v4().to_string();
+
+    let initiate_args = json!({
+        "reference": {"value": reference},
+        "processor": {"value": "stripe"},
+        "payment_type": {"value": "card"},
+        "amount": {"cents": price_cents},
+        "client": {"name": name, "email": email},
+    });
+    let outcome = match dispatch::handle(client, wasm_path, "Payments::Payment.Initiate", initiate_args, None, config, invoker).await {
+        Ok(o) => o,
+        Err(e) => return respond(500, "text/plain", &format!("{e:#}")),
+    };
+    if !outcome.accepted {
+        return respond(422, "application/json", &last_refusal(&outcome.result).to_string());
+    }
+
+    let request_args = json!({
+        "event_slug": event_slug,
+        "registration_id": {"value": reference},
+        "attendee": {"name": name, "email": email},
+    });
+    let outcome = match dispatch::handle(client, wasm_path, "Lifeadelics::Registration.Request", request_args, None, config, invoker).await {
+        Ok(o) => o,
+        Err(e) => return respond(500, "text/plain", &format!("{e:#}")),
+    };
+    if !outcome.accepted {
+        return respond(422, "application/json", &last_refusal(&outcome.result).to_string());
+    }
+
+    if api_key.is_empty() {
+        return respond(500, "text/plain", "STRIPE_API_KEY not set");
+    }
+    let success_url = format!("{site_url}/{event_slug}.html?registered=1");
+    let cancel_url = format!("{site_url}/{event_slug}.html?registered=0");
+
+    match checkout::create_checkout_session(api_key, price_cents, event_name, &reference, &success_url, &cancel_url).await {
+        Ok(checkout_url) => respond(200, "application/json", &json!({"checkout_url": checkout_url, "registration_id": reference}).to_string()),
+        Err(e) => respond(500, "text/plain", &format!("{e:#}")),
+    }
+}
+
+// STRIPE DRIVING IN — http_server.rb's own `POST /webhooks/stripe`.
+// `reference` round-trips through Checkout's own metadata (set above,
+// keyed "registration_id" — the same string is both the Registration's
+// own id and the Payment's own reference), read back here — never
+// trusted without a verified signature first. Dispatches through
+// Payment's own vendored PaymentGateway port, never Registration's
+// (removed — see lifeadelics.bluebook's own Registration comment).
+#[allow(clippy::too_many_arguments)]
+async fn webhook_route(
+    raw_body: &str,
+    signature_header: &str,
+    secret: &str,
+    client: &Mutex<Client>,
+    wasm_path: &Path,
+    config: &LineageConfig,
+    invoker: &dyn LambdaInvoker,
+) -> Value {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
+    if let Err(e) = checkout::verify_signature(raw_body, signature_header, secret, now) {
+        return respond(400, "text/plain", &e.to_string());
+    }
+    let event: Value = match serde_json::from_str(raw_body) {
+        Ok(v) => v,
+        Err(_) => return respond(400, "text/plain", "invalid JSON"),
+    };
+
+    let event_type = event.get("type").and_then(|v| v.as_str()).unwrap_or("");
+    let object = event.get("data").and_then(|d| d.get("object")).cloned().unwrap_or_else(|| json!({}));
+    let reference = object.get("metadata").and_then(|m| m.get("registration_id")).and_then(|v| v.as_str()).map(String::from);
+
+    if let Some(reference) = reference {
+        let reported_processor = json!({"value": "stripe"});
+        let verb_and_args = match event_type {
+            "checkout.session.completed" => {
+                // Checkout's own PaymentIntent id when one exists (every
+                // card/wallet payment mints one), the Checkout Session's
+                // own id otherwise — `.get(...)`, not a panic on a
+                // missing key, matching http_server.rb's own `[]`
+                // comment (a synthetic test payload carries no
+                // payment_intent at all).
+                let transaction_id = object.get("payment_intent").and_then(|v| v.as_str())
+                    .or_else(|| object.get("id").and_then(|v| v.as_str()))
+                    .unwrap_or("")
+                    .to_string();
+                Some(("Payments::Payment.PaymentGateway.Succeeded", json!({
+                    "reference": reference,
+                    "transaction_id": {"value": transaction_id},
+                    "reported_processor": reported_processor,
+                })))
+            }
+            "checkout.session.expired" => Some(("Payments::Payment.PaymentGateway.Failed", json!({
+                "reference": reference,
+                "reason": {"value": "checkout_expired"},
+                "reported_processor": reported_processor,
+            }))),
+            _ => None,
+        };
+
+        if let Some((verb, args)) = verb_and_args {
+            // A REFUSAL HERE (e.g. a redelivered webhook for an already-
+            // settled payment — Stripe's own delivery is at-least-once)
+            // is a benign no-op, not an error: the payment already holds
+            // the right status, there's nothing left to do, and
+            // returning 200 is what tells Stripe's own retry logic to
+            // stop. http_server.rb's own Ruby route has no rescue around
+            // its equivalent `dispatch_port` call at all (unlike POST
+            // /registrations, just above it) — an uncaught
+            // DOMAIN_REFUSALS there 500s and leaves Stripe retrying
+            // forever; only a genuine Err (a WASM/database fault, not a
+            // domain refusal) propagates as a real failure here, a
+            // deliberate improvement over the Ruby route's own gap, not
+            // a divergence papering over one.
+            if let Err(e) = dispatch::handle(client, wasm_path, verb, args, None, config, invoker).await {
+                return respond(500, "text/plain", &format!("{e:#}"));
+            }
+        }
+    }
+
+    respond(200, "text/plain", "")
 }
 
 // ---- rendering: form ---------------------------------------------------
@@ -1402,5 +1652,327 @@ mod tests {
         assert!(TEXTAREA_HINT.is_match("text"));
         assert!(!TEXTAREA_HINT.is_match("context"));
         assert!(EMAIL_HINT.is_match("EMAIL"));
+    }
+
+    // ---- checkout_route: real Postgres, real lifeadelics.wasm, no
+    // network ----------------------------------------------------------
+    // `registrations_route`'s own final hop (checkout::create_checkout_
+    // session, a genuine third-party HTTPS call to api.stripe.com) is
+    // deliberately NOT trait-injected/mocked here — auth.rs's own
+    // Google OAuth calls (verify/verify_id_token) hold to the exact
+    // same precedent: real third-party network code stays real-network,
+    // verified live rather than locally unit-tested. What IS tested
+    // below is everything genuinely this route's own logic: event
+    // lookup, the closed/missing-field/refusal branches, and the
+    // dispatch chain all the way through Registration.Request — a
+    // missing STRIPE_API_KEY is what stops each successful case one
+    // step short of the real network call, which doubles as proof the
+    // whole chain up to there ran for real (a wrong dispatch anywhere
+    // earlier would fail on ITS OWN assertion first).
+    use crate::lambda_client;
+    use tokio_postgres::NoTls;
+
+    async fn scratch_db(name: &str) -> Mutex<Client> {
+        let (admin, conn) = tokio_postgres::connect("host=localhost dbname=postgres", NoTls).await.expect("connect to postgres");
+        tokio::spawn(async move {
+            let _ = conn.await;
+        });
+        admin.batch_execute(&format!("DROP DATABASE IF EXISTS {name} WITH (FORCE)")).await.unwrap();
+        admin.batch_execute(&format!("CREATE DATABASE {name}")).await.unwrap();
+
+        let (client, conn) = tokio_postgres::connect(&format!("host=localhost dbname={name}"), NoTls).await.expect("connect to scratch db");
+        tokio::spawn(async move {
+            let _ = conn.await;
+        });
+        crate::journal::ensure_schema(&client).await.unwrap();
+        Mutex::new(client)
+    }
+
+    // Same shape dispatch.rs's own `provision_lineage` already builds —
+    // duplicated here rather than shared, matching this crate's own
+    // established precedent (auth.rs keeps its own `scratch_member_db`
+    // rather than reusing dispatch.rs's `scratch_db` too).
+    async fn provision_lineage(client: &Client, domain: &str, era: i32, aggregate_storage_names: &[&str]) {
+        client.batch_execute("CREATE TABLE IF NOT EXISTS hecks_eras (domain text, ordinal int, held_text text)").await.unwrap();
+        client
+            .execute("INSERT INTO hecks_eras (domain, ordinal, held_text) VALUES ($1, $2, 'test')", &[&domain, &era])
+            .await
+            .unwrap();
+
+        let journal_table = format!("hecks_journal_{}", crate::journal::snake(domain));
+        client
+            .batch_execute(&format!(
+                "CREATE TABLE IF NOT EXISTS \"{journal_table}\" (
+                    ordinal      bigserial PRIMARY KEY,
+                    era          int NOT NULL,
+                    aggregate    text NOT NULL,
+                    aggregate_id text NOT NULL,
+                    operation    text NOT NULL,
+                    state        jsonb
+                )"
+            ))
+            .await
+            .unwrap();
+
+        for name in aggregate_storage_names {
+            let snapshot_table = format!("{}_head_snapshot_{era}", crate::journal::snake(name));
+            client
+                .batch_execute(&format!("CREATE TABLE IF NOT EXISTS \"{snapshot_table}\" (id text PRIMARY KEY, ordinal bigint NOT NULL, state jsonb NOT NULL)"))
+                .await
+                .unwrap();
+        }
+    }
+
+    fn lifeadelics_config(era: i32) -> LineageConfig {
+        LineageConfig { domain: "Lifeadelics".to_string(), era }
+    }
+
+    fn lifeadelics_wasm_path() -> std::path::PathBuf {
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../dist/lifeadelics.wasm")
+    }
+
+    async fn schedule_event(client: &Mutex<Client>, wasm_path: &Path, config: &LineageConfig, slug: &str, price_cents: i64) {
+        let args = json!({
+            "slug": {"value": slug}, "name": {"value": "Yogadelics"},
+            "price": {"cents": price_cents}, "capacity": {"value": 20},
+        });
+        let outcome = dispatch::handle(client, wasm_path, "Lifeadelics::Event.Schedule", args, None, config, &lambda_client::NeverInvoker)
+            .await
+            .unwrap();
+        assert!(outcome.accepted, "scheduling the fixture event should succeed: {:?}", outcome.result);
+    }
+
+    fn sign_stripe_header(secret: &str, now: i64, payload: &str) -> String {
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+        let mut mac = Hmac::<Sha256>::new_from_slice(secret.as_bytes()).unwrap();
+        mac.update(format!("{now}.{payload}").as_bytes());
+        format!("t={now},v1={}", mac.finalize().into_bytes().iter().map(|b| format!("{b:02x}")).collect::<String>())
+    }
+
+    fn now_secs() -> i64 {
+        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64
+    }
+
+    #[tokio::test]
+    async fn registrations_route_refuses_a_body_missing_any_required_field() {
+        let client = scratch_db("hecks_host_web_test_registrations_missing_fields").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+
+        let response = registrations_route(r#"{"event_slug":"yoga-aug"}"#, "", "http://localhost:4321", &client, &lifeadelics_wasm_path(), &lifeadelics_config(1), &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 400);
+        assert!(response["body"].as_str().unwrap().contains("missing name"));
+    }
+
+    #[tokio::test]
+    async fn registrations_route_refuses_invalid_json_outright() {
+        let client = scratch_db("hecks_host_web_test_registrations_bad_json").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+
+        let response = registrations_route("not json", "", "http://localhost:4321", &client, &lifeadelics_wasm_path(), &lifeadelics_config(1), &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 400);
+    }
+
+    #[tokio::test]
+    async fn registrations_route_404s_an_unknown_event_slug() {
+        let client = scratch_db("hecks_host_web_test_registrations_no_event").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+
+        let body = json!({"event_slug": "nope", "name": "Ada", "email": "ada@example.com"}).to_string();
+        let response = registrations_route(&body, "", "http://localhost:4321", &client, &lifeadelics_wasm_path(), &lifeadelics_config(1), &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 404);
+    }
+
+    #[tokio::test]
+    async fn registrations_route_refuses_a_closed_event() {
+        let client = scratch_db("hecks_host_web_test_registrations_closed_event").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+        let config = lifeadelics_config(1);
+        let wasm_path = lifeadelics_wasm_path();
+
+        schedule_event(&client, &wasm_path, &config, "closed-event", 4200).await;
+        let close = dispatch::handle(&client, &wasm_path, "Lifeadelics::Event.Close", json!({"id": "closed-event"}), None, &config, &lambda_client::NeverInvoker)
+            .await
+            .unwrap();
+        assert!(close.accepted, "closing the fixture event should succeed: {:?}", close.result);
+
+        let body = json!({"event_slug": "closed-event", "name": "Ada", "email": "ada@example.com"}).to_string();
+        let response = registrations_route(&body, "", "http://localhost:4321", &client, &wasm_path, &config, &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 422);
+        assert!(response["body"].as_str().unwrap().contains("closed"));
+    }
+
+    #[tokio::test]
+    async fn registrations_route_propagates_a_real_domain_refusal_from_payment_initiate() {
+        // A ZERO-PRICE event -- PositiveMoney's own "an amount is
+        // positive" invariant refuses Payment.Initiate before
+        // Registration.Request is ever reached, proving the refusal
+        // this route surfaces is the REAL domain rule, not a stand-in.
+        let client = scratch_db("hecks_host_web_test_registrations_zero_price").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+        let config = lifeadelics_config(1);
+        let wasm_path = lifeadelics_wasm_path();
+
+        schedule_event(&client, &wasm_path, &config, "free-event", 0).await;
+
+        let body = json!({"event_slug": "free-event", "name": "Ada", "email": "ada@example.com"}).to_string();
+        let response = registrations_route(&body, "", "http://localhost:4321", &client, &wasm_path, &config, &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 422);
+        assert!(
+            response["body"].as_str().unwrap().contains("positive"),
+            "should surface PositiveMoney's own invariant text: {response:?}"
+        );
+
+        // AND NEITHER THE PAYMENT NOR THE REGISTRATION WAS PERSISTED —
+        // Registration.Request must never have been dispatched at all.
+        let read = dispatch::read(&client, &wasm_path).await.unwrap();
+        let instances = read["instances"].as_object().unwrap();
+        assert!(instances.keys().all(|k| !k.starts_with("Lifeadelics::Registration#") && !k.starts_with("Payments::Payment#")));
+    }
+
+    #[tokio::test]
+    async fn registrations_route_runs_the_whole_dispatch_chain_and_stops_one_step_short_of_the_real_stripe_call() {
+        let client = scratch_db("hecks_host_web_test_registrations_happy_path").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+        let config = lifeadelics_config(1);
+        let wasm_path = lifeadelics_wasm_path();
+
+        schedule_event(&client, &wasm_path, &config, "happy-event", 4200).await;
+
+        // STRIPE_API_KEY deliberately unset here (nothing in this test
+        // process's own environment sets it) -- the route's own guard
+        // trips ONLY after both real dispatches already committed,
+        // which this test confirms below by reading them back.
+        let body = json!({"event_slug": "happy-event", "name": "Ada Lovelace", "email": "ada@example.com"}).to_string();
+        let response = registrations_route(&body, "", "http://localhost:4321", &client, &wasm_path, &config, &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 500);
+        assert!(response["body"].as_str().unwrap().contains("STRIPE_API_KEY"), "{response:?}");
+
+        let read = dispatch::read(&client, &wasm_path).await.unwrap();
+        let instances = read["instances"].as_object().unwrap();
+        let registration = instances.iter().find(|(k, _)| k.starts_with("Lifeadelics::Registration#")).map(|(_, v)| v);
+        let payment = instances.iter().find(|(k, _)| k.starts_with("Payments::Payment#")).map(|(_, v)| v);
+        assert!(registration.is_some(), "Registration.Request should have committed for real: {instances:?}");
+        assert!(payment.is_some(), "Payment.Initiate should have committed for real: {instances:?}");
+
+        let registration = registration.unwrap();
+        let payment = payment.unwrap();
+        assert_eq!(registration["event_slug"], "happy-event");
+        assert_eq!(registration["attendee"]["name"], "Ada Lovelace");
+        // ONE SHARED REFERENCE — the Registration's own id equals the
+        // Payment's own reference, minted once (this route's own header
+        // on why), never independently.
+        let reference = registration["registration_id"]["value"].as_str().unwrap();
+        assert_eq!(payment["reference"]["value"], reference);
+        assert_eq!(payment["amount"]["cents"], 4200);
+        assert_eq!(payment["processor"]["value"], "stripe");
+    }
+
+    // ---- webhook_route: no network at all, fully testable end to end --
+
+    #[tokio::test]
+    async fn webhook_route_rejects_a_bad_signature_before_touching_the_domain_at_all() {
+        let client = scratch_db("hecks_host_web_test_webhook_bad_sig").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+
+        let payload = json!({"type": "checkout.session.completed", "data": {"object": {}}}).to_string();
+        let bad_header = "t=1700000000,v1=deadbeef";
+
+        let response = webhook_route(&payload, bad_header, "whsec_test_bad_sig", &client, &lifeadelics_wasm_path(), &lifeadelics_config(1), &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 400);
+    }
+
+    #[tokio::test]
+    async fn webhook_route_settles_a_payment_on_checkout_session_completed() {
+        let client = scratch_db("hecks_host_web_test_webhook_completed").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+        let config = lifeadelics_config(1);
+        let wasm_path = lifeadelics_wasm_path();
+
+        schedule_event(&client, &wasm_path, &config, "webhook-event", 4200).await;
+        let initiate = dispatch::handle(
+            &client, &wasm_path, "Payments::Payment.Initiate",
+            json!({
+                "reference": {"value": "REG-WEBHOOK-1"}, "processor": {"value": "stripe"},
+                "payment_type": {"value": "card"}, "amount": {"cents": 4200},
+                "client": {"name": "Ada Lovelace", "email": "ada@example.com"},
+            }),
+            None, &config, &lambda_client::NeverInvoker,
+        ).await.unwrap();
+        assert!(initiate.accepted, "{:?}", initiate.result);
+
+        let secret = "whsec_test_completed";
+        let payload = json!({
+            "type": "checkout.session.completed",
+            "data": {"object": {"metadata": {"registration_id": "REG-WEBHOOK-1"}, "payment_intent": "pi_test_abc"}},
+        }).to_string();
+        let now = now_secs();
+        let header = sign_stripe_header(secret, now, &payload);
+
+        let response = webhook_route(&payload, &header, secret, &client, &wasm_path, &config, &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 200, "{response:?}");
+
+        let read = dispatch::read(&client, &wasm_path).await.unwrap();
+        let payment = &read["instances"]["Payments::Payment#REG-WEBHOOK-1"];
+        assert_eq!(payment["status"], "succeeded");
+        assert_eq!(payment["transaction_id"]["value"], "pi_test_abc");
+
+        // A REDELIVERED webhook (Stripe's own delivery is at-least-once)
+        // for the SAME already-succeeded payment must still answer 200
+        // — the real domain refusal underneath is a benign no-op here,
+        // not surfaced as an error (this route's own header explains
+        // why, and why that's a deliberate improvement over
+        // http_server.rb's own unguarded equivalent).
+        let redelivered = webhook_route(&payload, &header, secret, &client, &wasm_path, &config, &lambda_client::NeverInvoker).await;
+        assert_eq!(redelivered["statusCode"], 200, "a redelivered webhook must not surface the resulting refusal as an error: {redelivered:?}");
+    }
+
+    #[tokio::test]
+    async fn webhook_route_declines_a_payment_on_checkout_session_expired() {
+        let client = scratch_db("hecks_host_web_test_webhook_expired").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+        let config = lifeadelics_config(1);
+        let wasm_path = lifeadelics_wasm_path();
+
+        schedule_event(&client, &wasm_path, &config, "webhook-event-2", 4200).await;
+        dispatch::handle(
+            &client, &wasm_path, "Payments::Payment.Initiate",
+            json!({
+                "reference": {"value": "REG-WEBHOOK-2"}, "processor": {"value": "stripe"},
+                "payment_type": {"value": "card"}, "amount": {"cents": 4200},
+                "client": {"name": "Ada Lovelace", "email": "ada@example.com"},
+            }),
+            None, &config, &lambda_client::NeverInvoker,
+        ).await.unwrap().accepted.then_some(()).expect("initiate should succeed");
+
+        let secret = "whsec_test_expired";
+        let payload = json!({
+            "type": "checkout.session.expired",
+            "data": {"object": {"metadata": {"registration_id": "REG-WEBHOOK-2"}}},
+        }).to_string();
+        let now = now_secs();
+        let header = sign_stripe_header(secret, now, &payload);
+
+        let response = webhook_route(&payload, &header, secret, &client, &wasm_path, &config, &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 200, "{response:?}");
+
+        let read = dispatch::read(&client, &wasm_path).await.unwrap();
+        let payment = &read["instances"]["Payments::Payment#REG-WEBHOOK-2"];
+        assert_eq!(payment["status"], "failed");
+        assert_eq!(payment["failure_reason"]["value"], "checkout_expired");
+    }
+
+    #[tokio::test]
+    async fn webhook_route_ignores_an_event_type_it_does_not_handle_and_still_answers_200() {
+        let client = scratch_db("hecks_host_web_test_webhook_unhandled_type").await;
+        provision_lineage(&*client.lock().await, "Lifeadelics", 1, &["Event", "Registration", "Payment"]).await;
+
+        let secret = "whsec_test_unhandled";
+        let payload = json!({"type": "charge.refunded", "data": {"object": {"metadata": {"registration_id": "whatever"}}}}).to_string();
+        let now = now_secs();
+        let header = sign_stripe_header(secret, now, &payload);
+
+        let response = webhook_route(&payload, &header, secret, &client, &lifeadelics_wasm_path(), &lifeadelics_config(1), &lambda_client::NeverInvoker).await;
+        assert_eq!(response["statusCode"], 200);
     }
 }

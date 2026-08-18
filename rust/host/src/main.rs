@@ -16,6 +16,7 @@
 // either exists.
 
 mod auth;
+mod checkout;
 mod dispatch;
 mod field_hints;
 mod ir;

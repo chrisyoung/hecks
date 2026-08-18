@@ -755,7 +755,7 @@ mod tests {
             "number": { "value": "acct-freeze-me" },
             "kind": { "name": "current" },
             "daily_limit": { "cents": 50000 },
-            "customer_id": "CUST-0007",
+            "customer": "CUST-0007",
         });
         handle(&client, &wasm_path(), "Banking::Account.Open", open_args, None, &config, &invoker)
             .await
@@ -911,13 +911,13 @@ mod tests {
 
         let open_src = serde_json::json!({
             "number": { "value": "src-rollback" }, "kind": { "name": "current" },
-            "daily_limit": { "cents": 50000 }, "customer_id": "CUST-0012",
+            "daily_limit": { "cents": 50000 }, "customer": "CUST-0012",
         });
         handle(&client, &wasm_path(), "Banking::Account.Open", open_src, None, &config, &lambda_client::NeverInvoker)
             .await.unwrap().accepted.then_some(()).expect("source account open should succeed");
         let open_dst = serde_json::json!({
             "number": { "value": "dst-rollback" }, "kind": { "name": "current" },
-            "daily_limit": { "cents": 50000 }, "customer_id": "CUST-0012",
+            "daily_limit": { "cents": 50000 }, "customer": "CUST-0012",
         });
         handle(&client, &wasm_path(), "Banking::Account.Open", open_dst, None, &config, &lambda_client::NeverInvoker)
             .await.unwrap().accepted.then_some(()).expect("destination account open should succeed");
@@ -963,13 +963,13 @@ mod tests {
 
         let open_src = serde_json::json!({
             "number": { "value": "src-backfill" }, "kind": { "name": "current" },
-            "daily_limit": { "cents": 50000 }, "customer_id": "CUST-0013",
+            "daily_limit": { "cents": 50000 }, "customer": "CUST-0013",
         });
         handle(&client, &wasm_path(), "Banking::Account.Open", open_src, None, &config, &invoker)
             .await.unwrap().accepted.then_some(()).expect("source account open should succeed");
         let open_dst = serde_json::json!({
             "number": { "value": "dst-backfill" }, "kind": { "name": "current" },
-            "daily_limit": { "cents": 50000 }, "customer_id": "CUST-0013",
+            "daily_limit": { "cents": 50000 }, "customer": "CUST-0013",
         });
         handle(&client, &wasm_path(), "Banking::Account.Open", open_dst, None, &config, &invoker)
             .await.unwrap().accepted.then_some(()).expect("destination account open should succeed");
@@ -1072,7 +1072,7 @@ mod tests {
             "number": { "value": "acct-freeze-dead-letter" },
             "kind": { "name": "current" },
             "daily_limit": { "cents": 50000 },
-            "customer_id": "CUST-0011",
+            "customer": "CUST-0011",
         });
         handle(&client, &wasm_path(), "Banking::Account.Open", open_args, None, &config, &invoker)
             .await
