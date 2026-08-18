@@ -15,13 +15,21 @@
 // the fuller reasoning) rather than a new IR capability invented
 // speculatively for a population of one.
 //
-// PRODUCTION-ONLY, DELIBERATELY — unlike the Ruby app (MockStripeAdapter
-// in development, real Stripe in production, picked by which adapter
-// lifeadelics.hecksagon binds), this crate only ever runs as a deployed
-// AWS Lambda (main.rs's own `lambda_runtime::run`, no standalone-server
-// mode the way Sinatra has one) — there is no "development" here to mock
-// for, the same reason auth.rs's own Google sign-in has no mock path
-// either. `STRIPE_API_KEY` is required, not optional.
+// MOCK BY DEFAULT, REAL STRIPE OPT-IN — mirrors the Ruby app's own
+// choice exactly (MockStripeAdapter unconditionally in every
+// environment except a real deploy — bin/smoke_test's own header: "the
+// same as every environment except a real deploy"), not a scaled-down
+// version of it. `web.rs`'s own `stripe_api_key()`/`stripe_webhook_
+// secret()` decide which side of the line a given deploy is on: an
+// empty `STRIPE_API_KEY` (the World's own blank default, lifeadelics.
+// world's own comment on why) means `mock_checkout_session` below,
+// never a real network call; `STRIPE_WEBHOOK_SECRET` falls back to the
+// SAME fixed, publicly-known, non-secret value adapters/http_server.rb
+// hardcodes (`"whsec_mock_lifeadelics_fixed"`, ALSO what domain/bin/
+// confirm_payment_manually signs against) — so a mock deploy needs zero
+// Lambda environment configuration at all to be fully exercisable,
+// registration through confirmation, matching Ruby's own zero-config
+// mock story.
 
 use hmac::{Hmac, Mac};
 use serde_json::Value;
@@ -106,6 +114,20 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     a.iter().zip(b.iter()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
+// THE MOCK OUTBOUND SIDE — MockStripeAdapter's own `create_session`
+// (vendor/hecksagain/lib/hecksagain/adapters/driven/mock_stripe_adapter.rb,
+// the hecksagain gem's own generic stand-in), ported byte-for-byte:
+// never reads price/product name (a real adapter needs them to build a
+// session a payer actually sees; this only needs to look enough like
+// one to swap in), and the URL it returns carries the SAME
+// `registration_id` a real webhook's metadata would, so a caller
+// signing its own synthetic webhook against it (confirm_payment_
+// manually, a smoke test) has something real to key off of.
+pub fn mock_checkout_session(registration_id: &str, success_url: &str) -> String {
+    let separator = if success_url.contains('?') { "&" } else { "?" };
+    format!("{success_url}{separator}mock_checkout=1&mock_registration_id={registration_id}")
+}
+
 // THE OUTBOUND SIDE — adapters/stripe/stripe.rb's own `create_session`,
 // same four fields the Ruby version builds: currency hardcoded "usd"
 // (same as Ruby — lifeadelics' own Event::Money value object carries no
@@ -166,6 +188,21 @@ mod tests {
         let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
         mac.update(signed_payload.as_bytes());
         hex_encode(&mac.finalize().into_bytes())
+    }
+
+    #[test]
+    fn mock_checkout_session_matches_mock_stripe_adapters_own_exact_shape() {
+        // mock_stripe_adapter.rb's own real output, reproduced byte for
+        // byte: `"#{success_url}#{separator}mock_checkout=1&mock_
+        // registration_id=#{registration_id}"`.
+        let url = mock_checkout_session("REG-1", "https://example.com/yoga.html?registered=1");
+        assert_eq!(url, "https://example.com/yoga.html?registered=1&mock_checkout=1&mock_registration_id=REG-1");
+    }
+
+    #[test]
+    fn mock_checkout_session_uses_a_bare_question_mark_when_the_success_url_carries_no_query_string_yet() {
+        let url = mock_checkout_session("REG-2", "https://example.com/yoga.html");
+        assert_eq!(url, "https://example.com/yoga.html?mock_checkout=1&mock_registration_id=REG-2");
     }
 
     #[test]
