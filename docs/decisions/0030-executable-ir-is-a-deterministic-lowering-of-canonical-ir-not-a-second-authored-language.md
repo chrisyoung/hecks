@@ -117,8 +117,9 @@ Five distinct risks are actually in play here, not one ("can a generator emit st
 3. Can canonical IR lower into executable IR without becoming a second source of truth?
 4. Can the executable representation stay smaller than canonical IR?
 5. Does the resulting runtime actually get simpler?
+6. Can executable IR make behavioral variation explicit, rather than inferring it from incidental optional structure — i.e., can it avoid hiding an authoring-mode switch inside what looks like ordinary optional data?
 
-No single construct tests all five, and jumping straight to `Reaction` — the most complex candidate — would confound them if it failed. Two smaller, ordered slices isolate them instead.
+No single construct tests all six, and jumping straight to `Reaction` — the most complex candidate — would confound them if it failed. Neither Expression nor Binding can even expose risk 6: both are pure evaluation/resolution with no temporal behaviour and no optional sub-structure whose presence silently changes what runs. Three ordered slices isolate the risks instead of confounding them.
 
 ### Slice 1 — Expression alone (this is ADR 0022, reframed as a slice rather than a standalone fix)
 
@@ -183,15 +184,57 @@ kernel execution
 
 Success here proves risks **3** and **4**.
 
-### Reaction is deferred until both slices are boring
+### Slice 3 — Reaction is the real stress test, deferred until both earlier slices are boring
 
-`Reaction` is the first construct that would test risk **5** — whether the runtime actually gets simpler — and that test is only meaningful once 1–4 are independently retired. Testing it earlier would confound "is the architecture right" with "is this specific, more complex construct hard to lower."
+`Reaction` tests risk **5** (does the runtime actually get simpler) — meaningful only once 1–4 are independently retired — but it also introduces a risk Expression and Binding structurally cannot expose: **behavioral mode coupling.**
+
+`Reaction`'s optional sub-structure is not itself the problem — "generate structure, handwrite meaning" covers `Reaction { trigger, condition, bindings, dispatches, context? }` and `ReactionContext { correlation, memory, retry, compensation }` exactly as cleanly as it covers everything else. The risk appears the moment runtime semantics become *implicitly determined by the presence or absence of that structure* — an interpreter shaped like:
+
+```
+if context
+  checkpoint; retry; compensate; resolve from memory
+else
+  log-and-drop; resolve from payload
+end
+```
+
+Here, `context?` has stopped being optional data and started being a hidden mode switch — the interpreter secretly contains two runtimes, branching on construct *kind* rather than executing one explicit protocol over explicit capabilities. **The test to run before trusting a `Reaction` design:** can every behavioral difference between policy-shaped and process-manager-shaped execution be *named explicitly* in executable IR, rather than inferred from incidental shape?
+
+That test also exposes a bundling question ADR 0029 deliberately left alone, being a Ruby-side extraction of *today's* behaviour: `ReactionContext` there bundles correlation, memory, retry, and compensation together because `process_manager` bundles them together in the corpus today — a fair, pragmatic call for a same-behaviour extraction. But at the executable-IR layer those four don't actually imply each other: correlation doesn't logically require retry; memory doesn't logically require compensation; multi-command dispatch doesn't logically require checkpointing. If they always travel together today only because one authoring construct (`process_manager`) happens to bundle them, the lowering step can still emit them together for every case that exists now — but executable IR should describe them as the separable capabilities they are, not enshrine the authoring bundle as if it were one indivisible concept:
+
+```
+Reaction {
+  trigger, condition, bindings, dispatches,
+  context:        Context::Stateless | Context::Correlated { correlation, memory },
+  failure_policy: FailurePolicy::Drop | FailurePolicy::Managed { retry, compensation, checkpoint }
+}
+```
+
+The exact split may not survive contact with the real code — the point is the principle, not this specific shape: *optional structure is fine; optional structure that silently activates unrelated semantics together is suspicious.* `process_manager` is free to stay the authoring-level bundle it is today; the executable form exists to describe what actually has to happen, which is a different question than what one keyword happens to declare together.
+
+**The second Reaction-specific risk is ordering.** Expression is pure evaluation; Binding is resolution — neither has a temporal dimension. `Reaction` does: match trigger → evaluate condition → resolve bindings → checkpoint? → dispatch → handle refusal → retry? → compensate? → persist memory? — and the *order* of those steps is itself semantic (ADR 0029's own `saga_interpreter.rb` reading depends on it: state moves to `to_state` *before* dispatches run, specifically so a second refusal can't loop). This is the first place "generate structure, handwrite meaning" must preserve not just individual operation semantics but a whole execution protocol — a state machine, not a pure function.
+
+**Acceptance criterion for this slice:** the generated `Reaction` structure contains all information required to determine execution, but no target-language control flow; one small, explicit, handwritten interpreter implements a single execution protocol over that structure. **The smell to check the interpreter for:**
+
+```
+if process_manager_like?
+  ...
+elsif policy_like?
+  ...
+```
+
+If that appears, the executable algebra hasn't decomposed far enough — construct *kind* has leaked into the kernel as a branch, rather than the kernel executing one protocol parameterized by explicit strategies (`evaluate trigger → evaluate condition → resolve bindings using context strategy → apply persistence strategy → dispatch → apply failure strategy`, each strategy explicit data or a small kernel capability, never a branch on which authoring construct produced this `Reaction`).
+
+**The progression, restated with all three slices:** Expression proves generated executable structure can drive two real runtimes (risks 1–2). Binding proves canonical semantics can lower into that structure without becoming a second source of truth (risks 3–4). Reaction proves the executable algebra can represent real temporal/control semantics *without recreating the authoring constructs it's supposed to have replaced* (risks 5–6) — which is a materially higher bar than either earlier slice, and the reason `Reaction` stays last regardless of how well Expression and Binding go.
 
 **Stop condition, checked after Slice 2, before Reaction starts:** did handwritten Rust shrink? Did handwritten Ruby shrink? Did duplicated grammar disappear? Is there exactly one semantic definition? Is the lowering step visibly simpler than the representation it produces? Can executable IR omit canonical-only information? If every answer is yes, proceed to `Reaction`. If not, this ADR needs rethinking before anything larger lands on top of it.
 
+**A second stop condition, specific to Reaction and checked only once a design exists:** does the generated structure name every behavioural difference explicitly, with no construct-kind branch in the handwritten interpreter? If yes, this ADR has produced something more significant than a code-generation cleanup — a credible small executable algebra beneath Bluebook. If no, the decomposition isn't finished, and the design needs another pass before it's trusted, not shipped as a "close enough" approximation.
+
 ## Consequences
 
-- **This is architecture with a proof sequence, not a task list.** The two slices above are validation gates, not a full implementation plan for `Reaction` — a concrete plan for lowering `Reaction` itself belongs in a follow-up, written only after Slice 2's stop condition passes and after ADR 0029's own `Reaction`/`Binding` extraction gives this ADR real material to lower.
+- **This is architecture with a proof sequence, not a task list.** The three slices above are validation gates, not a full implementation plan for `Reaction` — a concrete design for `Reaction`'s executable form belongs in a follow-up, written only after Slice 2's stop condition passes and after ADR 0029's own `Reaction`/`Binding` extraction gives this ADR real material to lower.
+- **`ReactionContext`'s bundling (correlation + memory + retry + compensation, ADR 0029) is provisional at the executable-IR layer, not settled by that ADR.** It's the right call for a same-behaviour Ruby-side extraction; whether the executable algebra keeps it as one capability or splits it into orthogonal ones (context vs. failure policy) is exactly what Slice 3 tests.
 - **ADR 0022 is reframed, not superseded.** Its diagnosis (duplicated hand-authored `expr.rs`/`Evaluator`) stands; its remedy is now understood as step one of a larger, still-bounded target rather than a complete fix on its own.
 - **The single-lowering-step discipline is the whole risk.** If the lowering step or the executable-node representations end up hand-duplicated per runtime after all, this decision has produced a fourth interpreter instead of removing duplication — the "warning sign" above is the concrete thing to check for during implementation, not just at design time.
 - **Rust's obligations shrink, but only once this is built.** Until the lowering step and a self-hosted executable algebra exist, Rust still mirrors whatever Ruby's canonical model contains, same as today.

@@ -40,7 +40,7 @@ Reading both interpreters line by line (`policy_interpreter.rb:83-176`, `saga_in
 
 - **`Reaction`** — trigger (the signal), bindings, conditions (`where`), dispatch(es). What every `policy` already is, in full.
 - **`Binding`** — the key/value argument-resolution primitive. Already literally duplicated in the grammar (below) — the clearest single artifact showing both constructs grew from one underlying shape.
-- **`ReactionContext`** — the optional envelope a `Reaction` carries when it must coordinate across more than one event: correlation, memory, compensation (`unwind`), retry.
+- **`ReactionContext`** — the optional envelope a `Reaction` carries when it must coordinate across more than one event: correlation, memory, compensation (`unwind`), retry. Bundled together here because that's how `process_manager` bundles them in the corpus today — a fair call for a same-behaviour extraction, not a claim that the four logically imply each other. ADR 0030 revisits whether the executable-IR layer should keep this bundle or split it into orthogonal capabilities (context vs. failure policy); this ADR doesn't need that answer to do the Ruby-side work below.
 
 ```
 Policy         → Reaction { trigger, bindings, conditions, dispatch }
