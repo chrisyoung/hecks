@@ -123,6 +123,8 @@ No single construct tests all six, and jumping straight to `Reaction` — the mo
 
 ### Slice 1 — Expression alone (this is ADR 0022, reframed as a slice rather than a standalone fix)
 
+**Correction, added after inventory (PRD 09):** most of this slice already exists and already works. `lib/hecksagain/grammar/expression.bluebook` self-hosts an `Operator`/`Normalisation` admission ledger (propose → render per target → admit), replayed by `spec/operator_conformance_spec.rb`, generating both Ruby's `projection.json` (`bin/expression_projection`) and Rust's `OperatorCategory` enum (`bin/project_kernel_capabilities`) from one source — correctly, for 18 operators across 7 categories, with `bin/rust_kernel_coverage` mechanically checking every admitted category has a hand-written Rust interpretation file. The diagram below is what that mechanism already does. What's still genuinely open, and what PRD 09 actually scopes: twelve operator symbols (`.match?`, `.present?`/`.blank?`, `.split`, `.first`/`.last`, `.start_with?`/`.end_with?`, `.all?`/`.any?`/`.none?`, `.find`) were added to Ruby's `Resolver` outside this ledger entirely and have zero Rust representation — a real, live gap in an otherwise-working mechanism, not evidence the mechanism needs to be built. Separately, `Expr` itself (the Rust enum) stays hand-written even for admitted operators — generating it too remains open and is not what PRD 09 attempts.
+
 ```
 executable expression definition
         ↓
