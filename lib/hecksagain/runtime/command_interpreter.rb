@@ -132,12 +132,12 @@ module Hecksagain
           entity_name, _dot, command_name = delegation.target.to_s.rpartition(".")
           entity = ctx.aggregate.entities.find { |e| e.hecks_name == entity_name } ||
                    raise(WiringError, "#{ctx.command.hecks_name} delegates_to #{entity_name}." \
-                                       "#{command_name}, but #{ctx.aggregate.hecks_name} has no " \
-                                       "entity named #{entity_name.inspect}")
+                                      "#{command_name}, but #{ctx.aggregate.hecks_name} has no " \
+                                      "entity named #{entity_name.inspect}")
           target_command = entity.command(command_name) ||
                            raise(WiringError, "#{ctx.command.hecks_name} delegates_to " \
-                                               "#{entity_name}.#{command_name}, which " \
-                                               "#{entity_name} declares no such command")
+                                              "#{entity_name}.#{command_name}, which " \
+                                              "#{entity_name} declares no such command")
 
           # `with:` REMAPS, it does not ENUMERATE — starting from a copy
           # of THIS command's own already-resolved args (`ctx.args`) and
