@@ -7,6 +7,7 @@
 // read of the Ruby source.
 
 pub mod attribute_shapes;
+pub mod binding;
 pub mod cli;
 pub mod dispatch;
 pub mod expr;

@@ -1,6 +1,6 @@
 # PRD 10 — Lower `Binding` into the executable algebra (ADR 0030 Slice 2)
 
-**Status:** Not started. Depends on nothing PRD 09 didn't already ship — reuses its admitted `Expression` algebra as the substrate, per ADR 0030's own prediction that `Expression` would turn out to be the one genuinely load-bearing primitive.
+**Status:** Core lowering/resolution shipped (2026-08-20) in both Ruby and Rust, hand-written, unit-tested against real interpreter branch order — see "What shipped," below, for the one honest gap (no generator yet, unlike PRD 09's `Operator`). Depended on nothing PRD 09 didn't already ship — reuses its admitted `Expression` algebra as the substrate, per ADR 0030's own prediction that `Expression` would turn out to be the one genuinely load-bearing primitive.
 
 ## The problem
 
@@ -36,13 +36,23 @@ Nothing about *how* a binding resolves is represented as data — it's entirely 
 
 ## Acceptance criteria
 
-- [ ] A canonical `Binding` (`{key, value}`) lowers deterministically to an executable form (`{destination, source: Expression}`) via one small, inspectable function.
-- [ ] The lowering function contains no resolution logic of its own — every actual decision (which source wins, in what order) is data it restructures, not logic it invents. Read it end to end in one sitting as the acceptance bar, the same way ADR 0030 states it.
-- [ ] Both a literal `value` and a Symbol `value` lower correctly, the Symbol case producing an `Expression::Reference` ordered exactly the way `dispatch_args`'s real branch order does (correlation head, then payload, then memory) when all three sources are available, and exactly the way `trigger_args` does (payload only) when just one is.
-- [ ] The executable `Binding` shape has one generated Ruby representation and one generated Rust representation, from one source definition — not two hand-authored ones.
-- [ ] A small, standalone evaluator (Ruby and Rust) resolves an executable `Binding` against a given `available_sources` map and produces the same value `trigger_args`/`dispatch_args` would, checked against real recorded cases from `@registry.policy_dispatch_log`/`@registry.saga_dispatch_log` (both already capture exactly this input/output pair today — reuse them as fixtures, don't invent synthetic ones where real recordings exist).
-- [ ] Existing Ruby-side corpus/fuzzer/behaviors suites remain green — this PRD adds a parallel lowering path; it does not change `PolicyInterpreter`/`SagaInterpreter`'s actual dispatch behaviour.
-- [ ] `cargo build`/`test`/`clippy` clean on whatever Rust this PRD adds.
+- [x] A canonical `Binding` (`{key, value}`) lowers deterministically to an executable form (`{destination, source}`) via one small, inspectable function — `Hecksagain::Bluebook::Expression::BindingLowering.lower` (Ruby), `kernel::binding::lower` (Rust), both under 20 lines.
+- [x] The lowering function contains no resolution logic of its own — every actual decision (which source wins, in what order) is data it restructures, not logic it invents. Read end to end in one sitting on both sides.
+- [x] Both a literal `value` and a Symbol `value` lower correctly, the Symbol case producing a `Reference` ordered exactly the way `dispatch_args`'s real branch order does (correlation head, then payload, then memory) when all three sources are available, and exactly the way `trigger_args` does (payload only) when just one is — asserted directly in both test suites.
+- [ ] The executable `Binding` shape has one generated Ruby representation and one generated Rust representation, from one source definition — **not shipped**. Both sides are hand-written mirrors of each other today, the same honest state PRD 09 started from for `Expression` before that ledger existed. See "What shipped."
+- [x] A small, standalone evaluator (Ruby and Rust) resolves an executable `Binding` against a given `available_sources`/`sources` map and produces the same value `trigger_args`/`dispatch_args` would — proven with hand-built cases shaped after the real branch order, not the literal `@registry.policy_dispatch_log`/`saga_dispatch_log` entries (those are populated only by a live dispatch; no checked-in fixture file of them exists to read from, so the tests construct the same shapes by hand instead — see "What shipped" for why this is a fair substitute, not a shortcut).
+- [x] Existing Ruby-side corpus/fuzzer/behaviors suites remain green (1574 examples, 0 failures, local suite) — this PRD adds a parallel lowering path; it does not change `PolicyInterpreter`/`SagaInterpreter`'s actual dispatch behaviour.
+- [x] `cargo build`/`test`/`clippy` clean (20 Rust tests, 3 new).
+
+## What shipped
+
+**The lowering and resolution mechanism, in both languages, hand-written:** `lib/hecksagain/bluebook/expression/binding_lowering.rb` (`ExecutableBinding`/`Literal`/`Reference`, `lower`/`resolve`) and `rust/src/kernel/binding.rs`, structural mirrors of each other. Both take an explicit ordered `priority`/source list as an argument rather than knowing anything about correlation heads or saga memory — `Reaction`/`ReactionContext` stay untouched, per the Non-goals. Ruby: 9 spec examples, all passing, each shaped after a real `trigger_args`/`dispatch_args` branch. Rust: 3 unit tests covering the same three real cases (literal passthrough, correlation-wins-over-payload-and-memory, falls through to nil on a genuinely absent name).
+
+**Not shipped: generation.** Unlike PRD 09's `Operator`, there is no self-hosted `Binding` ledger, no `bin/`-style generator, and no `bin/rust_kernel_coverage`-style mechanical check tying the two implementations together. This is a real gap against this PRD's own fourth acceptance criterion, left open rather than quietly declared done — closing it means designing what a self-hosted `Binding` declaration would even look like (a new aggregate beside `expression.bluebook`'s `Operator`/`Normalisation`? a sibling chapter?), which PRD 10's own Approach named as an open question rather than answered. Until that exists, Ruby's and Rust's `Literal`/`Reference` shapes are two hand-authored copies of the same small structure — low risk given how small and stable that structure is, but exactly the pattern ADR 0022/0030 exist to avoid at scale, worth closing before this becomes a third or fourth hand-copied pair somewhere else.
+
+**Fixtures: hand-built, not lifted from a log.** `@registry.policy_dispatch_log`/`saga_dispatch_log` are populated at real dispatch time, not checked into the repo as a fixture file — there was nothing to literally read from. Both test suites instead construct `sources`/`available_sources` inputs matching the exact field names and structure those logs record (confirmed by re-reading `trigger_args`/`dispatch_args` at implementation time, not assumed from the earlier PRD draft), which satisfies the spirit of "test against real shapes" even though the letter of the original acceptance criterion (reuse the logs themselves) wasn't literally possible.
+
+**Deliberately not attempted:** wiring `PolicyInterpreter`/`SagaInterpreter` to actually use this lowering in place of their own `trigger_args`/`dispatch_args` — per the Non-goals, unchanged.
 
 ## Non-goals
 
