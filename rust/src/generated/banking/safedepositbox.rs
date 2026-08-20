@@ -365,6 +365,16 @@ pub enum Size {
     Large,
 }
 
+impl crate::kernel::Fielded for Size {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { Size::Small => "small".to_string(), Size::Medium => "medium".to_string(), Size::Large => "large".to_string(), }))),
+            _ => None,
+        }
+    }
+}
+
 impl Size {
     pub fn to_json(&self) -> crate::kernel::Json {
         let member = match self {
@@ -714,6 +724,7 @@ impl crate::kernel::Fielded for SafeDepositBox {
             "customer" => self.customer.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             "branch_code" => self.branch_code.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "box_number" => self.box_number.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "size" => self.size.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "visits" => Some(Field::Value(Value::List(self.visits.len()))),
             "keys" => Some(Field::Value(Value::List(self.keys.len()))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
@@ -780,6 +791,7 @@ impl crate::kernel::Fielded for RentArgs {
             "customer" => Some(Field::Value(Value::Str(self.customer.clone()))),
             "branch_code" => Some(Field::Nested(&self.branch_code)),
             "box_number" => Some(Field::Nested(&self.box_number)),
+            "size" => Some(Field::Nested(&self.size)),
             _ => None,
         }
     }

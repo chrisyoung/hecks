@@ -170,6 +170,16 @@ pub enum ToStringType {
     Nilclass,
 }
 
+impl crate::kernel::Fielded for ToStringType {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { ToStringType::String => "String".to_string(), ToStringType::Integer => "Integer".to_string(), ToStringType::Float => "Float".to_string(), ToStringType::Trueclass => "TrueClass".to_string(), ToStringType::Falseclass => "FalseClass".to_string(), ToStringType::Nilclass => "NilClass".to_string(), }))),
+            _ => None,
+        }
+    }
+}
+
 impl ToStringType {
     pub fn to_json(&self) -> crate::kernel::Json {
         let member = match self {
@@ -209,6 +219,16 @@ pub enum SizedType {
     Hash,
 }
 
+impl crate::kernel::Fielded for SizedType {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { SizedType::Array => "Array".to_string(), SizedType::String => "String".to_string(), SizedType::Hash => "Hash".to_string(), }))),
+            _ => None,
+        }
+    }
+}
+
 impl SizedType {
     pub fn to_json(&self) -> crate::kernel::Json {
         let member = match self {
@@ -242,6 +262,16 @@ pub enum Primitive {
     Float,
     Trueclass,
     Falseclass,
+}
+
+impl crate::kernel::Fielded for Primitive {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { Primitive::String => "String".to_string(), Primitive::Integer => "Integer".to_string(), Primitive::Float => "Float".to_string(), Primitive::Trueclass => "TrueClass".to_string(), Primitive::Falseclass => "FalseClass".to_string(), }))),
+            _ => None,
+        }
+    }
 }
 
 impl Primitive {
@@ -278,6 +308,16 @@ impl Primitive {
 pub enum NormalisationStrategy {
     CollapseWhitespace,
     Replace,
+}
+
+impl crate::kernel::Fielded for NormalisationStrategy {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { NormalisationStrategy::CollapseWhitespace => "collapse_whitespace".to_string(), NormalisationStrategy::Replace => "replace".to_string(), }))),
+            _ => None,
+        }
+    }
 }
 
 impl NormalisationStrategy {
@@ -351,6 +391,16 @@ pub enum QueryComparator {
     NoneInState,
 }
 
+impl crate::kernel::Fielded for QueryComparator {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { QueryComparator::Eq => "eq".to_string(), QueryComparator::Ne => "ne".to_string(), QueryComparator::Gt => "gt".to_string(), QueryComparator::Gte => "gte".to_string(), QueryComparator::Lt => "lt".to_string(), QueryComparator::Lte => "lte".to_string(), QueryComparator::In => "in".to_string(), QueryComparator::Contains => "contains".to_string(), QueryComparator::NoneInState => "none_in_state".to_string(), }))),
+            _ => None,
+        }
+    }
+}
+
 impl QueryComparator {
     pub fn to_json(&self) -> crate::kernel::Json {
         let member = match self {
@@ -397,6 +447,16 @@ pub enum LoadOrder {
     TranslationsBluebook,
     Hecksagon,
     World,
+}
+
+impl crate::kernel::Fielded for LoadOrder {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { LoadOrder::Port => "*.port".to_string(), LoadOrder::Adapter => "*.adapter".to_string(), LoadOrder::Bluebook => "*.bluebook".to_string(), LoadOrder::TranslationsBluebook => "translations/*.bluebook".to_string(), LoadOrder::Hecksagon => "*.hecksagon".to_string(), LoadOrder::World => "*.world".to_string(), }))),
+            _ => None,
+        }
+    }
 }
 
 impl LoadOrder {
@@ -448,6 +508,16 @@ pub enum AggregateDispatchOrder {
     EnforceInvariants,
     Save,
     Emit,
+}
+
+impl crate::kernel::Fielded for AggregateDispatchOrder {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { AggregateDispatchOrder::RefuseUnknownArguments => "refuse_unknown_arguments".to_string(), AggregateDispatchOrder::RefuseAbsentArguments => "refuse_absent_arguments".to_string(), AggregateDispatchOrder::NormalizeArgs => "normalize_args".to_string(), AggregateDispatchOrder::RefuseRoleMismatch => "refuse_role_mismatch".to_string(), AggregateDispatchOrder::ResolveReferences => "resolve_references".to_string(), AggregateDispatchOrder::Hydrate => "hydrate".to_string(), AggregateDispatchOrder::EnforceGivens => "enforce_givens".to_string(), AggregateDispatchOrder::AdmissibleTransition => "admissible_transition".to_string(), AggregateDispatchOrder::AssignCreationAttributes => "assign_creation_attributes".to_string(), AggregateDispatchOrder::ApplyMutations => "apply_mutations".to_string(), AggregateDispatchOrder::AdvanceLifecycle => "advance_lifecycle".to_string(), AggregateDispatchOrder::EnforceEnsures => "enforce_ensures".to_string(), AggregateDispatchOrder::EnforceInvariants => "enforce_invariants".to_string(), AggregateDispatchOrder::Save => "save".to_string(), AggregateDispatchOrder::Emit => "emit".to_string(), }))),
+            _ => None,
+        }
+    }
 }
 
 impl AggregateDispatchOrder {
@@ -517,6 +587,16 @@ pub enum EntityDispatchOrder {
     Emit,
 }
 
+impl crate::kernel::Fielded for EntityDispatchOrder {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { EntityDispatchOrder::NormalizeArgs => "normalize_args".to_string(), EntityDispatchOrder::RefuseRoleMismatch => "refuse_role_mismatch".to_string(), EntityDispatchOrder::ResolveReferences => "resolve_references".to_string(), EntityDispatchOrder::HydrateParent => "hydrate_parent".to_string(), EntityDispatchOrder::LocateElement => "locate_element".to_string(), EntityDispatchOrder::EnforceGivens => "enforce_givens".to_string(), EntityDispatchOrder::AdmissibleTransition => "admissible_transition".to_string(), EntityDispatchOrder::ApplyMutations => "apply_mutations".to_string(), EntityDispatchOrder::AdvanceLifecycle => "advance_lifecycle".to_string(), EntityDispatchOrder::EnforceEnsures => "enforce_ensures".to_string(), EntityDispatchOrder::EnforceInvariants => "enforce_invariants".to_string(), EntityDispatchOrder::Save => "save".to_string(), EntityDispatchOrder::Emit => "emit".to_string(), }))),
+            _ => None,
+        }
+    }
+}
+
 impl EntityDispatchOrder {
     pub fn to_json(&self) -> crate::kernel::Json {
         let member = match self {
@@ -579,6 +659,16 @@ pub enum DomainRefusal {
     Unauthorized,
     Unknownargument,
     Unknownverb,
+}
+
+impl crate::kernel::Fielded for DomainRefusal {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { DomainRefusal::Absentargument => "AbsentArgument".to_string(), DomainRefusal::Alreadyexists => "AlreadyExists".to_string(), DomainRefusal::Attributeabsent => "AttributeAbsent".to_string(), DomainRefusal::Ensuresnotmet => "EnsuresNotMet".to_string(), DomainRefusal::Givennotmet => "GivenNotMet".to_string(), DomainRefusal::Invariantviolation => "InvariantViolation".to_string(), DomainRefusal::Lifecyclerefused => "LifecycleRefused".to_string(), DomainRefusal::Notfound => "NotFound".to_string(), DomainRefusal::Projectionabsent => "ProjectionAbsent".to_string(), DomainRefusal::Remoterefusal => "RemoteRefusal".to_string(), DomainRefusal::Typemismatch => "TypeMismatch".to_string(), DomainRefusal::Unauthorized => "Unauthorized".to_string(), DomainRefusal::Unknownargument => "UnknownArgument".to_string(), DomainRefusal::Unknownverb => "UnknownVerb".to_string(), }))),
+            _ => None,
+        }
+    }
 }
 
 impl DomainRefusal {
@@ -703,6 +793,16 @@ impl RefusalTemplate {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Trigger {
     Refused,
+}
+
+impl crate::kernel::Fielded for Trigger {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::{Field, Value};
+        match name {
+            "value" => Some(Field::Value(Value::Str(match self { Trigger::Refused => "refused".to_string(), }))),
+            _ => None,
+        }
+    }
 }
 
 impl Trigger {

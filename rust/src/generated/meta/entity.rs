@@ -383,6 +383,134 @@ if !unknown.is_empty() {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct KeywordSeed {
+    pub word: &'static str,
+    pub context: &'static str,
+    pub body: &'static str,
+    pub inner: &'static str,
+    pub opens: &'static str,
+    pub fills: &'static str,
+    pub status: &'static str,
+    pub was: &'static str,
+    pub resolves_via: &'static str,
+    pub disambiguator: &'static str,
+}
+
+pub const KEYWORD_SEED: &[KeywordSeed] = &[
+    KeywordSeed { word: "description", context: "Entity", body: "none", inner: "", opens: "", fills: "description", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "identified_by", context: "Entity", body: "source", inner: "", opens: "", fills: "identified_by", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "identified_by", context: "Entity", body: "none", inner: "", opens: "", fills: "identified_by", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "given", context: "Entity", body: "source", inner: "", opens: "", fills: "preconditions", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "invariant", context: "Entity", body: "source", inner: "", opens: "", fills: "invariants", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "command", context: "Entity", body: "keywords", inner: "Command", opens: "Command", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "query", context: "Entity", body: "keywords", inner: "Query", opens: "Query", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "lifecycle", context: "Entity", body: "keywords", inner: "Lifecycle", opens: "", fills: "state_field", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "attribute", context: "Entity", body: "none", inner: "", opens: "", fills: "attributes", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "reference_to", context: "Entity", body: "none", inner: "", opens: "", fills: "attributes", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "entity", context: "Entity", body: "keywords", inner: "Entity", opens: "Entity", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+];
+
+impl KeywordSeed {
+    pub fn to_json(&self) -> crate::kernel::Json {
+        crate::kernel::Json::Object(vec![
+        ("word".to_string(), crate::kernel::Json::Str(self.word.to_string())),
+        ("context".to_string(), crate::kernel::Json::Str(self.context.to_string())),
+        ("body".to_string(), crate::kernel::Json::Str(self.body.to_string())),
+        ("inner".to_string(), crate::kernel::Json::Str(self.inner.to_string())),
+        ("opens".to_string(), crate::kernel::Json::Str(self.opens.to_string())),
+        ("fills".to_string(), crate::kernel::Json::Str(self.fills.to_string())),
+        ("status".to_string(), crate::kernel::Json::Str(self.status.to_string())),
+        ("was".to_string(), crate::kernel::Json::Str(self.was.to_string())),
+        ("resolves_via".to_string(), crate::kernel::Json::Str(self.resolves_via.to_string())),
+        ("disambiguator".to_string(), crate::kernel::Json::Str(self.disambiguator.to_string())),
+        ])
+    }
+
+    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
+        for row in KEYWORD_SEED {
+            if v.get("word").and_then(crate::kernel::Json::as_str) == Some(row.word) && v.get("context").and_then(crate::kernel::Json::as_str) == Some(row.context) && v.get("body").and_then(crate::kernel::Json::as_str) == Some(row.body) && v.get("inner").and_then(crate::kernel::Json::as_str) == Some(row.inner) && v.get("opens").and_then(crate::kernel::Json::as_str) == Some(row.opens) && v.get("fills").and_then(crate::kernel::Json::as_str) == Some(row.fills) && v.get("status").and_then(crate::kernel::Json::as_str) == Some(row.status) && v.get("was").and_then(crate::kernel::Json::as_str) == Some(row.was) && v.get("resolves_via").and_then(crate::kernel::Json::as_str) == Some(row.resolves_via) && v.get("disambiguator").and_then(crate::kernel::Json::as_str) == Some(row.disambiguator) {
+                return Ok(row.clone());
+            }
+        }
+        Err(crate::kernel::Refusal::TypeMismatch(format!("KeywordSeed: no member matches {:?}", v)))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ArgumentSeed {
+    pub keyword: &'static str,
+    pub context: &'static str,
+    pub at: &'static str,
+    pub named: &'static str,
+    pub kind: &'static str,
+    pub required: &'static str,
+    pub fills: &'static str,
+    pub selects: &'static str,
+    pub pair_key_fills: &'static str,
+    pub pair_value_fills: &'static str,
+    pub pairs_shape: &'static str,
+    pub status: &'static str,
+    pub variadic: &'static str,
+    pub coerce: &'static str,
+    pub blank_message: &'static str,
+}
+
+pub const ARGUMENT_SEED: &[ArgumentSeed] = &[
+    ArgumentSeed { keyword: "description", context: "Entity", at: "1", named: "", kind: "text", required: "true", fills: "description", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "false", blank_message: "" },
+    ArgumentSeed { keyword: "given", context: "Entity", at: "1", named: "", kind: "text", required: "true", fills: "description", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "invariant", context: "Entity", at: "1", named: "", kind: "text", required: "true", fills: "description", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "identified_by", context: "Entity", at: "1", named: "", kind: "symbol", required: "false", fills: "identified_by", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "true", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "identified_by", context: "Entity", at: "1", named: "", kind: "constant", required: "false", fills: "type", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "deprecated", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "identified_by", context: "Entity", at: "", named: "as", kind: "symbol", required: "false", fills: "name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "deprecated", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "command", context: "Entity", at: "1", named: "", kind: "text", required: "true", fills: "name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "command", context: "Entity", at: "", named: "from", kind: "literal", required: "false", fills: "from", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "query", context: "Entity", at: "1", named: "", kind: "text", required: "true", fills: "name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "entity", context: "Entity", at: "1", named: "", kind: "text", required: "true", fills: "name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "lifecycle", context: "Entity", at: "1", named: "", kind: "symbol", required: "true", fills: "state_field", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "lifecycle", context: "Entity", at: "", named: "default", kind: "literal", required: "true", fills: "state_start", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "attribute", context: "Entity", at: "1", named: "", kind: "symbol", required: "true", fills: "name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "attribute", context: "Entity", at: "2", named: "", kind: "constant", required: "true", fills: "type", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "attribute", context: "Entity", at: "", named: "default", kind: "literal", required: "false", fills: "default", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "attribute", context: "Entity", at: "", named: "optional", kind: "flag", required: "false", fills: "optional", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "attribute", context: "Entity", at: "", named: "pattern", kind: "text", required: "false", fills: "pattern", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "attribute", context: "Entity", at: "", named: "admits", kind: "text", required: "false", fills: "admits", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "attribute", context: "Entity", at: "", named: "one_of", kind: "list", required: "false", fills: "one_of", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "reference_to", context: "Entity", at: "1", named: "", kind: "constant", required: "true", fills: "type", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "reference_to", context: "Entity", at: "", named: "as", kind: "symbol", required: "false", fills: "name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+];
+
+impl ArgumentSeed {
+    pub fn to_json(&self) -> crate::kernel::Json {
+        crate::kernel::Json::Object(vec![
+        ("keyword".to_string(), crate::kernel::Json::Str(self.keyword.to_string())),
+        ("context".to_string(), crate::kernel::Json::Str(self.context.to_string())),
+        ("at".to_string(), crate::kernel::Json::Str(self.at.to_string())),
+        ("named".to_string(), crate::kernel::Json::Str(self.named.to_string())),
+        ("kind".to_string(), crate::kernel::Json::Str(self.kind.to_string())),
+        ("required".to_string(), crate::kernel::Json::Str(self.required.to_string())),
+        ("fills".to_string(), crate::kernel::Json::Str(self.fills.to_string())),
+        ("selects".to_string(), crate::kernel::Json::Str(self.selects.to_string())),
+        ("pair_key_fills".to_string(), crate::kernel::Json::Str(self.pair_key_fills.to_string())),
+        ("pair_value_fills".to_string(), crate::kernel::Json::Str(self.pair_value_fills.to_string())),
+        ("pairs_shape".to_string(), crate::kernel::Json::Str(self.pairs_shape.to_string())),
+        ("status".to_string(), crate::kernel::Json::Str(self.status.to_string())),
+        ("variadic".to_string(), crate::kernel::Json::Str(self.variadic.to_string())),
+        ("coerce".to_string(), crate::kernel::Json::Str(self.coerce.to_string())),
+        ("blank_message".to_string(), crate::kernel::Json::Str(self.blank_message.to_string())),
+        ])
+    }
+
+    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
+        for row in ARGUMENT_SEED {
+            if v.get("keyword").and_then(crate::kernel::Json::as_str) == Some(row.keyword) && v.get("context").and_then(crate::kernel::Json::as_str) == Some(row.context) && v.get("at").and_then(crate::kernel::Json::as_str) == Some(row.at) && v.get("named").and_then(crate::kernel::Json::as_str) == Some(row.named) && v.get("kind").and_then(crate::kernel::Json::as_str) == Some(row.kind) && v.get("required").and_then(crate::kernel::Json::as_str) == Some(row.required) && v.get("fills").and_then(crate::kernel::Json::as_str) == Some(row.fills) && v.get("selects").and_then(crate::kernel::Json::as_str) == Some(row.selects) && v.get("pair_key_fills").and_then(crate::kernel::Json::as_str) == Some(row.pair_key_fills) && v.get("pair_value_fills").and_then(crate::kernel::Json::as_str) == Some(row.pair_value_fills) && v.get("pairs_shape").and_then(crate::kernel::Json::as_str) == Some(row.pairs_shape) && v.get("status").and_then(crate::kernel::Json::as_str) == Some(row.status) && v.get("variadic").and_then(crate::kernel::Json::as_str) == Some(row.variadic) && v.get("coerce").and_then(crate::kernel::Json::as_str) == Some(row.coerce) && v.get("blank_message").and_then(crate::kernel::Json::as_str) == Some(row.blank_message) {
+                return Ok(row.clone());
+            }
+        }
+        Err(crate::kernel::Refusal::TypeMismatch(format!("ArgumentSeed: no member matches {:?}", v)))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Entity {
     pub aggregate: Option<String>,
     pub owner: Option<EntityText>,

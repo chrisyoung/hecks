@@ -21,6 +21,12 @@ module Hecksagain
         # FOR here. `reference_to Payment, as: :payment_id` reads the same
         # even though the target happens to equal the owning aggregate.
         def reference_to(type, as: nil)
+          unless MetaValidator.shadow_parsing?
+            raise Malformed,
+                  "#{@name}.reference_to is behavioral routing, not retained domain state — " \
+                  "pass the receiving aggregate in to: and declare only external facts with attribute"
+          end
+
           target = Naming.demodulise(type)
           attribute(as || default_reference_name(target), Reference.new(target))
         end
@@ -53,15 +59,6 @@ module Hecksagain
           raise Malformed,
                 "#{@name} declares no emits — an operation with nothing to say " \
                 "afterward is a call into nothing" if !outbound && @emits.empty?
-
-          # Only enforced when this operation belongs to ONE aggregate — a
-          # port declared bare at a hecksagon's root has no single owner for
-          # an emitted event to be ABOUT, so nothing here can require one.
-          if @owner
-            raise Malformed,
-                  "#{@name} names no reference_to #{@owner} — an operation needs one to " \
-                  "say which #{@owner} its emitted event belongs to" unless operation.identity_attribute(@owner)
-          end
 
           operation
         end

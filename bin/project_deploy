@@ -203,7 +203,7 @@ end
 # "genuinely supports either mode") could in principle attach a chapter
 # that itself declares a cross-domain policy, and a policy nested inside
 # `aggregate "X" do ... end` is exactly as real a cross-domain trigger as
-# one declared at the bluebook's own top level (docs/guides/policies-
+# one declared at the bluebook's own top level (docs/implemented/guides/policies-
 # and-process-managers.md: "A policy does not care where it was
 # written"). `to_h`'s own `policies` already flattens aggregate-scoped
 # and top-level policies into one list per bluebook — read the same way

@@ -9,7 +9,7 @@
 //
 // WASIp1 (`wasm32-wasip1`, what bin/project_wasm builds) speaks
 // stdin/stdout the same way a native process does
-// (docs/decisions/0012-wasm-via-wasi-stdio.md) — `MemoryInputPipe`/
+// (docs/implemented/decisions/0012-wasm-via-wasi-stdio.md) — `MemoryInputPipe`/
 // `MemoryOutputPipe` (wasmtime_wasi::p2::pipe) are the in-process
 // equivalent of piping a string to/from a subprocess, without actually
 // spawning one. Neither implements `StdinStream`/`StdoutStream`

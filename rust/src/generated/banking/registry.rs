@@ -11,14 +11,14 @@ use crate::kernel::Repository;
 pub struct Store {
     pub customer: crate::kernel::InMemoryRepository<crate::generated::banking::customer::Customer>,
     pub account: crate::kernel::InMemoryRepository<crate::generated::banking::account::Account>,
+    pub onboardingcase: crate::kernel::InMemoryRepository<crate::generated::banking::onboardingcase::OnboardingCase>,
     pub atmcard: crate::kernel::InMemoryRepository<crate::generated::banking::atmcard::ATMCard>,
-    pub transfer: crate::kernel::InMemoryRepository<crate::generated::banking::transfer::Transfer>,
     pub cardpayment: crate::kernel::InMemoryRepository<crate::generated::banking::cardpayment::CardPayment>,
+    pub safedepositbox: crate::kernel::InMemoryRepository<crate::generated::banking::safedepositbox::SafeDepositBox>,
+    pub statement: crate::kernel::InMemoryRepository<crate::generated::banking::statement::Statement>,
+    pub transfer: crate::kernel::InMemoryRepository<crate::generated::banking::transfer::Transfer>,
     pub externaltransfer: crate::kernel::InMemoryRepository<crate::generated::banking::externaltransfer::ExternalTransfer>,
     pub scheduledpayment: crate::kernel::InMemoryRepository<crate::generated::banking::scheduledpayment::ScheduledPayment>,
-    pub safedepositbox: crate::kernel::InMemoryRepository<crate::generated::banking::safedepositbox::SafeDepositBox>,
-    pub onboardingcase: crate::kernel::InMemoryRepository<crate::generated::banking::onboardingcase::OnboardingCase>,
-    pub statement: crate::kernel::InMemoryRepository<crate::generated::banking::statement::Statement>,
 }
 
 impl Store {
@@ -26,14 +26,14 @@ impl Store {
         Self {
             customer: crate::kernel::InMemoryRepository::new(),
             account: crate::kernel::InMemoryRepository::new(),
+            onboardingcase: crate::kernel::InMemoryRepository::new(),
             atmcard: crate::kernel::InMemoryRepository::new(),
-            transfer: crate::kernel::InMemoryRepository::new(),
             cardpayment: crate::kernel::InMemoryRepository::new(),
+            safedepositbox: crate::kernel::InMemoryRepository::new(),
+            statement: crate::kernel::InMemoryRepository::new(),
+            transfer: crate::kernel::InMemoryRepository::new(),
             externaltransfer: crate::kernel::InMemoryRepository::new(),
             scheduledpayment: crate::kernel::InMemoryRepository::new(),
-            safedepositbox: crate::kernel::InMemoryRepository::new(),
-            onboardingcase: crate::kernel::InMemoryRepository::new(),
-            statement: crate::kernel::InMemoryRepository::new(),
         }
     }
 
@@ -50,29 +50,29 @@ for (id, record) in self.customer.entries() {
 for (id, record) in self.account.entries() {
     instances.push((format!("{}{}", "Banking::Account#", id), record.to_json()));
 }
+for (id, record) in self.onboardingcase.entries() {
+    instances.push((format!("{}{}", "Banking::OnboardingCase#", id), record.to_json()));
+}
 for (id, record) in self.atmcard.entries() {
     instances.push((format!("{}{}", "Banking::ATMCard#", id), record.to_json()));
 }
-for (id, record) in self.transfer.entries() {
-    instances.push((format!("{}{}", "Banking::Transfer#", id), record.to_json()));
-}
 for (id, record) in self.cardpayment.entries() {
     instances.push((format!("{}{}", "Banking::CardPayment#", id), record.to_json()));
+}
+for (id, record) in self.safedepositbox.entries() {
+    instances.push((format!("{}{}", "Banking::SafeDepositBox#", id), record.to_json()));
+}
+for (id, record) in self.statement.entries() {
+    instances.push((format!("{}{}", "Banking::Statement#", id), record.to_json()));
+}
+for (id, record) in self.transfer.entries() {
+    instances.push((format!("{}{}", "Banking::Transfer#", id), record.to_json()));
 }
 for (id, record) in self.externaltransfer.entries() {
     instances.push((format!("{}{}", "Banking::ExternalTransfer#", id), record.to_json()));
 }
 for (id, record) in self.scheduledpayment.entries() {
     instances.push((format!("{}{}", "Banking::ScheduledPayment#", id), record.to_json()));
-}
-for (id, record) in self.safedepositbox.entries() {
-    instances.push((format!("{}{}", "Banking::SafeDepositBox#", id), record.to_json()));
-}
-for (id, record) in self.onboardingcase.entries() {
-    instances.push((format!("{}{}", "Banking::OnboardingCase#", id), record.to_json()));
-}
-for (id, record) in self.statement.entries() {
-    instances.push((format!("{}{}", "Banking::Statement#", id), record.to_json()));
 }
         instances
     }
@@ -95,16 +95,28 @@ if let Some(id) = key.strip_prefix("Banking::Account#") {
     store.account.save(id, crate::generated::banking::account::Account::from_json(value)?);
     continue;
 }
+if let Some(id) = key.strip_prefix("Banking::OnboardingCase#") {
+    store.onboardingcase.save(id, crate::generated::banking::onboardingcase::OnboardingCase::from_json(value)?);
+    continue;
+}
 if let Some(id) = key.strip_prefix("Banking::ATMCard#") {
     store.atmcard.save(id, crate::generated::banking::atmcard::ATMCard::from_json(value)?);
     continue;
 }
-if let Some(id) = key.strip_prefix("Banking::Transfer#") {
-    store.transfer.save(id, crate::generated::banking::transfer::Transfer::from_json(value)?);
-    continue;
-}
 if let Some(id) = key.strip_prefix("Banking::CardPayment#") {
     store.cardpayment.save(id, crate::generated::banking::cardpayment::CardPayment::from_json(value)?);
+    continue;
+}
+if let Some(id) = key.strip_prefix("Banking::SafeDepositBox#") {
+    store.safedepositbox.save(id, crate::generated::banking::safedepositbox::SafeDepositBox::from_json(value)?);
+    continue;
+}
+if let Some(id) = key.strip_prefix("Banking::Statement#") {
+    store.statement.save(id, crate::generated::banking::statement::Statement::from_json(value)?);
+    continue;
+}
+if let Some(id) = key.strip_prefix("Banking::Transfer#") {
+    store.transfer.save(id, crate::generated::banking::transfer::Transfer::from_json(value)?);
     continue;
 }
 if let Some(id) = key.strip_prefix("Banking::ExternalTransfer#") {
@@ -113,18 +125,6 @@ if let Some(id) = key.strip_prefix("Banking::ExternalTransfer#") {
 }
 if let Some(id) = key.strip_prefix("Banking::ScheduledPayment#") {
     store.scheduledpayment.save(id, crate::generated::banking::scheduledpayment::ScheduledPayment::from_json(value)?);
-    continue;
-}
-if let Some(id) = key.strip_prefix("Banking::SafeDepositBox#") {
-    store.safedepositbox.save(id, crate::generated::banking::safedepositbox::SafeDepositBox::from_json(value)?);
-    continue;
-}
-if let Some(id) = key.strip_prefix("Banking::OnboardingCase#") {
-    store.onboardingcase.save(id, crate::generated::banking::onboardingcase::OnboardingCase::from_json(value)?);
-    continue;
-}
-if let Some(id) = key.strip_prefix("Banking::Statement#") {
-    store.statement.save(id, crate::generated::banking::statement::Statement::from_json(value)?);
     continue;
 }
             }
@@ -149,29 +149,29 @@ if aggregate == "Banking::Customer" {
 if aggregate == "Banking::Account" {
     return Some(self.account.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
 }
+if aggregate == "Banking::OnboardingCase" {
+    return Some(self.onboardingcase.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
+}
 if aggregate == "Banking::ATMCard" {
     return Some(self.atmcard.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
 }
-if aggregate == "Banking::Transfer" {
-    return Some(self.transfer.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
-}
 if aggregate == "Banking::CardPayment" {
     return Some(self.cardpayment.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
+}
+if aggregate == "Banking::SafeDepositBox" {
+    return Some(self.safedepositbox.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
+}
+if aggregate == "Banking::Statement" {
+    return Some(self.statement.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
+}
+if aggregate == "Banking::Transfer" {
+    return Some(self.transfer.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
 }
 if aggregate == "Banking::ExternalTransfer" {
     return Some(self.externaltransfer.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
 }
 if aggregate == "Banking::ScheduledPayment" {
     return Some(self.scheduledpayment.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
-}
-if aggregate == "Banking::SafeDepositBox" {
-    return Some(self.safedepositbox.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
-}
-if aggregate == "Banking::OnboardingCase" {
-    return Some(self.onboardingcase.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
-}
-if aggregate == "Banking::Statement" {
-    return Some(self.statement.entries().map(|(id, record)| (id.clone(), record.to_json())).collect());
 }
         None
     }
@@ -306,6 +306,33 @@ pub fn dispatch_by_name(
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
               crate::generated::banking::account::dispatch_correct_interest(&mut store.account, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
+          "Banking::OnboardingCase.Open" => {
+              let args = crate::generated::banking::onboardingcase::OpenArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Branch clerk"), "Open", caller_role)?;
+              crate::kernel::check_reference(&store.customer, &args.customer, "Customer", "reference")?;
+              let owner_deref = Vec::new();
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::onboardingcase::dispatch_open(&mut store.onboardingcase, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::OnboardingCase.Clear" => {
+              let id = crate::generated::banking::onboardingcase::OnboardingCase::extract_id(args_json)?;
+              let args = crate::generated::banking::onboardingcase::ClearArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Compliance officer"), "Clear", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::OnboardingCase", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::onboardingcase::dispatch_clear(&mut store.onboardingcase, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::OnboardingCase.Decline" => {
+              let id = crate::generated::banking::onboardingcase::OnboardingCase::extract_id(args_json)?;
+              let args = crate::generated::banking::onboardingcase::DeclineArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Compliance officer"), "Decline", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::OnboardingCase", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::onboardingcase::dispatch_decline(&mut store.onboardingcase, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
           "Banking::ATMCard.Issue" => {
               let args = crate::generated::banking::atmcard::IssueArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Branch clerk"), "Issue", caller_role)?;
@@ -350,61 +377,6 @@ pub fn dispatch_by_name(
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
               crate::generated::banking::atmcard::dispatch_retire(&mut store.atmcard, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::Transfer.Request" => {
-              let args = crate::generated::banking::transfer::RequestArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Customer"), "Request", caller_role)?;
-              crate::kernel::check_reference(&store.account, &args.source, "Account", "number")?;
-              crate::kernel::check_reference(&store.account, &args.destination, "Account", "number")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "source", as_name: "source", target: "Banking::Account" }, crate::kernel::ReferenceSpec { field: "destination", as_name: "destination", target: "Banking::Account" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::transfer::dispatch_request(&mut store.transfer, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::Transfer.Debited" => {
-              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
-              let args = crate::generated::banking::transfer::DebitedArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("System"), "Debited", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::transfer::dispatch_debited(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::Transfer.Settle" => {
-              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
-              let args = crate::generated::banking::transfer::SettleArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("System"), "Settle", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::transfer::dispatch_settle(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::Transfer.Credited" => {
-              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
-              let args = crate::generated::banking::transfer::CreditedArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("System"), "Credited", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::transfer::dispatch_credited(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::Transfer.Reverse" => {
-              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
-              let args = crate::generated::banking::transfer::ReverseArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("System"), "Reverse", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::transfer::dispatch_reverse(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::Transfer.Reject" => {
-              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
-              let args = crate::generated::banking::transfer::RejectArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("System"), "Reject", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::transfer::dispatch_reject(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Banking::CardPayment.Authorize" => {
               let args = crate::generated::banking::cardpayment::AuthorizeArgs::from_json(args_json)?;
@@ -471,6 +443,106 @@ pub fn dispatch_by_name(
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
               crate::generated::banking::cardpayment::dispatch_reject_dispute(&mut store.cardpayment, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::SafeDepositBox.Rent" => {
+              let args = crate::generated::banking::safedepositbox::RentArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Branch clerk"), "Rent", caller_role)?;
+              crate::kernel::check_reference(&store.customer, &args.customer, "Customer", "reference")?;
+              let owner_deref = Vec::new();
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::safedepositbox::dispatch_rent(&mut store.safedepositbox, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::SafeDepositBox.Surrender" => {
+              let id = crate::generated::banking::safedepositbox::SafeDepositBox::extract_id(args_json)?;
+              let args = crate::generated::banking::safedepositbox::SurrenderArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Customer"), "Surrender", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::SafeDepositBox", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::safedepositbox::dispatch_surrender(&mut store.safedepositbox, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::SafeDepositBox.LogVisit" => {
+              let id = crate::generated::banking::safedepositbox::SafeDepositBox::extract_id(args_json)?;
+              let args = crate::generated::banking::safedepositbox::LogVisitArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Vault officer"), "LogVisit", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::SafeDepositBox", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::safedepositbox::dispatch_log_visit(&mut store.safedepositbox, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::SafeDepositBox.IssueKey" => {
+              let id = crate::generated::banking::safedepositbox::SafeDepositBox::extract_id(args_json)?;
+              let args = crate::generated::banking::safedepositbox::IssueKeyArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Vault officer"), "IssueKey", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::SafeDepositBox", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::safedepositbox::dispatch_issue_key(&mut store.safedepositbox, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::Statement.Generate" => {
+              let args = crate::generated::banking::statement::GenerateArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("System"), "Generate", caller_role)?;
+              crate::kernel::check_reference(&store.account, &args.account, "Account", "number")?;
+              let owner_deref = Vec::new();
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "account", as_name: "account", target: "Banking::Account" }], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::statement::dispatch_generate(&mut store.statement, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::Transfer.Request" => {
+              let args = crate::generated::banking::transfer::RequestArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("Customer"), "Request", caller_role)?;
+              crate::kernel::check_reference(&store.account, &args.source, "Account", "number")?;
+              crate::kernel::check_reference(&store.account, &args.destination, "Account", "number")?;
+              let owner_deref = Vec::new();
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "source", as_name: "source", target: "Banking::Account" }, crate::kernel::ReferenceSpec { field: "destination", as_name: "destination", target: "Banking::Account" }], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::transfer::dispatch_request(&mut store.transfer, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::Transfer.Debited" => {
+              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
+              let args = crate::generated::banking::transfer::DebitedArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("System"), "Debited", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::transfer::dispatch_debited(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::Transfer.Settle" => {
+              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
+              let args = crate::generated::banking::transfer::SettleArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("System"), "Settle", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::transfer::dispatch_settle(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::Transfer.Credited" => {
+              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
+              let args = crate::generated::banking::transfer::CreditedArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("System"), "Credited", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::transfer::dispatch_credited(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::Transfer.Reverse" => {
+              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
+              let args = crate::generated::banking::transfer::ReverseArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("System"), "Reverse", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::transfer::dispatch_reverse(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Banking::Transfer.Reject" => {
+              let id = crate::generated::banking::transfer::Transfer::extract_id(args_json)?;
+              let args = crate::generated::banking::transfer::RejectArgs::from_json(args_json)?;
+              crate::kernel::check_role(Some("System"), "Reject", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Transfer", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
+              crate::generated::banking::transfer::dispatch_reject(&mut store.transfer, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Banking::ExternalTransfer.Request" => {
               let args = crate::generated::banking::externaltransfer::RequestArgs::from_json(args_json)?;
@@ -554,78 +626,6 @@ pub fn dispatch_by_name(
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
               crate::generated::banking::scheduledpayment::dispatch_abandon(&mut store.scheduledpayment, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::SafeDepositBox.Rent" => {
-              let args = crate::generated::banking::safedepositbox::RentArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Branch clerk"), "Rent", caller_role)?;
-              crate::kernel::check_reference(&store.customer, &args.customer, "Customer", "reference")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::safedepositbox::dispatch_rent(&mut store.safedepositbox, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::SafeDepositBox.Surrender" => {
-              let id = crate::generated::banking::safedepositbox::SafeDepositBox::extract_id(args_json)?;
-              let args = crate::generated::banking::safedepositbox::SurrenderArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Customer"), "Surrender", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::SafeDepositBox", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::safedepositbox::dispatch_surrender(&mut store.safedepositbox, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::SafeDepositBox.LogVisit" => {
-              let id = crate::generated::banking::safedepositbox::SafeDepositBox::extract_id(args_json)?;
-              let args = crate::generated::banking::safedepositbox::LogVisitArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Vault officer"), "LogVisit", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::SafeDepositBox", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::safedepositbox::dispatch_log_visit(&mut store.safedepositbox, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::SafeDepositBox.IssueKey" => {
-              let id = crate::generated::banking::safedepositbox::SafeDepositBox::extract_id(args_json)?;
-              let args = crate::generated::banking::safedepositbox::IssueKeyArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Vault officer"), "IssueKey", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::SafeDepositBox", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::safedepositbox::dispatch_issue_key(&mut store.safedepositbox, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::OnboardingCase.Open" => {
-              let args = crate::generated::banking::onboardingcase::OpenArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Branch clerk"), "Open", caller_role)?;
-              crate::kernel::check_reference(&store.customer, &args.customer, "Customer", "reference")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::onboardingcase::dispatch_open(&mut store.onboardingcase, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::OnboardingCase.Clear" => {
-              let id = crate::generated::banking::onboardingcase::OnboardingCase::extract_id(args_json)?;
-              let args = crate::generated::banking::onboardingcase::ClearArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Compliance officer"), "Clear", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::OnboardingCase", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::onboardingcase::dispatch_clear(&mut store.onboardingcase, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::OnboardingCase.Decline" => {
-              let id = crate::generated::banking::onboardingcase::OnboardingCase::extract_id(args_json)?;
-              let args = crate::generated::banking::onboardingcase::DeclineArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Compliance officer"), "Decline", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::OnboardingCase", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::onboardingcase::dispatch_decline(&mut store.onboardingcase, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Banking::Statement.Generate" => {
-              let args = crate::generated::banking::statement::GenerateArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("System"), "Generate", caller_role)?;
-              crate::kernel::check_reference(&store.account, &args.account, "Account", "number")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "account", as_name: "account", target: "Banking::Account" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::banking::statement::dispatch_generate(&mut store.statement, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Banking::Account.LedgerEntry.Amend" => {
               let parent_id = crate::generated::banking::account::Account::extract_id(args_json)?;
@@ -713,14 +713,14 @@ fn stamp_payload(events: Vec<crate::kernel::Event>, args_json: &crate::kernel::J
 pub static REFERENCE_TABLE: crate::kernel::ReferenceTable = &[
     ("Banking::Customer", &[]),
     ("Banking::Account", &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }]),
+    ("Banking::OnboardingCase", &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }]),
     ("Banking::ATMCard", &[crate::kernel::ReferenceSpec { field: "account", as_name: "account", target: "Banking::Account" }]),
-    ("Banking::Transfer", &[crate::kernel::ReferenceSpec { field: "source", as_name: "source", target: "Banking::Account" }, crate::kernel::ReferenceSpec { field: "destination", as_name: "destination", target: "Banking::Account" }]),
     ("Banking::CardPayment", &[crate::kernel::ReferenceSpec { field: "account", as_name: "account", target: "Banking::Account" }, crate::kernel::ReferenceSpec { field: "disputed_by", as_name: "disputed_by", target: "Banking::Customer" }]),
+    ("Banking::SafeDepositBox", &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }]),
+    ("Banking::Statement", &[crate::kernel::ReferenceSpec { field: "account", as_name: "account", target: "Banking::Account" }]),
+    ("Banking::Transfer", &[crate::kernel::ReferenceSpec { field: "source", as_name: "source", target: "Banking::Account" }, crate::kernel::ReferenceSpec { field: "destination", as_name: "destination", target: "Banking::Account" }]),
     ("Banking::ExternalTransfer", &[crate::kernel::ReferenceSpec { field: "account", as_name: "account", target: "Banking::Account" }]),
     ("Banking::ScheduledPayment", &[crate::kernel::ReferenceSpec { field: "account", as_name: "account", target: "Banking::Account" }]),
-    ("Banking::SafeDepositBox", &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }]),
-    ("Banking::OnboardingCase", &[crate::kernel::ReferenceSpec { field: "customer", as_name: "customer", target: "Banking::Customer" }]),
-    ("Banking::Statement", &[crate::kernel::ReferenceSpec { field: "account", as_name: "account", target: "Banking::Account" }]),
 ];
 
 impl crate::kernel::ReferenceLookup for Store {
@@ -731,29 +731,29 @@ if target == "Banking::Customer" {
 if target == "Banking::Account" {
     return self.account.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
 }
+if target == "Banking::OnboardingCase" {
+    return self.onboardingcase.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
+}
 if target == "Banking::ATMCard" {
     return self.atmcard.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
 }
-if target == "Banking::Transfer" {
-    return self.transfer.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
-}
 if target == "Banking::CardPayment" {
     return self.cardpayment.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
+}
+if target == "Banking::SafeDepositBox" {
+    return self.safedepositbox.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
+}
+if target == "Banking::Statement" {
+    return self.statement.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
+}
+if target == "Banking::Transfer" {
+    return self.transfer.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
 }
 if target == "Banking::ExternalTransfer" {
     return self.externaltransfer.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
 }
 if target == "Banking::ScheduledPayment" {
     return self.scheduledpayment.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
-}
-if target == "Banking::SafeDepositBox" {
-    return self.safedepositbox.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
-}
-if target == "Banking::OnboardingCase" {
-    return self.onboardingcase.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
-}
-if target == "Banking::Statement" {
-    return self.statement.find(id).map(|r| Box::new(r) as Box<dyn crate::kernel::Fielded>);
 }
         None
     }
@@ -771,30 +771,30 @@ pub const CROSS_DOMAIN_POLICIES: &[crate::kernel::CrossDomainPolicyRule] = &[
     crate::kernel::CrossDomainPolicyRule { policy_name: "FlagKeyReturn", event_name: "KeyReturnDue", event_qualifier: None, target_domain: "Notifications", target_verb: "Notifications::Notifications.Send" },
 ];
 
-fn pm_literal_0() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("text".to_string(), crate::kernel::Json::Str("transfer out".to_string()))]) }
-fn pm_literal_1() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("text".to_string(), crate::kernel::Json::Str("transfer in".to_string()))]) }
-fn pm_literal_2() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("text".to_string(), crate::kernel::Json::Str("transfer reversed".to_string()))]) }
-fn pm_literal_3() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("name".to_string(), crate::kernel::Json::Str("current".to_string()))]) }
-fn pm_literal_4() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("cents".to_string(), crate::kernel::Json::int(0))]) }
+fn pm_literal_0() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("name".to_string(), crate::kernel::Json::Str("current".to_string()))]) }
+fn pm_literal_1() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("cents".to_string(), crate::kernel::Json::int(0))]) }
+fn pm_literal_2() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("text".to_string(), crate::kernel::Json::Str("transfer out".to_string()))]) }
+fn pm_literal_3() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("text".to_string(), crate::kernel::Json::Str("transfer in".to_string()))]) }
+fn pm_literal_4() -> crate::kernel::Json { crate::kernel::Json::Object(vec![("text".to_string(), crate::kernel::Json::Str("transfer reversed".to_string()))]) }
 
 pub const PROCESS_MANAGERS: &[crate::kernel::ProcessManagerDef] = &[
-    crate::kernel::ProcessManagerDef { name: "Settlement", correlates_by: "reference.value", starts_on: "TransferRequested", ends_on: "TransferSettled", initial_state: "requested", handlers: &[crate::kernel::Handler { event_type: "TransferRequested", from_state: "requested", to_state: "requested", dispatches: &[crate::kernel::DispatchSpec { command_name: "Account.Debit", with: &[("number", crate::kernel::WithValue::Ref("source")), ("amount", crate::kernel::WithValue::Ref("amount")), ("narrative", crate::kernel::WithValue::Literal(pm_literal_0)), ("reference", crate::kernel::WithValue::Ref("reference"))] }] }, crate::kernel::Handler { event_type: "AccountDebited", from_state: "requested", to_state: "awaiting_credit", dispatches: &[crate::kernel::DispatchSpec { command_name: "Transfer.Debited", with: &[("transfer", crate::kernel::WithValue::Ref("reference"))] }, crate::kernel::DispatchSpec { command_name: "Account.Credit", with: &[("number", crate::kernel::WithValue::Ref("destination")), ("amount", crate::kernel::WithValue::Ref("amount")), ("narrative", crate::kernel::WithValue::Literal(pm_literal_1)), ("reference", crate::kernel::WithValue::Ref("reference"))] }] }, crate::kernel::Handler { event_type: "AccountCredited", from_state: "awaiting_credit", to_state: "awaiting_credit", dispatches: &[crate::kernel::DispatchSpec { command_name: "Transfer.Credited", with: &[("transfer", crate::kernel::WithValue::Ref("reference"))] }] }, crate::kernel::Handler { event_type: "TransferCredited", from_state: "awaiting_credit", to_state: "settled", dispatches: &[crate::kernel::DispatchSpec { command_name: "Transfer.Settle", with: &[("transfer", crate::kernel::WithValue::Ref("reference"))] }] }, crate::kernel::Handler { event_type: "refused", from_state: "awaiting_credit", to_state: "reversed", dispatches: &[crate::kernel::DispatchSpec { command_name: "Account.Credit", with: &[("number", crate::kernel::WithValue::Ref("source")), ("amount", crate::kernel::WithValue::Ref("amount")), ("narrative", crate::kernel::WithValue::Literal(pm_literal_2))] }, crate::kernel::DispatchSpec { command_name: "Transfer.Reverse", with: &[("transfer", crate::kernel::WithValue::Ref("reference"))] }] }] },
+    crate::kernel::ProcessManagerDef { name: "Onboarding", correlates_by: "reference.value", starts_on: "OnboardingOpened", ends_on: "AccountOpened", initial_state: "screening", handlers: &[crate::kernel::Handler { event_type: "OnboardingCleared", from_state: "screening", to_state: "cleared", dispatches: &[crate::kernel::DispatchSpec { command_name: "Account.Open", with: &[("customer", crate::kernel::WithValue::Ref("customer")), ("number", crate::kernel::WithValue::Ref("account_number")), ("kind", crate::kernel::WithValue::Literal(pm_literal_0)), ("daily_limit", crate::kernel::WithValue::Literal(pm_literal_1))] }] }, crate::kernel::Handler { event_type: "OnboardingDeclined", from_state: "screening", to_state: "declined", dispatches: &[] }] },
+    crate::kernel::ProcessManagerDef { name: "Settlement", correlates_by: "reference.value", starts_on: "TransferRequested", ends_on: "TransferSettled", initial_state: "requested", handlers: &[crate::kernel::Handler { event_type: "TransferRequested", from_state: "requested", to_state: "requested", dispatches: &[crate::kernel::DispatchSpec { command_name: "Account.Debit", with: &[("number", crate::kernel::WithValue::Ref("source")), ("amount", crate::kernel::WithValue::Ref("amount")), ("narrative", crate::kernel::WithValue::Literal(pm_literal_2)), ("reference", crate::kernel::WithValue::Ref("reference"))] }] }, crate::kernel::Handler { event_type: "AccountDebited", from_state: "requested", to_state: "awaiting_credit", dispatches: &[crate::kernel::DispatchSpec { command_name: "Transfer.Debited", with: &[("transfer", crate::kernel::WithValue::Ref("reference"))] }, crate::kernel::DispatchSpec { command_name: "Account.Credit", with: &[("number", crate::kernel::WithValue::Ref("destination")), ("amount", crate::kernel::WithValue::Ref("amount")), ("narrative", crate::kernel::WithValue::Literal(pm_literal_3)), ("reference", crate::kernel::WithValue::Ref("reference"))] }] }, crate::kernel::Handler { event_type: "AccountCredited", from_state: "awaiting_credit", to_state: "awaiting_credit", dispatches: &[crate::kernel::DispatchSpec { command_name: "Transfer.Credited", with: &[("transfer", crate::kernel::WithValue::Ref("reference"))] }] }, crate::kernel::Handler { event_type: "TransferCredited", from_state: "awaiting_credit", to_state: "settled", dispatches: &[crate::kernel::DispatchSpec { command_name: "Transfer.Settle", with: &[("transfer", crate::kernel::WithValue::Ref("reference"))] }] }, crate::kernel::Handler { event_type: "refused", from_state: "awaiting_credit", to_state: "reversed", dispatches: &[crate::kernel::DispatchSpec { command_name: "Account.Credit", with: &[("number", crate::kernel::WithValue::Ref("source")), ("amount", crate::kernel::WithValue::Ref("amount")), ("narrative", crate::kernel::WithValue::Literal(pm_literal_4))] }, crate::kernel::DispatchSpec { command_name: "Transfer.Reverse", with: &[("transfer", crate::kernel::WithValue::Ref("reference"))] }] }] },
     crate::kernel::ProcessManagerDef { name: "ExternalSettlement", correlates_by: "end_to_end.value", starts_on: "ExternalTransferRequested", ends_on: "ExternalTransferSent", initial_state: "requested", handlers: &[crate::kernel::Handler { event_type: "ExternalTransferRequested", from_state: "requested", to_state: "requested", dispatches: &[crate::kernel::DispatchSpec { command_name: "ExternalTransfer.SendTransfer", with: &[("end_to_end", crate::kernel::WithValue::Ref("end_to_end"))] }] }, crate::kernel::Handler { event_type: "refused", from_state: "requested", to_state: "returned", dispatches: &[crate::kernel::DispatchSpec { command_name: "ExternalTransfer.Return", with: &[("end_to_end", crate::kernel::WithValue::Ref("end_to_end"))] }] }] },
-    crate::kernel::ProcessManagerDef { name: "Onboarding", correlates_by: "reference.value", starts_on: "OnboardingOpened", ends_on: "AccountOpened", initial_state: "screening", handlers: &[crate::kernel::Handler { event_type: "OnboardingCleared", from_state: "screening", to_state: "cleared", dispatches: &[crate::kernel::DispatchSpec { command_name: "Account.Open", with: &[("customer", crate::kernel::WithValue::Ref("customer")), ("number", crate::kernel::WithValue::Ref("account_number")), ("kind", crate::kernel::WithValue::Literal(pm_literal_3)), ("daily_limit", crate::kernel::WithValue::Literal(pm_literal_4))] }] }, crate::kernel::Handler { event_type: "OnboardingDeclined", from_state: "screening", to_state: "declined", dispatches: &[] }] },
 ];
 
 pub fn reference_key_for_aggregate(qualified_name: &str) -> Option<&'static str> {
     match qualified_name {
         "Banking::Customer" => Some("customer"),
         "Banking::Account" => Some("account"),
+        "Banking::OnboardingCase" => Some("onboarding_case"),
         "Banking::ATMCard" => Some("atm_card"),
-        "Banking::Transfer" => Some("transfer"),
         "Banking::CardPayment" => Some("card_payment"),
+        "Banking::SafeDepositBox" => Some("safe_deposit_box"),
+        "Banking::Statement" => Some("statement"),
+        "Banking::Transfer" => Some("transfer"),
         "Banking::ExternalTransfer" => Some("external_transfer"),
         "Banking::ScheduledPayment" => Some("scheduled_payment"),
-        "Banking::SafeDepositBox" => Some("safe_deposit_box"),
-        "Banking::OnboardingCase" => Some("onboarding_case"),
-        "Banking::Statement" => Some("statement"),
         _ => None,
     }
 }
@@ -893,12 +893,12 @@ crate::kernel::QueryDef {
     limit: None,
 },
 crate::kernel::QueryDef {
-    verb: "Banking::Transfer.InFlight",
-    aggregate: "Banking::Transfer",
+    verb: "Banking::OnboardingCase.Screening",
+    aggregate: "Banking::OnboardingCase",
     conditions: &[
-        crate::kernel::QueryCondition { field: "status", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Literal("debited") },
+        crate::kernel::QueryCondition { field: "status", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Literal("screening") },
     ],
-    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "status", descending: false }),
+    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "reference", descending: false }),
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -929,6 +929,15 @@ crate::kernel::QueryDef {
     limit: None,
 },
 crate::kernel::QueryDef {
+    verb: "Banking::Transfer.InFlight",
+    aggregate: "Banking::Transfer",
+    conditions: &[
+        crate::kernel::QueryCondition { field: "status", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Literal("debited") },
+    ],
+    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "status", descending: false }),
+    limit: None,
+},
+crate::kernel::QueryDef {
     verb: "Banking::ExternalTransfer.Sent",
     aggregate: "Banking::ExternalTransfer",
     conditions: &[
@@ -944,15 +953,6 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "status", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Literal("scheduled") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "due_on", descending: false }),
-    limit: None,
-},
-crate::kernel::QueryDef {
-    verb: "Banking::OnboardingCase.Screening",
-    aggregate: "Banking::OnboardingCase",
-    conditions: &[
-        crate::kernel::QueryCondition { field: "status", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Literal("screening") },
-    ],
-    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "reference", descending: false }),
     limit: None,
 },
 ];

@@ -100,9 +100,10 @@ else
     # silently (and correctly, for any OTHER unloaded adapter) answers
     # false.
     Kernel.load(File.expand_path("../lib/hecksagain/adapters/driven/postgres_era.adapter", __dir__))
-    Kernel.load(File.join(domain, "bluebook", "#{File.basename(domain)}.bluebook"))
+    bluebook_directory = File.join(domain, "bluebook")
+    Hecksagain::Adapters::Folder.new.load_bluebooks(bluebook_directory)
 
-    # ALSO the .hecksagon file, not just the .bluebook — this is what
+    # ALSO every .hecksagon file in the folder — this is what
     # actually fires `uses_framework`, which `Kernel.load`s that framework
     # member's own .bluebook into this SAME registry as a side effect
     # (HecksagonBuilder#uses_framework -> Framework.load!, hecksagon_
@@ -111,12 +112,11 @@ else
     # with no .hecksagon (or one that attaches nothing) leaves
     # target_registry.bluebooks with just its own single entry, exactly
     # as before this line existed.
-    hecksagon_file = File.join(domain, "bluebook", "#{File.basename(domain)}.hecksagon")
-    Kernel.load(hecksagon_file) if File.exist?(hecksagon_file)
+    Dir.glob(File.join(bluebook_directory, "*.hecksagon")).each { |file| Kernel.load(file) }
   end
 
   # Still .keys.first, unchanged from before .hecksagon was ever loaded
-  # here — the target domain's OWN .bluebook is always loaded first,
+  # here — the target domain's OWN chapter is always loaded first,
   # before .hecksagon's uses_framework calls add anything else, so
   # insertion order (Ruby Hash's own guarantee) already puts it first
   # regardless of how many framework chapters get pulled in after it.

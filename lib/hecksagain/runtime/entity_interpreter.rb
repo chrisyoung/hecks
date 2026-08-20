@@ -6,6 +6,9 @@ require_relative "identity"
 require_relative "instance"
 require_relative "value"
 require_relative "refusal_wording"
+require_relative "routing"
+require_relative "dependency_planning"
+require_relative "../ports/persistence/execution"
 
 module Hecksagain
   module Runtime
@@ -41,14 +44,14 @@ module Hecksagain
       # exactly as it always has. Only `locate_element` walks the chain.
       Context = Struct.new(:domain, :aggregate, :entity, :entity_name, :command, :command_name,
                            :args, :repository, :instance, :chain, :element, :view, :transition,
-                           :old_element, :result)
+                           :old_element, :result, :route, :plan, :persistence_outcome)
 
       def initialize(registry, rules:)
         @registry = registry
         @rules    = rules
       end
 
-      def call(domain, aggregate, dotted, args)
+      def call(domain, aggregate, dotted, legacy_args, route: nil, with: nil)
         *entity_names, command_name = dotted.to_s.split(".")
         if entity_names.empty?
           raise UnknownVerb, RefusalWording.render("UnknownVerb", "entity_unknown",
@@ -61,10 +64,13 @@ module Hecksagain
                   raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_no_command",
                                                            entity: entity.hecks_name, command: command_name.inspect))
 
+        args = Routing.payload(command, with: with, legacy: legacy_args)
         ctx = Context.new(domain, aggregate, entity, entity_names.join("."), command, command_name, args)
         ctx.chain = chain
+        ctx.route = route
+        ctx.plan = DependencyPlanning::Analyzer.call(aggregate: entity, command: command)
         run_dispatch_order(DISPATCH_ORDER, ctx)
-        [ctx.instance, ctx.result]
+        [ctx.instance, ctx.result, ctx.plan, ctx.persistence_outcome]
       end
 
       private
@@ -103,12 +109,14 @@ module Hecksagain
       def step_hydrate_parent(ctx)
         ctx.repository = @registry.repository(ctx.domain, ctx.aggregate)
         ctx.instance = step(:hydrate_parent) {
-          parent(ctx.repository, ctx.aggregate, ctx.entity_name, ctx.command_name, ctx.args)
+          parent(ctx.repository, ctx.aggregate, ctx.entity_name, ctx.command_name, ctx.args, ctx.route)
         }
       end
 
       def step_locate_element(ctx)
-        ctx.element = step(:locate_element) { locate_chain(ctx.aggregate, ctx.chain, ctx.instance, ctx.args, ctx.command_name) }
+        ctx.element = step(:locate_element) {
+          locate_chain(ctx.aggregate, ctx.chain, ctx.instance, ctx.args, ctx.command_name, ctx.route)
+        }
         # `view` was hydrated ONCE, here, into its OWN state hash
         # (Value.hydrate builds a fresh Hash — never aliased with `element`)
         # — exactly right for enforce_givens, which must read pre-mutation.
@@ -162,7 +170,11 @@ module Hecksagain
       end
 
       def step_save(ctx)
-        step(:save) { ctx.repository.save(ctx.instance) }
+        step(:save) do
+          @rules.resolve_state_references(ctx.domain, ctx.aggregate, ctx.instance.state)
+          ctx.repository.save(ctx.instance)
+          ctx.persistence_outcome = Ports::Persistence::Outcome.new(status: :saved, instance: ctx.instance)
+        end
       end
 
       def step_emit(ctx)
@@ -173,8 +185,9 @@ module Hecksagain
       # addresses one acting on itself — derive from the declared identity first
       # (`Identity.of`), and let a bare `id:` name an already-derived record when
       # the identity itself is not what the caller is holding.
-      def parent(repository, aggregate, entity_name, command_name, args)
-        parent_id = Identity.of(aggregate, args) ||
+      def parent(repository, aggregate, entity_name, command_name, args, route = nil)
+        parent_id = route&.aggregate ||
+                    Identity.of(aggregate, args) ||
                     Identity.from(aggregate, args, :id) ||
                     raise(NotFound, RefusalWording.render("NotFound", "entity_parent_no_identity",
                                                           command: command_name, aggregate: aggregate.hecks_name,
@@ -200,11 +213,12 @@ module Hecksagain
       # answer `.value_object` (Entity's own header comment) so handing
       # it an intermediate owner instead would break every VO-typed
       # identity field a nested entity declares.
-      def locate_chain(root_aggregate, chain, instance, args, command_name)
+      def locate_chain(root_aggregate, chain, instance, args, command_name, route = nil)
         container = instance
         owner     = root_aggregate
-        chain.each do |entity|
-          container = element_of(root_aggregate, owner, entity, command_name, container, args)
+        chain.each_with_index do |entity, index|
+          container = element_of(root_aggregate, owner, entity, command_name, container, args,
+                                 route&.entities&.fetch(index))
           owner = entity
         end
         container
@@ -214,24 +228,30 @@ module Hecksagain
       # A piece's identity may be several paths, the same shape a head's can be,
       # so a dispatch that names the element has to supply every part and every
       # part has to agree with the stored one.
-      def element_of(root_aggregate, owner, entity, command_name, container, args)
+      def element_of(root_aggregate, owner, entity, command_name, container, args, routed_identity = nil)
         entity_name = entity.hecks_name
         list_attr = owner.attributes.find { |a| a.list? && a.type.to_s == entity_name } ||
                     raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_holds_no_list",
                                                              aggregate: owner.hecks_name, entity: entity_name))
 
-        wants = entity.identity_paths.map do |path|
-          head = path.to_s.split(".").first.to_sym
-          raw  = args[head] ||
-                 raise(NotFound, RefusalWording.render("NotFound", "entity_element_no_identity",
-                                                       command: command_name, entity: entity_name,
-                                                       identity: Identity.reading(entity)))
+        wants = unless routed_identity
+                  entity.identity_paths.map do |path|
+                    head = path.to_s.split(".").first.to_sym
+                    raw  = args[head] ||
+                           raise(NotFound, RefusalWording.render("NotFound", "entity_element_no_identity",
+                                                                 command: command_name, entity: entity_name,
+                                                                 identity: Identity.reading(entity)))
 
-          [head, path, Value.for_attribute(root_aggregate, entity.attribute(head), raw)]
-        end
+                    [head, path, Value.for_attribute(root_aggregate, entity.attribute(head), raw)]
+                  end
+                end
 
         original = Array(container[list_attr.name])
-        position = original.find_index { |el| wants.all? { |head, _path, want| el[head] == want } }
+        position = if routed_identity
+                     original.find_index { |element| element_identity(entity, element).to_s == routed_identity.to_s }
+                   else
+                     original.find_index { |el| wants.all? { |head, _path, want| el[head] == want } }
+                   end
         unless position
           raise NotFound, RefusalWording.render(
             "NotFound", "entity_element_missing",

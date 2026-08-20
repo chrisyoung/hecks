@@ -410,7 +410,7 @@ module RustProjection
     # `entity_command_skip_reason` — deliberately just `command_skip_reason`
     # with `entity` standing in for `aggregate`: an entity's own IR shape
     # (`attributes`/`lifecycle`/`commands`) is the SAME six-key shape an
-    # aggregate's is (docs/guides/running-a-runtime.md, "Entities" —
+    # aggregate's is (docs/implemented/guides/running-a-runtime.md, "Entities" —
     # exported recursively, identically). The one real divergence —
     # `append_field_problems`/`append_element` reading `aggregate[:entities]`,
     # which an entity node doesn't carry — is why this guards `:append`
@@ -425,7 +425,7 @@ module RustProjection
     end
 
     # ── AN ENTITY COMMAND — `EntityInterpreter#call`'s shorter
-    # `DISPATCH_ORDER` (docs/guides/entities.md), ported the same way
+    # `DISPATCH_ORDER` (docs/implemented/guides/entities.md), ported the same way
     # `emit_command` ports `CommandInterpreter#call`: compile the type
     # shapes, hand the kernel `Expr` data plus closures to interpret.
     # `kernel::dispatch_entity` (dispatch.rs) is the generic, hand-written

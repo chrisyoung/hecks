@@ -17,7 +17,7 @@ require "stringio"
 # chain is what keeps them three distinguishable facts.
 RSpec.describe "a construct's identity" do
   CONSTRUCT_PIZZAS  = InMemoryDomain::PIZZAS_BLUEBOOK
-  CONSTRUCT_BANKING = File.join(InMemoryDomain::ROOT, "examples/banking/bluebook/banking.bluebook").freeze
+  CONSTRUCT_BANKING = InMemoryDomain::BANKING_BLUEBOOK_DIR
 
   # The house pattern — load into a fresh registry against the Memory adapter, so
   # no example touches a data directory. `Hecks.boot` on a real example domain
@@ -30,7 +30,7 @@ RSpec.describe "a construct's identity" do
       Kernel.load(InMemoryDomain::EXTRACTION_PORT)
       Kernel.load(InMemoryDomain::MEMORY_ADAPTER)
       Kernel.load(InMemoryDomain::PRISM_ADAPTER)
-      Kernel.load(bluebook)
+      load_bluebook_files(bluebook)
       Hecksagain::Runtime::Loader.bind_runtime(
         Hecksagain::Runtime::Dispatcher.new(registry)
       )
@@ -110,7 +110,16 @@ RSpec.describe "a construct's identity" do
     it "resolves every reference in banking to a head in its own chapter" do
       found = references_in(banking, "Banking")
 
-      expect(found.size).to eq(22)
+      # 21, not 22: SafeDepositBox's own creating command no longer
+      # redeclares `reference_to Customer` beside the aggregate's own —
+      # Wave 7's reference-decluttering, so far landed on this one
+      # aggregate. Every other aggregate here (Account, ATMCard,
+      # CardPayment, Statement, Transfer, ExternalTransfer,
+      # ScheduledPayment, OnboardingCase) still double-declares its own
+      # reference on both itself and its creating command; finishing
+      # that migration across the rest of the corpus is separate,
+      # larger follow-up work, not a defect this count is asserting.
+      expect(found.size).to eq(21)
       found.each do |owner, attribute|
         resolved = attribute.type.resolve
 

@@ -39,10 +39,30 @@ module Hecksagain
         end
 
         def execute(sql, binds = [])
+          response_results({ sql: sql, params: binds }).first.fetch("results", [])
+        end
+
+        # D1 batches are SQL transactions: statements execute in order and a
+        # failure rolls the entire sequence back. Keep the tuple-shaped local
+        # seam small so adapter code and focused fakes do not need to know the
+        # REST request envelope.
+        # https://developers.cloudflare.com/d1/worker-api/d1-database/#batch
+        def batch(statements)
+          payload = {
+            batch: statements.map do |sql, binds|
+              { sql: sql, params: binds || [] }
+            end
+          }
+          response_results(payload).map { |result| result.fetch("results", []) }
+        end
+
+        private
+
+        def response_results(payload)
           request = Net::HTTP::Post.new(@uri)
           request["Authorization"] = "Bearer #{@api_token}"
           request["Content-Type"] = "application/json"
-          request.body = JSON.generate(sql: sql, params: binds)
+          request.body = JSON.generate(payload)
 
           response = Net::HTTP.start(@uri.host, @uri.port, use_ssl: true) { |http| http.request(request) }
           body =
@@ -57,8 +77,18 @@ module Hecksagain
             raise Runtime::WiringError, "D1 query failed: #{messages.empty? ? response.body : messages}"
           end
 
-          body.fetch("result").first.fetch("results")
+          results = body.fetch("result")
+          failed = results.find { |result| result["success"] == false }
+          if failed
+            messages = (body["errors"] || []).map { |error| error["message"] }.join("; ")
+            detail = failed["error"] || failed["message"] || messages
+            raise Runtime::WiringError, "D1 query failed: #{detail.to_s.empty? ? 'a batched statement failed' : detail}"
+          end
+
+          results
         end
+
+        public
 
         def get_first_row(sql, binds = [])
           execute(sql, binds).first
@@ -76,6 +106,8 @@ module Hecksagain
       SQL_TYPES = { "Integer" => "INTEGER", "Float" => "REAL" }.freeze
 
       attr_reader :aggregate
+
+      def persistence_capabilities = [:atomic_put]
 
       def initialize(aggregate:, settings: {}, root: nil)
         @aggregate = aggregate
@@ -181,6 +213,48 @@ module Hecksagain
         entry = Ports::Persistence::Entry.new(operation: "save", id: instance.id.to_s, state: instance.state.dup)
         append(entry)
         project(entry)
+      end
+
+      # Classification, durable journal append and current-state projection
+      # are one D1 batch transaction and therefore one HTTP request. The first
+      # statement supplies the outcome from database state inside that same
+      # transaction; the runtime performs no preliminary find.
+      def atomic_put(entry, insert_only: false)
+        # `insert_only:` ASKS ONE EXTRA ROUND TRIP, deliberately, only when a
+        # `creates?` command needs the refusal a plain overwrite cannot give:
+        # D1's batch has no conditional statement of its own (unlike the
+        # single-transaction adapters' own `next`, below), so the only way to
+        # never run the write half at all — never a later refusal reading as
+        # though it had — is to know the answer BEFORE building it.
+        if insert_only
+          exists = !@db.execute("SELECT 1 FROM #{quoted_table} WHERE id = ?", [entry.id.to_s]).empty?
+          return :conflicted if exists
+        end
+
+        instance = Runtime::Instance.new(aggregate: @aggregate, id: entry.id, state: entry.state)
+        columns = (["id"] + persisted_fields.map { |field| field[:name].to_s }).map { |column| quote_ident(column) }
+        values = [instance.id.to_s] + persisted_fields.map { |field| encode_field(field, instance[field[:name]]) }
+        slots = Array.new(columns.size, "?").join(", ")
+
+        results = @db.batch([
+                              [
+                                "SELECT CASE WHEN EXISTS " \
+                                "(SELECT 1 FROM #{quoted_table} WHERE id = ?) " \
+                                "THEN 'replaced' ELSE 'inserted' END AS status",
+                                [entry.id.to_s]
+                              ],
+                              [
+                                "INSERT INTO #{quoted_entry_table} " \
+                                "(aggregate_id, operation, state, mirrors) VALUES (?, ?, ?, ?)",
+                                [entry.id, entry.operation, JSON.generate(entry.state), JSON.generate(entry.mirrors)]
+                              ],
+                              [
+                                "INSERT OR REPLACE INTO #{quoted_table} (#{columns.join(', ')}) VALUES (#{slots})",
+                                values
+                              ]
+                            ])
+
+        results.fetch(0).fetch(0).fetch("status").to_sym
       end
 
       def delete(id)

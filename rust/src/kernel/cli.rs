@@ -1,7 +1,7 @@
 // HAND-WRITTEN, ONCE, GENERIC — the stdin/stdout JSON CLI contract every
 // compiled artifact speaks, native binary or wasm32-wasip1 module alike
 // (WASI implements stdio the same way a normal process does — see
-// docs/decisions/0012-wasm-via-wasi-stdio.md). Reads the exact
+// docs/implemented/decisions/0012-wasm-via-wasi-stdio.md). Reads the exact
 // `{"steps": [...]}` shape `bin/rust_conformance` already feeds Ruby's
 // `Fuzzing::Replay.call`, and writes the exact `{"instances", "events",
 // "refusals", "queries"}` shape `Fuzzing::Replay.call`'s own return hash
@@ -39,7 +39,7 @@ pub fn run(input: &str) -> String {
     // `Store::from_seed`, mechanical inverses, `rust/project/registry.rb`'s
     // `emit_registry`). Optional and additive: an input with no `"seed"`
     // key behaves exactly as before (`Store::new()`, empty). Lets a HOST
-    // (rust/host, docs/decisions/0012) seed prior state back in instead
+    // (rust/host, docs/implemented/decisions/0012) seed prior state back in instead
     // of replaying `steps` from scratch every invocation — `steps` then
     // needs to carry only the genuinely new command(s), not the whole
     // history.
@@ -77,7 +77,7 @@ pub fn run(input: &str) -> String {
         None => HashMap::new(),
     };
     // One entry per step, in step order — a HOST driving this kernel
-    // (rust/host, docs/decisions/0012) needs to know which records THIS
+    // (rust/host, docs/implemented/decisions/0012) needs to know which records THIS
     // step's own dispatch (including everything it cascaded through
     // policies/sagas) actually saved, not just the whole-store snapshot
     // `instances` already reports. Kept parallel to `steps`, not flattened,
@@ -281,6 +281,12 @@ pub fn run(input: &str) -> String {
         // site mirrors `Dispatcher#reenter`'s `Caller.without`).
         let caller_role = step.get("role").and_then(Json::as_str);
 
+        // Direct callers use top-level `to`/`with`; the durable host wraps
+        // that same object under its historical `args` journal column so no
+        // storage migration is required. Generated `dispatch_by_name`
+        // accepts either location through `CommandInvocation`.
+        let command_input = command_input(step, args);
+
         // `orchestrate` appends every event — this step's own AND every
         // policy reaction it triggers — into `events` itself; only the
         // TOP-level verb's own refusal is recorded per step, matching
@@ -308,7 +314,7 @@ pub fn run(input: &str) -> String {
             tables,
             &mut sagas,
             verb,
-            args,
+            command_input,
             caller_role,
             None,
             0,
@@ -420,6 +426,14 @@ fn filter_label(filter: &Json) -> String {
     format!("filter {}.{} {}", field("aggregate"), field("field"), field("op"))
 }
 
+fn command_input<'a>(step: &'a Json, legacy_args: &'a Json) -> &'a Json {
+    if step.get("to").is_some() || step.get("with").is_some() {
+        step
+    } else {
+        legacy_args
+    }
+}
+
 fn mutation_to_json(mutation: &MutationRecord) -> Json {
     Json::obj(vec![
         ("aggregate", Json::str(mutation.aggregate.clone())),
@@ -476,4 +490,30 @@ fn event_to_json(event: &Event) -> Json {
 
 fn error_output(message: &str) -> String {
     Json::obj(vec![("error", Json::str(message.to_string()))]).to_json_string()
+}
+
+#[cfg(test)]
+mod routing_tests {
+    use super::*;
+
+    #[test]
+    fn top_level_with_selects_an_unrouted_compound_create_invocation() {
+        let step = Json::obj(vec![
+            ("verb", Json::str("Banking::SafeDepositBox.Rent")),
+            (
+                "with",
+                Json::obj(vec![
+                    ("branch_code", Json::str("DOWNTOWN")),
+                    ("box_number", Json::int(12)),
+                ]),
+            ),
+        ]);
+        let legacy_args = Json::obj(vec![]);
+
+        let selected = command_input(&step, &legacy_args);
+        let invocation = crate::kernel::CommandInvocation::from_json(selected).unwrap();
+        assert_eq!(invocation.route(), None);
+        assert_eq!(invocation.facts().get("branch_code").and_then(Json::as_str), Some("DOWNTOWN"));
+        assert_eq!(invocation.facts().get("box_number").and_then(Json::as_i64), Some(12));
+    }
 }

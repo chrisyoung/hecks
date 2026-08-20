@@ -43,7 +43,7 @@
 // CROSS-DOMAIN POLICIES (`across "OtherDomain"`) are matched here the
 // SAME way a same-domain policy is (event_name/event_qualifier), but
 // never dispatched here — this module is the WASM-sandboxed kernel
-// (docs/decisions/0012), no network, no way to reach another domain's
+// (docs/implemented/decisions/0012), no network, no way to reach another domain's
 // own deployed Lambda. `react_policies` below pushes a
 // `PendingCrossDomainReaction` instead of recursing into `orchestrate`,
 // and `kernel::cli::run` carries that list out through this call's own
@@ -521,7 +521,7 @@ fn react_policies<S: AggregateScan>(
         }
 
         // Without `with:`, the event's WHOLE payload forwards verbatim as
-        // the trigger's own args — docs/guides/policies-and-process-
+        // the trigger's own args — docs/implemented/guides/policies-and-process-
         // managers.md: "not reshaped, not filtered." `caller_role: None`
         // — `Dispatcher#reenter`'s own `Caller.without`: a policy
         // reaction is system-triggered, never carries whatever caller the

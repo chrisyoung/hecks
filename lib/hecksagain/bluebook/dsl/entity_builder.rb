@@ -10,7 +10,8 @@ module Hecksagain
         include RuleReference
         include WordGate
 
-        def initialize(name, owner_value_objects: [], owner_named_givens: {})
+        def initialize(name, owner_value_objects: [], owner_named_givens: {},
+                       identity_name_prefix: nil, identity_value_object_installer: nil)
           @name         = name
           @commands     = []
           @queries      = []
@@ -18,6 +19,8 @@ module Hecksagain
           @named_givens = {}
           @invariants   = []
           @owner_value_objects = owner_value_objects
+          @identity_name_prefix = identity_name_prefix || Naming.demodulise(name)
+          @identity_value_object_installer = identity_value_object_installer
           # THE AGGREGATE-WIDE cross-entity given pool — ONE hash, the
           # SAME object, threaded unchanged through every piece nested
           # under one aggregate however deep (the identical shape
@@ -44,9 +47,30 @@ module Hecksagain
         # own head can (Card.assignee_id, a Team's own id), just never
         # to another PIECE, since there's no cross-piece addressing
         # anywhere in this language to resolve one against.
-        def reference_to(type, as: nil)
+        def reference_to(type, as: nil, optional: false)
           target = Naming.demodulise(type)
-          attribute(as || default_reference_name(target), Reference.new(target))
+          relationship_attribute(target, :reference_to,
+                                 as || default_reference_name(target), optional: optional)
+        end
+
+        def has_many(type, as: nil, **options)
+          unless options.empty?
+            raise Malformed, "#{@name}.has_many takes no #{options.keys.first}: — an empty list already means none"
+          end
+
+          plural = Naming.demodulise(type)
+          relationship_attribute(Naming.singularize(plural), :has_many,
+                                 as || Naming.snake(plural).to_sym, list: true)
+        end
+
+        def has_one(type, as: nil, optional: false)
+          target = Naming.demodulise(type)
+          relationship_attribute(target, :has_one, as || Naming.snake(target).to_sym, optional: optional)
+        end
+
+        def belongs_to(type, as: nil, optional: false)
+          target = Naming.demodulise(type)
+          relationship_attribute(target, :belongs_to, as || Naming.snake(target).to_sym, optional: optional)
         end
 
         # A PIECE is known by a field, not by a whole value object.
@@ -156,8 +180,11 @@ module Hecksagain
           )
         end
 
-        def self.build(name, owner_value_objects: [], owner_named_givens: {}, &block)
-          builder = new(name, owner_value_objects: owner_value_objects, owner_named_givens: owner_named_givens)
+        def self.build(name, owner_value_objects: [], owner_named_givens: {},
+                       identity_name_prefix: nil, identity_value_object_installer: nil, &block)
+          builder = new(name, owner_value_objects: owner_value_objects, owner_named_givens: owner_named_givens,
+                              identity_name_prefix: identity_name_prefix,
+                              identity_value_object_installer: identity_value_object_installer)
           builder.instance_eval(&block) if block
           builder.build
         end
@@ -170,8 +197,11 @@ module Hecksagain
         # a sibling piece's `.attributes`), then commands, then queries.
         def drain_pending!
           @entities = @pending_entities.map do |name, block|
-            EntityBuilder.build(name, owner_value_objects: @owner_value_objects,
-                                      owner_named_givens:  @owner_named_givens, &block)
+            EntityBuilder.build(name, owner_value_objects:             @owner_value_objects,
+                                      owner_named_givens:              @owner_named_givens,
+                                      identity_name_prefix:            "#{@identity_name_prefix}#{Naming.demodulise(name)}",
+                                      identity_value_object_installer: @identity_value_object_installer,
+                                &block)
           end
 
           @commands = @pending_commands.map do |name, from, block|
@@ -206,6 +236,13 @@ module Hecksagain
         # its own, so a bare field's own type resolves against its OWNER
         # aggregate's, passed in at declaration (`AggregateBuilder#entity`).
         def identity_pool = @owner_value_objects
+
+        def identity_value_object_name = "#{@identity_name_prefix}Identity"
+
+        def install_identity_value_object!(value_object)
+          @identity_value_object_installer&.call(value_object)
+          @owner_value_objects << value_object unless @owner_value_objects.include?(value_object)
+        end
       end
     end
   end

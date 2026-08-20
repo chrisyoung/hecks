@@ -83,7 +83,14 @@ module Hecksagain
     # own first use motivated (found here, fixed at the source rather
     # than left as a private `TREES.clear` poke from outside).
     def self.load_bluebook(path)
-      Hecksagain::Adapters::Prism.forget(path)
+      paths = if path.is_a?(Array)
+                path
+              elsif File.directory?(path)
+                Dir.glob(File.join(path, "*.bluebook"))
+              else
+                [path]
+              end
+      paths.each { |file| Hecksagain::Adapters::Prism.forget(file) }
 
       registry = Hecksagain::Runtime::Registry.new
       Hecksagain.with_registry(registry) do
@@ -91,7 +98,8 @@ module Hecksagain
         Kernel.load(EXTRACTION_PORT)
         Kernel.load(MEMORY_ADAPTER)
         Kernel.load(PRISM_ADAPTER)
-        Kernel.load(path)
+        Hecksagain::Bluebook::MetaValidator.defer { paths.each { |file| Kernel.load(file) } }
+        Hecksagain::Bluebook::MetaValidator.judge_deferred!(registry)
       end
       registry
     end
@@ -213,38 +221,50 @@ module Hecksagain
           bluebook_files = Dir.glob(File.join(domain_dir, "bluebook", "*.bluebook"))
           next if bluebook_files.empty?
 
-          file = bluebook_files.first # every example domain here is one file
-          before_json = Codemod.export_json(Codemod.load_bluebook(file))
-          candidates  = @find_candidates.call(Codemod.load_bluebook(file))
+          before_json = Codemod.export_json(Codemod.load_bluebook(bluebook_files))
+          candidates  = @find_candidates.call(Codemod.load_bluebook(bluebook_files))
 
           if candidates.empty?
             results[:clean] << domain_dir
             next
           end
 
-          original = File.read(file)
-          text, applied = apply_many(original, candidates)
+          live = bluebook_files.to_h { |file| [file, File.read(file)] }
+          applied_by_file = Hash.new { |hash, file| hash[file] = [] }
 
-          if applied.empty?
-            results[:skipped] << { file: file, reason: "candidates found but no matching source line",
-candidates: candidates.map(&@label) }
-            next
+          candidates.each do |candidate|
+            target_file = bluebook_files.find { |file| apply_many(live[file], [candidate]).last.any? }
+            unless target_file
+              results[:skipped] << { file: domain_dir, reason: "no matching source line", candidates: [@label.call(candidate)] }
+              next
+            end
+
+            original_text = live[target_file]
+            text, = apply_many(original_text, [candidate])
+            live[target_file] = text
+            File.write(target_file, text)
+            after_json, error = Codemod.safely do
+              Codemod.export_json(Codemod.load_bluebook(bluebook_files))
+            end
+
+            if after_json == before_json && !dry_run
+              applied_by_file[target_file] << candidate
+            elsif after_json == before_json
+              live[target_file] = original_text
+              File.write(target_file, original_text)
+              Codemod.safely { Codemod.load_bluebook(bluebook_files) }
+              applied_by_file[target_file] << candidate
+            else
+              live[target_file] = original_text
+              File.write(target_file, original_text)
+              Codemod.safely { Codemod.load_bluebook(bluebook_files) }
+              reason = error ? "reboot raised after edit (#{error}) — reverted" : "IR changed after edit — reverted"
+              results[:skipped] << { file: target_file, reason: reason, candidates: [@label.call(candidate)] }
+            end
           end
 
-          # DRY RUN STILL VERIFIES — it writes the edit, reboots, and
-          # diffs the SAME way a real run does (the only safe way to
-          # know whether a candidate WOULD apply cleanly); it just
-          # always writes the original text back afterward instead of
-          # leaving the edit in place.
-          File.write(file, text)
-          after_json, error = Codemod.safely { Codemod.export_json(Codemod.load_bluebook(file)) }
-          File.write(file, original) if dry_run || after_json != before_json
-
-          if after_json == before_json
+          applied_by_file.each do |file, applied|
             results[:applied] << { file: file, candidates: applied.map(&@label) }
-          else
-            reason = error ? "reboot raised after edit (#{error}) — reverted" : "IR changed after edit — reverted"
-            results[:skipped] << { file: file, reason: reason, candidates: applied.map(&@label) }
           end
         end
       end

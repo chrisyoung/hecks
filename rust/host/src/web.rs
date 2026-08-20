@@ -1590,7 +1590,7 @@ mod tests {
     fn external_transfer_direction_resolves_its_admits_declared_set_across_aggregates() {
         // ExternalTransfer.direction: MovementDirection{value}, admits:
         // "Account::LedgerDirection" — the real, live `admits:` example
-        // in the corpus (examples/banking/bluebook/banking.bluebook).
+        // in the corpus (examples/banking/bluebook/).
         let ledger_direction_vo = json!({
             "name": "LedgerDirection",
             "attributes": [{"name": "value", "type": "String", "list": false, "default": null, "optional": false, "pattern": null, "admits": null}],
