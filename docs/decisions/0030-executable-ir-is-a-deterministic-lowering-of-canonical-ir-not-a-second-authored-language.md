@@ -188,53 +188,92 @@ Success here proves risks **3** and **4**.
 
 `Reaction` tests risk **5** (does the runtime actually get simpler) — meaningful only once 1–4 are independently retired — but it also introduces a risk Expression and Binding structurally cannot expose: **behavioral mode coupling.**
 
-`Reaction`'s optional sub-structure is not itself the problem — "generate structure, handwrite meaning" covers `Reaction { trigger, condition, bindings, dispatches, context? }` and `ReactionContext { correlation, memory, retry, compensation }` exactly as cleanly as it covers everything else. The risk appears the moment runtime semantics become *implicitly determined by the presence or absence of that structure* — an interpreter shaped like:
+`Reaction`'s optional sub-structure is not itself the problem — "generate structure, handwrite meaning" covers `Reaction { trigger, condition, bindings, dispatches, context? }` exactly as cleanly as it covers everything else. The risk appears the moment runtime semantics become *implicitly determined by the presence or absence of that structure* — an interpreter shaped like `if context: checkpoint; retry; compensate; resolve from memory / else: log-and-drop; resolve from payload` has stopped treating `context?` as optional data and started using it as a hidden mode switch, secretly running two different interpreters under one construct name.
+
+**Correction to "one execution protocol":** that's the wrong shape to aim for. `process_manager`'s real behaviour — a retry re-enters dispatch, compensation invokes a whole separate leg, checkpointing happens at a specific transition boundary, accumulated memory feeds later resolution — is not a linear pipeline with optional steps. It's a state machine, with real branches and real cycles:
 
 ```
-if context
-  checkpoint; retry; compensate; resolve from memory
+Triggered → Matched → BindingsResolved → Prepared → Dispatching
+                                                       /  |  \
+                                                     ok refusal defect
+                                                      |     |      |
+                                                      ↓     ↓      ↓
+                                                  Commit  Handle  Handle
+                                                            |       |
+                                                       compensate?  retry?
+                                                            |       |
+                                                    compensation    └──→ back to
+                                                       reaction          Prepared/Dispatching
+```
+
+A stateless `policy` takes the *shortest path* through this same machine — it doesn't run a different, simpler machine. That reframing matters: aiming for "one linear sequence" would either force saga semantics into a fake pipeline wearing flags, or (worse) produce two pipelines wearing one name. Aiming for one state machine, where a stateless reaction just skips optional states rather than needing a different machine, is the honest target.
+
+**The smell test, sharpened.** Conditionals are not the problem — `if failure_policy.retry?(defect)` and `if context.correlated?` are completely legitimate; something has to decide which capability applies. The smell is a branch on construct *origin*, or its disguised equivalent:
+
+```
+# fine — each branch is a real, named capability
+context.load(...)
+binding.resolve(...)
+failure_policy.handle(...)
+
+# the smell — direct or disguised
+if reaction.origin == :process_manager
+  execute_saga_way(...)
 else
-  log-and-drop; resolve from payload
+  execute_policy_way(...)
 end
 ```
 
-Here, `context?` has stopped being optional data and started being a hidden mode switch — the interpreter secretly contains two runtimes, branching on construct *kind* rather than executing one explicit protocol over explicit capabilities. **The test to run before trusting a `Reaction` design:** can every behavioral difference between policy-shaped and process-manager-shaped execution be *named explicitly* in executable IR, rather than inferred from incidental shape?
+The disguised form is the one worth watching for: `if context.correlated? / 80 lines of process-manager execution / else / 30 lines of policy execution` is the same smell as the direct form, wearing a capability check as camouflage. The real question for any branch: does it correspond to an independent, named executable capability, or to which authoring keyword produced this `Reaction`?
 
-That test also exposes a bundling question ADR 0029 deliberately left alone, being a Ruby-side extraction of *today's* behaviour: `ReactionContext` there bundles correlation, memory, retry, and compensation together because `process_manager` bundles them together in the corpus today — a fair, pragmatic call for a same-behaviour extraction. But at the executable-IR layer those four don't actually imply each other: correlation doesn't logically require retry; memory doesn't logically require compensation; multi-command dispatch doesn't logically require checkpointing. If they always travel together today only because one authoring construct (`process_manager`) happens to bundle them, the lowering step can still emit them together for every case that exists now — but executable IR should describe them as the separable capabilities they are, not enshrine the authoring bundle as if it were one indivisible concept:
+**A concrete finding from the real code, not a hypothesis: checkpoint timing is semantic, and checkpoint may not be a `failure_policy` property at all.** `resolve → checkpoint → dispatch` and `resolve → dispatch → checkpoint` are not equivalent — the first records intent before an external effect and recovers differently from a crash than the second, which records completion after one. Reading `saga_interpreter.rb#advance_saga` (ADR 0029's own citation) settles which one hecksagain actually does: the state transition and its checkpoint happen *once*, inside the mutex, immediately after `instance[:state] = handler.to_state` and strictly *before* `handler.dispatches.each` runs any dispatch. Intent is durably recorded first; the external effects follow. That's a fact to preserve in the executable form, not a design choice up for grabs — and it argues for a third, independent dimension rather than folding checkpoint into failure handling:
 
 ```
 Reaction {
   trigger, condition, bindings, dispatches,
-  context:        Context::Stateless | Context::Correlated { correlation, memory },
-  failure_policy: FailurePolicy::Drop | FailurePolicy::Managed { retry, compensation, checkpoint }
+  context:     Context::Stateless | Context::Correlated { correlation, memory },
+  persistence: Persistence::Ephemeral | Persistence::Checkpointed { boundary: BeforeDispatch },
+  failure:     Failure::Drop | Failure::Managed { retry, compensation }
 }
 ```
 
-The exact split may not survive contact with the real code — the point is the principle, not this specific shape: *optional structure is fine; optional structure that silently activates unrelated semantics together is suspicious.* `process_manager` is free to stay the authoring-level bundle it is today; the executable form exists to describe what actually has to happen, which is a different question than what one keyword happens to declare together.
+Correlation doesn't logically require checkpointing; checkpointing doesn't logically require managed failure handling. They travel together today only because one keyword (`process_manager`) bundles all three — which is a fine authoring convenience and a bad executable-semantics assumption. (Named provisionally — per "make real variation explicit, don't parameterize hypothetical variation," below, this three-way split shouldn't be taken as settled until it's checked against what the code actually varies, not just this reading of it.)
 
-**The second Reaction-specific risk is ordering.** Expression is pure evaluation; Binding is resolution — neither has a temporal dimension. `Reaction` does: match trigger → evaluate condition → resolve bindings → checkpoint? → dispatch → handle refusal → retry? → compensate? → persist memory? — and the *order* of those steps is itself semantic (ADR 0029's own `saga_interpreter.rb` reading depends on it: state moves to `to_state` *before* dispatches run, specifically so a second refusal can't loop). This is the first place "generate structure, handwrite meaning" must preserve not just individual operation semantics but a whole execution protocol — a state machine, not a pure function.
+**A second concrete finding: multi-dispatch failure semantics, also read from the real code rather than assumed.** `handler.dispatches.each { |spec| deliver_saga_dispatch(...) }` does not stop at the first failure — every dispatch in a leg is attempted independently, in declaration order, regardless of an earlier one's outcome. Each dispatch's *own* refusal, or its own exhausted retries, independently triggers `unwind` (compensation) against the *shared correlated instance* — not "compensate just that dispatch," not "abort the remaining dispatches," and retry (`MAX_DEFECT_RETRIES`) is scoped to that one dispatch's own attempt, never the whole leg. **Do not design a `DispatchPlan` primitive (`sequential`, `failure: stop`, etc.) to cover this** — that would be parameterizing a variation nothing in the corpus actually exercises. The one behaviour that exists — independent attempts, shared-instance compensation on any failure, per-dispatch retry — should simply be *named* as the `dispatches` stage's actual semantics, not left as a knob nobody turns.
 
-**Acceptance criterion for this slice:** the generated `Reaction` structure contains all information required to determine execution, but no target-language control flow; one small, explicit, handwritten interpreter implements a single execution protocol over that structure. **The smell to check the interpreter for:**
+**A third finding, closing a gap rather than opening one:** policy's `where` (an arbitrary boolean `Expression`) and a process-manager leg's guard (`instance[:state] == handler.from_state`, a bare equality check) look asymmetric — one general, one narrow — until the guard is read as what it actually is: `Equal(Reference(:state), Literal(handler.from_state))`, an ordinary instance of the same `Expression` primitive Slice 1 already builds, just always instantiated the same way. Read this way, `condition` doesn't need two mechanisms; it needs one (`Expression`), with a process-manager's guard as a specific, common shape of it rather than a structurally different check. This is exactly the kind of thing the mechanical criterion below exists to catch.
 
-```
-if process_manager_like?
-  ...
-elsif policy_like?
-  ...
-```
+**The mechanical criterion, applied to what's actually different between the two interpreters today** (from `policy_interpreter.rb`/`saga_interpreter.rb`, ADR 0029's own reading):
 
-If that appears, the executable algebra hasn't decomposed far enough — construct *kind* has leaked into the kernel as a branch, rather than the kernel executing one protocol parameterized by explicit strategies (`evaluate trigger → evaluate condition → resolve bindings using context strategy → apply persistence strategy → dispatch → apply failure strategy`, each strategy explicit data or a small kernel capability, never a branch on which authoring construct produced this `Reaction`).
+| concern | policy | process manager | changes a stage's behaviour, or the transition graph? |
+|---|---|---|---|
+| trigger matching | event name | event name | same stage, same implementation |
+| condition evaluation | arbitrary `Expression` (`where`) | state-equality (a narrow `Expression`, see above) | same stage, one implementation once unified |
+| argument resolution | payload / literal | correlation-head / payload / memory | same stage, different strategy |
+| correlation | none | yes, mutex-guarded | `context` strategy |
+| checkpoint | none | once, before dispatch (confirmed above) | `persistence` strategy, but *fixed boundary* — not itself a free parameter |
+| dispatch cardinality | one | many, independent (confirmed above) | same stage; `dispatches` is already plural in ADR 0029's design |
+| refusal | drop (log, stop) | compensate (`unwind`) | `failure` strategy |
+| defect | one attempt, drop | retry (×3), then compensate | `failure` strategy |
+| depth ceiling | drop | compensate | `failure` strategy — same outcome class as refusal/defect, not a fourth case |
+| state commit | none | exact point: with the checkpoint, before dispatch | `persistence` strategy |
 
-**The progression, restated with all three slices:** Expression proves generated executable structure can drive two real runtimes (risks 1–2). Binding proves canonical semantics can lower into that structure without becoming a second source of truth (risks 3–4). Reaction proves the executable algebra can represent real temporal/control semantics *without recreating the authoring constructs it's supposed to have replaced* (risks 5–6) — which is a materially higher bar than either earlier slice, and the reason `Reaction` stays last regardless of how well Expression and Binding go.
+Every row here changes what a stage *does* via a named strategy, not *when* stages run or which stages exist — which is the good outcome the criterion is checking for. If a future row instead changed the transition graph itself (a strategy that requires jumping to a different point in the state machine depending on another strategy's value), that would be evidence the two-or-three-strategy model is insufficient and the interaction needs modelling as explicit named transitions instead — still one `Reaction` state machine, but a real transition machine rather than a pipeline with parameterized callbacks. And if inspection ever turns up two largely disjoint transition graphs rather than one machine with strategy-varied stages, that's a legitimate result too — evidence `Reaction` was too aggressive a collapse, feeding back into ADR 0029's own framing, not a failure of this ADR's method.
+
+**The shared skeleton this suggests** (a shape to test against the table above, not a design to build ahead of it): accept event → match reaction → acquire execution context → evaluate guard → resolve bindings → enter execution boundary (checkpoint, if `persistence` says so) → dispatch invocation(s) → classify outcome → apply outcome policy (`failure` strategy) → commit/update context → emit resulting events. Policy and process-manager become different *implementations* of the same eleven stages, not different machines. One caveat: if a chosen strategy for one stage ever needs to change *where* another stage occurs, rather than only what it does, stage-parameterization has stopped being sufficient, and the actual transitions need to be modelled explicitly rather than assumed independent.
+
+**The acceptance criterion for this slice, stated precisely:** `Reaction` defines one explicit execution state machine. Optional capabilities may enable or bypass states and alter transitions, but no transition may depend on whether the canonical source construct was a `policy` or a `process_manager`. **The concrete test:** take the lowered executable IR, erase every trace of which canonical construct it came from, and run it. If the runtime still reproduces exactly the correct behaviour, the decomposition succeeded. If it needs to know where the `Reaction` originated, the authoring model has been smuggled back into the kernel.
+
+**The progression, restated with all three slices:** Expression proves generated executable structure can drive two real runtimes (risks 1–2). Binding proves canonical semantics can lower into that structure without becoming a second source of truth (risks 3–4). Reaction proves the executable algebra can represent real temporal/control semantics — a genuine state machine, not a pure function — *without recreating the authoring constructs it's supposed to have replaced* (risks 5–6). That's a materially higher bar than either earlier slice, and the reason `Reaction` stays last regardless of how well Expression and Binding go.
 
 **Stop condition, checked after Slice 2, before Reaction starts:** did handwritten Rust shrink? Did handwritten Ruby shrink? Did duplicated grammar disappear? Is there exactly one semantic definition? Is the lowering step visibly simpler than the representation it produces? Can executable IR omit canonical-only information? If every answer is yes, proceed to `Reaction`. If not, this ADR needs rethinking before anything larger lands on top of it.
 
-**A second stop condition, specific to Reaction and checked only once a design exists:** does the generated structure name every behavioural difference explicitly, with no construct-kind branch in the handwritten interpreter? If yes, this ADR has produced something more significant than a code-generation cleanup — a credible small executable algebra beneath Bluebook. If no, the decomposition isn't finished, and the design needs another pass before it's trusted, not shipped as a "close enough" approximation.
+**A second stop condition, specific to Reaction and checked only once a design exists:** does the provenance-erasure test above pass? If yes, this ADR has produced something more significant than a code-generation cleanup — a credible small executable algebra beneath Bluebook. If no, the decomposition isn't finished, and the design needs another pass before it's trusted, not shipped as a "close enough" approximation.
 
 ## Consequences
 
 - **This is architecture with a proof sequence, not a task list.** The three slices above are validation gates, not a full implementation plan for `Reaction` — a concrete design for `Reaction`'s executable form belongs in a follow-up, written only after Slice 2's stop condition passes and after ADR 0029's own `Reaction`/`Binding` extraction gives this ADR real material to lower.
-- **`ReactionContext`'s bundling (correlation + memory + retry + compensation, ADR 0029) is provisional at the executable-IR layer, not settled by that ADR.** It's the right call for a same-behaviour Ruby-side extraction; whether the executable algebra keeps it as one capability or splits it into orthogonal ones (context vs. failure policy) is exactly what Slice 3 tests.
+- **`ReactionContext`'s bundling (correlation + memory + retry + compensation, ADR 0029) is provisional at the executable-IR layer, not settled by that ADR.** It's the right call for a same-behaviour Ruby-side extraction; whether the executable algebra keeps it as one capability or splits it into orthogonal ones — the working hypothesis in Slice 3 is three (`context`, `persistence`, `failure`), not two, once checkpoint timing turned out to be its own semantic dimension — is exactly what Slice 3 tests, checked against the mechanical criterion's table, not designed ahead of it.
 - **ADR 0022 is reframed, not superseded.** Its diagnosis (duplicated hand-authored `expr.rs`/`Evaluator`) stands; its remedy is now understood as step one of a larger, still-bounded target rather than a complete fix on its own.
 - **The single-lowering-step discipline is the whole risk.** If the lowering step or the executable-node representations end up hand-duplicated per runtime after all, this decision has produced a fourth interpreter instead of removing duplication — the "warning sign" above is the concrete thing to check for during implementation, not just at design time.
 - **Rust's obligations shrink, but only once this is built.** Until the lowering step and a self-hosted executable algebra exist, Rust still mirrors whatever Ruby's canonical model contains, same as today.
