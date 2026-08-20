@@ -1,6 +1,6 @@
 # Executable IR is a deterministic lowering of canonical IR — not a second authored language
 
-**Status:** Proposed — pending review, and deliberately unscheduled relative to ADR 0029. Written alongside it because the two share one seam (`Reaction`/`Binding`) but are separable pieces of work — 0029 is a Ruby-side interpreter extraction with a five-step sequencing plan; this ADR is a cross-runtime architecture decision with no sequencing plan yet, because its first real step is ADR 0022's still-open self-hosting work.
+**Status:** Proposed — pending review. Written alongside ADR 0029 because the two share one seam (`Reaction`/`Binding`) but are separable pieces of work — 0029 is a Ruby-side interpreter extraction with a five-step sequencing plan; this ADR's own proof sequence is two slices, Expression then Binding, deliberately stopping short of `Reaction` until both hold — see "Proof sequence," below.
 
 ## Context
 
@@ -108,16 +108,73 @@ Bluebook → Canonical IR                  decode Executable IR
 
 Smaller structs, a smaller parser, smaller binaries, less validation, less memory, less parity surface to keep in sync — the last of these being the direct payoff against ADR 0022's actual complaint. A full Rust consumer of the *canonical* model may still be worth having for tooling/projection use cases, but that is a different layer from the runtime kernel — conceptually `hecks-ir` (full canonical) vs. `hecks-exec-ir` (tiny executable) vs. `hecks-kernel` (executes exec-ir), without committing yet to three actual crates.
 
+## Proof sequence — Expression, then Binding, then, only if both hold, Reaction
+
+Five distinct risks are actually in play here, not one ("can a generator emit structs of different shapes," which is ordinary codegen and proves nothing):
+
+1. Can one definition encode executable semantics precisely enough?
+2. Can Ruby and Rust consume generated artifacts without adding handwritten semantic branches?
+3. Can canonical IR lower into executable IR without becoming a second source of truth?
+4. Can the executable representation stay smaller than canonical IR?
+5. Does the resulting runtime actually get simpler?
+
+No single construct tests all five, and jumping straight to `Reaction` — the most complex candidate — would confound them if it failed. Two smaller, ordered slices isolate them instead.
+
+### Slice 1 — Expression alone (this is ADR 0022, reframed as a slice rather than a standalone fix)
+
+```
+executable expression definition
+        ↓
+generate Ruby node model / evaluator
+generate Rust node model / evaluator
+        ↓
+retire handwritten Ruby/Rust duplication
+        ↓
+verify against the existing corpus + fuzzer parity
+```
+
+`Reaction` stays untouched during this slice. Expression proves risks **1** and **2** only — it cannot test the canonical→executable *lowering* boundary at all, because canonical and executable Expression are already nearly identical; a pass here could accidentally prove nothing more than "we can generate two expression evaluators from one grammar."
+
+**Success criteria:** one source definition; zero handwritten parallel expression grammar; same observable behaviour, same failures/refusals, same serialization shape as today.
+
+**The acceptance test that actually matters:** can a new expression operator (e.g. `contains`) be added by editing exactly one semantic definition and regenerating, writing runtime operator code only where it's genuinely non-generic? If adding one operator still means hand-editing a Rust enum, a Rust parser, a Rust evaluator, a Ruby model, a Ruby evaluator, a serializer, *and* a validator, ADR 0022 has not succeeded regardless of what else this slice produced.
+
+**A generation-depth caution that applies to every slice, not just this one:** prefer generating node types, codecs, and visitors that one small, generic, *handwritten* evaluator walks, over generating the evaluator's own logic — unless the grammar genuinely carries enough semantic information to do the latter cleanly. The goal is eliminating duplicated *semantic definition*, not eliminating every handwritten line. Turning the self-hosted schema into a programming language just to avoid a 50-line visitor recreates the second-authored-language failure mode this whole ADR exists to avoid, from a different direction.
+
+### Slice 2 — Binding, deliberately not Reaction, as the first real lowering test
+
+```
+Canonical Binding { key, value/source, ... }
+        ↓ lower_binding(...)   — the one handwritten bridge, kept tiny and inspectable
+Executable Binding { destination, expression }
+        ↓
+generated Ruby / Rust representation
+        ↓
+kernel execution
+```
+
+`Binding` is chosen deliberately over `Reaction` for this slice: it is the smallest construct that genuinely exercises canonical→executable *lowering* (risk **3**) rather than pass-through, and it's small enough that if the architecture turns out wrong here, nothing large has been committed to it. It also happens to be immediately useful regardless of outcome — ADR 0029 already found `Binding` duplicated byte-for-byte between `Policy` and `ProcessManager`, so this slice is simultaneously an architecture experiment and a real cleanup.
+
+**The design constraint that makes this a fair test:** `lower_binding` must stay small and obviously correct on inspection — mostly discarding canonical-only information and normalizing equivalent authoring shapes. The failure mode to watch for is a large lowering function that secretly re-implements Bluebook semantics — a second compiler hidden inside "lowering," which is the second-authored-language risk arriving through the back door rather than the front.
+
+Success here proves risks **3** and **4**.
+
+### Reaction is deferred until both slices are boring
+
+`Reaction` is the first construct that would test risk **5** — whether the runtime actually gets simpler — and that test is only meaningful once 1–4 are independently retired. Testing it earlier would confound "is the architecture right" with "is this specific, more complex construct hard to lower."
+
+**Stop condition, checked after Slice 2, before Reaction starts:** did handwritten Rust shrink? Did handwritten Ruby shrink? Did duplicated grammar disappear? Is there exactly one semantic definition? Is the lowering step visibly simpler than the representation it produces? Can executable IR omit canonical-only information? If every answer is yes, proceed to `Reaction`. If not, this ADR needs rethinking before anything larger lands on top of it.
+
 ## Consequences
 
-- **This is architecture, not a task list.** Unlike ADR 0029, this decision has no sequencing plan yet — its first real increment is ADR 0022's self-hosted expression work, reframed as "start of the executable algebra" rather than "the whole job." A concrete plan for the lowering step and the executable-node generation belongs in a follow-up, after 0022's self-hosting lands and after ADR 0029's `Reaction`/`Binding` extraction gives this ADR real material to lower.
+- **This is architecture with a proof sequence, not a task list.** The two slices above are validation gates, not a full implementation plan for `Reaction` — a concrete plan for lowering `Reaction` itself belongs in a follow-up, written only after Slice 2's stop condition passes and after ADR 0029's own `Reaction`/`Binding` extraction gives this ADR real material to lower.
 - **ADR 0022 is reframed, not superseded.** Its diagnosis (duplicated hand-authored `expr.rs`/`Evaluator`) stands; its remedy is now understood as step one of a larger, still-bounded target rather than a complete fix on its own.
 - **The single-lowering-step discipline is the whole risk.** If the lowering step or the executable-node representations end up hand-duplicated per runtime after all, this decision has produced a fourth interpreter instead of removing duplication — the "warning sign" above is the concrete thing to check for during implementation, not just at design time.
 - **Rust's obligations shrink, but only once this is built.** Until the lowering step and a self-hosted executable algebra exist, Rust still mirrors whatever Ruby's canonical model contains, same as today.
 
 ## Open, deliberately
 
-- **Whether `Condition` and `Binding` survive as named primitives or fully reduce to `Expression`-shaped structures.** Argued for reduction above; not settled, since nothing has been built against either shape yet to test it.
+- **Whether `Condition` and `Binding` survive as named primitives or fully reduce to `Expression`-shaped structures.** Argued for reduction above; Slice 2 is exactly the test — its outcome answers this for `Binding` directly and for `Condition` by close analogy.
 - **Where the lowering step physically lives** — inside the existing Ruby projector framework (`lib/hecksagain/projector/`, already the seam ADR 0027 names for canonical-IR consumers) or a new, dedicated module. Leaning toward the projector framework, since it already exists to consume canonical IR toward a target; not decided.
 - **Whether `hecks-exec-ir`/`hecks-kernel` ever become real, separate crates**, versus staying a conceptual boundary inside the existing `rust/` layout. No pressure to decide before the self-hosted algebra exists to put in them.
 - **Serialization format for Executable IR crossing the Ruby→Rust boundary** (binary vs. JSON) — a real decision with WASM-size consequences, deferred until there's an executable algebra to serialize.
@@ -127,3 +184,5 @@ Smaller structs, a smaller parser, smaller binaries, less validation, less memor
 - **Leaving canonical and executable concerns conflated**, on the theory that ADR 0022's expression self-hosting alone is enough. Rejected because it fixes one duplicated evaluator while leaving the assumption that caused it — everything declared is everything every runtime must understand — fully in place, ready to cause the same problem again the next time the grammar grows.
 - **A canonical/executable split built from hand-written models on both sides**, i.e., without a self-hosted executable algebra generating both runtimes' representations. Rejected as the specific failure mode this whole decision exists to avoid — it would not reduce duplication, it would relocate it one layer deeper and add a translation step on top.
 - **Deciding `Condition`/`Binding`'s final shape now**, before any of this is built. Rejected as premature — ADR 0029's extraction hasn't happened yet, and this ADR's own criterion (does removing it change observable execution) is best applied to real code, not to a diagram.
+- **Starting the proof sequence with `Reaction`**, on the reasoning that it's the construct that actually matters. Rejected because `Reaction` is complex enough to confound multiple risks at once — a failure there wouldn't distinguish "the lowering architecture is wrong" from "`Reaction` specifically is hard to lower." Expression and Binding isolate risks 1–4 cheaply before anything is staked on the construct risk 5 actually cares about.
+- **Generating the evaluator implementation itself from the executable grammar**, rather than generating node types/codecs with one small handwritten evaluator walking them. Rejected as a default — legitimate only if the grammar genuinely carries enough semantic information to generate evaluation cleanly, which is a per-operator judgment call, not a blanket strategy. Defaulting to full generation risks turning the self-hosted schema into a programming language in its own right, which is the second-authored-language failure mode arrived at through the generator instead of through hand-authoring.
