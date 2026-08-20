@@ -186,6 +186,23 @@ kernel execution
 
 Success here proves risks **3** and **4**.
 
+### Stop-condition check, run honestly (2026-08-20) — Reaction does not start yet
+
+PRD 09 (Expression) and PRD 10 (Binding) both shipped, verified, on the correct branch. The stop condition above exists precisely so shipping isn't mistaken for passing it — run here rather than skipped:
+
+| question | answer | why |
+|---|---|---|
+| Did handwritten Rust shrink? | **No** | PRD 09 *added* four new hand-written category files (`regex.rs`, `presence.rs`, `string.rs`, `accessor.rs`) and a new dependency; PRD 10 added `binding.rs`. Both were real, correct additions — closing a coverage gap and building a mechanism that didn't exist — but neither is a *reduction*. |
+| Did handwritten Ruby shrink? | **No** | Same shape: `binding_lowering.rb` is new code, not a replacement for `trigger_args`/`dispatch_args`, which PRD 10's own Non-goals explicitly left untouched. |
+| Did duplicated grammar disappear? | **No, and Binding added a fresh instance of it.** ADR 0022's original complaint — Ruby's `Evaluator`/`Resolver` and Rust's `expr.rs` as two hand-authored implementations of the same closed grammar — still fully stands; PRD 09 closed an *admission* gap, not that duplication. PRD 10 is more pointed: `binding_lowering.rb` and `binding.rs` are two hand-authored mirrors of the exact same small structure, flagged honestly in both files' own headers and in PRD 10's "What shipped," but duplicated all the same. |
+| Is there exactly one semantic definition? | **No** — for Binding, explicitly two. For Expression's *newly admitted* operators, also two (hand-written on both sides; only the *category roster*, not the node logic, generates). |
+| Is the lowering step visibly simpler than the representation it produces? | **Not yet meaningfully testable** — no generation pipeline exists for `Binding` to compare a lowering step against; `lower()` is small, but "simpler than what it produces" presumes there's a generated artifact on the other side, and there isn't one yet. |
+| Can executable IR omit canonical-only information? | **Untested** — neither slice's work involved a canonical-only field (`goal`-shaped) to check this against. |
+
+**Six questions, zero clean yeses.** Per this ADR's own text: *"If not, this ADR needs rethinking before anything larger lands on top of it."* `Reaction` does not start from this state. This is not a failure of PRD 09/10 — both did exactly what they set out to do, honestly, and PRD 09 in particular *did* prove the underlying claim (generation without duplication) is achievable, just for the *pre-existing* 18 operators, not the ones either PRD touched. What's missing before `Reaction` is warranted: an actual generator for `Binding` (PRD 10's own still-open acceptance criterion), and ideally the same for the newly-admitted Expression operators — closing the *new* duplication both slices honestly flagged, rather than adding `Reaction`'s much larger surface on top of a foundation that hasn't cleared its own bar yet.
+
+**Decided:** the next increment is closing PRD 10's open generation gap, not starting Slice 3.
+
 ### Slice 3 — Reaction is the real stress test, deferred until both earlier slices are boring
 
 `Reaction` tests risk **5** (does the runtime actually get simpler) — meaningful only once 1–4 are independently retired — but it also introduces a risk Expression and Binding structurally cannot expose: **behavioral mode coupling.**
