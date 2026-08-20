@@ -125,6 +125,54 @@
       "category": "sized",
       "precedence": 8,
       "arity": 1
+    },
+    {
+      "symbol": ".match?",
+      "category": "regex",
+      "precedence": 6,
+      "arity": 2
+    },
+    {
+      "symbol": ".present?",
+      "category": "presence",
+      "precedence": 9,
+      "arity": 1
+    },
+    {
+      "symbol": ".blank?",
+      "category": "presence",
+      "precedence": 9,
+      "arity": 1
+    },
+    {
+      "symbol": ".split",
+      "category": "string",
+      "precedence": 6,
+      "arity": 2
+    },
+    {
+      "symbol": ".first",
+      "category": "accessor",
+      "precedence": 9,
+      "arity": 1
+    },
+    {
+      "symbol": ".last",
+      "category": "accessor",
+      "precedence": 9,
+      "arity": 1
+    },
+    {
+      "symbol": ".start_with?",
+      "category": "string",
+      "precedence": 6,
+      "arity": 2
+    },
+    {
+      "symbol": ".end_with?",
+      "category": "string",
+      "precedence": 6,
+      "arity": 2
     }
   ],
   "normalisations": [

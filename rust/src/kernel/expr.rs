@@ -176,6 +176,21 @@ pub enum Expr {
     Modulo { receiver: Box<Expr>, divisor: Box<Expr> },
     Size(Box<Expr>),
     Lookup(&'static str),
+    // PRD 09 — admitted alongside the twelve above via the operator
+    // ledger, previously real in Ruby's `Resolver` and ungoverned by it
+    // entirely. `MatchesRegex`/`Presence`/`StartsWith`/`EndsWith` are
+    // fully interpreted (`expression_operators::{regex,presence,string}`);
+    // `Split`/`First`/`Last` are admitted and ROUTED but always REFUSE —
+    // see `expression_operators::string::split`'s own header for why
+    // that's a real, named gap (`Value::List` carries only a length, not
+    // elements) rather than a router bug.
+    MatchesRegex { receiver: Box<Expr>, pattern: String, flags: String },
+    Presence { receiver: Box<Expr>, negated: bool },
+    Split { receiver: Box<Expr>, separator: String },
+    First(Box<Expr>),
+    Last(Box<Expr>),
+    StartsWith { receiver: Box<Expr>, substring: String },
+    EndsWith { receiver: Box<Expr>, substring: String },
 }
 
 /// `state`/`attrs` from `Evaluator.call(expr, state, attrs)` — `args` is
@@ -222,6 +237,10 @@ fn category_of(expr: &Expr) -> OperatorCategory {
         SignTest { .. } => OperatorCategory::SignTest,
         Empty(..) | Size(..) => OperatorCategory::Sized,
         ToS(..) => OperatorCategory::ToString,
+        MatchesRegex { .. } => OperatorCategory::Regex,
+        Presence { .. } => OperatorCategory::Presence,
+        Split { .. } | StartsWith { .. } | EndsWith { .. } => OperatorCategory::String,
+        First(..) | Last(..) => OperatorCategory::Accessor,
         Int(..) | Float(..) | Str(..) | Bool(..) | Nil | Lookup(..) => {
             unreachable!("interpret's own leaf arms handle these before category_of is ever called")
         }
@@ -253,6 +272,19 @@ fn dispatch_operator(category: OperatorCategory, expr: &Expr, ctx: &EvalContext)
             _ => Err(Refusal::TypeMismatch(format!("dispatch_operator(Sized, ..) called with {expr:?} — a router bug"))),
         },
         OperatorCategory::ToString => to_string::interpret(expr, ctx),
+        OperatorCategory::Regex => regex::interpret(expr, ctx),
+        OperatorCategory::Presence => presence::interpret(expr, ctx),
+        OperatorCategory::String => match expr {
+            Expr::Split { .. } => string::split(expr, ctx),
+            Expr::StartsWith { .. } => string::starts_with(expr, ctx),
+            Expr::EndsWith { .. } => string::ends_with(expr, ctx),
+            _ => Err(Refusal::TypeMismatch(format!("dispatch_operator(String, ..) called with {expr:?} — a router bug"))),
+        },
+        OperatorCategory::Accessor => match expr {
+            Expr::First(..) => accessor::first(expr, ctx),
+            Expr::Last(..) => accessor::last(expr, ctx),
+            _ => Err(Refusal::TypeMismatch(format!("dispatch_operator(Accessor, ..) called with {expr:?} — a router bug"))),
+        },
     }
 }
 

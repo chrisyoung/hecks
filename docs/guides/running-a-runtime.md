@@ -502,6 +502,31 @@ and held equal to it by `spec/operator_conformance_spec.rb`:
 | `.positive?`, `.negative?`, `.zero?` | sign_test | 1 | sugar for comparing the receiver against literal `0` |
 | `.empty?`, `.size` | sized | 1 | `Array`, `String`, `Hash` only |
 | `.to_s` | to_string | 1 | `String`, `Integer`, `Float`, `Boolean`, `nil` only — raises `EvaluationError` on anything else |
+| `.match?` | regex | 2 | `receiver.match?(/pattern/flags)`; `String`/`Integer`/`Float`/`nil` coerce, `Boolean` refuses — same set `Resolver.matches_regex?` itself accepts |
+| `.present?`, `.blank?` | presence | 1 | Rails-standard semantics: `nil`/`false` are blank, a `String`/`Array` is blank when EMPTY, a number or `true` never is |
+| `.split` | string | 2 | `receiver.split("separator")` — a real `Array` result; see the Rust note below |
+| `.first`, `.last` | accessor | 1 | every real corpus usage receives a `Split`-produced `Array` |
+| `.start_with?`, `.end_with?` | string | 2 | `String` only |
+
+Admitted 2026-08-20 (PRD 09) alongside the ten above — each was already
+real in `Bluebook::Expression::Resolver` beforehand, added piecemeal
+across several migration passes without ever being proposed through
+`lib/hecksagain/grammar/expression.bluebook`'s own admission ledger, so
+none of them had Rust representation and `bin/rust_kernel_coverage`
+could not even see the gap. `.all?`/`.any?`/`.none?`/`.find` remain
+unadmitted on purpose — each opens a `{ |x| PREDICATE }` block, a shape
+none of the ledger's four `Strategy` values describes yet.
+
+**A Rust-specific gap, not a Ruby one.** `.split`/`.first`/`.last` are
+admitted and fully correct in Ruby, but the Rust kernel's `Value::List`
+carries only a length (`rust/src/kernel/expr.rs`'s own header) — real
+corpus text was never expected to ask for a list's own elements by
+expression, until `.split("::").last` (`Query::Phrase`'s own invariant)
+proved otherwise. Rust's `expression_operators::string::split`/
+`accessor::{first,last}` recognize and refuse these explicitly, with a
+named reason, rather than silently answering wrong — closing that for
+real needs `Value::List` to carry actual elements, a separate,
+larger change this admission pass didn't make.
 
 Every one of the six comparison operators reduces to two primitives —
 `less_than` and `equal` — combined with a boolean algebra rather than

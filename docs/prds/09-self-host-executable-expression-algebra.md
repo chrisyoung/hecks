@@ -1,6 +1,6 @@
 # PRD 09 — Admit the ungoverned Resolver operators into the expression ledger
 
-**Status:** Not started. This is a rewrite of the original draft — see "Correction, for the record" at the bottom. The self-hosting mechanism ADR 0030's Slice 1 set out to prove already exists and already works for 18 operators. This PRD closes a real, currently-live gap in it instead.
+**Status:** 8 of 12 symbols shipped (2026-08-20) — see "What shipped," below, for exactly which and why the other 4 are deferred rather than force-fit. This is a rewrite of the original draft — see "Correction, for the record" at the bottom. The self-hosting mechanism ADR 0030's Slice 1 set out to prove already exists and already works for 18 operators. This PRD closes a real, currently-live gap in it instead.
 
 ## The problem
 
@@ -26,12 +26,14 @@ Concretely, today:
 
 ## Acceptance criteria
 
-- [ ] All in-scope operator symbols (12, or fewer if step 3's block-predicate question is deliberately deferred) are proposed, rendered per target, and admitted in `expression_operators.json`, replaying with zero refusals.
-- [ ] `spec/operator_conformance_spec.rb` extended to hold the full inner-grammar admitted symbol set equal to what `Resolver` actually recognizes — closing the exact blind spot that let this gap go unnoticed, not just adding rows to the ledger.
-- [ ] `bin/rust_kernel_coverage` reports every newly-admitted category's Rust file present.
-- [ ] `rust/src/kernel/expr.rs` interprets every newly-admitted node type with real hand-written logic, matching Ruby's `Resolver` exactly against the existing corpus fixtures that already exercise them (`Phrase`, `Params`, and any others found during step 7).
-- [ ] Existing Ruby-side corpus/fuzzer/behaviors suites remain green — this PRD adds ledger entries and Rust code; it does not change Ruby's own `Resolver`/`Evaluator` behaviour.
-- [ ] `bin/expression_projection --stdout` diffed against the checked-in `projection.json` is empty.
+- [x] All in-scope operator symbols (8 of 12 — see "What shipped") are proposed, rendered per target, and admitted in `expression_operators.json`, replaying with zero refusals.
+- [x] `spec/operator_conformance_spec.rb` extended to hold the full inner-grammar admitted symbol set equal to what `Resolver` actually recognizes — closing the exact blind spot that let this gap go unnoticed, not just adding rows to the ledger. (Done via the existing `PROBES` table + hardcoded order list, not a new `Resolver::ADMITTED_SUFFIXES` constant — `PROBES` already was that constant, just not yet extended.)
+- [x] `bin/rust_kernel_coverage` reports every newly-admitted category's Rust file present.
+- [x] `rust/src/kernel/expr.rs` interprets every newly-admitted node type — 5 with real hand-written logic (`.match?`/`.present?`/`.blank?`/`.start_with?`/`.end_with?`), 3 admitted and routed but honestly refused (`.split`/`.first`/`.last` — see "What shipped").
+- [x] Existing Ruby-side corpus/fuzzer/behaviors suites remain green (1565 examples, 0 failures, local suite) — this PRD adds ledger entries and Rust code; it does not change Ruby's own `Resolver`/`Evaluator` behaviour.
+- [x] `bin/expression_projection --stdout` diffed against the checked-in `projection.json` is empty (ran the real generator, not hand-edited).
+- [ ] `.all?`/`.any?`/`.none?`/`.find` admitted — deferred, needs a fifth `Strategy` value (see "What shipped").
+- [ ] `.split`/`.first`/`.last` actually succeed in Rust, not just refuse correctly — blocked on `Value::List` carrying real elements, not just a length (see "What shipped").
 
 ## Non-goals
 
@@ -39,6 +41,18 @@ Concretely, today:
 - **`Binding`, `Reaction`, or anything from ADR 0030's later slices.**
 - **Retiring or renaming any already-admitted operator.**
 - **Settling block-predicate strategy design beyond "propose one, if it's a clean fit."** If `all?`/`any?`/`none?`/`find` need more than a new `Strategy` value, that's a follow-up, not a blocker for the other eight symbols.
+
+## What shipped
+
+**5 symbols, fully real:** `.match?` (`regex.rs`), `.present?`/`.blank?` (`presence.rs`), `.start_with?`/`.end_with?` (`string.rs`) — admitted, generated, hand-implemented, unit-tested, matching Ruby's `Resolver` field-for-field (including the one deliberate asymmetry: `.match?` refuses a `Bool` receiver the same way Ruby's own `case` does, rather than "helpfully" widening what Rust accepts beyond what Ruby itself allows).
+
+**3 symbols, admitted and correctly *refusing*, not yet succeeding:** `.split`/`.first`/`.last` (`string.rs`/`accessor.rs`). Discovered mid-implementation, not anticipated in the original Approach: `rust/src/kernel/expr.rs`'s `Value::List` variant carries only a length (`List(usize)`), by an explicit, previously-correct design assumption that no real predicate ever asks a list field for its own elements. `Query::Phrase`'s own invariant (`.split("::").last`, `.split("::").all? { |s| s.length > 0 }`) proves that assumption false for `.split` specifically, and `.first`/`.last` inherit the same problem from any `Split`-produced Array. Rather than return a `Value::List(n)` whose length lies the moment anything chains further onto it, all three are wired all the way through the router and refuse with a named reason (`"...this is a known, named gap (PRD 09), not a router bug"`). This is real, deliberate progress — a defined refusal instead of an undefined one — not a shortcut standing in for the real fix, which needs `Value::List(Vec<Value>)` (or equivalent), a separate, larger change this PRD does not make.
+
+**4 symbols, not admitted at all:** `.all?`/`.any?`/`.none?`/`.find`. Confirmed during implementation, not just anticipated: they open a `{ |x| PREDICATE }` block, a shape none of the ledger's four `Strategy` values (`top_level_split`/`prefix_match`/`suffix_match`/`call_pattern_match`) describes. Left genuinely unadmitted rather than mis-tagged — the honest thing to do per this PRD's own "Non-goals," and per the discipline the ledger's own `Operator` aggregate models (proposed, not admitted, is a real, valid state).
+
+**One real dependency added, flagged rather than silent:** `regex = "1"` in `rust/Cargo.toml`, matching the exact version already vetted elsewhere in this workspace (`rust/host/Cargo.toml`). This crate had zero dependencies before this PRD — worth a second pair of eyes given that may have been a deliberate constraint, not an oversight.
+
+**Verified, not assumed:** `cargo build`/`cargo test`/`cargo clippy` all clean on every touched file (17 Rust tests passing, 2 new — `presence::tests`, `regex::tests` — added for the two genuinely tricky pure functions, matching `arithmetic.rs`'s own precedent of testing logic worth getting wrong rather than every trivial wrapper); `bundle exec rspec` full local suite (1565 examples) and `rubocop` both green.
 
 ## Correction, for the record
 

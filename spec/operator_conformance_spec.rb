@@ -133,11 +133,24 @@ RSpec.describe "the operator domain" do
   end
 
   it "orders the inner grammar exactly the way grammar.md documents it" do
-    # rule 1 (.length), 2-5 (literals), and 12 (dotted lookup) are
-    # terminal productions, not operators — same exclusion. This is rules
-    # 6-11, in order.
+    # rule 1 (.length), 2-6 (literals, including the array literal — a
+    # terminal production the same as its scalar siblings, admitted
+    # nowhere for the same reason), and the final dotted-lookup fallback
+    # are terminal productions, not operators — same exclusion.
+    #
+    # .match?/.present?/.blank?/.split/.first/.last/.start_with?/
+    # .end_with? admitted here (PRD 09) — each already real in
+    # Resolver#parse, previously ungoverned by this ledger entirely (no
+    # Rust representation, invisible to bin/rust_kernel_coverage, and
+    # this very spec passed without seeing them). .all?/.any?/.none?/
+    # .find remain unadmitted on purpose: they open a `{ |x| ... }`
+    # block, a shape none of the four existing Strategy values
+    # (top_level_split/prefix_match/suffix_match/call_pattern_match)
+    # describes — PRD 09 scopes a fifth Strategy value as its own
+    # follow-up rather than mis-tagging them to close this list early.
     expect(symbols(by_grammar("inner"))).to eq(
-      ["+", ".positive?", ".negative?", ".zero?", ".empty?", ".to_s", ".modulo", ".size"]
+      ["+", ".positive?", ".negative?", ".zero?", ".empty?", ".to_s", ".modulo", ".size",
+       ".match?", ".present?", ".blank?", ".split", ".first", ".last", ".start_with?", ".end_with?"]
     )
   end
 
@@ -158,18 +171,29 @@ RSpec.describe "the operator domain" do
   # cases — so each is held by a behavioral probe, and direction B is
   # the probe table's keys equalling the admitted set.
   PROBES = {
-    "||"         => -> { Evaluator.parse("a || b").is_a?(Evaluator::Or) },
-    "&&"         => -> { Evaluator.parse("a && b").is_a?(Evaluator::And) },
-    "!"          => -> { Evaluator.parse("!a").is_a?(Evaluator::Not) },
-    ".include?"  => -> { Evaluator.parse("list.include?(x)").is_a?(Evaluator::Include) },
-    "+"          => -> { Resolver.parse("a + b").is_a?(Resolver::Addition) },
-    ".modulo"    => -> { Resolver.parse("a.modulo(b)").is_a?(Resolver::Modulo) },
-    ".positive?" => -> { Resolver.parse("a.positive?").is_a?(Resolver::SignTest) },
-    ".negative?" => -> { Resolver.parse("a.negative?").is_a?(Resolver::SignTest) },
-    ".zero?"     => -> { Resolver.parse("a.zero?").is_a?(Resolver::SignTest) },
-    ".empty?"    => -> { Resolver.parse("a.empty?").is_a?(Resolver::Empty) },
-    ".to_s"      => -> { Resolver.parse("a.to_s").is_a?(Resolver::ToS) },
-    ".size"      => -> { Resolver.parse("a.size").is_a?(Resolver::Size) }
+    "||"           => -> { Evaluator.parse("a || b").is_a?(Evaluator::Or) },
+    "&&"           => -> { Evaluator.parse("a && b").is_a?(Evaluator::And) },
+    "!"            => -> { Evaluator.parse("!a").is_a?(Evaluator::Not) },
+    ".include?"    => -> { Evaluator.parse("list.include?(x)").is_a?(Evaluator::Include) },
+    "+"            => -> { Resolver.parse("a + b").is_a?(Resolver::Addition) },
+    ".modulo"      => -> { Resolver.parse("a.modulo(b)").is_a?(Resolver::Modulo) },
+    ".positive?"   => -> { Resolver.parse("a.positive?").is_a?(Resolver::SignTest) },
+    ".negative?"   => -> { Resolver.parse("a.negative?").is_a?(Resolver::SignTest) },
+    ".zero?"       => -> { Resolver.parse("a.zero?").is_a?(Resolver::SignTest) },
+    ".empty?"      => -> { Resolver.parse("a.empty?").is_a?(Resolver::Empty) },
+    ".to_s"        => -> { Resolver.parse("a.to_s").is_a?(Resolver::ToS) },
+    ".size"        => -> { Resolver.parse("a.size").is_a?(Resolver::Size) },
+    # PRD 09 — the eight admitted in this pass. .present?/.blank? both
+    # parse to Presence (distinguished by :negated, the same shape
+    # .positive?/.negative?/.zero? already share one probed class for).
+    ".match?"      => -> { Resolver.parse("a.match?(/x/)").is_a?(Resolver::MatchesRegex) },
+    ".present?"    => -> { Resolver.parse("a.present?").is_a?(Resolver::Presence) },
+    ".blank?"      => -> { Resolver.parse("a.blank?").is_a?(Resolver::Presence) },
+    ".split"       => -> { Resolver.parse('a.split("::")').is_a?(Resolver::Split) },
+    ".first"       => -> { Resolver.parse("a.first").is_a?(Resolver::First) },
+    ".last"        => -> { Resolver.parse("a.last").is_a?(Resolver::Last) },
+    ".start_with?" => -> { Resolver.parse('a.start_with?("{")').is_a?(Resolver::StartsWith) },
+    ".end_with?"   => -> { Resolver.parse('a.end_with?("}")').is_a?(Resolver::EndsWith) }
   }.freeze
 
   it "implements every admitted structural operator, and no other" do

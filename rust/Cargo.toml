@@ -21,6 +21,20 @@ name = "rust"
 version = "0.1.0"
 edition = "2021"
 
+# PRD 09 — `.match?` (Resolver::MatchesRegex) needs real regex
+# evaluation to be admitted honestly rather than refused the way
+# `.split`/`.first`/`.last` are (see expression_operators/string.rs's
+# and accessor.rs's own headers for why THOSE stay refused instead).
+# `regex = "1"` is not a new dependency to this WORKSPACE — rust/host's
+# own Cargo.toml already pins the identical version elsewhere — only new
+# to this crate specifically, which had none before this line. Flagged
+# here rather than added silently: this crate's own zero-dependency
+# history up to this point may have been a deliberate choice, not an
+# accident, and this is the one place PRD 09 makes a real judgment call
+# rather than a mechanical one.
+[dependencies]
+regex = "1"
+
 [lib]
 name = "rust"
 path = "src/lib.rs"
