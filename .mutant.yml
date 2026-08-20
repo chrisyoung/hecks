@@ -1,0 +1,35 @@
+# PRD 07 (docs/prds/07-ruby-mutation-testing.md) — step 1: evaluating
+# `mutant` against this codebase's real constraints before committing to it.
+# Scoped narrowly, per the PRD, to the dispatch pipeline: CommandInterpreter
+# and its ArgumentGate/MutationApplier siblings — the most heavily
+# property-tested code in the runtime, and a place with NO dedicated spec
+# file (it's exercised indirectly through many spec files), so this also
+# tests whether mutant's rspec integration can even find relevant coverage
+# for code that isn't tested by naming-convention correlation.
+includes:
+  - lib
+
+requires:
+  - hecksagain
+
+integration:
+  name: rspec
+
+matcher:
+  subjects:
+    - Hecksagain::Runtime::CommandInterpreter::ArgumentGate#refuse_unknown_arguments
+
+# See tmp/mutant_full_suite_selector.rb — mutant-rspec's default naming-
+# convention test selector finds ~0 correlated tests against this
+# codebase's prose-described specs, even though a measured coverage probe
+# found 109/~150 spec files genuinely exercise this code. This hook forces
+# every mutation to run against the full available suite instead (the
+# honest brute-force baseline), so the timeout below is sized for that,
+# not mutant's default 5s single-test-selection estimate.
+hooks:
+  - mutant/full_suite_selector.rb
+
+mutation:
+  timeout: 180.0
+
+usage: opensource

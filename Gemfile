@@ -63,4 +63,11 @@ group :development, :test do
   # opinion on at all.
   gem "rubocop", "~> 1.69", require: false
   gem "rubocop-rspec", "~> 3.3", require: false
+
+  # PRD 07 (docs/prds/07-ruby-mutation-testing.md) — evaluating `mutant`
+  # against this codebase's real constraints before committing to it as a
+  # permanent tool. Local-only for now, same reasoning as parallel_tests
+  # above: not yet wired into CI or the pre-push hook.
+  gem "mutant", "~> 0.16", require: false
+  gem "mutant-rspec", "~> 0.16", require: false
 end
