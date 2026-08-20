@@ -1,0 +1,129 @@
+# Executable IR is a deterministic lowering of canonical IR — not a second authored language
+
+**Status:** Proposed — pending review, and deliberately unscheduled relative to ADR 0029. Written alongside it because the two share one seam (`Reaction`/`Binding`) but are separable pieces of work — 0029 is a Ruby-side interpreter extraction with a five-step sequencing plan; this ADR is a cross-runtime architecture decision with no sequencing plan yet, because its first real step is ADR 0022's still-open self-hosting work.
+
+## Context
+
+ADR 0029 found that `goal` carries real domain meaning (a command's human-readable intent) and requires zero runtime behaviour — it's read by `docs_projector.rb`/`cli_projector.rb`, never by an interpreter. That's a small fact about one field. The larger fact it exposes: **every field the Ruby grammar declares is currently assumed, by construction, to be something every runtime — including Rust — must eventually understand.** Nothing in the codebase says otherwise; ADR 0022's framing of its own problem ("self-host the expression grammar," i.e. all of it) inherits that assumption without stating it.
+
+That assumption is expensive in a specific way ADR 0022 already documents: `rust/src/kernel/expr.rs` is a hand-port of Ruby's `Evaluator`/`Resolver` — "two independently authored implementations of the same small, *closed* grammar." The fix ADR 0022 proposes (self-host the expression grammar so both are checked against one shared description) is correct as far as it goes, but scoped to expressions alone it leaves the same question open one level up: is `policy`, `process_manager`, `goal`, and everything else in `reaction.bluebook` also something Rust must eventually mirror? If the answer stays "yes, eventually," Rust's obligation only grows as the language does.
+
+## Decision
+
+### The pipeline has two IRs, not one, and a single lowering step between them
+
+```
+Bluebook DSL
+     ↓  (author, parse)
+Canonical IR
+     ↓  (lower — the ONE handwritten semantic bridge)
+Executable IR
+     ↓  (decode, execute — generated/generic on both sides)
+Ruby kernel · Rust kernel · WASM kernel
+```
+
+**Canonical IR** is the complete semantic description of a domain — everything a bluebook means, including its own documentation of itself: `goal`, `description`, story/rationale, documentation metadata, projection metadata. This is what exists today; nothing about it changes.
+
+**Executable IR** contains only what a runtime must actually execute: `Command`, `Event`, `Reaction` (ADR 0029's primitive), `Query`, `Expression`, and whatever `Reaction`'s own context requires (`ReactionContext`, `Binding` — see "How small," below). `Policy` and `ProcessManager` do not appear in it at all — both lower to `Reaction`, distinguished only by whether their context is stateless or correlated:
+
+```
+canonical                              executable
+Policy {                               Reaction {
+  on: LoanApproved                       trigger: Event(LoanApproved)
+  dispatch: FundAccount        lowers    condition: True
+  mappings: ...                  →       bindings: [...]
+}                                        dispatches: [FundAccount]
+                                         context: Stateless
+                                       }
+
+ProcessManager { ... }        lowers    Reaction {
+                                 →         trigger: ...
+                                           condition: ...
+                                           bindings: ...
+                                           dispatches: ...
+                                           context: Correlated {
+                                             key: ..., memory: ...,
+                                             retry: ..., compensation: ...
+                                           }
+                                       }
+```
+
+Once this lowering exists, Rust has no reason to know what a `Policy` or a `ProcessManager` is — it only ever sees `Reaction`.
+
+### The criterion for which side a field lands on
+
+For every canonical field, ask: **could removing this field change the externally observable execution of the domain?**
+
+- **No → canonical-only.** `goal`, `description`, rationale, documentation labels, projection metadata.
+- **Yes → executable.** Command arguments, event structure, reaction trigger, binding expressions, conditions, correlation semantics, retry semantics, compensation semantics, query definitions.
+
+This is the same test, applied one layer up, as ADR 0026's "the language uses everything it declares" — 0026 asks whether the *language itself* uses a construct; this asks whether *execution* does. A field can pass 0026's bar (used somewhere, by something) and still fail this one, exactly as `goal` does: used by the docs projector, never by execution.
+
+### The one hard constraint: this must not become a second authored language
+
+The entire value of this split depends on Executable IR being a **deterministic projection** of Canonical IR — never a second source of truth. The failure mode is concrete and specific: hand-write a canonical model, hand-write a lowering step, then hand-write a Ruby evaluator for the executable model *and* hand-write a Rust evaluator for it too. That's not two interpreters becoming one boundary — it's one interpreter becoming three, with the same "kept in agreement by discipline, not by construction" problem ADR 0022 already lives with, now duplicated across an extra layer.
+
+What makes the split pay for itself is a single self-hosted definition of the **executable semantic algebra** — an `executable.bluebook`, in this codebase's own idiom — from which Ruby's executable-node representation, Rust's, encoding/decoding, and validation are all generated or generic, the same way ADR 0022 already proposes for expressions alone:
+
+```
+executable.bluebook
+        ↓
+grammar / generated model
+        ├── Ruby executable nodes
+        ├── Rust executable nodes
+        ├── encoder / decoder
+        └── validation
+```
+
+Counted this way, there are three places semantics live, not four: **(1)** the Bluebook authoring parser, **(2)** the canonical→executable lowering (the one handwritten semantic bridge — it belongs in exactly one place, on the Ruby/authoring side, and nowhere else), **(3)** the executable kernel, shared across runtimes through generated structures and a small evaluator. If a fourth hand-authored thing appears anywhere in that chain, this decision has failed on its own terms.
+
+### The warning sign to watch for
+
+If `executable.bluebook` starts acquiring `policy`, `process_manager`, `goal`, `workflow`, or anything else that reads as an authoring convenience rather than an execution primitive, that is Bluebook being recreated underneath Bluebook — the second-authored-language failure mode, arrived at by accretion rather than by decision. The executable algebra should stay close to boring: `Reaction`, `Expression`, `Binding`, `Invocation`, `Query`. If it stays that small, the boundary is in the right place.
+
+### How small the executable algebra might actually be
+
+`Reaction`'s fields (ADR 0029: trigger, condition, bindings, dispatches, optional context) are already executable structure on their own. Two of them may not deserve independent primitive status:
+
+- **`Condition` may just be `Expression` typed to a boolean result** — not a distinct kernel concept.
+- **`Binding` may just be `{destination, Expression}`** — a small program, not a structural primitive of its own.
+
+If both hold up under scrutiny, the executable kernel reduces to something close to: `Command`, `Event`, `Reaction`, `Query`, `Expression`, `Context`. That would make **`Expression` the one genuinely load-bearing, irreducible primitive** — it's the shared substrate for conditions, bindings, query predicates, correlation keys, and plausibly future authorization predicates. Which is also exactly the piece ADR 0022 already found duplicated and already proposed self-hosting. Read this way, ADR 0022 wasn't solving a narrow problem — it was starting on the one piece of the executable algebra most worth starting on. This ADR reframes its target accordingly: not "self-host the expression grammar" but **"self-host the executable semantic algebra, starting with `Expression` because it's already duplicated and already the load-bearing primitive."**
+
+### The boundary this must not cross: deployment stays out
+
+Executable IR answers only *what behaviour a runtime must realize* — never *how it's delivered*. A `Reaction` says "on event A, if expression B, bind values C and issue command D." It must never say "send D over MQTT to device 17," which HTTP endpoint served the request, which Postgres table backs a query, a thread count, a Lambda ARN, or a WASM memory layout. Those stay exactly where hecksagain already puts them — in ports, adapters, and the `.hecksagon`/`.world` wiring layer (the same separation `README.md`'s three-file split already draws: `.bluebook` is "the domain... No I/O, no config"; `.hecksagon` is "the wiring... override, not substrate"). This ADR does not touch that boundary; it names a second one, one layer further in, between the domain's full meaning and the slice of it a runtime executes.
+
+### What this does for Rust and WASM specifically
+
+Once Rust consumes Executable IR rather than parsing Bluebook toward a full canonical model, it never needs to carry `goal`, documentation, stories, authoring concepts, projection metadata, or discipline metadata — not as fields it ignores, but as concepts its parser and structs never mention at all. Concretely:
+
+```
+Ruby / authoring side                    Rust
+Bluebook → Canonical IR                  decode Executable IR
+  → validate / analyze                     → execute
+  → lower to Executable IR
+  → serialize (binary / JSON)
+```
+
+Smaller structs, a smaller parser, smaller binaries, less validation, less memory, less parity surface to keep in sync — the last of these being the direct payoff against ADR 0022's actual complaint. A full Rust consumer of the *canonical* model may still be worth having for tooling/projection use cases, but that is a different layer from the runtime kernel — conceptually `hecks-ir` (full canonical) vs. `hecks-exec-ir` (tiny executable) vs. `hecks-kernel` (executes exec-ir), without committing yet to three actual crates.
+
+## Consequences
+
+- **This is architecture, not a task list.** Unlike ADR 0029, this decision has no sequencing plan yet — its first real increment is ADR 0022's self-hosted expression work, reframed as "start of the executable algebra" rather than "the whole job." A concrete plan for the lowering step and the executable-node generation belongs in a follow-up, after 0022's self-hosting lands and after ADR 0029's `Reaction`/`Binding` extraction gives this ADR real material to lower.
+- **ADR 0022 is reframed, not superseded.** Its diagnosis (duplicated hand-authored `expr.rs`/`Evaluator`) stands; its remedy is now understood as step one of a larger, still-bounded target rather than a complete fix on its own.
+- **The single-lowering-step discipline is the whole risk.** If the lowering step or the executable-node representations end up hand-duplicated per runtime after all, this decision has produced a fourth interpreter instead of removing duplication — the "warning sign" above is the concrete thing to check for during implementation, not just at design time.
+- **Rust's obligations shrink, but only once this is built.** Until the lowering step and a self-hosted executable algebra exist, Rust still mirrors whatever Ruby's canonical model contains, same as today.
+
+## Open, deliberately
+
+- **Whether `Condition` and `Binding` survive as named primitives or fully reduce to `Expression`-shaped structures.** Argued for reduction above; not settled, since nothing has been built against either shape yet to test it.
+- **Where the lowering step physically lives** — inside the existing Ruby projector framework (`lib/hecksagain/projector/`, already the seam ADR 0027 names for canonical-IR consumers) or a new, dedicated module. Leaning toward the projector framework, since it already exists to consume canonical IR toward a target; not decided.
+- **Whether `hecks-exec-ir`/`hecks-kernel` ever become real, separate crates**, versus staying a conceptual boundary inside the existing `rust/` layout. No pressure to decide before the self-hosted algebra exists to put in them.
+- **Serialization format for Executable IR crossing the Ruby→Rust boundary** (binary vs. JSON) — a real decision with WASM-size consequences, deferred until there's an executable algebra to serialize.
+
+## Rejected alternatives
+
+- **Leaving canonical and executable concerns conflated**, on the theory that ADR 0022's expression self-hosting alone is enough. Rejected because it fixes one duplicated evaluator while leaving the assumption that caused it — everything declared is everything every runtime must understand — fully in place, ready to cause the same problem again the next time the grammar grows.
+- **A canonical/executable split built from hand-written models on both sides**, i.e., without a self-hosted executable algebra generating both runtimes' representations. Rejected as the specific failure mode this whole decision exists to avoid — it would not reduce duplication, it would relocate it one layer deeper and add a translation step on top.
+- **Deciding `Condition`/`Binding`'s final shape now**, before any of this is built. Rejected as premature — ADR 0029's extraction hasn't happened yet, and this ADR's own criterion (does removing it change observable execution) is best applied to real code, not to a diagram.
