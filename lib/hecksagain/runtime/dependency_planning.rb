@@ -135,10 +135,10 @@ module Hecksagain
             end
 
             if mutation.op == :set
-              known_writes << target if analyze_source(mutation.source)
+              known_writes << target if analyze_source?(mutation.source)
             elsif STATEFUL_MUTATIONS.include?(mutation.op)
               state_reads << target
-              analyze_source(mutation.source)
+              analyze_source?(mutation.source)
             else
               unresolved << "mutation operation #{mutation.op} has no dependency rule"
             end
@@ -147,7 +147,7 @@ module Hecksagain
 
         # Returns true only when the source is known without prior aggregate
         # state. Hash sources are the canonical append binding shape.
-        def analyze_source(source)
+        def analyze_source?(source)
           case source
           when Symbol
             if payload_fields.include?(source)
@@ -162,7 +162,7 @@ module Hecksagain
             unresolved << "mutation source #{source} has no payload or aggregate field"
             false
           when Hash
-            source.values.map { |value| analyze_source(value) }.all?
+            source.values.map { |value| analyze_source?(value) }.all?
           else
             true
           end

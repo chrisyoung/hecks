@@ -99,7 +99,8 @@ RSpec.describe "Postgres atomic_put persistence", io: true do
 
     expect(threads.map(&:value)).to contain_exactly(:inserted, :replaced)
     expect(stores.first.entries.size).to eq(2)
-    expect(%w[First Second]).to include(stores.first.find("sku-1").state[:label].to_h.fetch(:value))
+    expect(stores.first.find("sku-1").state[:label].to_h.fetch(:value))
+      .to(satisfy { |value| %w[First Second].include?(value) })
   ensure
     threads&.each { |thread| thread.join if thread.alive? }
   end

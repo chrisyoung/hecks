@@ -12,7 +12,10 @@ module Hecksagain
     # resolving the declaration and before re-entering the dispatcher.
     module ReactionInvocation
       Target = Struct.new(:aggregate, :entities, :command, keyword_init: true)
-      Scope = Struct.new(:name, :values, keyword_init: true)
+      # :facts, not :values — Struct.new already defines #values (every
+      # member's own value, in order); naming this field :values silently
+      # shadowed that with the single Hash it actually holds.
+      Scope = Struct.new(:name, :facts, keyword_init: true)
 
       module_function
 
@@ -36,8 +39,8 @@ module Hecksagain
       def resolve_mapping(with_spec:, scopes:, bindings: {}, label: "reaction")
         normalized_bindings = bindings.transform_keys(&:to_sym)
         normalized_scopes = scopes.map do |scope|
-          scope = Scope.new(name: scope.first, values: scope.last) unless scope.is_a?(Scope)
-          Scope.new(name: scope.name.to_s, values: scope.values.transform_keys(&:to_sym))
+          scope = Scope.new(name: scope.first, facts: scope.last) unless scope.is_a?(Scope)
+          Scope.new(name: scope.name.to_s, facts: scope.facts.transform_keys(&:to_sym))
         end
 
         with_spec.to_h do |key, source|
@@ -46,13 +49,13 @@ module Hecksagain
                   elsif normalized_bindings.key?(source)
                     normalized_bindings.fetch(source)
                   else
-                    visible = normalized_scopes.find { |scope| scope.values.key?(source) }
+                    visible = normalized_scopes.find { |scope| scope.facts.key?(source) }
                     unless visible
                       names = normalized_scopes.map(&:name).join(" then ")
                       raise UnknownArgument,
                             "#{label}'s with: reads :#{source}, which is not visible in #{names}"
                     end
-                    visible.values.fetch(source)
+                    visible.facts.fetch(source)
                   end
 
           [key.to_sym, Value.materialize(value)]

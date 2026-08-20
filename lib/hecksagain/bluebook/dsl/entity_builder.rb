@@ -53,6 +53,11 @@ module Hecksagain
                                  as || default_reference_name(target), optional: optional)
         end
 
+        # has_many/has_one are DSL declaration keywords a domain author
+        # writes verbatim (matching belongs_to alongside them) — not real
+        # predicates, so renaming to many?/one? per Naming/PredicatePrefix
+        # would break every bluebook that declares one.
+        # rubocop:disable Naming/PredicatePrefix
         def has_many(type, as: nil, **options)
           unless options.empty?
             raise Malformed, "#{@name}.has_many takes no #{options.keys.first}: — an empty list already means none"
@@ -67,6 +72,7 @@ module Hecksagain
           target = Naming.demodulise(type)
           relationship_attribute(target, :has_one, as || Naming.snake(target).to_sym, optional: optional)
         end
+        # rubocop:enable Naming/PredicatePrefix
 
         def belongs_to(type, as: nil, optional: false)
           target = Naming.demodulise(type)
