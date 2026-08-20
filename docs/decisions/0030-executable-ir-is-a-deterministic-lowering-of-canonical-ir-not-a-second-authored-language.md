@@ -137,9 +137,33 @@ verify against the existing corpus + fuzzer parity
 
 **Success criteria:** one source definition; zero handwritten parallel expression grammar; same observable behaviour, same failures/refusals, same serialization shape as today.
 
-**The acceptance test that actually matters:** can a new expression operator (e.g. `contains`) be added by editing exactly one semantic definition and regenerating, writing runtime operator code only where it's genuinely non-generic? If adding one operator still means hand-editing a Rust enum, a Rust parser, a Rust evaluator, a Ruby model, a Ruby evaluator, a serializer, *and* a validator, ADR 0022 has not succeeded regardless of what else this slice produced.
+**The generate/handwrite boundary, stated as a mechanical rule, not a preference:** a generator owns *structure*; a handwritten evaluator owns *meaning*. `Expr = LessThan(lhs, rhs) | Equal(lhs, rhs) | And(lhs, rhs) | Or(lhs, rhs) | Not(expr) | Literal(value)` is declarative — the Ruby node model, the Rust enum, codecs, visitors, and validation all generate cleanly from it. What `LessThan(a, b) => compare(resolve(a), resolve(b))` *means* does not — that's interpretation, and stays a small, explicit, handwritten evaluator per runtime even at 50 lines, unless the executable definition already carries independent declarative semantics powerful enough to make generating the evaluator purely mechanical. The test for whether a definition has crossed that line: if an operator's definition is structural (`name: less_than, arity: 2, result: boolean`), generate from it; the moment it needs `implementation: lhs < rhs` or a per-target `ruby:`/`rust:` code string, the grammar has started becoming an interpreter or a code-template language, and that's the second-authored-language failure mode arriving through the generator instead of through hand-authoring. Stop before that line, not after.
 
-**A generation-depth caution that applies to every slice, not just this one:** prefer generating node types, codecs, and visitors that one small, generic, *handwritten* evaluator walks, over generating the evaluator's own logic — unless the grammar genuinely carries enough semantic information to do the latter cleanly. The goal is eliminating duplicated *semantic definition*, not eliminating every handwritten line. Turning the self-hosted schema into a programming language just to avoid a 50-line visitor recreates the second-authored-language failure mode this whole ADR exists to avoid, from a different direction.
+**The one legitimate exception — reduction, not implementation.** ADR 0029/0022 already note the expression grammar has "six operators, reduced to two primitives (`less_than`, `equal`) combined with a small boolean algebra." Those reductions are themselves declarative and *can* be generated: `greater_than(a, b) = less_than(b, a)`; `not_equal(a, b) = not(equal(a, b))`; `less_than_or_equal(a, b) = or(less_than(a, b), equal(a, b))`. That splits every operator into one of two buckets:
+
+- **Primitive semantics** — `equal`, `less_than`, `resolve`/reference, boolean composition (`and`/`or`/`not`). Irreducible; hand-implemented once per runtime.
+- **Derived semantics** — `greater_than`, `<=`, `>=`, `!=`, compound boolean forms. Expressible purely as composition of the primitives; generated, never hand-implemented.
+
+Which sharpens the pipeline:
+
+```
+self-hosted expression definition
+        ↓
+generated node types
+generated normalization / reduction     (derived → primitive composition)
+        ↓
+tiny handwritten evaluator
+        ↓
+irreducible primitives: resolve, equal, less_than, boolean composition
+```
+
+**The acceptance test, stated honestly rather than absolutely:** the bar is not "adding any operator touches exactly one file, no matter what" — that bar, taken literally, would eventually pressure the grammar into carrying executable semantics just to satisfy it, which is exactly the failure mode above. The honest version: *adding syntax or a derived operator requires one definition change and regeneration; adding genuinely new primitive semantics requires one definition change plus one small, explicit implementation per execution engine.* `contains` is the live diagnostic for telling which case a new operator is: if it lowers into existing primitives (a composition, like the `<=` example above), it's derived — one definition edit, generated everywhere. If it doesn't, it introduces real new runtime meaning, and both runtimes legitimately need a small hand-written implementation of it — that is not a failure of self-hosting, it's an honest count of where semantics actually live. Keep using `contains` (or whatever the next proposed operator turns out to be) as this test as the executable algebra grows.
+
+**The metric that actually matters is semantic implementation count, not evaluator line count.** Two 35-line evaluators, one per runtime, operating over identical generated node sets and implementing only `resolve`, `equal`, `less_than` — three tiny primitives — is a healthy outcome even though 70 handwritten lines exist. A single "fully generated" evaluator produced by an increasingly clever metagrammar is the less healthy outcome, even at a smaller line count, because the semantics moved into the grammar to get there. Slice 1's success is measured by counting irreducible hand-implemented primitives per runtime, not by counting deleted lines.
+
+**This same rule transfers to Binding and Reaction, unchanged.** For `Binding {destination, expression}`, representation and codecs generate; the operation itself (`value = evaluate(binding.expression, context); assign(binding.destination, value)`) stays handwritten and generic, because it's interpretation regardless of how few lines it takes. For `Reaction`, the shape — how triggers match, how bindings evaluate, how commands dispatch — generates; kernel semantics (what retry or compensation actually *does*) stays handwritten, unless a given behaviour reduces to composition of already-existing primitives, in which case it's lowered before runtime rather than re-implemented. The decision tree is the same at every layer: **can this be derived solely from declared structure or composition? Generate/lower it. Does it require defining what an operation means at runtime? Handwrite it as a kernel primitive. Would generating it require embedding target-language code or templates in the grammar? Stop — the interpreter has moved into the grammar.**
+
+**Revised acceptance bar for this slice, replacing the looser version above:** one source of expression structure; one source of derived-operator definitions; generated, equivalent Ruby/Rust representations; no handwritten duplicated grammar; a deliberately tiny, explicit, handwritten primitive evaluator per runtime; corpus/fuzzer parity.
 
 ### Slice 2 — Binding, deliberately not Reaction, as the first real lowering test
 
