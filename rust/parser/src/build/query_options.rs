@@ -21,6 +21,17 @@ use crate::ir;
 use crate::parse::{self, ArgumentGateResult};
 use crate::ruby_value;
 
+/// The five words this module's own header names — hoisted here, the
+/// ONE place `apply`'s own match arms already list them exhaustively,
+/// rather than a separate copy in `parse::query` and `parse::
+/// read_model` each (both used to declare their own identical
+/// `OPTION_WORDS` — found duplicated, not derived from `keywords.rs`'s
+/// own `fills: "options"` rows on purpose: those rows ALSO cover
+/// `where`/`order_by`/`limit` for the `ReadModel` context, which have
+/// their own dedicated match arms in `read_model.rs`, not this module's
+/// catch-all — a naive filter would silently pull those three back in).
+pub const OPTION_WORDS: &[&str] = &["offset", "cursor", "authorize", "nulls", "inspect_query"];
+
 /// Applies one already-gated option call onto `options` — `word` is one
 /// of the five this module's own header names; `context` (`"Query"` or
 /// `"ReadModel"`) is passed through only for `positional_symbol`'s own

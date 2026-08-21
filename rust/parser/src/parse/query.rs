@@ -16,8 +16,6 @@ pub fn not_implemented(file: &str, line: usize, word: &str) -> Diagnostic {
     Diagnostic::not_yet_implemented(file, line, format!("Query.{word}"))
 }
 
-const OPTION_WORDS: &[&str] = &["offset", "cursor", "authorize", "nulls", "inspect_query"];
-
 /// Parses a `query "Name" do ... end` body.
 pub fn parse_body(file: &str, lines: &[SourceLine], pos: &mut usize, name: &str) -> ParseResult<ir::Query> {
     let mut query = ir::Query { name: name.to_string(), ..Default::default() };
@@ -48,7 +46,7 @@ pub fn parse_body(file: &str, lines: &[SourceLine], pos: &mut usize, name: &str)
                 let raw = super::positional_constant(file, line, "limit", &gated.args, 1)?;
                 query.limit = Some(ir::LimitSpec { value: crate::ruby_value::render(&crate::ruby_value::read(raw)) });
             }
-            word if OPTION_WORDS.contains(&word) => query_options::apply(file, line, word, &gated.args, &mut query.options)?,
+            word if query_options::OPTION_WORDS.contains(&word) => query_options::apply(file, line, word, &gated.args, &mut query.options)?,
             _ => return Err(super::not_built_yet("Query", gated.row, file, line, &gated.call.word)),
         }
     }

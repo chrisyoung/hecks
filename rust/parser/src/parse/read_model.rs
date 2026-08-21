@@ -23,8 +23,6 @@ pub fn not_implemented(file: &str, line: usize, word: &str) -> Diagnostic {
     Diagnostic::not_yet_implemented(file, line, format!("ReadModel.{word}"))
 }
 
-const OPTION_WORDS: &[&str] = &["offset", "cursor", "authorize", "nulls", "inspect_query"];
-
 /// Parses a `report "Name" do ... end` body (`report`/`read_model`).
 /// `include`s are gathered raw and resolved into `aggregate_heads` at the
 /// END (mirroring `ReadModelBuilder#build`'s own build-time resolution —
@@ -104,7 +102,7 @@ pub fn parse_body(file: &str, lines: &[SourceLine], pos: &mut usize, name: &str)
                 let raw = super::positional_constant(file, last_line, "limit", &gated.args, 1)?;
                 limit = Some(ir::LimitSpec { value: crate::ruby_value::render(&crate::ruby_value::read(raw)) });
             }
-            word if OPTION_WORDS.contains(&word) => query_options::apply(file, last_line, word, &gated.args, &mut options)?,
+            word if query_options::OPTION_WORDS.contains(&word) => query_options::apply(file, last_line, word, &gated.args, &mut options)?,
             _ => return Err(super::not_built_yet("ReadModel", gated.row, file, last_line, &gated.call.word)),
         }
     }

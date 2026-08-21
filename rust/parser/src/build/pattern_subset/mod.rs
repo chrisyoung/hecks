@@ -17,7 +17,16 @@
 //!
 //! A CHARACTER WALK, deliberately plain, mirroring Ruby's own line for
 //! line — the subset is defined by this walk, not by handing the pattern
-//! to a real regex engine and asking what it thinks.
+//! to a real regex engine and asking what it thinks. `validate` stays
+//! hand-written here; the refusal-wording DATA it reads (`REASONS`) is
+//! generated — see `reasons.rs`'s own header for why the split, the
+//! same "generate structure, handwrite meaning" boundary this whole
+//! kernel/parser already draws elsewhere (`kernel::binding`/`kernel::
+//! reaction`'s own `mod.rs`+`logic.rs` split, `query_comparators.rs`'s
+//! own header).
+
+mod reasons;
+use reasons::REASONS;
 
 pub struct Rejection {
     pub construct: &'static str,
@@ -87,49 +96,6 @@ fn posix_class_at(chars: &[char], index: usize) -> bool {
     }
     chars.get(cursor) == Some(&':') && chars.get(cursor + 1) == Some(&']')
 }
-
-const REASONS: &[(&str, &str, &str)] = &[
-    (
-        "backreference",
-        "backreference",
-        "backreferences cannot be matched in linear time and portable engines refuse them ; a declared pattern may not depend on one",
-    ),
-    (
-        "named_backreference",
-        "named backreference",
-        "a named backreference is still a backreference — it cannot be matched in linear time ; a declared pattern may not depend on one",
-    ),
-    (
-        "perl_class",
-        "perl character class",
-        "engines read it in OPPOSITE directions : ASCII in some and Unicode in others, so an Arabic-Indic digit satisfies one and not the other. Spell the range you mean — [0-9], [A-Za-z0-9_], [ \\t] — which every engine reads the same way",
-    ),
-    (
-        "posix_class",
-        "posix bracket class",
-        "[:digit:] and friends flip between ASCII and Unicode across engines — the mirror of the perl classes, and wrong in the same way. Spell the range you mean",
-    ),
-    (
-        "lookahead",
-        "lookahead",
-        "lookahead cannot be matched in linear time and portable engines refuse it ; a declared pattern may not depend on it",
-    ),
-    (
-        "lookbehind",
-        "lookbehind",
-        "lookbehind cannot be matched in linear time and portable engines refuse it ; a declared pattern may not depend on it",
-    ),
-    (
-        "atomic_group",
-        "atomic group",
-        "an atomic group is a backtracking-engine control knob — linear-time engines reject `(?>` as a syntax error",
-    ),
-    (
-        "possessive",
-        "possessive quantifier",
-        "a possessive quantifier is a backtracking-engine control knob — linear-time engines reject it as a syntax error",
-    ),
-];
 
 #[cfg(test)]
 mod tests {
