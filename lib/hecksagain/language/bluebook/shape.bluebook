@@ -127,8 +127,11 @@ Hecks.bluebook "Bluebook" do
       attribute :pattern,  ValueObjectText, optional: true
       attribute :default, ValueObjectText, optional: true
       attribute :admits,  ValueObjectText, optional: true
+      # See Command.Argument's own :relationship (command.bluebook) — the
+      # same field, the same reason.
+      attribute :relationship, ValueObjectText, optional: true
 
-      sets :attributes, append: { name: :name, type: :type, list: :list, default: :default, optional: :optional, pattern: :pattern, admits: :admits }
+      sets :attributes, append: { name: :name, type: :type, list: :list, default: :default, optional: :optional, pattern: :pattern, admits: :admits, relationship: :relationship }
 
       emits "ShapeFieldAttached"
     end

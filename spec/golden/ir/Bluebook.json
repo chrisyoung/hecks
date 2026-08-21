@@ -5329,6 +5329,16 @@
               "pattern": null,
               "relationship": null,
               "type": "ArgType"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "relationship",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "ArgType"
             }
           ],
           "emits": [
@@ -5351,6 +5361,7 @@
                 "name": ":name",
                 "optional": ":optional",
                 "pattern": ":pattern",
+                "relationship": ":relationship",
                 "type": ":type"
               },
               "op": "append",
@@ -5434,6 +5445,16 @@
               "pattern": null,
               "relationship": null,
               "type": "ArgType"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "relationship",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "ArgType"
             }
           ],
           "emits": [
@@ -5456,6 +5477,7 @@
                 "name": ":name",
                 "optional": ":optional",
                 "pattern": ":pattern",
+                "relationship": ":relationship",
                 "type": ":points_at"
               },
               "op": "append",
@@ -14835,6 +14857,16 @@
               "pattern": null,
               "relationship": null,
               "type": "QueryText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "relationship",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "QueryText"
             }
           ],
           "emits": [
@@ -14857,6 +14889,7 @@
                 "name": ":name",
                 "optional": ":optional",
                 "pattern": ":pattern",
+                "relationship": ":relationship",
                 "type": ":type"
               },
               "op": "append",
@@ -16374,6 +16407,16 @@
               "pattern": null,
               "relationship": null,
               "type": "ValueObjectText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "relationship",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "ValueObjectText"
             }
           ],
           "emits": [
@@ -16396,6 +16439,7 @@
                 "name": ":name",
                 "optional": ":optional",
                 "pattern": ":pattern",
+                "relationship": ":relationship",
                 "type": ":type"
               },
               "op": "append",

@@ -166,8 +166,14 @@ Hecks.bluebook "Bluebook" do
       attribute :pattern,  QueryText, optional: true
       attribute :default, QueryText, optional: true
       attribute :admits,  QueryText, optional: true
+      # See Command.Argument's own :relationship (command.bluebook) — the
+      # same field, the same reason: an argument minted verbatim from the
+      # owner's own reference-typed attribute must carry that fact through
+      # the self-hosted round trip too, or the language cannot say it about
+      # itself.
+      attribute :relationship, QueryText, optional: true
 
-      sets :attributes, append: { name: :name, type: :type, list: :list, default: :default, optional: :optional, pattern: :pattern, admits: :admits }
+      sets :attributes, append: { name: :name, type: :type, list: :list, default: :default, optional: :optional, pattern: :pattern, admits: :admits, relationship: :relationship }
 
       emits "AskArgumentAttached"
     end

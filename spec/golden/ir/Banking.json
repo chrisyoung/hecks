@@ -548,7 +548,7 @@
               "name": "customer",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Customer>"
             },
             {
@@ -1897,7 +1897,7 @@
               "name": "customer",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Customer>"
             },
             {
@@ -2211,7 +2211,7 @@
               "name": "account",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Account>"
             },
             {
@@ -2931,7 +2931,7 @@
               "name": "account",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Account>"
             },
             {
@@ -4431,7 +4431,7 @@
               "name": "account",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Account>"
             }
           ],
@@ -4754,7 +4754,7 @@
               "name": "source",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Account>"
             },
             {
@@ -4764,7 +4764,7 @@
               "name": "destination",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Account>"
             }
           ],
@@ -5268,7 +5268,7 @@
               "name": "account",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Account>"
             },
             {
@@ -5731,7 +5731,7 @@
               "name": "account",
               "optional": false,
               "pattern": null,
-              "relationship": null,
+              "relationship": "reference_to",
               "type": "Reference<Account>"
             },
             {

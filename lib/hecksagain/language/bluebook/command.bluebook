@@ -176,8 +176,18 @@ Hecks.bluebook "Bluebook" do
       # The closed set this argument's value must belong to — see
       # Aggregate.Attribute, which carries the same word for a head's attributes.
       attribute :admits,  ArgType, optional: true
+      # Whether this argument was minted verbatim from the owning aggregate/
+      # entity's own reference-typed attribute (`sets :field` importing a
+      # `reference_to`/`has_many`/`has_one`/`belongs_to` field rather than
+      # retyping it) — see Aggregate.Attribute, which carries the same word
+      # for a head's own attributes. Missing here, a round trip through the
+      # self-hosted meta-domain silently dropped it for every command
+      # argument, even though the live DSL builder set it correctly in
+      # memory (CommandBuilder#resolve_bare_set!) — the wire just never
+      # carried it back.
+      attribute :relationship, ArgType, optional: true
 
-      sets :attributes, append: { name: :name, type: :type, list: :list, default: :default, optional: :optional, pattern: :pattern, admits: :admits }
+      sets :attributes, append: { name: :name, type: :type, list: :list, default: :default, optional: :optional, pattern: :pattern, admits: :admits, relationship: :relationship }
 
       emits "ArgumentAttached"
     end
@@ -206,8 +216,11 @@ Hecks.bluebook "Bluebook" do
       attribute :pattern,  ArgType, optional: true
       attribute :default, ArgType, optional: true
       attribute :admits,  ArgType, optional: true
+      # See Argument's own :relationship, just above — the same gap, one
+      # verb over.
+      attribute :relationship, ArgType, optional: true
 
-      sets :attributes, append: { name: :name, type: :points_at, list: :list, default: :default, optional: :optional, pattern: :pattern, admits: :admits }
+      sets :attributes, append: { name: :name, type: :points_at, list: :list, default: :default, optional: :optional, pattern: :pattern, admits: :admits, relationship: :relationship }
 
       emits "ArgumentReferenceAttached"
     end
