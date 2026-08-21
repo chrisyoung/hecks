@@ -19,15 +19,29 @@ module Hecksagain
     # "hand-written code, held to data by a spec" discipline
     # `binding_shape_spec.rb` already holds `BindingLowering` to.
     #
-    # STRUCTURE ONLY, DELIBERATELY UNWIRED — matching `kernel/binding/
-    # mod.rs`'s own current state (nothing in Rust calls
-    # `kernel::binding` either, yet): this is the shape a Rust
-    # `orchestrate.rs` executor would run, not that executor itself.
-    # Converging `orchestrate.rs`'s own 981 hand-written lines onto one
-    # is real, separate, larger follow-up work — see ADR 0030's own
-    # 2026-08-21 update for why, and what it would still need (a real
-    # way to get a LOWERED `Reaction` per domain policy/handler into
-    # Rust, which this slice does not attempt).
+    # STRUCTURE, PLUS ONE REAL PIECE OF INTERPRETATION, STILL
+    # DELIBERATELY UNWIRED — `rust/src/kernel/reaction/logic.rs`
+    # (hand-written, tested) mirrors `ReactionExecutor#resolve_args`
+    # for real: given a `Dispatch` and real `sources`, it resolves
+    # bindings exactly like the Ruby executor does, `Dispatch::VERBATIM`
+    # included. What's NOT there, and not guessed at: CONDITION
+    # evaluation. `logic.rs`'s own header records why — `orchestrate.rs`
+    # checks a saga leg's own state guard with a plain, direct string
+    # comparison, never through `kernel::expr::interpret`, and its own
+    # `PolicyRule` struct carries no `where` field at all; every real
+    # `Fielded` implementor in this crate is a statically-generated,
+    # per-command struct, never a dynamically-shaped runtime Hash the
+    # way a `Reaction`'s own `condition` would need. Nothing in Rust's
+    # real reaction engine needs general expression evaluation against
+    # dynamic state TODAY, so building that machinery here would be
+    # exactly the "no primitive without pressure" violation ADR 0029's
+    # own kernel-lowering rule refuses. Converging `orchestrate.rs`
+    # itself onto this shape — beyond binding resolution — is real,
+    # separate, larger follow-up work — see ADR 0030's own 2026-08-21
+    # update for why, and what it would still need (a real way to get a
+    # LOWERED `Reaction` per domain policy/handler into Rust, and a real
+    # answer to the condition-evaluation question above, neither
+    # attempted here).
     module Shape
       Field = Struct.new(:name, :rust_type, keyword_init: true)
 
