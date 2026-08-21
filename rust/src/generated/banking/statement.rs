@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for StatementPeriod {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -79,6 +84,11 @@ impl crate::kernel::Fielded for StatementAmount {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.cents))
+    }
 }
 
 
@@ -125,6 +135,11 @@ impl crate::kernel::Fielded for StatementDate {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -290,6 +305,11 @@ impl crate::kernel::Fielded for GenerateArgs {
             "generated_on" => Some(Field::Nested(&self.generated_on)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 

@@ -96,6 +96,41 @@ module RustProjection
       when r::ToS    then "Expr::ToS(Box::new(#{emit_resolver(node.receiver)}))"
       when r::Modulo then "Expr::Modulo { receiver: Box::new(#{emit_resolver(node.receiver)}), divisor: Box::new(#{emit_resolver(node.divisor)}) }"
       when r::Size   then "Expr::Size(Box::new(#{emit_resolver(node.receiver)}))"
+      # PRD 09's own admitted-but-never-emitted operators — real gap,
+      # not a design choice: `expr/mod.rs` (generated from
+      # `NodeShapeRust`) has carried every one of these `Expr` variants
+      # since PRD 09/11 shipped, but this emitter was never taught to
+      # PRODUCE one, because nothing in this repo's real corpus ever
+      # used any of them in a `given`/`ensures`/invariant until the
+      # "fix the gaps, continued" pass's own `PolicyReference`/
+      # `ProcessManagerText` invariants (`reaction.bluebook`) — the
+      # first real corpus text to reach a `.all? { ... }`, which is
+      # what surfaced this: `bin/project_rust` (and so CI, which builds
+      # the conformance binary FROM SCRATCH — `.github/workflows/
+      # ci.yml`'s own "Build the Rust conformance binary" step) would
+      # have failed the moment that invariant landed. Closed here in
+      # full, not just for `BlockPredicate`/`Find` (the one node that
+      # actually triggered it), since every sibling gap is the same
+      # bug and would only resurface the next time real corpus text
+      # happened to reach one of them.
+      when r::MatchesRegex
+        "Expr::MatchesRegex { receiver: Box::new(#{emit_resolver(node.receiver)}), pattern: #{node.pattern.inspect}.to_string(), flags: #{node.flags.inspect}.to_string() }"
+      when r::Presence
+        "Expr::Presence { receiver: Box::new(#{emit_resolver(node.receiver)}), negated: #{node.negated} }"
+      when r::Split
+        "Expr::Split { receiver: Box::new(#{emit_resolver(node.receiver)}), separator: #{node.separator.inspect}.to_string() }"
+      when r::First then "Expr::First(Box::new(#{emit_resolver(node.receiver)}))"
+      when r::Last  then "Expr::Last(Box::new(#{emit_resolver(node.receiver)}))"
+      when r::StartsWith
+        "Expr::StartsWith { receiver: Box::new(#{emit_resolver(node.receiver)}), substring: #{node.substring.inspect}.to_string() }"
+      when r::EndsWith
+        "Expr::EndsWith { receiver: Box::new(#{emit_resolver(node.receiver)}), substring: #{node.substring.inspect}.to_string() }"
+      when r::BlockPredicate
+        "Expr::BlockPredicate { mode: #{node.mode.to_s.inspect}.to_string(), receiver: Box::new(#{emit_resolver(node.receiver)}), " \
+          "param: #{node.param.to_s.inspect}.to_string(), predicate: Box::new(#{emit_bool(node.predicate)}) }"
+      when r::Find
+        "Expr::Find { receiver: Box::new(#{emit_resolver(node.receiver)}), param: #{node.param.to_s.inspect}.to_string(), " \
+          "predicate: Box::new(#{emit_bool(node.predicate)}), path: vec![#{node.path.map { |seg| "#{seg.inspect}.to_string()" }.join(', ')}] }"
       else
         raise "unhandled resolver node #{node.class} — the real grammar has no such node; this generator is stale"
       end

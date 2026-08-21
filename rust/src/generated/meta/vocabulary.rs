@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for VocabularyName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -318,6 +323,7 @@ pub const MUTATION_OP: &[MutationOp] = &[
     MutationOp { name: "multiply", sign: "" },
     MutationOp { name: "clamp", sign: "" },
     MutationOp { name: "remove", sign: "" },
+    MutationOp { name: "delegate", sign: "" },
 ];
 
 impl MutationOp {
@@ -444,6 +450,7 @@ pub enum AggregateDispatchOrder {
     AssignCreationAttributes,
     ApplyMutations,
     AdvanceLifecycle,
+    DelegateToEntity,
     EnforceEnsures,
     EnforceInvariants,
     Save,
@@ -464,6 +471,7 @@ impl AggregateDispatchOrder {
             AggregateDispatchOrder::AssignCreationAttributes => "assign_creation_attributes",
             AggregateDispatchOrder::ApplyMutations => "apply_mutations",
             AggregateDispatchOrder::AdvanceLifecycle => "advance_lifecycle",
+            AggregateDispatchOrder::DelegateToEntity => "delegate_to_entity",
             AggregateDispatchOrder::EnforceEnsures => "enforce_ensures",
             AggregateDispatchOrder::EnforceInvariants => "enforce_invariants",
             AggregateDispatchOrder::Save => "save",
@@ -487,13 +495,14 @@ impl AggregateDispatchOrder {
             "assign_creation_attributes" => Ok(AggregateDispatchOrder::AssignCreationAttributes),
             "apply_mutations" => Ok(AggregateDispatchOrder::ApplyMutations),
             "advance_lifecycle" => Ok(AggregateDispatchOrder::AdvanceLifecycle),
+            "delegate_to_entity" => Ok(AggregateDispatchOrder::DelegateToEntity),
             "enforce_ensures" => Ok(AggregateDispatchOrder::EnforceEnsures),
             "enforce_invariants" => Ok(AggregateDispatchOrder::EnforceInvariants),
             "save" => Ok(AggregateDispatchOrder::Save),
             "emit" => Ok(AggregateDispatchOrder::Emit),
             other => Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationClosedSetMember.render(&[
                 ("type", "AggregateDispatchOrder"),
-                ("admitted", "\"refuse_unknown_arguments\", \"refuse_absent_arguments\", \"normalize_args\", \"refuse_role_mismatch\", \"resolve_references\", \"hydrate\", \"enforce_givens\", \"admissible_transition\", \"assign_creation_attributes\", \"apply_mutations\", \"advance_lifecycle\", \"enforce_ensures\", \"enforce_invariants\", \"save\", \"emit\""),
+                ("admitted", "\"refuse_unknown_arguments\", \"refuse_absent_arguments\", \"normalize_args\", \"refuse_role_mismatch\", \"resolve_references\", \"hydrate\", \"enforce_givens\", \"admissible_transition\", \"assign_creation_attributes\", \"apply_mutations\", \"advance_lifecycle\", \"delegate_to_entity\", \"enforce_ensures\", \"enforce_invariants\", \"save\", \"emit\""),
                 ("offered", &format!("{:?}", other)),
             ]))),
         }

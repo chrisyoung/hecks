@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for PizzaName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -79,6 +84,11 @@ impl crate::kernel::Fielded for Price {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.cents))
+    }
 }
 
 
@@ -139,6 +149,11 @@ impl crate::kernel::Fielded for CustomerName {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -202,6 +217,11 @@ impl crate::kernel::Fielded for ToppingName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -263,6 +283,11 @@ impl crate::kernel::Fielded for ToppingAmount {
             "value" => Some(Field::Value(Value::Int(self.value))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
     }
 }
 
@@ -326,6 +351,11 @@ impl crate::kernel::Fielded for Topping {
             "amount" => Some(Field::Value(Value::Int(self.amount))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -407,6 +437,11 @@ impl crate::kernel::Fielded for Pizza {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -457,7 +492,7 @@ impl crate::kernel::Fielded for Order {
         match name {
             "name" => self.name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "pizza" => self.pizza.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "toppings" => Some(Field::Value(Value::List(self.toppings.len()))),
+            "toppings" => Some(Field::NestedList(&self.toppings)),
             "customer_name" => self.customer_name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
             _ => None,
@@ -519,6 +554,11 @@ impl crate::kernel::Fielded for CreatePizzaArgs {
             "pizza" => Some(Field::Nested(&self.pizza)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -605,6 +645,11 @@ impl crate::kernel::Fielded for AddToppingArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -677,25 +722,30 @@ impl crate::kernel::Fielded for PurchaseArgs {
         use crate::kernel::Field;
         
         match name {
-            "customer_name" => Some(Field::Nested(&self.customer_name)),
             "amount" => Some(Field::Nested(&self.amount)),
+            "customer_name" => Some(Field::Nested(&self.customer_name)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
 
 #[derive(Debug, Clone)]
 pub struct PurchaseArgs {
-    pub customer_name: CustomerName,
     pub amount: Price,
+    pub customer_name: CustomerName,
 }
 
 pub fn dispatch_purchase(
     repo: &mut impl crate::kernel::Repository<Order>, id: &str, args: PurchaseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Order> {
-        args.customer_name.check_invariants()?;
         args.amount.check_invariants()?;
+        args.customer_name.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
@@ -730,24 +780,24 @@ pub fn dispatch_purchase(
 impl PurchaseArgs {
     pub fn to_json(&self) -> crate::kernel::Json {
         crate::kernel::Json::Object(vec![
-        ("customer_name".to_string(), self.customer_name.to_json()),
         ("amount".to_string(), self.amount.to_json()),
+        ("customer_name".to_string(), self.customer_name.to_json()),
         ])
     }
 }
 
 impl PurchaseArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["customer_name", "amount", "id", "order", "name"]);
+let unknown = v.unknown_keys(&["amount", "customer_name", "id", "order", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Purchase does not declare {} — it takes customer_name, amount",
+        "Purchase does not declare {} — it takes amount, customer_name",
         unknown.join(", ")
     )));
 }
         Ok(Self {
-        customer_name: CustomerName::from_json(&v.require("customer_name", "PurchaseArgs")?.coerce_single_field("value"))?,
         amount: Price::from_json(&v.require("amount", "PurchaseArgs")?.coerce_single_field("cents"))?,
+        customer_name: CustomerName::from_json(&v.require("customer_name", "PurchaseArgs")?.coerce_single_field("value"))?,
         })
     }
 }

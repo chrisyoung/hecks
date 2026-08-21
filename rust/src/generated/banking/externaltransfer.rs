@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for EndToEndReference {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -64,6 +69,11 @@ impl crate::kernel::Fielded for MovementDirection {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -110,6 +120,11 @@ impl crate::kernel::Fielded for ExternalAmount {
             "cents" => Some(Field::Value(Value::Int(self.cents))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.cents))
     }
 }
 
@@ -171,6 +186,11 @@ impl crate::kernel::Fielded for BeneficiaryName {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -305,6 +325,11 @@ impl crate::kernel::Fielded for RequestArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -405,6 +430,11 @@ impl crate::kernel::Fielded for SendTransferArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -477,6 +507,11 @@ impl crate::kernel::Fielded for RecallArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -548,6 +583,11 @@ impl crate::kernel::Fielded for ReturnArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

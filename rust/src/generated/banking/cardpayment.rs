@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for AuthorisationCode {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -63,6 +68,11 @@ impl crate::kernel::Fielded for PaymentAmount {
             "cents" => Some(Field::Value(Value::Int(self.cents))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.cents))
     }
 }
 
@@ -125,6 +135,11 @@ impl crate::kernel::Fielded for MerchantName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -186,6 +201,11 @@ impl crate::kernel::Fielded for Tag {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -255,7 +275,7 @@ impl crate::kernel::Fielded for CardPayment {
             "authorisation" => self.authorisation.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "amount" => self.amount.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "merchant" => self.merchant.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "tags" => self.tags.as_ref().map(|v| Field::Value(Value::List(v.len()))).or(Some(Field::Value(Value::Nil))),
+            "tags" => self.tags.as_ref().map(|v| Field::NestedList(v)).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
             _ => None,
         }
@@ -318,11 +338,16 @@ impl crate::kernel::Fielded for AuthorizeArgs {
         match name {
             "account" => Some(Field::Value(Value::Str(self.account.clone()))),
             "authorisation" => Some(Field::Nested(&self.authorisation)),
-            "tags" => self.tags.as_ref().map(|v| Field::Value(Value::List(v.len()))).or(Some(Field::Value(Value::Nil))),
+            "tags" => self.tags.as_ref().map(|v| Field::NestedList(v)).or(Some(Field::Value(Value::Nil))),
             "amount" => Some(Field::Nested(&self.amount)),
             "merchant" => Some(Field::Nested(&self.merchant)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -424,6 +449,11 @@ impl crate::kernel::Fielded for CaptureArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -495,6 +525,11 @@ impl crate::kernel::Fielded for VoidArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -568,6 +603,11 @@ impl crate::kernel::Fielded for RefundArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -640,6 +680,11 @@ impl crate::kernel::Fielded for ReverseArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -711,6 +756,11 @@ impl crate::kernel::Fielded for DisputeArgs {
             "disputed_by" => Some(Field::Value(Value::Str(self.disputed_by.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.disputed_by.clone()))
     }
 }
 
@@ -786,6 +836,11 @@ impl crate::kernel::Fielded for ChargebackArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -857,6 +912,11 @@ impl crate::kernel::Fielded for RejectDisputeArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

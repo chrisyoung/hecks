@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for CustomerNumber {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -78,6 +83,11 @@ impl crate::kernel::Fielded for CustomerStanding {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -142,6 +152,11 @@ impl crate::kernel::Fielded for PersonName {
             "family" => Some(Field::Value(Value::Str(self.family.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -222,6 +237,11 @@ impl crate::kernel::Fielded for EmailAddress {
             "address" => Some(Field::Value(Value::Str(self.address.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.address.clone()))
     }
 }
 
@@ -335,6 +355,11 @@ impl crate::kernel::Fielded for RegisterArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -425,6 +450,11 @@ impl crate::kernel::Fielded for SuspendArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -497,6 +527,11 @@ impl crate::kernel::Fielded for ReinstateArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -567,6 +602,11 @@ impl crate::kernel::Fielded for CloseArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

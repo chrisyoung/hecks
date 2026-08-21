@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for TransferReference {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -79,6 +84,11 @@ impl crate::kernel::Fielded for TransferMoney {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.cents))
+    }
 }
 
 
@@ -139,6 +149,11 @@ impl crate::kernel::Fielded for Narrative {
             "text" => Some(Field::Value(Value::Str(self.text.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.text.clone()))
     }
 }
 
@@ -273,6 +288,11 @@ impl crate::kernel::Fielded for RequestArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -375,6 +395,11 @@ impl crate::kernel::Fielded for DebitedArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -446,6 +471,11 @@ impl crate::kernel::Fielded for SettleArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -519,6 +549,11 @@ impl crate::kernel::Fielded for CreditedArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -591,6 +626,11 @@ impl crate::kernel::Fielded for ReverseArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -662,6 +702,11 @@ impl crate::kernel::Fielded for RejectArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

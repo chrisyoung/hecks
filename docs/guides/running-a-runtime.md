@@ -505,10 +505,10 @@ and held equal to it by `spec/operator_conformance_spec.rb`:
 | `.match?` | regex | 2 | `receiver.match?(/pattern/flags)`; `String`/`Integer`/`Float`/`nil` coerce, `Boolean` refuses — same set `Resolver.matches_regex?` itself accepts |
 | `.present?`, `.blank?` | presence | 1 | Rails-standard semantics: `nil`/`false` are blank, a `String`/`Array` is blank when EMPTY, a number or `true` never is |
 | `.split` | string | 2 | `receiver.split("separator")` — a real `Array` result (`Value::Elements`, both languages), see the Rust note below |
-| `.first`, `.last` | accessor | 1 | real in both languages over a `.split`-produced `Array`; `nil` on empty, matching Ruby |
+| `.first`, `.last` | accessor | 1 | real in both languages, over a `.split`-produced `Array` AND a STORED `list_of` attribute; `nil` on empty, matching Ruby |
 | `.start_with?`, `.end_with?` | string | 2 | `String` only |
-| `.all?`, `.any?`, `.none?` | block_predicate | 2 | `receiver.all? { \|x\| predicate }`; real in both languages over a `.split`-produced `Array` |
-| `.find` | block_predicate | 2 | `receiver.find { \|x\| predicate }` real in both languages; the trailing `.path` projection form is not (Rust note below) |
+| `.all?`, `.any?`, `.none?` | block_predicate | 2 | `receiver.all? { \|x\| predicate }`; real in both languages, over EITHER real source |
+| `.find` | block_predicate | 2 | `receiver.find { \|x\| predicate }` real in both languages, over either source; the trailing `.path` projection is real over a STORED list, still a real refusal over `.split`'s own output (Rust note below) |
 
 Admitted 2026-08-20 (PRD 09, then two follow-up "gaps" passes) — each
 was already real in `Bluebook::Expression::Resolver` beforehand, added
@@ -521,35 +521,51 @@ ledger, so none of them had Rust representation and
 `suffix_match`/`call_pattern_match`) describes an operator that opens a
 `{ |x| PREDICATE }` block.
 
-**The Rust gap is now closed for `.split`'s own output — not for a
-STORED list attribute, which is a different, larger thing.**
+**The Rust gap is now closed for BOTH real element sources.** PRD 09's
+own pass closed it for `.split`'s own output:
 `rust/src/kernel/expr/logic.rs`'s `Value` grew a second list-shaped
-variant, `Elements(Vec<Value>)`, deliberately separate from `List`
-(the count-only shape every one of the ~75 real generated `field()`
-implementations already constructs for a stored `:list`-typed
-attribute, e.g. `account.ledger` — untouched by this change, and still
-count-only). `.split` produces real `Elements`; `.first`/`.last`/
-`.all?`/`.any?`/`.none?`/`.find` consume them for real. `.find`'s own
-trailing dotted `.path` still refuses explicitly — `Elements` only ever
-holds plain scalars, which have no fields a path could walk. Reading a
-stored list attribute's own elements by expression (`account.ledger.first`)
-is still not possible in either language — that's the materially
-larger change (the code generator would need a general way to turn an
-arbitrary element type, including nested value objects/entities with no
-general scalar reading, into a `Value`) this pass did not make.
+variant, `Elements(Vec<Value>)`, deliberately separate from `List` (the
+count-only shape a stored `:list`-typed attribute, e.g. `account.ledger`,
+still surfaces as for `.size`/`.empty?`/`.present?`/`.blank?`/
+comparisons — those never needed real elements, and still don't). A
+later "fix the gaps, continued" pass closed it for the STORED list
+itself: `Field` (the same file) grew `NestedList(&dyn ListFielded)`,
+handed back by a generated `field()` instead of `Field::Value(Value::
+List(len))` when the attribute is `list_of(X)` — real elements, walked
+through `X`'s own `Fielded` impl, not read off `Value` at all.
+`.first`/`.last`/`.all?`/`.any?`/`.none?`/`.find` all consume both
+shapes now, through `expr::interpret_as_field` (the one place besides
+`lookup` itself that resolves a receiver, and the only one that
+preserves `Field::NestedList` rather than collapsing it to a count
+first). A bare `.first`/`.last` — grammar-terminal, no trailing path —
+answers the real element when it's a single-field value object
+(`Fielded::as_scalar`, generated for exactly that shape) and refuses,
+precisely, when it's genuinely multi-field with nothing a bare
+accessor could single out. `.find`'s own trailing dotted `.path` is
+real now too, over a STORED list — walked through the found element's
+`Fielded` impl the same way an ordinary dotted lookup is — the exact
+"find-then-project" shape (`legs.find { |l| ... }.next_load_location`)
+that motivated adding a `path` field to `Find` in the first place. It
+stays a refusal over a `.split`-produced match: `Elements` only ever
+holds plain scalars, which have no fields any path could walk.
 
-**Verified differently from everything else in this section.** No
-domain in this repo's actual corpus (banking, pizzas, embryonaut, meta,
-...) has real `.split`/`.first`/`.last`/`.all?`/`.find` usage —
-`spec/rust_conformance_spec.rb`'s real-domain harness, which checked
-every other operator here, has nothing to replay for these. Verified
-instead by hand-written Rust unit tests in
+**Verified two different ways.** `.split`-produced elements: no domain
+in this repo's actual corpus has real usage, so `spec/
+rust_conformance_spec.rb`'s real-domain harness has nothing to replay
+— verified instead by hand-written Rust unit tests in
 `expression_operators/{string,accessor,block_predicate}.rs` checking
 Ruby's own well-documented semantics directly (including `String#split`'s
 three splitting rules and its trailing-empty-string normalization, and
 the `[].first`/`[].any?`-shaped vacuous cases on an empty sequence) — a
 real but weaker form of verification than a running domain, recorded as
-such rather than overclaimed.
+such rather than overclaimed. STORED-list elements have a real corpus
+fixture: the self-hosted "Bluebook" meta-domain's own `Attach`/
+`Normalise` commands (`lib/hecksagain/language/bluebook/bluebook.bluebook`)
+carry real `ensures` checks over `old.attaches_to`/`old.normalisations`
+— dispatched for real every time ANY domain loads (`MetaValidator`
+replays every built IR through this exact meta-domain), checked
+byte-for-byte against Ruby by `spec/rust_conformance_spec.rb` the same
+way every other operator in this table is.
 
 Every one of the six comparison operators reduces to two primitives —
 `less_than` and `equal` — combined with a boolean algebra rather than

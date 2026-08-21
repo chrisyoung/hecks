@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for EntityName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -78,6 +83,11 @@ impl crate::kernel::Fielded for EntityText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -127,6 +137,11 @@ impl crate::kernel::Fielded for Rule {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -175,6 +190,11 @@ impl crate::kernel::Fielded for IdentityPath {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -234,6 +254,11 @@ impl crate::kernel::Fielded for PieceField {
             "admits" => self.admits.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -298,6 +323,11 @@ impl crate::kernel::Fielded for PieceTransition {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -348,6 +378,11 @@ impl crate::kernel::Fielded for Position {
             "value" => Some(Field::Value(Value::Int(self.value))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
     }
 }
 
@@ -406,13 +441,13 @@ impl crate::kernel::Fielded for Entity {
             "owner" => self.owner.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "name" => self.name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "description" => self.description.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "identified_by" => Some(Field::Value(Value::List(self.identified_by.len()))),
-            "attributes" => Some(Field::Value(Value::List(self.attributes.len()))),
-            "preconditions" => Some(Field::Value(Value::List(self.preconditions.len()))),
-            "invariants" => Some(Field::Value(Value::List(self.invariants.len()))),
+            "identified_by" => Some(Field::NestedList(&self.identified_by)),
+            "attributes" => Some(Field::NestedList(&self.attributes)),
+            "preconditions" => Some(Field::NestedList(&self.preconditions)),
+            "invariants" => Some(Field::NestedList(&self.invariants)),
             "state_field" => self.state_field.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "state_start" => self.state_start.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "transitions" => Some(Field::Value(Value::List(self.transitions.len()))),
+            "transitions" => Some(Field::NestedList(&self.transitions)),
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
@@ -491,6 +526,11 @@ impl crate::kernel::Fielded for DeclareArgs {
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -594,6 +634,11 @@ impl crate::kernel::Fielded for IdentifyArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -664,6 +709,11 @@ impl crate::kernel::Fielded for SealArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -740,6 +790,11 @@ impl crate::kernel::Fielded for AttributeArgs {
             "admits" => self.admits.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -837,6 +892,11 @@ impl crate::kernel::Fielded for PreconditionArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -913,6 +973,11 @@ impl crate::kernel::Fielded for InvariantArgs {
             "canonical" => Some(Field::Nested(&self.canonical)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -991,6 +1056,11 @@ impl crate::kernel::Fielded for LifecycleArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -1068,6 +1138,11 @@ impl crate::kernel::Fielded for TransitionArgs {
             "to_state" => Some(Field::Nested(&self.to_state)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 

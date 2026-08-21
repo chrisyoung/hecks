@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for ReadModelName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -78,6 +83,11 @@ impl crate::kernel::Fielded for ReadModelText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -124,6 +134,11 @@ impl crate::kernel::Fielded for ProjectionPurpose {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -190,6 +205,11 @@ impl crate::kernel::Fielded for Head {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -247,6 +267,11 @@ impl crate::kernel::Fielded for ProjectionOption {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -299,6 +324,11 @@ impl crate::kernel::Fielded for GroupByField {
             "field" => Some(Field::Value(Value::Str(self.field.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.field.clone()))
     }
 }
 
@@ -361,6 +391,11 @@ impl crate::kernel::Fielded for Position {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -420,9 +455,9 @@ impl crate::kernel::Fielded for ReadModel {
             "query_name" => self.query_name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "reference_name" => self.reference_name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "reference_target" => self.reference_target.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "aggregate_heads" => Some(Field::Value(Value::List(self.aggregate_heads.len()))),
-            "options" => Some(Field::Value(Value::List(self.options.len()))),
-            "group_by" => Some(Field::Value(Value::List(self.group_by.len()))),
+            "aggregate_heads" => Some(Field::NestedList(&self.aggregate_heads)),
+            "options" => Some(Field::NestedList(&self.options)),
+            "group_by" => Some(Field::NestedList(&self.group_by)),
             "count" => self.count.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "median_field" => self.median_field.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
@@ -505,6 +540,11 @@ impl crate::kernel::Fielded for DeclareArgs {
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -618,6 +658,11 @@ impl crate::kernel::Fielded for GatherArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -697,6 +742,11 @@ impl crate::kernel::Fielded for GroupByArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -768,6 +818,11 @@ impl crate::kernel::Fielded for CountArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -838,6 +893,11 @@ impl crate::kernel::Fielded for MedianArgs {
             "median_field" => Some(Field::Nested(&self.median_field)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -912,6 +972,11 @@ impl crate::kernel::Fielded for OptionArgs {
             "at" => self.at.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 

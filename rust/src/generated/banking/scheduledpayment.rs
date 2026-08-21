@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for InstructionReference {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -63,6 +68,11 @@ impl crate::kernel::Fielded for ScheduledAmount {
             "cents" => Some(Field::Value(Value::Int(self.cents))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.cents))
     }
 }
 
@@ -124,6 +134,11 @@ impl crate::kernel::Fielded for PaymentRecipient {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -187,6 +202,11 @@ impl crate::kernel::Fielded for PaymentDueDate {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -249,6 +269,11 @@ impl crate::kernel::Fielded for RetryCount {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -309,6 +334,11 @@ impl crate::kernel::Fielded for RetryLimit {
             "value" => Some(Field::Value(Value::Int(self.value))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
     }
 }
 
@@ -450,6 +480,11 @@ impl crate::kernel::Fielded for ScheduleArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -551,6 +586,11 @@ impl crate::kernel::Fielded for ExecuteArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -622,6 +662,11 @@ impl crate::kernel::Fielded for CancelArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -695,6 +740,11 @@ impl crate::kernel::Fielded for FailArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -766,6 +816,11 @@ impl crate::kernel::Fielded for RetryArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -840,6 +895,11 @@ impl crate::kernel::Fielded for AbandonArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

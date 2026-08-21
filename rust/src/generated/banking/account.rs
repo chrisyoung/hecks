@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for AccountNumber {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -79,6 +84,11 @@ impl crate::kernel::Fielded for DailyLimit {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.cents))
+    }
 }
 
 
@@ -139,6 +149,11 @@ impl crate::kernel::Fielded for LedgerSequence {
             "value" => Some(Field::Value(Value::Int(self.value))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
     }
 }
 
@@ -233,6 +248,11 @@ impl crate::kernel::Fielded for Money {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -297,6 +317,11 @@ impl crate::kernel::Fielded for PositiveMoney {
             "currency" => Some(Field::Value(Value::Str(self.currency.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -409,6 +434,11 @@ impl crate::kernel::Fielded for Narrative {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.text.clone()))
+    }
 }
 
 
@@ -478,6 +508,11 @@ impl crate::kernel::Fielded for LedgerEntry {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 impl LedgerEntry {
@@ -544,6 +579,11 @@ impl crate::kernel::Fielded for LedgerEntryAmendArgs {
             "narrative" => Some(Field::Nested(&self.narrative)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -626,6 +666,11 @@ impl crate::kernel::Fielded for LedgerEntryReverseArgs {
             "narrative" => Some(Field::Nested(&self.narrative)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -715,7 +760,7 @@ impl crate::kernel::Fielded for Account {
             "number" => self.number.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "balance" => self.balance.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "daily_limit" => self.daily_limit.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "ledger" => Some(Field::Value(Value::List(self.ledger.len()))),
+            "ledger" => Some(Field::NestedList(&self.ledger)),
             "fees_cents" => self.fees_cents.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "interest_cents" => self.interest_cents.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
@@ -787,6 +832,11 @@ impl crate::kernel::Fielded for OpenArgs {
             "daily_limit" => Some(Field::Nested(&self.daily_limit)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -885,6 +935,11 @@ impl crate::kernel::Fielded for CreditArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -961,6 +1016,11 @@ impl crate::kernel::Fielded for DebitArgs {
             "narrative" => Some(Field::Nested(&self.narrative)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -1041,6 +1101,11 @@ impl crate::kernel::Fielded for FreezeAccountArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -1111,6 +1176,11 @@ impl crate::kernel::Fielded for UnfreezeArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -1180,6 +1250,11 @@ impl crate::kernel::Fielded for CloseAccountArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -1252,6 +1327,11 @@ impl crate::kernel::Fielded for ApplyFeeArgs {
             "narrative" => Some(Field::Nested(&self.narrative)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -1330,6 +1410,11 @@ impl crate::kernel::Fielded for CorrectFeeArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -1403,6 +1488,11 @@ impl crate::kernel::Fielded for AccrueInterestArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -1474,6 +1564,11 @@ impl crate::kernel::Fielded for CorrectInterestArgs {
             "amount" => Some(Field::Nested(&self.amount)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

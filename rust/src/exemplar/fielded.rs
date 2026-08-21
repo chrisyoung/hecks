@@ -37,8 +37,23 @@ fn tmpl_value_expr_placeholder(v: &i64) -> crate::kernel::Value {
     crate::kernel::Value::Int(*v)
 }
 
+// "Fix the gaps, continued" — `Field::NestedList` needs its element
+// type to implement `Fielded` (`i64`, everywhere else's placeholder
+// scalar, doesn't); a real generated `list_of(X)` element always does
+// (`X` is always a generated value object/entity struct — `expr/
+// logic.rs`'s own `ListFielded` header), so this stands in for one,
+// existing ONLY to give `TmplListHost`/`TmplListOptionalHost` a real
+// type to hold — never itself a shape either template arm below reads
+// from.
+struct TmplElement;
+impl crate::kernel::Fielded for TmplElement {
+    fn field(&self, _name: &str) -> Option<crate::kernel::Field<'_>> {
+        None
+    }
+}
+
 struct TmplListOptionalHost {
-    tmpl_ident: Option<Vec<i64>>,
+    tmpl_ident: Option<Vec<TmplElement>>,
 }
 impl TmplListOptionalHost {
     fn arm(&self) -> Option<crate::kernel::Field<'_>> {
@@ -46,7 +61,7 @@ impl TmplListOptionalHost {
         use crate::kernel::Value;
         match "x" {
             // TMPL:fielded_arm_list_optional BEGIN
-            "tmpl_field" => self.tmpl_ident.as_ref().map(|v| Field::Value(Value::List(v.len()))).or(Some(Field::Value(Value::Nil))),
+            "tmpl_field" => self.tmpl_ident.as_ref().map(|v| Field::NestedList(v)).or(Some(Field::Value(Value::Nil))),
             // TMPL:fielded_arm_list_optional END
             _ => None,
         }
@@ -54,15 +69,14 @@ impl TmplListOptionalHost {
 }
 
 struct TmplListHost {
-    tmpl_ident: Vec<i64>,
+    tmpl_ident: Vec<TmplElement>,
 }
 impl TmplListHost {
     fn arm(&self) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
-        use crate::kernel::Value;
         match "x" {
             // TMPL:fielded_arm_list BEGIN
-            "tmpl_field" => Some(Field::Value(Value::List(self.tmpl_ident.len()))),
+            "tmpl_field" => Some(Field::NestedList(&self.tmpl_ident)),
             // TMPL:fielded_arm_list END
             _ => None,
         }
@@ -177,6 +191,25 @@ fn tmpl_arms_block() -> Option<crate::kernel::Field<'static>> {
     None
 }
 
+// "Fix the gaps, continued" — the OPTIONAL `as_scalar` override,
+// present only on a value object/entity `rust/project/types.rb`'s
+// `sole_field_of` finds has exactly one scalar-typed attribute (`Price
+// { cents: Int }`, not `Binding { key: String, value: String }`) — the
+// same "does this collapse to a bare JSON scalar" test
+// `composite_from_json_expr` already applies at the JSON boundary,
+// reused here at the expression-evaluation boundary. A bare function
+// call, like `tmpl_arms_block` above — the SAME marker shape, not a
+// second mechanism — substituted with either `None` (the common case:
+// no override, `Fielded`'s own default stands) or the real `Some(...)`
+// body. Absent from `fielded_record` (aggregate records are roots,
+// never a list element another `Fielded` walks into, so `as_scalar`
+// there would be dead code no caller could ever reach) — present only
+// on `fielded_flat`, below, which `emit_fielded_flat` already shares
+// between value objects, entities, and command-arg structs alike.
+fn tmpl_as_scalar_block() -> Option<crate::kernel::Value> {
+    None
+}
+
 struct TmplFlatType;
 struct TmplRecordType;
 
@@ -209,6 +242,11 @@ impl crate::kernel::Fielded for TmplFlatType {
 "tmpl_arms_placeholder" => tmpl_arms_block(),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+tmpl_as_scalar_block()
     }
 }
 // TMPL:fielded_flat END

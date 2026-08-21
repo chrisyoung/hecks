@@ -24,6 +24,18 @@ pub fn step<'a>(current: Field<'a>, seg: &str, head: &str, path: &str) -> Result
     match current {
         Field::Nested(obj) => obj.field(seg).ok_or_else(|| eval_error(format!("cannot resolve {seg:?} on {head:?}"))),
         Field::Value(v) => Err(eval_error(format!("{path} — cannot look up {seg:?} on scalar {v:?}"))),
+        // A LIST HAS NO NAMED FIELD OF ITS OWN TO WALK — "fix the gaps,
+        // continued." `.first`/`.last`/`.all?`/`.any?`/`.none?`/`.find`
+        // are the real way into a list's elements, and every one of
+        // them is grammar-terminal or carries its own explicit `path`
+        // (`Find`'s own struct) rather than composing through an
+        // ordinary dotted `Lookup` segment the way this function walks
+        // — so an ordinary segment landing on a `NestedList` here is
+        // exactly as much a real refusal as one landing on a scalar,
+        // just above.
+        Field::NestedList(_) => {
+            Err(eval_error(format!("{path} — cannot look up {seg:?} on a list; use .first/.last/.all?/.any?/.none?/.find instead")))
+        }
     }
 }
 
@@ -42,5 +54,13 @@ pub fn finish(current: Field<'_>, path: &str) -> Result<Value, Refusal> {
     match current {
         Field::Value(v) => Ok(v),
         Field::Nested(obj) => obj.as_scalar().ok_or_else(|| eval_error(format!("{path} resolved to an object, not a scalar"))),
+        // Every ordinary caller (`.size`/`.empty?`/`.present?`/
+        // `.blank?`/comparisons — everything that reaches `Value`
+        // through `lookup`/`interpret` rather than
+        // `expr::interpret_as_field`) only ever needs the count, same
+        // as before this pass — real element access lives behind
+        // `interpret_as_field` instead, which returns the `Field`
+        // itself and never calls this function at all.
+        Field::NestedList(list) => Ok(Value::List(list.list_len())),
     }
 }

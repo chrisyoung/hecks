@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for IdentityId {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -124,6 +129,11 @@ impl crate::kernel::Fielded for RegisterArgs {
             "identity_id" => Some(Field::Nested(&self.identity_id)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

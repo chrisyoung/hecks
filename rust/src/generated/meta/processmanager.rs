@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for ProcessManagerName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -78,12 +83,31 @@ impl crate::kernel::Fielded for ProcessManagerText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
 impl ProcessManagerText {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::BlockPredicate { mode: "all".to_string(), receiver: Box::new(Expr::Split { receiver: Box::new(Expr::Lookup("value")), separator: ".".to_string() }), param: "segment".to_string(), predicate: Box::new(Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("segment")))))))) }, &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "ProcessManagerText"),
+            ("description", "every dotted segment names something"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
         Ok(())
     }
 }
@@ -124,6 +148,11 @@ impl crate::kernel::Fielded for SagaState {
             "name" => Some(Field::Value(Value::Str(self.name.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.name.clone()))
     }
 }
 
@@ -172,6 +201,11 @@ impl crate::kernel::Fielded for HandlerText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -218,6 +252,11 @@ impl crate::kernel::Fielded for DispatchText {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -268,6 +307,11 @@ impl crate::kernel::Fielded for Binding {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -317,6 +361,11 @@ impl crate::kernel::Fielded for Position {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -361,14 +410,19 @@ pub struct Handler {
 impl crate::kernel::Fielded for Handler {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
-        use crate::kernel::Value;
+        
         match name {
             "event_type" => Some(Field::Nested(&self.event_type)),
             "from_state" => Some(Field::Nested(&self.from_state)),
             "to_state" => Some(Field::Nested(&self.to_state)),
-            "dispatches" => Some(Field::Value(Value::List(self.dispatches.len()))),
+            "dispatches" => Some(Field::NestedList(&self.dispatches)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -403,12 +457,17 @@ pub struct Dispatch {
 impl crate::kernel::Fielded for Dispatch {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
-        use crate::kernel::Value;
+        
         match name {
             "command_name" => Some(Field::Nested(&self.command_name)),
-            "with_spec" => Some(Field::Value(Value::List(self.with_spec.len()))),
+            "with_spec" => Some(Field::NestedList(&self.with_spec)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -469,6 +528,11 @@ impl crate::kernel::Fielded for HandlerDispatchArgs {
             "command_name" => Some(Field::Nested(&self.command_name)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -555,8 +619,8 @@ impl crate::kernel::Fielded for ProcessManager {
             "correlates_by" => self.correlates_by.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "starts_on" => self.starts_on.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "ends_on" => self.ends_on.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "states" => Some(Field::Value(Value::List(self.states.len()))),
-            "handlers" => Some(Field::Value(Value::List(self.handlers.len()))),
+            "states" => Some(Field::NestedList(&self.states)),
+            "handlers" => Some(Field::NestedList(&self.handlers)),
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
@@ -628,6 +692,11 @@ impl crate::kernel::Fielded for DeclareArgs {
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -731,6 +800,11 @@ impl crate::kernel::Fielded for StateArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -803,6 +877,11 @@ impl crate::kernel::Fielded for HandlerArgs {
             "to_state" => Some(Field::Nested(&self.to_state)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

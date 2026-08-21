@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for CardSerial {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -79,6 +84,11 @@ impl crate::kernel::Fielded for CardNickname {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -125,6 +135,11 @@ impl crate::kernel::Fielded for DailyFee {
             "amount" => Some(Field::Value(Value::Float(self.amount))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Float(self.amount))
     }
 }
 
@@ -187,6 +202,11 @@ impl crate::kernel::Fielded for WithdrawalSequence {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -248,6 +268,11 @@ impl crate::kernel::Fielded for WithdrawalAmount {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.cents))
+    }
 }
 
 
@@ -308,6 +333,11 @@ impl crate::kernel::Fielded for Narrative {
             "text" => Some(Field::Value(Value::Str(self.text.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.text.clone()))
     }
 }
 
@@ -377,6 +407,11 @@ impl crate::kernel::Fielded for Withdrawal {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 impl Withdrawal {
@@ -440,6 +475,11 @@ impl crate::kernel::Fielded for WithdrawalDisputeArgs {
             "narrative" => Some(Field::Nested(&self.narrative)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -527,7 +567,7 @@ impl crate::kernel::Fielded for ATMCard {
             "serial" => self.serial.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "nickname" => self.nickname.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "daily_fee" => self.daily_fee.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "withdrawals" => Some(Field::Value(Value::List(self.withdrawals.len()))),
+            "withdrawals" => Some(Field::NestedList(&self.withdrawals)),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
             _ => None,
         }
@@ -591,6 +631,11 @@ impl crate::kernel::Fielded for IssueArgs {
             "daily_fee" => Some(Field::Nested(&self.daily_fee)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -682,6 +727,11 @@ impl crate::kernel::Fielded for RenameArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -754,6 +804,11 @@ impl crate::kernel::Fielded for WithdrawArgs {
             "narrative" => Some(Field::Nested(&self.narrative)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -831,6 +886,11 @@ impl crate::kernel::Fielded for ActivateArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -901,6 +961,11 @@ impl crate::kernel::Fielded for RetireArgs {
 
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

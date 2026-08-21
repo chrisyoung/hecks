@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for BranchCode {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -79,6 +84,11 @@ impl crate::kernel::Fielded for BoxNumber {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -140,6 +150,11 @@ impl crate::kernel::Fielded for VisitSequence {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -200,6 +215,11 @@ impl crate::kernel::Fielded for VisitDate {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -263,6 +283,11 @@ impl crate::kernel::Fielded for VisitNote {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.text.clone()))
+    }
 }
 
 
@@ -309,6 +334,11 @@ impl crate::kernel::Fielded for KeySerial {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -411,6 +441,11 @@ impl crate::kernel::Fielded for Visit {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 impl Visit {
@@ -478,6 +513,11 @@ impl crate::kernel::Fielded for VisitAnnotateArgs {
             "note" => Some(Field::Nested(&self.note)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -570,6 +610,11 @@ impl crate::kernel::Fielded for KeyIssuance {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 impl KeyIssuance {
@@ -629,6 +674,11 @@ impl crate::kernel::Fielded for KeyIssuanceReturnArgs {
             "serial" => Some(Field::Nested(&self.serial)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -714,8 +764,8 @@ impl crate::kernel::Fielded for SafeDepositBox {
             "customer" => self.customer.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             "branch_code" => self.branch_code.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "box_number" => self.box_number.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "visits" => Some(Field::Value(Value::List(self.visits.len()))),
-            "keys" => Some(Field::Value(Value::List(self.keys.len()))),
+            "visits" => Some(Field::NestedList(&self.visits)),
+            "keys" => Some(Field::NestedList(&self.keys)),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
             _ => None,
         }
@@ -782,6 +832,11 @@ impl crate::kernel::Fielded for RentArgs {
             "box_number" => Some(Field::Nested(&self.box_number)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -877,6 +932,11 @@ impl crate::kernel::Fielded for SurrenderArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -949,6 +1009,11 @@ impl crate::kernel::Fielded for LogVisitArgs {
             "note" => self.note.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -1029,6 +1094,11 @@ impl crate::kernel::Fielded for IssueKeyArgs {
             "serial" => Some(Field::Nested(&self.serial)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

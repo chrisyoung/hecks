@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for RuleText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -72,6 +77,11 @@ impl crate::kernel::Fielded for NormalisationRule {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -126,6 +136,11 @@ impl crate::kernel::Fielded for BluebookName {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -188,6 +203,11 @@ impl crate::kernel::Fielded for Vision {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -248,6 +268,11 @@ impl crate::kernel::Fielded for Classification {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -310,6 +335,11 @@ impl crate::kernel::Fielded for Version {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -371,6 +401,11 @@ impl crate::kernel::Fielded for FormerlyKnownAs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -431,6 +466,11 @@ impl crate::kernel::Fielded for AttachesToContext {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -499,8 +539,8 @@ impl crate::kernel::Fielded for Bluebook {
             "classification" => self.classification.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "version" => self.version.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "formerly_known_as" => self.formerly_known_as.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "normalisations" => Some(Field::Value(Value::List(self.normalisations.len()))),
-            "attaches_to" => Some(Field::Value(Value::List(self.attaches_to.len()))),
+            "normalisations" => Some(Field::NestedList(&self.normalisations)),
+            "attaches_to" => Some(Field::NestedList(&self.attaches_to)),
             _ => None,
         }
     }
@@ -567,6 +607,11 @@ impl crate::kernel::Fielded for DeclareArgs {
             "formerly_known_as" => self.formerly_known_as.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -666,6 +711,11 @@ impl crate::kernel::Fielded for AttachArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -698,6 +748,7 @@ pub fn dispatch_attach(
         },
         &[
             crate::kernel::EnsuresSpec { description: "the list grew by exactly one", expr: Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Size(Box::new(Expr::Lookup("attaches_to")))), right: Box::new(Expr::Add(Box::new(Expr::Size(Box::new(Expr::Lookup("old.attaches_to")))), Box::new(Expr::Int(1)))) } },
+            crate::kernel::EnsuresSpec { description: "this context isn't already attached", expr: Expr::BlockPredicate { mode: "none".to_string(), receiver: Box::new(Expr::Lookup("old.attaches_to")), param: "c".to_string(), predicate: Box::new(Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("c")), right: Box::new(Expr::Lookup("context")) }) } },
         ],
         &["ChapterAttached"],
         args.to_json(),
@@ -741,6 +792,11 @@ impl crate::kernel::Fielded for NormaliseArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -780,7 +836,7 @@ pub fn dispatch_normalise(
             Ok(())
         },
         &[
-
+            crate::kernel::EnsuresSpec { description: "this exact rule isn't already declared", expr: Expr::BlockPredicate { mode: "none".to_string(), receiver: Box::new(Expr::Lookup("old.normalisations")), param: "n".to_string(), predicate: Box::new(Expr::And(Box::new(Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("n.strategy")), right: Box::new(Expr::Lookup("strategy")) }), Box::new(Expr::And(Box::new(Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("n.source_token")), right: Box::new(Expr::Lookup("source_token")) }), Box::new(Expr::And(Box::new(Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("n.replacement")), right: Box::new(Expr::Lookup("replacement")) }), Box::new(Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("n.boundary")), right: Box::new(Expr::Lookup("boundary")) }))))))) } },
         ],
         &["NormalisationAttached"],
         args.to_json(),

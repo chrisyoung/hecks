@@ -7,33 +7,44 @@
 // of the original four strategies describes a `{ |x| ... }`-opening
 // operator.
 //
-// BOTH REAL NOW, over `Value::Elements` — the same PRD 09 gap-closing
-// pass that made `string::split`/`accessor::{first,last}` real.
+// BOTH REAL NOW, over BOTH real element sources — PRD 09's own
+// gap-closing pass (`.split`-produced `Value::Elements`), and the "fix
+// the gaps, continued" pass on top of it (a STORED list attribute's own
+// real elements, `Field::NestedList` — `expr/logic.rs`'s own header).
 // `interpret_with_element`'s own Ruby shape (`attrs.merge(node.param.to_sym
 // => element)`) is ported via `BoundElement` (`expr/logic.rs`) — one
 // name bound to the current element, checked first, falling through to
 // the surrounding `args` for everything else, for the span of one
-// predicate evaluation only.
+// predicate evaluation only. `BoundElement` binds a `Field`, not a bare
+// `Value` — a `.split`-produced element is always a plain scalar
+// (`Field::Value`), but a STORED element is a real, possibly
+// multi-field struct (`Field::Nested`), and a predicate like `.all? {
+// |n| n.strategy == strategy }` needs `n.strategy` to resolve through
+// the bound element's own `Fielded::field`, not a pre-collapsed scalar.
 //
-// A STORED list attribute (`Value::List`) STILL cannot bind real
-// elements — that gap is real and stays open, same as everywhere else
-// in this pass — and `.find`'s own trailing dotted `.path` projection
-// stays unimplemented too: `Value::Elements` only ever holds plain
-// scalars (`.split`'s own output), which have no fields a path could
-// walk, so a non-empty `path` refuses explicitly rather than silently
-// answering nothing meaningful.
+// `.find`'s own trailing dotted `.path` projection is real now too, for
+// the STORED-list source — `composite::step`/`finish` walk it through
+// the found element's own `Fielded` impl, the exact "find-then-project"
+// shape this struct's own header quotes as the motivating case (`legs.
+// find { |l| ... }.next_load_location`). It STAYS a refusal for a
+// `.split`-produced match: `Value::Elements` only ever holds plain
+// scalars, which have no fields any path could walk, so a non-empty
+// `path` there is a real refusal, not a router bug.
 //
-// NO REAL CORPUS FIXTURE EXERCISES ANY OF THIS TODAY — see `string.rs`'s
-// own header for the full explanation and what "verified" means here
-// instead (hand-written unit tests, not `rust_conformance_spec.rb`).
+// NO REAL CORPUS FIXTURE EXERCISES THE `.split`-PRODUCED PATH — see
+// `string.rs`'s own header for the full explanation. The STORED-list
+// path DOES have one now — `reaction.bluebook`'s own `Normalise`/
+// `Attach` `ensures` checks — see `accessor.rs`'s own header for the
+// same note.
 //
-// EVERY `Value` VARIANT IS NAMED BELOW, NONE LEFT TO A WILDCARD — see
-// `sized.rs`'s own header for why. `expr/logic.rs`'s `category_of`
-// guarantees each function below is only ever called with its own node
-// kind — see `logical.rs`'s own header for why the trailing router-bug
-// arms are not real refusal paths.
+// EVERY `Field`/`Value` VARIANT IS NAMED BELOW, NONE LEFT TO A
+// WILDCARD — see `sized.rs`'s own header for why. `expr/logic.rs`'s
+// `category_of` guarantees each function below is only ever called with
+// its own node kind — see `logical.rs`'s own header for why the
+// trailing router-bug arms are not real refusal paths.
 
-use crate::kernel::expr::{eval_error, interpret as eval, BoundElement, EvalContext, Expr, Value};
+use crate::kernel::attribute_shapes::composite;
+use crate::kernel::expr::{eval_error, interpret as eval, interpret_as_field, BoundElement, EvalContext, Expr, Field, Value};
 use crate::kernel::Refusal;
 
 pub fn block_predicate(expr: &Expr, ctx: &EvalContext) -> Result<Value, Refusal> {
@@ -41,18 +52,17 @@ pub fn block_predicate(expr: &Expr, ctx: &EvalContext) -> Result<Value, Refusal>
         return Err(Refusal::TypeMismatch(format!("block_predicate::block_predicate called with a non-block-predicate node {expr:?} — a router bug")));
     };
 
-    let elements = match eval(receiver, ctx)? {
-        Value::Elements(elements) => elements,
-        Value::List(_) => return Err(eval_error(format!("{mode}? cannot yet bind real elements from a STORED list attribute in the Rust kernel — Value::List carries only a length, not elements; this is a known, named gap, not a router bug"))),
-        v => return Err(eval_error(format!("{mode}? expects a list, got {v:?}"))),
+    let outcomes: Vec<bool> = match interpret_as_field(receiver, ctx)? {
+        Field::Value(Value::Elements(elements)) => elements
+            .into_iter()
+            .map(|element| evaluate_one(param, predicate, Field::Value(element), ctx))
+            .collect::<Result<_, _>>()?,
+        Field::NestedList(list) => (0..list.list_len())
+            .map(|i| evaluate_one(param, predicate, Field::Nested(list.list_get(i)), ctx))
+            .collect::<Result<_, _>>()?,
+        Field::Value(v) => return Err(eval_error(format!("{mode}? expects a list, got {v:?}"))),
+        Field::Nested(_) => return Err(eval_error(format!("{mode}? expects a list, got a single nested object"))),
     };
-
-    let mut outcomes = Vec::with_capacity(elements.len());
-    for element in elements {
-        let bound = BoundElement { name: param.as_str(), value: element, inner: ctx.args };
-        let bound_ctx = EvalContext { args: &bound, instance: ctx.instance };
-        outcomes.push(eval(predicate, &bound_ctx)?.truthy());
-    }
 
     // `BLOCK_PREDICATE_MODES` (resolver/block_predicates.rb) declares
     // exactly these three names, one per admitted symbol
@@ -76,27 +86,47 @@ pub fn find(expr: &Expr, ctx: &EvalContext) -> Result<Value, Refusal> {
         return Err(Refusal::TypeMismatch(format!("block_predicate::find called with a non-find node {expr:?} — a router bug")));
     };
 
-    let elements = match eval(receiver, ctx)? {
-        Value::Elements(elements) => elements,
-        Value::List(_) => return Err(eval_error("find cannot yet bind real elements from a STORED list attribute in the Rust kernel — Value::List carries only a length, not elements; this is a known, named gap, not a router bug".to_string())),
-        v => return Err(eval_error(format!("find expects a list, got {v:?}"))),
-    };
-
-    let mut found = None;
-    for element in elements {
-        let bound = BoundElement { name: param.as_str(), value: element.clone(), inner: ctx.args };
-        let bound_ctx = EvalContext { args: &bound, instance: ctx.instance };
-        if eval(predicate, &bound_ctx)?.truthy() {
-            found = Some(element);
-            break;
+    match interpret_as_field(receiver, ctx)? {
+        Field::Value(Value::Elements(elements)) => {
+            let mut found = None;
+            for element in elements {
+                if evaluate_one(param, predicate, Field::Value(element.clone()), ctx)? {
+                    found = Some(element);
+                    break;
+                }
+            }
+            match found {
+                None => Ok(Value::Nil),
+                Some(value) if path.is_empty() => Ok(value),
+                Some(_) => Err(eval_error("find's own trailing dotted path cannot project through a .split-produced element — Value::Elements only ever holds plain scalars, which have no fields to walk; this is a real refusal, not a router bug".to_string())),
+            }
         }
+        Field::NestedList(list) => {
+            for i in 0..list.list_len() {
+                let element = list.list_get(i);
+                if evaluate_one(param, predicate, Field::Nested(element), ctx)? {
+                    let mut current = Field::Nested(element);
+                    for seg in path {
+                        current = composite::step(current, seg, "find", "find")?;
+                    }
+                    return composite::finish(current, "find");
+                }
+            }
+            Ok(Value::Nil)
+        }
+        Field::Value(v) => Err(eval_error(format!("find expects a list, got {v:?}"))),
+        Field::Nested(_) => Err(eval_error("find expects a list, got a single nested object".to_string())),
     }
+}
 
-    match found {
-        None => Ok(Value::Nil),
-        Some(value) if path.is_empty() => Ok(value),
-        Some(_) => Err(eval_error("find's own trailing dotted path cannot yet project through a real element in the Rust kernel — Value::Elements only ever holds plain scalars (from .split), which have no fields to walk; this is a known, named gap, not a router bug".to_string())),
-    }
+/// Shared by `block_predicate`/`find` — binds `param` to `bound` (the
+/// current element, either shape) for the span of evaluating `predicate`
+/// against it once, exactly `Resolver#interpret_with_element`'s own
+/// contract (this file's own header).
+fn evaluate_one(param: &str, predicate: &Expr, bound: Field<'_>, ctx: &EvalContext) -> Result<bool, Refusal> {
+    let bound_element = BoundElement { name: param, value: bound, inner: ctx.args };
+    let bound_ctx = EvalContext { args: &bound_element, instance: ctx.instance };
+    Ok(eval(predicate, &bound_ctx)?.truthy())
 }
 
 #[cfg(test)]
@@ -245,5 +275,114 @@ mod tests {
         };
 
         assert!(find(&node, &ctx).is_err());
+    }
+
+    // "Fix the gaps, continued" — the STORED-list source, a real
+    // multi-field element (`n.strategy`/`n.source_token`, mirroring
+    // `reaction.bluebook`'s own `Normalise` rule fields — the exact
+    // motivating shape the "use the new predicates in bluebook.bluebook"
+    // pass reaches for real). Distinct fixture from `FixedList` above:
+    // this one answers `Field::NestedList`, not `Field::Value(Elements)`,
+    // and each element is itself dotted-path walkable — the case
+    // `BoundElement`'s own `Field`-not-`Value` binding exists for.
+    struct Rule {
+        strategy: &'static str,
+        source_token: &'static str,
+    }
+
+    impl Fielded for Rule {
+        fn field(&self, name: &str) -> Option<Field<'_>> {
+            match name {
+                "strategy" => Some(Field::Value(Value::Str(self.strategy.to_string()))),
+                "source_token" => Some(Field::Value(Value::Str(self.source_token.to_string()))),
+                _ => None,
+            }
+        }
+    }
+
+    struct FixedStoredList(Vec<Rule>);
+    impl Fielded for FixedStoredList {
+        fn field(&self, name: &str) -> Option<Field<'_>> {
+            (name == "rules").then(|| Field::NestedList(&self.0))
+        }
+    }
+
+    fn equals(field: &'static str, text: &'static str) -> Expr {
+        Expr::Compare {
+            op: Comparison { less_than: false, equal: true, negated: false },
+            left: Box::new(Expr::Lookup(field)),
+            right: Box::new(Expr::Str(text.to_string())),
+        }
+    }
+
+    // `n.strategy == "collapse" && n.source_token == "  "` — a real
+    // multi-field predicate, projecting into the bound element's OWN
+    // fields rather than comparing it as one opaque scalar. The `"n."`
+    // prefix is real, not decorative: `equals`'s own `Expr::Lookup` is
+    // a DOTTED path, walked head-first through `n` (the bound param)
+    // THEN into `.strategy` via `composite::step` — a bare
+    // `Expr::Lookup("strategy")` would look `strategy` up as its own
+    // top-level argument/instance field instead, which this file's own
+    // first draft got wrong and these tests caught failing outright
+    // (`cannot resolve "strategy"`), not silently.
+    fn matches_the_collapse_rule() -> Expr {
+        Expr::And(Box::new(equals("n.strategy", "collapse")), Box::new(equals("n.source_token", "  ")))
+    }
+
+    #[test]
+    fn none_is_true_over_a_stored_list_when_no_element_matches_by_its_own_fields() {
+        let list = FixedStoredList(vec![
+            Rule { strategy: "rewrite", source_token: "x" },
+            Rule { strategy: "collapse", source_token: "y" },
+        ]);
+        let ctx = EvalContext { args: &list, instance: &list };
+        let node = Expr::BlockPredicate {
+            mode: "none".to_string(), receiver: Box::new(Expr::Lookup("rules")),
+            param: "n".to_string(), predicate: Box::new(matches_the_collapse_rule()),
+        };
+
+        assert_eq!(block_predicate(&node, &ctx).unwrap(), Value::Bool(true));
+    }
+
+    #[test]
+    fn any_is_true_over_a_stored_list_when_one_element_matches_by_its_own_fields() {
+        let list = FixedStoredList(vec![
+            Rule { strategy: "rewrite", source_token: "x" },
+            Rule { strategy: "collapse", source_token: "  " },
+        ]);
+        let ctx = EvalContext { args: &list, instance: &list };
+        let node = Expr::BlockPredicate {
+            mode: "any".to_string(), receiver: Box::new(Expr::Lookup("rules")),
+            param: "n".to_string(), predicate: Box::new(matches_the_collapse_rule()),
+        };
+
+        assert_eq!(block_predicate(&node, &ctx).unwrap(), Value::Bool(true));
+    }
+
+    #[test]
+    fn find_over_a_stored_list_projects_its_own_trailing_path_through_the_found_element() {
+        let list = FixedStoredList(vec![
+            Rule { strategy: "rewrite", source_token: "x" },
+            Rule { strategy: "collapse", source_token: "target" },
+        ]);
+        let ctx = EvalContext { args: &list, instance: &list };
+        let node = Expr::Find {
+            receiver: Box::new(Expr::Lookup("rules")), param: "n".to_string(),
+            predicate: Box::new(equals("n.strategy", "collapse")), path: vec!["source_token".to_string()],
+        };
+
+        assert_eq!(find(&node, &ctx).unwrap(), Value::Str("target".to_string()));
+    }
+
+    #[test]
+    fn find_over_a_stored_list_answers_nil_when_nothing_matches() {
+        let list = FixedStoredList(vec![Rule { strategy: "rewrite", source_token: "x" }]);
+        let ctx = EvalContext { args: &list, instance: &list };
+        let node = Expr::Find {
+            receiver: Box::new(Expr::Lookup("rules")), param: "n".to_string(),
+            predicate: Box::new(equals("n.strategy", "collapse")), path: vec!["source_token".to_string()],
+        };
+
+        assert_eq!(find(&node, &ctx).unwrap(), Value::Nil);
     }
 }

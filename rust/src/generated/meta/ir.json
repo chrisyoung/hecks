@@ -363,6 +363,10 @@
             {
               "description": "the list grew by exactly one",
               "canonical": "attaches_to.size == old.attaches_to.size + 1"
+            },
+            {
+              "description": "this context isn't already attached",
+              "canonical": "old.attaches_to.none? { |c| c == context }"
             }
           ],
           "mutations": [
@@ -434,7 +438,12 @@
             }
           ],
           "givens": [],
-          "ensures": [],
+          "ensures": [
+            {
+              "description": "this exact rule isn't already declared",
+              "canonical": "old.normalisations.none? { |n| n.strategy == strategy && n.source_token == source_token && n.replacement == replacement && n.boundary == boundary }"
+            }
+          ],
           "mutations": [
             {
               "target": "normalisations",
@@ -5028,7 +5037,7 @@
         },
         {
           "name": "aggregate",
-          "type": "PolicyText",
+          "type": "PolicyReference",
           "list": false,
           "default": null,
           "optional": false,
@@ -5037,7 +5046,7 @@
         },
         {
           "name": "on_event",
-          "type": "PolicyText",
+          "type": "PolicyReference",
           "list": false,
           "default": null,
           "optional": false,
@@ -5046,7 +5055,7 @@
         },
         {
           "name": "trigger_command",
-          "type": "PolicyText",
+          "type": "PolicyReference",
           "list": false,
           "default": null,
           "optional": false,
@@ -5055,7 +5064,7 @@
         },
         {
           "name": "target_domain",
-          "type": "PolicyText",
+          "type": "PolicyReference",
           "list": false,
           "default": null,
           "optional": false,
@@ -5073,7 +5082,7 @@
         },
         {
           "name": "for_each",
-          "type": "PolicyText",
+          "type": "PolicyReference",
           "list": false,
           "default": null,
           "optional": true,
@@ -5136,6 +5145,28 @@
             }
           ],
           "invariants": [],
+          "closed_set": false,
+          "members": []
+        },
+        {
+          "name": "PolicyReference",
+          "attributes": [
+            {
+              "name": "value",
+              "type": "String",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
+            }
+          ],
+          "invariants": [
+            {
+              "description": "every dotted segment names something",
+              "canonical": "value.split(\".\").all? { |segment| !segment.to_s.empty? }"
+            }
+          ],
           "closed_set": false,
           "members": []
         },
@@ -5210,7 +5241,7 @@
             },
             {
               "name": "aggregate",
-              "type": "PolicyText",
+              "type": "PolicyReference",
               "list": false,
               "default": null,
               "optional": true,
@@ -5219,7 +5250,7 @@
             },
             {
               "name": "on_event",
-              "type": "PolicyText",
+              "type": "PolicyReference",
               "list": false,
               "default": null,
               "optional": false,
@@ -5228,7 +5259,7 @@
             },
             {
               "name": "trigger_command",
-              "type": "PolicyText",
+              "type": "PolicyReference",
               "list": false,
               "default": null,
               "optional": false,
@@ -5237,7 +5268,7 @@
             },
             {
               "name": "target_domain",
-              "type": "PolicyText",
+              "type": "PolicyReference",
               "list": false,
               "default": null,
               "optional": true,
@@ -5255,7 +5286,7 @@
             },
             {
               "name": "for_each",
-              "type": "PolicyText",
+              "type": "PolicyReference",
               "list": false,
               "default": null,
               "optional": true,
@@ -5480,7 +5511,12 @@
               "admits": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+            {
+              "description": "every dotted segment names something",
+              "canonical": "value.split(\".\").all? { |segment| !segment.to_s.empty? }"
+            }
+          ],
           "closed_set": false,
           "members": []
         },
@@ -6501,6 +6537,16 @@
                 "sign",
                 ""
               ]
+            ],
+            [
+              [
+                "name",
+                "delegate"
+              ],
+              [
+                "sign",
+                ""
+              ]
             ]
           ]
         },
@@ -6710,6 +6756,12 @@
               [
                 "step",
                 "advance_lifecycle"
+              ]
+            ],
+            [
+              [
+                "step",
+                "delegate_to_entity"
               ]
             ],
             [
@@ -7868,6 +7920,30 @@
                 "name",
                 "PortOperation"
               ]
+            ],
+            [
+              [
+                "name",
+                "Port"
+              ]
+            ],
+            [
+              [
+                "name",
+                "Adapter"
+              ]
+            ],
+            [
+              [
+                "name",
+                "Translation"
+              ]
+            ],
+            [
+              [
+                "name",
+                "TranslationAggregate"
+              ]
             ]
           ]
         },
@@ -8215,6 +8291,15 @@
               "optional": false,
               "pattern": null,
               "admits": "Syntax::Disambiguator"
+            },
+            {
+              "name": "calls",
+              "type": "String",
+              "list": false,
+              "default": "",
+              "optional": false,
+              "pattern": null,
+              "admits": null
             }
           ],
           "invariants": [],
@@ -8301,6 +8386,84 @@
             [
               [
                 "word",
+                "port"
+              ],
+              [
+                "context",
+                "File"
+              ],
+              [
+                "body",
+                "keywords"
+              ],
+              [
+                "inner",
+                "Port"
+              ],
+              [
+                "opens",
+                "Port"
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "adapter"
+              ],
+              [
+                "context",
+                "File"
+              ],
+              [
+                "body",
+                "keywords"
+              ],
+              [
+                "inner",
+                "Adapter"
+              ],
+              [
+                "opens",
+                "Adapter"
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
+                "data_translation"
+              ],
+              [
+                "context",
+                "File"
+              ],
+              [
+                "body",
+                "keywords"
+              ],
+              [
+                "inner",
+                "Translation"
+              ],
+              [
+                "opens",
+                "Translation"
+              ],
+              [
+                "fills",
+                ""
+              ]
+            ],
+            [
+              [
+                "word",
                 "vision"
               ],
               [
@@ -8374,6 +8537,10 @@
               [
                 "fills",
                 "attaches_to"
+              ],
+              [
+                "calls",
+                "attaches_to_impl"
               ]
             ],
             [
@@ -8478,6 +8645,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "aggregate_impl"
               ]
             ],
             [
@@ -8612,6 +8783,10 @@
               [
                 "fills",
                 "provenance"
+              ],
+              [
+                "calls",
+                "provenance_impl"
               ]
             ],
             [
@@ -8638,6 +8813,10 @@
               [
                 "fills",
                 "identified_by"
+              ],
+              [
+                "calls",
+                "identified_by_impl"
               ]
             ],
             [
@@ -8664,6 +8843,10 @@
               [
                 "fills",
                 "identified_by"
+              ],
+              [
+                "calls",
+                "identified_by_impl"
               ]
             ],
             [
@@ -8690,6 +8873,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -8720,6 +8907,10 @@
               [
                 "status",
                 "deprecated"
+              ],
+              [
+                "calls",
+                "has_many_impl"
               ]
             ],
             [
@@ -8750,6 +8941,10 @@
               [
                 "status",
                 "deprecated"
+              ],
+              [
+                "calls",
+                "has_one_impl"
               ]
             ],
             [
@@ -8780,6 +8975,10 @@
               [
                 "status",
                 "deprecated"
+              ],
+              [
+                "calls",
+                "belongs_to_impl"
               ]
             ],
             [
@@ -8806,6 +9005,10 @@
               [
                 "fills",
                 "state_field"
+              ],
+              [
+                "calls",
+                "lifecycle_impl"
               ]
             ],
             [
@@ -8832,6 +9035,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "entity_impl"
               ]
             ],
             [
@@ -8858,6 +9065,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "query_impl"
               ]
             ],
             [
@@ -8884,6 +9095,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "policy_impl"
               ]
             ],
             [
@@ -8936,6 +9151,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "command_impl"
               ]
             ],
             [
@@ -8962,6 +9181,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -8988,6 +9211,10 @@
               [
                 "fills",
                 "invariants"
+              ],
+              [
+                "calls",
+                "invariant_impl"
               ]
             ],
             [
@@ -9022,6 +9249,10 @@
               [
                 "disambiguator",
                 "declared_by"
+              ],
+              [
+                "calls",
+                "given_impl"
               ]
             ],
             [
@@ -9048,6 +9279,10 @@
               [
                 "fills",
                 "projected_fields"
+              ],
+              [
+                "calls",
+                "projects_impl"
               ]
             ],
             [
@@ -9100,6 +9335,10 @@
               [
                 "fills",
                 "identified_by"
+              ],
+              [
+                "calls",
+                "identified_by_impl"
               ]
             ],
             [
@@ -9126,6 +9365,10 @@
               [
                 "fills",
                 "identified_by"
+              ],
+              [
+                "calls",
+                "identified_by_impl"
               ]
             ],
             [
@@ -9152,6 +9395,10 @@
               [
                 "fills",
                 "preconditions"
+              ],
+              [
+                "calls",
+                "given_impl"
               ]
             ],
             [
@@ -9178,6 +9425,10 @@
               [
                 "fills",
                 "invariants"
+              ],
+              [
+                "calls",
+                "invariant_impl"
               ]
             ],
             [
@@ -9204,6 +9455,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "command_impl"
               ]
             ],
             [
@@ -9230,6 +9485,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "query_impl"
               ]
             ],
             [
@@ -9256,6 +9515,10 @@
               [
                 "fills",
                 "state_field"
+              ],
+              [
+                "calls",
+                "lifecycle_impl"
               ]
             ],
             [
@@ -9282,6 +9545,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -9308,6 +9575,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -9334,6 +9605,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "entity_impl"
               ]
             ],
             [
@@ -9360,6 +9635,10 @@
               [
                 "fills",
                 "role"
+              ],
+              [
+                "calls",
+                "role_impl"
               ]
             ],
             [
@@ -9412,6 +9691,10 @@
               [
                 "fills",
                 "provenance"
+              ],
+              [
+                "calls",
+                "provenance_impl"
               ]
             ],
             [
@@ -9438,6 +9721,10 @@
               [
                 "fills",
                 "references"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -9468,6 +9755,10 @@
               [
                 "resolves_via",
                 "hash_chain"
+              ],
+              [
+                "calls",
+                "given_impl"
               ]
             ],
             [
@@ -9496,8 +9787,72 @@
                 "mutations"
               ],
               [
-                "was",
+                "calls",
+                "sets_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "delegates_to"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "mutations"
+              ],
+              [
+                "calls",
+                "delegates_to_impl"
+              ]
+            ],
+            [
+              [
+                "word",
                 "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "mutations"
+              ],
+              [
+                "status",
+                "deprecated"
+              ],
+              [
+                "calls",
+                "then_set_impl"
               ]
             ],
             [
@@ -9550,6 +9905,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -9576,6 +9935,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -9602,6 +9965,10 @@
               [
                 "fills",
                 "rows"
+              ],
+              [
+                "calls",
+                "one_of_impl"
               ]
             ],
             [
@@ -9632,6 +9999,10 @@
               [
                 "resolves_via",
                 "sibling_scan"
+              ],
+              [
+                "calls",
+                "invariant_impl"
               ]
             ],
             [
@@ -9658,6 +10029,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "member_impl"
               ]
             ],
             [
@@ -9684,6 +10059,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "member_impl"
               ]
             ],
             [
@@ -9710,6 +10089,10 @@
               [
                 "fills",
                 "transitions"
+              ],
+              [
+                "calls",
+                "transition_impl"
               ]
             ],
             [
@@ -9762,6 +10145,10 @@
               [
                 "fills",
                 "trigger_command"
+              ],
+              [
+                "calls",
+                "trigger_impl"
               ]
             ],
             [
@@ -9944,6 +10331,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "transition_impl"
               ]
             ],
             [
@@ -9970,6 +10361,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "transition_impl"
               ]
             ],
             [
@@ -9996,6 +10391,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "dispatch_impl"
               ]
             ],
             [
@@ -10048,6 +10447,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -10074,6 +10477,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -10100,6 +10507,10 @@
               [
                 "fills",
                 "wheres"
+              ],
+              [
+                "calls",
+                "where_impl"
               ]
             ],
             [
@@ -10126,6 +10537,10 @@
               [
                 "fills",
                 "order_field"
+              ],
+              [
+                "calls",
+                "order_by_impl"
               ]
             ],
             [
@@ -10152,6 +10567,10 @@
               [
                 "fills",
                 "options"
+              ],
+              [
+                "calls",
+                "authorize_impl"
               ]
             ],
             [
@@ -10230,6 +10649,10 @@
               [
                 "fills",
                 "reference_target"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -10256,6 +10679,10 @@
               [
                 "fills",
                 "aggregate_heads"
+              ],
+              [
+                "calls",
+                "include_impl"
               ]
             ],
             [
@@ -10282,6 +10709,10 @@
               [
                 "fills",
                 "group_by"
+              ],
+              [
+                "calls",
+                "group_by_impl"
               ]
             ],
             [
@@ -10360,6 +10791,10 @@
               [
                 "fills",
                 "options"
+              ],
+              [
+                "calls",
+                "where_impl"
               ]
             ],
             [
@@ -10386,6 +10821,10 @@
               [
                 "fills",
                 "options"
+              ],
+              [
+                "calls",
+                "order_by_impl"
               ]
             ],
             [
@@ -10412,6 +10851,10 @@
               [
                 "fills",
                 "options"
+              ],
+              [
+                "calls",
+                "authorize_impl"
               ]
             ],
             [
@@ -10464,6 +10907,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "list_of_impl"
               ]
             ],
             [
@@ -10490,6 +10937,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "one_of_impl"
               ]
             ],
             [
@@ -10573,6 +11024,32 @@
             [
               [
                 "word",
+                "uses_embryonaut_bluebook"
+              ],
+              [
+                "context",
+                "Hecksagon"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "vendored_bluebooks"
+              ]
+            ],
+            [
+              [
+                "word",
                 "port"
               ],
               [
@@ -10594,6 +11071,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "port_impl"
               ]
             ],
             [
@@ -10620,6 +11101,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "tells_impl"
               ]
             ],
             [
@@ -10646,6 +11131,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "tells_impl"
               ]
             ],
             [
@@ -10672,6 +11161,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "asks_impl"
               ]
             ],
             [
@@ -10724,6 +11217,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -10750,6 +11247,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -10854,6 +11355,10 @@
               [
                 "fills",
                 "realm"
+              ],
+              [
+                "calls",
+                "realm_impl"
               ]
             ],
             [
@@ -10880,6 +11385,462 @@
               [
                 "fills",
                 "latest"
+              ],
+              [
+                "calls",
+                "latest_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "verb"
+              ],
+              [
+                "context",
+                "Port"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "verb"
+              ]
+            ],
+            [
+              [
+                "word",
+                "signal"
+              ],
+              [
+                "context",
+                "Port"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "signal"
+              ]
+            ],
+            [
+              [
+                "word",
+                "port"
+              ],
+              [
+                "context",
+                "Adapter"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "port"
+              ]
+            ],
+            [
+              [
+                "word",
+                "field"
+              ],
+              [
+                "context",
+                "Adapter"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "fields"
+              ]
+            ],
+            [
+              [
+                "word",
+                "secret"
+              ],
+              [
+                "context",
+                "Adapter"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "secrets"
+              ]
+            ],
+            [
+              [
+                "word",
+                "aggregate"
+              ],
+              [
+                "context",
+                "Translation"
+              ],
+              [
+                "body",
+                "keywords"
+              ],
+              [
+                "inner",
+                "TranslationAggregate"
+              ],
+              [
+                "opens",
+                "TranslationAggregate"
+              ],
+              [
+                "fills",
+                ""
+              ],
+              [
+                "calls",
+                "aggregate_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "retired"
+              ],
+              [
+                "context",
+                "Translation"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "retired"
+              ]
+            ],
+            [
+              [
+                "word",
+                "rename"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "renames"
+              ],
+              [
+                "calls",
+                "rename_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "move"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "moves"
+              ],
+              [
+                "calls",
+                "move_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "convert"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "converts"
+              ],
+              [
+                "calls",
+                "convert_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "drop"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "drops"
+              ]
+            ],
+            [
+              [
+                "word",
+                "retype"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "retypes"
+              ],
+              [
+                "calls",
+                "retype_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "compute"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "computes"
+              ],
+              [
+                "calls",
+                "compute_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "rekey"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "rekeys"
+              ],
+              [
+                "calls",
+                "rekey_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "backfill"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "backfills"
+              ],
+              [
+                "calls",
+                "backfill_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "unresolved"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ],
+              [
+                "calls",
+                "unresolved_impl"
               ]
             ]
           ]
@@ -11003,6 +11964,24 @@
               "optional": false,
               "pattern": null,
               "admits": null
+            },
+            {
+              "name": "coerce",
+              "type": "String",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
+            },
+            {
+              "name": "blank_message",
+              "type": "String",
+              "list": false,
+              "default": null,
+              "optional": false,
+              "pattern": null,
+              "admits": null
             }
           ],
           "invariants": [],
@@ -11096,6 +12075,10 @@
               [
                 "fills",
                 "vision"
+              ],
+              [
+                "coerce",
+                "false"
               ]
             ],
             [
@@ -11310,6 +12293,10 @@
               [
                 "fills",
                 "description"
+              ],
+              [
+                "coerce",
+                "false"
               ]
             ],
             [
@@ -12432,6 +13419,10 @@
               [
                 "fills",
                 "description"
+              ],
+              [
+                "coerce",
+                "false"
               ]
             ],
             [
@@ -13104,6 +14095,10 @@
               [
                 "fills",
                 "goal"
+              ],
+              [
+                "coerce",
+                "false"
               ]
             ],
             [
@@ -13524,6 +14519,372 @@
               [
                 "keyword",
                 "sets"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "remove"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=remove"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "delegates_to"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "target"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "delegates_to"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "with"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=delegate"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "target"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "to"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=set"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "from"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=set"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "append"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=append"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "increment"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=increment"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "decrement"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=decrement"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "multiply"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=multiply"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "clamp"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=clamp"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
               ],
               [
                 "context",
@@ -14668,6 +16029,10 @@
               [
                 "fills",
                 "description"
+              ],
+              [
+                "coerce",
+                "false"
               ]
             ],
             [
@@ -15190,6 +16555,10 @@
               [
                 "fills",
                 "description"
+              ],
+              [
+                "coerce",
+                "false"
               ]
             ],
             [
@@ -15734,6 +17103,36 @@
               [
                 "fills",
                 "framework_members"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "uses_embryonaut_bluebook"
+              ],
+              [
+                "context",
+                "Hecksagon"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "vendored_bluebooks"
               ]
             ],
             [
@@ -16339,6 +17738,944 @@
                 "pairs_shape",
                 "verbatim"
               ]
+            ],
+            [
+              [
+                "keyword",
+                "port"
+              ],
+              [
+                "context",
+                "File"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "verb"
+              ],
+              [
+                "context",
+                "Port"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "verb"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "signal"
+              ],
+              [
+                "context",
+                "Port"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "signal"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "adapter"
+              ],
+              [
+                "context",
+                "File"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "port"
+              ],
+              [
+                "context",
+                "Adapter"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "port"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "field"
+              ],
+              [
+                "context",
+                "Adapter"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "fields"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "secret"
+              ],
+              [
+                "context",
+                "Adapter"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "secrets"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "data_translation"
+              ],
+              [
+                "context",
+                "File"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "data_translation"
+              ],
+              [
+                "context",
+                "File"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "from"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "from"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "data_translation"
+              ],
+              [
+                "context",
+                "File"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "to"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "to"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "aggregate"
+              ],
+              [
+                "context",
+                "Translation"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "aggregate"
+              ],
+              [
+                "context",
+                "Translation"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "was"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "was"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "retired"
+              ],
+              [
+                "context",
+                "Translation"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ],
+              [
+                "blank_message",
+                "a retired needs an aggregate name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "rename"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "old_name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "rename"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "to"
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "to"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "move"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "old_path"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "move"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "to"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "to"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "convert"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "old_path"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "convert"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "to"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "to"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "convert"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "values"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "values"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "drop"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ],
+              [
+                "blank_message",
+                "a drop needs a name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "retype"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "old_type"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "retype"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "to"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "to"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "compute"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "old_path"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "compute"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "to"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "to"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "compute"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "sql"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "sql"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "rekey"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "sql"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "sql"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "backfill"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "backfill"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "default"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "default"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "unresolved"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "unresolved"
+              ],
+              [
+                "context",
+                "TranslationAggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "candidates"
+              ],
+              [
+                "kind",
+                "list"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "candidates"
+              ]
             ]
           ]
         },
@@ -16541,6 +18878,15 @@
               "optional": true,
               "pattern": null,
               "admits": "Syntax::Disambiguator"
+            },
+            {
+              "name": "calls",
+              "type": "KeywordSeedText",
+              "list": false,
+              "default": null,
+              "optional": true,
+              "pattern": null,
+              "admits": null
             }
           ],
           "givens": [],
@@ -16560,7 +18906,8 @@
                 "fills": ":fills",
                 "was": ":was",
                 "resolves_via": ":resolves_via",
-                "disambiguator": ":disambiguator"
+                "disambiguator": ":disambiguator",
+                "calls": ":calls"
               }
             }
           ],
@@ -16692,6 +19039,24 @@
               "optional": true,
               "pattern": null,
               "admits": null
+            },
+            {
+              "name": "coerce",
+              "type": "ArgumentSeedText",
+              "list": false,
+              "default": null,
+              "optional": true,
+              "pattern": null,
+              "admits": null
+            },
+            {
+              "name": "blank_message",
+              "type": "ArgumentSeedText",
+              "list": false,
+              "default": null,
+              "optional": true,
+              "pattern": null,
+              "admits": null
             }
           ],
           "givens": [],
@@ -16714,7 +19079,9 @@
                 "pair_key_fills": ":pair_key_fills",
                 "pair_value_fills": ":pair_value_fills",
                 "pairs_shape": ":pairs_shape",
-                "variadic": ":variadic"
+                "variadic": ":variadic",
+                "coerce": ":coerce",
+                "blank_message": ":blank_message"
               }
             }
           ],
@@ -16826,6 +19193,15 @@
               "optional": true,
               "pattern": null,
               "admits": "Syntax::Disambiguator"
+            },
+            {
+              "name": "calls",
+              "type": "KeywordSeedText",
+              "list": false,
+              "default": null,
+              "optional": true,
+              "pattern": null,
+              "admits": null
             }
           ],
           "commands": [
@@ -17003,6 +19379,24 @@
             },
             {
               "name": "variadic",
+              "type": "ArgumentSeedText",
+              "list": false,
+              "default": null,
+              "optional": true,
+              "pattern": null,
+              "admits": null
+            },
+            {
+              "name": "coerce",
+              "type": "ArgumentSeedText",
+              "list": false,
+              "default": null,
+              "optional": true,
+              "pattern": null,
+              "admits": null
+            },
+            {
+              "name": "blank_message",
               "type": "ArgumentSeedText",
               "list": false,
               "default": null,

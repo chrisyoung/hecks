@@ -74,8 +74,35 @@ module RustProjection
         'fielded_flat',
         'TmplFlatType' => struct_name,
         '"tmpl_arms_placeholder" => tmpl_arms_block(),' => arms.join("\n"),
-        'use crate::kernel::Value;' => (arms.any? { |arm| arm.include?('Value') } ? 'use crate::kernel::Value;' : '')
+        'use crate::kernel::Value;' => (arms.any? { |arm| arm.include?('Value') } ? 'use crate::kernel::Value;' : ''),
+        'tmpl_as_scalar_block()' => emit_as_scalar_body(attributes)
       )}\n"
+    end
+
+    # "Fix the gaps, continued" — the ONE `as_scalar` override case
+    # `fielded_flat`'s own template marker (`rust/src/exemplar/
+    # fielded.rs`) admits: EXACTLY one declared attribute, itself a
+    # bare scalar (not `list`, not `optional`, not a nested value
+    # object) — the same test `sole_field_of`/`effective_scalar_type`
+    # (json_codec.rb/naming.rb) already apply at the JSON boundary
+    # (`Price::from_json`'s own bare-scalar admission), reused here so
+    # `.first`/`.last`/`.find` over a STORED list of single-field value
+    # objects (`Price`, not `Binding`) can answer a real `Value`
+    # instead of refusing every element regardless of shape. `"None"`
+    # — `Fielded`'s own default, spelled out rather than left absent —
+    # for every other shape: zero attributes, more than one, or a sole
+    # attribute that is itself `list`/`optional`/a nested value object,
+    # none of which collapse to one comparable scalar.
+    def emit_as_scalar_body(attributes)
+      return "        None" unless attributes&.size == 1
+
+      attr = attributes.first
+      return "        None" if attr[:list] || attr[:optional]
+
+      scalar = effective_scalar_type(attr[:type])
+      return "        None" unless scalar
+
+      "        Some(#{scalar_to_value(scalar, "self.#{rust_ident_field(attr[:name])}")})"
     end
 
     # Aggregate records differ from value objects/args structs in one main

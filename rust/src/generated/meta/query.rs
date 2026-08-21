@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for QueryName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -78,6 +83,11 @@ impl crate::kernel::Fielded for QueryText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -128,6 +138,11 @@ impl crate::kernel::Fielded for Filter {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -191,6 +206,11 @@ impl crate::kernel::Fielded for AskArgument {
             "admits" => self.admits.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -257,6 +277,11 @@ impl crate::kernel::Fielded for AskOption {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -309,6 +334,11 @@ impl crate::kernel::Fielded for Position {
             "value" => Some(Field::Value(Value::Int(self.value))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
     }
 }
 
@@ -369,9 +399,9 @@ impl crate::kernel::Fielded for Query {
             "order_field" => self.order_field.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "order_way" => self.order_way.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "limit" => self.limit.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "wheres" => Some(Field::Value(Value::List(self.wheres.len()))),
-            "attributes" => Some(Field::Value(Value::List(self.attributes.len()))),
-            "options" => Some(Field::Value(Value::List(self.options.len()))),
+            "wheres" => Some(Field::NestedList(&self.wheres)),
+            "attributes" => Some(Field::NestedList(&self.attributes)),
+            "options" => Some(Field::NestedList(&self.options)),
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
@@ -451,6 +481,11 @@ impl crate::kernel::Fielded for DeclareArgs {
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -566,6 +601,11 @@ impl crate::kernel::Fielded for FilterArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -648,6 +688,11 @@ impl crate::kernel::Fielded for OptionArgs {
             "at" => self.at.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -737,6 +782,11 @@ impl crate::kernel::Fielded for ArgumentArgs {
             "admits" => self.admits.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 

@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for CommandName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -78,6 +83,11 @@ impl crate::kernel::Fielded for Actor {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -124,6 +134,11 @@ impl crate::kernel::Fielded for Goal {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -172,6 +187,11 @@ impl crate::kernel::Fielded for EventName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -218,6 +238,11 @@ impl crate::kernel::Fielded for Announcement {
             "name" => Some(Field::Value(Value::Str(self.name.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.name.clone()))
     }
 }
 
@@ -277,6 +302,11 @@ impl crate::kernel::Fielded for Argument {
             "admits" => self.admits.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -339,6 +369,11 @@ impl crate::kernel::Fielded for Rule {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -396,12 +431,17 @@ impl crate::kernel::Fielded for Change {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
 impl Change {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-        if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove"].contains(&self.op.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\" — got ", self.op))); }
+        if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove", "delegate"].contains(&self.op.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\", \"delegate\" — got ", self.op))); }
         Ok(())
     }
 }
@@ -451,6 +491,11 @@ impl crate::kernel::Fielded for CommandText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -498,6 +543,11 @@ impl crate::kernel::Fielded for Position {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -544,6 +594,11 @@ impl crate::kernel::Fielded for ArgName {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -606,6 +661,11 @@ impl crate::kernel::Fielded for ArgType {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -652,6 +712,11 @@ impl crate::kernel::Fielded for RuleText {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -700,6 +765,11 @@ impl crate::kernel::Fielded for FieldRef {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -746,6 +816,11 @@ impl crate::kernel::Fielded for OpName {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -807,12 +882,12 @@ impl crate::kernel::Fielded for Command {
             "name" => self.name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "role" => self.role.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "goal" => self.goal.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "emits" => Some(Field::Value(Value::List(self.emits.len()))),
+            "emits" => Some(Field::NestedList(&self.emits)),
             "references" => self.references.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "attributes" => Some(Field::Value(Value::List(self.attributes.len()))),
-            "givens" => Some(Field::Value(Value::List(self.givens.len()))),
-            "ensures" => Some(Field::Value(Value::List(self.ensures.len()))),
-            "mutations" => Some(Field::Value(Value::List(self.mutations.len()))),
+            "attributes" => Some(Field::NestedList(&self.attributes)),
+            "givens" => Some(Field::NestedList(&self.givens)),
+            "ensures" => Some(Field::NestedList(&self.ensures)),
+            "mutations" => Some(Field::NestedList(&self.mutations)),
             "provenance" => self.provenance.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "from" => self.from.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
@@ -900,6 +975,11 @@ impl crate::kernel::Fielded for DeclareArgs {
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -1022,6 +1102,11 @@ impl crate::kernel::Fielded for ArgumentArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -1123,6 +1208,11 @@ impl crate::kernel::Fielded for ReferenceArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -1218,6 +1308,11 @@ impl crate::kernel::Fielded for RuleArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -1294,6 +1389,11 @@ impl crate::kernel::Fielded for EnsureArgs {
             "canonical" => Some(Field::Nested(&self.canonical)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -1375,6 +1475,11 @@ impl crate::kernel::Fielded for ChangeArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -1391,7 +1496,7 @@ pub fn dispatch_change(
     repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: ChangeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         args.target.check_invariants()?;
-        if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove"].contains(&args.op.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\" — got ", args.op.value))); }
+        if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove", "delegate"].contains(&args.op.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\", \"delegate\" — got ", args.op.value))); }
         args.op.check_invariants()?;
         args.field.check_invariants()?;
         args.kind.check_invariants()?;
@@ -1464,6 +1569,11 @@ impl crate::kernel::Fielded for ActsOnArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -1535,6 +1645,11 @@ impl crate::kernel::Fielded for AnnounceArgs {
             "announces" => Some(Field::Nested(&self.announces)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

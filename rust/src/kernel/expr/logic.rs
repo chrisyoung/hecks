@@ -45,11 +45,15 @@ use crate::kernel::Refusal;
 
 // ── VALUE — the dynamic runtime value an expression evaluates to.
 // Mirrors what Ruby's `Resolver#interpret` can return (Integer/Float/
-// String/true/false/nil), plus one addition: `List(usize)`. Real corpus
-// expressions only ever ask `.size`/`.empty?` of a list-typed field,
-// never index into its elements by expression — so a STORED list field
-// surfaces as its length, not its contents. Each of the six variants IS
-// one of the four `AttributeShape`s once resolved to a runtime value:
+// String/true/false/nil), plus one addition: `List(usize)`. `List`
+// stays COUNT-ONLY on purpose, even after the "fix the gaps, continued"
+// pass below made a STORED list's real elements reachable by
+// expression — `.size`/`.empty?`/`.present?`/`.blank?`/comparisons are
+// the overwhelming common case for a list-typed field, and every one of
+// them only ever needs the count; `Field::NestedList` (below) is where
+// the real elements live, reached through `accessor`/`block_predicate`
+// only, not through this enum at all. Each of the six variants IS one
+// of the four `AttributeShape`s once resolved to a runtime value:
 // `Int`/`Float`/`Str`/`Bool` are `:scalar`, `List` is `:list`, `Nil` is
 // `:optional` (see `attribute_shapes/*.rs` for the shape-owned behavior
 // of each) — `Elements` is not a fifth `AttributeShape` and never will
@@ -63,25 +67,21 @@ pub enum Value {
     List(usize),
     Nil,
     /// PRD 09 gap-closing pass ("fix the gaps") — a REAL, in-memory
-    /// element sequence, produced only by `.split` and consumed only by
+    /// element sequence, produced only by `.split` and consumed by
     /// `.first`/`.last`/`.all?`/`.any?`/`.none?`/`.find`
-    /// (`expression_operators::{string,accessor,block_predicate}`).
-    /// Deliberately a SEPARATE variant from `List`, not a redefinition
-    /// of it: `List` is the count-only shape every one of the 75 real
-    /// generated `field()` implementations already constructs
-    /// (`Value::List(self.some_field.len())`) for a STORED list-typed
-    /// attribute — changing what `List` MEANS would mean regenerating
-    /// every domain and rewriting the code generator itself. `Elements`
-    /// touches none of that: it exists purely at expression-evaluation
-    /// time, born from `.split`'s own real string-splitting and never
-    /// read from a generated struct's own field at all. This is why
-    /// `.first`/`.last`/`.all?`/etc. can be real now while a STORED
-    /// list's own elements (e.g. `account.ledger`) still cannot be
-    /// walked by expression — that's a materially larger change (the
-    /// code generator would need to know how to turn an arbitrary
-    /// element type, including nested `Fielded` structs with no general
-    /// `Value` reading, into elements), genuinely out of this pass's
-    /// scope, not a shortcut taken here.
+    /// (`expression_operators::{string,accessor,block_predicate}`) —
+    /// alongside `Field::NestedList` (below), the STORED-list
+    /// counterpart those same four consume too. Deliberately a
+    /// SEPARATE variant from `List`, not a redefinition of it: `List`
+    /// is the count-only shape every generated `field()` implementation
+    /// still constructs for a STORED list-typed attribute's own
+    /// `.size`/`.empty?` reading — changing what `List` MEANS would
+    /// mean rewriting every one of those sites for no reason, since
+    /// they never needed real elements at all. `Elements` exists purely
+    /// at expression-evaluation time, born from `.split`'s own real
+    /// string-splitting — always plain scalars, never a struct — which
+    /// is exactly why it can be `Vec<Value>` where `Field::NestedList`'s
+    /// own elements (real, possibly multi-field structs) cannot be.
     Elements(Vec<Value>),
 }
 
@@ -106,6 +106,45 @@ impl Value {
 pub enum Field<'a> {
     Value(Value),
     Nested(&'a dyn Fielded),
+    /// "Fix the gaps" pass, continued — the STORED-list counterpart to
+    /// `Value::Elements` (`.split`'s own in-memory sequence, above): a
+    /// generated `field()` hands back THIS, not a bare
+    /// `Value::List(len)` count, for a stored `list_of(X)` attribute —
+    /// real elements, not just how many there are. `composite::finish`
+    /// still collapses this to `Value::List(list.list_len())` for every
+    /// caller that only ever sees a flat `Value` (`.size`/`.empty?`/
+    /// `.present?`/`.blank?`/comparisons — every existing behavior,
+    /// unchanged); only `expr::interpret_as_field` (this file, below),
+    /// the receiver-resolution `accessor`/`block_predicate` use instead
+    /// of the ordinary `Value`-only `eval`, ever sees this variant
+    /// survive intact.
+    NestedList(&'a dyn ListFielded),
+}
+
+/// The element-erased half of a stored `Vec<T: Fielded>` — `len`/`get`
+/// mirror `Vec<T>`'s own inherent methods almost exactly; this trait
+/// exists only because `dyn Fielded`'s own element type is erased
+/// (`Vec<Topping>` vs `Vec<LedgerEntry>` can't both satisfy one
+/// non-generic `Field::NestedList` slot any other way). The blanket
+/// impl below is the ONLY impl this crate ever needs — every real
+/// `list_of(X)` attribute's `X` is already a generated `Fielded`
+/// struct (`list_of` is never applied to a bare scalar type anywhere
+/// in the real corpus — checked against the whole tree before writing
+/// this), so nothing hand-written ever implements `ListFielded`
+/// itself.
+pub trait ListFielded {
+    fn list_len(&self) -> usize;
+    fn list_get(&self, index: usize) -> &dyn Fielded;
+}
+
+impl<T: Fielded> ListFielded for Vec<T> {
+    fn list_len(&self) -> usize {
+        self.len()
+    }
+
+    fn list_get(&self, index: usize) -> &dyn Fielded {
+        &self[index]
+    }
 }
 
 pub trait Fielded {
@@ -166,24 +205,38 @@ impl<'a> Fielded for WithOld<'a> {
 
 /// PRD 09 gap-closing pass — `Resolver#interpret_with_element`'s own
 /// shape (resolver/block_predicates.rb: `attrs.merge(node.param.to_sym
-/// => element)`), ported: binds ONE name to a scalar `Value` for the
-/// span of one predicate evaluation, checked FIRST, falling through to
-/// `inner` for every other name — the same "the bound name shadows
-/// anything else with the same name, for this one evaluation only,
-/// nothing persists past it" contract `WithOld`, above, already gives
-/// `old`. Public within this crate (not just this file) since
-/// `expression_operators::block_predicate` is the one real caller,
-/// constructing a fresh `EvalContext` per element.
+/// => element)`), ported: binds ONE name for the span of one predicate
+/// evaluation, checked FIRST, falling through to `inner` for every
+/// other name — the same "the bound name shadows anything else with
+/// the same name, for this one evaluation only, nothing persists past
+/// it" contract `WithOld`, above, already gives `old`. Public within
+/// this crate (not just this file) since
+/// `expression_operators::{accessor,block_predicate}` are the real
+/// callers, constructing a fresh `EvalContext` per element.
+///
+/// `value: Field<'a>`, not a bare `Value` — the "fix the gaps,
+/// continued" pass's own reason `Field::NestedList` exists at all:
+/// `.split`'s own elements are always plain scalars (`Field::Value`
+/// suffices), but a STORED list's elements are real structs, and a
+/// predicate like `.all? { |t| t.name == "spicy" }` needs `t` to still
+/// be dotted-path walkable (`Field::Nested`) — not pre-collapsed to a
+/// scalar before the predicate ever runs. One bound field, matched at
+/// lookup time, covers both shapes the same way `Field` already covers
+/// them everywhere else.
 pub struct BoundElement<'a> {
     pub name: &'a str,
-    pub value: Value,
+    pub value: Field<'a>,
     pub inner: &'a dyn Fielded,
 }
 
 impl<'a> Fielded for BoundElement<'a> {
     fn field(&self, name: &str) -> Option<Field<'_>> {
         if name == self.name {
-            return Some(Field::Value(self.value.clone()));
+            return Some(match &self.value {
+                Field::Value(v) => Field::Value(v.clone()),
+                Field::Nested(f) => Field::Nested(*f),
+                Field::NestedList(l) => Field::NestedList(*l),
+            });
         }
         self.inner.field(name)
     }
@@ -301,6 +354,15 @@ fn dispatch_operator(category: OperatorCategory, expr: &Expr, ctx: &EvalContext)
 /// possible if the generator is correct," so it's what this raises,
 /// rather than inventing a tenth refusal kind Ruby doesn't have.
 fn lookup(path: &str, ctx: &EvalContext) -> Result<Value, Refusal> {
+    composite::finish(lookup_field(path, ctx)?, path)
+}
+
+/// `lookup`'s own segment walk, stopping ONE step short: the raw
+/// terminal `Field` a dotted path resolves to, `composite::finish`'s
+/// own scalar-collapse not yet applied. `lookup` (above) is this plus
+/// that collapse — the ordinary case, and every caller except
+/// `interpret_as_field` (below) still gets exactly that.
+fn lookup_field<'a>(path: &str, ctx: &EvalContext<'a>) -> Result<Field<'a>, Refusal> {
     let mut segments = path.split('.');
     let head = segments.next().unwrap();
     let mut current = ctx
@@ -313,7 +375,24 @@ fn lookup(path: &str, ctx: &EvalContext) -> Result<Value, Refusal> {
         current = composite::step(current, seg, head, path)?;
     }
 
-    composite::finish(current, path)
+    Ok(current)
+}
+
+/// "Fix the gaps," continued — `.first`/`.last`/`.all?`/`.any?`/
+/// `.none?`/`.find`'s own RECEIVER resolution, and the one place in
+/// this whole file that does NOT collapse straight to a `Value`.
+/// Every other `Expr` variant's own interpretation already only ever
+/// answers a flat `Value` (`interpret`'s own signature) — only a bare
+/// `Expr::Lookup` can ever terminate on a `Field::NestedList`/
+/// `Field::Nested` in the first place, so this only special-cases that
+/// one node kind, deferring to `interpret` (wrapped in `Field::Value`)
+/// for everything else — `.split(...).all? { ... }` still reaches
+/// `accessor`/`block_predicate` exactly as it always has.
+pub(crate) fn interpret_as_field<'a>(expr: &Expr, ctx: &EvalContext<'a>) -> Result<Field<'a>, Refusal> {
+    match expr {
+        Expr::Lookup(path) => lookup_field(path, ctx),
+        other => interpret(other, ctx).map(Field::Value),
+    }
 }
 
 pub(crate) fn eval_error(message: String) -> Refusal {

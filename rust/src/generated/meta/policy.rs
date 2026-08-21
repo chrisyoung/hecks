@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for PolicyName {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -78,6 +83,11 @@ impl crate::kernel::Fielded for PolicyText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -112,6 +122,72 @@ if !unknown.is_empty() {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct PolicyReference {
+    pub value: String,
+}
+
+impl crate::kernel::Fielded for PolicyReference {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::Field;
+        use crate::kernel::Value;
+        match name {
+            "value" => Some(Field::Value(Value::Str(self.value.clone()))),
+            _ => None,
+        }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
+}
+
+
+impl PolicyReference {
+    pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
+{
+    let ctx = crate::kernel::EvalContext { args: &crate::kernel::NoFields, instance: self };
+    if !crate::kernel::interpret(&Expr::BlockPredicate { mode: "all".to_string(), receiver: Box::new(Expr::Split { receiver: Box::new(Expr::Lookup("value")), separator: ".".to_string() }), param: "segment".to_string(), predicate: Box::new(Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("segment")))))))) }, &ctx)?.truthy() {
+        let mut offered = self.to_json();
+        if let crate::kernel::Json::Object(fields) = &mut offered {
+            fields.sort_by(|a, b| a.0.cmp(&b.0));
+        }
+        let offered = offered.to_json_string();
+        return Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationValueObjectInvariant.render(&[
+            ("name", "PolicyReference"),
+            ("description", "every dotted segment names something"),
+            ("offered", offered.as_str()),
+        ])));
+    }
+}
+        Ok(())
+    }
+}
+
+impl PolicyReference {
+    pub fn to_json(&self) -> crate::kernel::Json {
+        crate::kernel::Json::Object(vec![
+        ("value".to_string(), crate::kernel::Json::Str(self.value.clone())),
+        ])
+    }
+}
+
+impl PolicyReference {
+    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
+let unknown = v.unknown_keys(&["value"]);
+if !unknown.is_empty() {
+    return Err(crate::kernel::Refusal::UnknownArgument(format!(
+        "PolicyReference does not declare {} — it takes value",
+        unknown.join(", ")
+    )));
+}
+        Ok(Self {
+        value: { let x = v.require("value", "PolicyReference")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("PolicyReference.value: expected String".to_string()))? },
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Binding {
     pub key: String,
     pub value: String,
@@ -126,6 +202,11 @@ impl crate::kernel::Fielded for Binding {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -176,6 +257,11 @@ impl crate::kernel::Fielded for Position {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -213,12 +299,12 @@ if !unknown.is_empty() {
 pub struct Policy {
     pub bluebook: Option<String>,
     pub name: Option<PolicyName>,
-    pub aggregate: Option<PolicyText>,
-    pub on_event: Option<PolicyText>,
-    pub trigger_command: Option<PolicyText>,
-    pub target_domain: Option<PolicyText>,
+    pub aggregate: Option<PolicyReference>,
+    pub on_event: Option<PolicyReference>,
+    pub trigger_command: Option<PolicyReference>,
+    pub target_domain: Option<PolicyReference>,
     pub r#where: Option<PolicyText>,
-    pub for_each: Option<PolicyText>,
+    pub for_each: Option<PolicyReference>,
     pub with_spec: Vec<Binding>,
     pub position: Option<Position>,
 }
@@ -235,7 +321,7 @@ impl crate::kernel::Fielded for Policy {
             "target_domain" => self.target_domain.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "where" => self.r#where.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "for_each" => self.for_each.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "with_spec" => Some(Field::Value(Value::List(self.with_spec.len()))),
+            "with_spec" => Some(Field::NestedList(&self.with_spec)),
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
@@ -264,12 +350,12 @@ impl Policy {
         Ok(Self {
         bluebook: match v.get("bluebook") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Policy.bluebook: expected String".to_string()))?), },
         name: match v.get("name") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyName::from_json(&x.coerce_single_field("value"))?), },
-        aggregate: match v.get("aggregate") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), },
-        on_event: match v.get("on_event") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), },
-        trigger_command: match v.get("trigger_command") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), },
-        target_domain: match v.get("target_domain") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), },
+        aggregate: match v.get("aggregate") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyReference::from_json(&x.coerce_single_field("value"))?), },
+        on_event: match v.get("on_event") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyReference::from_json(&x.coerce_single_field("value"))?), },
+        trigger_command: match v.get("trigger_command") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyReference::from_json(&x.coerce_single_field("value"))?), },
+        target_domain: match v.get("target_domain") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyReference::from_json(&x.coerce_single_field("value"))?), },
         r#where: match v.get("where") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), },
-        for_each: match v.get("for_each") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), },
+        for_each: match v.get("for_each") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PolicyReference::from_json(&x.coerce_single_field("value"))?), },
         with_spec: match v.get("with_spec").and_then(crate::kernel::Json::as_array) { Some(items) => items.iter().map(Binding::from_json).collect::<Result<Vec<_>, crate::kernel::Refusal>>()?, None => Vec::new(), },
         position: match v.get("position") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(Position::from_json(&x.coerce_single_field("value"))?), },
         })
@@ -315,6 +401,11 @@ impl crate::kernel::Fielded for DeclareArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -322,12 +413,12 @@ impl crate::kernel::Fielded for DeclareArgs {
 pub struct DeclareArgs {
     pub bluebook: String,
     pub name: PolicyName,
-    pub aggregate: Option<PolicyText>,
-    pub on_event: PolicyText,
-    pub trigger_command: PolicyText,
-    pub target_domain: Option<PolicyText>,
+    pub aggregate: Option<PolicyReference>,
+    pub on_event: PolicyReference,
+    pub trigger_command: PolicyReference,
+    pub target_domain: Option<PolicyReference>,
     pub r#where: Option<PolicyText>,
-    pub for_each: Option<PolicyText>,
+    pub for_each: Option<PolicyReference>,
     pub position: Option<Position>,
 }
 
@@ -411,12 +502,12 @@ if !unknown.is_empty() {
         Ok(Self {
         bluebook: { let x = v.require("bluebook", "DeclareArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("DeclareArgs.bluebook: expected String".to_string()))? },
         name: PolicyName::from_json(&v.require("name", "DeclareArgs")?.coerce_single_field("value"))?,
-        aggregate: match v.get("aggregate") { Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        on_event: PolicyText::from_json(&v.require("on_event", "DeclareArgs")?.coerce_single_field("value"))?,
-        trigger_command: PolicyText::from_json(&v.require("trigger_command", "DeclareArgs")?.coerce_single_field("value"))?,
-        target_domain: match v.get("target_domain") { Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        aggregate: match v.get("aggregate") { Some(x) => Some(PolicyReference::from_json(&x.coerce_single_field("value"))?), None => None, },
+        on_event: PolicyReference::from_json(&v.require("on_event", "DeclareArgs")?.coerce_single_field("value"))?,
+        trigger_command: PolicyReference::from_json(&v.require("trigger_command", "DeclareArgs")?.coerce_single_field("value"))?,
+        target_domain: match v.get("target_domain") { Some(x) => Some(PolicyReference::from_json(&x.coerce_single_field("value"))?), None => None, },
         r#where: match v.get("where") { Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        for_each: match v.get("for_each") { Some(x) => Some(PolicyText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        for_each: match v.get("for_each") { Some(x) => Some(PolicyReference::from_json(&x.coerce_single_field("value"))?), None => None, },
         position: match v.get("position") { Some(x) => Some(Position::from_json(&x.coerce_single_field("value"))?), None => None, },
         })
     }
@@ -431,6 +522,11 @@ impl crate::kernel::Fielded for BindArgs {
             "value" => Some(Field::Nested(&self.value)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

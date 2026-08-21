@@ -152,6 +152,17 @@ Hecks.bluebook "Bluebook", version: "1" do
       # ledger entry was posted") { ledger.size == old.ledger.size + 1
       # } — one more row than before, never fewer, never the same.
       ensures("the list grew by exactly one") { attaches_to.size == old.attaches_to.size + 1 }
+      # "FIX THE GAPS, CONTINUED" — the new predicates, used for real: a
+      # STORED list attribute's own real elements, not `.split`'s. Real
+      # gap this closes: nothing before this caught the SAME context
+      # attached twice — `attaches_to` just grew a duplicate entry,
+      # silently. `old.attaches_to` is `AttachesToContext`'s own single
+      # field (`attribute :value, String`), which is exactly why `c ==
+      # context` — comparing the bound element directly, not one of its
+      # named fields — is the right shape here: a single-field value
+      # object collapses to its own bare value the same way any other
+      # bare `Lookup` on one already does (`Fielded::as_scalar`).
+      ensures("this context isn't already attached") { old.attaches_to.none? { |c| c == context } }
       emits "ChapterAttached"
     end
 
@@ -187,6 +198,36 @@ Hecks.bluebook "Bluebook", version: "1" do
       sets :normalisations, append: {
         strategy: :strategy, source_token: :source_token,
         replacement: :replacement, boundary: :boundary, position: :position
+      }
+
+      # "FIX THE GAPS, CONTINUED" — the new predicates, used for real,
+      # over a genuinely MULTI-FIELD stored element (`NormalisationRule`
+      # has five fields; unlike `AttachesToContext` above, there is no
+      # single bare value to compare `n` against as a whole — the
+      # predicate projects into `n`'s OWN fields, `n.strategy`/
+      # `n.source_token`/..., the exact shape a bound block-predicate
+      # element needs `Fielded::field` for, not `as_scalar`).
+      # `position` (optional) is deliberately left out of the
+      # comparison — the four required fields already say everything
+      # "the exact same rule" needs to mean.
+      #
+      # `.none? { |n| ... }`, BRACES NOT `do...end` — the block-predicate
+      # parser's own header (resolver/block_predicates.rb) is explicit
+      # that its header regex matches `\{\s*\|(\w+)\|` only; `do...end`
+      # is not a second spelling of the same thing, it is a shape this
+      # grammar has no rule for at all, and the canonical TEXT is what
+      # gets checked, not what Ruby itself would accept as a block. Got
+      # this wrong on the first pass here (wrote `do...end`, which
+      # parsed as three bogus dotted-path segments — `"normalisations"`,
+      # `"none? do |n| n"`, `"strategy"` — and crashed indexing a String
+      # with a Symbol several layers downstream) — caught by actually
+      # loading a real domain, not assumed correct because it read like
+      # valid Ruby.
+      ensures("this exact rule isn't already declared") {
+        old.normalisations.none? { |n|
+          n.strategy == strategy && n.source_token == source_token &&
+            n.replacement == replacement && n.boundary == boundary
+        }
       }
 
       emits "NormalisationAttached"

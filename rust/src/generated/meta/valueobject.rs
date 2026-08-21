@@ -17,6 +17,11 @@ impl crate::kernel::Fielded for RowCount {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -63,6 +68,11 @@ impl crate::kernel::Fielded for ValueObjectName {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -137,6 +147,11 @@ impl crate::kernel::Fielded for ShapeField {
             "admits" => self.admits.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -246,6 +261,11 @@ impl crate::kernel::Fielded for Assertion {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -326,6 +346,11 @@ impl crate::kernel::Fielded for MemberPosition {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -372,6 +397,11 @@ impl crate::kernel::Fielded for MemberText {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
     }
 }
 
@@ -421,6 +451,11 @@ impl crate::kernel::Fielded for Pair {
             "value" => Some(Field::Value(Value::Str(self.value.clone()))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -486,6 +521,11 @@ impl crate::kernel::Fielded for Position {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Int(self.value))
+    }
 }
 
 
@@ -533,6 +573,11 @@ impl crate::kernel::Fielded for ValueObjectText {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        Some(Value::Str(self.value.clone()))
+    }
 }
 
 
@@ -575,12 +620,17 @@ pub struct Member {
 impl crate::kernel::Fielded for Member {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
-        use crate::kernel::Value;
+        
         match name {
             "position" => Some(Field::Nested(&self.position)),
-            "pairs" => Some(Field::Value(Value::List(self.pairs.len()))),
+            "pairs" => Some(Field::NestedList(&self.pairs)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -642,6 +692,11 @@ impl crate::kernel::Fielded for MemberPairArgs {
             "value" => Some(Field::Nested(&self.value)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 
@@ -728,10 +783,10 @@ impl crate::kernel::Fielded for ValueObject {
         match name {
             "aggregate" => self.aggregate.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             "name" => self.name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "attributes" => Some(Field::Value(Value::List(self.attributes.len()))),
-            "invariants" => Some(Field::Value(Value::List(self.invariants.len()))),
+            "attributes" => Some(Field::NestedList(&self.attributes)),
+            "invariants" => Some(Field::NestedList(&self.invariants)),
             "rows" => self.rows.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "members" => Some(Field::Value(Value::List(self.members.len()))),
+            "members" => Some(Field::NestedList(&self.members)),
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
@@ -798,6 +853,11 @@ impl crate::kernel::Fielded for DeclareArgs {
             "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -894,6 +954,11 @@ impl crate::kernel::Fielded for FieldArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
+    }
 }
 
 
@@ -989,6 +1054,11 @@ impl crate::kernel::Fielded for CloseArgs {
             _ => None,
         }
     }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
+    }
 }
 
 
@@ -1060,6 +1130,11 @@ impl crate::kernel::Fielded for AssertArgs {
             "canonical" => Some(Field::Nested(&self.canonical)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        use crate::kernel::Value;
+        None
     }
 }
 
@@ -1136,6 +1211,11 @@ impl crate::kernel::Fielded for MemberArgs {
             "position" => Some(Field::Nested(&self.position)),
             _ => None,
         }
+    }
+
+    fn as_scalar(&self) -> Option<crate::kernel::Value> {
+        
+        None
     }
 }
 

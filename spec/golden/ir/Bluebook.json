@@ -153,6 +153,10 @@
             {
               "canonical": "attaches_to.size == old.attaches_to.size + 1",
               "description": "the list grew by exactly one"
+            },
+            {
+              "canonical": "old.attaches_to.none? { |c| c == context }",
+              "description": "this context isn't already attached"
             }
           ],
           "from": null,
@@ -227,7 +231,10 @@
             "NormalisationAttached"
           ],
           "ensures": [
-
+            {
+              "canonical": "old.normalisations.none? { |n| n.strategy == strategy && n.source_token == source_token && n.replacement == replacement && n.boundary == boundary }",
+              "description": "this exact rule isn't already declared"
+            }
           ],
           "from": null,
           "givens": [
