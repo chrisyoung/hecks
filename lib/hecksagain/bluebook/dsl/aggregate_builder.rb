@@ -51,19 +51,28 @@ module Hecksagain
         # `attribute ..., default: { value: "small" }` captures a literal
         # Hash untouched — no re-parsing, no structure imposed beyond
         # "whatever the author wrote."
-        def provenance(from:)
+        # RENAMED FROM `provenance`/`projects`/`lifecycle`/`entity`/
+        # `query`/`policy`/`command` (all below) — item #13's full
+        # metaprogrammed dispatch (slice 4c). All bootstrap-reachable
+        # (used throughout the core/attached chapters), all in
+        # GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
+        def provenance_impl(from:)
           @provenance = from
         end
 
         # `optional:` — matching `CommandBuilder#reference_to`'s own
         # signature, which already had it; this one never forwarded it
-        # to `attribute()` even though `attribute()` itself already
-        # accepts it. A real gap: an aggregate that can point at ONE OF
-        # several targets (Item's own `personal_list_id`/
+        # to `attribute_impl()` even though `attribute_impl()` itself
+        # already accepts it. A real gap: an aggregate that can point at
+        # ONE OF several targets (Item's own `personal_list_id`/
         # `camping_list_id`, never both) needs each reference optional
         # on the aggregate's own persisted schema, not just as a
         # command's input.
-        def reference_to(type, as: nil, optional: false)
+        # RENAMED FROM `reference_to` — item #13's full metaprogrammed
+        # dispatch (slice 4b). Bootstrap-reachable (every core/attached
+        # grammar chapter uses reference_to to describe itself), so also
+        # named in GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
+        def reference_to_impl(type, as: nil, optional: false)
           target = Naming.demodulise(type)
           @reference_targets << target
           relationship_attribute(target, :reference_to,
@@ -96,7 +105,7 @@ module Hecksagain
         # aggregate in the chapter is real, not by `AggregateBuilder`
         # itself) — `validate_projected_fields!` is where that half
         # happens.
-        def projects(name, from:)
+        def projects_impl(name, from:)
           reference, _, remote_field = from.to_s.rpartition(".")
 
           if reference.empty? || remote_field.empty?
@@ -110,10 +119,27 @@ module Hecksagain
                                                   remote_field: remote_field.to_sym)
         end
 
-        # Relationship words retain the author's domain concept in IR. A
-        # relationship is still stored as one or more target identities, but
-        # it does not collapse to an anonymous `reference_to` during assembly.
-        def has_many(type, as: nil, **legacy_options)
+        # `has_many`/`has_one`/`belongs_to` were LEGACY (ADR 0025,
+        # "References") — sugar over `reference_to` that collapsed to an
+        # anonymous reference and, for `has_many`, LIED (singularised its
+        # target and minted one scalar, so `film.backers` read `nil` and
+        # never `[]`). Wave 6 (identity-and-relationships arc) un-deprecates
+        # all three for real: a relationship word now retains the author's
+        # domain concept in IR — still stored as one or more target
+        # identities, but no longer collapsed to a bare `reference_to`
+        # during assembly. `MetaValidator.shadow_parsing?` still routes to
+        # `legacy_has_many`/`legacy_has_one` so frozen era text written
+        # under the OLD (lying/collapsing) meaning still parses the way it
+        # did when it was written — real, if rare corpus: "Combined corpus
+        # uses: one."
+        #
+        # RENAMED FROM `has_many`/`has_one`/`belongs_to` — item #13's full
+        # metaprogrammed dispatch (slice 4). Each Keyword row's own
+        # `calls:` names the matching `_impl`; not bootstrap-reachable
+        # (no core/attached chapter uses one of these to describe itself),
+        # so no BOOTSTRAP_CALLS_FALLBACK entry is needed, unlike
+        # `attribute`/`role`.
+        def has_many_impl(type, as: nil, **legacy_options)
           if MetaValidator.shadow_parsing?
             return legacy_has_many(type, as: as, optional: legacy_options.fetch(:optional, false))
           end
@@ -129,7 +155,7 @@ module Hecksagain
                                  list: true)
         end
 
-        def has_one(type, as: nil, optional: false)
+        def has_one_impl(type, as: nil, optional: false)
           return legacy_has_one(type, as: as, optional: optional) if MetaValidator.shadow_parsing?
 
           target = Naming.demodulise(type)
@@ -138,7 +164,7 @@ module Hecksagain
                                  optional: optional)
         end
 
-        def belongs_to(type, as: nil, optional: false)
+        def belongs_to_impl(type, as: nil, optional: false)
           return legacy_has_one(type, as: as, optional: optional) if MetaValidator.shadow_parsing?
 
           target = Naming.demodulise(type)
@@ -147,7 +173,7 @@ module Hecksagain
                                  optional: optional)
         end
 
-        def lifecycle(field, default:, &block)
+        def lifecycle_impl(field, default:, &block)
           @lifecycle = LifecycleBuilder.build(field, default: default, &block)
         end
 
@@ -173,15 +199,15 @@ module Hecksagain
         # DIFFERENT canonical — bare `customer.status`, not
         # `parent.customer.status`, wrong scope for a piece's own command
         # to evaluate) nor round 4's single-piece `given` could reach.
-        def entity(name, &block)
+        def entity_impl(name, &block)
           @pending_entities << [name, block]
         end
 
-        def query(name, &block)
+        def query_impl(name, &block)
           @pending_queries << [name, block]
         end
 
-        def policy(name, &block)
+        def policy_impl(name, &block)
           reaction = PolicyBuilder.build(name, &block)
           reaction.aggregate = @name
           @policies << reaction
@@ -216,7 +242,7 @@ module Hecksagain
         # the lifecycle already declares which states exist, so naming
         # the legal ones is checkable against it, where a free-text
         # given could drift out of sync with the state machine and did.
-        def command(name, from: nil, &block)
+        def command_impl(name, from: nil, &block)
           # The verb is declared ON this aggregate — the owner `acts_on` answers
           # with — stamped by `Aggregate#initialize` once the aggregate
           # exists. An ENTITY's commands take the entity as their owner instead,
@@ -268,7 +294,10 @@ module Hecksagain
         # textually-different canonical registers under the same
         # description; see `reference_named_chapter_given`'s own
         # ambiguity error for how that surfaces.
-        def given(description, declared_by: nil, &predicate)
+        # RENAMED FROM `given` — item #13's full metaprogrammed dispatch
+        # (slice 4b), same reasoning as reference_to_impl above:
+        # bootstrap-reachable, in BOOTSTRAP_CALLS_FALLBACK.
+        def given_impl(description, declared_by: nil, &predicate)
           return reference_named_chapter_given(description, declared_by: declared_by) unless predicate
 
           named = build_rule(Given, description, predicate, owner_name: @name, word: "given",
@@ -335,7 +364,9 @@ module Hecksagain
         # texts across banking's six balance-moving commands, and the
         # four that only increase it said nothing at all — completeness
         # depended on someone noticing which commands could decrease it.
-        def invariant(description, &predicate)
+        # RENAMED FROM `invariant` — item #13's full metaprogrammed
+        # dispatch (slice 4b), same reasoning as given_impl above.
+        def invariant_impl(description, &predicate)
           @invariants << build_rule(Invariant, description, predicate, owner_name: @name, word: "invariant",
                                      extraction_failure: "it would be a rule the IR cannot carry")
         end
@@ -455,11 +486,11 @@ module Hecksagain
         # byte-identical to what those three did before this slice.
         def legacy_has_many(type, as:, optional: false)
           plural = Naming.demodulise(type)
-          reference_to(Naming.singularize(plural), as: as || Naming.snake(plural).to_sym, optional: optional)
+          reference_to_impl(Naming.singularize(plural), as: as || Naming.snake(plural).to_sym, optional: optional)
         end
 
         def legacy_has_one(type, as:, optional: false)
-          reference_to(type, as: as || Naming.snake(Naming.demodulise(type)).to_sym, optional: optional)
+          reference_to_impl(type, as: as || Naming.snake(Naming.demodulise(type)).to_sym, optional: optional)
         end
 
         # Every reference is told which Aggregate declares it, so it can
@@ -604,6 +635,15 @@ module Hecksagain
 
           @commands.each do |command|
             command.mutations.each do |mutation|
+              # `:delegate` — CommandBuilder#delegates_to's own comment —
+              # targets no field of THIS aggregate at all; its `target`
+              # names an "Entity.Command" pair instead, checked when the
+              # command builds (`delegates_to`'s own `rpartition` guard)
+              # and again at dispatch time (`CommandInterpreter
+              # #step_delegate_to_entity`, which refuses a real one that
+              # names no such entity or command). Sealing THIS check
+              # against it would refuse every delegating command outright.
+              next if mutation.op == :delegate
               next if known.include?(mutation.target.to_sym)
 
               raise Malformed,

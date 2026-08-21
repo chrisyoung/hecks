@@ -663,6 +663,10 @@
               [
                 "fills",
                 "realm"
+              ],
+              [
+                "calls",
+                "realm_impl"
               ]
             ],
             [
@@ -689,6 +693,10 @@
               [
                 "fills",
                 "latest"
+              ],
+              [
+                "calls",
+                "latest_impl"
               ]
             ]
           ],

@@ -33,7 +33,13 @@ module Hecksagain
         # One symbol is retired: it cannot say whether the author means a
         # value concept or a field-shaped database key. Frozen source still
         # reaches the old interpretation through `legacy_identified_by`.
-        def identified_by(*targets, as: nil, &definition)
+        # RENAMED FROM `identified_by` — item #13's full metaprogrammed
+        # dispatch (slice 4c), same shared-mixin shape `attribute_impl`
+        # already proved in slice 3: ONE renamed method, both Aggregate
+        # and Entity Keyword rows name it in `calls:`. Bootstrap-
+        # reachable (every self-hosted aggregate/entity declares an
+        # identity), so in BOOTSTRAP_CALLS_FALLBACK for both contexts.
+        def identified_by_impl(*targets, as: nil, &definition)
           return legacy_identified_by(*targets, as: as, &definition) if MetaValidator.shadow_parsing?
 
           refuse_second_identity!

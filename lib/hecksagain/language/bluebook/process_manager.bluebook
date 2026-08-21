@@ -226,9 +226,9 @@ Hecks.bluebook "Bluebook" do
       member word: "correlates_by",   context: "ProcessManager", body: "none",     inner: "",        opens: "",        fills: "correlates_by"
       member word: "starts_on",       context: "ProcessManager", body: "none",     inner: "",        opens: "",        fills: "starts_on"
       member word: "ends_on",         context: "ProcessManager", body: "none",     inner: "",        opens: "",        fills: "ends_on"
-      member word: "transition",      context: "ProcessManager", body: "keywords", inner: "Handler", opens: "Handler", fills: ""
-      member word: "transition",      context: "ProcessManager", body: "none",     inner: "",        opens: "",        fills: ""
-      member word: "dispatch",        context: "Handler",        body: "none",     inner: "",        opens: "Dispatch", fills: ""
+      member word: "transition",      context: "ProcessManager", body: "keywords", inner: "Handler", opens: "Handler", fills: "", calls: "transition_impl"
+      member word: "transition",      context: "ProcessManager", body: "none",     inner: "",        opens: "",        fills: "", calls: "transition_impl"
+      member word: "dispatch",        context: "Handler",        body: "none",     inner: "",        opens: "Dispatch", fills: "", calls: "dispatch_impl"
 
     end
 

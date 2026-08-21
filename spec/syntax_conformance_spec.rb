@@ -165,7 +165,79 @@ RSpec.describe "the declared syntax" do
       attributes:         "AttributeCollector's collection, read by whoever owns it",
       closed_sets:        "AttributeCollector's synthesised sets, installed by the aggregate",
       dispatches:         "HandlerBuilder's collection, read by ProcessManagerBuilder",
-      add_aggregate_head: "ReadModelBuilder's own build calls it; nothing types it"
+      add_aggregate_head: "ReadModelBuilder's own build calls it; nothing types it",
+      # `attribute_impl` — item #13's full metaprogrammed dispatch
+      # (slice 3, whole-project table-unification survey). Not a word
+      # itself: the `attribute` Keyword row's own `calls:` column names
+      # this as the real method it forwards to, unchanged, once its
+      # hand-written `def attribute` was removed. Every Keyword row for
+      # `attribute` still names the WORD "attribute", never
+      # "attribute_impl" — this is the target the word CALLS, not a
+      # second word the language would need its own row for.
+      attribute_impl:     "AttributeCollector's own real implementation, called by GenericDispatch's calls:",
+      # Same reasoning, slice 4: `role`/`unresolved` renamed to
+      # `role_impl`/`unresolved_impl` so `calls:` can name them; the
+      # Keyword rows still say "role"/"unresolved", never these.
+      role_impl:          "CommandBuilder's own real implementation, called by GenericDispatch's calls:",
+      unresolved_impl:    "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      has_many_impl:      "AggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      has_one_impl:       "AggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      belongs_to_impl:    "AggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      trigger_impl:       "PolicyBuilder's own real implementation, called by GenericDispatch's calls:",
+      dispatch_impl:      "HandlerBuilder's own real implementation, called by GenericDispatch's calls:",
+      # Same reasoning, slice 4b: `given`/`invariant`/`reference_to` are
+      # SEPARATE per-builder implementations (not one shared mixin like
+      # attribute_impl), each renamed the same way in its own file.
+      given_impl:         "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      invariant_impl:     "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      reference_to_impl:  "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      # Slice 4c — a fresh survey found every remaining hand-written
+      # word still un-migrated; same reasoning throughout, one comment
+      # for all of them.
+      aggregate_impl:     "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      attaches_to_impl:   "BluebookBuilder's own real implementation, called by GenericDispatch's calls:",
+      provenance_impl:    "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      identified_by_impl: "IdentityDeclaration's own real implementation, called by GenericDispatch's calls:",
+      lifecycle_impl:     "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      entity_impl:        "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      query_impl:         "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      policy_impl:        "AggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      command_impl:       "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      projects_impl:      "AggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      sets_impl:          "CommandBuilder's own real implementation, called by GenericDispatch's calls:",
+      # New word, not a slice of item #13's migration — CommandBuilder
+      # #delegates_to_impl's own comment gives the full reasoning.
+      # Reached the same way every hand-written Command word already is.
+      delegates_to_impl:  "CommandBuilder's own real implementation, called by GenericDispatch's calls:",
+      member_impl:        "ValueObjectBuilder's own real implementation, called by GenericDispatch's calls:",
+      where_impl:         "QuerySpecification::Common::DSL's own real implementation, called by GenericDispatch's calls:",
+      order_by_impl:      "QuerySpecification::Common::DSL's own real implementation, called by GenericDispatch's calls:",
+      authorize_impl:     "QuerySpecification::Common::DSL's own real implementation, called by GenericDispatch's calls:",
+      limit_impl:         "QuerySpecification::Common::DSL's own real implementation, called by GenericDispatch's calls:",
+      offset_impl:        "QuerySpecification::Common::DSL's own real implementation, called by GenericDispatch's calls:",
+      include_impl:       "ReadModelBuilder's own real implementation, called by GenericDispatch's calls:",
+      group_by_impl:      "ReadModelBuilder's own real implementation, called by GenericDispatch's calls:",
+      transition_impl:    "the owning builder's own real implementation, called by GenericDispatch's calls:",
+      tells_impl:         "DomainPortBuilder's own real implementation, called by GenericDispatch's calls: — also the target for the \"operation\" spelling, a Ruby alias no more",
+      asks_impl:          "DomainPortBuilder's own real implementation, called by GenericDispatch's calls:",
+      rename_impl:        "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      move_impl:          "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      convert_impl:       "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      retype_impl:        "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      compute_impl:       "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      rekey_impl:         "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      backfill_impl:      "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
+      # Slice 5 — the final three: Hecksagon#port/World#realm+latest
+      # (unblocked by WordGate#word_gate_dispatch's own new shared-
+      # helper mechanism), then_set (its own dedicated retired row now,
+      # not sets's own `was:`), and list_of/one_of (the new "Type"-
+      # context fallback).
+      port_impl:          "HecksagonBuilder's own real implementation, called by GenericDispatch's calls:",
+      realm_impl:         "WorldBuilder's own real implementation, called by GenericDispatch's calls:",
+      latest_impl:        "WorldBuilder's own real implementation, called by GenericDispatch's calls:",
+      then_set_impl:      "CommandBuilder's own real implementation, called by GenericDispatch's calls:",
+      list_of_impl:       "AttributeCollector's own real implementation, called by GenericDispatch's calls:",
+      one_of_impl:        "the owning builder's own real implementation, called by GenericDispatch's calls:"
     }
   }.freeze
 
@@ -297,13 +369,25 @@ RSpec.describe "the declared syntax" do
     next if builder.equal?(D::AttributeCollector)
 
     it "declares every word #{builder} answers (#{contexts.join(', ')})" do
+      own_words = contexts.flat_map { |ctx| declared_in(ctx).map { |row| row[:word] } }.uniq
       declared = contexts.flat_map { |ctx| declared_in(ctx).flat_map { |row| [row[:word], row[:was].to_s].reject(&:empty?) } }
                          .map(&:to_sym).uniq
 
       if builder.is_a?(Class) && builder.include?(D::AttributeCollector)
+        # A Type-position word (`list_of`/`one_of`) counts as declared
+        # for this builder UNLESS the builder's OWN context already has
+        # a row of the same name (`ValueObject`'s own `one_of`, the
+        # block-wrapper form) — the identical "own context first, Type
+        # second" order `WordGate#word_gate_dispatch`'s own fallback
+        # checks, item #13's full metaprogrammed dispatch (slice 5).
+        # Neither word is ever a real method to introspect anymore
+        # (both renamed to `*_impl`, reached through `calls:`), so this
+        # reads the SAME table the runtime dispatch itself reads,
+        # rather than Ruby's own method ownership.
         declared += LIVE_KEYWORDS.select { |row| row[:context] == "Type" }
-                                 .map { |row| row[:word].to_sym }
-                                 .select { |word| builder.instance_method(word).owner.equal?(D::AttributeCollector) }
+                                 .map { |row| row[:word] }
+                                 .reject { |word| own_words.include?(word) }
+                                 .map(&:to_sym)
       end
 
       answered = contexts.flat_map { |ctx| self.class.words_answered_by(ctx) }.uniq
@@ -323,8 +407,15 @@ RSpec.describe "the declared syntax" do
   it "answers every renamed word in both its spellings" do
     LIVE_KEYWORDS.reject { |row| row[:was].to_s.empty? }.each do |row|
       answered = self.class.words_answered_by(row[:context])
-      expect(answered).to include(row[:word].to_sym),
-                          "#{row[:context]}.#{row[:word]} — the new spelling has no builder"
+      # The NEW spelling may answer through `GenericDispatch`'s own
+      # `calls:` now (item #13's full metaprogrammed dispatch) rather
+      # than a literal method of its own name — `sets` (was: "then_set")
+      # is the first rename to hit this, once `sets` itself moved to
+      # `sets_impl` in slice 4c. The OLD spelling (`then_set`, here)
+      # always stays a real, unmigrated method — `WordGate` matches `was:`
+      # by exact row lookup, never through `calls:`.
+      expect(answered.include?(row[:word].to_sym) || generically_dispatched?(row[:word], row[:context])).to be(true),
+                                                                                                            "#{row[:context]}.#{row[:word]} — the new spelling has no builder"
       expect(answered).to include(row[:was].to_sym),
                           "#{row[:context]}.#{row[:word]} was #{row[:was]}, and the old " "spelling stopped parsing — a rename never strands the old era"
       expect(row[:was]).not_to eq(row[:word]), "#{row[:context]}.#{row[:word]} renames itself"

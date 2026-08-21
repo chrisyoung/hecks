@@ -209,6 +209,21 @@ RSpec.describe "the expression sublanguage" do
     end
   end
 
+  describe "first" do
+    it "reads the leading segment of a split, the mirror image of .last" do
+      matching = "dispatch::lexicon::query::command_bus"
+      not_matching = "other::lexicon::query::command_bus"
+
+      expect(evaluate('value.split("::").first == "dispatch"', value: matching)).to be(true)
+      expect(evaluate('value.split("::").first == "dispatch"', value: not_matching)).to be(false)
+    end
+
+    it "raises when the receiver has no #first" do
+      expect { evaluate("value.first", value: 12) }
+        .to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /first expects a list, got 12/)
+    end
+  end
+
   describe "block-taking all?/any?/none?" do
     it "aggregates a per-element predicate over a split array" do
       four_real_segments = "dispatch::lexicon::query::command_bus"
@@ -230,6 +245,74 @@ RSpec.describe "the expression sublanguage" do
       expect { evaluate("value.all? { |s| s.length > 0 }", value: "oops") }
         .to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /all\? expects a list, got "oops"/)
     end
+
+    it "handles a block predicate nested inside another block predicate's own predicate, the shipping-domain re-routing check this grammar gap forced a workaround for" do
+      # legs.any? { |l| an outer condition on l, AND some other leg satisfies an inner condition }
+      legs_with_a_later_leg = [
+        { "load" => "SESTO", "unload" => "USNYC" },
+        { "load" => "USNYC", "unload" => "AUSYD" }
+      ]
+      legs_without_a_later_leg = [
+        { "load" => "SESTO", "unload" => "USNYC" }
+      ]
+      expression = 'legs.any? { |l| l.load == "SESTO" && legs.any? { |o| o.load == "USNYC" } }'
+
+      expect(evaluate(expression, legs: legs_with_a_later_leg)).to be(true)
+      expect(evaluate(expression, legs: legs_without_a_later_leg)).to be(false)
+    end
+  end
+
+  describe "find" do
+    let(:legs) do
+      [
+        { "load" => "SESTO", "unload" => "USNYC", "voyage" => "V001" },
+        { "load" => "USNYC", "unload" => "AUSYD", "voyage" => "V002" }
+      ]
+    end
+
+    it "projects a field off the first matching element, the find-then-project shape a caller-precomputed field used to stand in for" do
+      expect(evaluate('legs.find { |l| l.load == "USNYC" }.voyage == "V002"', legs: legs)).to be(true)
+    end
+
+    it "resolves to nil, not an error, when no element matches — a normal 'no leg after this one' outcome" do
+      expect(evaluate('legs.find { |l| l.load == "ZZZZZ" }.voyage == "V002"', legs: legs)).to be(false)
+      # bare (no comparison), Evaluator truthy-casts every leaf's raw value
+      # the same way it does for `.last`/`.present?` — nil casts to false,
+      # not an error, exactly what "no leg found" should mean here.
+      expect(evaluate('legs.find { |l| l.load == "ZZZZZ" }.voyage', legs: legs)).to be(false)
+    end
+
+    it "composes bare, with no trailing path, the same way .last does" do
+      expect(evaluate('legs.find { |l| l.load == "USNYC" }.present?', legs: legs)).to be(true)
+      expect(evaluate('legs.find { |l| l.load == "ZZZZZ" }.present?', legs: legs)).to be(false)
+    end
+
+    it "raises when the receiver is not a list" do
+      expect { evaluate('value.find { |l| l.load == "USNYC" }.voyage', value: "oops") }
+        .to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /find expects a list, got "oops"/)
+    end
+
+    it "nests inside a block predicate's own predicate — the shipping-domain re-routing check that first exposed this: scanning for .find and .any?/.all?/.none? SEPARATELY found the wrong (inner) occurrence when they nest, the same crash signature nested .any? had before parse_block_opener unified the scan" do
+      two_legs = [
+        { "load" => "SESTO", "unload" => "USNYC" },
+        { "load" => "USNYC", "unload" => "AUSYD" }
+      ]
+      one_leg = [{ "load" => "SESTO", "unload" => "USNYC" }]
+      expression = 'legs.any? { |leg| leg.load == "SESTO" && legs.find { |o| o.load == leg.unload }.load == "USNYC" }'
+
+      expect(evaluate(expression, legs: two_legs)).to be(true)
+      expect(evaluate(expression, legs: one_leg)).to be(false)
+    end
+
+    it "nests the OTHER direction too — a block predicate inside .find's own predicate" do
+      two_legs = [
+        { "load" => "SESTO", "unload" => "USNYC" },
+        { "load" => "USNYC", "unload" => "AUSYD" }
+      ]
+      expression = 'legs.find { |leg| legs.any? { |o| o.load == leg.unload } }.load == "SESTO"'
+
+      expect(evaluate(expression, legs: two_legs)).to be(true)
+    end
   end
 
   describe "start_with? and end_with?" do
@@ -248,7 +331,7 @@ RSpec.describe "the expression sublanguage" do
     end
   end
 
-  describe "bare-lookup single-field VO scalar unwrap" do
+  describe "single-field VO scalar unwrap" do
     SingleFieldDouble = Struct.new(:value) do
       def to_h = { value: value }
     end
@@ -260,10 +343,29 @@ RSpec.describe "the expression sublanguage" do
       expect(evaluate('status == "inactive"', status: wrapped)).to be(false)
     end
 
-    it "leaves a dotted lookup walking the wrapper's own #[] untouched" do
+    it "leaves a dotted lookup reaching a VO's own #[]-addressed field untouched (already raw)" do
       wrapped = SingleFieldDouble.new("active")
 
       expect(evaluate('status.value == "active"', status: wrapped)).to be(true)
+    end
+
+    it "unwraps the terminal value of a dotted lookup that navigates to a nested single-field VO" do
+      # the leg.voyage shape: `leg` is an entity/hash, `voyage` is itself
+      # a single-field VO -- the dotted walk's intermediate hop reaches
+      # `leg` via #[], but the FINAL hop lands on a VO and must unwrap
+      # it the same as a bare lookup would, or `==` silently returns
+      # false for every comparison (Value#== only equals another Value).
+      leg = { voyage: SingleFieldDouble.new("SF-NY") }
+
+      expect(evaluate('leg.voyage == "SF-NY"', leg: leg)).to be(true)
+      expect(evaluate('leg.voyage == "SF-LA"', leg: leg)).to be(false)
+    end
+
+    it "unwraps both sides when comparing two nested single-field VOs directly" do
+      leg = { voyage: SingleFieldDouble.new("SF-NY") }
+      other_voyage = SingleFieldDouble.new("SF-NY")
+
+      expect(evaluate("leg.voyage == other_voyage", leg: leg, other_voyage: other_voyage)).to be(true)
     end
   end
 
@@ -453,6 +555,28 @@ RSpec.describe "the expression sublanguage" do
       resolved_again = evaluator.ast_cache.fetch(expr).expr
       expect(resolved_again).to equal(sign_test)
       expect(resolved_again.receiver).to equal(receiver_leaf)
+    end
+  end
+
+  # `interpret`'s own `case` in both Evaluator and Resolver used to have no
+  # `else` at all — a node type `parse` never produces reaching it (today,
+  # only possible from a hand-built AST, not real corpus text) would return
+  # bare `nil` silently rather than refuse. Neither method's real `parse` can
+  # produce a node outside its own known set, so this exercises the backstop
+  # directly, past `parse`, the only way to reach it at all.
+  describe "interpret's own exhaustiveness backstop" do
+    UnknownNode = Struct.new(:whatever)
+
+    it "Evaluator.interpret refuses a node type it has no case for, rather than silently returning nil" do
+      expect do
+        Hecksagain::Bluebook::Expression::Evaluator.interpret(UnknownNode.new, {}, {})
+      end.to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /no interpreter handles/)
+    end
+
+    it "Resolver.interpret refuses a node type it has no case for, rather than silently returning nil" do
+      expect do
+        Hecksagain::Bluebook::Expression::Resolver.interpret(UnknownNode.new, {}, {})
+      end.to raise_error(Hecksagain::Bluebook::Expression::EvaluationError, /no interpreter handles/)
     end
   end
 end

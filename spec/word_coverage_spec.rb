@@ -128,6 +128,18 @@ RSpec.describe "every live DSL word, used somewhere real" do
   # when written), not an assumption; delete an entry once the corpus
   # grows to cover it and this spec will say so on its own.
   EXEMPT = {
+    "delegates_to (Command)"               =>
+                                              "an external consumer outside this repo — `hecks_ai_training`, a downstream " \
+                                              "project building `domain/chess` — is the real motivating use: a chess move's " \
+                                              "own legality needs a synchronous, single-dispatch handoff from an aggregate-" \
+                                              "level command into one nested entity command, which neither `trigger` nor a " \
+                                              "saga's own `dispatches` can give (both commit the triggering command first " \
+                                              "and rescue the target's own refusal rather than raising it back — " \
+                                              "CommandBuilder#delegates_to_impl's own comment has the full trail). No " \
+                                              "bundled example here (banking/pizzas/compliance) has a real need for it yet; " \
+                                              "`spec/dsl_spec.rb`'s own delegates_to examples and " \
+                                              "`spec/runtime/delegates_to_spec.rb`'s own dedicated fixture and dispatch-" \
+                                              "level specs are this word's real, running coverage in the meantime.",
     "cursor (Query)"                       =>
                                               "refused unconditionally at build (QueryBuilder#seal_cursor) — no interpreter " \
                                               "implements cursor pagination, so any real declaration would refuse the bluebook " \
@@ -213,6 +225,15 @@ RSpec.describe "every live DSL word, used somewhere real" do
                                               "yet. docs/implemented/reference/entity.md's own fixture runs it for real, which is the " \
                                               "doctest bar, not this one.",
     "has_one (Entity)"                     => "same as has_many (Entity), one word over — EntityBuilder#has_one.",
+    # `then_set (Command)` — the OTHER kind of structural impossibility this
+    # file's own header distinguishes from a mere corpus gap: refused
+    # unconditionally at build outside MetaValidator.shadow_parsing?
+    # (CommandBuilder#then_set_impl); sets is the word now, and no live
+    # declaration of then_set can ever succeed to be a corpus example of.
+    "then_set (Command)"                   =>
+                                              "refused unconditionally at build outside MetaValidator.shadow_parsing? " \
+                                              "(CommandBuilder#then_set_impl) — sets is the word now; a live declaration " \
+                                              "exists only to be refused, never to succeed.",
     "uses_embryonaut_bluebook (Hecksagon)" =>
                                               "no hecksagon in THIS repository's own corpus vendors an embryonaut bluebook — " \
                                               "real, external use is what this word is for: lifeadelics/domain (a hecksagain-" \

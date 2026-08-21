@@ -57,7 +57,16 @@ module Hecksagain
         # otherwise silently win while the first still looked declared,
         # exactly the failure mode `reference_to`'s own duplicate guard
         # (below) already exists to prevent for a command's root.
-        def role(value)
+        #
+        # RENAMED FROM `role` — item #13's full metaprogrammed dispatch
+        # (slice 4). This is a uniqueness gate on PRIOR STATE (`@role`
+        # already set), not a pure function of the argument's own value —
+        # a genuinely different shape than a plain fill, so it stays
+        # hand-written and is reached through `calls:` like `attribute`
+        # was in slice 3. Bootstrap-reachable (every self-hosted command
+        # declares a role), so also named in
+        # `GenericDispatch::BOOTSTRAP_CALLS_FALLBACK`.
+        def role_impl(value)
           raise Malformed,
                 "#{@name} declares role twice — a command carries ONE " \
                 "responsibility; the second would silently win and the " \
@@ -70,14 +79,20 @@ module Hecksagain
 
         # See AggregateBuilder#provenance's own comment — identical shape,
         # one level down.
-        def provenance(from:) = @provenance = from
+        # RENAMED FROM `provenance` — item #13's full metaprogrammed
+        # dispatch (slice 4c). Bootstrap-reachable, in
+        # GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
+        def provenance_impl(from:) = @provenance = from
 
         # `optional:` rides here as well as on a plain attribute : `as:` makes a
         # reference into a NAMED ARGUMENT, and a named argument is exactly the kind
         # of fact that may or may not be given. The meta-domain's Verb.Declare
         # points at the Entity a command belongs to — and most commands belong to no
         # entity at all.
-        def reference_to(type, as: nil, optional: false)
+        # RENAMED FROM `reference_to` — item #13's full metaprogrammed
+        # dispatch (slice 4b). Bootstrap-reachable, in
+        # GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
+        def reference_to_impl(type, as: nil, optional: false)
           demodulised = Naming.demodulise(type)
           # moved to the language: given "a command names what it acts on", on Verb.ActsOn
 
@@ -104,7 +119,7 @@ module Hecksagain
         private
 
         def cross_reference(target, as, optional = false)
-          attribute(as || default_reference_name(target), Reference.new(target), optional: optional)
+          attribute_impl(as || default_reference_name(target), Reference.new(target), optional: optional)
         end
 
         public
@@ -120,7 +135,9 @@ module Hecksagain
         # named". Resolved against whatever the OWNING aggregate has
         # declared so far — see `AggregateBuilder#command`'s own
         # comment on why that means declaration order matters here.
-        def given(description, &predicate)
+        # RENAMED FROM `given` — item #13's full metaprogrammed dispatch
+        # (slice 4b), same reasoning as reference_to_impl above.
+        def given_impl(description, &predicate)
           return reference_named_given(description) unless predicate
 
           # moved to the language: given "a rule says what it means", on Verb.Rule
@@ -238,8 +255,17 @@ module Hecksagain
         KWARG_TO_OP = { to: :set, append: :append, increment: :increment, decrement: :decrement,
                         multiply: :multiply, clamp: :clamp, remove: :remove }.freeze
 
-        def sets(target, positional_to = UNSET, to: UNSET, append: UNSET,
-                 increment: UNSET, decrement: UNSET, multiply: UNSET, clamp: UNSET, remove: UNSET)
+        # RENAMED FROM `sets` — item #13's full metaprogrammed dispatch
+        # (slice 4c). The `KWARG_TO_OP` op-selection mapping is already
+        # table-verified (`Argument#selects`), but the REST (UNSET-
+        # sentinel discipline, redundant-spelling refusal, omittable-
+        # `to:` fallback, one-mutation-only refusal, the position-
+        # preserving `resolve_*!` reinsertion) is keyed off RUNTIME
+        # STATE, not a pure function of a static row — stays hand-
+        # written, reached through `calls:` like everything else here.
+        # Bootstrap-reachable, in BOOTSTRAP_CALLS_FALLBACK.
+        def sets_impl(target, positional_to = UNSET, to: UNSET, append: UNSET,
+                      increment: UNSET, decrement: UNSET, multiply: UNSET, clamp: UNSET, remove: UNSET)
           # moved to the language: given "a mutation names a target", on Verb.Change
 
           to = positional_to if to.equal?(UNSET) && !positional_to.equal?(UNSET)
@@ -277,7 +303,12 @@ module Hecksagain
         # LEGACY UNDER SHADOW-PARSING (S0a's own bridge) — frozen era text
         # minted before this rename still parses; live source refuses it,
         # naming the replacement.
-        def then_set(target, positional_to = UNSET, **kwargs)
+        # RENAMED FROM `then_set` — item #13's full metaprogrammed
+        # dispatch (slice 5). Not bootstrap-reachable. Now has its own
+        # dedicated, `status: "deprecated"` Keyword row (syntax.bluebook)
+        # rather than living only as `sets`'s own `was:` — see that
+        # row's own comment for why.
+        def then_set_impl(target, positional_to = UNSET, **kwargs)
           return legacy_then_set(target, positional_to, **kwargs) if MetaValidator.shadow_parsing?
 
           raise Malformed, "#{@name}'s then_set is gone — sets is the word now"
@@ -292,8 +323,96 @@ module Hecksagain
           @emits << event_name.to_s
         end
 
+        # THE SYNCHRONOUS COUSIN OF `trigger` — an AGGREGATE-level command
+        # that hands its own dispatch to ONE nested entity command, checked
+        # and applied within the SAME atomic dispatch rather than a second
+        # one. Built because `trigger`/`saga`'s own dispatch (`Dispatcher
+        # #reenter`) is a REACTION — the triggering command has already
+        # committed by the time it runs, and both `PolicyInterpreter#deliver`
+        # and `SagaInterpreter#deliver_saga_dispatch` rescue a target's own
+        # refusal and RECORD it rather than raising it back to the original
+        # caller. That is correct for what those two exist for (an
+        # eventually-consistent process that can compensate), and wrong for
+        # a caller who needs a synchronous yes/no on whether the thing they
+        # asked for actually happened — a chess move's own legality, for
+        # instance, checked live building `domain/chess` in a downstream
+        # project. `delegates_to` fills exactly that gap: the target
+        # entity command's own `given`/`ensures` are enforced as real,
+        # unrescued Ruby exceptions, so a refusal deep in the entity's own
+        # rules is the DELEGATING command's own refusal too, and nothing
+        # from either side is saved unless both sides pass.
+        #
+        # `target` is always ONE hop, `"Entity.Command"` — an aggregate
+        # names the entity it owns directly, same reach a bare `given`
+        # reference already has (see `Knight`'s own comment on this
+        # domain's shared givens), not a multi-segment dispatch chain.
+        # `with:` resolves the SAME way `sets ..., append: {...}`'s own
+        # field map and a policy's own `trigger ..., with: {...}` already
+        # do: each value names one of THIS command's own declared/implicit
+        # arguments, read at dispatch time and handed to the target under
+        # its own key.
+        #
+        # MUTUALLY EXCLUSIVE with `sets`/`emits` on the SAME command — a
+        # delegating command is a pure passthrough by design (see this
+        # method's own header), so it declares no OTHER mutation or event of
+        # its own; its result IS whatever the delegated entity command's own
+        # `sets`/`emits` produced. Enforced in `build`, once every builder
+        # call has already run, so declaration order does not matter.
+        #
+        # STORED AS A MUTATION, not a new Command field — a real, deliberate
+        # choice, not a shortcut. `Command`'s own shape (givens/ensures/
+        # mutations/emits/...) is not just Ruby: it round-trips through this
+        # language's OWN self-hosted meta-domain (`Bluebook::MetaValidator`
+        # dispatches every declaration into a "Bluebook" domain describing
+        # itself, then REBUILDS the real runtime graph from what THAT domain
+        # holds — `Hecks.bluebook` registers what `MetaValidator.call`
+        # returns, never the builder's own object graph directly, confirmed
+        # by reading `meta_validator.rb`'s own `self.call`/`self.hold`).
+        # A genuinely NEW top-level Command field needs the meta-domain's
+        # own grammar (`language/bluebook/behavior.bluebook` or wherever
+        # Verb.Rule/Ensure/Change live) taught to carry it too — the same
+        # scale of change as the real "item #13" migration this file's own
+        # comments document throughout. A NEW MUTATION OP does not: `sets`'s
+        # own `mutations:` field is ALREADY a fully round-tripped part of
+        # that contract (`Assembly::CONTRACTS["Command"].fields[:mutations]`),
+        # and an append-shaped mutation ALREADY carries a multi-key `fields:`
+        # hash the exact shape `with:` needs — so `delegates_to` rides that
+        # existing, already-correct wire format under a new `op: :delegate`
+        # instead of inventing a parallel one. `MutationOp`'s own closed set
+        # (vocabulary.bluebook) gained `"delegate"` alongside `"append"`
+        # for exactly this reason, and the THREE meta-domain touch points
+        # that hard-coded `op == "append"` for the multi-binding shape
+        # (`meta_validator/readings.rb#mutation_rows`,
+        # `meta_validator/shapes.rb#mutation`, `assembly/marks.rb#mutation`)
+        # now check for `:delegate` alongside it, each with a comment
+        # pointing back here.
+        # RENAMED FROM `delegates_to` to `delegates_to_impl` on declaration
+        # — matches `sets_impl`/`given_impl`/`reference_to_impl`'s own
+        # convention (language/bluebook/syntax.bluebook's own Keyword row
+        # for this word names `calls: "delegates_to_impl"`), the same
+        # `word`-vs-`_impl` split every hand-written (not yet item-#13-
+        # generic-dispatch-migrated) DSL word here already follows.
+        def delegates_to_impl(target, with: {})
+          entity_name, _dot, command_name = target.to_s.rpartition(".")
+          if entity_name.empty? || command_name.empty?
+            raise Malformed,
+                  "#{@name}'s delegates_to #{target.inspect} does not name an entity and a command " \
+                  "(\"Entity.Command\") — the same one-hop shape a bare given reference already uses"
+          end
+
+          @mutations << Mutation.new(target: target.to_s, op: :delegate, source: with)
+        end
+
         def build
           resolve_implicit_attributes!
+
+          delegation = @mutations.find { |mutation| mutation.op == :delegate }
+          if delegation && (@mutations.size > 1 || @emits.any?)
+            raise Malformed,
+                  "#{@name} both delegates_to #{delegation.target} and declares its own " \
+                  "sets/emits — a delegating command is a pure passthrough (see delegates_to's " \
+                  "own comment); its result is the delegated command's own"
+          end
 
           Command.declare(
             name:       @name,

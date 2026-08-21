@@ -36,7 +36,16 @@ module Hecksagain
           # holds the two equal) -- MutationApplier's own `when :remove`
           # branch (mutation_applier.rb) never calls #sign_of, so this was
           # a declared-vocabulary gap, not a behaviour gap.
-          MutationOp.new(name: "remove",    sign: nil)
+          MutationOp.new(name: "remove",    sign: nil),
+          # Vendored addition, not (yet) upstream hecksagain —
+          # CommandBuilder#delegates_to's own comment gives the full
+          # reasoning; carries no sign, like set/append/remove — it does
+          # no arithmetic, only a synchronous handoff into one nested
+          # entity command. Declared here so this table stays exactly
+          # what Vocabulary::MutationOp declares — MutationApplier's own
+          # `when :delegate` branch (mutation_applier.rb) never calls
+          # #sign_of either, same as `remove`'s own note above.
+          MutationOp.new(name: "delegate",  sign: nil)
         ].freeze
 
         # A mutation's source is either the NAME OF AN ARGUMENT or a LITERAL, and
@@ -69,6 +78,22 @@ module Hecksagain
           if current.is_a?(Value) && amount.is_a?(Value)
             return arithmetic_value_object(current, amount, target, sign, op)
           end
+
+          # `current` genuinely absent (no declared default, never set) and
+          # `amount` arrives VO-wrapped — a real command argument typed the
+          # same as the attribute, but with nothing to combine field-by-
+          # field against yet (that is what `arithmetic_value_object`,
+          # above, is for once BOTH sides carry real fields). Before this,
+          # falling straight to `unless amount.is_a?(Numeric)` below
+          # refused with "increment needs an Integer, got 500" — true of
+          # nothing: 500 is exactly the Integer it asked for, just still
+          # wearing the Money wrapper the command's own declared attribute
+          # type put it in. Unwrapped here, the same shape #clamp already
+          # falls through to for an absent VO-typed attribute
+          # (`current ||= 0`, then a raw scalar) — the mutation applier
+          # re-wraps the raw result into the declared VO type on write,
+          # the same way it already does for clamp's own result.
+          amount = unwrap_single_numeric_field(amount) if amount.is_a?(Value)
 
           # Widened from Integer to Numeric (migration plan task 4, i106):
           # miette's organ math increments a Float (`increment: 0.02`) --
@@ -108,7 +133,21 @@ module Hecksagain
           current.with(field, current[field] + (sign * amount[field]))
         end
 
-        def sign_of(op) = MUTATION_OPS.find { |candidate| candidate.name == op.to_s }&.sign || -1
+        # Not a bare `.find(...)&.sign || -1` — that silently answered
+        # DECREMENT'S sign for BOTH an op this table has never heard of
+        # AND a declared, real op that simply carries no sign at all
+        # (set/append/multiply/clamp/remove — see MUTATION_OPS above).
+        # Callers today only ever reach this for :increment/:decrement
+        # (both MutationApplier#apply and EntityInterpreter#
+        # apply_to_element gate every other op through their own `case`
+        # first, each with its own loud WiringError backstop), so this
+        # raise is not a real runtime path yet — it is the same
+        # backstop one level down, in case a future caller reaches
+        # #sign_of directly for an op that was never meant to have one.
+        def sign_of(op)
+          MUTATION_OPS.find { |candidate| candidate.name == op.to_s }&.sign ||
+            raise(WiringError, "no sign declared for mutation op #{op.inspect} — add one before calling #sign_of")
+        end
 
         # Vendored addition, not (yet) upstream hecksagain (migration plan
         # task 4, i106): `current * amount` -- the scaling counterpart to
@@ -123,6 +162,10 @@ module Hecksagain
           if current.is_a?(Value) && amount.is_a?(Value)
             return combine_value_object(current, amount, target, "multiply") { |c, a| c * a }
           end
+
+          # Same absent-`current`, VO-wrapped-`amount` gap as `#arithmetic`
+          # — see that method's own comment.
+          amount = unwrap_single_numeric_field(amount) if amount.is_a?(Value)
 
           unless amount.is_a?(Numeric) && current.is_a?(Numeric)
             raise TypeMismatch, RefusalWording.render("TypeMismatch", "arithmetic_amount",
@@ -147,8 +190,12 @@ module Hecksagain
           # this was the one arithmetic op that didn't, so a VO-typed
           # attribute with no declared `default:` (genuinely absent,
           # `Instance.defaults`/`#default_for`) hit TypeMismatch on the
-          # FIRST clamp, where increment/decrement/multiply would have
-          # silently treated the same absent field as zero.
+          # FIRST clamp. (#arithmetic/#multiply's OWN absent-current gap
+          # was a real, separate bug this comment used to describe wrong —
+          # they did not "silently treat the same absent field as zero";
+          # they raised too, blaming a perfectly valid `amount` for not
+          # being an Integer when it was one, just still Money-wrapped.
+          # Fixed alongside this one — see #unwrap_single_numeric_field.)
           current ||= 0
           if current.is_a?(Value)
             fields = current.to_h
@@ -167,6 +214,25 @@ module Hecksagain
         end
 
         private
+
+        # `amount` arrives VO-wrapped whenever the command's own declared
+        # attribute type says so (a real `Money`, not a bare Integer) —
+        # true whether or not `current` has ever been set. Only meaningful
+        # to call once `current` is known NOT to be a Value itself (the
+        # `current.is_a?(Value) && amount.is_a?(Value)` branch, above in
+        # both callers, already owns the case where both sides carry real
+        # fields to combine). Refuses rather than guesses when more than
+        # one field is numeric — genuinely ambiguous which one an absent
+        # `current` should be treated as zero for, the same reasoning
+        # `combine_value_object`'s own `shared_numeric.size == 1` check
+        # already holds to when both sides ARE present.
+        def unwrap_single_numeric_field(value)
+          fields = value.to_h
+          numeric_fields = fields.keys.select { |field| fields[field].is_a?(Numeric) }
+          return value unless numeric_fields.size == 1
+
+          fields[numeric_fields.first]
+        end
 
         def combine_value_object(current, amount, target, op)
           current_fields = current.to_h
