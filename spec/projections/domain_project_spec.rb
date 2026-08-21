@@ -86,7 +86,7 @@ RSpec.describe "Domain.project" do
 
   # PER-CONSTRUCT PROJECTION, and the fail-quiet it closed.
   #
-  # Every construct emits its own IR (Hecksagain::IR), so an aggregate is
+  # Every construct emits its own IR (Hecksagain::BluebookIR), so an aggregate is
   # a legitimate thing to project. But `bluebook:` was only ever a
   # parameter NAME — nothing checked what arrived — and a chapter-scoped
   # projector handed an aggregate did not crash: `StorageShape.project`
@@ -146,12 +146,12 @@ RSpec.describe "Domain.project" do
 
   describe "capabilities" do
     # `requires:` names a MODULE, not a shape word. The capabilities were
-    # already real — Hecksagain::IR is the ability to emit IR, and
+    # already real — Hecksagain::BluebookIR is the ability to emit IR, and
     # Behaviour::Chapter the ability to answer as a chapter — so a
     # projection names what it needs rather than a symbol standing in
     # for it.
     it "lets a target requiring only the IR capability run on any construct that emits" do
-      expect(Hecksagain::Projections::IR.projection_requires).to eq([Hecksagain::IR])
+      expect(Hecksagain::Projections::IR.projection_requires).to eq([Hecksagain::BluebookIR])
       expect { Object.const_get("Pizzas::Order").project(Hecksagain::Projections::IR) }.not_to raise_error
     end
 
@@ -163,7 +163,7 @@ RSpec.describe "Domain.project" do
       command = bluebook.aggregate("Order").commands.first
 
       expect(command).to be_a(Class)
-      expect(Hecksagain::Projector.capable?(command, Hecksagain::IR)).to be true
+      expect(Hecksagain::Projector.capable?(command, Hecksagain::BluebookIR)).to be true
     end
 
     # Defaulting to the chapter capability is what makes the check safe

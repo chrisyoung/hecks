@@ -6,7 +6,7 @@ require_relative "behaviour/policy"
 module Hecksagain
   module Bluebook
     class Policy
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::Policy
 
       emits_ir(

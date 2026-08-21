@@ -59,15 +59,15 @@ RSpec.describe "Reaction survives provenance erasure" do
   # referenced `.goal`/`.description` at all. An executable form that
   # omits them was never at risk of losing real behaviour.
   it "carries no canonical-only documentation field — Question 6, checked" do
-    expect(Hecksagain::Runtime::ReactionLowering::Reaction.members).not_to include(:goal, :description)
+    expect(Hecksagain::PrimalIR::Reaction.members).not_to include(:goal, :description)
   end
 
   it "lowers both into instances of the SAME Ruby class" do
     from_policy = Hecksagain::Runtime::ReactionLowering.lower_policy(policy)
     from_leg    = Hecksagain::Runtime::ReactionLowering.lower_process_manager_leg(process_manager, handler)
 
-    expect(from_policy).to be_a(Hecksagain::Runtime::ReactionLowering::Reaction)
-    expect(from_leg).to be_a(Hecksagain::Runtime::ReactionLowering::Reaction)
+    expect(from_policy).to be_a(Hecksagain::PrimalIR::Reaction)
+    expect(from_leg).to be_a(Hecksagain::PrimalIR::Reaction)
     expect(from_policy.class).to eq(from_leg.class)
   end
 
@@ -78,16 +78,16 @@ RSpec.describe "Reaction survives provenance erasure" do
     # `Reaction`'s own declared members — no `origin`/`kind`/`source_type`
     # field anywhere in the struct itself, checked mechanically rather
     # than by inspection alone.
-    expect(Hecksagain::Runtime::ReactionLowering::Reaction.members).not_to include(:origin, :kind, :source_type, :canonical_type)
+    expect(Hecksagain::PrimalIR::Reaction.members).not_to include(:origin, :kind, :source_type, :canonical_type)
 
     # The two really do differ — by real, named capability (context/
     # persistence/failure), not by an origin tag standing in for one.
-    expect(from_policy.context).to be_a(Hecksagain::Runtime::ReactionLowering::Context::Stateless)
-    expect(from_leg.context).to be_a(Hecksagain::Runtime::ReactionLowering::Context::Correlated)
-    expect(from_policy.persistence).to be_a(Hecksagain::Runtime::ReactionLowering::Persistence::Ephemeral)
-    expect(from_leg.persistence).to be_a(Hecksagain::Runtime::ReactionLowering::Persistence::Checkpointed)
-    expect(from_policy.failure).to be_a(Hecksagain::Runtime::ReactionLowering::Failure::Drop)
-    expect(from_leg.failure).to be_a(Hecksagain::Runtime::ReactionLowering::Failure::Managed)
+    expect(from_policy.context).to be_a(Hecksagain::PrimalIR::Context::Stateless)
+    expect(from_leg.context).to be_a(Hecksagain::PrimalIR::Context::Correlated)
+    expect(from_policy.persistence).to be_a(Hecksagain::PrimalIR::Persistence::Ephemeral)
+    expect(from_leg.persistence).to be_a(Hecksagain::PrimalIR::Persistence::Checkpointed)
+    expect(from_policy.failure).to be_a(Hecksagain::PrimalIR::Failure::Drop)
+    expect(from_leg.failure).to be_a(Hecksagain::PrimalIR::Failure::Managed)
   end
 
   it "evaluates BOTH conditions through the exact same function, with no branch on origin" do

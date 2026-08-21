@@ -1,3 +1,4 @@
+require_relative "../primal_ir"
 require_relative "reaction"
 require_relative "reaction_lowering"
 require_relative "value"
@@ -69,7 +70,7 @@ module Hecksagain
         attrs = sources[:payload] || {}
         return false unless Runtime::ReactionLowering.evaluate_condition(reaction, state, attrs)
 
-        if reaction.persistence.is_a?(Runtime::ReactionLowering::Persistence::Checkpointed)
+        if reaction.persistence.is_a?(PrimalIR::Persistence::Checkpointed)
           state[:state] = reaction.persistence.to_state
           on_checkpoint&.call(state)
         end
@@ -148,7 +149,7 @@ module Hecksagain
       # cheap function, and simpler than threading resolved args back
       # out through `dispatch!`'s own outcome shape.
       def resolve_args(dispatch, sources)
-        return sources[:payload] || {} if dispatch.bindings == Runtime::ReactionLowering::Dispatch::VERBATIM
+        return sources[:payload] || {} if dispatch.bindings == PrimalIR::Dispatch::VERBATIM
 
         dispatch.bindings.to_h do |binding|
           destination, resolved = Bluebook::Expression::BindingLowering.resolve(binding, sources)
@@ -181,7 +182,7 @@ module Hecksagain
       # SYMBOL-keyed `:correlation` bucket in `sources`, which
       # `BindingLowering`'s own `Reference` lookups expect.
       def correlation_kwarg(reaction, correlation)
-        return nil unless reaction.context.is_a?(Runtime::ReactionLowering::Context::Correlated)
+        return nil unless reaction.context.is_a?(PrimalIR::Context::Correlated)
 
         { reaction.context.correlation_key.to_s => correlation }
       end

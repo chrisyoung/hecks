@@ -14,7 +14,7 @@ module Hecksagain
     # Those stay on whatever command a `policy` triggers in reaction to the
     # event an operation emits.
     class PortOperation
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::PortOperation
 
       emits_ir(name: :hecks_name, attributes: many(:attributes), emits: :emits)
@@ -77,7 +77,7 @@ module Hecksagain
     # Superseding those is the goal ; for now they keep working untouched,
     # and this is additive.
     class DomainPort
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::DomainPort
 
       emits_ir(name: :name, operations: many(:operations))

@@ -56,7 +56,7 @@ module Hecksagain
           door.define_singleton_method(:ir)         { ir }
 
           # THE SAME VERB THE CHAPTER ANSWERS, one level down. Every
-          # construct emits its own IR (Hecksagain::IR), so an aggregate
+          # construct emits its own IR (Hecksagain::BluebookIR), so an aggregate
           # is a legitimate thing to project — `Pizzas::Order.project(
           # Projections::IR)` is this aggregate's IR, not the chapter's.
           #

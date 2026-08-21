@@ -20,9 +20,9 @@ module Hecksagain
     class ValueObject
       extend Construct
       # EXTENDED, not included — this construct is a class, so its
-      # emission is a class method. See Hecksagain::IR's own note on
+      # emission is a class method. See Hecksagain::BluebookIR's own note on
       # the two shapes.
-      extend Hecksagain::IR
+      extend Hecksagain::BluebookIR
       extend Behaviour::ValueObject
 
       emits_ir(

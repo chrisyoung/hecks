@@ -10,7 +10,7 @@ require_relative "hecksagain/freezer"
 require_relative "hecksagain/construct"
 # Before `bluebook` — every construct under `Bluebook` includes or
 # extends this to declare what it emits.
-require_relative "hecksagain/ir"
+require_relative "hecksagain/bluebook_ir"
 require_relative "hecksagain/literal"
 require_relative "hecksagain/facade"
 require_relative "hecksagain/query_specification"

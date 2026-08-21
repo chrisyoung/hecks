@@ -1,5 +1,5 @@
 require_relative "behaviour/process_manager"
-require_relative "../ir"
+require_relative "../bluebook_ir"
 
 module Hecksagain
   module Bluebook
@@ -7,7 +7,7 @@ module Hecksagain
       # A Struct already answers to_h; including the mixin puts the
       # DECLARED emission ahead of Struct's own in the ancestry, which
       # is what makes the shape data rather than a method body.
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
 
       emits_ir(
         command_name: -> { command_name.to_s },
@@ -17,7 +17,7 @@ module Hecksagain
 
     ProcessManagerHandler = Struct.new(:event_type, :from_state, :to_state,
                                        :dispatches, keyword_init: true) do
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
 
       emits_ir(
         event_type: -> { event_type.to_s },
@@ -58,7 +58,7 @@ module Hecksagain
       # spec/vocabulary_conformance_spec holds to this constant.
       REFUSED = Hecksagain::Vocabulary.fetch("Trigger").first
 
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::ProcessManager
 
       emits_ir(

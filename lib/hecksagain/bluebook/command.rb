@@ -6,7 +6,7 @@ module Hecksagain
     Given = Struct.new(:description, :canonical, :predicate, keyword_init: true)
 
     Mutation = Struct.new(:target, :op, :source, keyword_init: true) do
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::Mutation
 
       # `sign:` — item #5 of the whole-project table-unification survey.
@@ -65,7 +65,7 @@ module Hecksagain
     # per-boot projection ; no verb method is defined here.
     class Command
       extend Construct
-      extend Hecksagain::IR
+      extend Hecksagain::BluebookIR
       extend Behaviour::Command
 
       emits_ir(

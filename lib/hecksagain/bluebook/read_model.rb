@@ -12,7 +12,7 @@ module Hecksagain
     class ReadModel < QuerySpecification::ReadModel::Specification
       include Construct
 
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::ReadModel
 
       emits_ir(

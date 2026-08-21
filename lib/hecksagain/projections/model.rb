@@ -71,7 +71,7 @@ module Hecksagain
           module Hecksagain
             module Bluebook
               class #{name}
-                include Hecksagain::IR
+                include Hecksagain::BluebookIR
                 include #{host.fetch(:behaviour)}
 
           #{indent(emits(bluebook, name), 6)}

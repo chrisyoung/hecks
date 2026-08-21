@@ -1,5 +1,5 @@
 require_relative "behaviour/hexagon"
-require_relative "../ir"
+require_relative "../bluebook_ir"
 
 module Hecksagain
   module Bluebook
@@ -19,7 +19,7 @@ module Hecksagain
     end
 
     class Hecksagon
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::Hecksagon
 
       emits_ir(
@@ -42,7 +42,7 @@ module Hecksagain
     end
 
     class World
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::World
 
       emits_ir(domain: :domain, realm: :realm, latest: :latest, settings: :settings)

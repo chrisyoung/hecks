@@ -1,5 +1,5 @@
 require_relative "behaviour/chapter"
-require_relative "../ir"
+require_relative "../bluebook_ir"
 
 module Hecksagain
   module Bluebook
@@ -17,7 +17,7 @@ module Hecksagain
     class Chapter
       include Construct
       include Behaviour::Chapter
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
 
       # THE SCHEMA'S OWN VERSION — not a domain's `version:` (Banking's
       # "v1", a business fact the AUTHOR chose), but the shape `to_h`

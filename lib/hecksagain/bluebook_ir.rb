@@ -12,7 +12,7 @@ module Hecksagain
   # the EMISSION, which only makes sense if the two are different things.
   #
   # So emitting IR is a CAPABILITY a construct has, and this is that
-  # capability: `include Hecksagain::IR` and declare the shape once.
+  # capability: `include Hecksagain::BluebookIR` and declare the shape once.
   # The model it emits FROM is `Hecksagain::Bluebook` — a chapter class
   # nesting everything a chapter declares. It is deliberately not named
   # after this, its own output.
@@ -25,7 +25,7 @@ module Hecksagain
   # construct carries, which is the whole point of hanging emission off
   # the model rather than burying it.
   #
-  #   include Hecksagain::IR            # an instance-shaped construct
+  #   include Hecksagain::BluebookIR            # an instance-shaped construct
   #
   #   emits_ir(
   #     name:           :name,                   # send it
@@ -40,7 +40,7 @@ module Hecksagain
   # than cosmetic: `spec/golden/ir/*.json` pins the emitted form exactly,
   # so a reordered declaration is a changed artifact and the golden specs
   # will say so.
-  module IR
+  module BluebookIR
     # THE TWO SHAPES A CONSTRUCT COMES IN, and why this module has two
     # doors instead of hiding the difference.
     #
@@ -53,8 +53,8 @@ module Hecksagain
     #
     # That split is real and not worth papering over, so:
     #
-    #   include Hecksagain::IR   # instance-shaped — to_h is an instance method
-    #   extend  Hecksagain::IR   # class-shaped    — to_h is a class method
+    #   include Hecksagain::BluebookIR   # instance-shaped — to_h is an instance method
+    #   extend  Hecksagain::BluebookIR   # class-shaped    — to_h is a class method
     #
     # Both get the same `emits_ir` and the same emission rules.
     def self.included(base)

@@ -18,7 +18,7 @@ module Hecksagain
     end
 
     class Lifecycle
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::Lifecycle
 
       emits_ir(

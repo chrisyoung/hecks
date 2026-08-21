@@ -1,110 +1,16 @@
+require_relative "../primal_ir"
 require_relative "../bluebook/expression/evaluator"
 require_relative "../bluebook/expression/binding_lowering"
 require_relative "saga_interpreter"
 
 module Hecksagain
   module Runtime
-    # PRD 12 (ADR 0030 Slice 3, design) — the `Reaction` executable
-    # shape, and the two lowering functions that produce it from a real
-    # canonical `Policy`/`ProcessManager` leg. `ReactionExecutor`
-    # (`reaction_executor.rb`, sibling file) is what actually RUNS one;
-    # this file only builds the data.
+    # PRD 12 (ADR 0030 Slice 3) — the two lowering functions that build
+    # a `PrimalIR::Reaction` (`../primal_ir.rb`, sibling concern — the
+    # shape itself) from a real canonical `Policy`/`ProcessManager` leg.
+    # `ReactionExecutor` (`reaction_executor.rb`, sibling file) is what
+    # actually RUNS one; this file only builds the data.
     module ReactionLowering
-      # `dispatches` — a list of `Dispatch`, NOT two parallel lists.
-      # REAL FIX, found building the executor: a saga leg's own
-      # `handler.dispatches` can fire SEVERAL commands, each with its
-      # OWN `with_spec` — Settlement's own leg dispatches `Wire::Moved`
-      # (`with: { wire: :reference }`) and `Drawer::Put` (`with: {
-      # number: :destination, amount: :amount, reference: :reference
-      # }`), two DIFFERENT binding sets. An earlier draft of this file
-      # flattened every dispatch's bindings into one shared list on
-      # `Reaction` itself — harmless for the shape-only provenance test
-      # (nothing there ever resolved a binding against a real dispatch),
-      # actively wrong for an executor that has to know WHICH bindings
-      # belong to WHICH command. Caught before the executor shipped, not
-      # after.
-      Reaction = Struct.new(:trigger, :condition, :dispatches, :context, :persistence, :failure, keyword_init: true)
-
-      # `qualifier` — the emitting AGGREGATE's own name, when `on_event`
-      # was written qualified ("Account.AccountFrozen"); `nil` for a
-      # bare, same-domain event name and for every process-manager leg
-      # (`Behaviour::Policy#event_qualifier`, read directly).
-      Trigger = Struct.new(:name, :qualifier, keyword_init: true)
-
-      # `domain` — `nil` means "the reacting policy's own domain," the
-      # same fallback `PolicyInterpreter#deliver`'s own `target` string
-      # already builds (`policy.target_domain || domain`) and a process-
-      # manager leg's own dispatch never needs at all (`SagaInterpreter#
-      # qualified` only prefixes a domain when the command name doesn't
-      # already carry one).
-      CommandRef = Struct.new(:domain, :command_name, keyword_init: true)
-
-      # ONE dispatch this `Reaction` fires — its own target and its own
-      # bindings, resolved together at execution time. `bindings` is a
-      # list of `BindingLowering::ExecutableBinding` — the SAME node
-      # type for a policy's single dispatch and every one of a saga
-      # leg's several, never a policy-shaped list and a saga-shaped one
-      # — OR `Dispatch::VERBATIM`, below.
-      Dispatch = Struct.new(:command_ref, :bindings, keyword_init: true)
-
-      # `bindings == VERBATIM` means "ignore `bindings` entirely, hand
-      # the WHOLE `sources[:payload]` to the target as-is" — `policy`'s
-      # own REAL default when no `with:` is declared (`PolicyInterpreter#
-      # trigger_args`'s own original comment: "the event's whole payload
-      # forwards verbatim — the behaviour every policy did before
-      # `with:` existed"). A genuine THIRD case, not reducible to "zero
-      # bindings": an empty bindings list resolves to `{}` — no args at
-      # all — which is right for `SagaInterpreter#dispatch_args`'s own
-      # real default (an undeclared `with_spec` sends NOTHING, no
-      # verbatim-forward concept exists there at all) but silently
-      # wrong for a policy, which forwards everything by default. Found
-      # by the REAL corpus failing outright (every for_each/plain-
-      # trigger scenario with no declared `with:` lost its whole payload)
-      # once this pass wired the executor into production, not by
-      # inspection — `bindings: []` and `bindings: VERBATIM` are
-      # deliberately NOT the same value for exactly this reason.
-      #
-      # SET VIA `Dispatch::VERBATIM = ...`, NOT a bare `VERBATIM = ...`
-      # inside a `Struct.new(...) do ... end` block — the first draft of
-      # this used the block form, and it silently defined
-      # `ReactionLowering::VERBATIM`, not `Dispatch::VERBATIM`: a
-      # constant assignment inside a block follows LEXICAL scope (the
-      # source text's own `module`/`class` nesting), never the dynamic
-      # `self` a block gets instance/class-eval'd against, regardless of
-      # method definitions in the very same block correctly landing on
-      # the target class. Found immediately once this was actually
-      # exercised — `Dispatch::VERBATIM` raised `NameError:
-      # uninitialized constant`, not silently wrong — not by inspection.
-      Dispatch::VERBATIM = :verbatim
-
-      module Context
-        Stateless  = Class.new
-        Correlated = Struct.new(:correlation_key, :memory, keyword_init: true)
-      end
-
-      module Persistence
-        Ephemeral    = Class.new
-        # `to_state` — the REAL missing piece a first draft of this file
-        # left out, caught building the executor: `advance_saga`'s own
-        # checkpoint doesn't just record a fact, it MOVES the instance to
-        # `handler.to_state` before any dispatch runs — and the
-        # compensating leg's OWN guard (`unwind`'s `instance[:state] ==
-        # handler.from_state`) checks against THAT already-moved state,
-        # not the state the triggering leg started in. Without `to_state`
-        # here, an executor has the boundary right (checkpoint before
-        # dispatch) but nothing to advance the state TO, so a
-        # compensating leg's own guard never matches and compensation
-        # silently never fires — found by `spec/reaction_executor_spec.rb`
-        # actually failing (a shut drawer's refusal never credited the
-        # source drawer back), not by inspection.
-        Checkpointed = Struct.new(:boundary, :to_state, keyword_init: true)
-      end
-
-      module Failure
-        Drop    = Class.new
-        Managed = Struct.new(:retry, :compensation, keyword_init: true)
-      end
-
       module_function
 
       # THE ONE CONDITION EVALUATOR, called identically for a `policy`'s
@@ -123,30 +29,30 @@ module Hecksagain
       end
 
       # A REAL canonical `Policy` (`Bluebook::Policy`, read straight off
-      # a loaded registry) → a bare `Reaction`. `dispatches` is a
-      # ONE-ELEMENT list — the case ADR 0029's own step 4 (`trigger_command`
+      # a loaded registry) → a bare `PrimalIR::Reaction`. `dispatches` is
+      # a ONE-ELEMENT list — the case ADR 0029's own step 4 (`trigger_command`
       # → `dispatches: [...]`) would generalize to several, not attempted
       # here — sketched as already-plural so the executor never needs to
       # know which kind of `Reaction` it's holding.
       def lower_policy(policy)
         bindings = if policy.with_spec.to_a.empty?
-                     Dispatch::VERBATIM
+                     PrimalIR::Dispatch::VERBATIM
                    else
                      policy.with_spec.map { |key, value| Bluebook::Expression::BindingLowering.lower([key, value], available_sources: [:payload]) }
                    end
 
-        Reaction.new(
-          trigger:     Trigger.new(name: policy.event_name, qualifier: policy.event_qualifier),
+        PrimalIR::Reaction.new(
+          trigger:     PrimalIR::Trigger.new(name: policy.event_name, qualifier: policy.event_qualifier),
           condition:   policy.where.to_s.empty? ? nil : Bluebook::Expression::Evaluator.parse(policy.where),
-          dispatches:  [Dispatch.new(command_ref: CommandRef.new(domain: policy.target_domain, command_name: policy.trigger_command), bindings: bindings)],
-          context:     Context::Stateless.new,
-          persistence: Persistence::Ephemeral.new,
-          failure:     Failure::Drop.new
+          dispatches:  [PrimalIR::Dispatch.new(command_ref: PrimalIR::CommandRef.new(domain: policy.target_domain, command_name: policy.trigger_command), bindings: bindings)],
+          context:     PrimalIR::Context::Stateless.new,
+          persistence: PrimalIR::Persistence::Ephemeral.new,
+          failure:     PrimalIR::Failure::Drop.new
         )
       end
 
       # A REAL canonical `ProcessManager` leg (one `ProcessManagerHandler`,
-      # off a loaded registry) → a bare `Reaction`. The guard —
+      # off a loaded registry) → a bare `PrimalIR::Reaction`. The guard —
       # `instance[:state] == handler.from_state` in `SagaInterpreter#
       # advance_saga` — is built here as a REAL `Evaluator::Compare`
       # node (`Equal(Reference(:state), Literal(from_state))`), exactly
@@ -167,16 +73,16 @@ module Hecksagain
 
         dispatches = handler.dispatches.map do |d|
           bindings = d.with_spec.map { |key, value| Bluebook::Expression::BindingLowering.lower([key, value], available_sources: %i[correlation payload memory]) }
-          Dispatch.new(command_ref: CommandRef.new(domain: nil, command_name: d.command_name), bindings: bindings)
+          PrimalIR::Dispatch.new(command_ref: PrimalIR::CommandRef.new(domain: nil, command_name: d.command_name), bindings: bindings)
         end
 
-        Reaction.new(
-          trigger:     Trigger.new(name: handler.event_type, qualifier: nil),
+        PrimalIR::Reaction.new(
+          trigger:     PrimalIR::Trigger.new(name: handler.event_type, qualifier: nil),
           condition:   state_equals(handler.from_state),
           dispatches:  dispatches,
-          context:     Context::Correlated.new(correlation_key: pm.correlation_head, memory: true),
-          persistence: Persistence::Checkpointed.new(boundary: :before_dispatch, to_state: handler.to_state),
-          failure:     Failure::Managed.new(retry: SagaInterpreter::MAX_DEFECT_RETRIES, compensation: compensation)
+          context:     PrimalIR::Context::Correlated.new(correlation_key: pm.correlation_head, memory: true),
+          persistence: PrimalIR::Persistence::Checkpointed.new(boundary: :before_dispatch, to_state: handler.to_state),
+          failure:     PrimalIR::Failure::Managed.new(retry: SagaInterpreter::MAX_DEFECT_RETRIES, compensation: compensation)
         )
       end
 

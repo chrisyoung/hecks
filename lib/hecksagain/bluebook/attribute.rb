@@ -1,12 +1,12 @@
 require_relative "behaviour/attribute"
-require_relative "../ir"
+require_relative "../bluebook_ir"
 require_relative "../vocabulary"
 require_relative "../naming"
 
 module Hecksagain
   module Bluebook
     class Attribute
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::Attribute
 
       emits_ir(

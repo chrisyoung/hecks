@@ -30,7 +30,7 @@ module Hecksagain
     # would own this file; behaviour/aggregate.rb stays hand-written.
     class Aggregate
       include Construct
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::Aggregate
 
       emits_ir(

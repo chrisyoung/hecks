@@ -13,6 +13,6 @@ module Hecksagain
     IR = Projector::IRProjector
 
     IR.extend(Projector::Target)
-    IR.projects_as :ir, requires: Hecksagain::IR
+    IR.projects_as :ir, requires: Hecksagain::BluebookIR
   end
 end

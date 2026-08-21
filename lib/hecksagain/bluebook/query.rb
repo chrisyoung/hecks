@@ -22,7 +22,7 @@ module Hecksagain
     class Query < QuerySpecification::Common::Options
       include Construct
 
-      include Hecksagain::IR
+      include Hecksagain::BluebookIR
       include Behaviour::Query
 
       emits_ir(

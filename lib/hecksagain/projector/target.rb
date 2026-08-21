@@ -33,12 +33,12 @@ module Hecksagain
       # This began as `from: :chapter` / `from: :any` — two hand-kept
       # symbols, admitted by duck-typing on `.aggregates`, which is a
       # guess at what "is a chapter" means. The capabilities were already
-      # real by then: `Hecksagain::IR` is the ability to emit IR (its own
+      # real by then: `Hecksagain::BluebookIR` is the ability to emit IR (its own
       # header says so), and `Behaviour::Chapter` is the ability to answer
       # as a chapter. So a projection names the module it needs, and
       # admission is a genuine check rather than a proxy for one.
       #
-      #   projects_as :ir,         requires: Hecksagain::IR
+      #   projects_as :ir,         requires: Hecksagain::BluebookIR
       #   projects_as :vocabulary                              # chapter, the default
       #
       # It also composes: a projection needing two capabilities names

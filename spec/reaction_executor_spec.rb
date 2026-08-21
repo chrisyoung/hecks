@@ -53,7 +53,7 @@ RSpec.describe Hecksagain::Runtime::ReactionExecutor do
     outcomes = executor.dispatch!(reaction, sources: sources, domain: domain)
     outcomes.each do |outcome|
       next if outcome[:delivered]
-      next unless reaction.failure.is_a?(Hecksagain::Runtime::ReactionLowering::Failure::Managed)
+      next unless reaction.failure.is_a?(Hecksagain::PrimalIR::Failure::Managed)
       next unless reaction.failure.compensation
 
       run_reaction(executor, reaction.failure.compensation, sources: sources, state: state, domain: domain)

@@ -25,7 +25,7 @@ module Hecksagain
     # method to tell a piece from a head.
     class Entity
       extend Construct
-      extend Hecksagain::IR
+      extend Hecksagain::BluebookIR
       extend Behaviour::Entity
 
       emits_ir(
