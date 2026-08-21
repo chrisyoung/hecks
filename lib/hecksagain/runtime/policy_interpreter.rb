@@ -4,10 +4,23 @@ require_relative "query_interpreter"
 require_relative "refusal_wording"
 require_relative "value"
 require_relative "../bluebook/expression/evaluator"
+require_relative "saga_interpreter"
 
 module Hecksagain
   module Runtime
     class PolicyInterpreter
+      # A crash gets this many extra attempts before a reaction gives up —
+      # the exact constant, and the exact reasoning, `SagaInterpreter`'s
+      # own `MAX_DEFECT_RETRIES` already uses: "gives a transient failure
+      # (a DB timeout, a race, a cold start) a chance to clear on its own,
+      # retrying the identical dispatch, before this is treated as
+      # something to compensate for." A stateless policy has nothing to
+      # compensate — it never did, and still doesn't — but the transient-
+      # failure reasoning names nothing specific to correlation or memory,
+      # so it applies here unchanged (ADR 0029's own recorded "Open" item,
+      # closed).
+      MAX_DEFECT_RETRIES = SagaInterpreter::MAX_DEFECT_RETRIES
+
       attr_reader :registry
 
       def initialize(registry, door:)
@@ -97,42 +110,57 @@ module Hecksagain
                               reason:    "reaction depth #{@door.max_reaction_depth} reached")
         end
 
-        @door.reenter(target, **trigger_args(policy, event))
-        record.merge(delivered: true)
-      rescue *DOMAIN_REFUSALS => error
-        # The target refused — a fact about the domain, recorded and not
-        # fatal to the command that emitted the event.
-        record.merge(delivered: false, reason: error.message)
-      rescue StandardError => error
-        # A DEFECT, not a refusal — a NoMethodError in an interpreter, a
-        # NameError from a missing constant, a TypeError from a bad
-        # assumption : exactly the class of thing DOMAIN_REFUSALS
-        # (errors.rb, see the comment above that constant) deliberately
-        # excludes, and for the reason that comment gives at length —
-        # folding a crash into the same `delivered: false` shape as an
-        # ordinary refusal makes a broken runtime read as normal operation
-        # in the log. This clause does not reopen that hole: it is a
-        # SECOND, narrower rescue, tried only once the first one above has
-        # already declined to match, so a legitimate refusal still takes
-        # the branch above and a defect always takes this one.
-        #
-        # Catching it HERE is safe for a fact this method's caller cannot
-        # see from where it sits: by the time `react` runs, the command
-        # that EMITTED `event` has already succeeded and PERSISTED —
-        # `Dispatcher#dispatch` calls `@policies.react` only after its own
-        # `announced` events are already in hand. Letting this exception
-        # keep propagating would not undo that command (nothing here is
-        # transactional across aggregates) — it would only blow up the
-        # ORIGINAL caller's `dispatch` call for a failure that happened in
-        # a DIFFERENT command, one the caller never asked to run and has no
-        # way to compensate for. So the defect is recorded, distinguishably
-        # (`defect: true`, plus the error's own class — nothing here is
-        # allowed to read like an ordinary refusal), warned to STDERR so it
-        # is never silent, and left exactly where it happened for a human
-        # to find — never re-raised, and never swallowed either.
-        warn "[hecksagain] defect in reaction — policy #{policy.name} on #{event.name} " \
-             "firing #{target}: #{error.class}: #{error.message}"
-        record.merge(delivered: false, reason: error.message, defect: true, error_class: error.class.name)
+        attempt = 0
+        begin
+          @door.reenter(target, **trigger_args(policy, event))
+          record.merge(delivered: true)
+        rescue *DOMAIN_REFUSALS => error
+          # The target refused — a fact about the domain, recorded and not
+          # fatal to the command that emitted the event.
+          record.merge(delivered: false, reason: error.message)
+        rescue StandardError => error
+          # A DEFECT, not a refusal — a NoMethodError in an interpreter, a
+          # NameError from a missing constant, a TypeError from a bad
+          # assumption : exactly the class of thing DOMAIN_REFUSALS
+          # (errors.rb, see the comment above that constant) deliberately
+          # excludes, and for the reason that comment gives at length —
+          # folding a crash into the same `delivered: false` shape as an
+          # ordinary refusal makes a broken runtime read as normal operation
+          # in the log. This clause does not reopen that hole: it is a
+          # SECOND, narrower rescue, tried only once the first one above has
+          # already declined to match, so a legitimate refusal still takes
+          # the branch above and a defect always takes this one.
+          #
+          # RETRIED, same as a saga's own dispatch, before being treated as
+          # a defect — see `MAX_DEFECT_RETRIES`'s own comment, above, for
+          # why. Silent between attempts (no intermediate log entry): a
+          # policy's own `reaction_log` gets exactly one entry per `react`
+          # iteration, built from THIS method's return value — unlike a
+          # saga's `saga_log`, which is a running history appended to
+          # directly, there is nowhere an intermediate attempt could be
+          # recorded without changing that one-entry-per-reaction shape.
+          #
+          # Catching it HERE is safe for a fact this method's caller cannot
+          # see from where it sits: by the time `react` runs, the command
+          # that EMITTED `event` has already succeeded and PERSISTED —
+          # `Dispatcher#dispatch` calls `@policies.react` only after its own
+          # `announced` events are already in hand. Letting this exception
+          # keep propagating would not undo that command (nothing here is
+          # transactional across aggregates) — it would only blow up the
+          # ORIGINAL caller's `dispatch` call for a failure that happened in
+          # a DIFFERENT command, one the caller never asked to run and has no
+          # way to compensate for. So the defect is recorded, distinguishably
+          # (`defect: true`, plus the error's own class — nothing here is
+          # allowed to read like an ordinary refusal), warned to STDERR so it
+          # is never silent, and left exactly where it happened for a human
+          # to find — never re-raised, and never swallowed either.
+          attempt += 1
+          retry if attempt <= MAX_DEFECT_RETRIES
+
+          warn "[hecksagain] defect in reaction — policy #{policy.name} on #{event.name} " \
+               "firing #{target} after #{attempt} attempts: #{error.class}: #{error.message}"
+          record.merge(delivered: false, reason: error.message, defect: true, error_class: error.class.name)
+        end
       end
 
       # THE FAN-OUT — `policy.for_each` names a query ; this runs it
@@ -245,6 +273,18 @@ module Hecksagain
               "#{aggregate_name} and no reference-typed attribute targeting it"
       end
 
+      # ISOLATED PER ROW, same as a saga's own per-leg dispatch
+      # (`SagaInterpreter#deliver_saga_dispatch`) — before this, a defect
+      # in ONE row had no rescue of its own here, so it propagated out of
+      # the whole `Array(rows).map` in `deliver_for_each` and was caught
+      # by THAT method's own outer `rescue StandardError` as a single
+      # aggregate defect for the entire fan-out, silently discarding
+      # whatever OTHER rows had already succeeded. Retried up to
+      # `MAX_DEFECT_RETRIES` times first, same reasoning as `deliver`'s
+      # own singleton path — a `for_each` policy is still stateless (no
+      # correlation, no memory to compensate), so retry is the only
+      # saga-shaped behaviour that transfers; there is nothing here to
+      # `unwind`.
       def deliver_for_each_row(target, record, args, row)
         row_record = record.merge(for_row: row[:id])
 
@@ -253,13 +293,23 @@ module Hecksagain
                                   reason:    "reaction depth #{@door.max_reaction_depth} reached")
         end
 
-        # ALREADY MERGED, by `trigger_args` — the row key belongs in the
-        # source a `with:` projection reads FROM, not bolted onto its
-        # result, or a projection could never name the row it acts on.
-        @door.reenter(target, **args)
-        row_record.merge(delivered: true)
-      rescue *DOMAIN_REFUSALS => error
-        row_record.merge(delivered: false, reason: error.message)
+        attempt = 0
+        begin
+          # ALREADY MERGED, by `trigger_args` — the row key belongs in the
+          # source a `with:` projection reads FROM, not bolted onto its
+          # result, or a projection could never name the row it acts on.
+          @door.reenter(target, **args)
+          row_record.merge(delivered: true)
+        rescue *DOMAIN_REFUSALS => error
+          row_record.merge(delivered: false, reason: error.message)
+        rescue StandardError => error
+          attempt += 1
+          retry if attempt <= MAX_DEFECT_RETRIES
+
+          warn "[hecksagain] defect in reaction — policy #{record[:policy]} on #{record[:on]} " \
+               "firing #{target} for row #{row[:id].inspect} after #{attempt} attempts: #{error.class}: #{error.message}"
+          row_record.merge(delivered: false, reason: error.message, defect: true, error_class: error.class.name)
+        end
       end
 
       # `for_each`'s own QUERY route moved onto the Policy itself
