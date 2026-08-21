@@ -8,6 +8,16 @@ RSpec.describe "Postgres atomic_put persistence", io: true do
     ENV["POSTGRES_URL"].to_s.empty? ? "postgres" : ENV.fetch("POSTGRES_URL")
   end
 
+  # A bare dbname ("postgres", the local default) is not a conninfo string —
+  # PG.connect(database) alone hands it to libpq as a HOST, not a database
+  # name, and fails to resolve. Same dual-branch declared.start_with?(...)
+  # PG.connect(declared) : PG.connect(dbname: declared) the real adapter
+  # under test already uses (lib/hecksagain/adapters/driven/postgres.rb
+  # .connect_for) for the exact same POSTGRES_URL-or-local-default shape.
+  def pg_connect
+    database.start_with?("postgres://", "postgresql://") ? PG.connect(database) : PG.connect(dbname: database)
+  end
+
   def postgres_available?
     return PostgresProbe.available? if ENV["POSTGRES_URL"].to_s.empty?
 
@@ -25,7 +35,7 @@ RSpec.describe "Postgres atomic_put persistence", io: true do
   end
 
   before do
-    connection = PG.connect(database)
+    connection = pg_connect
     connection.exec("DROP SCHEMA IF EXISTS #{PG::Connection.quote_ident(SCHEMA)} CASCADE")
     connection.exec("CREATE SCHEMA #{PG::Connection.quote_ident(SCHEMA)}")
     connection.close
@@ -34,7 +44,7 @@ RSpec.describe "Postgres atomic_put persistence", io: true do
   after(:all) do
     next unless @postgres_atomic_put_available
 
-    connection = PG.connect(database)
+    connection = pg_connect
     connection.exec("DROP SCHEMA IF EXISTS #{PG::Connection.quote_ident(SCHEMA)} CASCADE")
     connection.close
   end
