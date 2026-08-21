@@ -32,104 +32,97 @@ module RustProjection
     end
 
     # `creates_owner?(aggregate, command, value_objects_by_name)` — REPLACES
-    # `command[:references].nil?` (and the coincidental bare-name matching
-    # `identity_components`, below, used to do) as the "does this command
-    # build the OWNER record from scratch" test.
+    # `command[:references].nil?` ALONE (and the coincidental bare-name
+    # matching `identity_components`, below, used to do) as the "does this
+    # command build the OWNER record from scratch" test.
     #
-    # WHY `references.nil?` WAS WRONG: `references` is set only when a
-    # command's own `reference_to` names something OTHER than its owner (a
-    # cross-reference attribute — `Aggregate.Attribute`'s own `reference_to
-    # ValueObject, as: :type`) — never by a bare self-reference to the
-    # command's OWN owner, because that self-reference would be a fake one
-    # written purely to flip this heuristic (rejected direction; see
-    # RESTART.md's "Option 1"): the owner a mutating meta-domain command
-    # like `Aggregate.Attribute` acts on is supplied entirely through
-    # ROUTING (`to:`/`with:`), never as a declared argument. So `Aggregate.
-    # Attribute` (attach one attribute to an EXISTING aggregate) ends up
-    # with `references: nil`, exactly like `Aggregate.Declare` (mint a
-    # brand-new Aggregate) — even though only the second one creates.
+    # `references.nil?` IS HONEST WHENEVER IT'S SET — a command that
+    # genuinely declares `reference_to <its own owner>` (bare, no `as:`)
+    # really does act on an existing one (`Compliance::AccountFreezeReview
+    # .Clear`/`Governance::RoleTransition.Revoke`, both real, both keep
+    # `references` non-nil and stay `false` here, unconditionally, on that
+    # signal alone). What's dishonest is treating an ABSENT `references` as
+    # proof of creation — a mutating meta-domain command like `Aggregate.
+    # Attribute` declares no `reference_to` at all, not because it creates,
+    # but because the owner it acts on is supplied entirely through ROUTING
+    # (`to:`/`with:`), never as a declared argument — adding a bare
+    # `reference_to Aggregate` purely to flip this heuristic was the
+    # rejected direction (RESTART.md's own "Option 1": a fake self-
+    # reference). So `references: nil` needs a SECOND, honest test.
     #
-    # THE HONEST TEST, instead: does this command's own mutations, together
-    # with the owner's deterministic defaults (list/optional/literal-
-    # default attributes, and value-object-typed attributes whose OWN
-    # fields are all defaulted), account for EVERY field the owner
-    # declares? A creating command always supplies (or defaults) its whole
-    # record; an acting command mutates a slice of one that already exists
-    # — `Aggregate.Attribute` only ever `sets :attributes, append: {...}`,
-    # an APPEND, never claims to set `:name`/`:description`/... at all.
+    # THAT TEST IS NOT COMPLETENESS. A creating command's generated Rust
+    # struct Option-wraps EVERY scalar field regardless (`emit_record`'s own
+    # header, types.rb) — an uncovered field just becomes `None`, which is
+    # exactly how `Pizzas::Order.CreatePizza` (zero mutations, no `customer_
+    # name` argument at all — `Order`'s fourth field) already generates
+    # correctly. `Runtime::DependencyPlanning::Analyzer#complete_state?`
+    # answers a DIFFERENT, narrower question for Ruby's own runtime (an
+    # atomic-put OPTIMIZATION eligibility check) and disagrees with "creates"
+    # on both sides — `CardPayment.Authorize` is complete_state?-false (its
+    # own identity field, `authorisation`, is never a `:set` target) yet
+    # unquestionably creates a fresh `CardPayment`; `Aggregate.Lifecycle`
+    # IS complete_state?-true-shaped (it `:set`s two real fields) yet acts on
+    # an existing `Aggregate` — completeness alone cannot tell these apart.
     #
-    # THE SAME QUESTION `Runtime::DependencyPlanning::Analyzer#complete_
-    # state?` already answers, correctly, for Ruby's own runtime
-    # (`CommandInterpreter#step_hydrate` reads it as `ctx.plan.complete_
-    # state?`; `creates?`/`references.nil?` is demoted to a secondary
-    # duplicate-check once THAT already decided how to hydrate — see
-    # RESTART.md's own "known risk" note on why the 1725-example Ruby suite
-    # never exercises `creates?` for this exact shape). This is the SAME
-    # computation, restricted to what's staticly knowable from the exported
-    # IR alone (mutations + attributes vs. the aggregate's own attributes),
-    # skipping the `given`/`ensures`/invariant expression walk Analyzer also
-    # does for its OWN `state_reads`/`unresolved_dependencies` — irrelevant
-    # here, since `complete_state?`'s second half (`owner_fields.subset?
-    # (known_writes)`) is unaffected by that walk on a corpus with no
-    # dangling rule reference, and the first half (no unresolved mutation)
-    # is reproduced in full below. Verified byte-for-byte equal to the real
-    # Analyzer's own `complete_state?` across every generated domain and
-    # the meta-domain itself (162/162 commands) before this landed.
+    # THE HONEST TEST: with `references: nil` already narrowing to "no
+    # explicit reference at all," a command creates the owner when it
+    # supplies (via a `:set` mutation OR — `emit_command`'s own
+    # `record_fields`, commands.rb — a same-named argument, copied straight
+    # across with NO mutation required) at least one of the owner's own
+    # REQUIRED (non-list, non-optional) fields. `Order.CreatePizza` supplies
+    # `name`/`pizza` this way (both required) — that's real evidence of
+    # building a genuinely new record. `Aggregate.Attribute`/`Aggregate.
+    # Lifecycle` supply nothing of the kind: the first's every argument is
+    # claimed by its own `append`, the second touches only `state_field`/
+    # `state_start`, both `optional: true` — attaching a fact to a record
+    # that must already exist is exactly what "nothing required is ever
+    # newly supplied" looks like. A `:set`/bare-matched argument already
+    # claimed by an APPEND (`ValueObject.Member`'s own `position`, feeding
+    # the appended MEMBER's `position`, never `ValueObject`'s own
+    # unrelated, declaration-order field of the same name) is excluded from
+    # counting as such evidence — the exact bare-name coincidence this
+    # whole fix exists to stop trusting blindly.
     def creates_owner?(aggregate, command, value_objects_by_name)
+      return false unless command[:references].nil?
+
       owner_fields = aggregate[:attributes].map { |a| a[:name].to_s }.to_set
       owner_fields << aggregate[:lifecycle][:field].to_s if aggregate[:lifecycle]
+      required_fields = aggregate[:attributes].reject { |a| a[:list] || a[:optional] }.map { |a| a[:name].to_s }.to_set
+
+      # ARGUMENT NAMES ALREADY CLAIMED BY AN APPEND — collected first, so
+      # an append's own element-field argument is never ALSO eligible to
+      # bare-name-match an unrelated owner field that happens to share its
+      # name (see this method's own header on `ValueObject.Member`).
+      append_claimed = Set.new
+      command[:mutations].each do |m|
+        next unless m[:op].to_s == "append"
+
+        Array(m[:fields]&.values).each do |v|
+          source = append_field_source(v)
+          append_claimed << source.to_s if source.is_a?(Symbol)
+        end
+      end
 
       known_writes = Set.new
-      aggregate[:attributes].each do |attr|
-        deterministic = attr[:list] || attr[:optional] || !attr[:default].nil?
-        unless deterministic
-          vo = value_objects_by_name[attr[:type]]
-          deterministic = vo && vo[:attributes].all? { |f| !f[:default].nil? }
-        end
-        known_writes << attr[:name].to_s if deterministic
-      end
-      known_writes << aggregate[:lifecycle][:field].to_s if aggregate[:lifecycle]
 
-      payload_fields = command[:attributes].map { |a| a[:name].to_s }.to_set
-      unresolved = false
-
-      # `value` is a Symbol (a command argument, or — when it names an
-      # OWNER field instead — a prior-state read) or a literal, the same
-      # two kinds `classified_source`/`Marks.read` already decode a
-      # mutation's source into. Mirrors Analyzer#analyze_source? exactly:
-      # true only when the value is knowable without reading any PRIOR
-      # state of the record this command is hydrating.
-      known_without_prior_state = lambda do |value|
-        next true unless value.is_a?(Symbol)
-
-        name = value.to_s
-        if payload_fields.include?(name)
-          true
-        elsif owner_fields.include?(name)
-          false
-        else
-          unresolved = true
-          false
-        end
+      # A BARE-NAME MATCH — `record_fields` (commands.rb) copies a
+      # creating command's argument straight into the same-named owner
+      # field with no `:set` mutation required at all.
+      command[:attributes].each do |attr|
+        name = attr[:name].to_s
+        known_writes << name if owner_fields.include?(name) && !append_claimed.include?(name)
       end
 
+      # AN EXPLICIT `:set` MUTATION — covers the "renamed source" shape a
+      # bare-name match alone can't (`sets :field, to: :other_arg`).
       command[:mutations].each do |m|
-        target = m[:target].to_s
-        unless owner_fields.include?(target)
-          unresolved = true
-          next
-        end
+        next unless m[:op].to_s == "set"
 
-        if m[:op].to_s == "append"
-          Array(m[:fields]&.values).each { |v| known_without_prior_state.call(append_field_source(v)) }
-        else
-          source = m[:source] || {}
-          value = source[:kind].to_s == "argument" ? source[:name].to_sym : source[:value]
-          known_writes << target if known_without_prior_state.call(value)
-        end
+        target = m[:target].to_s
+        known_writes << target if owner_fields.include?(target)
       end
 
-      !unresolved && owner_fields.subset?(known_writes)
+      required_fields.any? { |field| known_writes.include?(field) }
     end
 
     # `append`'s TARGET, resolved to whichever real thing it is — a plain
@@ -336,9 +329,33 @@ module RustProjection
     # `true`, but stays honest on its own terms rather than leaning on the
     # caller to have filtered first.
     def identity_components(aggregate, command)
+      # THE SAME "DECLARED" TEST `creates_owner?` (this file, own header)
+      # uses to count a field as supplied: a `:set` mutation targeting it,
+      # OR a same-named command argument copied straight across by
+      # `record_fields` (commands.rb) with no mutation at all — EXCLUDING
+      # an argument already claimed by an append (`ValueObject.Member`'s
+      # own `position`, coincidentally named, feeds the appended member's
+      # `position`, never the owner's identity). A "creates" command whose
+      # identity head is supplied this second way (`Governance::
+      # RoleAssignment.Assign`'s own `actor_id`/`role_name`/`starts_at` —
+      # no explicit `:set` at all, bare-name-matched like `Order.
+      # CreatePizza`'s whole record) reads `args.<head>` exactly the same
+      # as one supplied via an explicit `sets :<head>`.
+      append_claimed = Set.new
+      command[:mutations].each do |m|
+        next unless m[:op].to_s == "append"
+
+        Array(m[:fields]&.values).each do |v|
+          source = append_field_source(v)
+          append_claimed << source.to_s if source.is_a?(Symbol)
+        end
+      end
+      declared_names = command[:attributes].map { |a| a[:name].to_s }.to_set - append_claimed
+
       aggregate[:identified_by].map do |path|
         head, *rest = path.split(".")
-        if command[:mutations].any? { |m| m[:op].to_s == "set" && m[:target].to_s == head }
+        set_target = command[:mutations].any? { |m| m[:op].to_s == "set" && m[:target].to_s == head }
+        if set_target || declared_names.include?(head)
           if rest.any?
             { expr: "args.#{rust_ident_field(head)}.#{rest.map { |seg| rust_ident_field(seg) }.join('.')}.to_string()", param: nil }
           else

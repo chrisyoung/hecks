@@ -305,7 +305,7 @@ pub struct GenerateArgs {
 }
 
 pub fn dispatch_generate(
-    repo: &mut impl crate::kernel::Repository<Statement>, id: &str, args: GenerateArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Statement>, args: GenerateArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Statement> {
         args.period.check_invariants()?;
         args.opening_balance.check_invariants()?;
@@ -315,7 +315,17 @@ pub fn dispatch_generate(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", args.account.to_string(), args.period.value.to_string()),
+        build: Box::new(|| Statement {
+            account: Some(args.account.clone()),
+            period: Some(args.period.clone()),
+            opening_balance: Some(args.opening_balance.clone()),
+            closing_balance: Some(args.closing_balance.clone()),
+            generated_on: Some(args.generated_on.clone()),
+            frequency: Some(args.frequency.clone()),
+        }),
+    },
         "Generate",
         "Banking::Statement",
         "Statement",

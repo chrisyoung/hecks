@@ -286,7 +286,7 @@ pub struct RequestArgs {
 }
 
 pub fn dispatch_request(
-    repo: &mut impl crate::kernel::Repository<Transfer>, id: &str, args: RequestArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Transfer>, args: RequestArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Transfer> {
         args.reference.check_invariants()?;
         args.amount.check_invariants()?;
@@ -295,7 +295,17 @@ pub fn dispatch_request(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: args.reference.value.to_string(),
+        build: Box::new(|| Transfer {
+            source: Some(args.source.clone()),
+            destination: Some(args.destination.clone()),
+            reference: Some(args.reference.clone()),
+            amount: Some(args.amount.clone()),
+            narrative: Some(args.narrative.clone()),
+            status: "requested".to_string(),
+        }),
+    },
         "Request",
         "Banking::Transfer",
         "Transfer",

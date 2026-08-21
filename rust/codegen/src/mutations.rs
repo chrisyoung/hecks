@@ -196,9 +196,33 @@ pub struct IdentityComponent {
 
 /// THE IDENTITY IS THE JOIN OF ITS PARTS — see mutations.rb's own header
 /// for the full argument on the three component shapes.
+///
+/// "DECLARED" MEANS the SAME test `creates_owner` (shared.rs, own header)
+/// uses to count a field as supplied: a `:set` mutation targeting it, OR
+/// a same-named command argument copied straight across by `record_fields`
+/// (commands.rb) with no mutation at all — EXCLUDING an argument already
+/// claimed by an append (`append_claimed_names`, shared.rs). A "creates"
+/// command whose identity head is supplied this second way
+/// (`Governance::RoleAssignment.Assign`'s own `actor_id`/`role_name`/
+/// `starts_at` — no explicit `:set` at all, bare-name-matched like
+/// `Order.CreatePizza`'s whole record) reads `args.<head>` exactly the
+/// same as one supplied via an explicit `sets :<head>`. Ported to match
+/// mutations.rb exactly, including its `.to_string()` on the external
+/// branch's own expr — the ONE combination (single identity component,
+/// entirely external) that otherwise leaves a bare `&str` where `String`
+/// is expected.
 pub fn identity_components(aggregate: &Json, command: &Json) -> Vec<IdentityComponent> {
     let identified_by = aggregate.get("identified_by").map(Json::each).unwrap_or(&[]);
-    let cmd_attrs = command.get("attributes").map(Json::each).unwrap_or(&[]);
+    let cmd_mutations = command.get("mutations").map(Json::each).unwrap_or(&[]);
+    let append_claimed = crate::shared::append_claimed_names(command);
+    let declared_names: std::collections::HashSet<String> = command
+        .get("attributes")
+        .map(Json::each)
+        .unwrap_or(&[])
+        .iter()
+        .map(|a| crate::attr::name(a).to_string())
+        .filter(|name| !append_claimed.contains(name))
+        .collect();
 
     identified_by
         .iter()
@@ -207,14 +231,21 @@ pub fn identity_components(aggregate: &Json, command: &Json) -> Vec<IdentityComp
             let mut parts = path.split('.');
             let head = parts.next().unwrap_or("");
             let rest: Vec<&str> = parts.collect();
-            if !rest.is_empty() {
-                let rest_path = rest.iter().map(|seg| naming::rust_ident_field(seg)).collect::<Vec<_>>().join(".");
-                IdentityComponent { expr: format!("args.{}.{}.to_string()", naming::rust_ident_field(head), rest_path), param: None, head: None }
-            } else if cmd_attrs.iter().any(|a| crate::attr::name(a) == head) {
-                IdentityComponent { expr: format!("args.{}.to_string()", naming::rust_ident_field(head)), param: None, head: None }
+
+            let set_target = cmd_mutations.iter().any(|m| {
+                m.get("op").map(Json::to_s).as_deref() == Some("set") && m.get("target").map(Json::to_s).as_deref() == Some(head)
+            });
+
+            if set_target || declared_names.contains(head) {
+                if !rest.is_empty() {
+                    let rest_path = rest.iter().map(|seg| naming::rust_ident_field(seg)).collect::<Vec<_>>().join(".");
+                    IdentityComponent { expr: format!("args.{}.{}.to_string()", naming::rust_ident_field(head), rest_path), param: None, head: None }
+                } else {
+                    IdentityComponent { expr: format!("args.{}.to_string()", naming::rust_ident_field(head)), param: None, head: None }
+                }
             } else {
                 let param = naming::rust_ident_field(head);
-                IdentityComponent { expr: param.clone(), param: Some(format!("{param}: &str")), head: Some(head.to_string()) }
+                IdentityComponent { expr: format!("{param}.to_string()"), param: Some(format!("{param}: &str")), head: Some(head.to_string()) }
             }
         })
         .collect()
@@ -369,7 +400,7 @@ fn emit_mutation_line_body(
                     None
                 };
 
-                if crate::attr::list(target_attr) && optional && crate::shared::list_attr_creation_optional(aggregate, crate::attr::name(target_attr)) {
+                if crate::attr::list(target_attr) && optional && crate::shared::list_attr_creation_optional(aggregate, crate::attr::name(target_attr), value_objects_by_name) {
                     exemplar.render("mutation_set_plain", &[("tmpl_field", target_field.to_string()), ("tmpl_rhs_placeholder2()", rhs)])
                 } else if crate::attr::list(target_attr) && source_attr.map(crate::attr::optional).unwrap_or(false) {
                     exemplar.render("mutation_set_unwrap_or_default", &[("tmpl_field", target_field.to_string()), ("tmpl_optional_rhs_placeholder()", rhs)])

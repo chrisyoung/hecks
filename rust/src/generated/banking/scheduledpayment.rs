@@ -463,7 +463,7 @@ pub struct ScheduleArgs {
 }
 
 pub fn dispatch_schedule(
-    repo: &mut impl crate::kernel::Repository<ScheduledPayment>, id: &str, args: ScheduleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ScheduledPayment>, args: ScheduleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ScheduledPayment> {
         args.instruction.check_invariants()?;
         args.amount.check_invariants()?;
@@ -473,7 +473,19 @@ pub fn dispatch_schedule(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: args.instruction.value.to_string(),
+        build: Box::new(|| ScheduledPayment {
+            account: Some(args.account.clone()),
+            amount: Some(args.amount.clone()),
+            instruction: Some(args.instruction.clone()),
+            recipient: Some(args.recipient.clone()),
+            due_on: Some(args.due_on.clone()),
+            attempts: Some(RetryCount { value: 0 }),
+            max_attempts: Some(RetryLimit { value: 3 }),
+            status: "scheduled".to_string(),
+        }),
+    },
         "Schedule",
         "Banking::ScheduledPayment",
         "ScheduledPayment",

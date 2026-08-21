@@ -272,7 +272,7 @@ pub fn emit_record(exemplar: &Exemplar, aggregate: &Json, value_objects_by_name:
         .map(|attr| {
             let list = crate::attr::list(attr);
             let mut ty = naming::rust_type(crate::attr::type_name(attr), list);
-            if !list || crate::shared::list_attr_creation_optional(aggregate, crate::attr::name(attr)) {
+            if !list || crate::shared::list_attr_creation_optional(aggregate, crate::attr::name(attr), value_objects_by_name) {
                 ty = format!("Option<{ty}>");
             }
             vec![("TmplFieldType", ty), ("tmpl_field", naming::rust_ident_field(crate::attr::name(attr)))]

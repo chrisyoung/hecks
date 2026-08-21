@@ -318,7 +318,7 @@ pub struct RequestArgs {
 }
 
 pub fn dispatch_request(
-    repo: &mut impl crate::kernel::Repository<ExternalTransfer>, id: &str, args: RequestArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ExternalTransfer>, args: RequestArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ExternalTransfer> {
         args.end_to_end.check_invariants()?;
         args.amount.check_invariants()?;
@@ -329,7 +329,17 @@ pub fn dispatch_request(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: args.end_to_end.value.to_string(),
+        build: Box::new(|| ExternalTransfer {
+            account: Some(args.account.clone()),
+            end_to_end: Some(args.end_to_end.clone()),
+            amount: Some(args.amount.clone()),
+            beneficiary: Some(args.beneficiary.clone()),
+            direction: Some(args.direction.clone()),
+            status: "requested".to_string(),
+        }),
+    },
         "Request",
         "Banking::ExternalTransfer",
         "ExternalTransfer",

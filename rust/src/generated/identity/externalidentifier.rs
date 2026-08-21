@@ -274,7 +274,7 @@ pub struct LinkArgs {
 }
 
 pub fn dispatch_link(
-    repo: &mut impl crate::kernel::Repository<ExternalIdentifier>, id: &str, args: LinkArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ExternalIdentifier>, args: LinkArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ExternalIdentifier> {
         args.key.check_invariants()?;
         args.issuer.check_invariants()?;
@@ -283,7 +283,15 @@ pub fn dispatch_link(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: args.key.value.to_string(),
+        build: Box::new(|| ExternalIdentifier {
+            identity: Some(args.identity.clone()),
+            key: Some(args.key.clone()),
+            issuer: Some(args.issuer.clone()),
+            subject: Some(args.subject.clone()),
+        }),
+    },
         "Link",
         "Identity::ExternalIdentifier",
         "ExternalIdentifier",

@@ -541,7 +541,7 @@ pub struct CreatePizzaArgs {
 }
 
 pub fn dispatch_create_pizza(
-    repo: &mut impl crate::kernel::Repository<Order>, id: &str, args: CreatePizzaArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Order>, args: CreatePizzaArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Order> {
         args.name.check_invariants()?;
         args.pizza.check_invariants()?;
@@ -549,7 +549,16 @@ pub fn dispatch_create_pizza(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: args.name.value.to_string(),
+        build: Box::new(|| Order {
+            name: Some(args.name.clone()),
+            pizza: Some(args.pizza.clone()),
+            toppings: vec![],
+            customer_name: None,
+            status: "available".to_string(),
+        }),
+    },
         "CreatePizza",
         "Pizzas::Order",
         "Order",
@@ -752,5 +761,39 @@ if !unknown.is_empty() {
         customer_name: CustomerName::from_json(&v.require("customer_name", "PurchaseArgs")?.coerce_single_field("value"))?,
         })
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct PaymentGatewayReceiveArgs {
+    pub customer_name: CustomerName,
+    pub amount: Price,
+}
+
+impl PaymentGatewayReceiveArgs {
+    pub fn to_json(&self) -> crate::kernel::Json {
+        crate::kernel::Json::Object(vec![
+        ("customer_name".to_string(), self.customer_name.to_json()),
+        ("amount".to_string(), self.amount.to_json()),
+        ])
+    }
+}
+
+
+impl PaymentGatewayReceiveArgs {
+    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
+        Ok(Self {
+        customer_name: CustomerName::from_json(&v.require("customer_name", "PaymentGatewayReceiveArgs")?.coerce_single_field("value"))?,
+        amount: Price::from_json(&v.require("amount", "PaymentGatewayReceiveArgs")?.coerce_single_field("cents"))?,
+        })
+    }
+}
+
+
+pub fn dispatch_operation_paymentgateway_receive(receiver_id: &str, args: PaymentGatewayReceiveArgs) -> Result<Vec<crate::kernel::Event>, crate::kernel::Refusal> {
+        args.customer_name.check_invariants()?;
+        args.amount.check_invariants()?;
+    Ok(vec![
+        crate::kernel::Event { name: "PizzaPaymentReceived".to_string(), aggregate: "Pizzas::Order".to_string(), id: receiver_id.to_string(), payload: crate::kernel::Json::Null, correlation: None },
+    ])
 }
 

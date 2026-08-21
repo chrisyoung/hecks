@@ -91,7 +91,7 @@ pub fn emit_fielded_record(exemplar: &Exemplar, aggregate: &Json, value_objects_
         let scalar = naming::effective_scalar_type(crate::attr::type_name(attr));
         let list = crate::attr::list(attr);
 
-        let arm = if list && crate::shared::list_attr_creation_optional(aggregate, crate::attr::name(attr)) {
+        let arm = if list && crate::shared::list_attr_creation_optional(aggregate, crate::attr::name(attr), value_objects_by_name) {
             Some(exemplar.render("fielded_arm_list_optional", &[("\"tmpl_field\"", naming::ruby_inspect_string(&key)), ("tmpl_ident", ident)]))
         } else if list {
             Some(exemplar.render("fielded_arm_list", &[("\"tmpl_field\"", naming::ruby_inspect_string(&key)), ("tmpl_ident", ident)]))

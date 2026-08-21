@@ -535,22 +535,10 @@ pub fn dispatch_by_name(
               crate::generated::embryonaut::recurringpayment::dispatch_cancel(&mut store.recurringpayment, &id, args, mutations).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Governance::RoleAssignment.Assign" => {
-              // HAND-PATCHED, not regenerated — see ExternalIdentifier.Link's
-              // own comment below on why this whole file is orphaned.
-              // `Assign` used to be miscoded as a CREATING command
-              // (`references: nil` used to mean "creates"; it never
-              // genuinely does here — RoleAssignment.Assign only ever
-              // appends a row, exactly like its own sibling `Revoke` already
-              // reads an `id` to act on an EXISTING record) — `bin/
-              // project_rust`'s fix for this now generates `dispatch_assign`
-              // as an acting function (`id: &str` first, matching `Revoke`
-              // right below), so this caller needs the same `let id =
-              // ...extract_id...` line `Revoke` already has.
-              let id = crate::generated::governance::roleassignment::RoleAssignment::extract_id(args_json)?;
               let args = crate::generated::governance::roleassignment::AssignArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Governance administrator"), "Assign", caller_role)?;
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::governance::roleassignment::dispatch_assign(&mut store.roleassignment, &id, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::governance::roleassignment::dispatch_assign(&mut store.roleassignment, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Governance::RoleAssignment.Revoke" => {
               let id = crate::generated::governance::roleassignment::RoleAssignment::extract_id(args_json)?;
@@ -560,13 +548,10 @@ pub fn dispatch_by_name(
               crate::generated::governance::roleassignment::dispatch_revoke(&mut store.roleassignment, &id, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Governance::RoleTransition.Grant" => {
-              // HAND-PATCHED, not regenerated — same fix, same reason, as
-              // `RoleAssignment.Assign` above.
-              let id = crate::generated::governance::roletransition::RoleTransition::extract_id(args_json)?;
               let args = crate::generated::governance::roletransition::GrantArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Governance administrator"), "Grant", caller_role)?;
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::governance::roletransition::dispatch_grant(&mut store.roletransition, &id, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::governance::roletransition::dispatch_grant(&mut store.roletransition, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Governance::RoleTransition.Revoke" => {
               let id = crate::generated::governance::roletransition::RoleTransition::extract_id(args_json)?;
@@ -576,13 +561,10 @@ pub fn dispatch_by_name(
               crate::generated::governance::roletransition::dispatch_revoke(&mut store.roletransition, &id, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Identity::Identity.Register" => {
-              // HAND-PATCHED, not regenerated — same fix, same reason, as
-              // `RoleAssignment.Assign` above.
-              let id = crate::generated::identity::identity::Identity::extract_id(args_json)?;
               let args = crate::generated::identity::identity::RegisterArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Identity registrar"), "Register", caller_role)?;
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::identity::identity::dispatch_register(&mut store.identity, &id, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::identity::identity::dispatch_register(&mut store.identity, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Identity::ExternalIdentifier.Link" => {
               let args = crate::generated::identity::externalidentifier::LinkArgs::from_json(args_json)?;
@@ -601,11 +583,8 @@ pub fn dispatch_by_name(
               // see the CI-fix session's own report for the larger,
               // undecided question this leaves open.
               crate::kernel::check_reference(&store.identity, &args.identity, "Identity", "identity_id")?;
-              // HAND-PATCHED, not regenerated — same fix, same reason, as
-              // `RoleAssignment.Assign` above.
-              let id = crate::generated::identity::externalidentifier::ExternalIdentifier::extract_id(args_json)?;
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::identity::externalidentifier::dispatch_link(&mut store.externalidentifier, &id, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::identity::externalidentifier::dispatch_link(&mut store.externalidentifier, args, mutations, Vec::new(), Vec::new()).map(|(_, events)| stamp_payload(events, &payload))
           }
         other => Err(crate::kernel::Refusal::TypeMismatch(format!("unknown command {other:?}"))),
     }

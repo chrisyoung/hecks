@@ -503,12 +503,26 @@ module RustProjection
 
               manifest << manifest_entry(kind: "port_operation", id: operation_verb, generated: true, routed: true)
               operation_args_struct = "#{Projector.rust_ident(port[:name])}#{Projector.rust_ident(operation[:name])}Args"
+              # THE MIGRATION-ERA SELF-REFERENCE, if this operation still
+              # declares one — `ports.rb#emit_port_operation` excludes it
+              # from the generated args struct entirely (routing supplies
+              # the receiver now), so a reference_check against it would
+              # name a struct field that no longer exists; both filtered
+              # out here, together, the same way `emit_port_operation`
+              # and `registry.rb`'s own `split_aggregate_receiver` treat
+              # this one field as a single unit.
+              legacy_receiver_field = operation[:attributes]
+                .find { |attr| Projector.reference_target(attr[:type]) == aggregate[:name] }
+                &.dig(:name)
+              operation_reference_checks = reference_checks(operation, aggregates_by_name, unsupported_names)
+                .reject { |check| check[:target_name] == aggregate[:name] }
               port_operations << {
                 verb: operation_verb,
                 name: operation[:name],
                 fn: "#{port[:name].downcase}_#{Projector.dispatch_fn_name(Projector.rust_ident(operation[:name]))}",
                 args_struct: operation_args_struct,
-                reference_checks: reference_checks(operation, aggregates_by_name, unsupported_names),
+                reference_checks: operation_reference_checks,
+                legacy_receiver_field: legacy_receiver_field,
               }
             end
           end

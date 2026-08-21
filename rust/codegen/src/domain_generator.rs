@@ -236,7 +236,7 @@ pub fn generate(
                     crate::naming::rust_ident(vo.get("name").and_then(Json::as_str).unwrap_or(""));
                 puts_str(
                     &mut out,
-                    &json_codec::emit_to_json_flat(exemplar, &name, attrs, false, &[], None),
+                    &json_codec::emit_to_json_flat(exemplar, &name, attrs, &value_objects_by_name, false, &[], None),
                 );
                 puts_blank(&mut out);
                 // `Some(&[])` — mirrors the Ruby generator's own fix
@@ -283,6 +283,7 @@ pub fn generate(
                     exemplar,
                     &entity_name_ident,
                     entity_attrs,
+                    &value_objects_by_name,
                     false,
                     &extra,
                     None,
@@ -332,6 +333,7 @@ pub fn generate(
                         exemplar,
                         &nested_name_ident,
                         nested_attrs,
+                        &value_objects_by_name,
                         false,
                         &nested_extra,
                         None,
@@ -449,6 +451,7 @@ pub fn generate(
                 exemplar,
                 &record_name,
                 record_attrs,
+                &value_objects_by_name,
                 true,
                 &extra,
                 Some(aggregate),
@@ -501,7 +504,7 @@ pub fn generate(
             let cmd_attrs = command.get("attributes").map(Json::each).unwrap_or(&[]);
             puts_str(
                 &mut out,
-                &json_codec::emit_to_json_flat(exemplar, &args_struct, cmd_attrs, false, &[], None),
+                &json_codec::emit_to_json_flat(exemplar, &args_struct, cmd_attrs, &value_objects_by_name, false, &[], None),
             );
             puts_blank(&mut out);
             let allowlist =
@@ -519,7 +522,7 @@ pub fn generate(
             );
             puts_blank(&mut out);
 
-            let creates = command.get("references").is_none();
+            let creates = crate::shared::creates_owner(aggregate, command, &value_objects_by_name);
             let identity = mutations::identity_components(aggregate, command);
             let identity_extra_params: Vec<String> = if creates {
                 identity.iter().filter_map(|c| c.head.clone()).collect()
