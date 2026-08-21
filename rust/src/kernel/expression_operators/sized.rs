@@ -18,7 +18,11 @@
 // not merely a new `AttributeShape`/`OperatorCategory` name), a wildcard
 // here would silently decide "refuse it" for a case nobody actually
 // evaluated — an explicit arm forces whoever adds the variant to decide
-// on purpose whether `.empty?`/`.size` support it.
+// on purpose whether `.empty?`/`.size` support it. `Elements` (PRD 09
+// gap-closing pass) is exactly that seventh variant, and the compiler
+// forced this file to answer for it — `Vec::len()`/`is_empty()`
+// directly, real per-element data, not a stand-in length the way `List`
+// carries.
 //
 // `expr.rs`'s `category_of` guarantees `empty`/`size` below are only
 // ever called with `Empty`/`Size` respectively — see `logical.rs`'s
@@ -38,6 +42,7 @@ pub fn empty(expr: &Expr, ctx: &EvalContext) -> Result<Value, Refusal> {
     match v {
         Value::Str(_) => Ok(Value::Bool(scalar::is_empty(&v).expect("Str always answers is_empty"))),
         Value::List(_) => Ok(Value::Bool(list::is_empty(&v).expect("List always answers is_empty"))),
+        Value::Elements(ref elements) => Ok(Value::Bool(elements.is_empty())),
         Value::Int(_) | Value::Float(_) | Value::Bool(_) | Value::Nil => Err(eval_error(format!("empty? expects a list or string, got {v:?}"))),
     }
 }
@@ -51,6 +56,7 @@ pub fn size(expr: &Expr, ctx: &EvalContext) -> Result<Value, Refusal> {
     match v {
         Value::Str(_) => Ok(Value::Int(scalar::size(&v).expect("Str always answers size"))),
         Value::List(_) => Ok(Value::Int(list::size(&v).expect("List always answers size"))),
+        Value::Elements(ref elements) => Ok(Value::Int(elements.len() as i64)),
         Value::Int(_) | Value::Float(_) | Value::Bool(_) | Value::Nil => Err(eval_error(format!("size expects a list or string, got {v:?}"))),
     }
 }

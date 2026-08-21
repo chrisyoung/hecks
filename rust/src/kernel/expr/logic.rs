@@ -47,12 +47,13 @@ use crate::kernel::Refusal;
 // Mirrors what Ruby's `Resolver#interpret` can return (Integer/Float/
 // String/true/false/nil), plus one addition: `List(usize)`. Real corpus
 // expressions only ever ask `.size`/`.empty?` of a list-typed field,
-// never index into its elements by expression — so a list field
-// surfaces as its length, not its contents. Each variant IS one of the
-// four `AttributeShape`s once resolved to a runtime value: `Int`/
-// `Float`/`Str`/`Bool` are `:scalar`, `List` is `:list`, `Nil` is
+// never index into its elements by expression — so a STORED list field
+// surfaces as its length, not its contents. Each of the six variants IS
+// one of the four `AttributeShape`s once resolved to a runtime value:
+// `Int`/`Float`/`Str`/`Bool` are `:scalar`, `List` is `:list`, `Nil` is
 // `:optional` (see `attribute_shapes/*.rs` for the shape-owned behavior
-// of each).
+// of each) — `Elements` is not a fifth `AttributeShape` and never will
+// be; see its own doc below.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Int(i64),
@@ -61,6 +62,27 @@ pub enum Value {
     Bool(bool),
     List(usize),
     Nil,
+    /// PRD 09 gap-closing pass ("fix the gaps") — a REAL, in-memory
+    /// element sequence, produced only by `.split` and consumed only by
+    /// `.first`/`.last`/`.all?`/`.any?`/`.none?`/`.find`
+    /// (`expression_operators::{string,accessor,block_predicate}`).
+    /// Deliberately a SEPARATE variant from `List`, not a redefinition
+    /// of it: `List` is the count-only shape every one of the 75 real
+    /// generated `field()` implementations already constructs
+    /// (`Value::List(self.some_field.len())`) for a STORED list-typed
+    /// attribute — changing what `List` MEANS would mean regenerating
+    /// every domain and rewriting the code generator itself. `Elements`
+    /// touches none of that: it exists purely at expression-evaluation
+    /// time, born from `.split`'s own real string-splitting and never
+    /// read from a generated struct's own field at all. This is why
+    /// `.first`/`.last`/`.all?`/etc. can be real now while a STORED
+    /// list's own elements (e.g. `account.ledger`) still cannot be
+    /// walked by expression — that's a materially larger change (the
+    /// code generator would need to know how to turn an arbitrary
+    /// element type, including nested `Fielded` structs with no general
+    /// `Value` reading, into elements), genuinely out of this pass's
+    /// scope, not a shortcut taken here.
+    Elements(Vec<Value>),
 }
 
 impl Value {
@@ -139,6 +161,31 @@ impl<'a> Fielded for WithOld<'a> {
             return Some(Field::Nested(self.old));
         }
         self.args.field(name)
+    }
+}
+
+/// PRD 09 gap-closing pass — `Resolver#interpret_with_element`'s own
+/// shape (resolver/block_predicates.rb: `attrs.merge(node.param.to_sym
+/// => element)`), ported: binds ONE name to a scalar `Value` for the
+/// span of one predicate evaluation, checked FIRST, falling through to
+/// `inner` for every other name — the same "the bound name shadows
+/// anything else with the same name, for this one evaluation only,
+/// nothing persists past it" contract `WithOld`, above, already gives
+/// `old`. Public within this crate (not just this file) since
+/// `expression_operators::block_predicate` is the one real caller,
+/// constructing a fresh `EvalContext` per element.
+pub struct BoundElement<'a> {
+    pub name: &'a str,
+    pub value: Value,
+    pub inner: &'a dyn Fielded,
+}
+
+impl<'a> Fielded for BoundElement<'a> {
+    fn field(&self, name: &str) -> Option<Field<'_>> {
+        if name == self.name {
+            return Some(Field::Value(self.value.clone()));
+        }
+        self.inner.field(name)
     }
 }
 

@@ -29,15 +29,18 @@ pub fn numeric(v: &Value) -> Option<f64> {
 /// `Resolver::ToS`'s scalar half — `.to_s` on a `Str`/`Int`/`Float`/
 /// `Bool` value (`expression_operators::to_string` calls this before
 /// falling back to `optional::to_s` for the `Nil` case that isn't a
-/// scalar at all). `None` for any non-scalar `Value` (`List`/`Nil`),
-/// same reasoning as `numeric` above.
+/// scalar at all). `None` for any non-scalar `Value` (`List`/`Elements`/
+/// `Nil`), same reasoning as `numeric` above — `Elements` (PRD 09
+/// gap-closing pass) gets the identical treatment `List` already does:
+/// no real corpus predicate calls `.to_s` on an array, and Ruby's own
+/// `Array#to_s` (`.inspect`-shaped) was never ported here.
 pub fn to_s(v: &Value) -> Option<Value> {
     match v {
         Value::Str(s) => Some(Value::Str(s.clone())),
         Value::Int(i) => Some(Value::Str(i.to_string())),
         Value::Float(f) => Some(Value::Str(f.to_string())),
         Value::Bool(b) => Some(Value::Str(b.to_string())),
-        Value::List(_) | Value::Nil => None,
+        Value::List(_) | Value::Elements(_) | Value::Nil => None,
     }
 }
 

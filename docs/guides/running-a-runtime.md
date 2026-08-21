@@ -504,34 +504,52 @@ and held equal to it by `spec/operator_conformance_spec.rb`:
 | `.to_s` | to_string | 1 | `String`, `Integer`, `Float`, `Boolean`, `nil` only — raises `EvaluationError` on anything else |
 | `.match?` | regex | 2 | `receiver.match?(/pattern/flags)`; `String`/`Integer`/`Float`/`nil` coerce, `Boolean` refuses — same set `Resolver.matches_regex?` itself accepts |
 | `.present?`, `.blank?` | presence | 1 | Rails-standard semantics: `nil`/`false` are blank, a `String`/`Array` is blank when EMPTY, a number or `true` never is |
-| `.split` | string | 2 | `receiver.split("separator")` — a real `Array` result; see the Rust note below |
-| `.first`, `.last` | accessor | 1 | every real corpus usage receives a `Split`-produced `Array` |
+| `.split` | string | 2 | `receiver.split("separator")` — a real `Array` result (`Value::Elements`, both languages), see the Rust note below |
+| `.first`, `.last` | accessor | 1 | real in both languages over a `.split`-produced `Array`; `nil` on empty, matching Ruby |
 | `.start_with?`, `.end_with?` | string | 2 | `String` only |
-| `.all?`, `.any?`, `.none?` | block_predicate | 2 | `receiver.all? { \|x\| predicate }`; see the Rust note below |
-| `.find` | block_predicate | 2 | `receiver.find { \|x\| predicate }.path` — hands back the matched element (or a projection through `.path`), never a boolean |
+| `.all?`, `.any?`, `.none?` | block_predicate | 2 | `receiver.all? { \|x\| predicate }`; real in both languages over a `.split`-produced `Array` |
+| `.find` | block_predicate | 2 | `receiver.find { \|x\| predicate }` real in both languages; the trailing `.path` projection form is not (Rust note below) |
 
-Admitted 2026-08-20 (PRD 09, then a follow-up pass) — each was already
-real in `Bluebook::Expression::Resolver` beforehand, added piecemeal
-across several migration passes without ever being proposed through
-`lib/hecksagain/grammar/expression.bluebook`'s own admission ledger, so
-none of them had Rust representation and `bin/rust_kernel_coverage`
-could not even see the gap. `.all?`/`.any?`/`.none?`/`.find` needed a
-fifth `Strategy` value, `block_predicate_match` — none of the original
-four (`top_level_split`/`prefix_match`/`suffix_match`/`call_pattern_match`)
-describes an operator that opens a `{ |x| PREDICATE }` block.
+Admitted 2026-08-20 (PRD 09, then two follow-up "gaps" passes) — each
+was already real in `Bluebook::Expression::Resolver` beforehand, added
+piecemeal across several migration passes without ever being proposed
+through `lib/hecksagain/grammar/expression.bluebook`'s own admission
+ledger, so none of them had Rust representation and
+`bin/rust_kernel_coverage` could not even see the gap. `.all?`/`.any?`/
+`.none?`/`.find` needed a fifth `Strategy` value, `block_predicate_match`
+— none of the original four (`top_level_split`/`prefix_match`/
+`suffix_match`/`call_pattern_match`) describes an operator that opens a
+`{ |x| PREDICATE }` block.
 
-**A Rust-specific gap, not a Ruby one.** `.split`/`.first`/`.last`/
-`.all?`/`.any?`/`.none?`/`.find` are admitted and fully correct in Ruby,
-but the Rust kernel's `Value::List` carries only a length
-(`rust/src/kernel/expr/logic.rs`'s own header) — real corpus text was
-never expected to ask for a list's own elements by expression, until
-`.split("::").last` (`Query::Phrase`'s own invariant)
-proved otherwise. Rust's `expression_operators::{string::split,
-accessor::{first,last}, block_predicate::{block_predicate,find}}`
-recognize and refuse these explicitly, with a named reason, rather than
-silently answering wrong — closing that for real needs `Value::List` to
-carry actual elements, a separate, larger change neither admission pass
-made.
+**The Rust gap is now closed for `.split`'s own output — not for a
+STORED list attribute, which is a different, larger thing.**
+`rust/src/kernel/expr/logic.rs`'s `Value` grew a second list-shaped
+variant, `Elements(Vec<Value>)`, deliberately separate from `List`
+(the count-only shape every one of the ~75 real generated `field()`
+implementations already constructs for a stored `:list`-typed
+attribute, e.g. `account.ledger` — untouched by this change, and still
+count-only). `.split` produces real `Elements`; `.first`/`.last`/
+`.all?`/`.any?`/`.none?`/`.find` consume them for real. `.find`'s own
+trailing dotted `.path` still refuses explicitly — `Elements` only ever
+holds plain scalars, which have no fields a path could walk. Reading a
+stored list attribute's own elements by expression (`account.ledger.first`)
+is still not possible in either language — that's the materially
+larger change (the code generator would need a general way to turn an
+arbitrary element type, including nested value objects/entities with no
+general scalar reading, into a `Value`) this pass did not make.
+
+**Verified differently from everything else in this section.** No
+domain in this repo's actual corpus (banking, pizzas, embryonaut, meta,
+...) has real `.split`/`.first`/`.last`/`.all?`/`.find` usage —
+`spec/rust_conformance_spec.rb`'s real-domain harness, which checked
+every other operator here, has nothing to replay for these. Verified
+instead by hand-written Rust unit tests in
+`expression_operators/{string,accessor,block_predicate}.rs` checking
+Ruby's own well-documented semantics directly (including `String#split`'s
+three splitting rules and its trailing-empty-string normalization, and
+the `[].first`/`[].any?`-shaped vacuous cases on an empty sequence) — a
+real but weaker form of verification than a running domain, recorded as
+such rather than overclaimed.
 
 Every one of the six comparison operators reduces to two primitives —
 `less_than` and `equal` — combined with a boolean algebra rather than

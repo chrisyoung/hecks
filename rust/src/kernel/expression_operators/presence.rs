@@ -36,6 +36,11 @@ fn blank(v: &Value) -> bool {
         Value::Bool(b) => !*b,
         Value::Str(s) => s.is_empty(),
         Value::List(n) => *n == 0,
+        // PRD 09 gap-closing pass — Elements is blank when empty, the
+        // identical rule List already has (both are Ruby's own Array
+        // blank-when-empty semantics; Elements just carries real
+        // members instead of a bare count).
+        Value::Elements(elements) => elements.is_empty(),
         Value::Int(_) | Value::Float(_) => false,
     }
 }

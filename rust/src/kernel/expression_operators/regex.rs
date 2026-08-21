@@ -56,7 +56,7 @@ fn coerce(v: &Value) -> Result<String, Refusal> {
         Value::Int(i) => Ok(i.to_string()),
         Value::Float(f) => Ok(f.to_string()),
         Value::Nil => Ok(String::new()),
-        Value::Bool(_) | Value::List(_) => Err(eval_error(format!("match? expects a scalar, got {v:?}"))),
+        Value::Bool(_) | Value::List(_) | Value::Elements(_) => Err(eval_error(format!("match? expects a scalar, got {v:?}"))),
     }
 }
 

@@ -9,11 +9,30 @@
 // the corpus's own usage (resolver.rb's own comment on `StartsWith`),
 // and a `bool` answer needs nothing `Value` cannot already represent.
 //
-// `.split` IS NOT — see its own function below for why this is a real,
-// named gap rather than a missing case nobody noticed. This is the
-// honest thing to ship: an operator this kernel recognizes and refuses
-// FOR A STATED REASON is a real improvement over one it cannot even
-// parse today, even though it cannot yet succeed.
+// `.split` IS NOW REAL TOO — PRD 09 gap-closing pass. Produces
+// `Value::Elements`, not `Value::List` — see `expr/logic.rs`'s own doc
+// on `Elements` for why those are two different things and why this one
+// change didn't require regenerating a single domain. `ruby_split`,
+// below, replicates `String#split(pattern)`'s real behaviour field for
+// field (no limit argument, matching every real call site's own
+// spelling): a literal separator splits on exact occurrences; `""`
+// splits into individual characters; `" "` (the one special-cased
+// string) splits on RUNS of whitespace, awk-style, discarding leading
+// whitespace entirely; and — in every case — TRAILING empty strings are
+// dropped, the one normalization Ruby's own `split` always applies
+// without a limit, regardless of which of the three rules produced them.
+//
+// NO REAL CORPUS FIXTURE EXERCISES THIS TODAY — worth saying plainly.
+// Every other operator this session admitted was checked against
+// `spec/rust_conformance_spec.rb`'s real generated domains; this repo's
+// actual corpus (banking, pizzas, embryonaut, meta, ...) has zero real
+// `.split`/`.first`/`.last`/`.all?`/`.find` usage to replay. Verified
+// instead by hand-written Rust unit tests covering each of the three
+// splitting rules and the trailing-empty rule independently, against
+// Ruby's own well-documented `String#split` semantics — a real but
+// weaker form of verification than everything else this session
+// checked against a running domain, and recorded as such rather than
+// overclaimed.
 //
 // EVERY `Value` VARIANT IS NAMED BELOW, NONE LEFT TO A WILDCARD — see
 // `sized.rs`'s own header for why. `expr.rs`'s `category_of` guarantees
@@ -25,29 +44,72 @@ use crate::kernel::expr::{eval_error, interpret as eval, EvalContext, Expr, Valu
 use crate::kernel::Refusal;
 
 pub fn split(expr: &Expr, ctx: &EvalContext) -> Result<Value, Refusal> {
-    let Expr::Split { receiver, .. } = expr else {
+    let Expr::Split { receiver, separator } = expr else {
         return Err(Refusal::TypeMismatch(format!("string::split called with a non-split node {expr:?} — a router bug")));
     };
 
-    // `Value::List` carries its own LENGTH ONLY (`expr.rs`'s own header,
-    // `attribute_shapes/list.rs`'s own header) — real corpus text was
-    // never expected to ask for a list's OWN ELEMENTS by expression, and
-    // `.split`'s whole point is producing exactly that: a real Array a
-    // caller can `.first`/`.last`/`.all? { }` over (the corpus's own
-    // `Query::Phrase` does precisely this — `.split("::").last`,
-    // `.split("::").all? { |s| s.length > 0 }`). Evaluating the receiver
-    // and refusing HONESTLY, rather than returning a `Value::List(n)`
-    // whose length answers `.size`/`.empty?` correctly and lies the
-    // moment anything chains `.first`/`.last`/a block predicate onto it
-    // — the same "refuse rather than silently answer a question this
-    // shape cannot represent" discipline `to_string.rs`'s own `List` arm
-    // already sets a precedent for, one level further in. Closing this
-    // for real needs `Value::List` to carry actual elements
-    // (`List(Vec<Value>)`, not `List(usize)`) — a real architectural
-    // change, out of PRD 09's own scope (see PRD 09's "Correction" /
-    // follow-up note), not a missing line in this file.
-    let _ = eval(receiver, ctx)?;
-    Err(eval_error("split cannot yet produce a real list value in the Rust kernel — Value::List carries only a length, not elements; this is a known, named gap (PRD 09), not a router bug".to_string()))
+    match eval(receiver, ctx)? {
+        Value::Str(s) => Ok(Value::Elements(ruby_split(&s, separator).into_iter().map(Value::Str).collect())),
+        v => Err(eval_error(format!("split expects a string, got {v:?}"))),
+    }
+}
+
+/// `String#split(pattern)`, no limit argument — see this file's own
+/// header for the three rules and the trailing-empty normalization every
+/// one of them is subject to.
+fn ruby_split(value: &str, separator: &str) -> Vec<String> {
+    let mut parts: Vec<String> = if separator.is_empty() {
+        value.chars().map(|c| c.to_string()).collect()
+    } else if separator == " " {
+        value.split_whitespace().map(str::to_string).collect()
+    } else {
+        value.split(separator).map(str::to_string).collect()
+    };
+
+    while parts.last().is_some_and(String::is_empty) {
+        parts.pop();
+    }
+
+    parts
+}
+
+#[cfg(test)]
+mod split_tests {
+    use super::ruby_split;
+
+    // Every case here is real, well-documented `String#split` behaviour
+    // — checked against Ruby's own semantics, not a live `ruby -e` call,
+    // since no real corpus fixture exists to replay instead (this file's
+    // own header explains why).
+    #[test]
+    fn splits_on_a_literal_multi_character_separator() {
+        assert_eq!(ruby_split("a::b::c", "::"), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn empty_separator_splits_into_individual_characters() {
+        assert_eq!(ruby_split("abc", ""), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn a_single_space_separator_splits_on_whitespace_runs_and_drops_leading_whitespace() {
+        assert_eq!(ruby_split("  a   b  c ", " "), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn drops_trailing_empty_strings_but_keeps_leading_and_interior_ones() {
+        assert_eq!(ruby_split(",a,,b,", ","), vec!["", "a", "", "b"]);
+    }
+
+    #[test]
+    fn a_separator_matching_nothing_answers_the_whole_string_as_one_element() {
+        assert_eq!(ruby_split("abc", "::"), vec!["abc"]);
+    }
+
+    #[test]
+    fn an_empty_string_splits_to_no_elements_at_all() {
+        assert_eq!(ruby_split("", ","), Vec::<String>::new());
+    }
 }
 
 pub fn starts_with(expr: &Expr, ctx: &EvalContext) -> Result<Value, Refusal> {
