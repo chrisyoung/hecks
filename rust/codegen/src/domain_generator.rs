@@ -172,6 +172,36 @@ pub fn generate(
         .unwrap_or(&[])
         .to_vec();
 
+    // WHICH AGGREGATE OWNS EACH VALUE OBJECT, across this WHOLE domain — a
+    // COMMAND's own attribute can name ANY value object the domain
+    // declares, not just one its own owner also happens to declare
+    // (`Banking::SafeDepositBox.Rent`'s own `attribute :customer,
+    // CustomerNumber` — `CustomerNumber` is `Customer`'s own, never
+    // `SafeDepositBox`'s). See `bridging.rs`'s own
+    // `cross_aggregate_vo_imports` header. Last-writer-wins per name,
+    // matching Ruby's `each_with_object`.
+    let mut domain_value_object_owner: HashMap<String, String> = HashMap::new();
+    for a in all_aggregates {
+        let owner = a.get("name").and_then(Json::as_str).unwrap_or("").to_string();
+        for vo in a.get("value_objects").map(Json::each).unwrap_or(&[]) {
+            domain_value_object_owner.insert(
+                vo.get("name").and_then(Json::as_str).unwrap_or("").to_string(),
+                owner.clone(),
+            );
+        }
+    }
+    // THE VALUE OBJECTS THEMSELVES, same domain-wide reach — `bridging.rs`'s
+    // own `bridgeable_value_types`/`value_rhs` need the actual DEFINITION
+    // (not just which aggregate owns it) to bridge a cross-aggregate command
+    // argument's type into its target field. Merged into each aggregate's
+    // own LOCAL map below with the local map winning any name collision.
+    let mut domain_value_objects_by_name: HashMap<String, &Json> = HashMap::new();
+    for a in all_aggregates {
+        for vo in a.get("value_objects").map(Json::each).unwrap_or(&[]) {
+            domain_value_objects_by_name.insert(vo.get("name").and_then(Json::as_str).unwrap_or("").to_string(), vo);
+        }
+    }
+
     for aggregate in all_aggregates {
         let agg_name = aggregate.get("name").and_then(Json::as_str).unwrap_or("");
         if unsupported_names.iter().any(|n| n == agg_name) {
@@ -182,18 +212,16 @@ pub fn generate(
             .get("value_objects")
             .map(Json::each)
             .unwrap_or(&[]);
-        let value_objects_by_name: HashMap<String, &Json> = value_objects
-            .iter()
-            .map(|vo| {
-                (
-                    vo.get("name")
-                        .and_then(Json::as_str)
-                        .unwrap_or("")
-                        .to_string(),
-                    vo,
-                )
-            })
-            .collect();
+        let mut value_objects_by_name: HashMap<String, &Json> = domain_value_objects_by_name.clone();
+        value_objects_by_name.extend(value_objects.iter().map(|vo| {
+            (
+                vo.get("name")
+                    .and_then(Json::as_str)
+                    .unwrap_or("")
+                    .to_string(),
+                vo,
+            )
+        }));
 
         let record_name = crate::naming::rust_ident(agg_name);
         let can_route = json_codec::extract_id_supported(aggregate);
@@ -209,6 +237,9 @@ pub fn generate(
         );
         puts_str(&mut out, "#![allow(dead_code, unused_variables)]");
         puts_str(&mut out, "use crate::kernel::Expr;");
+        for line in crate::bridging::cross_aggregate_vo_imports(aggregate, &domain_value_object_owner, mod_name) {
+            puts_str(&mut out, &line);
+        }
         puts_blank(&mut out);
 
         for vo in value_objects {

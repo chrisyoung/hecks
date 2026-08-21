@@ -342,16 +342,33 @@ pub fn emit_command(exemplar: &Exemplar, command: &Json, aggregate: &Json, domai
                 let matched = attrs.iter().find(|a| crate::attr::name(a) == crate::attr::name(attr));
                 let field = naming::rust_ident_field(crate::attr::name(attr));
                 if let Some(matched) = matched {
+                    let matched_type = crate::attr::type_name(matched);
+                    let attr_type = crate::attr::type_name(attr);
                     if crate::attr::optional(matched) {
                         if crate::attr::list(attr) && !crate::shared::list_attr_creation_optional(aggregate, crate::attr::name(attr), value_objects_by_name) {
                             format!("            {field}: args.{field}.clone().unwrap_or_default(),")
-                        } else {
+                        } else if crate::attr::list(attr) || matched_type == attr_type {
                             format!("            {field}: args.{field}.clone(),")
+                        } else {
+                            // A CROSS-AGGREGATE argument, same name as the
+                            // owner's own field but a DIFFERENT declared
+                            // type — see bridging.rs's own header
+                            // (`SafeDepositBox.Rent`'s `attribute :customer,
+                            // CustomerNumber`, bridged into the owner's own
+                            // `customer: Reference<Customer>` field). A
+                            // blind `.clone()` here assumed the two types
+                            // were always identical, which this generic
+                            // name-match never actually required.
+                            format!("            {field}: {},", mutations::optional_value_rhs(&format!("args.{field}"), matched_type, attr_type, value_objects_by_name))
                         }
-                    } else if crate::attr::list(attr) {
-                        format!("            {field}: args.{field}.clone(),")
+                    } else if crate::attr::list(attr) || matched_type == attr_type {
+                        if crate::attr::list(attr) {
+                            format!("            {field}: args.{field}.clone(),")
+                        } else {
+                            format!("            {field}: Some(args.{field}.clone()),")
+                        }
                     } else {
-                        format!("            {field}: Some(args.{field}.clone()),")
+                        format!("            {field}: Some({}),", crate::bridging::value_rhs(&format!("args.{field}"), matched_type, attr_type, value_objects_by_name))
                     }
                 } else if crate::attr::list(attr) {
                     format!("            {field}: vec![],")

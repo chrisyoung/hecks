@@ -534,6 +534,17 @@ pub fn dispatch_by_name(
               let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
               crate::generated::banking::cardpayment::dispatch_reject_dispute(&mut store.cardpayment, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
+          "Banking::SafeDepositBox.Rent" => {
+              let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
+              let route = invocation.route();
+              let facts_json = invocation.facts();
+              let args = crate::generated::banking::safedepositbox::RentArgs::from_json(facts_json)?;
+              crate::kernel::check_role(Some("Branch clerk"), "Rent", caller_role)?;
+              let owner_deref = Vec::new();
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
+              crate::generated::banking::safedepositbox::dispatch_rent(&mut store.safedepositbox, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
           "Banking::SafeDepositBox.Surrender" => {
               let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
               let route = invocation.route();
@@ -980,6 +991,7 @@ pub fn command_creates(verb: &str) -> bool {
         "Banking::CardPayment.Dispute" => false,
         "Banking::CardPayment.Chargeback" => false,
         "Banking::CardPayment.RejectDispute" => false,
+        "Banking::SafeDepositBox.Rent" => true,
         "Banking::SafeDepositBox.Surrender" => false,
         "Banking::SafeDepositBox.LogVisit" => false,
         "Banking::SafeDepositBox.IssueKey" => false,

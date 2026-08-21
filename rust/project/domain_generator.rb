@@ -127,8 +127,34 @@ module RustProjection
         vo_by_name = a[:value_objects].to_h { |vo| [vo[:name], vo] }
         Projector.unsupported_attribute_types(a, vo_by_name).any?
       end.map { |a| a[:name] }
+      # WHICH AGGREGATE OWNS EACH VALUE OBJECT, across this WHOLE domain —
+      # a COMMAND's own attribute can name ANY value object the domain
+      # declares, not just one its own owner also happens to declare
+      # (`Banking::SafeDepositBox.Rent`'s own `attribute :customer,
+      # CustomerNumber` — `CustomerNumber` is `Customer`'s own, never
+      # `SafeDepositBox`'s). `cross_aggregate_vo_imports`, below, is the
+      # ONLY reader — a struct field/from_json/to_json's own type name
+      # (`Projector.rust_type`/`rust_ident`) still emits the SAME bare
+      # identifier it always did; what makes that identifier resolve for
+      # a FOREIGN type is a `use` line at the top of the generated file,
+      # not a qualified path threaded through every codegen call site.
+      domain_value_object_owner = ir[:aggregates].each_with_object({}) do |a, index|
+        a[:value_objects].each { |vo| index[vo[:name]] = a[:name] }
+      end
+      # THE VALUE OBJECTS THEMSELVES, same domain-wide reach — `bridging.
+      # rb`'s own `bridgeable_value_types?`/`value_rhs` need the actual
+      # DEFINITION (not just which aggregate owns it) to bridge a
+      # cross-aggregate command argument's type into its target field.
+      # Merged into each aggregate's own LOCAL map below with the local
+      # map winning any name collision — nothing that already resolved
+      # locally ever starts resolving to a different definition; this
+      # only ever adds a name a purely local map didn't have. Never
+      # iterated (only ever looked up by name), so widening it changes
+      # nothing about what any OTHER reader of a per-aggregate `value_
+      # objects_by_name` already saw.
+      domain_value_objects_by_name = ir[:aggregates].flat_map { |a| a[:value_objects] }.to_h { |vo| [vo[:name], vo] }
       ir[:aggregates].each do |aggregate|
-        value_objects_by_name = aggregate[:value_objects].to_h { |vo| [vo[:name], vo] }
+        value_objects_by_name = domain_value_objects_by_name.merge(aggregate[:value_objects].to_h { |vo| [vo[:name], vo] })
         # BEFORE anything below reads a single `attr[:optional]` off an
         # entity/value-object field — every one of those reads (the
         # struct-field wrap two loops down, `command_skip_reason`'s own
@@ -192,6 +218,7 @@ module RustProjection
           f.puts "// Do not hand-edit — re-run bin/project_rust instead."
           f.puts "#![allow(dead_code, unused_variables)]"
           f.puts 'use crate::kernel::Expr;'
+          Projector.cross_aggregate_vo_imports(aggregate, domain_value_object_owner, mod_name).each { |line| f.puts line }
           f.puts
 
           aggregate[:value_objects].each do |vo|

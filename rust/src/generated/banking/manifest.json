@@ -262,9 +262,8 @@
   {
     "kind": "command",
     "id": "Banking::SafeDepositBox.Rent",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "sets :customer sources an argument no single-field rewrap can bridge to the target's type — not generated yet"
+    "generated": true,
+    "routed": true
   },
   {
     "kind": "command",

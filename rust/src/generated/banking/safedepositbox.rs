@@ -2,6 +2,7 @@
 // Do not hand-edit — re-run bin/project_rust instead.
 #![allow(dead_code, unused_variables)]
 use crate::kernel::Expr;
+use crate::generated::banking::customer::CustomerNumber;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BranchCode {
@@ -769,6 +770,106 @@ impl SafeDepositBox {
 
         by_identity.or(by_id_key).or(by_reference_key).ok_or_else(|| {
             crate::kernel::Refusal::TypeMismatch("SafeDepositBox: no identity found (tried branch_code.value, box_number.value, id, safe_deposit_box)".to_string())
+        })
+    }
+}
+
+impl crate::kernel::Fielded for RentArgs {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::Field;
+        
+        match name {
+            "customer" => Some(Field::Nested(&self.customer)),
+            "branch_code" => Some(Field::Nested(&self.branch_code)),
+            "box_number" => Some(Field::Nested(&self.box_number)),
+            "size" => Some(Field::Nested(&self.size)),
+            _ => None,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct RentArgs {
+    pub customer: CustomerNumber,
+    pub branch_code: BranchCode,
+    pub box_number: BoxNumber,
+    pub size: Size,
+}
+
+pub fn dispatch_rent(
+    repo: &mut impl crate::kernel::Repository<SafeDepositBox>, args: RentArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+) -> crate::kernel::DispatchResult<SafeDepositBox> {
+        args.customer.check_invariants()?;
+        args.branch_code.check_invariants()?;
+        args.box_number.check_invariants()?;
+    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+
+    crate::kernel::dispatch(
+        repo,
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", args.branch_code.value.to_string(), args.box_number.value.to_string()),
+        build: Box::new(|| SafeDepositBox {
+            customer: Some(args.customer.value.clone()),
+            branch_code: Some(args.branch_code.clone()),
+            box_number: Some(args.box_number.clone()),
+            size: Some(args.size.clone()),
+            visits: vec![],
+            keys: vec![],
+            status: "vacant".to_string(),
+        }),
+    },
+        "Rent",
+        "Banking::SafeDepositBox",
+        "SafeDepositBox",
+        "branch_code.value, box_number.value",
+        &with_references,
+        &[
+            crate::kernel::GivenSpec { description: "box is vacant", expr: Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("status")), right: Box::new(Expr::Str("vacant".to_string())) } },
+        ],
+        Some(crate::kernel::TransitionCheck { field: "status", from_states: &["vacant"] }),
+        |record| {
+        record.customer = Some(args.customer.value.clone());
+        record.branch_code = Some(args.branch_code.clone());
+        record.box_number = Some(args.box_number.clone());
+        record.size = Some(args.size.clone());
+        record.status = "rented".to_string();
+            Ok(())
+        },
+        &[
+
+        ],
+        &["BoxRented"],
+        args.to_json(),
+        mutations,
+    )
+}
+
+impl RentArgs {
+    pub fn to_json(&self) -> crate::kernel::Json {
+        crate::kernel::Json::Object(vec![
+        ("customer".to_string(), self.customer.to_json()),
+        ("branch_code".to_string(), self.branch_code.to_json()),
+        ("box_number".to_string(), self.box_number.to_json()),
+        ("size".to_string(), self.size.to_json()),
+        ])
+    }
+}
+
+impl RentArgs {
+    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
+let unknown = v.unknown_keys(&["customer", "branch_code", "box_number", "size", "id", "reference", "end_to_end"]);
+if !unknown.is_empty() {
+    return Err(crate::kernel::Refusal::UnknownArgument(format!(
+        "Rent does not declare {} — it takes customer, branch_code, box_number, size",
+        unknown.join(", ")
+    )));
+}
+        Ok(Self {
+        customer: CustomerNumber::from_json(&v.require("customer", "RentArgs")?.coerce_single_field("value"))?,
+        branch_code: BranchCode::from_json(&v.require("branch_code", "RentArgs")?.coerce_single_field("value"))?,
+        box_number: BoxNumber::from_json(&v.require("box_number", "RentArgs")?.coerce_single_field("value"))?,
+        size: Size::from_json(&v.require("size", "RentArgs")?.coerce_single_field("value"))?,
         })
     }
 }

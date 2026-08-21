@@ -439,9 +439,8 @@
   {
     "kind": "command",
     "id": "Bluebook::Syntax.Declare",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "sets :bluebook sources an argument no single-field rewrap can bridge to the target's type — not generated yet"
+    "generated": true,
+    "routed": true
   },
   {
     "kind": "command",
@@ -452,8 +451,9 @@
   {
     "kind": "command",
     "id": "Bluebook::Syntax.Argument",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "sets append field(s): arguments.position: not a declared field; arguments.keyword: not a declared field; arguments.context: not a declared field; arguments.at: not a declared field; arguments.named: not a declared field; arguments.kind: not a declared field; arguments.required: not a declared field; arguments.fills: not a declared field; arguments.selects: not a declared field; arguments.pair_key_fills: not a declared field; arguments.pair_value_fills: not a declared field; arguments.pairs_shape: not a declared field; arguments.variadic: not a declared field; arguments.minimum: not a declared field; arguments.coerce: not a declared field; arguments.blank_message: not a declared field"
   },
   {
     "kind": "aggregate",

@@ -354,11 +354,24 @@ module RustProjection
             # fallback `default_for` gives an UNMATCHED list attribute.
             if attr[:list] && !list_attr_creation_optional?(aggregate, attr[:name], value_objects_by_name)
               "            #{field}: args.#{field}.clone().unwrap_or_default(),"
-            else
+            elsif attr[:list] || matched[:type] == attr[:type]
               "            #{field}: args.#{field}.clone(),"
+            else
+              # A CROSS-AGGREGATE argument, same name as the owner's own
+              # field but a DIFFERENT declared type — `bridging.rb`'s own
+              # header (`SafeDepositBox.Rent`'s `attribute :customer,
+              # CustomerNumber`, bridged into the owner's own `customer:
+              # Reference<Customer>` field). A blind `.clone()` here
+              # assumed the two types were always identical, which this
+              # generic name-match never actually required.
+              "            #{field}: #{optional_value_rhs("args.#{field}", matched[:type], attr[:type], value_objects_by_name)},"
             end
           elsif matched
-            attr[:list] ? "            #{field}: args.#{field}.clone()," : "            #{field}: Some(args.#{field}.clone()),"
+            if attr[:list] || matched[:type] == attr[:type]
+              attr[:list] ? "            #{field}: args.#{field}.clone()," : "            #{field}: Some(args.#{field}.clone()),"
+            else
+              "            #{field}: Some(#{value_rhs("args.#{field}", matched[:type], attr[:type], value_objects_by_name)}),"
+            end
           elsif attr[:list]
             "            #{field}: vec![],"
           else
