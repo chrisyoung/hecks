@@ -1,6 +1,6 @@
 # PRD 12 — `Reaction`'s executable form (ADR 0030 Slice 3, design)
 
-**Status:** Design only, informed by a real Ruby-side extraction (`lib/hecksagain/runtime/{reaction,binding}.rb`, this same pass) that ADR 0030 named as its own prerequisite ("gives this ADR real material to lower, not a diagram"). No executable-IR node, no lowering step, and no Rust representation exist yet — this document proposes them, and names exactly what a follow-up implementation pass needs to build. The provenance-erasure test ADR 0030 sets as Slice 3's own acceptance gate is sketched here and given one small, real, hand-built instance (`spec/reaction_provenance_spec.rb`) — a start on the gate, not the finished proof (see "What's proven, and what isn't," below).
+**Status:** Design AND a real, differentially-verified executor (`lib/hecksagain/runtime/reaction_executor.rb`), built on a real Ruby-side extraction (`lib/hecksagain/runtime/reaction.rb`) that ADR 0030 named as its own prerequisite ("gives this ADR real material to lower, not a diagram"). `ReactionExecutor` is NOT wired into the real event-dispatch loop — `PolicyInterpreter`/`SagaInterpreter` still own production dispatch, and ADR 0029's own step 5 (full corpus/fuzzer parity) is the real gate before anything old is retired, not attempted here. What exists instead: `spec/reaction_executor_spec.rb` runs real banking/wire scenarios through both the production interpreters and this executor, independently, and asserts identical outcomes — 2/2 real scenarios (success, and refusal-with-compensation), both against the actual `settlement.bluebook` fixture. See "The executor," below, for what it does and three real bugs building it caught.
 
 ## Where this picks up
 
@@ -26,63 +26,41 @@ Reusing ADR 0030's own analysis (`0030-executable-ir...md`, "Slice 3"), refined 
 
 ```
 Reaction {
-  trigger:      Event(name) | Signal(name)     # a policy's on_event / a saga leg's event_type
-  condition:    Expression                     # policy's `where`, OR a saga leg's state-equality guard
-  bindings:     [BindingLowering::ExecutableBinding]   # see above — not a new shape
-  dispatches:   [CommandRef]                    # already plural in the canonical model (handler.dispatches);
-                                                 # policy's own single trigger_command is the one-element case
+  trigger:      Trigger { name, qualifier }        # a policy's on_event / a saga leg's event_type
+  condition:    Expression | nil                   # policy's `where` (nil when unconditional), OR a saga leg's state-equality guard
+  dispatches:   [Dispatch { command_ref: CommandRef, bindings: [BindingLowering::ExecutableBinding] }]
   context:      Context::Stateless | Context::Correlated { correlation_key, memory }
-  persistence:  Persistence::Ephemeral | Persistence::Checkpointed { boundary: BeforeDispatch }
-  failure:      Failure::Drop | Failure::Managed { retry: MAX_DEFECT_RETRIES, compensation: Reaction }
+  persistence:  Persistence::Ephemeral | Persistence::Checkpointed { boundary: :before_dispatch, to_state }
+  failure:      Failure::Drop | Failure::Managed { retry: MAX_DEFECT_RETRIES, compensation: Reaction | nil }
 }
 ```
 
-This is unchanged from ADR 0030's own provisional three-way split (`context`/`persistence`/`failure`, not two) — nothing found during the Ruby extraction contradicted it. One thing the extraction DID confirm concretely, closing ADR 0030's own "Open" item on this point: **`persistence`'s `Checkpointed` boundary is real, singular, and load-bearing** — `advance_saga`'s own mutex-guarded block writes `instance[:state] = handler.to_state` and calls `checkpoint(...)` *before* `handler.dispatches.each` runs a single dispatch, unconditionally, on every real code path (`begin_saga`, `advance_saga`, `unwind` all follow this same order). There is no second boundary anywhere in the corpus — `BeforeDispatch` is not one option among several, it's the only one this runtime has ever implemented.
+Two real corrections against the ADR's own original sketch, both found building the executor, not assumed correct from the design alone:
 
-**`failure.compensation: Reaction`, not a bare command reference** — `unwind` doesn't fire a raw dispatch, it advances the SAME state machine along the `REFUSED` trigger's own handler, which is itself a full leg (its own bindings, its own dispatches, its own possible further failure). Modeling compensation as "another `Reaction`, reached by trigger name" rather than a special one-shot escape hatch is what keeps this one state machine rather than a state machine plus a bolted-on rescue path — directly answering the acceptance criterion below.
+- **`bindings` moved off `Reaction` itself, onto a new `Dispatch` struct, one per entry in `dispatches`.** A real saga leg's own `handler.dispatches` can fire SEVERAL commands, each with its OWN, DIFFERENT `with_spec` — Settlement's own leg dispatches `Wire::Moved` (`with: { wire: :reference }`) and `Drawer::Put` (`with: { number: :destination, amount: :amount, reference: :reference }`), two different binding sets for two different commands. A flat `bindings` field shared across `Reaction` had no way to say which bindings belonged to which dispatch — harmless for the shape-only provenance test (nothing there ever resolved a binding against a real dispatch), wrong the moment an executor had to actually run one.
+- **`Persistence::Checkpointed` gained `to_state`.** `advance_saga`'s own checkpoint doesn't just record a fact, it MOVES the correlated instance to `handler.to_state` *before* any dispatch runs — and the compensating leg's own guard (`unwind`'s `instance[:state] == handler.from_state`) checks against THAT already-moved state, not the state the triggering leg started in. Without `to_state`, the boundary was right (checkpoint before dispatch) but had nothing to advance state TO, so a compensating leg's own guard never matched and compensation silently never fired — caught by the executor's own differential spec failing outright (a shut drawer's refusal never credited the source drawer back).
+
+Everything else is unchanged from ADR 0030's own provisional three-way split (`context`/`persistence`/`failure`, not two) — nothing found during the Ruby extraction contradicted it. `persistence`'s `Checkpointed` boundary being singular and load-bearing (`before_dispatch`, unconditionally, on every real code path) was confirmed reading the interpreters; `to_state`, above, is what building the executor added on top of that reading.
+
+**`failure.compensation: Reaction | nil`, not a bare command reference** — `unwind` doesn't fire a raw dispatch, it advances the SAME state machine along the `REFUSED` trigger's own handler, which is itself a full leg (its own bindings, its own dispatches, its own possible further failure). Modeling compensation as "another `Reaction`, reached by trigger name" rather than a special one-shot escape hatch is what keeps this one state machine rather than a state machine plus a bolted-on rescue path — directly answering the acceptance criterion below. `nil` is real too — a process manager with no `on :refused` handler at all (`Onboarding`, in the real corpus) compensates nothing, matching `unwind`'s own `return unless handler` guard.
 
 ## The lowering
 
-```ruby
-def lower_policy(policy)
-  Reaction.new(
-    trigger:     Trigger::Event.new(name: policy.event_name, qualifier: policy.event_qualifier),
-    condition:   policy.where.to_s.empty? ? Expr::Bool.new(true) : Evaluator.parse(policy.where),
-    bindings:    policy.with_spec.map { |b| BindingLowering.lower(b, available_sources: [:payload]) },
-    dispatches:  [CommandRef.new(policy.target_domain, policy.trigger_command)],
-    context:     Context::Stateless.new,
-    persistence: Persistence::Ephemeral.new,
-    failure:     Failure::Drop.new
-  )
-end
+Real code now (`lib/hecksagain/runtime/reaction_lowering.rb`), not a sketch — `lower_policy`/`lower_process_manager_leg`, both under 25 lines, both pure data restructuring: no dispatch, no state mutation, no I/O. `guard_expression` (named `state_equals` in the real file) builds a real `Evaluator::Compare` node (`Equal(Reference(:state), Literal(from_state))`) using the Evaluator's own existing struct constructors directly — no new public builder API was needed, contrary to what this section originally guessed. `lower_process_manager_leg`'s recursive `compensation:` call is guarded against a compensating leg compensating itself (`!refused_handler.equal?(handler)`) — checked against the real corpus, not just defensively: see "Open, deliberately," below, now closed.
 
-def lower_process_manager_leg(pm, handler)
-  Reaction.new(
-    trigger:     Trigger::Event.new(name: handler.event_type, qualifier: nil),
-    condition:   guard_expression(handler.from_state),   # Equal(Reference(:state), Literal(from_state)) — ADR 0030's own "third finding"
-    bindings:    handler.dispatches.flat_map { |d| d.with_spec.map { |b| BindingLowering.lower(b, available_sources: [:correlation, :payload, :memory]) } },
-    dispatches:  handler.dispatches.map { |d| CommandRef.new(nil, d.command_name) },
-    context:     Context::Correlated.new(correlation_key: pm.correlates_by, memory: true),
-    persistence: Persistence::Checkpointed.new(boundary: :before_dispatch),
-    failure:     Failure::Managed.new(retry: SagaInterpreter::MAX_DEFECT_RETRIES,
-                                       compensation: pm.handler_for(SagaInterpreter::REFUSED) && lower_process_manager_leg(pm, pm.handler_for(SagaInterpreter::REFUSED)))
-  )
-end
-```
+## The executor
 
-Sketched, not implemented — real gaps this sketch doesn't hide: `guard_expression` needs `Equal`/`Reference`/`Literal` `Expr` constructors that exist in the Evaluator's own AST already but have no public builder API outside `Evaluator.parse`'s own string-driven path; `Trigger::Event`/`CommandRef`/`Context`/`Persistence`/`Failure` are all new Ruby structs this design proposes but does not create. Building these is the next pass's job, guided by ADR 0030's own rule: if a lowering function starts needing to know *how* to execute something rather than just restructure already-declared data, it's become a second interpreter, not a lowering step. `lower_process_manager_leg`'s recursive `compensation:` call is the one place in this sketch worth double-checking against that rule once built — compensation-of-compensation is real (a compensating leg can itself be a `Handler` with its own `dispatches`), but it must stay a data restructuring (build the compensating `Reaction` once, hand it back), never a second copy of `advance_saga`'s own control flow.
+Real code now (`lib/hecksagain/runtime/reaction_executor.rb`): `ReactionExecutor#run(reaction, sources:, state:, on_checkpoint:, domain:)` — evaluate condition → checkpoint (mutating `state` in place, if `Checkpointed`) → for each `Dispatch`, resolve its own bindings and run it through `Reaction.deliver_dispatch` → compensate independently on that dispatch's own failure, before the next dispatch in the same reaction is even attempted (ADR 0030's own "second concrete finding," ported literally — `handler.dispatches.each` in the original never stops at the first failure).
+
+**A third real bug, also caught by the differential spec failing rather than assumed correct:** the first draft reassigned `state` via `state.merge(...)` inside `run` instead of mutating it in place. The real `SagaInterpreter`'s own idempotency guard against DOUBLE compensation depends on `instance` being one SHARED, mutable Hash — two of a reaction's own dispatches can independently fail and independently call `compensate`, and the real system's own guard is that the SECOND call sees the state the FIRST compensation already moved to, no longer matching the compensating leg's own condition, so it silently no-ops the second time ("the check is the guard," `unwind`'s own real comment). A fresh `.merge` handed each independent compensation call its own copy of the pre-compensation state, so the guard matched a second, wrong time — the differential spec's own wire drawer ended up double-credited (15,000 instead of the correct 12,500) until this was fixed to `state[:state] = ...` in place.
 
 ## The provenance-erasure test
 
 ADR 0030's own acceptance criterion, stated precisely: *take the lowered executable IR, erase every trace of which canonical construct it came from, and run it. If the runtime still reproduces exactly the correct behaviour, the decomposition succeeded.*
 
-`spec/reaction_provenance_spec.rb` (new, alongside this PRD) is a first, small, honest instance of this test — not the full gate:
+`spec/reaction_provenance_spec.rb` proves the SHAPE survives provenance erasure — lowers a real policy and a real process-manager leg, asserts both land in the same Ruby class with no field naming which construct produced either, and runs both conditions through the one shared `evaluate_condition`. `spec/reaction_executor_spec.rb` goes one step further: it proves EXECUTION survives it too, for two real scenarios, differentially against the real production interpreters — not full corpus/fuzzer parity (see "What's proven, and what isn't," below), but real behavior, not just shape.
 
-- Lowers one real `policy` (banking's own `FreezeAccountsOnSuspension`) and one real `process_manager` leg (banking's own `Settlement`'s first transition) via the sketch above.
-- Asserts both land in `Reaction` instances of the *same Ruby class*, distinguished only by field VALUES (`context.class`, `failure.class`, ...), never by a tag naming which canonical construct produced them.
-- Walks the mechanical criterion table from ADR 0030 ("trigger matching: same stage, same implementation"; "condition evaluation: same stage, one implementation once unified"; ...) as literal assertions: the SAME `evaluate_condition(reaction, event)` function, called on both, with no branch anywhere on "is this a policy-shaped or process-manager-shaped Reaction."
-
-**What's proven, and what isn't.** This confirms the *shape* survives provenance erasure — two structurally different canonical constructs really do produce one common Ruby type with no leftover tag. It does NOT yet prove the full acceptance criterion, which requires an actual EXECUTOR that runs a bare `Reaction` end to end (matching/binding/dispatching/checkpointing/compensating) with `PolicyInterpreter`/`SagaInterpreter` retired in favor of it — that executor is not built, and building it is real, substantial work (effectively ADR 0029's step 3 reassessment run a second time, this time forcing an actual merge rather than stopping at "two thin shells," since a real `Reaction` executor is exactly that merge). Recorded here as the concrete next PRD, not attempted in this pass.
+**What's proven, and what isn't.** Proven: the shape survives erasure; a real policy-shaped and a real saga-leg-shaped `Reaction` both execute correctly through the one executor for the scenarios tested, including the compensate-independently-per-dispatch and checkpoint-before-dispatch behaviors. NOT proven: full parity across the entire real corpus and the fuzzer's own generated sequences — ADR 0029's own step 5 gate, the one that has to pass before `PolicyInterpreter`/`SagaInterpreter` could actually be retired in the executor's favor. That gate, and the event-dispatch-loop wiring an actual production swap would need (watching for the next event a leg's own dispatch emits, chaining multiple legs — not attempted here, since `ReactionExecutor` runs exactly one leg per call), remain real, separate, future work.
 
 ## Question 6, checked
 
@@ -95,11 +73,11 @@ Both check out, empirically, against the `Reaction` shape above:
 
 ## Non-goals
 
-- **Building the `Reaction` executor.** Sketched above as the concrete next PRD; not started here.
-- **Rust representation of `Reaction`.** ADR 0030 is explicit Rust never needs to know what a `Policy`/`ProcessManager` is — only `Reaction`, once an executable form exists to generate from. No Rust work is proposed or attempted in this design.
-- **Generalizing `trigger_command` → `dispatches: [...]` at the grammar level** (ADR 0029's own step 4). `dispatches` is already modeled as plural in the `Reaction` shape above (the sketch's `[CommandRef.new(...)]` one-element list for a policy), but the actual grammar/builder change making a real multi-dispatch `policy` authorable is separate, additive DSL surface work this design doesn't touch.
+- **Wiring `ReactionExecutor` into the real event-dispatch loop, retiring `PolicyInterpreter`/`SagaInterpreter`.** Real, separate, future work — needs ADR 0029's own step 5 (full corpus/fuzzer parity) as its gate, and an outer loop `ReactionExecutor` doesn't have (watching for the next event a leg's own dispatch emits, chaining legs across a whole saga instead of running exactly one at a time).
+- **Rust representation of `Reaction`.** ADR 0030 is explicit Rust never needs to know what a `Policy`/`ProcessManager` is — only `Reaction`, once an executable form exists to generate from. Deliberately still not attempted: the Ruby executor exists now but isn't adopted in production, and generating a Rust mirror of a design that might still shift once real corpus/fuzzer parity work starts would risk exactly the churn ADR 0030 warns against. Worth building once the Ruby executor is the ONE real implementation, not before.
+- **Generalizing `trigger_command` → `dispatches: [...]` at the grammar level** (ADR 0029's own step 4). `dispatches` is already modeled as plural in the `Reaction` shape above (a policy's own single trigger_command lowers to a one-element list), but the actual grammar/builder change making a real multi-dispatch `policy` authorable is separate, additive DSL surface work this design doesn't touch.
 
-## Open, deliberately
+## Open, deliberately — now resolved
 
-- **Whether `Trigger`/`CommandRef`/`Context`/`Persistence`/`Failure` belong in `expression.bluebook`'s own chapter, a new sibling chapter, or stay Ruby-only until a generator is worth building** — the same question PRD 10 left open for `Binding`'s own executable shape, unresolved here for the same reason: no generation pipeline exists yet to compare a lowering step against.
-- **Whether compensation-of-compensation (a compensating leg with its own `on :refused` handler) appears anywhere in the real corpus.** Not checked in this pass — if it does, `lower_process_manager_leg`'s recursive sketch needs a cycle guard; if it doesn't, the recursion as sketched is already correct and the guard is defensive-only.
+- **Whether `Trigger`/`CommandRef`/`Context`/`Persistence`/`Failure` belong in `expression.bluebook`'s own chapter, a new sibling chapter, or stay Ruby-only until a generator is worth building.** Decided: Ruby-only, for now — the same call PRD 10 made for `Binding`'s own executable shape, for the same reason: no generation pipeline exists yet to compare a lowering step against, and building one ahead of real Rust pressure (see the Rust non-goal, above) would be machinery built ahead of proven need. Revisit once/if Rust representation work creates that pressure.
+- **Whether compensation-of-compensation (a compensating leg with its own `on :refused` handler) appears anywhere in the real corpus.** Checked: it does not. Every process manager in `banking.bluebook` and `settlement.bluebook` has AT MOST one `transition :refused` handler (`Carry`: 1, `Settlement`: 1, `ExternalSettlement`: 1, `Onboarding`: 0) — `lower_process_manager_leg`'s recursion guard (`!refused_handler.equal?(handler)`) terminates after exactly one level everywhere it's ever actually exercised, confirmed rather than merely defensive.
