@@ -17,21 +17,27 @@ Hecks.bluebook "Bluebook" do
     # the source, and facts about the source are what this language holds.
     # `Aggregate#to_h` does not carry it and does not need to: the wire format is
     # a contract, and the language may hold more than it.
-    attribute :aggregate,       PolicyText
-    attribute :on_event,        PolicyText
-    attribute :trigger_command, PolicyText
-    attribute :target_domain,   PolicyText
+    attribute :aggregate,       PolicyReference
+    attribute :on_event,        PolicyReference
+    attribute :trigger_command, PolicyReference
+    attribute :target_domain,   PolicyReference
     # THE GUARD, CARRIED AS TEXT — same discipline `Command.givens`
     # already holds: the block that wrote it is never called at
     # runtime, only its EXTRACTED SOURCE is (Ports::Extraction), so
     # what the language holds is the string, not a live Proc no wire
     # format could carry. Optional — most policies fire unconditionally.
+    #
+    # STAYS PLAIN `PolicyText`, NOT `PolicyReference` — see that
+    # value object's own comment for why a dotted-segment shape check
+    # would be actively wrong here: `where` is arbitrary predicate
+    # source (a decimal literal, a Range's `..`), not a dotted
+    # reference.
     attribute :where,           PolicyText, optional: true
     # THE FAN-OUT SOURCE — a query verb ("Aggregate.query_name" or
     # "Domain::Aggregate.query_name"), same text shape as
     # `trigger_command`/`target_domain` beside it. Optional — most
     # policies fire once, not once per row.
-    attribute :for_each,        PolicyText, optional: true
+    attribute :for_each,        PolicyReference, optional: true
     # WHAT THE TRIGGER IS GIVEN, when the event's own shape is not it.
     # Empty means the whole payload forwards verbatim — what every policy
     # did before this existed, and still the right default for a trigger
@@ -53,6 +59,41 @@ Hecks.bluebook "Bluebook" do
 
     value_object "PolicyText" do
       attribute :value, String
+    end
+
+    # A DOTTED REFERENCE — `aggregate`/`on_event`/`trigger_command`/
+    # `target_domain`/`for_each`'s own real shape, never `where`'s
+    # (which stays plain `PolicyText`, above): `Naming.command_ref`'s
+    # canonical text ("Account.Debit", "Domain::Aggregate.Command") or
+    # a bare single-segment name with nothing to qualify
+    # ("CustomerSuspended") — real values read straight off the
+    # corpus (`banking.bluebook`/`pizzas.bluebook`/every fixture under
+    # `spec/fixtures`), not invented for this invariant.
+    #
+    # `.all?`/`.split` — PRD 09's gap-closing pass, admitted but until
+    # now with no real corpus fixture anywhere exercising them
+    # (`string.rs`'s own header). This is that fixture: every real
+    # domain's Policy declarations dispatch through this value object
+    # once loaded (`MetaValidator`'s own header — "delete
+    # language/bluebook/ and validation stops"), so this invariant
+    # runs for real, against real data, every time.
+    value_object "PolicyReference" do
+      attribute :value, String
+      # `"".split(".")` answers `[]`, and `[].all? { ... }` is
+      # vacuously true — so a legitimately blank reference (an
+      # `aggregate` a chapter-owned policy leaves empty, per the
+      # comment above) passes this check the same way a genuinely
+      # dotted one does; this invariant is about SHAPE, not presence,
+      # which stays the `Declare` command's own job (`on_event`/
+      # `trigger_command` are not `optional: true`, below; `aggregate`/
+      # `target_domain`/`for_each` are). What it catches: a leading
+      # dot (".Frozen"), or two dots writing an empty segment in the
+      # middle ("Account..Frozen") — a malformed reference that would
+      # otherwise resolve wrong, or not at all, only once dispatch
+      # actually tried to walk it.
+      invariant("every dotted segment names something") do
+        value.split(".").all? { |segment| !segment.to_s.empty? }
+      end
     end
 
     # DECLARED HERE RATHER THAN SHARED WITH `Dispatch`'s own — a value
@@ -88,12 +129,12 @@ Hecks.bluebook "Bluebook" do
 
       reference_to Bluebook
       attribute :name,            PolicyName
-      attribute :aggregate,       PolicyText, optional: true
-      attribute :on_event,        PolicyText
-      attribute :trigger_command, PolicyText
-      attribute :target_domain,   PolicyText, optional: true
+      attribute :aggregate,       PolicyReference, optional: true
+      attribute :on_event,        PolicyReference
+      attribute :trigger_command, PolicyReference
+      attribute :target_domain,   PolicyReference, optional: true
       attribute :where,           PolicyText, optional: true
-      attribute :for_each,        PolicyText, optional: true
+      attribute :for_each,        PolicyReference, optional: true
 
       attribute :position, Position, optional: true
       emits "ReactionDeclared"
@@ -138,8 +179,20 @@ Hecks.bluebook "Bluebook" do
       invariant("a process manager is named") { !value.to_s.empty? }
     end
 
+    # `correlates_by`/`starts_on`/`ends_on` — every use is a dotted
+    # reference (`"reference.value"`, `"Account.AccountFrozen"`) or a
+    # bare single-segment name (`"WireAsked"`, `:widget_id`); nothing
+    # here is free-form predicate text the way Policy's own `where` is
+    # (a process-manager leg's guard is a bare state-equality check,
+    # never authored text — ADR 0030's own "third finding"), so unlike
+    # `Policy`'s `PolicyText`/`PolicyReference` split, ONE type carries
+    # this invariant directly. See `PolicyReference`'s own comment,
+    # above, for the full reasoning this shares.
     value_object "ProcessManagerText" do
       attribute :value, String
+      invariant("every dotted segment names something") do
+        value.split(".").all? { |segment| !segment.to_s.empty? }
+      end
     end
 
     value_object "SagaState" do
