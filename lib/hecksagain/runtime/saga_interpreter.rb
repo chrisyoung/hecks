@@ -3,6 +3,8 @@ require_relative "saga_interpreter/correlation"
 require_relative "../bluebook/process_manager"
 require_relative "errors"
 require_relative "value"
+require_relative "reaction"
+require_relative "binding"
 
 module Hecksagain
   module Runtime
@@ -127,6 +129,22 @@ module Hecksagain
         end
       end
 
+      # ADR 0029's own step 2 — the refusal/defect rescue and depth-
+      # ceiling check are `Reaction.deliver_dispatch`'s own now, shared
+      # with `PolicyInterpreter#deliver`; what's genuinely specific to
+      # a process-manager leg, and stays here rather than moving into
+      # that shared module, is compensation itself: a refused leg
+      # UNWINDS (fires the `on :refused` handler, moving state to its
+      # `to_state` BEFORE its own dispatches run, so a second refusal
+      # finds the instance already past `from_state` instead of
+      # looping), and so does a leg whose crash outlives every retry —
+      # tagged `defect_compensated: true` rather than folded into an
+      # ordinary refusal's shape, so the log never misrepresents a
+      # crash as a decision the domain made. `on_defect_attempt` is
+      # this leg's own running history: every RETRYABLE attempt gets
+      # its own intermediate `saga_log` entry (`retrying: true`) —
+      # `PolicyInterpreter` has nowhere to put one, a saga's own
+      # `saga_log` always did.
       def deliver_saga_dispatch(pm, spec, event, instance, correlation, domain)
         args   = dispatch_args(pm, spec, event, instance, correlation)
         record = { process_manager: pm.name, instance: correlation, dispatch: spec.command_name }
@@ -147,70 +165,46 @@ module Hecksagain
                                             with_spec: spec.with_spec, args: args }
         end
 
-        if @door.reaction_depth_reached?
-          # THE CEILING IS NOT A DOMAIN DECISION EITHER — same reasoning as a
-          # crash, below — but unlike a crash there is nothing ambiguous
-          # about it: the leg unambiguously did not run, so it unwinds
-          # exactly like a refusal instead of stranding the instance for a
-          # human to notice. `unwind`'s own state guard (it moves to its
-          # `to_state` before its dispatches run) is what keeps this from
-          # looping if the ceiling is still in effect when the compensating
-          # leg tries to dispatch — that leg's own attempt hits this same
-          # branch, calls `unwind` again, and finds the instance already
-          # past `from_state`.
-          @registry.saga_log << record.merge(delivered: false,
-                                             reason:    "reaction depth #{@door.max_reaction_depth} reached")
+        # THE CEILING IS NOT A DOMAIN DECISION EITHER — same reasoning as a
+        # crash, below — but unlike a crash there is nothing ambiguous
+        # about it: the leg unambiguously did not run, so it unwinds
+        # exactly like a refusal instead of stranding the instance for a
+        # human to notice. `unwind`'s own state guard (it moves to its
+        # `to_state` before its dispatches run) is what keeps this from
+        # looping if the ceiling is still in effect when the compensating
+        # leg tries to dispatch — that leg's own attempt hits this same
+        # branch, calls `unwind` again, and finds the instance already
+        # past `from_state`.
+        if Reaction.depth_ceiling_reached?(@door)
+          @registry.saga_log << record.merge(Reaction.depth_ceiling_record(@door))
           unwind(pm, event, instance, correlation, domain)
           return
         end
 
-        attempt = 0
-        begin
-          @door.reenter(qualified(spec.command_name, domain),
-                        saga_correlation: { pm.correlation_head.to_s => correlation }, **args)
-          @registry.saga_log << record.merge(delivered: true)
-        rescue *DOMAIN_REFUSALS => error
-          # Same rule as the policy interpreter : a refusal by the target is
-          # a recorded outcome, and the leg that raised it UNWINDS — see
-          # `unwind`'s own comment for why the procedure runs its
-          # compensation here rather than leaving the money (or whatever
-          # else a leg moved) sitting out.
-          @registry.saga_log << record.merge(delivered: false, reason: error.message)
-          unwind(pm, event, instance, correlation, domain)
-        rescue StandardError => error
-          # A DEFECT, not a refusal — see PolicyInterpreter#deliver's own
-          # comment for the full reasoning: the same DOMAIN_REFUSALS split,
-          # and the same "the triggering command already succeeded and
-          # persisted by the time this runs" fact that makes catching it
-          # here safe rather than reckless.
-          #
-          # UNLIKE a refusal, a crash is not a decision the domain made, so
-          # it does not unwind on the first failure — MAX_DEFECT_RETRIES
-          # gives a transient failure (a DB timeout, a race, a cold start)
-          # a chance to clear on its own, retrying the identical dispatch,
-          # before this is treated as something to compensate for. Every
-          # attempt is recorded distinguishably (`defect: true`, the
-          # error's own class); only once retries are exhausted is it
-          # warned to STDERR and unwound — tagged `defect_compensated:
-          # true` rather than folded into an ordinary refusal's shape, so
-          # the log never misrepresents a crash as a decision the domain
-          # made. Compensating a genuinely stuck leg beats leaving it for a
-          # human to find; misrepresenting *why* it compensated is what the
-          # tag is for.
-          attempt += 1
-          if attempt <= MAX_DEFECT_RETRIES
+        outcome = Reaction.deliver_dispatch(
+          max_retries:       MAX_DEFECT_RETRIES,
+          on_defect_attempt: lambda { |attempt, error|
             @registry.saga_log << record.merge(delivered: false, reason: error.message,
                                                defect: true, error_class: error.class.name,
                                                attempt: attempt, retrying: true)
-            retry
-          end
+          },
+          on_exhausted:      lambda { |attempt, error|
+            warn "[hecksagain] defect in saga #{pm.name} — instance #{correlation.inspect} " \
+                 "dispatching #{spec.command_name} after #{attempt} attempts: #{error.class}: #{error.message}"
+          }
+        ) { @door.reenter(qualified(spec.command_name, domain), saga_correlation: { pm.correlation_head.to_s => correlation }, **args) }
 
-          warn "[hecksagain] defect in saga #{pm.name} — instance #{correlation.inspect} " \
-               "dispatching #{spec.command_name} after #{attempt} attempts: #{error.class}: #{error.message}"
-          @registry.saga_log << record.merge(delivered: false, reason: error.message, defect: true,
-                                             error_class: error.class.name, defect_compensated: true)
-          unwind(pm, event, instance, correlation, domain)
+        if outcome[:delivered]
+          @registry.saga_log << record.merge(outcome)
+          return
         end
+
+        # A refusal or an exhausted defect both UNWIND — see this
+        # method's own header for why a crash is tagged
+        # `defect_compensated: true` rather than left looking like an
+        # ordinary refusal.
+        @registry.saga_log << record.merge(outcome[:defect] ? outcome.merge(defect_compensated: true) : outcome)
+        unwind(pm, event, instance, correlation, domain)
       end
 
       # A refused leg UNWINDS — the procedure runs the leg declared `on :refused`,
@@ -257,19 +251,23 @@ module Hecksagain
         end
       end
 
+      # ADR 0029's own step 3 — the argument-resolution logic itself is
+      # `Binding.resolve`'s now, shared with `PolicyInterpreter#trigger_args`;
+      # a saga's own source chain is the full one that module supports —
+      # correlation head, then payload, then accumulated memory, in
+      # exactly the priority order this method always checked them in.
+      # `Binding::NOT_FOUND`, not `nil`, is what a source answers to
+      # defer to the next one — `event.payload.key?(value)` (not merely
+      # "payload[value] is truthy") is the ORIGINAL check this ports:
+      # a payload field present with an explicit `nil` value must still
+      # win over memory, not fall through to it.
       def dispatch_args(pm, spec, event, instance, correlation)
-        spec.with_spec.to_h do |key, value|
-          resolved = if !value.is_a?(Symbol) then value
-                     elsif value == pm.correlation_head then correlation
-                     elsif event.payload.key?(value) then event.payload[value]
-                     else instance[:memory][value]
-                     end
-          # A process manager carries facts between aggregate boundaries.  It
-          # must carry a value object's state, not its source aggregate's
-          # runtime type: TransferMoney and Account::Money may share fields
-          # without being the same domain object.
-          [key.to_sym, Value.materialize(resolved)]
-        end
+        sources = [
+          ->(name) { name == pm.correlation_head ? correlation : Binding::NOT_FOUND },
+          ->(name) { event.payload.key?(name) ? event.payload[name] : Binding::NOT_FOUND },
+          ->(name) { instance[:memory][name] }
+        ]
+        Binding.resolve(spec.with_spec, sources)
       end
 
       def qualified(command_name, domain)
