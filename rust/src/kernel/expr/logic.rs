@@ -32,10 +32,16 @@
 // compiling cleanly while quietly interpreting the new capability WRONG.
 // That failure mode is the entire reason this refactor exists, so this
 // match must never grow one back.
+//
+// PRD 11 — `Expr` ITSELF MOVED OUT OF THIS FILE, to `../mod.rs`,
+// GENERATED from `Hecksagain::Bluebook::Expression::NodeShapeRust`. This
+// file kept everything else unchanged — the split is structural
+// (one file becomes two), not behavioural.
 
-use super::Refusal;
 use crate::kernel::attribute_shapes::composite;
-use crate::kernel::expression_operators::{self, comparison, OperatorCategory};
+use crate::kernel::expr::Expr;
+use crate::kernel::expression_operators::{self, OperatorCategory};
+use crate::kernel::Refusal;
 
 // ── VALUE — the dynamic runtime value an expression evaluates to.
 // Mirrors what Ruby's `Resolver#interpret` can return (Integer/Float/
@@ -134,63 +140,6 @@ impl<'a> Fielded for WithOld<'a> {
         }
         self.args.field(name)
     }
-}
-
-// `Comparison` used to be defined here; it now lives in
-// `expression_operators::comparison` (the "comparison" category owns the
-// algebra it's named for) and is re-exported at this same path so every
-// call site — hand-written or generated (`rust/project/expr_emitter.rb`
-// emits `crate::kernel::Comparison { .. }` literals directly) — keeps
-// working unchanged.
-pub use comparison::Comparison;
-
-// ── EXPR — the full Evaluator + Resolver AST as one recursive Rust enum.
-// Every variant corresponds to exactly one real Ruby node type:
-// Evaluator::{Or,And,Not,Compare,Include,Resolve} and Resolver::
-// {IntegerLiteral,FloatLiteral,StringLiteral,BoolLiteral,NilLiteral,
-// Addition,SignTest,Empty,ToS,Modulo,Size,Lookup}. `Resolve` itself
-// doesn't need its own variant — Ruby's `Resolve` is just "interpret the
-// wrapped Resolver node, then check truthiness," and every `Expr` variant
-// below already produces a `Value` that `interpret`'s callers can check
-// for truthiness directly.
-// Not every domain's `given`/`ensures`/invariant text exercises every
-// node this grammar admits — a variant going unconstructed for one
-// domain is expected, not a sign of dead code to prune.
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub enum Expr {
-    Or(Box<Expr>, Box<Expr>),
-    And(Box<Expr>, Box<Expr>),
-    Not(Box<Expr>),
-    Compare { op: Comparison, left: Box<Expr>, right: Box<Expr> },
-    Include { haystack: Box<Expr>, needle: Box<Expr> },
-    Int(i64),
-    Float(f64),
-    Str(String),
-    Bool(bool),
-    Nil,
-    Add(Box<Expr>, Box<Expr>),
-    SignTest { op: Comparison, receiver: Box<Expr> },
-    Empty(Box<Expr>),
-    ToS(Box<Expr>),
-    Modulo { receiver: Box<Expr>, divisor: Box<Expr> },
-    Size(Box<Expr>),
-    Lookup(&'static str),
-    // PRD 09 — admitted alongside the twelve above via the operator
-    // ledger, previously real in Ruby's `Resolver` and ungoverned by it
-    // entirely. `MatchesRegex`/`Presence`/`StartsWith`/`EndsWith` are
-    // fully interpreted (`expression_operators::{regex,presence,string}`);
-    // `Split`/`First`/`Last` are admitted and ROUTED but always REFUSE —
-    // see `expression_operators::string::split`'s own header for why
-    // that's a real, named gap (`Value::List` carries only a length, not
-    // elements) rather than a router bug.
-    MatchesRegex { receiver: Box<Expr>, pattern: String, flags: String },
-    Presence { receiver: Box<Expr>, negated: bool },
-    Split { receiver: Box<Expr>, separator: String },
-    First(Box<Expr>),
-    Last(Box<Expr>),
-    StartsWith { receiver: Box<Expr>, substring: String },
-    EndsWith { receiver: Box<Expr>, substring: String },
 }
 
 /// `state`/`attrs` from `Evaluator.call(expr, state, attrs)` — `args` is

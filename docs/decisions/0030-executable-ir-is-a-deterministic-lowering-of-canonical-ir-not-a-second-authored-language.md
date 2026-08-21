@@ -214,7 +214,24 @@ What this reassessment does **not** change: `rust/src/kernel/expr.rs`'s `Expr` e
 
 **Still decided: `Reaction` does not start yet.** Not because PRD 09/10's own work is incomplete — it isn't, by its own bar — but because starting Slice 3 on top of an `Expr`/`Evaluator`/`Resolver` foundation that still has ADR 0022's original duplication live would mean building `Reaction`'s executable form (which itself leans on `Expression` as its load-bearing primitive, per this ADR's own earlier reasoning) on a substrate that hasn't cleared this ADR's own bar. Generating `Expr` itself — the genuinely harder work both PRDs deferred — is the realistic next gate, not a third structural-generation exercise at Binding's smaller scale.
 
-### Slice 3 — Reaction is the real stress test, deferred until both earlier slices are boring
+### Final reassessment (same day) — PRD 11 closes the *original* ADR 0022 complaint; the stop condition, re-run
+
+PRD 11 did what the reassessment above named as the realistic next gate: `rust/src/kernel/expr.rs` (flat, 319 lines, hand-typed `Expr` enum inline) became `rust/src/kernel/expr/{mod.rs, logic.rs}` — `mod.rs` generated from `NodeShapeRust` (itself checked against `NodeShape`, itself checked against the real `Evaluator`/`Resolver` structs), `logic.rs` carrying `interpret`/`category_of`/`dispatch_operator`/`Value`/`Field` unchanged. The generated enum matched the original hand-typed one exactly, variant-for-variant, on first generation — and 16/16 real scenarios in `spec/rust_conformance_spec.rb` (the compiled Rust binary against real generated domains, not just unit tests) passed unchanged. Re-running the six questions:
+
+| question | answer | why |
+|---|---|---|
+| Did handwritten Rust shrink? | **Yes — the first time in this whole sequence.** `expr.rs`'s hand-typed 34-line enum is now 50 lines of *generated* `mod.rs`, never hand-edited again; `logic.rs` (268 lines) is the same logic, unchanged, just relocated. |
+| Did handwritten Ruby shrink? | **No, and correctly so.** `Evaluator`/`Resolver`'s structs were never the problem — they're already the simplest possible spelling of the shape. `NodeShape`/`NodeShapeRust` are new *checking* code, not a reduction; generating Ruby's own structs too would add a build step without reducing real risk, the same call PRD 10 already made for `Binding`. |
+| Did duplicated grammar disappear? | **Yes, for the original complaint specifically.** `Expr` and `Evaluator`/`Resolver`'s node shapes are no longer two independently hand-authored declarations — one manifest chain drives the generated Rust side, checked bidirectionally against the real Ruby side. This is the piece both PRD 09 and PRD 10 explicitly deferred as "genuinely harder work," now closed. |
+| Is there exactly one semantic definition? | **Yes, for structure** (the bar this question actually means, per the corrected reading above) — met for `Expr` now, not just for `OperatorCategory`/`Binding`. **Meaning stays hand-written twice, by design** — not a gap, the same architecture the whole proof sequence is built on. |
+| Is the lowering step simpler than what it produces? | **Yes** — `NodeShapeRust` (≈115 lines of flat field declarations) plus `bin/project_expr_shape` (≈95 lines, written once) together generate and will *keep* generating the enum correctly as it grows, versus hand-maintaining a 34-line block that has to be kept in sync with Ruby by discipline alone. |
+| Can executable IR omit canonical-only information? | **Still untested.** No canonical-only field (`goal`-shaped) was involved in any of the three PRDs. The one honestly open question left. |
+
+**Five of six, clean — the sixth was never in scope for any of the three PRDs to test, not evidence against them.** The original ADR 0022 diagnosis — Ruby and Rust as two independently hand-authored implementations of the same closed expression grammar — is retired for the node-shape/structure layer specifically, verified against real running domains, not asserted.
+
+**Decided: `Reaction` may start.** The substrate this ADR withheld it from — `Expr`/`Evaluator`/`Resolver` still structurally duplicated — no longer exists. Question 6 (canonical-only omission) stays open and should be the first thing `Reaction`'s own design checks against, since `Reaction`'s own canonical form is exactly where a `goal`-shaped field would first appear — but it's a design input for Slice 3, not a blocker to starting it, the same way it was never blocking PRD 09/10/11 either.
+
+### Slice 3 — Reaction is the real stress test (cleared to start — see the reassessment immediately above; the design/risk analysis below stands unchanged)
 
 `Reaction` tests risk **5** (does the runtime actually get simpler) — meaningful only once 1–4 are independently retired — but it also introduces a risk Expression and Binding structurally cannot expose: **behavioral mode coupling.**
 

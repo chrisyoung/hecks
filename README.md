@@ -402,6 +402,7 @@ Every domain this repository's own tests and docs draw examples from:
 | `bin/project_binding_shape` | PRD 10 follow-up (ADR 0030's own Slice-2 stop-condition check) — writes rust/src/kernel/binding/mod.rs (the `Literal`/`Reference`/`Source... |
 | `bin/project_cli` | Mints a command-line binary for a domain, named after its bluebook. bin/project_cli # every domain in this checkout bin/project_cli qa # ... |
 | `bin/project_deploy` | The AWS DEPLOYMENT projector — docs/decisions/0018-rehydrate-replay-lambda-host.md. Generates the SAM template and build Makefile for rus... |
+| `bin/project_expr_shape` | PRD 11 — writes the `Expr` enum declaration ONLY (structure, not interpretation) from ONE definition: Hecksagain::Bluebook::Expression::N... |
 | `bin/project_field_hints` | Generates rust/host/src/field_hints.rs — the four regex hints Hecksagain::Forms::FieldShape#text_field (lib/hecksagain/ forms/field_shape... |
 | `bin/project_kernel_capabilities` | Generates the two capability enums the hand-written Rust kernel (rust/src/kernel/attribute_shapes/*.rs, rust/src/kernel/ expression_opera... |
 | `bin/project_model` | Projects the model's holding half from the language that declares it. Behaviour::X is hand-written and untouched; `settle` is the seam. b... |

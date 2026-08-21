@@ -1,6 +1,6 @@
 # PRD 11 — Generate `Expr`'s full node shape from one source
 
-**Status:** Not started. This is the "genuinely harder work" PRD 09's own Non-goals and ADR 0022 both explicitly deferred — the piece ADR 0030's Slice-2 reassessment names as the realistic next gate before `Reaction` (Slice 3) is warranted, not a third small-scale structural exercise like Binding's.
+**Status:** Shipped and verified (2026-08-20) — see "What shipped," below. This was the "genuinely harder work" PRD 09's own Non-goals and ADR 0022 both explicitly deferred; ADR 0030's Slice-2 reassessment named it the realistic next gate before `Reaction` (Slice 3) is warranted.
 
 ## The problem
 
@@ -20,17 +20,30 @@ This is the one piece both prior PRDs' honest self-assessment converged on: clos
 
 ## Acceptance criteria
 
-- [ ] One manifest declares every in-scope node's field shape (≈24 nodes — see step 1/3 for what's excluded and why).
-- [ ] `rust/src/kernel/expr.rs`'s `Expr` enum is generated from that manifest, structurally identical to today's hand-typed version for every node the manifest currently covers — a pure refactor from Rust's side, zero behaviour change.
-- [ ] Ruby's `Evaluator`/`Resolver` node structs are checked equal to the manifest (member names, both directions) by a new conformance spec, the same shape `binding_shape_spec.rb` already uses.
-- [ ] Regenerating produces an empty diff against the checked-in generated file.
-- [ ] `cargo build`/`test`/`clippy` clean; existing Ruby corpus/fuzzer/behaviors suites and the existing `spec/operator_conformance_spec.rb`/`spec/expression_spec.rb` remain green, byte-for-byte unchanged in behaviour.
-- [ ] ADR 0030's own stop-condition table (last run in ADR 0030's "Reassessment" section) is re-run after this PRD lands, with "did duplicated grammar disappear" now checkable against the *original* ADR 0022 complaint, not just what PRD 09/10 touched.
+- [x] One manifest declares every in-scope node's field shape (24 nodes — `NodeShape`, `node_shape.rb`, PRD 11's own Ruby-only first half).
+- [x] `rust/src/kernel/expr.rs`'s `Expr` enum is generated from that manifest, structurally identical to today's hand-typed version for every node the manifest currently covers — verified two ways: byte-for-byte identical variant-by-variant against a pre-change backup, and 16/16 real conformance scenarios (`spec/rust_conformance_spec.rb`, the compiled Rust binary vs. Ruby, across real generated domains) unchanged.
+- [x] Ruby's `Evaluator`/`Resolver` node structs are checked equal to the manifest (member names, both directions) — `spec/node_shape_spec.rb`, including a reverse-direction check that `parse` cannot produce a node kind the manifest doesn't know about.
+- [x] Regenerating produces an empty diff against the checked-in generated file — `spec/node_shape_rust_spec.rb`'s own currency check.
+- [x] `cargo build`/`test`/`clippy` clean (20 tests, unchanged count — this was a pure restructuring); full local Ruby suite green (1638 examples); `spec/operator_conformance_spec.rb`/`spec/expression_spec.rb` untouched and passing.
+- [ ] ADR 0030's own stop-condition table re-run — not done in this commit; the honest next step, since this PRD's own claim (closes the *original* ADR 0022 complaint) needs that table re-run to be checked, not asserted.
 
 ## Non-goals
 
-- **Generating interpretation logic.** `interpret`/`dispatch_operator`/every `expression_operators/*.rs` function body stays hand-written, unchanged, per the "generate structure, handwrite meaning" boundary this whole proof sequence is built on.
-- **`ArrayLiteral`'s real Rust representation** (i.e., extending `Value::List` to carry elements). Structure generates; interpretation keeps refusing, exactly PRD 09's own precedent for `.split`/`.first`/`.last`.
+- **Generating interpretation logic.** `interpret`/`dispatch_operator`/every `expression_operators/*.rs` function body stayed hand-written, unchanged, in `expr/logic.rs` — confirmed by the conformance suite's own unchanged pass, not just by intent.
+- **`ArrayLiteral`'s real Rust representation** (i.e., extending `Value::List` to carry elements) — unchanged, as planned.
+- **`ArrayLiteral`'s Rust *structure*, too — a real deviation from this PRD's original Approach, decided during implementation.** The Approach (step 2) proposed generating `ArrayLiteral`'s structure even without real interpretation, "cheap and harmless." Once the actual goal sharpened to "reproduce today's *working* enum, verified byte-for-byte, zero behaviour change," adding a variant the current hand-typed enum has never had stopped being harmless — it would have made the enum's own regeneration check compare against a *moving* target instead of the real one. `ArrayLiteral` stays absent from `NodeShapeRust`'s `RUST_NODES` entirely (not merely unimplemented); adding it is now explicitly a future, separate decision, not bundled into this pure restructuring.
 - **`BlockPredicate`/`Find` / `.all?`/`.any?`/`.none?`/`.find`.** Still unadmitted; still not this PRD's decision to make.
-- **`Reaction`, `ReactionContext`, or anything from ADR 0030 Slice 3.** This PRD is what ADR 0030's own reassessment names as the prerequisite gate, not a step past it — Slice 3 starts only after this lands and the stop condition is re-run clean.
-- **A self-hosted admission ledger for nodes**, matching `Operator`'s propose/render/admit lifecycle. Same reasoning `BindingShape`'s own header already gives: this is a closed, ADR-defined grammar, not an open-ended vocabulary — a plain manifest is the right-sized tool, not a ledger built for growth nobody is asking for.
+- **`Reaction`, `ReactionContext`, or anything from ADR 0030 Slice 3.** Untouched.
+- **A self-hosted admission ledger for nodes**, matching `Operator`'s propose/render/admit lifecycle. Same reasoning `BindingShape`'s own header already gives: this is a closed, ADR-defined grammar, not an open-ended vocabulary.
+
+## What shipped
+
+**Ruby half** (`NodeShape`, `node_shape.rb` + `spec/node_shape_spec.rb`): all 24 real `Evaluator`/`Resolver` node shapes declared and checked bidirectionally against the real structs — including two genuine asymmetries found and flagged, not papered over: `SignTest`'s Ruby struct carries a `test` field with no Rust use; `NilLiteral` is a plain Ruby `Class`, not a `Struct`, so it has no `.members` to check the normal way.
+
+**Rust half** (`NodeShapeRust`, `node_shape_rust.rb` + `bin/project_expr_shape` + `spec/node_shape_rust_spec.rb`): `rust/src/kernel/expr.rs` (flat, 319 lines, hand-typed) became `rust/src/kernel/expr/{mod.rs (generated), logic.rs (hand-written)}` — the same split `binding/` already established. `mod.rs`'s generated enum matched the original hand-typed one exactly on first generation, variant-for-variant — the strongest possible confirmation the manifest transcription was accurate, since nothing was adjusted to make it match after the fact. `logic.rs` carries everything else (`Value`, `Field`/`Fielded`, `NoFields`, `WithOld`, `EvalContext`, `interpret`, `category_of`, `dispatch_operator`, `lookup`) completely unchanged, one import path fixed for the new nesting depth (`super::Refusal` → `crate::kernel::Refusal`, since `logic.rs` sits one directory deeper than the original flat file).
+
+**A second, genuine Ruby/Rust field asymmetry found while transcribing** (beyond `SignTest`'s, already known from the Ruby half): `Lookup`'s `path` field is `String` conceptually on the Ruby side but a `&'static str` in Rust specifically — generated call sites hand it a compile-time-known field path, never an owned runtime string. Recorded explicitly in `NodeShapeRust`'s own header as the reason its ground truth is the literal current Rust file, not `NodeShape`'s conceptual type labels.
+
+**Verification, in order of strength:** (1) the generated enum matched the hand-typed original byte-for-byte on first attempt; (2) `cargo build`/`test`/`clippy` clean, 20/20 tests, zero new warnings; (3) the full workspace (not just `--lib`) builds; (4) **16/16 scenarios in `spec/rust_conformance_spec.rb` pass** — the compiled Rust binary run against real generated domains (banking, including role-checking, refusal wording across 8 variants, query filters, port operations, named queries, read models, entities/policies/sagas) compared instance-for-instance, event-for-event, refusal-for-refusal, reaction-for-reaction against Ruby. This is the acceptance bar that actually matters for "zero behaviour change," and it held.
+
+**Open, honestly:** ADR 0030's stop-condition table needs re-running against this — not done yet, deliberately left as the next explicit step rather than self-certified here.
