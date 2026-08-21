@@ -219,39 +219,70 @@ module Hecksagain
       # are one D1 batch transaction and therefore one HTTP request. The first
       # statement supplies the outcome from database state inside that same
       # transaction; the runtime performs no preliminary find.
+      #
+      # `insert_only:` used to spend a SEPARATE, EARLIER round trip finding
+      # out whether the row existed before ever building the batch — a real
+      # TOCTOU gap (two concurrent creates at the same identity could both
+      # pass that check before either wrote). D1's batch has no conditional
+      # BRANCH of its own, true, but it does not need one: a batch's own
+      # statements already execute in order, atomically, as one transaction
+      # (Connection#batch's own comment) — the exact guarantee the single-
+      # connection adapters' own `@db.transaction do ... end` gets locally.
+      # So the existence check moves INSIDE the batch as its own first
+      # statement, and the two writes are individually gated with `WHERE NOT
+      # EXISTS (...)` against that same table, evaluated in the same
+      # transaction — a row that already existed makes both writes into
+      # real, zero-row no-ops rather than skipping them from the Ruby side,
+      # matching Sqlite#atomic_put's `next` (skip append AND project both,
+      # together) with no second HTTP call and no gap for another writer to
+      # land in between the check and the write.
       def atomic_put(entry, insert_only: false)
-        # `insert_only:` ASKS ONE EXTRA ROUND TRIP, deliberately, only when a
-        # `creates?` command needs the refusal a plain overwrite cannot give:
-        # D1's batch has no conditional statement of its own (unlike the
-        # single-transaction adapters' own `next`, below), so the only way to
-        # never run the write half at all — never a later refusal reading as
-        # though it had — is to know the answer BEFORE building it.
-        if insert_only
-          exists = !@db.execute("SELECT 1 FROM #{quoted_table} WHERE id = ?", [entry.id.to_s]).empty?
-          return :conflicted if exists
-        end
-
         instance = Runtime::Instance.new(aggregate: @aggregate, id: entry.id, state: entry.state)
         columns = (["id"] + persisted_fields.map { |field| field[:name].to_s }).map { |column| quote_ident(column) }
         values = [instance.id.to_s] + persisted_fields.map { |field| encode_field(field, instance[field[:name]]) }
         slots = Array.new(columns.size, "?").join(", ")
+        not_exists = "WHERE NOT EXISTS (SELECT 1 FROM #{quoted_table} WHERE id = ?)"
+
+        status_sql =
+          if insert_only
+            "SELECT CASE WHEN EXISTS (SELECT 1 FROM #{quoted_table} WHERE id = ?) " \
+              "THEN 'conflicted' ELSE 'inserted' END AS status"
+          else
+            "SELECT CASE WHEN EXISTS (SELECT 1 FROM #{quoted_table} WHERE id = ?) " \
+              "THEN 'replaced' ELSE 'inserted' END AS status"
+          end
+
+        entry_sql, entry_binds =
+          if insert_only
+            [
+              "INSERT INTO #{quoted_entry_table} (aggregate_id, operation, state, mirrors) " \
+              "SELECT ?, ?, ?, ? #{not_exists}",
+              [entry.id, entry.operation, JSON.generate(entry.state), JSON.generate(entry.mirrors), entry.id.to_s]
+            ]
+          else
+            [
+              "INSERT INTO #{quoted_entry_table} (aggregate_id, operation, state, mirrors) VALUES (?, ?, ?, ?)",
+              [entry.id, entry.operation, JSON.generate(entry.state), JSON.generate(entry.mirrors)]
+            ]
+          end
+
+        aggregate_sql, aggregate_binds =
+          if insert_only
+            [
+              "INSERT INTO #{quoted_table} (#{columns.join(', ')}) SELECT #{slots} #{not_exists}",
+              values + [entry.id.to_s]
+            ]
+          else
+            [
+              "INSERT OR REPLACE INTO #{quoted_table} (#{columns.join(', ')}) VALUES (#{slots})",
+              values
+            ]
+          end
 
         results = @db.batch([
-                              [
-                                "SELECT CASE WHEN EXISTS " \
-                                "(SELECT 1 FROM #{quoted_table} WHERE id = ?) " \
-                                "THEN 'replaced' ELSE 'inserted' END AS status",
-                                [entry.id.to_s]
-                              ],
-                              [
-                                "INSERT INTO #{quoted_entry_table} " \
-                                "(aggregate_id, operation, state, mirrors) VALUES (?, ?, ?, ?)",
-                                [entry.id, entry.operation, JSON.generate(entry.state), JSON.generate(entry.mirrors)]
-                              ],
-                              [
-                                "INSERT OR REPLACE INTO #{quoted_table} (#{columns.join(', ')}) VALUES (#{slots})",
-                                values
-                              ]
+                              [status_sql, [entry.id.to_s]],
+                              [entry_sql, entry_binds],
+                              [aggregate_sql, aggregate_binds]
                             ])
 
         results.fetch(0).fetch(0).fetch("status").to_sym

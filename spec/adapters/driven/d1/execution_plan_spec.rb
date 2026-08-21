@@ -1,4 +1,5 @@
 require "spec_helper"
+require "sqlite3"
 
 RSpec.describe "D1 execution-plan capabilities" do
   def item_aggregate
@@ -73,6 +74,93 @@ RSpec.describe "D1 execution-plan capabilities" do
       expect(statements[1][0]).to include('INSERT INTO "item_entries"')
       expect(statements[2][0]).to include('INSERT OR REPLACE INTO "item"')
     end
+  end
+
+  # `real_sqlite_batch_connection` runs each statement against a genuine
+  # SQLite3::Database, inside `@db.transaction`, in the SAME order — the
+  # local proxy for what Connection#batch's own comment says D1 already
+  # guarantees server-side ("statements execute in order and a failure
+  # rolls the entire sequence back"). `fake_batch_connection` above only
+  # proves the RUBY SIDE issues one batch and no separate `execute`; this
+  # proves the SQL ITSELF is valid and the `WHERE NOT EXISTS` gating
+  # genuinely blocks both writes when the row already exists — not just
+  # that the code compiles. A real multi-threaded concurrency test (the
+  # shape `postgres_atomic_put_spec.rb` uses) is not attempted here: two
+  # Ruby threads sharing ONE SQLite3::Database connection are not a
+  # faithful stand-in for D1's own server-side concurrent-batch handling,
+  # and would test SQLite3-gem thread-safety more than the SQL's own
+  # correctness. What actually closed the gap — moving the check inside
+  # the same atomic batch instead of a separate round trip — is exactly
+  # what this test exercises.
+  def real_sqlite_batch_connection
+    db = SQLite3::Database.new(":memory:")
+    db.results_as_hash = true
+    Class.new do
+      def initialize(db) = @db = db
+
+      def execute(sql, binds = []) = @db.execute(sql, binds)
+      def get_first_row(sql, binds = []) = execute(sql, binds).first
+      def get_first_value(sql, binds = []) = get_first_row(sql, binds)&.values&.first
+
+      def batch(statements)
+        results = nil
+        @db.transaction { results = statements.map { |sql, binds| execute(sql, binds || []) } }
+        results
+      end
+    end.new(db)
+  end
+
+  def adapter_on_real_sqlite(aggregate)
+    connection = real_sqlite_batch_connection
+    adapter = adapter_with(connection, aggregate)
+    %i[create_aggregate_table! create_entry_table! ensure_entry_operation_column! ensure_entry_mirrors_column!].each do |setup|
+      adapter.send(setup)
+    end
+    adapter
+  end
+
+  it "insert_only: closes the round trip — one batch, and a real conflict blocks both writes" do
+    aggregate = item_aggregate
+    adapter = adapter_on_real_sqlite(aggregate)
+    repository = Hecksagain::Ports::Persistence::AppendOnly.new(adapter)
+
+    first = Hecksagain::Runtime::Instance.new(
+      aggregate: aggregate, id: "sku-1", state: { identity: { sku: "sku-1" }, label: { value: "First" } }
+    )
+    second = Hecksagain::Runtime::Instance.new(
+      aggregate: aggregate, id: "sku-1", state: { identity: { sku: "sku-1" }, label: { value: "Second" } }
+    )
+
+    expect(repository.atomic_put(first, insert_only: true).status).to eq(:inserted)
+    expect(adapter.entries.size).to eq(1)
+    expect(adapter.find("sku-1").state[:label].to_h).to eq(value: "First")
+
+    # THE ROW ALREADY EXISTS — both gated writes must be genuine no-ops,
+    # not merely "the method returns :conflicted while quietly still
+    # writing," which is precisely the shape the old separate-round-trip
+    # check could not rule out under a real race.
+    expect(repository.atomic_put(second, insert_only: true).status).to eq(:conflicted)
+    expect(adapter.entries.size).to eq(1)
+    expect(adapter.find("sku-1").state[:label].to_h).to eq(value: "First")
+  end
+
+  it "insert_only: still issues exactly one batch, no separate existence-check round trip" do
+    aggregate = item_aggregate
+    connection = fake_batch_connection
+    repository = Hecksagain::Ports::Persistence::AppendOnly.new(adapter_with(connection, aggregate))
+
+    instance = Hecksagain::Runtime::Instance.new(
+      aggregate: aggregate, id: "sku-1", state: { identity: { sku: "sku-1" }, label: { value: "First" } }
+    )
+
+    repository.atomic_put(instance, insert_only: true)
+
+    expect(connection.batches.size).to eq(1)
+    statements = connection.batches.first
+    expect(statements.size).to eq(3)
+    expect(statements[0][0]).to match(/SELECT CASE WHEN EXISTS .* THEN 'conflicted' ELSE 'inserted' END AS status/)
+    expect(statements[1][0]).to include("WHERE NOT EXISTS")
+    expect(statements[2][0]).to include("WHERE NOT EXISTS")
   end
 
   it "encodes the connection batch as one REST request and returns each statement's rows in order" do
