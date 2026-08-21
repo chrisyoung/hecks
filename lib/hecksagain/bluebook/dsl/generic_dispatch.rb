@@ -134,6 +134,102 @@ module Hecksagain
           %w[Bluebook read_model]      => :read_models
         }.freeze
 
+        # `WordGate#method_missing`'s OWN bootstrap-window fallback,
+        # consulted ONLY while `MetaValidator.bootstrapping?` (the real
+        # table doesn't exist yet to read `keyword[:calls]` from). Names
+        # the SAME (context, word) -> method pairs the real table's own
+        # `calls:` column carries for these rows — kept in sync by hand,
+        # the one place in this whole arc that was worth it: it
+        # duplicates a METHOD NAME, never the method's own logic, so
+        # there is nothing here that could drift into a WRONG ANSWER,
+        # only (if ever forgotten) into `attribute` staying unreachable
+        # during bootstrap, the same loud `NoMethodError` failure this
+        # whole mechanism already had before slice 3 existed.
+        BOOTSTRAP_CALLS_FALLBACK = {
+          %w[Aggregate attribute]        => :attribute_impl,
+          %w[Entity attribute]           => :attribute_impl,
+          %w[Command attribute]          => :attribute_impl,
+          %w[ValueObject attribute]      => :attribute_impl,
+          %w[Query attribute]            => :attribute_impl,
+          %w[PortOperation attribute]    => :attribute_impl,
+          %w[Command role]               => :role_impl,
+          # given/invariant/reference_to — slice 4b. Each is a SEPARATE
+          # per-builder implementation (not a shared mixin like
+          # attribute_impl), so every (context, word) pair below names
+          # its OWN builder's own method, even where several share a
+          # name.
+          %w[Aggregate given]            => :given_impl,
+          %w[Entity given]               => :given_impl,
+          %w[Command given]              => :given_impl,
+          %w[Aggregate invariant]        => :invariant_impl,
+          %w[Entity invariant]           => :invariant_impl,
+          %w[ValueObject invariant]      => :invariant_impl,
+          %w[Aggregate reference_to]     => :reference_to_impl,
+          %w[Entity reference_to]        => :reference_to_impl,
+          %w[Command reference_to]       => :reference_to_impl,
+          %w[Query reference_to]         => :reference_to_impl,
+          %w[ReadModel reference_to]     => :reference_to_impl,
+          %w[PortOperation reference_to] => :reference_to_impl,
+          # `belongs_to` — genuinely NEW bootstrap-reachability, post-dating
+          # the "not bootstrap-reachable" determination above: has_many/
+          # has_one/belongs_to were retired everywhere when that check was
+          # made, so nothing core/attached used one to describe itself.
+          # Wave 6 (identity-and-relationships arc) un-deprecates all three
+          # for real, and syntax.bluebook's own Bluebook.Declare relationship
+          # (`belongs_to Bluebook`) now uses one describing itself — checked
+          # directly (only `belongs_to`, not `has_many`/`has_one`, is
+          # actually used this way by any core/attached chapter today).
+          %w[Aggregate belongs_to]       => :belongs_to_impl,
+          # slice 4c — the remaining hand-written words a fresh survey
+          # found still un-migrated across every builder. Each checked
+          # for bootstrap-reachability individually (grepped directly
+          # against every core/attached chapter, not assumed); only the
+          # ones below actually are.
+          %w[Bluebook aggregate]         => :aggregate_impl,
+          %w[Aggregate provenance]       => :provenance_impl,
+          %w[Aggregate identified_by]    => :identified_by_impl,
+          %w[Aggregate lifecycle]        => :lifecycle_impl,
+          %w[Aggregate entity]           => :entity_impl,
+          %w[Aggregate query]            => :query_impl,
+          %w[Aggregate policy]           => :policy_impl,
+          %w[Aggregate command]          => :command_impl,
+          %w[Aggregate projects]         => :projects_impl,
+          %w[Entity identified_by]       => :identified_by_impl,
+          %w[Entity command]             => :command_impl,
+          %w[Entity query]               => :query_impl,
+          %w[Entity lifecycle]           => :lifecycle_impl,
+          %w[Command provenance]         => :provenance_impl,
+          %w[Command sets]               => :sets_impl,
+          %w[Lifecycle transition]       => :transition_impl,
+          %w[ReadModel where]            => :where_impl,
+          %w[ReadModel order_by]         => :order_by_impl,
+          %w[ReadModel include]          => :include_impl,
+          %w[Query where]                => :where_impl,
+          %w[Query order_by]             => :order_by_impl,
+          %w[Entity entity]              => :entity_impl,
+          %w[ValueObject member]         => :member_impl,
+          # slice 5. `port`/`realm`/`latest` — real, closed-set words
+          # that sat unreachable behind Hecksagon/World's own class-level
+          # `method_missing` (see WordGate#word_gate_dispatch's own
+          # header), not bootstrap circularity as such, but the SAME
+          # fallback table serves them: this hash is looked up before
+          # `word_gate_dispatch` even runs, keyed by whichever context
+          # the caller's own class reports.
+          %w[Hecksagon port]             => :port_impl,
+          %w[World realm]                => :realm_impl,
+          %w[World latest]               => :latest_impl,
+          # `["Type", word]` — ONE entry each covers `list_of`/`one_of`
+          # for EVERY calling context (Aggregate/Entity/Command/Query/
+          # PortOperation/ValueObject all use them in an attribute's own
+          # type position, and `self.class::GRAMMAR_CONTEXT` can never
+          # actually equal "Type" — see `word_gate_dispatch`'s own
+          # header). The bootstrap branch checks this key directly, the
+          # same way the ordinary `word_gate_dispatch` path's own
+          # "Type"-context fallback does.
+          %w[Type list_of]               => :list_of_impl,
+          %w[Type one_of]                => :one_of_impl
+        }.freeze
+
         module_function
 
         # THE STATIC PREDICATE — does this (context, word) pair fall
@@ -159,19 +255,34 @@ module Hecksagain
           return NOT_HANDLED unless shape
 
           case shape[:kind]
-          when :opens_block  then try_opens_block(builder, shape[:keyword], args, kwargs, block)
-          when :zero_arg     then try_zero_arg(builder, shape[:keyword], args)
-          when :single_fill  then try_single_fill(builder, shape[:fills], shape[:argument], args, kwargs)
+          when :calls_through then try_calls_through(builder, shape[:calls], args, kwargs, block)
+          when :opens_block   then try_opens_block(builder, shape[:keyword], args, kwargs, block)
+          when :zero_arg      then try_zero_arg(builder, shape[:keyword], args)
+          when :single_fill   then try_single_fill(builder, shape[:fills], shape[:argument], args, kwargs)
+          else
+            # `shape_for` names exactly four kinds and this case
+            # matches all four — a backstop against the day a fifth is
+            # added there without a matching arm here. Falling through
+            # silently would return bare `nil` from what the caller
+            # (`WordGate#method_missing`) reads as "handled" (anything
+            # other than NOT_HANDLED counts), so a self-hosted DSL word
+            # would silently execute as a no-op instead of raising the
+            # same "not yet implemented" refusal a genuinely unmigrated
+            # word already gets.
+            raise Runtime::WiringError, "no dispatcher handles shape #{shape[:kind].inspect} — add one before shape_for can produce it"
           end
         end
 
         # THE ONE PLACE ROW SHAPE IS JUDGED — returns a small Hash naming
-        # which of the three safe shapes (context, word) is, or `nil` if
+        # which of the four safe shapes (context, word) is, or `nil` if
         # it falls outside this slice's own verified scope. No argument
         # values are read here; this only ever looks at the table.
         def shape_for(context, word, rows)
           keyword = rows[:keywords].find { |k| k[:context] == context && k[:word] == word && k[:status] != "retired" }
           return nil unless keyword
+
+          calls = keyword[:calls].to_s
+          return { kind: :calls_through, calls: calls } unless calls.empty?
 
           return { kind: :opens_block, keyword: keyword } if SAFE_OPENS_BLOCK.key?([context, word])
 
@@ -188,6 +299,19 @@ module Hecksagain
           return nil unless COERCE_BY_KIND.key?(arg[:kind])
 
           { kind: :single_fill, fills: fills, argument: arg }
+        end
+
+        # `keyword[:calls]` names a real Ruby method whose whole call —
+        # every positional, every kwarg, the block, all of it — forwards
+        # here UNCHANGED. No argument-shape interpretation at all,
+        # deliberately: the target method (`AttributeCollector#
+        # attribute_impl`, etc.) already does its own, real, hand-
+        # written argument handling; this is a pure, transparent `send`,
+        # the lowest-risk possible shape for a word whose own logic is
+        # too complex to re-derive from the table (type-quoting refusal,
+        # closed-set synthesis, pattern validation, ...).
+        def try_calls_through(builder, calls, args, kwargs, block)
+          builder.send(calls, *args, **kwargs, &block)
         end
 
         def try_opens_block(builder, keyword, args, kwargs, block)

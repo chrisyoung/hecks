@@ -255,6 +255,24 @@ Hecks.bluebook "Bluebook" do
       # than one candidate can register (today: only `given` on
       # Aggregate).
       attribute :disambiguator,  KeywordSeedText, admits: "Syntax::Disambiguator", optional: true
+      # THE ESCAPE HATCH — item #13's full metaprogrammed dispatch (slice
+      # 3, whole-project table-unification survey). BLANK for every word
+      # `GenericDispatch` fills/opens/zero-args directly off `fills:`/
+      # `opens:`. NON-EMPTY names a real Ruby method this word's whole
+      # call (args, kwargs, block, untouched) forwards to instead — for
+      # words whose own logic is genuinely too complex to re-derive from
+      # argument shape alone (`attribute`'s own type-quoting/closed-set-
+      # synthesis/pattern validation). The method itself stays exactly
+      # what it always was, hand-written, unchanged — this column only
+      # says WHICH one answers the word, the same way `resolves_via`
+      # already names which shared primitive a bare reference resolves
+      # through, one level up. Read DURING bootstrap too (`WordGate`'s
+      # own `BOOTSTRAP_CALLS_FALLBACK`, a small explicit table naming
+      # the SAME (context, word) -> method pairs this column would say,
+      # since the real table doesn't exist yet at that point) — the one
+      # place in this whole arc a bootstrap fallback was worth building,
+      # because it duplicates NO logic, only a method NAME.
+      attribute :calls, KeywordSeedText, optional: true
 
       lifecycle :status, default: "admitted" do
         # NOT `proposed` : nothing in the real table is ever declared
@@ -406,7 +424,7 @@ Hecks.bluebook "Bluebook" do
 
       sets :keywords, append: { position: :position, word: :word, context: :context, body: :body,
                                  inner: :inner, opens: :opens, fills: :fills, was: :was,
-                                 resolves_via: :resolves_via, disambiguator: :disambiguator }
+                                 resolves_via: :resolves_via, disambiguator: :disambiguator, calls: :calls }
 
       emits "KeywordAdmitted"
     end

@@ -336,14 +336,25 @@ Hecks.bluebook "Bluebook" do
       attribute :resolves_via,  String, default: "", admits: "Syntax::ResolutionScope"
       attribute :disambiguator, String, default: "", admits: "Syntax::Disambiguator"
 
-      member word: "role",            context: "Command", body: "none",   inner: "", opens: "", fills: "role"
+      member word: "role",            context: "Command", body: "none",   inner: "", opens: "", fills: "role", calls: "role_impl"
       member word: "goal",            context: "Command", body: "none",   inner: "", opens: "", fills: "goal"
-      member word: "provenance",      context: "Command", body: "none",   inner: "", opens: "", fills: "provenance"
-      member word: "reference_to",    context: "Command", body: "none",   inner: "", opens: "", fills: "references"
-      member word: "given",           context: "Command", body: "source", inner: "", opens: "", fills: "givens", resolves_via: "hash_chain"
-      member word: "sets",            context: "Command", body: "none",   inner: "", opens: "", fills: "mutations", was: "then_set"
+      member word: "provenance",      context: "Command", body: "none",   inner: "", opens: "", fills: "provenance", calls: "provenance_impl"
+      member word: "reference_to",    context: "Command", body: "none",   inner: "", opens: "", fills: "references", calls: "reference_to_impl"
+      member word: "given",           context: "Command", body: "source", inner: "", opens: "", fills: "givens", resolves_via: "hash_chain", calls: "given_impl"
+      member word: "sets",            context: "Command", body: "none",   inner: "", opens: "", fills: "mutations", calls: "sets_impl"
+      # RENAMED spelling of `sets`, above — its own dedicated, deprecated row
+      # (not `sets`'s own `was:`, syntax_conformance_spec.rb's own "no
+      # renamed-away spelling as a row of its own AND a was:" rule), kept
+      # here refusing live ONLY so `MetaValidator.shadow_parsing?` can still
+      # read frozen era text that used it (CommandBuilder#then_set_impl's
+      # own comment).
+      member word: "then_set",        context: "Command", body: "none",   inner: "", opens: "", fills: "mutations", status: "deprecated", calls: "then_set_impl"
+      # A command's synchronous handoff into one nested entity command
+      # (CommandBuilder#delegates_to_impl's own comment gives the full
+      # reasoning) — a new word, not a migrated one.
+      member word: "delegates_to",    context: "Command", body: "none",   inner: "", opens: "", fills: "mutations", calls: "delegates_to_impl"
       member word: "emits",           context: "Command", body: "none",   inner: "", opens: "", fills: "emits"
-      member word: "attribute",       context: "Command", body: "none",   inner: "", opens: "", fills: "attributes"
+      member word: "attribute",       context: "Command", body: "none",   inner: "", opens: "", fills: "attributes", calls: "attribute_impl"
       member word: "ensures", context: "Command", body: "source", inner: "", opens: "", fills: "ensures"
 
     end
@@ -381,6 +392,17 @@ Hecks.bluebook "Bluebook" do
       member keyword: "sets",            context: "Command", at: "",  named: "multiply",  kind: "literal",  required: "false", fills: "source", selects: "op=multiply"
       member keyword: "sets",            context: "Command", at: "",  named: "clamp",     kind: "literal",  required: "false", fills: "source", selects: "op=clamp"
       member keyword: "sets",            context: "Command", at: "",  named: "remove",    kind: "literal",  required: "false", fills: "source", selects: "op=remove"
+      member keyword: "then_set",        context: "Command", at: "1", named: "",           kind: "symbol",   required: "true",  fills: "target"
+      member keyword: "then_set",        context: "Command", at: "",  named: "to",         kind: "literal",  required: "false", fills: "source", selects: "op=set"
+      member keyword: "then_set",        context: "Command", at: "",  named: "from",       kind: "literal",  required: "false", fills: "source", selects: "op=set"
+      member keyword: "then_set",        context: "Command", at: "",  named: "append",     kind: "literal",  required: "false", fills: "source", selects: "op=append"
+      member keyword: "then_set",        context: "Command", at: "",  named: "increment",  kind: "literal",  required: "false", fills: "source", selects: "op=increment"
+      member keyword: "then_set",        context: "Command", at: "",  named: "decrement",  kind: "literal",  required: "false", fills: "source", selects: "op=decrement"
+      member keyword: "then_set",        context: "Command", at: "",  named: "multiply",   kind: "literal",  required: "false", fills: "source", selects: "op=multiply"
+      member keyword: "then_set",        context: "Command", at: "",  named: "clamp",      kind: "literal",  required: "false", fills: "source", selects: "op=clamp"
+      member keyword: "then_set",        context: "Command", at: "",  named: "remove",     kind: "literal",  required: "false", fills: "source", selects: "op=remove"
+      member keyword: "delegates_to",    context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "target"
+      member keyword: "delegates_to",    context: "Command", at: "",  named: "with",      kind: "literal",  required: "false", fills: "source", selects: "op=delegate"
       member keyword: "emits",           context: "Command", at: "1", named: "",          kind: "text",     required: "true",  fills: "emits"
       member keyword: "attribute",       context: "Command", at: "1", named: "",          kind: "symbol",   required: "true",  fills: "name"
       member keyword: "attribute",       context: "Command", at: "2", named: "",          kind: "constant", required: "true",  fills: "type"

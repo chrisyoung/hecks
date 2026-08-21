@@ -47,18 +47,25 @@ module Hecksagain
         # own head can (Card.assignee_id, a Team's own id), just never
         # to another PIECE, since there's no cross-piece addressing
         # anywhere in this language to resolve one against.
-        def reference_to(type, as: nil, optional: false)
+        # RENAMED FROM `reference_to` — item #13's full metaprogrammed
+        # dispatch (slice 4b). Bootstrap-reachable, in
+        # GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
+        def reference_to_impl(type, as: nil, optional: false)
           target = Naming.demodulise(type)
           relationship_attribute(target, :reference_to,
                                  as || default_reference_name(target), optional: optional)
         end
 
-        # has_many/has_one are DSL declaration keywords a domain author
-        # writes verbatim (matching belongs_to alongside them) — not real
-        # predicates, so renaming to many?/one? per Naming/PredicatePrefix
-        # would break every bluebook that declares one.
+        # has_many_impl/has_one_impl are DSL declaration keywords a domain
+        # author writes as bare has_many/has_one (matching belongs_to_impl
+        # alongside them) — not real predicates, so renaming to many?/one?
+        # per Naming/PredicatePrefix would break every bluebook that
+        # declares one. New on Entity (Wave 6, identity-and-relationships
+        # arc) — pieces never had relationship words before; named
+        # `*_impl` to match AggregateBuilder's own siblings, item #13's
+        # full metaprogrammed dispatch convention.
         # rubocop:disable Naming/PredicatePrefix
-        def has_many(type, as: nil, **options)
+        def has_many_impl(type, as: nil, **options)
           unless options.empty?
             raise Malformed, "#{@name}.has_many takes no #{options.keys.first}: — an empty list already means none"
           end
@@ -68,13 +75,13 @@ module Hecksagain
                                  as || Naming.snake(plural).to_sym, list: true)
         end
 
-        def has_one(type, as: nil, optional: false)
+        def has_one_impl(type, as: nil, optional: false)
           target = Naming.demodulise(type)
           relationship_attribute(target, :has_one, as || Naming.snake(target).to_sym, optional: optional)
         end
         # rubocop:enable Naming/PredicatePrefix
 
-        def belongs_to(type, as: nil, optional: false)
+        def belongs_to_impl(type, as: nil, optional: false)
           target = Naming.demodulise(type)
           relationship_attribute(target, :belongs_to, as || Naming.snake(target).to_sym, optional: optional)
         end
@@ -92,11 +99,15 @@ module Hecksagain
         # SAME guard, checked against this PIECE's own lifecycle field
         # (S10, ADR 0025 — a piece's own state machine is checkable the
         # same way a head's is).
-        def command(name, from: nil, &block)
+        # RENAMED FROM `command`/`query`/`entity`/`lifecycle` (all below)
+        # — item #13's full metaprogrammed dispatch (slice 4c), same
+        # reasoning as AggregateBuilder's own siblings: bootstrap-
+        # reachable, in BOOTSTRAP_CALLS_FALLBACK.
+        def command_impl(name, from: nil, &block)
           @pending_commands << [name, from, block]
         end
 
-        def query(name, &block)
+        def query_impl(name, &block)
           @pending_queries << [name, block]
         end
 
@@ -111,11 +122,11 @@ module Hecksagain
         # piece's already does (`AggregateBuilder#entity`'s own comment
         # names this pool ; there is exactly one of them, however deep
         # the nesting goes).
-        def entity(name, &block)
+        def entity_impl(name, &block)
           @pending_entities << [name, block]
         end
 
-        def lifecycle(field, default:, &block)
+        def lifecycle_impl(field, default:, &block)
           @lifecycle = LifecycleBuilder.build(field, default: default, &block)
         end
 
@@ -137,7 +148,9 @@ module Hecksagain
         # (`CommandBuilder#reference_named_given`) still reads whatever
         # `@named_givens` holds AT THE COMMAND'S OWN BUILD TIME, not by
         # magic.
-        def given(description, &predicate)
+        # RENAMED FROM `given` — item #13's full metaprogrammed dispatch
+        # (slice 4b), same reasoning as reference_to_impl above.
+        def given_impl(description, &predicate)
           named = build_rule(Given, description, predicate, owner_name: @name, word: "given",
                               extraction_failure: "its source could not be read, so no other runtime could ever evaluate it")
           @named_givens[description] = named
@@ -163,7 +176,9 @@ module Hecksagain
         # piece yet; if that need shows up, it is `given`'s own
         # cross-entity write-through pattern to extend, not a reason to
         # invent a second one here speculatively.
-        def invariant(description, &predicate)
+        # RENAMED FROM `invariant` — item #13's full metaprogrammed
+        # dispatch (slice 4b), same reasoning as given_impl above.
+        def invariant_impl(description, &predicate)
           @invariants << build_rule(Invariant, description, predicate, owner_name: @name, word: "invariant",
                                      extraction_failure: "it would be a rule the IR cannot carry")
         end

@@ -76,7 +76,7 @@ Hecks.bluebook "Translation" do
       attribute :disambiguator, String, default: "", admits: "Syntax::Disambiguator"
 
       member word: "data_translation", context: "File",    body: "keywords", inner: "Translation",    opens: "Translation",    fills: ""
-      member word: "aggregate",       context: "Translation", body: "keywords", inner: "TranslationAggregate", opens: "TranslationAggregate", fills: ""
+      member word: "aggregate",       context: "Translation", body: "keywords", inner: "TranslationAggregate", opens: "TranslationAggregate", fills: "", calls: "aggregate_impl"
       member word: "retired",         context: "Translation", body: "none",     inner: "",                     opens: "",                     fills: "retired"
 
     end

@@ -31,7 +31,7 @@ end
 
 ```ruby bluebook
 Hecks.bluebook "CommandReference" do
-  vision "The two command words the corpus does not yet write."
+  vision "The three command words the corpus does not yet write."
 
   aggregate "Meter" do
     attribute :serial, Serial
@@ -61,11 +61,62 @@ Hecks.bluebook "CommandReference" do
       emits "MeterAdvanced"
     end
   end
+
+  # A SEPARATE AGGREGATE, purely for `delegates_to` — it needs a NESTED
+  # ENTITY to hand a dispatch to, which Meter above has no real reason
+  # to carry.
+  aggregate "Board" do
+    attribute :name,   BoardName
+    identified_by :name
+    attribute :pieces, list_of(Piece)
+
+    value_object("BoardName") { attribute :value, String }
+    value_object("Square")    { attribute :file, Integer; attribute :rank, Integer }
+    value_object("PieceId")   { attribute :value, String }
+
+    command "Open" do
+      sets :name
+      emits "BoardOpened"
+    end
+
+    command "PlacePiece" do
+      reference_to Board
+      attribute :id,     PieceId
+      attribute :square, Square
+      sets :pieces, append: { id: :id, square: :square }
+      emits "PiecePlaced"
+    end
+
+    # THE WORD THIS SECTION EXISTS FOR — a caller dispatches THIS, never
+    # "CommandReference::Board.Piece.Move" directly.
+    command "MovePiece" do
+      reference_to Board
+      attribute :id, PieceId
+      attribute :to, Square
+      delegates_to "Piece.Move", with: { id: :id, to: :to }
+    end
+
+    entity "Piece" do
+      attribute :id,     PieceId
+      attribute :square, Square
+      identified_by :id
+
+      command "Move" do
+        attribute :to, Square
+        given("destination differs from current square") { square.file != to.file || square.rank != to.rank }
+        sets :square, to: :to
+        emits "PieceMoved"
+      end
+    end
+  end
 end
 ```
 
 ```ruby boot
-Hecks.hecksagon("CommandReference") { CommandReference::Meter.persisted_by("Memory") }
+Hecks.hecksagon("CommandReference") do
+  CommandReference::Meter.persisted_by("Memory")
+  CommandReference::Board.persisted_by("Memory")
+end
 ```
 
 ```ruby
@@ -208,7 +259,7 @@ written as a sentence a caller can act on rather than a name.
 ## sets
 
 <!-- generated:begin word=sets -->
-`sets target, to:, append:, increment:, decrement:, multiply:, clamp:, remove:` — fills `mutations`, was `then_set`
+`sets target, to:, append:, increment:, decrement:, multiply:, clamp:, remove:` — fills `mutations`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -222,7 +273,7 @@ written as a sentence a caller can act on rather than a name.
 | `remove:` | literal | false | source |
 <!-- generated:end -->
 
-`sets` is the word — ADR 0025 reverts `then_set` (the language's own grammar already declared `sets`, `was: "then_set"`, before the DSL implementation caught up). `then_set` keeps booting only for frozen era text under the legacy grammar; live source refuses it, naming `sets`. One call, one op: `to:` overwrites the field, `append:` grows a list attribute by one value object built from the pairs you name, `increment:`/`decrement:` do arithmetic on a numeric field. `to:` is omittable when it would only repeat the target — `sets :serial` alone already means `to: :serial` — and writing the redundant form out is refused. See commands.md's "`sets` — one op per field" for the flattening rule `append:` applies to a single-member value object.
+`sets` is the word — ADR 0025 reverts `then_set` (the language's own grammar already declared `sets` before the DSL implementation caught up). `then_set` (below) keeps booting only for frozen era text under the legacy grammar; live source refuses it, naming `sets`. One call, one op: `to:` overwrites the field, `append:` grows a list attribute by one value object built from the pairs you name, `increment:`/`decrement:` do arithmetic on a numeric field. `to:` is omittable when it would only repeat the target — `sets :serial` alone already means `to: :serial` — and writing the redundant form out is refused. See commands.md's "`sets` — one op per field" for the flattening rule `append:` applies to a single-member value object.
 
 `to:` overwrites, `increment:` does arithmetic, `append:` grows a list —
 one op per call, three calls across two commands here:
@@ -243,6 +294,71 @@ between `increment:` and `to:`:
 meter.advance!(units: { units: 5 }, note: { note: "second read" })
 meter.reading.units  # => 17
 ```
+
+## then_set
+
+<!-- generated:begin word=then_set -->
+`then_set target, to:, from:, append:, increment:, decrement:, multiply:, clamp:, remove:` — fills `mutations`, **status: deprecated**
+
+| argument | kind | required | fills |
+|---|---|---|---|
+| positional 1 | symbol | true | target |
+| `to:` | literal | false | source |
+| `from:` | literal | false | source |
+| `append:` | literal | false | source |
+| `increment:` | literal | false | source |
+| `decrement:` | literal | false | source |
+| `multiply:` | literal | false | source |
+| `clamp:` | literal | false | source |
+| `remove:` | literal | false | source |
+<!-- generated:end -->
+
+GONE — see `sets` above, the word ADR 0025 reverts to. Refuses live, unconditionally:
+
+```ruby
+Hecks.bluebook("MeterGone") { aggregate("Meter") { identified_by :serial; attribute :serial, Serial; value_object("Serial") { attribute :value, String }; command("Bump") { role "Owner"; then_set :serial, to: "x" } } }  # ~> Malformed: then_set is gone
+```
+
+## delegates_to
+
+<!-- generated:begin word=delegates_to -->
+`delegates_to target, with:` — fills `mutations`
+
+| argument | kind | required | fills |
+|---|---|---|---|
+| positional 1 | text | true | target |
+| `with:` | literal | false | source |
+<!-- generated:end -->
+
+An AGGREGATE-level command that hands its own dispatch to ONE nested
+entity command, checked and applied within the SAME atomic dispatch
+rather than a separate one — the synchronous cousin of a policy's own
+`trigger` or a saga's own `dispatches`. Both of those REACT to an
+already-committed command and rescue the target's own refusal rather
+than raising it back to the original caller, which is correct for an
+eventually-consistent process that can compensate and wrong for a
+caller who needs a synchronous yes/no on whether the thing they asked
+for actually happened. `delegates_to` fills that gap: the target
+entity command's own `given`/`ensures` are enforced as real, unrescued
+exceptions, so a refusal deep in the entity's own rules is the
+delegating command's own refusal too, and nothing from either side is
+saved unless both sides pass. `target` is always one hop,
+`"Entity.Command"`; `with:` maps this command's own arguments onto the
+target's, the same way `sets ..., append: {...}`'s own field map
+already does. A delegating command declares no `sets`/`emits` of its
+own — its result IS the target's.
+
+```ruby
+board = CommandReference::Board.open!(name: { value: "b1" })
+board.place_piece!(id: { value: "p1" }, square: { file: 3, rank: 3 })
+board.move_piece!(id: { value: "p1" }, to: { file: 5, rank: 5 })
+
+board = runtime.registry.repository("CommandReference", runtime.registry.bluebook("CommandReference").aggregate("Board")).find("b1")
+board[:pieces].first[:square].to_h  # => {:file=>5, :rank=>5}
+```
+
+The caller above never names `Piece` at all — `MovePiece` is the only
+door.
 
 ## emits
 

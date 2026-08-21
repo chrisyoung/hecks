@@ -53,8 +53,8 @@ Hecks.bluebook "World" do
       attribute :disambiguator, String, default: "", admits: "Syntax::Disambiguator"
 
       member word: "world",           context: "File",     body: "keywords", inner: "World",          opens: "World",          fills: ""
-      member word: "realm",           context: "World",     body: "none", inner: "", opens: "", fills: "realm"
-      member word: "latest",          context: "World",     body: "none", inner: "", opens: "", fills: "latest"
+      member word: "realm",           context: "World",     body: "none", inner: "", opens: "", fills: "realm", calls: "realm_impl"
+      member word: "latest",          context: "World",     body: "none", inner: "", opens: "", fills: "latest", calls: "latest_impl"
 
     end
 

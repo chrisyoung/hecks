@@ -214,15 +214,15 @@ Hecks.bluebook "Translation" do
       attribute :resolves_via,  String, default: "", admits: "Syntax::ResolutionScope"
       attribute :disambiguator, String, default: "", admits: "Syntax::Disambiguator"
 
-      member word: "rename",          context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "renames"
-      member word: "move",            context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "moves"
-      member word: "convert",         context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "converts"
+      member word: "rename",          context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "renames", calls: "rename_impl"
+      member word: "move",            context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "moves", calls: "move_impl"
+      member word: "convert",         context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "converts", calls: "convert_impl"
       member word: "drop",            context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "drops"
-      member word: "retype",          context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "retypes"
-      member word: "compute",         context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "computes"
-      member word: "rekey",           context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "rekeys"
-      member word: "backfill",        context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "backfills"
-      member word: "unresolved",      context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: ""
+      member word: "retype",          context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "retypes", calls: "retype_impl"
+      member word: "compute",         context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "computes", calls: "compute_impl"
+      member word: "rekey",           context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "rekeys", calls: "rekey_impl"
+      member word: "backfill",        context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "backfills", calls: "backfill_impl"
+      member word: "unresolved",      context: "TranslationAggregate", body: "none", inner: "", opens: "", fills: "", calls: "unresolved_impl"
 
     end
 

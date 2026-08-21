@@ -39,7 +39,15 @@ module Hecksagain
         # still needs to read it. `block_given?` is what tells the two
         # calling shapes apart: the type-position form
         # (`one_of("a", "b")`) never passes a block, only the wrapper does.
-        def one_of(*values, &block)
+        # RENAMED FROM `one_of` — item #13's full metaprogrammed dispatch
+        # (slice 5). SAME NAME as `AttributeCollector#one_of_impl`'s own
+        # — required for the `super(*values)` call below to keep
+        # resolving; see that method's own comment. Reached directly
+        # through its own "ValueObject"-context Keyword row (the
+        # block-wrapper form has its own row, distinct from "Type"'s),
+        # not through the Type-position fallback this word's OTHER
+        # context uses.
+        def one_of_impl(*values, &block)
           unless block
             # NO VALUES, NO BLOCK is the SCALAR spelling — nonsensical, not
             # merely inert: it names a closed set with nothing in it. The
@@ -68,7 +76,10 @@ module Hecksagain
           instance_eval(&block)
         end
 
-        def member(**fields)
+        # RENAMED FROM `member` — item #13's full metaprogrammed dispatch
+        # (slice 4c). Bootstrap-reachable, in
+        # GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
+        def member_impl(**fields)
           raise Malformed, "#{@name} declared an empty member" if fields.empty?
 
           @members << fields
@@ -87,7 +98,10 @@ module Hecksagain
         # the referencing value object's own build time, against
         # whatever sibling value objects the aggregate has already
         # built, the same ordering rule `given` carries.
-        def invariant(description, &predicate)
+        # RENAMED FROM `invariant` — item #13's full metaprogrammed
+        # dispatch (slice 4b). Bootstrap-reachable, in
+        # GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
+        def invariant_impl(description, &predicate)
           return reference_named_invariant(description) unless predicate
 
           # moved to the language: given "a rule says what it means", on Shape.Assert
@@ -156,7 +170,7 @@ module Hecksagain
 
           @inline_closed_set_field = field
           @closed_set = true
-          values.each { |value| member(field => value.to_s) }
+          values.each { |value| member_impl(field => value.to_s) }
         end
       end
     end

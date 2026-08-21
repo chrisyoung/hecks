@@ -219,14 +219,14 @@ Hecks.bluebook "Bluebook" do
       attribute :disambiguator, String, default: "", admits: "Syntax::Disambiguator"
 
       member word: "description",     context: "ReadModel", body: "none", inner: "", opens: "", fills: "description"
-      member word: "reference_to",    context: "ReadModel", body: "none", inner: "", opens: "", fills: "reference_target"
-      member word: "include",         context: "ReadModel", body: "none", inner: "", opens: "", fills: "aggregate_heads"
-      member word: "group_by",        context: "ReadModel", body: "none", inner: "", opens: "", fills: "group_by"
+      member word: "reference_to",    context: "ReadModel", body: "none", inner: "", opens: "", fills: "reference_target", calls: "reference_to_impl"
+      member word: "include",         context: "ReadModel", body: "none", inner: "", opens: "", fills: "aggregate_heads", calls: "include_impl"
+      member word: "group_by",        context: "ReadModel", body: "none", inner: "", opens: "", fills: "group_by", calls: "group_by_impl"
       member word: "count",           context: "ReadModel", body: "none", inner: "", opens: "", fills: "count"
       member word: "median",          context: "ReadModel", body: "none", inner: "", opens: "", fills: "median_field"
-      member word: "where",           context: "ReadModel", body: "none", inner: "", opens: "", fills: "options"
-      member word: "order_by",        context: "ReadModel", body: "none", inner: "", opens: "", fills: "options"
-      member word: "authorize",       context: "ReadModel", body: "none", inner: "", opens: "", fills: "options"
+      member word: "where",           context: "ReadModel", body: "none", inner: "", opens: "", fills: "options", calls: "where_impl"
+      member word: "order_by",        context: "ReadModel", body: "none", inner: "", opens: "", fills: "options", calls: "order_by_impl"
+      member word: "authorize",       context: "ReadModel", body: "none", inner: "", opens: "", fills: "options", calls: "authorize_impl"
       member word: "inspect_query",   context: "ReadModel", body: "none", inner: "", opens: "", fills: "options"
 
     end

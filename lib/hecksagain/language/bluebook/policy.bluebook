@@ -136,7 +136,7 @@ Hecks.bluebook "Bluebook" do
       attribute :disambiguator, String, default: "", admits: "Syntax::Disambiguator"
 
       member word: "on",              context: "Policy",    body: "none", inner: "", opens: "",       fills: "on_event"
-      member word: "trigger",         context: "Policy",    body: "none", inner: "", opens: "",       fills: "trigger_command"
+      member word: "trigger",         context: "Policy",    body: "none", inner: "", opens: "",       fills: "trigger_command", calls: "trigger_impl"
       member word: "across",          context: "Policy",    body: "none", inner: "", opens: "",       fills: "target_domain"
       member word: "where",           context: "Policy",    body: "source", inner: "", opens: "", fills: "where"
       member word: "for_each",        context: "Policy",    body: "none", inner: "", opens: "", fills: "for_each"

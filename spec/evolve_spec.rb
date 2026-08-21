@@ -42,15 +42,16 @@ RSpec.describe "the evolve surgery" do
   it "reads every keyword row, absent status as admitted" do
     rows = EVOLVE.keyword_rows
     expect(rows.size).to be > 70
-    # NO ROW IS DEPRECATED ANY MORE. S17/ADR 0026's relationship-
-    # cardinality slice un-deprecated has_many/has_one/belongs_to for
-    # real (they build and dispatch now, not merely refuse outside
-    # shadow_parse) — the one "deprecated" row this test used to pin
-    # went with it. The claim this test actually holds — a row with NO
-    # status: column reads back as "admitted", never blank — needs no
-    # second status to prove: every value present is "admitted", never
-    # the empty string a missing column would leave unfilled.
-    expect(rows.map { |row| row[:status] }.uniq.sort).to eq(["admitted"])
+    # S17/ADR 0026's relationship-cardinality slice un-deprecated
+    # has_many/has_one/belongs_to for real (they build and dispatch now,
+    # not merely refuse outside shadow_parse) — but `then_set` (item #13's
+    # own slice 5 rename of `sets`) is a real "deprecated" row again,
+    # kept refusing live only so shadow_parse can still read frozen era
+    # text that used the old spelling. The claim this test actually
+    # holds — an ABSENT status: column reads back as "admitted", never
+    # blank — needs no particular status SET to prove; it only needs
+    # every present value to be non-empty, checked below.
+    expect(rows.map { |row| row[:status] }.uniq.sort).to eq(%w[admitted deprecated])
     expect(rows.map { |row| row[:status] }).to all(satisfy { |status| !status.to_s.empty? })
   end
 

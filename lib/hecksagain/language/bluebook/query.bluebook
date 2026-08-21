@@ -189,11 +189,11 @@ Hecks.bluebook "Bluebook" do
       attribute :disambiguator, String, default: "", admits: "Syntax::Disambiguator"
 
       member word: "description",     context: "Query", body: "none", inner: "", opens: "", fills: "description"
-      member word: "attribute",       context: "Query", body: "none", inner: "", opens: "", fills: "attributes"
-      member word: "reference_to",    context: "Query", body: "none", inner: "", opens: "", fills: "attributes"
-      member word: "where",           context: "Query", body: "none", inner: "", opens: "", fills: "wheres"
-      member word: "order_by",        context: "Query", body: "none", inner: "", opens: "", fills: "order_field"
-      member word: "authorize",       context: "Query", body: "none", inner: "", opens: "", fills: "options"
+      member word: "attribute",       context: "Query", body: "none", inner: "", opens: "", fills: "attributes", calls: "attribute_impl"
+      member word: "reference_to",    context: "Query", body: "none", inner: "", opens: "", fills: "attributes", calls: "reference_to_impl"
+      member word: "where",           context: "Query", body: "none", inner: "", opens: "", fills: "wheres", calls: "where_impl"
+      member word: "order_by",        context: "Query", body: "none", inner: "", opens: "", fills: "order_field", calls: "order_by_impl"
+      member word: "authorize",       context: "Query", body: "none", inner: "", opens: "", fills: "options", calls: "authorize_impl"
       member word: "inspect_query",   context: "Query", body: "none", inner: "", opens: "", fills: "options"
 
     end

@@ -1677,6 +1677,10 @@
               [
                 "fills",
                 "provenance"
+              ],
+              [
+                "calls",
+                "provenance_impl"
               ]
             ],
             [
@@ -1703,6 +1707,10 @@
               [
                 "fills",
                 "identified_by"
+              ],
+              [
+                "calls",
+                "identified_by_impl"
               ]
             ],
             [
@@ -1729,6 +1737,10 @@
               [
                 "fills",
                 "identified_by"
+              ],
+              [
+                "calls",
+                "identified_by_impl"
               ]
             ],
             [
@@ -1755,6 +1767,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -1781,6 +1797,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "has_many_impl"
               ]
             ],
             [
@@ -1807,6 +1827,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "has_one_impl"
               ]
             ],
             [
@@ -1833,6 +1857,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "belongs_to_impl"
               ]
             ],
             [
@@ -1859,6 +1887,10 @@
               [
                 "fills",
                 "state_field"
+              ],
+              [
+                "calls",
+                "lifecycle_impl"
               ]
             ],
             [
@@ -1885,6 +1917,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "entity_impl"
               ]
             ],
             [
@@ -1911,6 +1947,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "query_impl"
               ]
             ],
             [
@@ -1937,6 +1977,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "policy_impl"
               ]
             ],
             [
@@ -1989,6 +2033,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "command_impl"
               ]
             ],
             [
@@ -2015,6 +2063,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -2041,6 +2093,10 @@
               [
                 "fills",
                 "invariants"
+              ],
+              [
+                "calls",
+                "invariant_impl"
               ]
             ],
             [
@@ -2075,6 +2131,10 @@
               [
                 "disambiguator",
                 "declared_by"
+              ],
+              [
+                "calls",
+                "given_impl"
               ]
             ],
             [
@@ -2101,6 +2161,10 @@
               [
                 "fills",
                 "projected_fields"
+              ],
+              [
+                "calls",
+                "projects_impl"
               ]
             ],
             [
@@ -2127,6 +2191,10 @@
               [
                 "fills",
                 "transitions"
+              ],
+              [
+                "calls",
+                "transition_impl"
               ]
             ]
           ],
@@ -4309,6 +4377,10 @@
               [
                 "fills",
                 "attaches_to"
+              ],
+              [
+                "calls",
+                "attaches_to_impl"
               ]
             ],
             [
@@ -4413,6 +4485,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "aggregate_impl"
               ]
             ],
             [
@@ -6394,6 +6470,10 @@
               [
                 "fills",
                 "role"
+              ],
+              [
+                "calls",
+                "role_impl"
               ]
             ],
             [
@@ -6446,6 +6526,10 @@
               [
                 "fills",
                 "provenance"
+              ],
+              [
+                "calls",
+                "provenance_impl"
               ]
             ],
             [
@@ -6472,6 +6556,10 @@
               [
                 "fills",
                 "references"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -6502,6 +6590,10 @@
               [
                 "resolves_via",
                 "hash_chain"
+              ],
+              [
+                "calls",
+                "given_impl"
               ]
             ],
             [
@@ -6530,8 +6622,72 @@
                 "mutations"
               ],
               [
-                "was",
+                "calls",
+                "sets_impl"
+              ]
+            ],
+            [
+              [
+                "word",
                 "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "mutations"
+              ],
+              [
+                "status",
+                "deprecated"
+              ],
+              [
+                "calls",
+                "then_set_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "delegates_to"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "mutations"
+              ],
+              [
+                "calls",
+                "delegates_to_impl"
               ]
             ],
             [
@@ -6584,6 +6740,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -7283,6 +7443,372 @@
               [
                 "selects",
                 "op=remove"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "target"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "to"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=set"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "from"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=set"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "append"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=append"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "increment"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=increment"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "decrement"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=decrement"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "multiply"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=multiply"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "clamp"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=clamp"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "then_set"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "remove"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=remove"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "delegates_to"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                "1"
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                "true"
+              ],
+              [
+                "fills",
+                "target"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "delegates_to"
+              ],
+              [
+                "context",
+                "Command"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "with"
+              ],
+              [
+                "kind",
+                "literal"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "source"
+              ],
+              [
+                "selects",
+                "op=delegate"
               ]
             ],
             [
@@ -8658,6 +9184,10 @@
               [
                 "fills",
                 "identified_by"
+              ],
+              [
+                "calls",
+                "identified_by_impl"
               ]
             ],
             [
@@ -8684,6 +9214,10 @@
               [
                 "fills",
                 "identified_by"
+              ],
+              [
+                "calls",
+                "identified_by_impl"
               ]
             ],
             [
@@ -8710,6 +9244,10 @@
               [
                 "fills",
                 "preconditions"
+              ],
+              [
+                "calls",
+                "given_impl"
               ]
             ],
             [
@@ -8736,6 +9274,10 @@
               [
                 "fills",
                 "invariants"
+              ],
+              [
+                "calls",
+                "invariant_impl"
               ]
             ],
             [
@@ -8762,6 +9304,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "command_impl"
               ]
             ],
             [
@@ -8788,6 +9334,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "query_impl"
               ]
             ],
             [
@@ -8814,6 +9364,10 @@
               [
                 "fills",
                 "state_field"
+              ],
+              [
+                "calls",
+                "lifecycle_impl"
               ]
             ],
             [
@@ -8840,6 +9394,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -8866,6 +9424,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -8892,6 +9454,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "has_many_impl"
               ]
             ],
             [
@@ -8918,6 +9484,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "has_one_impl"
               ]
             ],
             [
@@ -8944,6 +9514,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "belongs_to_impl"
               ]
             ],
             [
@@ -8970,6 +9544,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "entity_impl"
               ]
             ]
           ],
@@ -10720,6 +11298,10 @@
               [
                 "fills",
                 "trigger_command"
+              ],
+              [
+                "calls",
+                "trigger_impl"
               ]
             ],
             [
@@ -12096,6 +12678,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "transition_impl"
               ]
             ],
             [
@@ -12122,6 +12708,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "transition_impl"
               ]
             ],
             [
@@ -12148,6 +12738,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "dispatch_impl"
               ]
             ]
           ],
@@ -13567,6 +14161,10 @@
               [
                 "fills",
                 "reference_target"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -13593,6 +14191,10 @@
               [
                 "fills",
                 "aggregate_heads"
+              ],
+              [
+                "calls",
+                "include_impl"
               ]
             ],
             [
@@ -13619,6 +14221,10 @@
               [
                 "fills",
                 "group_by"
+              ],
+              [
+                "calls",
+                "group_by_impl"
               ]
             ],
             [
@@ -13697,6 +14303,10 @@
               [
                 "fills",
                 "options"
+              ],
+              [
+                "calls",
+                "where_impl"
               ]
             ],
             [
@@ -13723,6 +14333,10 @@
               [
                 "fills",
                 "options"
+              ],
+              [
+                "calls",
+                "order_by_impl"
               ]
             ],
             [
@@ -13749,6 +14363,10 @@
               [
                 "fills",
                 "options"
+              ],
+              [
+                "calls",
+                "authorize_impl"
               ]
             ],
             [
@@ -15327,6 +15945,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -15353,6 +15975,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "reference_to_impl"
               ]
             ],
             [
@@ -15379,6 +16005,10 @@
               [
                 "fills",
                 "wheres"
+              ],
+              [
+                "calls",
+                "where_impl"
               ]
             ],
             [
@@ -15405,6 +16035,10 @@
               [
                 "fills",
                 "order_field"
+              ],
+              [
+                "calls",
+                "order_by_impl"
               ]
             ],
             [
@@ -15431,6 +16065,10 @@
               [
                 "fills",
                 "options"
+              ],
+              [
+                "calls",
+                "authorize_impl"
               ]
             ],
             [
@@ -17132,6 +17770,10 @@
               [
                 "fills",
                 "attributes"
+              ],
+              [
+                "calls",
+                "attribute_impl"
               ]
             ],
             [
@@ -17158,6 +17800,10 @@
               [
                 "fills",
                 "rows"
+              ],
+              [
+                "calls",
+                "one_of_impl"
               ]
             ],
             [
@@ -17188,6 +17834,10 @@
               [
                 "resolves_via",
                 "sibling_scan"
+              ],
+              [
+                "calls",
+                "invariant_impl"
               ]
             ],
             [
@@ -17214,6 +17864,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "member_impl"
               ]
             ],
             [
@@ -17240,6 +17894,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "member_impl"
               ]
             ],
             [
@@ -17266,6 +17924,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "list_of_impl"
               ]
             ],
             [
@@ -17292,6 +17954,10 @@
               [
                 "fills",
                 ""
+              ],
+              [
+                "calls",
+                "one_of_impl"
               ]
             ]
           ],
@@ -18032,6 +18698,16 @@
               "pattern": null,
               "relationship": null,
               "type": "KeywordSeedText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "calls",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "KeywordSeedText"
             }
           ],
           "emits": [
@@ -18049,6 +18725,7 @@
             {
               "fields": {
                 "body": ":body",
+                "calls": ":calls",
                 "context": ":context",
                 "disambiguator": ":disambiguator",
                 "fills": ":fills",
@@ -18373,6 +19050,16 @@
               "default": null,
               "list": false,
               "name": "disambiguator",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "KeywordSeedText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "calls",
               "optional": true,
               "pattern": null,
               "relationship": null,
@@ -19892,6 +20579,16 @@
                 "sign",
                 ""
               ]
+            ],
+            [
+              [
+                "name",
+                "delegate"
+              ],
+              [
+                "sign",
+                ""
+              ]
             ]
           ],
           "name": "MutationOp"
@@ -20110,6 +20807,12 @@
               [
                 "step",
                 "advance_lifecycle"
+              ]
+            ],
+            [
+              [
+                "step",
+                "delegate_to_entity"
               ]
             ],
             [
