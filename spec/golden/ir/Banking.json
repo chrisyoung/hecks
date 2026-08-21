@@ -602,6 +602,15 @@
               "sign": "",
               "source": {
                 "kind": "argument",
+                "name": "customer"
+              },
+              "target": "customer"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
                 "name": "number"
               },
               "target": "number"
@@ -1932,6 +1941,15 @@
               "sign": "",
               "source": {
                 "kind": "argument",
+                "name": "customer"
+              },
+              "target": "customer"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
                 "name": "reference"
               },
               "target": "reference"
@@ -2236,6 +2254,15 @@
           ],
           "goal": "Put a card in a customer's hand",
           "mutations": [
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "account"
+              },
+              "target": "account"
+            },
             {
               "op": "set",
               "sign": "",
@@ -2881,16 +2908,6 @@
               "admits": null,
               "default": null,
               "list": false,
-              "name": "account",
-              "optional": false,
-              "pattern": null,
-              "relationship": null,
-              "type": "Reference<Account>"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
               "name": "authorisation",
               "optional": false,
               "pattern": null,
@@ -2906,6 +2923,16 @@
               "pattern": null,
               "relationship": null,
               "type": "Tag"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "account",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "Reference<Account>"
             },
             {
               "admits": null,
@@ -2947,6 +2974,15 @@
           ],
           "goal": null,
           "mutations": [
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "account"
+              },
+              "target": "account"
+            },
             {
               "op": "set",
               "sign": "",
@@ -4342,16 +4378,6 @@
               "admits": null,
               "default": null,
               "list": false,
-              "name": "account",
-              "optional": false,
-              "pattern": null,
-              "relationship": null,
-              "type": "Reference<Account>"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
               "name": "period",
               "optional": false,
               "pattern": null,
@@ -4397,6 +4423,16 @@
               "pattern": null,
               "relationship": null,
               "type": "StatementFrequency"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "account",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "Reference<Account>"
             }
           ],
           "emits": [
@@ -4418,7 +4454,15 @@
           ],
           "goal": "Close out one period's activity into a permanent record",
           "mutations": [
-
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "account"
+              },
+              "target": "account"
+            }
           ],
           "name": "Generate",
           "provenance": null,
@@ -4677,26 +4721,6 @@
               "admits": null,
               "default": null,
               "list": false,
-              "name": "source",
-              "optional": false,
-              "pattern": null,
-              "relationship": null,
-              "type": "Reference<Account>"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
-              "name": "destination",
-              "optional": false,
-              "pattern": null,
-              "relationship": null,
-              "type": "Reference<Account>"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
               "name": "reference",
               "optional": false,
               "pattern": null,
@@ -4722,6 +4746,26 @@
               "pattern": null,
               "relationship": null,
               "type": "Narrative"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "source",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "Reference<Account>"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "destination",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "Reference<Account>"
             }
           ],
           "emits": [
@@ -5211,21 +5255,21 @@
               "admits": null,
               "default": null,
               "list": false,
-              "name": "account",
-              "optional": false,
-              "pattern": null,
-              "relationship": null,
-              "type": "Reference<Account>"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
               "name": "end_to_end",
               "optional": false,
               "pattern": null,
               "relationship": null,
               "type": "EndToEndReference"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "account",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "Reference<Account>"
             },
             {
               "admits": null,
@@ -5277,6 +5321,15 @@
           ],
           "goal": null,
           "mutations": [
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "account"
+              },
+              "target": "account"
+            },
             {
               "op": "set",
               "sign": "",
@@ -5665,21 +5718,21 @@
               "admits": null,
               "default": null,
               "list": false,
-              "name": "account",
-              "optional": false,
-              "pattern": null,
-              "relationship": null,
-              "type": "Reference<Account>"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
               "name": "instruction",
               "optional": false,
               "pattern": null,
               "relationship": null,
               "type": "InstructionReference"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "account",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "Reference<Account>"
             },
             {
               "admits": null,
@@ -5731,6 +5784,15 @@
           ],
           "goal": null,
           "mutations": [
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "account"
+              },
+              "target": "account"
+            },
             {
               "op": "set",
               "sign": "",

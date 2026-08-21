@@ -92,10 +92,10 @@ Hecks.bluebook "Banking" do
       role "Branch clerk"
       goal "Put a card in a customer's hand"
 
-      reference_to Account
       given("customer is active")
       given("account is open")
 
+      sets :account
       sets :serial
       sets :daily_fee
 
@@ -234,11 +234,11 @@ Hecks.bluebook "Banking" do
     end
 
     command "Authorize" do
-      reference_to Account
       attribute :authorisation, AuthorisationCode
       attribute :tags, list_of(Tag), optional: true
       given("customer is active")
       given("account is open")
+      sets :account
       sets :amount
       sets :merchant
       sets :tags

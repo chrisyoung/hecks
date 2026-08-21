@@ -110,15 +110,21 @@ RSpec.describe "a construct's identity" do
     it "resolves every reference in banking to a head in its own chapter" do
       found = references_in(banking, "Banking")
 
-      # 21, not 22: SafeDepositBox's own creating command no longer
-      # redeclares `reference_to Customer` beside the aggregate's own —
-      # Wave 7's reference-decluttering, so far landed on this one
-      # aggregate. Every other aggregate here (Account, ATMCard,
-      # CardPayment, Statement, Transfer, ExternalTransfer,
-      # ScheduledPayment, OnboardingCase) still double-declares its own
-      # reference on both itself and its creating command; finishing
-      # that migration across the rest of the corpus is separate,
-      # larger follow-up work, not a defect this count is asserting.
+      # STILL 21, not 22 or fewer: Wave 7's reference-decluttering is now
+      # finished across every self-referencing aggregate in this chapter
+      # (SafeDepositBox, Account, ATMCard, CardPayment, Statement,
+      # Transfer x2, ExternalTransfer, ScheduledPayment, OnboardingCase) —
+      # none of their creating commands spell `reference_to <target>`
+      # itself anymore; each instead declares a bare `sets :field` and
+      # lets implicit-command-attributes (docs/implemented/resolution-
+      # rules/implicit-command-attributes.md) import the aggregate's own
+      # reference attribute verbatim. `references_in` counts the
+      # COMPILED shape, not the source spelling, so the import lands the
+      # identical reference-typed attribute on the command's own
+      # attribute list either way — the count this asserts was never
+      # about decluttering's own effect, only about whether the target
+      # resolves; decluttering removed a redundant DECLARATION, not an
+      # attribute.
       expect(found.size).to eq(21)
       found.each do |owner, attribute|
         resolved = attribute.type.resolve

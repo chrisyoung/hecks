@@ -56,8 +56,6 @@ Hecks.bluebook "Banking" do
       role "Customer"
       goal "Send money to another account"
 
-      reference_to Account, as: :source
-      reference_to Account, as: :destination
       attribute :reference,   TransferReference
 
       # A REFERENCE IS THE ACCOUNT'S NUMBER, so these read it as one. They said
@@ -201,10 +199,10 @@ Hecks.bluebook "Banking" do
     end
 
     command "Request" do
-      reference_to Account
       attribute :end_to_end, EndToEndReference
       given("customer is active")
       given("account is open")
+      sets :account
       sets :amount
       sets :beneficiary
       sets :direction
@@ -298,10 +296,10 @@ Hecks.bluebook "Banking" do
     end
 
     command "Schedule" do
-      reference_to Account
       attribute :instruction, InstructionReference
       given("customer is active")
       given("account is open")
+      sets :account
       sets :amount
       sets :recipient
       sets :due_on

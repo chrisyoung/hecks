@@ -37,9 +37,9 @@ Hecks.bluebook "Banking" do
       role "Branch clerk"
       goal "Open a KYC case for a newly registered customer, naming the account it will become"
 
-      reference_to Customer, as: :customer
       given("customer is active")
 
+      sets :customer
       sets :reference
       sets :account_number
 

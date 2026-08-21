@@ -180,9 +180,9 @@ Hecks.bluebook "Banking" do
       role "Branch clerk"
       goal "Give a customer somewhere to keep money"
 
-      reference_to Customer
       given("customer is active")
 
+      sets :customer
       sets :number
       sets :kind
       sets :daily_limit

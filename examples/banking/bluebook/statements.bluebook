@@ -65,7 +65,6 @@ Hecks.bluebook "Banking" do
       role "System"
       goal "Close out one period's activity into a permanent record"
 
-      reference_to Account
       attribute :period,          StatementPeriod
       attribute :opening_balance, StatementAmount
       attribute :closing_balance, StatementAmount
@@ -73,6 +72,8 @@ Hecks.bluebook "Banking" do
       attribute :frequency,       StatementFrequency
       given("customer is active")
       given("account is open")
+
+      sets :account
 
       emits "StatementGenerated"
     end
