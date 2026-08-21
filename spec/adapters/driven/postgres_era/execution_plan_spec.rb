@@ -2,14 +2,18 @@ require "hecksagain"
 require_relative "../../../support/postgres_probe"
 
 RSpec.describe "PostgresEra execution-plan capabilities", io: true do
-  SPEC_DB = "hecksagain_postgres_era_execution_plan_spec".freeze
+  # Not SPEC_DB — a constant assigned inside an RSpec.describe block lands
+  # at TOP LEVEL (load_hygiene_spec.rb's own "lets no two spec files
+  # disagree about a top-level constant"), and postgres_era_spec.rb
+  # already claims that name for a different database.
+  EXECUTION_PLAN_DB = "hecksagain_postgres_era_execution_plan_spec".freeze
 
   before(:all) do
     skip "no reachable Postgres — start one to run this spec" unless PostgresProbe.available?
 
     admin = PG.connect(dbname: "postgres")
-    admin.exec("DROP DATABASE IF EXISTS #{SPEC_DB} WITH (FORCE)")
-    admin.exec("CREATE DATABASE #{SPEC_DB}")
+    admin.exec("DROP DATABASE IF EXISTS #{EXECUTION_PLAN_DB} WITH (FORCE)")
+    admin.exec("CREATE DATABASE #{EXECUTION_PLAN_DB}")
     admin.close
   end
 
@@ -17,12 +21,12 @@ RSpec.describe "PostgresEra execution-plan capabilities", io: true do
     next unless PostgresProbe.available?
 
     admin = PG.connect(dbname: "postgres")
-    admin.exec("DROP DATABASE IF EXISTS #{SPEC_DB} WITH (FORCE)")
+    admin.exec("DROP DATABASE IF EXISTS #{EXECUTION_PLAN_DB} WITH (FORCE)")
     admin.close
   end
 
   before do
-    scrub = PG.connect(dbname: SPEC_DB)
+    scrub = PG.connect(dbname: EXECUTION_PLAN_DB)
     scrub.exec("DROP SCHEMA public CASCADE")
     scrub.exec("CREATE SCHEMA public")
     scrub.close
@@ -47,7 +51,7 @@ RSpec.describe "PostgresEra execution-plan capabilities", io: true do
     aggregate = item_aggregate
     adapter = Hecksagain::Adapters::PostgresEra.new(
       aggregate: aggregate,
-      settings:  { database: SPEC_DB, domain: "PostgresEraPlanning" }
+      settings:  { database: EXECUTION_PLAN_DB, domain: "PostgresEraPlanning" }
     )
     repository = Hecksagain::Ports::Persistence::AppendOnly.new(adapter)
 
