@@ -79,14 +79,40 @@ module Hecksagain
 
       # STEP TWO — run OUTSIDE any mutex the caller holds (see this
       # class's own header for why). Resolves bindings and dispatches
-      # each of `reaction.dispatches` in turn, through `Reaction.
-      # deliver_dispatch`'s own shared refusal/defect/retry rescue.
-      # Returns one outcome hash per dispatch — `{delivered: true}` /
-      # `{delivered: false, reason:}` / `{delivered: false, reason:,
-      # defect: true, error_class:}` — never raises, never decides what
-      # to do about a failure; that decision belongs to the caller
-      # (see this class's own header on why compensation orchestration
-      # lives in `SagaInterpreter`, not here).
+      # each of `reaction.dispatches` in turn, through `dispatch_one!`
+      # below. Returns one outcome hash per dispatch — never raises,
+      # never decides what to do about a failure; that decision belongs
+      # to the caller (see this class's own header on why compensation
+      # orchestration lives in `SagaInterpreter`, not here).
+      def dispatch!(reaction, sources:, domain: nil, correlation: nil, on_defect_attempt: nil, on_exhausted: nil)
+        reaction.dispatches.map do |dispatch|
+          dispatch_one!(reaction, dispatch, sources: sources, domain: domain, correlation: correlation,
+                                            on_defect_attempt: on_defect_attempt, on_exhausted: on_exhausted)
+        end
+      end
+
+      # ONE dispatch, checked and run — the granularity `SagaInterpreter`
+      # itself actually needs: a leg's several dispatches are each
+      # logged (`saga_dispatch_log`) and, on failure, each independently
+      # trigger compensation (`unwind`) BEFORE the next dispatch in the
+      # same leg runs, so the reaction-depth ceiling has to be checked
+      # FRESH per dispatch, not once for the whole leg — a real,
+      # exercised distinction (`spec/runtime/saga_spec.rb`'s own "unwinds
+      # when the reaction-depth ceiling is hit" test counts exactly
+      # THREE separate `reaction_depth_reached?` calls across two
+      # dispatches in ONE leg plus one in another). `dispatch!` above is
+      # this method called once per `reaction.dispatches` entry — the
+      # shape `PolicyInterpreter` needs, since a policy's `Reaction`
+      # only ever has one.
+      #
+      # Answers `Reaction.depth_ceiling_record(@door)` directly, without
+      # ever calling `Reaction.deliver_dispatch`, when the ceiling is
+      # reached — the SAME `{delivered: false, reason:}` shape a refusal
+      # gets, so a caller's own outcome-handling code (see
+      # `SagaInterpreter#deliver_saga_dispatch`) needs no separate
+      # branch for it: the ceiling isn't a domain decision, but it isn't
+      # ambiguous either — the leg unambiguously did not run — so it
+      # merges and compensates exactly like an ordinary refusal.
       #
       # `on_defect_attempt`/`on_exhausted`, each called as `(dispatch,
       # attempt, error)` — a `Dispatch`, not a bare `(attempt, error)`
@@ -96,8 +122,17 @@ module Hecksagain
       # more than one — every real `SagaInterpreter` warn/log message
       # already did, and this is what lets that wording survive moving
       # the retry loop itself into this shared class.
-      def dispatch!(reaction, sources:, domain: nil, on_defect_attempt: nil, on_exhausted: nil)
-        reaction.dispatches.map { |dispatch| run_dispatch(dispatch, sources, domain, on_defect_attempt, on_exhausted) }
+      #
+      # `correlation` — the runtime VALUE a correlated leg's own
+      # `reaction.context.correlation_key` names (e.g. `"wire-1"`),
+      # threaded through to `@door.reenter` as `saga_correlation:` —
+      # `nil` for a stateless policy's `Context::Stateless`, matching
+      # `@door.reenter`'s own `saga_correlation: nil` default exactly
+      # (PolicyInterpreter never passes `correlation:` at all).
+      def dispatch_one!(reaction, dispatch, sources:, domain: nil, correlation: nil, on_defect_attempt: nil, on_exhausted: nil)
+        return Reaction.depth_ceiling_record(@door) if Reaction.depth_ceiling_reached?(@door)
+
+        run_dispatch(reaction, dispatch, sources, domain, correlation, on_defect_attempt, on_exhausted)
       end
 
       # PUBLIC on purpose, unlike the rest of this class's own internals
@@ -123,7 +158,7 @@ module Hecksagain
 
       private
 
-      def run_dispatch(dispatch, sources, domain, on_defect_attempt, on_exhausted)
+      def run_dispatch(reaction, dispatch, sources, domain, correlation, on_defect_attempt, on_exhausted)
         target = qualify(dispatch.command_ref, domain)
         args   = resolve_args(dispatch, sources)
 
@@ -131,17 +166,34 @@ module Hecksagain
           max_retries:       SagaInterpreter::MAX_DEFECT_RETRIES,
           on_defect_attempt: on_defect_attempt && ->(attempt, error) { on_defect_attempt.call(dispatch, attempt, error) },
           on_exhausted:      on_exhausted && ->(attempt, error) { on_exhausted.call(dispatch, attempt, error) }
-        ) { @door.reenter(target, **args) }
+        ) { @door.reenter(target, saga_correlation: correlation_kwarg(reaction, correlation), **args) }
+      end
+
+      # `nil` unless `reaction.context` is `Correlated` — a stateless
+      # policy's `Context::Stateless` has no `correlation_key` at all,
+      # and `@door.reenter`'s own `saga_correlation: nil` default is
+      # exactly what every PolicyInterpreter call already produced
+      # before this method existed (it never passed the kwarg). The key
+      # is STRINGIFIED — `SagaInterpreter#deliver_saga_dispatch`'s own
+      # original stamp always was (`pm.correlation_head.to_s`), matching
+      # `Correlation#saga_correlation`'s own read side
+      # (`event.correlation[pm.correlation_head.to_s]`) — unlike the
+      # SYMBOL-keyed `:correlation` bucket in `sources`, which
+      # `BindingLowering`'s own `Reference` lookups expect.
+      def correlation_kwarg(reaction, correlation)
+        return nil unless reaction.context.is_a?(Runtime::ReactionLowering::Context::Correlated)
+
+        { reaction.context.correlation_key.to_s => correlation }
       end
 
       # `command_ref.domain`, if the reaction's own dispatch named one
       # (a policy's `target_domain`) — else the ambient ONLY if the
       # command name doesn't already carry one (the same defensive
-      # check `SagaInterpreter#qualified` already makes; a real
-      # `command_name` never actually contains "::" today — `Naming.
-      # command_ref` always rewrites it to a dot — but the check is
-      # free and matches existing precedent rather than assuming that
-      # holds forever).
+      # check `SagaInterpreter#qualified` used to make, before this
+      # method replaced it for both interpreters; a real `command_name`
+      # never actually contains "::" today — `Naming.command_ref`
+      # always rewrites it to a dot — but the check is free and matches
+      # existing precedent rather than assuming that holds forever).
       def qualify(command_ref, domain)
         return "#{command_ref.domain}::#{command_ref.command_name}" if command_ref.domain
         return command_ref.command_name if command_ref.command_name.include?("::")

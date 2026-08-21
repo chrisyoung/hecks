@@ -174,7 +174,7 @@ module Hecksagain
           trigger:     Trigger.new(name: handler.event_type, qualifier: nil),
           condition:   state_equals(handler.from_state),
           dispatches:  dispatches,
-          context:     Context::Correlated.new(correlation_key: pm.correlates_by, memory: true),
+          context:     Context::Correlated.new(correlation_key: pm.correlation_head, memory: true),
           persistence: Persistence::Checkpointed.new(boundary: :before_dispatch, to_state: handler.to_state),
           failure:     Failure::Managed.new(retry: SagaInterpreter::MAX_DEFECT_RETRIES, compensation: compensation)
         )
