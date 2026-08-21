@@ -203,6 +203,17 @@ PRD 09 (Expression) and PRD 10 (Binding) both shipped, verified, on the correct 
 
 **Decided:** the next increment is closing PRD 10's open generation gap, not starting Slice 3.
 
+### Reassessment (same day) — `Binding`'s structural gap closed; one bar was mis-stated, one remains genuinely open
+
+`bin/project_binding_shape` now generates `rust/src/kernel/binding/mod.rs` from one manifest (`BindingShape`), with Ruby's own structs checked equal to it — closing PRD 10's specific open item. Re-running the table above with that change requires correcting how it was read the first time, not just updating one row: **"is there exactly one semantic definition"** was answered as a single yes/no when this ADR's own Slice 1 section already drew the real distinction — *structure* must not duplicate; *meaning* (the tiny handwritten evaluator per runtime) is expected to, by design, per "generate structure, handwrite meaning." Read correctly:
+
+- **Structure** — `OperatorCategory` (PRD 09, pre-existing) and now `Source`/`ExecutableBinding` (PRD 10) both have exactly one generated source. This bar is **met**, for everything either slice actually touched.
+- **Meaning** — `expression_operators/*.rs` and `binding/logic.rs` are hand-written once per runtime, matching Ruby's own hand-written `Resolver`/`BindingLowering` logic. This is **not a gap** — it's the architecture working as designed. The `lower()`/`resolve()` pair being short and inspectable (PRD 10's own acceptance bar) is what makes duplicating them safely tolerable, the same reasoning that makes a 7-primitive expression evaluator tolerable to hand-write twice.
+
+What this reassessment does **not** change: `rust/src/kernel/expr.rs`'s `Expr` enum and Ruby's `Evaluator`/`Resolver` node set are still two independently hand-authored implementations of the *original*, larger closed grammar — ADR 0022's own complaint, predating both PRDs, untouched by either. That's the one piece of "did duplicated grammar disappear" that's still a real *structural* duplication, not a design-accepted one, and it's the one both "did handwritten Rust/Ruby shrink" questions were really gesturing at. Neither PRD 09 nor PRD 10 set out to fix it (PRD 09's own Non-goals name it explicitly: "generating the `Expr` enum itself... remains open, genuinely harder, work"), so its persistence isn't a new finding — but it does mean the honest state is **structure-duplication is resolved for what these two slices cover; the original, larger structural duplication is unresolved and unattempted.**
+
+**Still decided: `Reaction` does not start yet.** Not because PRD 09/10's own work is incomplete — it isn't, by its own bar — but because starting Slice 3 on top of an `Expr`/`Evaluator`/`Resolver` foundation that still has ADR 0022's original duplication live would mean building `Reaction`'s executable form (which itself leans on `Expression` as its load-bearing primitive, per this ADR's own earlier reasoning) on a substrate that hasn't cleared this ADR's own bar. Generating `Expr` itself — the genuinely harder work both PRDs deferred — is the realistic next gate, not a third structural-generation exercise at Binding's smaller scale.
+
 ### Slice 3 — Reaction is the real stress test, deferred until both earlier slices are boring
 
 `Reaction` tests risk **5** (does the runtime actually get simpler) — meaningful only once 1–4 are independently retired — but it also introduces a risk Expression and Binding structurally cannot expose: **behavioral mode coupling.**
