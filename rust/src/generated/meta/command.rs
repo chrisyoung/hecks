@@ -1014,329 +1014,6 @@ impl Command {
     }
 }
 
-impl crate::kernel::Fielded for DeclareArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "aggregate" => Some(Field::Value(Value::Str(self.aggregate.clone()))),
-            "entity_id" => self.entity_id.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
-            "name" => Some(Field::Nested(&self.name)),
-            "role" => self.role.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "goal" => self.goal.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "provenance" => self.provenance.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "from" => self.from.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct DeclareArgs {
-    pub aggregate: String,
-    pub entity_id: Option<String>,
-    pub name: CommandName,
-    pub role: Option<Actor>,
-    pub goal: Option<Goal>,
-    pub provenance: Option<CommandText>,
-    pub from: Option<CommandText>,
-    pub position: Option<Position>,
-}
-
-pub fn dispatch_declare(
-    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, args: DeclareArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<Command> {
-        args.name.check_invariants()?;
-        if let Some(v) = &args.role { v.check_invariants()?; }
-        if let Some(v) = &args.goal { v.check_invariants()?; }
-        if let Some(v) = &args.provenance { v.check_invariants()?; }
-        if let Some(v) = &args.from { v.check_invariants()?; }
-        if let Some(v) = &args.position { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id, args.name.value.to_string()),
-        build: Box::new(|| Command {
-            aggregate: Some(args.aggregate.clone()),
-            entity_id: args.entity_id.clone(),
-            name: Some(args.name.clone()),
-            role: args.role.clone(),
-            goal: args.goal.clone(),
-            emits: vec![],
-            references: None,
-            attributes: vec![],
-            givens: vec![],
-            ensures: vec![],
-            mutations: vec![],
-            provenance: args.provenance.clone(),
-            from: args.from.clone(),
-            position: args.position.clone(),
-        }),
-    },
-        "Declare",
-        "Bluebook::Command",
-        "Command",
-        "owner_id, name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        let _ = record;
-            Ok(())
-        },
-        &[
-
-        ],
-        &["VerbDeclared"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl DeclareArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("aggregate".to_string(), crate::kernel::Json::Str(self.aggregate.clone())),
-        ("entity_id".to_string(), self.entity_id.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
-        ("name".to_string(), self.name.to_json()),
-        ("role".to_string(), self.role.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("goal".to_string(), self.goal.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("provenance".to_string(), self.provenance.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("from".to_string(), self.from.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("position".to_string(), self.position.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl DeclareArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["aggregate", "entity_id", "name", "role", "goal", "provenance", "from", "position", "id", "owner_id"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Declare does not declare {} — it takes aggregate, entity_id, name, role, goal, provenance, from, position",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        aggregate: { let x = v.require("aggregate", "DeclareArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("DeclareArgs.aggregate: expected String".to_string()))? },
-        entity_id: match v.get("entity_id") { Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("DeclareArgs.entity_id: expected String".to_string()))?), None => None, },
-        name: CommandName::from_json(&v.require("name", "DeclareArgs")?.coerce_single_field("value"))?,
-        role: match v.get("role") { Some(x) => Some(Actor::from_json(&x.coerce_single_field("value"))?), None => None, },
-        goal: match v.get("goal") { Some(x) => Some(Goal::from_json(&x.coerce_single_field("value"))?), None => None, },
-        provenance: match v.get("provenance") { Some(x) => Some(CommandText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        from: match v.get("from") { Some(x) => Some(CommandText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        position: match v.get("position") { Some(x) => Some(Position::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
-impl crate::kernel::Fielded for ArgumentArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "name" => Some(Field::Nested(&self.name)),
-            "type" => Some(Field::Nested(&self.r#type)),
-            "list" => Some(Field::Nested(&self.list)),
-            "optional" => self.optional.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "pattern" => self.pattern.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "default" => self.default.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "admits" => self.admits.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct ArgumentArgs {
-    pub name: ArgName,
-    pub r#type: ArgType,
-    pub list: ArgType,
-    pub optional: Option<ArgType>,
-    pub pattern: Option<ArgType>,
-    pub default: Option<ArgType>,
-    pub admits: Option<ArgType>,
-}
-
-pub fn dispatch_argument(
-    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: ArgumentArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<Command> {
-        args.name.check_invariants()?;
-        args.r#type.check_invariants()?;
-        args.list.check_invariants()?;
-        if let Some(v) = &args.optional { v.check_invariants()?; }
-        if let Some(v) = &args.pattern { v.check_invariants()?; }
-        if let Some(v) = &args.default { v.check_invariants()?; }
-        if let Some(v) = &args.admits { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
-        "Argument",
-        "Bluebook::Command",
-        "Command",
-        "owner_id, name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        record.attributes.push(Argument { name: args.name.value.clone(), r#type: args.r#type.value.clone(), list: args.list.value.clone(), default: args.default.clone().map(|v| v.value.clone()), optional: args.optional.clone().map(|v| v.value.clone()), pattern: args.pattern.clone().map(|v| v.value.clone()), admits: args.admits.clone().map(|v| v.value.clone()) });
-            Ok(())
-        },
-        &[
-
-        ],
-        &["ArgumentAttached"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl ArgumentArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("name".to_string(), self.name.to_json()),
-        ("type".to_string(), self.r#type.to_json()),
-        ("list".to_string(), self.list.to_json()),
-        ("optional".to_string(), self.optional.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("pattern".to_string(), self.pattern.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("default".to_string(), self.default.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("admits".to_string(), self.admits.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl ArgumentArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["name", "type", "list", "optional", "pattern", "default", "admits", "id", "command", "owner_id"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Argument does not declare {} — it takes name, type, list, optional, pattern, default, admits",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        name: ArgName::from_json(&v.require("name", "ArgumentArgs")?.coerce_single_field("value"))?,
-        r#type: ArgType::from_json(&v.require("type", "ArgumentArgs")?.coerce_single_field("value"))?,
-        list: ArgType::from_json(&v.require("list", "ArgumentArgs")?.coerce_single_field("value"))?,
-        optional: match v.get("optional") { Some(x) => Some(ArgType::from_json(&x.coerce_single_field("value"))?), None => None, },
-        pattern: match v.get("pattern") { Some(x) => Some(ArgType::from_json(&x.coerce_single_field("value"))?), None => None, },
-        default: match v.get("default") { Some(x) => Some(ArgType::from_json(&x.coerce_single_field("value"))?), None => None, },
-        admits: match v.get("admits") { Some(x) => Some(ArgType::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
-impl crate::kernel::Fielded for ReferenceArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "points_at" => Some(Field::Value(Value::Str(self.points_at.clone()))),
-            "name" => Some(Field::Nested(&self.name)),
-            "list" => Some(Field::Nested(&self.list)),
-            "optional" => self.optional.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "pattern" => self.pattern.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "default" => self.default.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "admits" => self.admits.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct ReferenceArgs {
-    pub points_at: String,
-    pub name: ArgName,
-    pub list: ArgType,
-    pub optional: Option<ArgType>,
-    pub pattern: Option<ArgType>,
-    pub default: Option<ArgType>,
-    pub admits: Option<ArgType>,
-}
-
-pub fn dispatch_reference(
-    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: ReferenceArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<Command> {
-        args.name.check_invariants()?;
-        args.list.check_invariants()?;
-        if let Some(v) = &args.optional { v.check_invariants()?; }
-        if let Some(v) = &args.pattern { v.check_invariants()?; }
-        if let Some(v) = &args.default { v.check_invariants()?; }
-        if let Some(v) = &args.admits { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
-        "Reference",
-        "Bluebook::Command",
-        "Command",
-        "owner_id, name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        record.attributes.push(Argument { name: args.name.value.clone(), r#type: args.points_at.clone(), list: args.list.value.clone(), default: args.default.clone().map(|v| v.value.clone()), optional: args.optional.clone().map(|v| v.value.clone()), pattern: args.pattern.clone().map(|v| v.value.clone()), admits: args.admits.clone().map(|v| v.value.clone()) });
-            Ok(())
-        },
-        &[
-
-        ],
-        &["ArgumentReferenceAttached"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl ReferenceArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("points_at".to_string(), crate::kernel::Json::Str(self.points_at.clone())),
-        ("name".to_string(), self.name.to_json()),
-        ("list".to_string(), self.list.to_json()),
-        ("optional".to_string(), self.optional.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("pattern".to_string(), self.pattern.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("default".to_string(), self.default.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("admits".to_string(), self.admits.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl ReferenceArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["points_at", "name", "list", "optional", "pattern", "default", "admits", "id", "command", "owner_id"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Reference does not declare {} — it takes points_at, name, list, optional, pattern, default, admits",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        points_at: { let x = v.require("points_at", "ReferenceArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("ReferenceArgs.points_at: expected String".to_string()))? },
-        name: ArgName::from_json(&v.require("name", "ReferenceArgs")?.coerce_single_field("value"))?,
-        list: ArgType::from_json(&v.require("list", "ReferenceArgs")?.coerce_single_field("value"))?,
-        optional: match v.get("optional") { Some(x) => Some(ArgType::from_json(&x.coerce_single_field("value"))?), None => None, },
-        pattern: match v.get("pattern") { Some(x) => Some(ArgType::from_json(&x.coerce_single_field("value"))?), None => None, },
-        default: match v.get("default") { Some(x) => Some(ArgType::from_json(&x.coerce_single_field("value"))?), None => None, },
-        admits: match v.get("admits") { Some(x) => Some(ArgType::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
 impl crate::kernel::Fielded for RuleArgs {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
@@ -1357,7 +1034,7 @@ pub struct RuleArgs {
 }
 
 pub fn dispatch_rule(
-    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: RuleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: RuleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1365,7 +1042,25 @@ pub fn dispatch_rule(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
+        build: Box::new(|| Command {
+            aggregate: None,
+            entity_id: None,
+            name: None,
+            role: None,
+            goal: None,
+            emits: vec![],
+            references: None,
+            attributes: vec![],
+            givens: vec![],
+            ensures: vec![],
+            mutations: vec![],
+            provenance: None,
+            from: None,
+            position: None,
+        }),
+    },
         "Rule",
         "Bluebook::Command",
         "Command",
@@ -1400,7 +1095,7 @@ impl RuleArgs {
 
 impl RuleArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["description", "canonical", "id", "command", "owner_id", "name"]);
+let unknown = v.unknown_keys(&["description", "canonical", "id", "owner_id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Rule does not declare {} — it takes description, canonical",
@@ -1434,7 +1129,7 @@ pub struct EnsureArgs {
 }
 
 pub fn dispatch_ensure(
-    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: EnsureArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: EnsureArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1442,7 +1137,25 @@ pub fn dispatch_ensure(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
+        build: Box::new(|| Command {
+            aggregate: None,
+            entity_id: None,
+            name: None,
+            role: None,
+            goal: None,
+            emits: vec![],
+            references: None,
+            attributes: vec![],
+            givens: vec![],
+            ensures: vec![],
+            mutations: vec![],
+            provenance: None,
+            from: None,
+            position: None,
+        }),
+    },
         "Ensure",
         "Bluebook::Command",
         "Command",
@@ -1477,7 +1190,7 @@ impl EnsureArgs {
 
 impl EnsureArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["description", "canonical", "id", "command", "owner_id", "name"]);
+let unknown = v.unknown_keys(&["description", "canonical", "id", "owner_id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Ensure does not declare {} — it takes description, canonical",
@@ -1517,7 +1230,7 @@ pub struct ChangeArgs {
 }
 
 pub fn dispatch_change(
-    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: ChangeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: ChangeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         args.target.check_invariants()?;
         if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove"].contains(&args.op.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\" — got ", args.op.value))); }
@@ -1529,7 +1242,25 @@ pub fn dispatch_change(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
+        build: Box::new(|| Command {
+            aggregate: None,
+            entity_id: None,
+            name: None,
+            role: None,
+            goal: None,
+            emits: vec![],
+            references: None,
+            attributes: vec![],
+            givens: vec![],
+            ensures: vec![],
+            mutations: vec![],
+            provenance: None,
+            from: None,
+            position: None,
+        }),
+    },
         "Change",
         "Bluebook::Command",
         "Command",
@@ -1567,7 +1298,7 @@ impl ChangeArgs {
 
 impl ChangeArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["target", "op", "field", "kind", "source", "id", "command", "owner_id", "name"]);
+let unknown = v.unknown_keys(&["target", "op", "field", "kind", "source", "id", "owner_id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Change does not declare {} — it takes target, op, field, kind, source",
@@ -1602,14 +1333,32 @@ pub struct ActsOnArgs {
 }
 
 pub fn dispatch_acts_on(
-    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: ActsOnArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: ActsOnArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         args.root.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
+        build: Box::new(|| Command {
+            aggregate: None,
+            entity_id: None,
+            name: None,
+            role: None,
+            goal: None,
+            emits: vec![],
+            references: None,
+            attributes: vec![],
+            givens: vec![],
+            ensures: vec![],
+            mutations: vec![],
+            provenance: None,
+            from: None,
+            position: None,
+        }),
+    },
         "ActsOn",
         "Bluebook::Command",
         "Command",
@@ -1643,7 +1392,7 @@ impl ActsOnArgs {
 
 impl ActsOnArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["root", "id", "command", "owner_id", "name"]);
+let unknown = v.unknown_keys(&["root", "id", "owner_id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "ActsOn does not declare {} — it takes root",
@@ -1674,14 +1423,32 @@ pub struct AnnounceArgs {
 }
 
 pub fn dispatch_announce(
-    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: AnnounceArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: AnnounceArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         args.announces.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
+        build: Box::new(|| Command {
+            aggregate: None,
+            entity_id: None,
+            name: None,
+            role: None,
+            goal: None,
+            emits: vec![],
+            references: None,
+            attributes: vec![],
+            givens: vec![],
+            ensures: vec![],
+            mutations: vec![],
+            provenance: None,
+            from: None,
+            position: None,
+        }),
+    },
         "Announce",
         "Bluebook::Command",
         "Command",
@@ -1714,7 +1481,7 @@ impl AnnounceArgs {
 
 impl AnnounceArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["announces", "id", "command", "owner_id", "name"]);
+let unknown = v.unknown_keys(&["announces", "id", "owner_id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Announce does not declare {} — it takes announces",

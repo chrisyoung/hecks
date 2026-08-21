@@ -197,498 +197,397 @@ pub fn dispatch_by_name(
     mutations: &mut Vec<crate::kernel::MutationRecord>,
 ) -> Result<Vec<crate::kernel::Event>, crate::kernel::Refusal> {
     match verb {
-          "Bluebook::Aggregate.Declare" => {
-              let args = crate::generated::meta::aggregate::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.bluebook, &args.bluebook, "Bluebook", "name")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "bluebook", as_name: "bluebook", target: "Bluebook::Bluebook" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_declare(&mut store.aggregate, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
           "Bluebook::Aggregate.Identify" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Identify creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Identify creates a Aggregate — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::IdentifyArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Identify", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_identify(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_identify(&mut store.aggregate, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Attribute" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Attribute creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::AttributeArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Attribute", caller_role)?;
               crate::kernel::check_reference(&store.valueobject, &args.r#type, "ValueObject", "aggregate, name")?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "type", as_name: "type", target: "Bluebook::ValueObject" }], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_attribute(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_attribute(&mut store.aggregate, &bluebook, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Reference" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Reference creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::ReferenceArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Reference", caller_role)?;
               crate::kernel::check_reference(&store.aggregate, &args.points_at, "Aggregate", "bluebook, name")?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "points_at", as_name: "points_at", target: "Bluebook::Aggregate" }], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_reference(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_reference(&mut store.aggregate, &bluebook, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Holds" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Holds creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::HoldsArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Holds", caller_role)?;
               crate::kernel::check_reference(&store.entity, &args.holds, "Entity", "aggregate, name")?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "holds", as_name: "holds", target: "Bluebook::Entity" }], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_holds(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_holds(&mut store.aggregate, &bluebook, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Lifecycle" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Lifecycle creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Lifecycle creates a Aggregate — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::LifecycleArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Lifecycle", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_lifecycle(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_lifecycle(&mut store.aggregate, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Transition" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Transition creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Transition creates a Aggregate — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::TransitionArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Transition", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_transition(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_transition(&mut store.aggregate, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Seal" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Seal creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Seal creates a Aggregate — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::SealArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Seal", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_seal(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_seal(&mut store.aggregate, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Value" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Value creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::ValueArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Value", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_value(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_value(&mut store.aggregate, &bluebook, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Invariant" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Invariant creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Invariant creates a Aggregate — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::InvariantArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Invariant", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_invariant(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_invariant(&mut store.aggregate, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Precondition" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Precondition creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Precondition creates a Aggregate — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::PreconditionArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Precondition", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_precondition(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_precondition(&mut store.aggregate, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Aggregate.Projects" => {
-              let id = crate::generated::meta::aggregate::Aggregate::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Aggregate.Projects creates a Aggregate — pass bluebook".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::aggregate::ProjectsArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Projects", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Aggregate", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::aggregate::dispatch_projects(&mut store.aggregate, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Bluebook.Declare" => {
-              let args = crate::generated::meta::bluebook::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
               let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::bluebook::dispatch_declare(&mut store.bluebook, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::aggregate::dispatch_projects(&mut store.aggregate, &bluebook, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Bluebook.Attach" => {
-              let id = crate::generated::meta::bluebook::Bluebook::extract_id(args_json)?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Bluebook.Attach creates a Bluebook — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::bluebook::AttachArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Attach", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Bluebook", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::bluebook::dispatch_attach(&mut store.bluebook, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::bluebook::dispatch_attach(&mut store.bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Bluebook.Normalise" => {
-              let id = crate::generated::meta::bluebook::Bluebook::extract_id(args_json)?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Bluebook.Normalise creates a Bluebook — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::bluebook::NormaliseArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Normalise", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Bluebook", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::bluebook::dispatch_normalise(&mut store.bluebook, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Command.Declare" => {
-              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Declare creates a Command — pass owner_id".to_string()))?.to_id_component()?;
-              let args = crate::generated::meta::command::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.aggregate, &args.aggregate, "Aggregate", "bluebook, name")?;
-              if let Some(v) = &args.entity_id { crate::kernel::check_reference(&store.entity, v, "Entity", "aggregate, name")?; }
               let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "aggregate", as_name: "aggregate", target: "Bluebook::Aggregate" }, crate::kernel::ReferenceSpec { field: "entity_id", as_name: "entity", target: "Bluebook::Entity" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::command::dispatch_declare(&mut store.command, &owner_id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Command.Argument" => {
-              let id = crate::generated::meta::command::Command::extract_id(args_json)?;
-              let args = crate::generated::meta::command::ArgumentArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Argument", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::command::dispatch_argument(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Command.Reference" => {
-              let id = crate::generated::meta::command::Command::extract_id(args_json)?;
-              let args = crate::generated::meta::command::ReferenceArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Reference", caller_role)?;
-              crate::kernel::check_reference(&store.aggregate, &args.points_at, "Aggregate", "bluebook, name")?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "points_at", as_name: "points_at", target: "Bluebook::Aggregate" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::command::dispatch_reference(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::bluebook::dispatch_normalise(&mut store.bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Command.Rule" => {
-              let id = crate::generated::meta::command::Command::extract_id(args_json)?;
+              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Rule creates a Command — pass owner_id".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Rule creates a Command — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::command::RuleArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Rule", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::command::dispatch_rule(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::command::dispatch_rule(&mut store.command, &owner_id, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Command.Ensure" => {
-              let id = crate::generated::meta::command::Command::extract_id(args_json)?;
+              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Ensure creates a Command — pass owner_id".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Ensure creates a Command — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::command::EnsureArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Ensure", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::command::dispatch_ensure(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::command::dispatch_ensure(&mut store.command, &owner_id, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Command.Change" => {
-              let id = crate::generated::meta::command::Command::extract_id(args_json)?;
+              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Change creates a Command — pass owner_id".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Change creates a Command — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::command::ChangeArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Change", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::command::dispatch_change(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::command::dispatch_change(&mut store.command, &owner_id, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Command.ActsOn" => {
-              let id = crate::generated::meta::command::Command::extract_id(args_json)?;
+              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.ActsOn creates a Command — pass owner_id".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.ActsOn creates a Command — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::command::ActsOnArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "ActsOn", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::command::dispatch_acts_on(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::command::dispatch_acts_on(&mut store.command, &owner_id, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Command.Announce" => {
-              let id = crate::generated::meta::command::Command::extract_id(args_json)?;
+              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Announce creates a Command — pass owner_id".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Command.Announce creates a Command — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::command::AnnounceArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Announce", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::command::dispatch_announce(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Entity.Declare" => {
-              let args = crate::generated::meta::entity::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.aggregate, &args.aggregate, "Aggregate", "bluebook, name")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "aggregate", as_name: "aggregate", target: "Bluebook::Aggregate" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::entity::dispatch_declare(&mut store.entity, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::command::dispatch_announce(&mut store.command, &owner_id, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Entity.Identify" => {
-              let id = crate::generated::meta::entity::Entity::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Identify creates a Entity — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Identify creates a Entity — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::entity::IdentifyArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Identify", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Entity", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::entity::dispatch_identify(&mut store.entity, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::entity::dispatch_identify(&mut store.entity, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Entity.Seal" => {
-              let id = crate::generated::meta::entity::Entity::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Seal creates a Entity — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Seal creates a Entity — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::entity::SealArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Seal", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Entity", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::entity::dispatch_seal(&mut store.entity, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::entity::dispatch_seal(&mut store.entity, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Entity.Attribute" => {
-              let id = crate::generated::meta::entity::Entity::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Attribute creates a Entity — pass aggregate".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::entity::AttributeArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Attribute", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Entity", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::entity::dispatch_attribute(&mut store.entity, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::entity::dispatch_attribute(&mut store.entity, &aggregate, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Entity.Precondition" => {
-              let id = crate::generated::meta::entity::Entity::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Precondition creates a Entity — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Precondition creates a Entity — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::entity::PreconditionArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Precondition", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Entity", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::entity::dispatch_precondition(&mut store.entity, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::entity::dispatch_precondition(&mut store.entity, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Entity.Invariant" => {
-              let id = crate::generated::meta::entity::Entity::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Invariant creates a Entity — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Invariant creates a Entity — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::entity::InvariantArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Invariant", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Entity", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::entity::dispatch_invariant(&mut store.entity, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::entity::dispatch_invariant(&mut store.entity, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Entity.Lifecycle" => {
-              let id = crate::generated::meta::entity::Entity::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Lifecycle creates a Entity — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Lifecycle creates a Entity — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::entity::LifecycleArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Lifecycle", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Entity", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::entity::dispatch_lifecycle(&mut store.entity, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::entity::dispatch_lifecycle(&mut store.entity, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Entity.Transition" => {
-              let id = crate::generated::meta::entity::Entity::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Transition creates a Entity — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Entity.Transition creates a Entity — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::entity::TransitionArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Transition", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Entity", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::entity::dispatch_transition(&mut store.entity, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Policy.Declare" => {
-              let args = crate::generated::meta::policy::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.bluebook, &args.bluebook, "Bluebook", "name")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "bluebook", as_name: "bluebook", target: "Bluebook::Bluebook" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::policy::dispatch_declare(&mut store.policy, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::entity::dispatch_transition(&mut store.entity, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Policy.Bind" => {
-              let id = crate::generated::meta::policy::Policy::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Policy.Bind creates a Policy — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Policy.Bind creates a Policy — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::policy::BindArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Bind", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Policy", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::policy::dispatch_bind(&mut store.policy, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::ProcessManager.Declare" => {
-              let args = crate::generated::meta::processmanager::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.bluebook, &args.bluebook, "Bluebook", "name")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "bluebook", as_name: "bluebook", target: "Bluebook::Bluebook" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::processmanager::dispatch_declare(&mut store.processmanager, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::policy::dispatch_bind(&mut store.policy, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ProcessManager.State" => {
-              let id = crate::generated::meta::processmanager::ProcessManager::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ProcessManager.State creates a ProcessManager — pass bluebook".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::processmanager::StateArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "State", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ProcessManager", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::processmanager::dispatch_state(&mut store.processmanager, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::processmanager::dispatch_state(&mut store.processmanager, &bluebook, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ProcessManager.Handler" => {
-              let id = crate::generated::meta::processmanager::ProcessManager::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ProcessManager.Handler creates a ProcessManager — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ProcessManager.Handler creates a ProcessManager — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::processmanager::HandlerArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Handler", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ProcessManager", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::processmanager::dispatch_handler(&mut store.processmanager, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::ReadModel.Declare" => {
-              let args = crate::generated::meta::readmodel::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.bluebook, &args.bluebook, "Bluebook", "name")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "bluebook", as_name: "bluebook", target: "Bluebook::Bluebook" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::readmodel::dispatch_declare(&mut store.readmodel, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::processmanager::dispatch_handler(&mut store.processmanager, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ReadModel.Gather" => {
-              let id = crate::generated::meta::readmodel::ReadModel::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.Gather creates a ReadModel — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.Gather creates a ReadModel — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::readmodel::GatherArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Gather", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ReadModel", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::readmodel::dispatch_gather(&mut store.readmodel, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::readmodel::dispatch_gather(&mut store.readmodel, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ReadModel.GroupBy" => {
-              let id = crate::generated::meta::readmodel::ReadModel::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.GroupBy creates a ReadModel — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.GroupBy creates a ReadModel — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::readmodel::GroupByArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "GroupBy", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ReadModel", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::readmodel::dispatch_group_by(&mut store.readmodel, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::readmodel::dispatch_group_by(&mut store.readmodel, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ReadModel.Count" => {
-              let id = crate::generated::meta::readmodel::ReadModel::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.Count creates a ReadModel — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.Count creates a ReadModel — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::readmodel::CountArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Count", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ReadModel", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::readmodel::dispatch_count(&mut store.readmodel, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::readmodel::dispatch_count(&mut store.readmodel, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ReadModel.Median" => {
-              let id = crate::generated::meta::readmodel::ReadModel::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.Median creates a ReadModel — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.Median creates a ReadModel — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::readmodel::MedianArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Median", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ReadModel", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::readmodel::dispatch_median(&mut store.readmodel, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::readmodel::dispatch_median(&mut store.readmodel, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ReadModel.Option" => {
-              let id = crate::generated::meta::readmodel::ReadModel::extract_id(args_json)?;
+              let bluebook = args_json.dig("bluebook").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.Option creates a ReadModel — pass bluebook".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ReadModel.Option creates a ReadModel — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::readmodel::OptionArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Option", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ReadModel", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::readmodel::dispatch_option(&mut store.readmodel, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Query.Declare" => {
-              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Query.Declare creates a Query — pass owner_id".to_string()))?.to_id_component()?;
-              let args = crate::generated::meta::query::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.aggregate, &args.aggregate, "Aggregate", "bluebook, name")?;
-              if let Some(v) = &args.entity_id { crate::kernel::check_reference(&store.entity, v, "Entity", "aggregate, name")?; }
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "aggregate", as_name: "aggregate", target: "Bluebook::Aggregate" }, crate::kernel::ReferenceSpec { field: "entity_id", as_name: "entity", target: "Bluebook::Entity" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::query::dispatch_declare(&mut store.query, &owner_id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::readmodel::dispatch_option(&mut store.readmodel, &bluebook, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Query.Filter" => {
-              let id = crate::generated::meta::query::Query::extract_id(args_json)?;
+              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Query.Filter creates a Query — pass owner_id".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Query.Filter creates a Query — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::query::FilterArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Filter", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Query", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::query::dispatch_filter(&mut store.query, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::query::dispatch_filter(&mut store.query, &owner_id, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Query.Option" => {
-              let id = crate::generated::meta::query::Query::extract_id(args_json)?;
+              let owner_id = args_json.dig("owner_id").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Query.Option creates a Query — pass owner_id".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Query.Option creates a Query — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::query::OptionArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Option", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Query", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::query::dispatch_option(&mut store.query, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Query.Argument" => {
-              let id = crate::generated::meta::query::Query::extract_id(args_json)?;
-              let args = crate::generated::meta::query::ArgumentArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Argument", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Query", &id);
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::query::dispatch_argument(&mut store.query, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::ValueObject.Declare" => {
-              let args = crate::generated::meta::valueobject::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.aggregate, &args.aggregate, "Aggregate", "bluebook, name")?;
               let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "aggregate", as_name: "aggregate", target: "Bluebook::Aggregate" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::valueobject::dispatch_declare(&mut store.valueobject, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::ValueObject.Field" => {
-              let id = crate::generated::meta::valueobject::ValueObject::extract_id(args_json)?;
-              let args = crate::generated::meta::valueobject::FieldArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Field", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ValueObject", &id);
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::valueobject::dispatch_field(&mut store.valueobject, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::query::dispatch_option(&mut store.query, &owner_id, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ValueObject.Close" => {
-              let id = crate::generated::meta::valueobject::ValueObject::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ValueObject.Close creates a ValueObject — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ValueObject.Close creates a ValueObject — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::valueobject::CloseArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Close", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ValueObject", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::valueobject::dispatch_close(&mut store.valueobject, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::valueobject::dispatch_close(&mut store.valueobject, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ValueObject.Assert" => {
-              let id = crate::generated::meta::valueobject::ValueObject::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ValueObject.Assert creates a ValueObject — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ValueObject.Assert creates a ValueObject — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::valueobject::AssertArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Assert", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ValueObject", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::valueobject::dispatch_assert(&mut store.valueobject, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::valueobject::dispatch_assert(&mut store.valueobject, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ValueObject.Member" => {
-              let id = crate::generated::meta::valueobject::ValueObject::extract_id(args_json)?;
+              let aggregate = args_json.dig("aggregate").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ValueObject.Member creates a ValueObject — pass aggregate".to_string()))?.to_id_component()?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::ValueObject.Member creates a ValueObject — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::valueobject::MemberArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Member", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ValueObject", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::valueobject::dispatch_member(&mut store.valueobject, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Bluebook::Syntax.Declare" => {
-              let args = crate::generated::meta::syntax::DeclareArgs::from_json(args_json)?;
-              crate::kernel::check_role(Some("Language"), "Declare", caller_role)?;
-              crate::kernel::check_reference(&store.bluebook, &args.bluebook, "Bluebook", "name")?;
-              let owner_deref = Vec::new();
-              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "bluebook", as_name: "bluebook", target: "Bluebook::Bluebook" }], &args);
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::syntax::dispatch_declare(&mut store.syntax, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::valueobject::dispatch_member(&mut store.valueobject, &aggregate, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Syntax.Keyword" => {
-              let id = crate::generated::meta::syntax::Syntax::extract_id(args_json)?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Syntax.Keyword creates a Syntax — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::syntax::KeywordArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Keyword", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Syntax", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::syntax::dispatch_keyword(&mut store.syntax, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::syntax::dispatch_keyword(&mut store.syntax, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::Syntax.Argument" => {
-              let id = crate::generated::meta::syntax::Syntax::extract_id(args_json)?;
+              let name = args_json.dig("name").ok_or_else(|| crate::kernel::Refusal::NotFound("Bluebook::Syntax.Argument creates a Syntax — pass name".to_string()))?.to_id_component()?;
               let args = crate::generated::meta::syntax::ArgumentArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Language"), "Argument", caller_role)?;
-              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Syntax", &id);
+              let owner_deref = Vec::new();
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::meta::syntax::dispatch_argument(&mut store.syntax, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::meta::syntax::dispatch_argument(&mut store.syntax, &name, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ProcessManager.Handler.Dispatch" => {
               let parent_id = crate::generated::meta::processmanager::ProcessManager::extract_id(args_json)?;
@@ -795,7 +694,7 @@ pub static REFERENCE_TABLE: crate::kernel::ReferenceTable = &[
     ("Bluebook::ReadModel", &[crate::kernel::ReferenceSpec { field: "bluebook", as_name: "bluebook", target: "Bluebook::Bluebook" }]),
     ("Bluebook::Query", &[crate::kernel::ReferenceSpec { field: "aggregate", as_name: "aggregate", target: "Bluebook::Aggregate" }, crate::kernel::ReferenceSpec { field: "entity_id", as_name: "entity", target: "Bluebook::Entity" }]),
     ("Bluebook::ValueObject", &[crate::kernel::ReferenceSpec { field: "aggregate", as_name: "aggregate", target: "Bluebook::Aggregate" }]),
-    ("Bluebook::Syntax", &[]),
+    ("Bluebook::Syntax", &[crate::kernel::ReferenceSpec { field: "bluebook", as_name: "bluebook", target: "Bluebook::Bluebook" }]),
     ("Bluebook::Vocabulary", &[]),
 ];
 

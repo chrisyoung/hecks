@@ -188,12 +188,13 @@ module RustProjection
     # redundant `sets` on an already-implicit creation attribute).
     # THE IDENTITY IS THE JOIN OF ITS PARTS (Naming::IDENTITY_JOIN is ":",
     # read directly) — one component per `identified_by` entry, each
-    # resolved the same way `Runtime::Identity.from` resolves it: a dotted
-    # path walks into the named argument's own field; a BARE component that
-    # IS a declared command attribute reads that argument directly, no
-    # walk; a bare component that is NOT a declared attribute (`owner_id` —
-    # "never a declared attribute," per `language/bluebook/behavior.bluebook`'s
-    # own comment) isn't in the command's own typed `XArgs` struct at all —
+    # resolved the same way `Runtime::Identity.from` resolves it: a
+    # component whose HEAD names a declared command attribute walks into
+    # that argument's own field (a dotted `rest` walks further into it —
+    # `box_number.value`, a value-object-typed argument); a component
+    # whose head is NOT a declared attribute (`owner_id` — "never a
+    # declared attribute," per `language/bluebook/behavior.bluebook`'s own
+    # comment) isn't in the command's own typed `XArgs` struct at all —
     # it's an addressing key allowed straight through `refuse_unknown_
     # arguments`'s allowlist the same way `id:` already is, so it never
     # became a struct field; the generated dispatch function instead takes
@@ -203,16 +204,44 @@ module RustProjection
     # JSON key `registry.rb`'s own router reads it off `args_json` under,
     # once it stops merely declaring the parameter and starts actually
     # supplying it.
+    #
+    # THE HEAD CHECK GOVERNS BOTH SHAPES, NOT JUST THE BARE ONE — this used
+    # to branch on `rest.any?` FIRST, so any dotted path unconditionally
+    # read `args.<head>.<rest>`, assuming the head was always one of this
+    # command's OWN declared attributes. True for every ordinary domain's
+    # creating command until the self-hosted meta-grammar's own
+    # owner-mutating commands (`Aggregate.Identify` et al.) exercised the
+    # one combination nothing else in the corpus had: a DOTTED identity
+    # component (`name.value`, the meta-Aggregate's own name being a
+    # single-field value object) whose head belongs to the OWNER being
+    # mutated, not to the command's own args — `IdentifyArgs` has only
+    # `path`, so `args.name` doesn't exist, and `cargo build` refused it.
+    # The head-declared? check now gates BOTH shapes: undeclared means
+    # external regardless of whether the path was dotted, because a value
+    # supplied from outside args is already the resolved scalar the caller
+    # read off the owner's own state — there is no `.value` left to walk.
     def identity_components(aggregate, command)
       aggregate[:identified_by].map do |path|
         head, *rest = path.split(".")
-        if rest.any?
-          { expr: "args.#{rust_ident_field(head)}.#{rest.map { |seg| rust_ident_field(seg) }.join('.')}.to_string()", param: nil }
-        elsif command[:attributes].any? { |a| a[:name].to_s == head }
-          { expr: "args.#{rust_ident_field(head)}.to_string()", param: nil }
+        if command[:attributes].any? { |a| a[:name].to_s == head }
+          if rest.any?
+            { expr: "args.#{rust_ident_field(head)}.#{rest.map { |seg| rust_ident_field(seg) }.join('.')}.to_string()", param: nil }
+          else
+            { expr: "args.#{rust_ident_field(head)}.to_string()", param: nil }
+          end
         else
+          # `.to_string()` here too, matching the other two branches — a
+          # single-component identity returns this expr UNWRAPPED
+          # (build_identity_expr, below: `components.first[:expr]` when
+          # there's only one), straight into a `Hydrate::Create { id: ...
+          # }` field typed `String`. This param is `&str`; every other
+          # branch already produces an owned `String`, so this was the one
+          # combination (single identity component, and it's external) that
+          # left a bare `&str` where `String` was expected — never hit
+          # before the meta-grammar's own owner-mutating commands added a
+          # case with exactly one identity part, entirely external.
           param = rust_ident_field(head)
-          { expr: param, param: "#{param}: &str", head: head }
+          { expr: "#{param}.to_string()", param: "#{param}: &str", head: head }
         end
       end
     end

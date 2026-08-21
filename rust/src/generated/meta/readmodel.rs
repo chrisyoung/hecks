@@ -610,122 +610,6 @@ impl ReadModel {
     }
 }
 
-impl crate::kernel::Fielded for DeclareArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "bluebook" => Some(Field::Value(Value::Str(self.bluebook.clone()))),
-            "name" => Some(Field::Nested(&self.name)),
-            "description" => self.description.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "query_name" => Some(Field::Nested(&self.query_name)),
-            "reference_name" => self.reference_name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "reference_target" => self.reference_target.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct DeclareArgs {
-    pub bluebook: String,
-    pub name: ReadModelName,
-    pub description: Option<ProjectionPurpose>,
-    pub query_name: ReadModelText,
-    pub reference_name: Option<ReadModelText>,
-    pub reference_target: Option<ReadModelText>,
-    pub position: Option<Position>,
-}
-
-pub fn dispatch_declare(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, args: DeclareArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<ReadModel> {
-        args.name.check_invariants()?;
-        if let Some(v) = &args.description { v.check_invariants()?; }
-        args.query_name.check_invariants()?;
-        if let Some(v) = &args.reference_name { v.check_invariants()?; }
-        if let Some(v) = &args.reference_target { v.check_invariants()?; }
-        if let Some(v) = &args.position { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", args.bluebook.to_string(), args.name.value.to_string()),
-        build: Box::new(|| ReadModel {
-            bluebook: Some(args.bluebook.clone()),
-            name: Some(args.name.clone()),
-            description: args.description.clone(),
-            query_name: Some(args.query_name.clone()),
-            reference_name: args.reference_name.clone(),
-            reference_target: args.reference_target.clone(),
-            aggregate_heads: vec![],
-            options: vec![],
-            group_by: vec![],
-            count: None,
-            median_field: None,
-            position: args.position.clone(),
-        }),
-    },
-        "Declare",
-        "Bluebook::ReadModel",
-        "ReadModel",
-        "bluebook, name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        let _ = record;
-            Ok(())
-        },
-        &[
-
-        ],
-        &["ProjectionDeclared"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl DeclareArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("bluebook".to_string(), crate::kernel::Json::Str(self.bluebook.clone())),
-        ("name".to_string(), self.name.to_json()),
-        ("description".to_string(), self.description.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("query_name".to_string(), self.query_name.to_json()),
-        ("reference_name".to_string(), self.reference_name.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("reference_target".to_string(), self.reference_target.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("position".to_string(), self.position.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl DeclareArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["bluebook", "name", "description", "query_name", "reference_name", "reference_target", "position", "id"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Declare does not declare {} — it takes bluebook, name, description, query_name, reference_name, reference_target, position",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        bluebook: { let x = v.require("bluebook", "DeclareArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("DeclareArgs.bluebook: expected String".to_string()))? },
-        name: ReadModelName::from_json(&v.require("name", "DeclareArgs")?.coerce_single_field("value"))?,
-        description: match v.get("description") { Some(x) => Some(ProjectionPurpose::from_json(&x.coerce_single_field("value"))?), None => None, },
-        query_name: ReadModelText::from_json(&v.require("query_name", "DeclareArgs")?.coerce_single_field("value"))?,
-        reference_name: match v.get("reference_name") { Some(x) => Some(ReadModelText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        reference_target: match v.get("reference_target") { Some(x) => Some(ReadModelText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        position: match v.get("position") { Some(x) => Some(Position::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
 impl crate::kernel::Fielded for GatherArgs {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
@@ -748,7 +632,7 @@ pub struct GatherArgs {
 }
 
 pub fn dispatch_gather(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: GatherArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: GatherArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
         args.aggregate.check_invariants()?;
         args.r#as.check_invariants()?;
@@ -757,7 +641,23 @@ pub fn dispatch_gather(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
+        build: Box::new(|| ReadModel {
+            bluebook: None,
+            name: None,
+            description: None,
+            query_name: None,
+            reference_name: None,
+            reference_target: None,
+            aggregate_heads: vec![],
+            options: vec![],
+            group_by: vec![],
+            count: None,
+            median_field: None,
+            position: None,
+        }),
+    },
         "Gather",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -792,7 +692,7 @@ impl GatherArgs {
 
 impl GatherArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["aggregate", "as", "many", "id", "read_model", "bluebook", "name"]);
+let unknown = v.unknown_keys(&["aggregate", "as", "many", "id", "bluebook", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Gather does not declare {} — it takes aggregate, as, many",
@@ -825,14 +725,30 @@ pub struct GroupByArgs {
 }
 
 pub fn dispatch_group_by(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: GroupByArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: GroupByArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
         args.field.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
+        build: Box::new(|| ReadModel {
+            bluebook: None,
+            name: None,
+            description: None,
+            query_name: None,
+            reference_name: None,
+            reference_target: None,
+            aggregate_heads: vec![],
+            options: vec![],
+            group_by: vec![],
+            count: None,
+            median_field: None,
+            position: None,
+        }),
+    },
         "GroupBy",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -865,7 +781,7 @@ impl GroupByArgs {
 
 impl GroupByArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["field", "id", "read_model", "bluebook", "name"]);
+let unknown = v.unknown_keys(&["field", "id", "bluebook", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "GroupBy does not declare {} — it takes field",
@@ -881,9 +797,9 @@ if !unknown.is_empty() {
 impl crate::kernel::Fielded for CountArgs {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
-        
+        use crate::kernel::Value;
         match name {
-            "count" => Some(Field::Nested(&self.count)),
+            "count" => self.count.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -892,18 +808,34 @@ impl crate::kernel::Fielded for CountArgs {
 
 #[derive(Debug, Clone)]
 pub struct CountArgs {
-    pub count: ReadModelText,
+    pub count: Option<ReadModelText>,
 }
 
 pub fn dispatch_count(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: CountArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: CountArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
-        args.count.check_invariants()?;
+        if let Some(v) = &args.count { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
+        build: Box::new(|| ReadModel {
+            bluebook: None,
+            name: None,
+            description: None,
+            query_name: None,
+            reference_name: None,
+            reference_target: None,
+            aggregate_heads: vec![],
+            options: vec![],
+            group_by: vec![],
+            count: args.count.clone(),
+            median_field: None,
+            position: None,
+        }),
+    },
         "Count",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -914,7 +846,7 @@ pub fn dispatch_count(
         ],
         None,
         |record| {
-        record.count = Some(args.count.clone());
+        record.count = args.count.clone();
             Ok(())
         },
         &[
@@ -929,14 +861,14 @@ pub fn dispatch_count(
 impl CountArgs {
     pub fn to_json(&self) -> crate::kernel::Json {
         crate::kernel::Json::Object(vec![
-        ("count".to_string(), self.count.to_json()),
+        ("count".to_string(), self.count.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
 
 impl CountArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["count", "id", "read_model", "bluebook", "name"]);
+let unknown = v.unknown_keys(&["count", "id", "bluebook", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Count does not declare {} — it takes count",
@@ -944,7 +876,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        count: ReadModelText::from_json(&v.require("count", "CountArgs")?.coerce_single_field("value"))?,
+        count: match v.get("count") { Some(x) => Some(ReadModelText::from_json(&x.coerce_single_field("value"))?), None => None, },
         })
     }
 }
@@ -952,9 +884,9 @@ if !unknown.is_empty() {
 impl crate::kernel::Fielded for MedianArgs {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
-        
+        use crate::kernel::Value;
         match name {
-            "median_field" => Some(Field::Nested(&self.median_field)),
+            "median_field" => self.median_field.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -963,18 +895,34 @@ impl crate::kernel::Fielded for MedianArgs {
 
 #[derive(Debug, Clone)]
 pub struct MedianArgs {
-    pub median_field: ReadModelText,
+    pub median_field: Option<ReadModelText>,
 }
 
 pub fn dispatch_median(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: MedianArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: MedianArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
-        args.median_field.check_invariants()?;
+        if let Some(v) = &args.median_field { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
+        build: Box::new(|| ReadModel {
+            bluebook: None,
+            name: None,
+            description: None,
+            query_name: None,
+            reference_name: None,
+            reference_target: None,
+            aggregate_heads: vec![],
+            options: vec![],
+            group_by: vec![],
+            count: None,
+            median_field: args.median_field.clone(),
+            position: None,
+        }),
+    },
         "Median",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -985,7 +933,7 @@ pub fn dispatch_median(
         ],
         None,
         |record| {
-        record.median_field = Some(args.median_field.clone());
+        record.median_field = args.median_field.clone();
             Ok(())
         },
         &[
@@ -1000,14 +948,14 @@ pub fn dispatch_median(
 impl MedianArgs {
     pub fn to_json(&self) -> crate::kernel::Json {
         crate::kernel::Json::Object(vec![
-        ("median_field".to_string(), self.median_field.to_json()),
+        ("median_field".to_string(), self.median_field.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
 
 impl MedianArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["median_field", "id", "read_model", "bluebook", "name"]);
+let unknown = v.unknown_keys(&["median_field", "id", "bluebook", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Median does not declare {} — it takes median_field",
@@ -1015,7 +963,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        median_field: ReadModelText::from_json(&v.require("median_field", "MedianArgs")?.coerce_single_field("value"))?,
+        median_field: match v.get("median_field") { Some(x) => Some(ReadModelText::from_json(&x.coerce_single_field("value"))?), None => None, },
         })
     }
 }
@@ -1044,7 +992,7 @@ pub struct OptionArgs {
 }
 
 pub fn dispatch_option(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: OptionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: OptionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
         args.option.check_invariants()?;
         args.key.check_invariants()?;
@@ -1054,7 +1002,23 @@ pub fn dispatch_option(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
+        build: Box::new(|| ReadModel {
+            bluebook: None,
+            name: None,
+            description: None,
+            query_name: None,
+            reference_name: None,
+            reference_target: None,
+            aggregate_heads: vec![],
+            options: vec![],
+            group_by: vec![],
+            count: None,
+            median_field: None,
+            position: None,
+        }),
+    },
         "Option",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -1090,7 +1054,7 @@ impl OptionArgs {
 
 impl OptionArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["option", "key", "value", "at", "id", "read_model", "bluebook", "name"]);
+let unknown = v.unknown_keys(&["option", "key", "value", "at", "id", "bluebook", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Option does not declare {} — it takes option, key, value, at",

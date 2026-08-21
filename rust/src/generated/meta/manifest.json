@@ -7,8 +7,9 @@
   {
     "kind": "command",
     "id": "Bluebook::Aggregate.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :description sources optional argument description; sets :provenance sources optional argument provenance; sets :position sources optional argument position — not generated yet"
   },
   {
     "kind": "command",
@@ -84,8 +85,9 @@
   {
     "kind": "command",
     "id": "Bluebook::Bluebook.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :vision sources optional argument vision; sets :classification sources optional argument classification; sets :version sources optional argument version; sets :formerly_known_as sources optional argument formerly_known_as — not generated yet"
   },
   {
     "kind": "command",
@@ -107,20 +109,23 @@
   {
     "kind": "command",
     "id": "Bluebook::Command.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :role sources optional argument role; sets :goal sources optional argument goal; sets :provenance sources optional argument provenance; sets :position sources optional argument position — not generated yet"
   },
   {
     "kind": "command",
     "id": "Bluebook::Command.Argument",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "sets append field(s): attributes.relationship: not a declared field"
   },
   {
     "kind": "command",
     "id": "Bluebook::Command.Reference",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "sets append field(s): attributes.relationship: not a declared field"
   },
   {
     "kind": "command",
@@ -160,8 +165,9 @@
   {
     "kind": "command",
     "id": "Bluebook::Entity.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :description sources optional argument description; sets :position sources optional argument position — not generated yet"
   },
   {
     "kind": "command",
@@ -213,8 +219,9 @@
   {
     "kind": "command",
     "id": "Bluebook::Policy.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :aggregate sources optional argument aggregate; sets :target_domain sources optional argument target_domain; sets :position sources optional argument position — not generated yet"
   },
   {
     "kind": "command",
@@ -253,8 +260,9 @@
   {
     "kind": "command",
     "id": "Bluebook::ProcessManager.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :ends_on sources optional argument ends_on; sets :position sources optional argument position — not generated yet"
   },
   {
     "kind": "command",
@@ -276,8 +284,9 @@
   {
     "kind": "command",
     "id": "Bluebook::ReadModel.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :description sources optional argument description; sets :reference_name sources optional argument reference_name; sets :reference_target sources optional argument reference_target; sets :position sources optional argument position — not generated yet"
   },
   {
     "kind": "command",
@@ -317,8 +326,9 @@
   {
     "kind": "command",
     "id": "Bluebook::Query.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :description sources optional argument description; sets :order_field sources optional argument order_field; sets :order_way sources optional argument order_way; sets :limit sources optional argument limit; sets :position sources optional argument position — not generated yet"
   },
   {
     "kind": "command",
@@ -335,8 +345,9 @@
   {
     "kind": "command",
     "id": "Bluebook::Query.Argument",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "sets append field(s): attributes.relationship: not a declared field"
   },
   {
     "kind": "aggregate",
@@ -357,14 +368,16 @@
   {
     "kind": "command",
     "id": "Bluebook::ValueObject.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "optional argument feeds a non-optional target: sets :position sources optional argument position — not generated yet"
   },
   {
     "kind": "command",
     "id": "Bluebook::ValueObject.Field",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "sets append field(s): attributes.relationship: not a declared field"
   },
   {
     "kind": "command",
@@ -426,8 +439,9 @@
   {
     "kind": "command",
     "id": "Bluebook::Syntax.Declare",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "sets :bluebook sources an argument no single-field rewrap can bridge to the target's type — not generated yet"
   },
   {
     "kind": "command",

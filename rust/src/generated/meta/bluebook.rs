@@ -671,108 +671,6 @@ impl Bluebook {
     }
 }
 
-impl crate::kernel::Fielded for DeclareArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "name" => Some(Field::Nested(&self.name)),
-            "vision" => self.vision.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "classification" => self.classification.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "version" => self.version.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "formerly_known_as" => self.formerly_known_as.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct DeclareArgs {
-    pub name: BluebookName,
-    pub vision: Option<Vision>,
-    pub classification: Option<Classification>,
-    pub version: Option<Version>,
-    pub formerly_known_as: Option<FormerlyKnownAs>,
-}
-
-pub fn dispatch_declare(
-    repo: &mut impl crate::kernel::Repository<Bluebook>, args: DeclareArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<Bluebook> {
-        args.name.check_invariants()?;
-        if let Some(v) = &args.vision { v.check_invariants()?; }
-        if let Some(v) = &args.classification { v.check_invariants()?; }
-        if let Some(v) = &args.version { v.check_invariants()?; }
-        if let Some(v) = &args.formerly_known_as { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Create {
-        id: args.name.value.to_string(),
-        build: Box::new(|| Bluebook {
-            name: Some(args.name.clone()),
-            vision: args.vision.clone(),
-            classification: args.classification.clone(),
-            version: args.version.clone(),
-            formerly_known_as: args.formerly_known_as.clone(),
-            normalisations: vec![],
-            attaches_to: vec![],
-        }),
-    },
-        "Declare",
-        "Bluebook::Bluebook",
-        "Bluebook",
-        "name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        let _ = record;
-            Ok(())
-        },
-        &[
-
-        ],
-        &["ChapterDeclared"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl DeclareArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("name".to_string(), self.name.to_json()),
-        ("vision".to_string(), self.vision.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("classification".to_string(), self.classification.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("version".to_string(), self.version.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("formerly_known_as".to_string(), self.formerly_known_as.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl DeclareArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["name", "vision", "classification", "version", "formerly_known_as", "id"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Declare does not declare {} — it takes name, vision, classification, version, formerly_known_as",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        name: BluebookName::from_json(&v.require("name", "DeclareArgs")?.coerce_single_field("value"))?,
-        vision: match v.get("vision") { Some(x) => Some(Vision::from_json(&x.coerce_single_field("value"))?), None => None, },
-        classification: match v.get("classification") { Some(x) => Some(Classification::from_json(&x.coerce_single_field("value"))?), None => None, },
-        version: match v.get("version") { Some(x) => Some(Version::from_json(&x.coerce_single_field("value"))?), None => None, },
-        formerly_known_as: match v.get("formerly_known_as") { Some(x) => Some(FormerlyKnownAs::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
 impl crate::kernel::Fielded for AttachArgs {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
@@ -791,14 +689,25 @@ pub struct AttachArgs {
 }
 
 pub fn dispatch_attach(
-    repo: &mut impl crate::kernel::Repository<Bluebook>, id: &str, args: AttachArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Bluebook>, name: &str, args: AttachArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Bluebook> {
         args.context.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: name.to_string(),
+        build: Box::new(|| Bluebook {
+            name: None,
+            vision: None,
+            classification: None,
+            version: None,
+            formerly_known_as: None,
+            normalisations: vec![],
+            attaches_to: vec![],
+        }),
+    },
         "Attach",
         "Bluebook::Bluebook",
         "Bluebook",
@@ -831,7 +740,7 @@ impl AttachArgs {
 
 impl AttachArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["context", "id", "bluebook", "name"]);
+let unknown = v.unknown_keys(&["context", "id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Attach does not declare {} — it takes context",
@@ -870,7 +779,7 @@ pub struct NormaliseArgs {
 }
 
 pub fn dispatch_normalise(
-    repo: &mut impl crate::kernel::Repository<Bluebook>, id: &str, args: NormaliseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Bluebook>, name: &str, args: NormaliseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Bluebook> {
         args.strategy.check_invariants()?;
         args.source_token.check_invariants()?;
@@ -881,7 +790,18 @@ pub fn dispatch_normalise(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: name.to_string(),
+        build: Box::new(|| Bluebook {
+            name: None,
+            vision: None,
+            classification: None,
+            version: None,
+            formerly_known_as: None,
+            normalisations: vec![],
+            attaches_to: vec![],
+        }),
+    },
         "Normalise",
         "Bluebook::Bluebook",
         "Bluebook",
@@ -918,7 +838,7 @@ impl NormaliseArgs {
 
 impl NormaliseArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["strategy", "source_token", "replacement", "boundary", "position", "id", "bluebook", "name"]);
+let unknown = v.unknown_keys(&["strategy", "source_token", "replacement", "boundary", "position", "id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Normalise does not declare {} — it takes strategy, source_token, replacement, boundary, position",

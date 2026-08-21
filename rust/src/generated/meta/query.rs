@@ -556,125 +556,6 @@ impl Query {
     }
 }
 
-impl crate::kernel::Fielded for DeclareArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "aggregate" => Some(Field::Value(Value::Str(self.aggregate.clone()))),
-            "entity_id" => self.entity_id.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
-            "name" => Some(Field::Nested(&self.name)),
-            "description" => self.description.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "order_field" => self.order_field.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "order_way" => self.order_way.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "limit" => self.limit.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct DeclareArgs {
-    pub aggregate: String,
-    pub entity_id: Option<String>,
-    pub name: QueryName,
-    pub description: Option<QueryText>,
-    pub order_field: Option<QueryText>,
-    pub order_way: Option<QueryText>,
-    pub limit: Option<QueryText>,
-    pub position: Option<Position>,
-}
-
-pub fn dispatch_declare(
-    repo: &mut impl crate::kernel::Repository<Query>, owner_id: &str, args: DeclareArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<Query> {
-        args.name.check_invariants()?;
-        if let Some(v) = &args.description { v.check_invariants()?; }
-        if let Some(v) = &args.order_field { v.check_invariants()?; }
-        if let Some(v) = &args.order_way { v.check_invariants()?; }
-        if let Some(v) = &args.limit { v.check_invariants()?; }
-        if let Some(v) = &args.position { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id, args.name.value.to_string()),
-        build: Box::new(|| Query {
-            aggregate: Some(args.aggregate.clone()),
-            entity_id: args.entity_id.clone(),
-            name: Some(args.name.clone()),
-            description: args.description.clone(),
-            order_field: args.order_field.clone(),
-            order_way: args.order_way.clone(),
-            limit: args.limit.clone(),
-            wheres: vec![],
-            attributes: vec![],
-            options: vec![],
-            position: args.position.clone(),
-        }),
-    },
-        "Declare",
-        "Bluebook::Query",
-        "Query",
-        "owner_id, name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        let _ = record;
-            Ok(())
-        },
-        &[
-
-        ],
-        &["AskDeclared"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl DeclareArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("aggregate".to_string(), crate::kernel::Json::Str(self.aggregate.clone())),
-        ("entity_id".to_string(), self.entity_id.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
-        ("name".to_string(), self.name.to_json()),
-        ("description".to_string(), self.description.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("order_field".to_string(), self.order_field.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("order_way".to_string(), self.order_way.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("limit".to_string(), self.limit.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("position".to_string(), self.position.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl DeclareArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["aggregate", "entity_id", "name", "description", "order_field", "order_way", "limit", "position", "id", "owner_id"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Declare does not declare {} — it takes aggregate, entity_id, name, description, order_field, order_way, limit, position",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        aggregate: { let x = v.require("aggregate", "DeclareArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("DeclareArgs.aggregate: expected String".to_string()))? },
-        entity_id: match v.get("entity_id") { Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("DeclareArgs.entity_id: expected String".to_string()))?), None => None, },
-        name: QueryName::from_json(&v.require("name", "DeclareArgs")?.coerce_single_field("value"))?,
-        description: match v.get("description") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        order_field: match v.get("order_field") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        order_way: match v.get("order_way") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        limit: match v.get("limit") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        position: match v.get("position") { Some(x) => Some(Position::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
 impl crate::kernel::Fielded for FilterArgs {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
@@ -697,7 +578,7 @@ pub struct FilterArgs {
 }
 
 pub fn dispatch_filter(
-    repo: &mut impl crate::kernel::Repository<Query>, id: &str, args: FilterArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Query>, owner_id: &str, name: &str, args: FilterArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Query> {
         args.field.check_invariants()?;
         if !["eq", "ne", "gt", "gte", "lt", "lte", "in", "contains", "none_in_state"].contains(&args.op.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::QueryComparator — \"eq\", \"ne\", \"gt\", \"gte\", \"lt\", \"lte\", \"in\", \"contains\", \"none_in_state\" — got ", args.op.value))); }
@@ -707,7 +588,22 @@ pub fn dispatch_filter(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
+        build: Box::new(|| Query {
+            aggregate: None,
+            entity_id: None,
+            name: None,
+            description: None,
+            order_field: None,
+            order_way: None,
+            limit: None,
+            wheres: vec![],
+            attributes: vec![],
+            options: vec![],
+            position: None,
+        }),
+    },
         "Filter",
         "Bluebook::Query",
         "Query",
@@ -742,7 +638,7 @@ impl FilterArgs {
 
 impl FilterArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["field", "op", "value", "id", "query", "owner_id", "name"]);
+let unknown = v.unknown_keys(&["field", "op", "value", "id", "owner_id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Filter does not declare {} — it takes field, op, value",
@@ -781,7 +677,7 @@ pub struct OptionArgs {
 }
 
 pub fn dispatch_option(
-    repo: &mut impl crate::kernel::Repository<Query>, id: &str, args: OptionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Query>, owner_id: &str, name: &str, args: OptionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Query> {
         args.option.check_invariants()?;
         args.key.check_invariants()?;
@@ -791,7 +687,22 @@ pub fn dispatch_option(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
+        build: Box::new(|| Query {
+            aggregate: None,
+            entity_id: None,
+            name: None,
+            description: None,
+            order_field: None,
+            order_way: None,
+            limit: None,
+            wheres: vec![],
+            attributes: vec![],
+            options: vec![],
+            position: None,
+        }),
+    },
         "Option",
         "Bluebook::Query",
         "Query",
@@ -827,7 +738,7 @@ impl OptionArgs {
 
 impl OptionArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["option", "key", "value", "at", "id", "query", "owner_id", "name"]);
+let unknown = v.unknown_keys(&["option", "key", "value", "at", "id", "owner_id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Option does not declare {} — it takes option, key, value, at",
@@ -839,107 +750,6 @@ if !unknown.is_empty() {
         key: QueryText::from_json(&v.require("key", "OptionArgs")?.coerce_single_field("value"))?,
         value: match v.get("value") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
         at: match v.get("at") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
-impl crate::kernel::Fielded for ArgumentArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "name" => Some(Field::Nested(&self.name)),
-            "type" => Some(Field::Nested(&self.r#type)),
-            "list" => Some(Field::Nested(&self.list)),
-            "optional" => self.optional.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "pattern" => self.pattern.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "default" => self.default.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "admits" => self.admits.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct ArgumentArgs {
-    pub name: QueryText,
-    pub r#type: QueryText,
-    pub list: QueryText,
-    pub optional: Option<QueryText>,
-    pub pattern: Option<QueryText>,
-    pub default: Option<QueryText>,
-    pub admits: Option<QueryText>,
-}
-
-pub fn dispatch_argument(
-    repo: &mut impl crate::kernel::Repository<Query>, id: &str, args: ArgumentArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<Query> {
-        args.name.check_invariants()?;
-        args.r#type.check_invariants()?;
-        args.list.check_invariants()?;
-        if let Some(v) = &args.optional { v.check_invariants()?; }
-        if let Some(v) = &args.pattern { v.check_invariants()?; }
-        if let Some(v) = &args.default { v.check_invariants()?; }
-        if let Some(v) = &args.admits { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
-        "Argument",
-        "Bluebook::Query",
-        "Query",
-        "owner_id, name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        record.attributes.push(AskArgument { name: args.name.value.clone(), r#type: args.r#type.value.clone(), list: args.list.value.clone(), default: args.default.clone().map(|v| v.value.clone()), optional: args.optional.clone().map(|v| v.value.clone()), pattern: args.pattern.clone().map(|v| v.value.clone()), admits: args.admits.clone().map(|v| v.value.clone()) });
-            Ok(())
-        },
-        &[
-
-        ],
-        &["AskArgumentAttached"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl ArgumentArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("name".to_string(), self.name.to_json()),
-        ("type".to_string(), self.r#type.to_json()),
-        ("list".to_string(), self.list.to_json()),
-        ("optional".to_string(), self.optional.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("pattern".to_string(), self.pattern.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("default".to_string(), self.default.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("admits".to_string(), self.admits.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl ArgumentArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["name", "type", "list", "optional", "pattern", "default", "admits", "id", "query", "owner_id"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Argument does not declare {} — it takes name, type, list, optional, pattern, default, admits",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        name: QueryText::from_json(&v.require("name", "ArgumentArgs")?.coerce_single_field("value"))?,
-        r#type: QueryText::from_json(&v.require("type", "ArgumentArgs")?.coerce_single_field("value"))?,
-        list: QueryText::from_json(&v.require("list", "ArgumentArgs")?.coerce_single_field("value"))?,
-        optional: match v.get("optional") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        pattern: match v.get("pattern") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        default: match v.get("default") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        admits: match v.get("admits") { Some(x) => Some(QueryText::from_json(&x.coerce_single_field("value"))?), None => None, },
         })
     }
 }

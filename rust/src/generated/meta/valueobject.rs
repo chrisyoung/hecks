@@ -903,204 +903,12 @@ impl ValueObject {
     }
 }
 
-impl crate::kernel::Fielded for DeclareArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "aggregate" => Some(Field::Value(Value::Str(self.aggregate.clone()))),
-            "name" => Some(Field::Nested(&self.name)),
-            "position" => self.position.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct DeclareArgs {
-    pub aggregate: String,
-    pub name: ValueObjectName,
-    pub position: Option<Position>,
-}
-
-pub fn dispatch_declare(
-    repo: &mut impl crate::kernel::Repository<ValueObject>, args: DeclareArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<ValueObject> {
-        args.name.check_invariants()?;
-        if let Some(v) = &args.position { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", args.aggregate.to_string(), args.name.value.to_string()),
-        build: Box::new(|| ValueObject {
-            aggregate: Some(args.aggregate.clone()),
-            name: Some(args.name.clone()),
-            attributes: vec![],
-            invariants: vec![],
-            rows: None,
-            members: vec![],
-            position: args.position.clone(),
-        }),
-    },
-        "Declare",
-        "Bluebook::ValueObject",
-        "ValueObject",
-        "aggregate, name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        let _ = record;
-            Ok(())
-        },
-        &[
-
-        ],
-        &["ShapeDeclared"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl DeclareArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("aggregate".to_string(), crate::kernel::Json::Str(self.aggregate.clone())),
-        ("name".to_string(), self.name.to_json()),
-        ("position".to_string(), self.position.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl DeclareArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["aggregate", "name", "position", "id"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Declare does not declare {} — it takes aggregate, name, position",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        aggregate: { let x = v.require("aggregate", "DeclareArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("DeclareArgs.aggregate: expected String".to_string()))? },
-        name: ValueObjectName::from_json(&v.require("name", "DeclareArgs")?.coerce_single_field("value"))?,
-        position: match v.get("position") { Some(x) => Some(Position::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
-impl crate::kernel::Fielded for FieldArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "name" => Some(Field::Nested(&self.name)),
-            "type" => Some(Field::Nested(&self.r#type)),
-            "list" => Some(Field::Nested(&self.list)),
-            "optional" => self.optional.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "pattern" => self.pattern.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "default" => self.default.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            "admits" => self.admits.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct FieldArgs {
-    pub name: ValueObjectName,
-    pub r#type: ValueObjectName,
-    pub list: ValueObjectName,
-    pub optional: Option<ValueObjectName>,
-    pub pattern: Option<ValueObjectText>,
-    pub default: Option<ValueObjectText>,
-    pub admits: Option<ValueObjectText>,
-}
-
-pub fn dispatch_field(
-    repo: &mut impl crate::kernel::Repository<ValueObject>, id: &str, args: FieldArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<ValueObject> {
-        args.name.check_invariants()?;
-        args.r#type.check_invariants()?;
-        args.list.check_invariants()?;
-        if let Some(v) = &args.optional { v.check_invariants()?; }
-        if let Some(v) = &args.pattern { v.check_invariants()?; }
-        if let Some(v) = &args.default { v.check_invariants()?; }
-        if let Some(v) = &args.admits { v.check_invariants()?; }
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
-        "Field",
-        "Bluebook::ValueObject",
-        "ValueObject",
-        "aggregate, name.value",
-        &with_references,
-        &[
-
-        ],
-        None,
-        |record| {
-        record.attributes.push(ShapeField { name: args.name.value.clone(), r#type: args.r#type.value.clone(), list: args.list.value.clone(), default: args.default.clone().map(|v| v.value.clone()), optional: args.optional.clone().map(|v| v.value.clone()), pattern: args.pattern.clone().map(|v| v.value.clone()), admits: args.admits.clone().map(|v| v.value.clone()) });
-            Ok(())
-        },
-        &[
-
-        ],
-        &["ShapeFieldAttached"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl FieldArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("name".to_string(), self.name.to_json()),
-        ("type".to_string(), self.r#type.to_json()),
-        ("list".to_string(), self.list.to_json()),
-        ("optional".to_string(), self.optional.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("pattern".to_string(), self.pattern.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("default".to_string(), self.default.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ("admits".to_string(), self.admits.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
-        ])
-    }
-}
-
-impl FieldArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["name", "type", "list", "optional", "pattern", "default", "admits", "id", "value_object", "aggregate"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Field does not declare {} — it takes name, type, list, optional, pattern, default, admits",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        name: ValueObjectName::from_json(&v.require("name", "FieldArgs")?.coerce_single_field("value"))?,
-        r#type: ValueObjectName::from_json(&v.require("type", "FieldArgs")?.coerce_single_field("value"))?,
-        list: ValueObjectName::from_json(&v.require("list", "FieldArgs")?.coerce_single_field("value"))?,
-        optional: match v.get("optional") { Some(x) => Some(ValueObjectName::from_json(&x.coerce_single_field("value"))?), None => None, },
-        pattern: match v.get("pattern") { Some(x) => Some(ValueObjectText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        default: match v.get("default") { Some(x) => Some(ValueObjectText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        admits: match v.get("admits") { Some(x) => Some(ValueObjectText::from_json(&x.coerce_single_field("value"))?), None => None, },
-        })
-    }
-}
-
 impl crate::kernel::Fielded for CloseArgs {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::Field;
-        
+        use crate::kernel::Value;
         match name {
-            "rows" => Some(Field::Nested(&self.rows)),
+            "rows" => self.rows.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -1109,18 +917,29 @@ impl crate::kernel::Fielded for CloseArgs {
 
 #[derive(Debug, Clone)]
 pub struct CloseArgs {
-    pub rows: RowCount,
+    pub rows: Option<RowCount>,
 }
 
 pub fn dispatch_close(
-    repo: &mut impl crate::kernel::Repository<ValueObject>, id: &str, args: CloseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ValueObject>, aggregate: &str, name: &str, args: CloseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ValueObject> {
-        args.rows.check_invariants()?;
+        if let Some(v) = &args.rows { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
+        build: Box::new(|| ValueObject {
+            aggregate: None,
+            name: None,
+            attributes: vec![],
+            invariants: vec![],
+            rows: args.rows.clone(),
+            members: vec![],
+            position: None,
+        }),
+    },
         "Close",
         "Bluebook::ValueObject",
         "ValueObject",
@@ -1131,7 +950,7 @@ pub fn dispatch_close(
         ],
         None,
         |record| {
-        record.rows = Some(args.rows.clone());
+        record.rows = args.rows.clone();
             Ok(())
         },
         &[
@@ -1146,14 +965,14 @@ pub fn dispatch_close(
 impl CloseArgs {
     pub fn to_json(&self) -> crate::kernel::Json {
         crate::kernel::Json::Object(vec![
-        ("rows".to_string(), self.rows.to_json()),
+        ("rows".to_string(), self.rows.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
 
 impl CloseArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["rows", "id", "value_object", "aggregate", "name"]);
+let unknown = v.unknown_keys(&["rows", "id", "aggregate", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Close does not declare {} — it takes rows",
@@ -1161,7 +980,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        rows: RowCount::from_json(&v.require("rows", "CloseArgs")?.coerce_single_field("value"))?,
+        rows: match v.get("rows") { Some(x) => Some(RowCount::from_json(&x.coerce_single_field("value"))?), None => None, },
         })
     }
 }
@@ -1186,7 +1005,7 @@ pub struct AssertArgs {
 }
 
 pub fn dispatch_assert(
-    repo: &mut impl crate::kernel::Repository<ValueObject>, id: &str, args: AssertArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ValueObject>, aggregate: &str, name: &str, args: AssertArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ValueObject> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1194,7 +1013,18 @@ pub fn dispatch_assert(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
+        build: Box::new(|| ValueObject {
+            aggregate: None,
+            name: None,
+            attributes: vec![],
+            invariants: vec![],
+            rows: None,
+            members: vec![],
+            position: None,
+        }),
+    },
         "Assert",
         "Bluebook::ValueObject",
         "ValueObject",
@@ -1229,7 +1059,7 @@ impl AssertArgs {
 
 impl AssertArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["description", "canonical", "id", "value_object", "aggregate", "name"]);
+let unknown = v.unknown_keys(&["description", "canonical", "id", "aggregate", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Assert does not declare {} — it takes description, canonical",
@@ -1261,14 +1091,25 @@ pub struct MemberArgs {
 }
 
 pub fn dispatch_member(
-    repo: &mut impl crate::kernel::Repository<ValueObject>, id: &str, args: MemberArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ValueObject>, aggregate: &str, name: &str, args: MemberArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ValueObject> {
         args.position.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
+        crate::kernel::Hydrate::Create {
+        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
+        build: Box::new(|| ValueObject {
+            aggregate: None,
+            name: None,
+            attributes: vec![],
+            invariants: vec![],
+            rows: None,
+            members: vec![],
+            position: Some(args.position.clone()),
+        }),
+    },
         "Member",
         "Bluebook::ValueObject",
         "ValueObject",
@@ -1301,7 +1142,7 @@ impl MemberArgs {
 
 impl MemberArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["position", "id", "value_object", "aggregate", "name"]);
+let unknown = v.unknown_keys(&["position", "id", "aggregate", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
         "Member does not declare {} — it takes position",
