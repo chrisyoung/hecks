@@ -3,13 +3,25 @@ require_relative "errors"
 require_relative "query_interpreter"
 require_relative "refusal_wording"
 require_relative "value"
-require_relative "../bluebook/expression/evaluator"
-require_relative "../bluebook/expression/binding_lowering"
 require_relative "saga_interpreter"
 require_relative "reaction"
+require_relative "reaction_lowering"
+require_relative "reaction_executor"
 
 module Hecksagain
   module Runtime
+    # ADR 0029/0030, this pass's own real convergence — `deliver`/
+    # `deliver_for_each`/`deliver_for_each_row`/`trigger_args` no longer
+    # hand-roll their own refusal/defect/retry/binding-resolution logic;
+    # they lower each real `Policy` to a bare `Reaction`
+    # (`ReactionLowering.lower_policy`) and run it through
+    # `ReactionExecutor` — the SAME class `SagaInterpreter` now uses for
+    # its own leg dispatch. What's left here is what's genuinely
+    # policy-specific: matching an event to its candidate policies at
+    # all (`policies_for`), and the `for_each` fan-out (a real, distinct
+    # capability — resolving a query, addressing each row, dispatching
+    # once per row — that has no analogue in a bare `Reaction` and
+    # stays hand-written).
     class PolicyInterpreter
       # A crash gets this many extra attempts before a reaction gives up —
       # the exact constant, and the exact reasoning, `SagaInterpreter`'s
@@ -28,6 +40,7 @@ module Hecksagain
       def initialize(registry, door:)
         @registry = registry
         @door     = door
+        @executor = ReactionExecutor.new(registry, door: door)
       end
 
       # `deliver` returns `nil` for a policy whose `where` did not hold —
@@ -78,55 +91,35 @@ module Hecksagain
         end
       end
 
-      # THE GUARD, evaluated against the triggering event's own payload —
-      # a policy has no aggregate instance of its own to read state from,
-      # so `state` is empty and every bare name a `where` resolves comes
-      # from `attrs` (Expression::Resolver#fetch checks `attrs` before
-      # `state`, so this is exactly the shape `enforce_givens` already
-      # gives a command's own given, minus the settled-record half a
-      # policy simply has none of). Called from inside `deliver`'s own
-      # rescue-guarded body (both callers, below) — never guarded here —
-      # so an EvaluationError (an unresolvable field, a bad comparison) is
-      # caught the SAME way any other reaction defect is, not swallowed as
-      # though the policy had merely declined to fire.
-      def where_holds?(policy, event)
-        return true if policy.where.to_s.empty?
-
-        Bluebook::Expression::Evaluator.call(policy.where, {}, event.payload.transform_keys(&:to_sym))
-      end
-
-      # ADR 0029's own step 2 — the refusal/defect rescue and depth-
-      # ceiling check are `Reaction.deliver_dispatch`'s own now, shared
-      # with `SagaInterpreter#deliver_saga_dispatch`; the reasoning for
-      # WHY catching a defect here is safe (the command that emitted
-      # `event` already succeeded and persisted, so letting a crash
-      # propagate would only blow up an unrelated caller for a failure
-      # it never asked to run), why a refusal and a defect are told
-      # apart, and why a defect retries before being recorded, all
-      # lives on `Reaction.deliver_dispatch`'s own comment now — this
-      # method's own job shrank to what's genuinely specific to a
-      # stateless policy: no intermediate retry log entry (a policy's
-      # `reaction_log` holds exactly one entry per reaction, unlike a
-      # saga's running `saga_log`), and no compensation to run.
+      # THE WHOLE REACTION, lowered once per delivery and run through
+      # `ReactionExecutor` — condition (`policy.where`, or unconditional),
+      # depth ceiling, dispatch, refusal/defect/retry are all
+      # `ReactionExecutor`/`Reaction.deliver_dispatch`'s own job now, the
+      # exact same code `SagaInterpreter` runs its own legs through. What
+      # stays here: `for_each`'s own fan-out (no analogue in a bare
+      # `Reaction`), and the raw-inputs log (`policy_dispatch_log`) —
+      # Ruby-only bookkeeping `Properties.dispatch_binding_fidelity`
+      # independently re-derives against, never itself part of the
+      # executable shape.
       def deliver(policy, event, domain)
-        # `record` ASSIGNED BEFORE ANY BRANCH THAT CAN RAISE, same reason
-        # `deliver_for_each`'s own header gives : both rescue clauses below
-        # call `.merge` on it, and a defect raised before it existed would
-        # be caught here only to raise a second, different NoMethodError
-        # trying to record the first one.
-        target = "#{policy.target_domain || domain}::#{policy.trigger_command}"
-        record = { policy: policy.name, on: event.name, trigger: target }
+        reaction = ReactionLowering.lower_policy(policy)
+        target   = "#{policy.target_domain || domain}::#{policy.trigger_command}"
+        record   = { policy: policy.name, on: event.name, trigger: target }
 
-        return deliver_for_each(policy, event, domain, target, record) unless policy.for_each.to_s.empty?
-        return nil unless where_holds?(policy, event)
+        return deliver_for_each(policy, reaction, event, domain, target, record) unless policy.for_each.to_s.empty?
 
+        payload = event.payload.transform_keys(&:to_sym)
+        sources = { payload: payload }
+        return nil unless @executor.match_and_checkpoint?(reaction, state: {}, sources: sources)
         return record.merge(Reaction.depth_ceiling_record(@door)) if Reaction.depth_ceiling_reached?(@door)
 
-        outcome = Reaction.deliver_dispatch(max_retries:  MAX_DEFECT_RETRIES,
-                                            on_exhausted: lambda { |attempt, error|
-                                              warn "[hecksagain] defect in reaction — policy #{policy.name} on #{event.name} " \
-                                                   "firing #{target} after #{attempt} attempts: #{error.class}: #{error.message}"
-                                            }) { @door.reenter(target, **trigger_args(policy, event)) }
+        log_policy_dispatch(policy, event, payload, reaction)
+
+        outcome = @executor.dispatch!(reaction, sources: sources, domain: domain,
+                                      on_exhausted: lambda { |_dispatch, attempt, error|
+                                        warn "[hecksagain] defect in reaction — policy #{policy.name} on #{event.name} " \
+                                             "firing #{target} after #{attempt} attempts: #{error.class}: #{error.message}"
+                                      }).first
 
         record.merge(outcome)
       end
@@ -148,20 +141,28 @@ module Hecksagain
       # `nil` — a domain-authoring mistake, not a data problem), is a
       # single top-level defect for the policy, the same shape `deliver`'s
       # own outer rescue already gives every other reaction.
-      def deliver_for_each(policy, event, domain, target, record)
-        return nil unless where_holds?(policy, event)
+      #
+      # `reaction`'s own dispatch/bindings are lowered ONCE, by the
+      # caller — reused for every row, resolved against a DIFFERENT
+      # payload (the row's own key merged in) each time. Same object,
+      # different source data, matching how `BindingLowering.resolve`
+      # already separates a lowered binding's SHAPE from what it
+      # resolves against.
+      def deliver_for_each(policy, reaction, event, domain, target, record)
+        payload = event.payload.transform_keys(&:to_sym)
+        return nil unless @executor.match_and_checkpoint?(reaction, state: {}, sources: { payload: payload })
 
         query_domain, aggregate_name, query_name = policy.for_each_route(domain)
         aggregate = resolve_query_aggregate(query_domain, aggregate_name, policy.for_each)
         # THE QUERY READS THE EVENT, never the projection — `with:` says
         # what the TRIGGER is given, and the fan-out's query is asking a
         # different question (WHICH rows) in the event's own vocabulary.
-        query_args    = event.payload.transform_keys(&:to_sym)
-        rows          = QueryInterpreter.new(@registry).call(query_domain, aggregate, query_name, query_args)
+        rows          = QueryInterpreter.new(@registry).call(query_domain, aggregate, query_name, payload)
         reference_key = addressing_key_for(target, aggregate_name)
 
         Array(rows).map do |row|
-          deliver_for_each_row(target, record, trigger_args(policy, event, reference_key => row[:id]), row)
+          row_payload = payload.merge(reference_key => row[:id])
+          deliver_for_each_row(policy, reaction, target, record, domain, row_payload, row)
         end
       rescue *DOMAIN_REFUSALS => error
         record.merge(delivered: false, reason: error.message)
@@ -169,61 +170,6 @@ module Hecksagain
         warn "[hecksagain] defect in reaction — policy #{policy.name} on #{event.name} " \
              "resolving for_each #{policy.for_each}: #{error.class}: #{error.message}"
         record.merge(delivered: false, reason: error.message, defect: true, error_class: error.class.name)
-      end
-
-      # WHAT THE TRIGGER IS GIVEN. Undeclared, the event's whole payload
-      # forwards verbatim — the behaviour every policy had before `with:`
-      # existed, and still the right default for a trigger shaped like
-      # its event.
-      #
-      # Declared, it is the same reading a saga's own `dispatch ...,
-      # with:` gets (`SagaInterpreter#dispatch_args`): a Symbol names a
-      # field on the SOURCE below, anything else is a literal the policy
-      # supplies itself. A saga additionally resolves against its own
-      # memory and correlation key; a policy has neither — it holds
-      # nothing between events — so the source is the event, plus:
-      #
-      # `extra` is a FAN-OUT'S ROW KEY, merged into the source BEFORE the
-      # projection rather than after it. That is what lets a `for_each`
-      # policy name the row it is acting on — `with: { account: :account }`
-      # — and therefore what lets one send the row and NOTHING ELSE. A
-      # trigger needing only which record to act on is the ordinary case
-      # for a fan-out, and before this it could not be written: the whole
-      # event rode along, and the target had to declare every field of it
-      # whether it read them or not.
-      # ADR 0029's own step 3, reconciled onto PRD 10's own lowering —
-      # the argument-resolution logic itself is `BindingLowering`'s now
-      # (`Bluebook::Expression::BindingLowering`, ADR 0030 Slice 2),
-      # shared with `SagaInterpreter#dispatch_args`, not a second,
-      # freshly-written resolver: a policy's own source is one bucket,
-      # `payload`, matching `BindingLowering`'s own "no correlation, no
-      # memory" case exactly (`lower(binding, available_sources:
-      # [:payload])`).
-      def trigger_args(policy, event, extra = {})
-        payload = event.payload.transform_keys(&:to_sym).merge(extra)
-        return payload if policy.with_spec.to_a.empty?
-
-        sources = { payload: payload }
-        args = policy.with_spec.to_h do |key, value|
-          executable = Bluebook::Expression::BindingLowering.lower([key, value], available_sources: [:payload])
-          destination, resolved = Bluebook::Expression::BindingLowering.resolve(executable, sources)
-          # Carried as STATE, not as the emitting aggregate's own runtime
-          # type — the same reason a saga materialises: two aggregates may
-          # share a value object's fields without sharing the class.
-          [destination, Value.materialize(resolved)]
-        end
-
-        # THE RAW INPUTS `args` WAS RESOLVED FROM — same additive,
-        # Ruby-only shape SagaInterpreter#deliver_saga_dispatch's own
-        # saga_dispatch_log gets, for Properties.dispatch_binding_
-        # fidelity's own independent re-derivation of Policy#with_spec's
-        # 2-branch resolution (Symbol → payload lookup, anything else →
-        # literal — a policy holds no correlation and no memory, so
-        # `payload` — the merged event-payload-plus-fan-out-row source —
-        # is the WHOLE source, unlike a saga's own 4-branch one).
-        @registry.policy_dispatch_log << { policy: policy.name, on: event.name, payload: payload,
-                                            with_spec: policy.with_spec, args: args }
-        args
       end
 
       # RESOLVES `target` ("Domain::Aggregate.Command", the same shape
@@ -252,41 +198,59 @@ module Hecksagain
       end
 
       # ISOLATED PER ROW, same as a saga's own per-leg dispatch
-      # (`SagaInterpreter#deliver_saga_dispatch`) — before this, a defect
-      # in ONE row had no rescue of its own here, so it propagated out of
-      # the whole `Array(rows).map` in `deliver_for_each` and was caught
-      # by THAT method's own outer `rescue StandardError` as a single
-      # aggregate defect for the entire fan-out, silently discarding
-      # whatever OTHER rows had already succeeded. Retried up to
-      # `MAX_DEFECT_RETRIES` times first, same reasoning as `deliver`'s
-      # own singleton path — a `for_each` policy is still stateless (no
+      # (`SagaInterpreter#deliver_saga_dispatch`) — a defect in ONE row
+      # never propagates out of the whole `Array(rows).map` in
+      # `deliver_for_each`, which would otherwise be caught by THAT
+      # method's own outer `rescue StandardError` as a single aggregate
+      # defect for the entire fan-out, silently discarding whatever
+      # OTHER rows had already succeeded. Retried up to
+      # `MAX_DEFECT_RETRIES` times first (`ReactionExecutor`/`Reaction.
+      # deliver_dispatch`'s own job), same reasoning as `deliver`'s own
+      # singleton path — a `for_each` policy is still stateless (no
       # correlation, no memory to compensate), so retry is the only
       # saga-shaped behaviour that transfers; there is nothing here to
       # `unwind`.
-      def deliver_for_each_row(target, record, args, row)
+      def deliver_for_each_row(policy, reaction, target, record, domain, row_payload, row)
         row_record = record.merge(for_row: row[:id])
 
         return row_record.merge(Reaction.depth_ceiling_record(@door)) if Reaction.depth_ceiling_reached?(@door)
 
-        # ALREADY MERGED, by `trigger_args` — the row key belongs in the
+        sources = { payload: row_payload }
+        log_policy_dispatch(policy, record, row_payload, reaction)
+
+        # ALREADY MERGED, by the caller — the row key belongs in the
         # source a `with:` projection reads FROM, not bolted onto its
         # result, or a projection could never name the row it acts on.
-        outcome = Reaction.deliver_dispatch(max_retries:  MAX_DEFECT_RETRIES,
-                                            on_exhausted: lambda { |attempt, error|
-                                              warn "[hecksagain] defect in reaction — policy #{record[:policy]} on #{record[:on]} " \
-                                                   "firing #{target} for row #{row[:id].inspect} after #{attempt} attempts: #{error.class}: #{error.message}"
-                                            }) { @door.reenter(target, **args) }
+        outcome = @executor.dispatch!(reaction, sources: sources, domain: domain,
+                                      on_exhausted: lambda { |_dispatch, attempt, error|
+                                        warn "[hecksagain] defect in reaction — policy #{record[:policy]} on #{record[:on]} " \
+                                             "firing #{target} for row #{row[:id].inspect} after #{attempt} attempts: #{error.class}: #{error.message}"
+                                      }).first
 
         row_record.merge(outcome)
       end
 
-      # `for_each`'s own QUERY route moved onto the Policy itself
-      # (Behaviour::Policy#for_each_route) — one reading the interpreter
-      # and the fuzzer's fan-out property both call, rather than the
-      # same split spelled twice. The reference-KEY the dispatch itself
-      # uses is `addressing_key_for`, above — a property of the TARGET
-      # COMMAND, not of the policy, so it lives on `Behaviour::Command`
-      # instead.
+      # THE RAW INPUTS a dispatch resolves from, logged alongside the
+      # result — the same additive, Ruby-only shape `SagaInterpreter`'s
+      # own `saga_dispatch_log` gets, for `Properties.dispatch_binding_
+      # fidelity`'s own independent re-derivation of `Policy#with_spec`'s
+      # resolution. Skipped entirely when `with_spec` is empty — a
+      # tautological pass, nothing declared to check, the same reason a
+      # command with no givens/from is skipped elsewhere. `record` here
+      # is either `event`-shaped (the plain path, carrying `.name`) or
+      # the already-merged for_each record Hash (carrying `:on`) — both
+      # answer the on-event name this log entry needs, just spelled
+      # differently, which is why this reads `.respond_to?(:name) ?
+      # record.name : record[:on]` rather than two near-identical
+      # methods.
+      def log_policy_dispatch(policy, record, payload, reaction)
+        return if policy.with_spec.to_a.empty?
+
+        args = @executor.resolve_args(reaction.dispatches.first, { payload: payload })
+        on   = record.respond_to?(:name) ? record.name : record[:on]
+        @registry.policy_dispatch_log << { policy: policy.name, on: on, payload: payload,
+                                            with_spec: policy.with_spec, args: args }
+      end
 
       def resolve_query_aggregate(domain, aggregate_name, verb)
         bluebook = @registry.bluebook(domain) ||

@@ -40,6 +40,28 @@ RSpec.describe Hecksagain::Runtime::ReactionExecutor do
     registry.dispatch("Wire::Drawer.Put",  number: { value: "left" }, amount: { cents: 10_000 })
   end
 
+  # `match_and_checkpoint?` then `dispatch!`, compensating independently
+  # on any failed dispatch — the exact two-step, mutex-free shape
+  # `SagaInterpreter`'s own real orchestration uses (this test has no
+  # mutex to guard, being single-threaded and synchronous, so it skips
+  # straight to calling both steps in order). Mirrors this class's own
+  # header on why compensation orchestration is a CALLER'S job, not
+  # this class's own.
+  def run_reaction(executor, reaction, sources:, state:, domain:)
+    return { matched: false } unless executor.match_and_checkpoint?(reaction, state: state, sources: sources)
+
+    outcomes = executor.dispatch!(reaction, sources: sources, domain: domain)
+    outcomes.each do |outcome|
+      next if outcome[:delivered]
+      next unless reaction.failure.is_a?(Hecksagain::Runtime::ReactionLowering::Failure::Managed)
+      next unless reaction.failure.compensation
+
+      run_reaction(executor, reaction.failure.compensation, sources: sources, state: state, domain: domain)
+    end
+
+    { matched: true, outcomes: outcomes }
+  end
+
   let(:process_manager) { registry_b.registry.bluebook("Wire").process_managers.find { |pm| pm.name == "Carry" } }
   let(:handler) { process_manager.handlers.find { |h| h.event_type == "WireAsked" } }
   let(:reaction) { Hecksagain::Runtime::ReactionLowering.lower_process_manager_leg(process_manager, handler) }
@@ -84,10 +106,8 @@ RSpec.describe Hecksagain::Runtime::ReactionExecutor do
       # SEPARATE, identically-seeded registry — never through the real
       # dispatch pipeline, which never saw "WireAsked" fire on this one.
       door = Hecksagain::Runtime::Dispatcher.new(registry_b.registry)
-      outcome = described_class.new(registry_b.registry, door: door).run(
-        reaction, sources: sources, state: state, domain: "Wire",
-        on_checkpoint: ->(_) {}
-      )
+      outcome = run_reaction(described_class.new(registry_b.registry, door: door), reaction,
+                             sources: sources, state: state, domain: "Wire")
       left_after_executor = Wire::Drawer.find("left").cents.to_h
 
       expect(outcome[:matched]).to be(true)
@@ -124,10 +144,8 @@ RSpec.describe Hecksagain::Runtime::ReactionExecutor do
 
     it "fires the compensating leg on refusal, crediting the source drawer back" do
       door = Hecksagain::Runtime::Dispatcher.new(registry_b.registry)
-      outcome = described_class.new(registry_b.registry, door: door).run(
-        credit_reaction, sources: credit_sources, state: credit_state, domain: "Wire",
-        on_checkpoint: ->(_) {}
-      )
+      outcome = run_reaction(described_class.new(registry_b.registry, door: door), credit_reaction,
+                             sources: credit_sources, state: credit_state, domain: "Wire")
 
       expect(outcome[:matched]).to be(true)
       # The credit leg's OWN "Drawer::Put" into "right" refuses (shut) —

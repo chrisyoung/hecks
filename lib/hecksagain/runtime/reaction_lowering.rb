@@ -43,8 +43,39 @@ module Hecksagain
       # bindings, resolved together at execution time. `bindings` is a
       # list of `BindingLowering::ExecutableBinding` — the SAME node
       # type for a policy's single dispatch and every one of a saga
-      # leg's several, never a policy-shaped list and a saga-shaped one.
+      # leg's several, never a policy-shaped list and a saga-shaped one
+      # — OR `Dispatch::VERBATIM`, below.
       Dispatch = Struct.new(:command_ref, :bindings, keyword_init: true)
+
+      # `bindings == VERBATIM` means "ignore `bindings` entirely, hand
+      # the WHOLE `sources[:payload]` to the target as-is" — `policy`'s
+      # own REAL default when no `with:` is declared (`PolicyInterpreter#
+      # trigger_args`'s own original comment: "the event's whole payload
+      # forwards verbatim — the behaviour every policy did before
+      # `with:` existed"). A genuine THIRD case, not reducible to "zero
+      # bindings": an empty bindings list resolves to `{}` — no args at
+      # all — which is right for `SagaInterpreter#dispatch_args`'s own
+      # real default (an undeclared `with_spec` sends NOTHING, no
+      # verbatim-forward concept exists there at all) but silently
+      # wrong for a policy, which forwards everything by default. Found
+      # by the REAL corpus failing outright (every for_each/plain-
+      # trigger scenario with no declared `with:` lost its whole payload)
+      # once this pass wired the executor into production, not by
+      # inspection — `bindings: []` and `bindings: VERBATIM` are
+      # deliberately NOT the same value for exactly this reason.
+      #
+      # SET VIA `Dispatch::VERBATIM = ...`, NOT a bare `VERBATIM = ...`
+      # inside a `Struct.new(...) do ... end` block — the first draft of
+      # this used the block form, and it silently defined
+      # `ReactionLowering::VERBATIM`, not `Dispatch::VERBATIM`: a
+      # constant assignment inside a block follows LEXICAL scope (the
+      # source text's own `module`/`class` nesting), never the dynamic
+      # `self` a block gets instance/class-eval'd against, regardless of
+      # method definitions in the very same block correctly landing on
+      # the target class. Found immediately once this was actually
+      # exercised — `Dispatch::VERBATIM` raised `NameError:
+      # uninitialized constant`, not silently wrong — not by inspection.
+      Dispatch::VERBATIM = :verbatim
 
       module Context
         Stateless  = Class.new
@@ -98,7 +129,11 @@ module Hecksagain
       # here — sketched as already-plural so the executor never needs to
       # know which kind of `Reaction` it's holding.
       def lower_policy(policy)
-        bindings = policy.with_spec.map { |key, value| Bluebook::Expression::BindingLowering.lower([key, value], available_sources: [:payload]) }
+        bindings = if policy.with_spec.to_a.empty?
+                     Dispatch::VERBATIM
+                   else
+                     policy.with_spec.map { |key, value| Bluebook::Expression::BindingLowering.lower([key, value], available_sources: [:payload]) }
+                   end
 
         Reaction.new(
           trigger:     Trigger.new(name: policy.event_name, qualifier: policy.event_qualifier),

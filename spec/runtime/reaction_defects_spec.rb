@@ -128,7 +128,19 @@ RSpec.describe "a reaction that cannot be delivered" do
   # fixture just to inject one row's crash would test the query machinery
   # `spec/runtime/policy_spec.rb`'s own real-domain fixtures already cover,
   # not this method's own new retry/isolation logic.
+  #
+  # `fanout_policy` declares no `with_spec` — its own lowered `Reaction`
+  # has no bindings to resolve, so `row_payload` (an empty Hash here) is
+  # never actually read; only `row` (carrying `:id`, for the log/warn
+  # wording) and the door's own behaviour matter to what these two tests
+  # check.
   describe "#deliver_for_each_row" do
+    let(:fanout_policy) do
+      Hecksagain::Bluebook::Policy.new(
+        name: "ReviewOnFlag", on_event: "Flagged", trigger_command: "Fanout::Account.Review"
+      )
+    end
+    let(:reaction) { Hecksagain::Runtime::ReactionLowering.lower_policy(fanout_policy) }
     let(:base_record) { { policy: "ReviewOnFlag", on: "Flagged", trigger: "Fanout::Account.Review" } }
 
     it "retries a crashing row up to MAX_DEFECT_RETRIES times, and delivers cleanly once it clears" do
@@ -137,7 +149,8 @@ RSpec.describe "a reaction that cannot be delivered" do
                                           failures: Hecksagain::Runtime::PolicyInterpreter::MAX_DEFECT_RETRIES)
       interpreter = Hecksagain::Runtime::PolicyInterpreter.new(registry, door: door)
 
-      row_record = interpreter.send(:deliver_for_each_row, "Fanout::Account.Review", base_record, {}, id: "a1")
+      row_record = interpreter.send(:deliver_for_each_row, fanout_policy, reaction, "Fanout::Account.Review",
+                                    base_record, "Fanout", {}, { id: "a1" })
 
       expect(row_record).to include(delivered: true, for_row: "a1")
       expect(door.attempts).to eq(Hecksagain::Runtime::PolicyInterpreter::MAX_DEFECT_RETRIES + 1)
@@ -150,8 +163,10 @@ RSpec.describe "a reaction that cannot be delivered" do
 
       expected_attempts = Hecksagain::Runtime::PolicyInterpreter::MAX_DEFECT_RETRIES + 1
       row_record = nil
-      expect { row_record = interpreter.send(:deliver_for_each_row, "Fanout::Account.Review", base_record, {}, id: "a1") }
-        .to output(/ReviewOnFlag.*Flagged.*a1.*after #{expected_attempts} attempts/m).to_stderr
+      expect {
+        row_record = interpreter.send(:deliver_for_each_row, fanout_policy, reaction, "Fanout::Account.Review",
+                                      base_record, "Fanout", {}, { id: "a1" })
+      }.to output(/ReviewOnFlag.*Flagged.*a1.*after #{expected_attempts} attempts/m).to_stderr
 
       expect(row_record).to include(delivered: false, for_row: "a1", defect: true, error_class: "NoMethodError")
     end
