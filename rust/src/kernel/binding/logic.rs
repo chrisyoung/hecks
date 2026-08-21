@@ -9,13 +9,14 @@
 // a NAME as data (`Literal`/`Reference`), reusing `expr::Value` for a
 // literal's payload rather than inventing a second value type.
 //
-// HAND-WRITTEN, NOT (YET) GENERATED — unlike `expression_operators/*.rs`
-// (PRD 09), there is no self-hosted `Binding` ledger this file is
-// checked against the way `bin/rust_kernel_coverage` checks an operator
-// category's file exists. PRD 10 names this explicitly as open, not a
-// silent gap: whether `Binding`'s executable shape ever gets its own
-// generated Ruby/Rust pair, the way `Operator`'s already does, is a
-// real decision this file does not make for you.
+// INTERPRETATION ONLY — `Source`/`ExecutableBinding` themselves are
+// GENERATED (`../mod.rs`, from `bin/project_binding_shape`, ground
+// truth `Hecksagain::Bluebook::Expression::BindingShape`), closing the
+// "two hand-authored mirrors" gap PRD 10 originally shipped with and
+// flagged honestly (ADR 0030's own Slice-2 stop-condition check). What
+// stays hand-written here, deliberately, is only `lower`/`resolve` —
+// the same "generate structure, handwrite meaning" boundary
+// `expression_operators/*.rs` already draws (PRD 09).
 //
 // WHAT THIS FILE DELIBERATELY DOES NOT KNOW — same as the Ruby side: no
 // concept of "correlation head" or "saga memory." `lower`/`resolve`
@@ -23,6 +24,7 @@
 // plain argument; assembling those buckets correctly is a future
 // `Reaction`/`ReactionContext` (ADR 0030 Slice 3) caller's job.
 
+use super::{ExecutableBinding, Source};
 use crate::kernel::expr::Value;
 use std::collections::HashMap;
 
@@ -30,23 +32,6 @@ use std::collections::HashMap;
 /// is the shape a real assembled context would have.
 pub type SourceBucket = HashMap<String, Value>;
 pub type Sources = HashMap<String, SourceBucket>;
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Source {
-    Literal(Value),
-    /// `name` — the field to look up. `priority` — the ordered bucket
-    /// names to search, first match wins, mirroring
-    /// `SagaInterpreter#dispatch_args`'s own real branch order
-    /// (correlation head, then payload, then memory) when all three are
-    /// supplied; a stateless policy supplies just `["payload"]`.
-    Reference { name: String, priority: Vec<String> },
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ExecutableBinding {
-    pub destination: String,
-    pub source: Source,
-}
 
 /// `binding` is a `(key, value)` pair — the same shape `with_spec`'s own
 /// real elements have (`policy.rb`/`process_manager.rb`, read directly:
@@ -64,7 +49,7 @@ pub fn lower(key: &str, value: Value, is_reference: bool, priority: &[String]) -
         };
         Source::Reference { name, priority: priority.to_vec() }
     } else {
-        Source::Literal(value)
+        Source::Literal { value }
     };
 
     ExecutableBinding { destination: key.to_string(), source }
@@ -75,7 +60,7 @@ pub fn lower(key: &str, value: Value, is_reference: bool, priority: &[String]) -
 /// `trigger_args`/`dispatch_args`'s own `to_h` block produces.
 pub fn resolve(binding: &ExecutableBinding, sources: &Sources) -> (String, Value) {
     let value = match &binding.source {
-        Source::Literal(v) => v.clone(),
+        Source::Literal { value } => value.clone(),
         Source::Reference { name, priority } => resolve_reference(name, priority, sources),
     };
     (binding.destination.clone(), value)

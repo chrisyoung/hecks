@@ -399,6 +399,7 @@ Every domain this repository's own tests and docs draw examples from:
 | `bin/pattern-cases` | THE RECORDED FIXTURE for `pattern:`, and how to regenerate it : bin/pattern-cases > spec/corpus/fixtures/patterns.json spec/pattern_subse... |
 | `bin/present` | Boots the banking example against the in-memory adapter (same rebind spec/facade/handle_spec.rb already uses — banking.hecksagon itself b... |
 | `bin/project` | Refreshes every read-model projection a domain declares, by hand — the same catch-up a boot runs lazily, forced now rather than on first ... |
+| `bin/project_binding_shape` | PRD 10 follow-up (ADR 0030's own Slice-2 stop-condition check) — writes rust/src/kernel/binding/mod.rs (the `Literal`/`Reference`/`Source... |
 | `bin/project_cli` | Mints a command-line binary for a domain, named after its bluebook. bin/project_cli # every domain in this checkout bin/project_cli qa # ... |
 | `bin/project_deploy` | The AWS DEPLOYMENT projector — docs/decisions/0018-rehydrate-replay-lambda-host.md. Generates the SAM template and build Makefile for rus... |
 | `bin/project_field_hints` | Generates rust/host/src/field_hints.rs — the four regex hints Hecksagain::Forms::FieldShape#text_field (lib/hecksagain/ forms/field_shape... |
