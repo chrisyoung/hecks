@@ -10488,6 +10488,14 @@
               [
                 "fills",
                 "value_objects"
+              ],
+              [
+                "resolves_via",
+                "owner_keyed"
+              ],
+              [
+                "disambiguator",
+                "declared_by"
               ]
             ],
             [
@@ -14334,6 +14342,36 @@
               [
                 "fills",
                 "name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "value_object"
+              ],
+              [
+                "context",
+                "Aggregate"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "declared_by"
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                "false"
+              ],
+              [
+                "fills",
+                "declared_by"
               ]
             ],
             [

@@ -96,9 +96,12 @@ Hecks.bluebook "Bluebook" do
       end
     end
 
-    # DECLARED HERE RATHER THAN SHARED WITH `Dispatch`'s own — a value
-    # object belongs to the aggregate that uses it, and everything that
-    # walks an aggregate's own scope has nowhere else to look.
+    # ADR 0029 step 1 — declared HERE, referenced (not re-declared) by
+    # `ProcessManager`'s own `Dispatch`, below. Before the chapter-wide
+    # `value_object` sharing this uses existed, this was declared
+    # byte-identically twice — the clearest single artifact ADR 0029
+    # itself named as evidence `Policy` and `ProcessManager` grew from
+    # one underlying shape.
     value_object "Binding" do
       attribute :key,   String
       attribute :value, String
@@ -112,6 +115,7 @@ Hecks.bluebook "Bluebook" do
     # inheriting it from whatever order a store happens to iterate: an ask that
     # does not say how it is ordered is answered in identity order, which is
     # right for every other ask and fatal for the one that is the SOURCE.
+    #
     value_object "Position" do
       attribute :value, Integer
     end
@@ -216,10 +220,13 @@ Hecks.bluebook "Bluebook" do
       attribute :value, String
     end
 
-    value_object "Binding" do
-      attribute :key,   String
-      attribute :value, String
-    end
+    # ADR 0029 step 1 — REFERENCES `Policy`'s own declaration, above, the
+    # SAME word minus the block (`AggregateBuilder#value_object`'s own
+    # "no block is a reference" shape, mirroring `given`'s). Byte-
+    # identical to `Policy`'s own `Binding` before this sharing existed
+    # — the clearest single artifact ADR 0029 itself named as evidence
+    # `Policy` and `ProcessManager` grew from one underlying shape.
+    value_object "Binding"
 
     # The way back: everything DECLARED IN the chapter above. The parent
     # reference IS the query.
@@ -229,6 +236,18 @@ Hecks.bluebook "Bluebook" do
     # inheriting it from whatever order a store happens to iterate: an ask that
     # does not say how it is ordered is answered in identity order, which is
     # right for every other ask and fatal for the one that is the SOURCE.
+    #
+    # DECLARED HERE RATHER THAN SHARED WITH `Policy`'s own — `Position`
+    # is a name reused independently across MANY of this chapter's own
+    # constructs (`Aggregate`, `Command`, `Query`, `ValueObject`,
+    # `Entity`, `Policy` all declare their own), not the same fact
+    # `Binding`'s dedup above closes: chapter-wide sharing (`Aggregate
+    # Builder#value_object`'s own bare-reference form) would be
+    # AMBIGUOUS here without `declared_by:` on every one of them, and
+    # forcing that disambiguation onto a name this widely and
+    # independently reused would misrepresent that they are the SAME
+    # domain fact, which they are not — see `Binding`'s own comment,
+    # above, for the real duplication this mechanism DOES close.
     value_object "Position" do
       attribute :value, Integer
     end

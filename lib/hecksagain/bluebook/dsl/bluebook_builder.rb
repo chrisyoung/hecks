@@ -21,6 +21,16 @@ module Hecksagain
           # extended across an aggregate's whole entity tree, earlier
           # this arc). See `#given`'s own comment for what this closes.
           @chapter_named_givens = {}
+          # ADR 0029 step 1 — the SAME chapter-wide sharing, one level
+          # over, for `value_object`: `reaction.bluebook`'s own
+          # `Policy`/`ProcessManager` each declared byte-identical
+          # `Binding`/`Position` value objects before this existed,
+          # because no aggregate could reference a sibling aggregate's
+          # own declared value object by name. See
+          # `AggregateBuilder#value_object`'s own comment for the exact
+          # mechanism mirrored (`given_impl`'s write-through, `owner_
+          # keyed` resolution).
+          @chapter_value_objects = {}
         end
 
         def vision(value)
@@ -64,7 +74,8 @@ module Hecksagain
         # chapter's own top-level shape is written with it), so also
         # named in GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
         def aggregate_impl(name, &block)
-          @aggregates << AggregateBuilder.build(name, chapter_named_givens: @chapter_named_givens, &block)
+          @aggregates << AggregateBuilder.build(name, chapter_named_givens:  @chapter_named_givens,
+                                                      chapter_value_objects: @chapter_value_objects, &block)
         end
 
         # `read_model` is the word (ADR 0025 reverts `report` — the IR

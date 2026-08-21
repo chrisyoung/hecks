@@ -367,7 +367,7 @@ Hecks.bluebook "Bluebook" do
       member word: "entity",          context: "Aggregate", body: "keywords", inner: "Entity",        opens: "Entity",         fills: "", calls: "entity_impl"
       member word: "query",           context: "Aggregate", body: "keywords", inner: "Query",         opens: "Query",          fills: "", calls: "query_impl"
       member word: "policy",          context: "Aggregate", body: "keywords", inner: "Policy",        opens: "Policy",         fills: "", calls: "policy_impl"
-      member word: "value_object",    context: "Aggregate", body: "keywords", inner: "ValueObject",   opens: "ValueObject",    fills: "value_objects"
+      member word: "value_object",    context: "Aggregate", body: "keywords", inner: "ValueObject",   opens: "ValueObject",    fills: "value_objects", resolves_via: "owner_keyed", disambiguator: "declared_by"
       member word: "command",         context: "Aggregate", body: "keywords", inner: "Command",       opens: "Command",        fills: "", calls: "command_impl"
       member word: "attribute",       context: "Aggregate", body: "none",     inner: "",              opens: "",               fills: "attributes", calls: "attribute_impl"
       # THE AGGREGATE BOUNDARY IS WHAT AN INVARIANT DEFINES (S10, ADR
@@ -890,6 +890,7 @@ Hecks.bluebook "Bluebook" do
       member keyword: "query",           context: "Aggregate", at: "1", named: "",         kind: "text",     required: "true",  fills: "name"
       member keyword: "policy",          context: "Aggregate", at: "1", named: "",         kind: "text",     required: "true",  fills: "name"
       member keyword: "value_object",    context: "Aggregate", at: "1", named: "",         kind: "text",     required: "true",  fills: "name"
+      member keyword: "value_object",    context: "Aggregate", at: "",  named: "declared_by", kind: "constant", required: "false", fills: "declared_by"
       member keyword: "command",         context: "Aggregate", at: "1", named: "",         kind: "text",     required: "true",  fills: "name"
       # LIFECYCLE STATE AS A COMMAND GUARD (S10, ADR 0025) — `command
       # "Debit", from: "open"` checked against THIS aggregate's own

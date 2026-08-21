@@ -1,4 +1,5 @@
 require_relative "word_gate"
+require_relative "value_object_declaration"
 module Hecksagain
   module Bluebook
     module DSL
@@ -8,9 +9,10 @@ module Hecksagain
         include AttributeCollector
         include IdentityDeclaration
         include RuleReference
+        include ValueObjectDeclaration
         include WordGate
 
-        def initialize(name, chapter_named_givens: {})
+        def initialize(name, chapter_named_givens: {}, chapter_value_objects: {})
           @name          = name
           @value_objects = []
           @commands      = []
@@ -31,6 +33,9 @@ module Hecksagain
           # aggregate the same chapter builds. See `#given`'s own
           # comment for what this closes.
           @chapter_named_givens = chapter_named_givens
+          # ADR 0029 step 1 — the SAME chapter-wide pool, one level over,
+          # for `value_object` — see `#value_object`'s own comment.
+          @chapter_value_objects = chapter_value_objects
           # DEFERRED CONSTRUCTION — `entity`/`command`/`query` push a
           # pending descriptor here instead of building immediately; see
           # `#drain_pending!`'s own comment for why.
@@ -198,25 +203,17 @@ module Hecksagain
           @policies << reaction
         end
 
-        # `builder.closed_sets` TOO, not only `builder.build` — a REAL,
-        # previously-unreachable gap this exact fix exposed: a
-        # value_object's own INLINE `attribute :x, one_of(...)` (now legal
-        # — S3, ADR 0025 removed the wrong-arity collision that used to
-        # make this crash before it could ever matter) synthesises its own
-        # anonymous value object via the SAME `AttributeCollector#closed_
-        # sets` mechanism an aggregate's own attributes already use — and
-        # nothing installed it anywhere. `Box.attributes` said `size:
-        # "Size"` while no "Size" value object existed in the whole
-        # domain: a dangling type name, not a working closed set. Flattened
-        # into THIS aggregate's own `@value_objects`, the identical move
-        # `@value_objects + closed_sets` already makes for the aggregate's
-        # own direct attributes (see this file's other 5 call sites).
-        def value_object(name, &block)
-          builder = ValueObjectBuilder.new(name, owner_value_objects: @value_objects + closed_sets)
-          builder.instance_eval(&block) if block
-          @value_objects << builder.build
-          @value_objects.concat(builder.closed_sets)
-        end
+        # `value_object` itself — including its own "builder.closed_sets
+        # too, not only builder.build" fix (a value_object's own INLINE
+        # `attribute :x, one_of(...)` synthesises its own anonymous value
+        # object via `AttributeCollector#closed_sets`, and needs
+        # installing too, not left dangling) and ADR 0029 step 1's own
+        # chapter-wide sharing (the SAME word, minus a block, is a
+        # reference) — is `ValueObjectDeclaration` now, a sibling mixin,
+        # extracted the moment the sharing pushed this class past
+        # `Metrics/ClassLength`, the same reason `AttributeCollector`/
+        # `IdentityDeclaration`/`RuleReference` (included below) are
+        # their own mixins rather than inline here.
 
         # `from:` — LIFECYCLE STATE BECOMES A COMMAND GUARD (S10, ADR
         # 0025) — `command "Debit", from: "open"` replaces `given
@@ -390,8 +387,8 @@ module Hecksagain
           ir
         end
 
-        def self.build(name, chapter_named_givens: {}, &block)
-          builder = new(name, chapter_named_givens: chapter_named_givens)
+        def self.build(name, chapter_named_givens: {}, chapter_value_objects: {}, &block)
+          builder = new(name, chapter_named_givens: chapter_named_givens, chapter_value_objects: chapter_value_objects)
           builder.instance_eval(&block) if block
           builder.build
         end

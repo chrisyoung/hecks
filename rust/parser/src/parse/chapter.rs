@@ -262,6 +262,14 @@ fn parse_body_into(
     // try_reference_named_chapter_given`'s own header for why this is
     // keyed by owner too, not a flat `Given` list.
     let mut chapter_named_givens: Vec<(String, ir::Given)> = Vec::new();
+    // ADR 0029 step 1 — the SAME chapter-wide pool, one level over, for
+    // `value_object`: `reaction.bluebook`'s own `Policy`/`ProcessManager`
+    // declared byte-identical `Binding` value objects before Ruby's own
+    // `AggregateBuilder#value_object` (chapter-wide sharing) existed —
+    // see `aggregate::try_reference_named_chapter_value_object`'s own
+    // header for the mirrored mechanism. SCOPED TO THIS FILE, same
+    // reasoning as `chapter_named_givens` just above.
+    let mut chapter_value_objects: Vec<(String, ir::ValueObject)> = Vec::new();
 
     loop {
         let Some(gated) = super::next_line(file, lines, pos, "Bluebook")? else {
@@ -287,7 +295,8 @@ fn parse_body_into(
             }
             "aggregate" => {
                 let agg_name = super::positional_text(file, line, "aggregate", &gated.args, 1)?;
-                let (built, policies) = aggregate::parse_body(file, lines, pos, &agg_name, &mut chapter_named_givens)?;
+                let (built, policies) =
+                    aggregate::parse_body(file, lines, pos, &agg_name, &mut chapter_named_givens, &mut chapter_value_objects)?;
                 bluebook.aggregates.push(built);
                 aggregate_policies.extend(policies);
             }

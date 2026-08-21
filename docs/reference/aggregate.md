@@ -369,11 +369,12 @@ runtime.registry.bluebook("Banking").policies.map(&:name).first  # => "ReviewOnF
 ## value_object
 
 <!-- generated:begin word=value_object -->
-`value_object name do ... end` — opens a `ValueObject` body, fills `value_objects`
+`value_object name, declared_by: do ... end` — opens a `ValueObject` body, fills `value_objects`
 
 | argument | kind | required | fills |
 |---|---|---|---|
 | positional 1 | text | true | name |
+| `declared_by:` | constant | false | declared_by |
 <!-- generated:end -->
 
 Opens a type with no identity of its own, carrying its `attribute`s and `invariant`s wherever it is used. See the ValueObject context page for the full vocabulary.

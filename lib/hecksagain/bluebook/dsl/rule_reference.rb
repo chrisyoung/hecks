@@ -128,9 +128,16 @@ module Hecksagain
         # AFTER `grammar_registry` is fully built and memoized, so reads
         # the real table, every time, no exception.
         BOOTSTRAP_FALLBACK = {
-          %w[given Aggregate]       => { resolves_via: "owner_keyed", disambiguator: "declared_by" },
-          %w[given Command]         => { resolves_via: "hash_chain" },
-          %w[invariant ValueObject] => { resolves_via: "sibling_scan" }
+          %w[given Aggregate]        => { resolves_via: "owner_keyed", disambiguator: "declared_by" },
+          %w[given Command]          => { resolves_via: "hash_chain" },
+          %w[invariant ValueObject]  => { resolves_via: "sibling_scan" },
+          # ADR 0029 step 1 — `value_object`'s own bare-reference form
+          # (`AggregateBuilder#value_object`) is exercised WHILE
+          # `reaction.bluebook` itself loads, building the very grammar
+          # table `#lookup`'s own non-bootstrapping branch would
+          # otherwise read — the same unavoidable exception `given`/
+          # `invariant` already needed this fallback for.
+          %w[value_object Aggregate] => { resolves_via: "owner_keyed", disambiguator: "declared_by" }
         }.freeze
 
         def lookup(word, context)

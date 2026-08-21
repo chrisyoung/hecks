@@ -157,12 +157,94 @@ fn try_reference_named_chapter_given(
     Ok(Some(resolved))
 }
 
+/// BARE `value_object(name)` — CHAPTER-WIDE REFERENCE (ADR 0029 step 1).
+/// Mirrors `try_reference_named_chapter_given` immediately above, one
+/// member wider: `syntax.bluebook`'s own grammar row for `value_object`/
+/// Aggregate still declares `body: "keywords"` (block required) —
+/// unchanged, on purpose, since a FRESH declaration still needs one — so
+/// a genuinely bare `value_object` has to be recognized and consumed
+/// HERE, by raw lexing, before `body_gate` would refuse it the same way
+/// `given`'s own bare form would without this peek. NOT wired for
+/// `closed_set`-carrying value objects (an inline `attribute :x,
+/// one_of(...)` inside the DECLARING block) — `Binding`, ADR 0029's own
+/// real target, has none; a future name that needs both would need this
+/// pool to carry its own closed sets too, not attempted here since
+/// nothing exercises it.
+fn try_reference_named_chapter_value_object(
+    file: &str,
+    lines: &[SourceLine],
+    pos: &mut usize,
+    chapter_value_objects: &[(String, ir::ValueObject)],
+) -> ParseResult<Option<ir::ValueObject>> {
+    let Some(&line) = lines.get(*pos) else { return Ok(None) };
+    let LineShape::Call(call) = lex::classify(file, &line)? else { return Ok(None) };
+    if call.word != "value_object" || !matches!(call.opener, Opener::None) {
+        return Ok(None);
+    }
+
+    super::verify_resolves_via(file, line.number, "value_object", "Aggregate", "owner_keyed")?;
+
+    let args = super::argument_gate(file, "value_object", "Aggregate", &call.args, line.number)?;
+    let name = super::positional_text(file, line.number, "value_object", &args, 1)?;
+    let declared_by = super::named_raw(&args, "declared_by").map(|raw| naming::demodulise(raw.trim()));
+
+    let candidates: Vec<&(String, ir::ValueObject)> =
+        chapter_value_objects.iter().filter(|(_, vo)| vo.name == name).collect();
+
+    let resolved = if let Some(owner) = declared_by {
+        candidates
+            .iter()
+            .find(|(candidate_owner, _)| candidate_owner == &owner)
+            .map(|(_, vo)| vo.clone())
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    file,
+                    line.number,
+                    format!(
+                        "'{name}' names no value object {owner} declares in this chapter — {owner} \
+                         either hasn't declared '{name}', or declared_by: named the wrong aggregate"
+                    ),
+                )
+            })?
+    } else {
+        match candidates.as_slice() {
+            [] => {
+                return Err(Diagnostic::new(
+                    file,
+                    line.number,
+                    format!(
+                        "'{name}' names no value object any aggregate in this chapter has declared \
+                         yet — declare it once with a block, before the aggregates that reference it"
+                    ),
+                ))
+            }
+            [(_, vo)] => vo.clone(),
+            _ => {
+                let owners: Vec<&str> = candidates.iter().map(|(owner, _)| owner.as_str()).collect();
+                return Err(Diagnostic::new(
+                    file,
+                    line.number,
+                    format!(
+                        "'{name}' is ambiguous in this chapter — {} each declare a DIFFERENT value \
+                         object under this same name; name which one with declared_by:",
+                        owners.join(", ")
+                    ),
+                ));
+            }
+        }
+    };
+
+    *pos += 1;
+    Ok(Some(resolved))
+}
+
 pub fn parse_body(
     file: &str,
     lines: &[SourceLine],
     pos: &mut usize,
     name: &str,
     chapter_named_givens: &mut Vec<(String, ir::Given)>,
+    chapter_value_objects: &mut Vec<(String, ir::ValueObject)>,
 ) -> ParseResult<(ir::Aggregate, Vec<ir::Policy>)> {
     let mut aggregate = ir::Aggregate { name: name.to_string(), ..Default::default() };
     let mut pending_identity: Option<super::PendingIdentity> = None;
@@ -197,6 +279,14 @@ pub fn parse_body(
         // consumed HERE, by raw lexing, before that gate would refuse it.
         if let Some(given) = try_reference_named_chapter_given(file, lines, pos, chapter_named_givens)? {
             aggregate.preconditions.push(given);
+            continue;
+        }
+
+        // BARE `value_object(name)` — CHAPTER-WIDE REFERENCE (ADR 0029
+        // step 1), peeked and consumed the identical way `given`'s own
+        // bare form is, immediately above.
+        if let Some(vo) = try_reference_named_chapter_value_object(file, lines, pos, chapter_value_objects)? {
+            aggregate.value_objects.push(vo);
             continue;
         }
 
@@ -360,7 +450,17 @@ pub fn parse_body(
                 let vo = super::parse_nested_body(file, lines, pos, &gated.call.opener, line, |f, l, p| {
                     value_object::parse_body(f, l, p, &vo_name, &owner_value_objects)
                 })?;
-                aggregate.value_objects.push(vo);
+                aggregate.value_objects.push(vo.clone());
+                // WRITE-THROUGH, first-declared-wins PER OWNER (ADR 0029
+                // step 1) — the identical shape `given`'s own write-
+                // through takes, just above: a DIFFERENT owner
+                // independently declaring the identical name registers
+                // its OWN entry alongside, never overwriting another
+                // owner's — see `try_reference_named_chapter_value_object`'s
+                // own header for why.
+                if !chapter_value_objects.iter().any(|(owner, v)| owner == name && v.name == vo_name) {
+                    chapter_value_objects.push((name.to_string(), vo));
+                }
             }
             "lifecycle" => {
                 let field = super::positional_symbol(file, line, "lifecycle", &gated.args, 1)?;

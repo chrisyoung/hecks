@@ -117,8 +117,11 @@ RSpec.describe "the DSL surface is fully covered" do
       # `identified_by` (S9, ADR 0025) — shared by AggregateBuilder and
       # EntityBuilder via IdentityDeclaration, the same reason
       # attribute/list_of/attributes are already exempted here for
-      # AttributeCollector.
-      stale = declared - actual - %i[attributes list_of attribute identified_by]
+      # AttributeCollector. `value_object` (ADR 0029 step 1) is the
+      # SAME shape one mixin over — extracted into ValueObjectDeclaration
+      # once its own chapter-wide sharing pushed AggregateBuilder past
+      # Metrics/ClassLength.
+      stale = declared - actual - %i[attributes list_of attribute identified_by value_object]
 
       expect(stale).to be_empty,
                        "#{label} declares #{stale.inspect} which no longer exists — remove it"
