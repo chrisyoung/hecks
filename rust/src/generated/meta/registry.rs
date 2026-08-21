@@ -865,6 +865,67 @@ pub fn reference_key_for_aggregate(qualified_name: &str) -> Option<&'static str>
     }
 }
 
+pub fn command_creates(verb: &str) -> bool {
+    match verb {
+        "Bluebook::Aggregate.Identify" => false,
+        "Bluebook::Aggregate.Attribute" => false,
+        "Bluebook::Aggregate.Reference" => false,
+        "Bluebook::Aggregate.Holds" => false,
+        "Bluebook::Aggregate.Lifecycle" => false,
+        "Bluebook::Aggregate.Transition" => false,
+        "Bluebook::Aggregate.Seal" => false,
+        "Bluebook::Aggregate.Value" => false,
+        "Bluebook::Aggregate.Invariant" => false,
+        "Bluebook::Aggregate.Precondition" => false,
+        "Bluebook::Aggregate.Projects" => false,
+        "Bluebook::Bluebook.Attach" => false,
+        "Bluebook::Bluebook.Normalise" => false,
+        "Bluebook::Command.Rule" => false,
+        "Bluebook::Command.Ensure" => false,
+        "Bluebook::Command.Change" => false,
+        "Bluebook::Command.ActsOn" => false,
+        "Bluebook::Command.Announce" => false,
+        "Bluebook::Entity.Identify" => false,
+        "Bluebook::Entity.Seal" => false,
+        "Bluebook::Entity.Attribute" => false,
+        "Bluebook::Entity.Precondition" => false,
+        "Bluebook::Entity.Invariant" => false,
+        "Bluebook::Entity.Lifecycle" => false,
+        "Bluebook::Entity.Transition" => false,
+        "Bluebook::Policy.Bind" => false,
+        "Bluebook::ProcessManager.State" => false,
+        "Bluebook::ProcessManager.Handler" => false,
+        "Bluebook::ProcessManager.Handler.Dispatch" => false,
+        "Bluebook::ReadModel.Gather" => false,
+        "Bluebook::ReadModel.GroupBy" => false,
+        "Bluebook::ReadModel.Count" => false,
+        "Bluebook::ReadModel.Median" => false,
+        "Bluebook::ReadModel.Option" => false,
+        "Bluebook::Query.Filter" => false,
+        "Bluebook::Query.Option" => false,
+        "Bluebook::ValueObject.Close" => false,
+        "Bluebook::ValueObject.Assert" => false,
+        "Bluebook::ValueObject.Member" => false,
+        "Bluebook::ValueObject.Member.Pair" => false,
+        "Bluebook::Syntax.Keyword" => false,
+        "Bluebook::Syntax.Argument" => false,
+        "Bluebook::Syntax.Keyword.Deprecate" => false,
+        "Bluebook::Syntax.Keyword.Retire" => false,
+        "Bluebook::Syntax.Argument.Deprecate" => false,
+        "Bluebook::Syntax.Argument.Retire" => false,
+        _ => false,
+    }
+}
+
+pub fn identity_head_for_aggregate(qualified_name: &str) -> Option<&'static str> {
+    match qualified_name {
+        "Bluebook::Bluebook" => Some("name"),
+        "Bluebook::Syntax" => Some("name"),
+        "Bluebook::Vocabulary" => Some("name"),
+        _ => None,
+    }
+}
+
 pub const QUERIES: &[crate::kernel::QueryDef] = &[
 crate::kernel::QueryDef {
     verb: "Bluebook::Aggregate.DeclaredIn",

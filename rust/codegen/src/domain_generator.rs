@@ -626,6 +626,7 @@ pub fn generate(
                 domain_name,
                 aggregate.get("attributes").map(Json::each).unwrap_or(&[]),
             ),
+            identified_by: aggregate.get("identified_by").map(Json::each).unwrap_or(&[]).iter().map(Json::to_s).collect(),
         });
     }
 
@@ -724,6 +725,16 @@ pub fn generate(
             exemplar,
             &[(domain_name.to_string(), generated_names)],
         ),
+    );
+    puts_blank(&mut registry_rs);
+    puts_str(
+        &mut registry_rs,
+        &reactions::emit_creates_table(exemplar, &registry_aggregates),
+    );
+    puts_blank(&mut registry_rs);
+    puts_str(
+        &mut registry_rs,
+        &reactions::emit_identity_head_table(exemplar, &registry_aggregates),
     );
     puts_blank(&mut registry_rs);
     puts_str(

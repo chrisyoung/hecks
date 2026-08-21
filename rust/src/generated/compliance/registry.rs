@@ -221,6 +221,25 @@ pub fn reference_key_for_aggregate(qualified_name: &str) -> Option<&'static str>
     }
 }
 
+pub fn command_creates(verb: &str) -> bool {
+    match verb {
+        "Compliance::AccountFreezeReview.Open" => true,
+        "Compliance::AccountFreezeReview.Clear" => false,
+        "Compliance::AccountFreezeReview.Escalate" => false,
+        "Compliance::BoxSurrenderReview.Open" => true,
+        "Compliance::BoxSurrenderReview.Clear" => false,
+        "Compliance::BoxSurrenderReview.Escalate" => false,
+        _ => false,
+    }
+}
+
+pub fn identity_head_for_aggregate(qualified_name: &str) -> Option<&'static str> {
+    match qualified_name {
+        "Compliance::AccountFreezeReview" => Some("number"),
+        _ => None,
+    }
+}
+
 pub const QUERIES: &[crate::kernel::QueryDef] = &[
 
 ];

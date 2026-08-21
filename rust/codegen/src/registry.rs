@@ -79,6 +79,10 @@ pub struct AggregateEntry {
     /// own specs, and the domain-wide `REFERENCE_TABLE`'s own row for
     /// this aggregate (`reference_specs.rb`'s own header).
     pub reference_specs: Vec<ReferenceSpec>,
+    /// THIS AGGREGATE'S OWN DECLARED IDENTITY PATHS, carried through
+    /// verbatim — `reactions.rs`'s own `emit_identity_head_table` reads
+    /// the single-component case (the only shape it resolves).
+    pub identified_by: Vec<String>,
 }
 
 pub fn emit_role_check(
@@ -543,6 +547,7 @@ mod tests {
             chapter_mod: "banking".to_string(),
             domain_name: "Banking".to_string(),
             reference_specs: Vec::new(),
+            identified_by: vec!["branch_code".to_string(), "box_number".to_string()],
         };
 
         let generated = emit_registry(&Exemplar::load(), &[aggregate]);

@@ -174,6 +174,22 @@ pub fn reference_key_for_aggregate(qualified_name: &str) -> Option<&'static str>
     }
 }
 
+pub fn command_creates(verb: &str) -> bool {
+    match verb {
+        "Identity::Identity.Register" => true,
+        "Identity::ExternalIdentifier.Link" => true,
+        _ => false,
+    }
+}
+
+pub fn identity_head_for_aggregate(qualified_name: &str) -> Option<&'static str> {
+    match qualified_name {
+        "Identity::Identity" => Some("identity_id"),
+        "Identity::ExternalIdentifier" => Some("key"),
+        _ => None,
+    }
+}
+
 pub const QUERIES: &[crate::kernel::QueryDef] = &[
 crate::kernel::QueryDef {
     verb: "Identity::ExternalIdentifier.ResolvedBy",

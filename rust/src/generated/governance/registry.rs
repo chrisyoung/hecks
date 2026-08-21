@@ -197,6 +197,23 @@ pub fn reference_key_for_aggregate(qualified_name: &str) -> Option<&'static str>
     }
 }
 
+pub fn command_creates(verb: &str) -> bool {
+    match verb {
+        "Governance::RoleAssignment.Assign" => true,
+        "Governance::RoleAssignment.Revoke" => false,
+        "Governance::RoleTransition.Grant" => true,
+        "Governance::RoleTransition.Revoke" => false,
+        _ => false,
+    }
+}
+
+pub fn identity_head_for_aggregate(qualified_name: &str) -> Option<&'static str> {
+    match qualified_name {
+
+        _ => None,
+    }
+}
+
 pub const QUERIES: &[crate::kernel::QueryDef] = &[
 crate::kernel::QueryDef {
     verb: "Governance::RoleAssignment.AssignmentsForActor",

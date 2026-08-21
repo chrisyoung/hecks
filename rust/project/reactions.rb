@@ -364,5 +364,54 @@ module RustProjection
 
       Exemplar.render("reference_key_table", '"tmpl_qualified" => Some("tmpl_key"),' => arms.join("\n"))
     end
+
+    # ── "DOES THIS VERB CREATE THE RECORD IT ADDRESSES" — `orchestrate.rs`'s
+    # own routing split (`split_routed_args`, its own header) needs this
+    # BEFORE it can decide whether a policy/saga-triggered dispatch's
+    # projected args should have their addressing key promoted into `to:`
+    # at all: `ReactionInvocation.build`'s own `target.command.creates?`
+    # gate — a CREATING target has no existing record to route to, so its
+    # whole projection stays `with:` facts, unrouted, exactly like
+    # `Pizzas::Order.CreatePizza` dispatched directly. Reuses `emit_
+    # registry`'s own already-computed `commands[]`/`entity_commands[]`
+    # `creates:`/`verb:` fields verbatim — an entity command is never
+    # creating (commands.rb's own header on `emit_entity_command`), so it
+    # always reads `false` here without needing its own separate branch.
+    def emit_creates_table(aggregates)
+      arms = aggregates.flat_map do |aggregate|
+        (Array(aggregate[:commands]).map { |c| [c[:verb], c[:creates]] } +
+         Array(aggregate[:entity_commands]).map { |c| [c[:verb], false] }).map do |verb, creates|
+          "        #{verb.inspect} => #{creates},"
+        end
+      end
+
+      Exemplar.render("creates_table", '"tmpl_verb" => true,' => arms.join("\n"))
+    end
+
+    # ── THE SINGLE-COMPONENT IDENTITY HEAD `orchestrate.rs`'s own routing
+    # split (`split_routed_args`) tries FIRST, matching `ReactionInvocation
+    # .identity_for`'s own first move (`Identity.of`, tried before any
+    # alias): a construct's own declared identity field, present in the
+    # projected args by that EXACT name — `ExternalTransfer::SendTransfer`'s
+    # own `dispatch ..., with: { end_to_end: :end_to_end }` is the corpus's
+    # live example (`end_to_end`, `ExternalTransfer`'s own `identified_by`
+    # head, not derivable from `reference_key_for_aggregate`'s generic
+    # snake-cased-type-name rule at all). A COMPOSITE identity (more than
+    # one component) is a real, documented gap here, not silently assumed
+    # to work — `identity_for`'s own multi-field reconstruction needs every
+    # component present at once, which this single-key table cannot
+    # express; skipped rather than guessed at.
+    def emit_identity_head_table(aggregates)
+      arms = aggregates.filter_map do |aggregate|
+        heads = Array(aggregate[:identified_by])
+        next if heads.size != 1
+
+        head = heads.first.to_s.split(".").first
+        qualified = "#{aggregate[:domain_name]}::#{aggregate[:name]}"
+        "        #{qualified.inspect} => Some(#{head.inspect}),"
+      end
+
+      Exemplar.render("identity_head_table", '"tmpl_qualified" => Some("tmpl_head"),' => arms.join("\n"))
+    end
   end
 end

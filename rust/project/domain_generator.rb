@@ -127,7 +127,6 @@ module RustProjection
         vo_by_name = a[:value_objects].to_h { |vo| [vo[:name], vo] }
         Projector.unsupported_attribute_types(a, vo_by_name).any?
       end.map { |a| a[:name] }
-
       ir[:aggregates].each do |aggregate|
         value_objects_by_name = aggregate[:value_objects].to_h { |vo| [vo[:name], vo] }
         # BEFORE anything below reads a single `attr[:optional]` off an
@@ -536,6 +535,12 @@ module RustProjection
           commands: registry_commands,
           entity_commands: entity_commands,
           ports: port_operations,
+          # THIS AGGREGATE'S OWN DECLARED IDENTITY PATHS, carried through
+          # verbatim — `emit_identity_head_table`/`reactions.rb` reads the
+          # single-component case (the only shape it resolves; a
+          # composite identity is a real, documented gap there, not
+          # silently assumed to work).
+          identified_by: aggregate[:identified_by],
           # WHICH TOP-LEVEL GENERATED MODULE this aggregate's own .rs file
           # lives under (`meta`, `embryonaut`, `governance`, ...) — a
           # standalone per-chapter registry.rs (this file, below) uses it
@@ -738,6 +743,10 @@ module RustProjection
         f.puts Projector.emit_process_manager_table(ir[:process_managers])
         f.puts
         f.puts Projector.emit_reference_key_table([[domain_name, generated_aggregates.map { |a| a[:name] }]])
+        f.puts
+        f.puts Projector.emit_creates_table(registry_aggregates)
+        f.puts
+        f.puts Projector.emit_identity_head_table(registry_aggregates)
         f.puts
         f.puts Projector.emit_query_table(query_defs)
         f.puts

@@ -945,6 +945,81 @@ pub fn reference_key_for_aggregate(qualified_name: &str) -> Option<&'static str>
     }
 }
 
+pub fn command_creates(verb: &str) -> bool {
+    match verb {
+        "Banking::Customer.Register" => true,
+        "Banking::Customer.Suspend" => false,
+        "Banking::Customer.Reinstate" => false,
+        "Banking::Customer.Close" => false,
+        "Banking::Account.Open" => true,
+        "Banking::Account.Credit" => false,
+        "Banking::Account.Debit" => false,
+        "Banking::Account.FreezeAccount" => false,
+        "Banking::Account.Unfreeze" => false,
+        "Banking::Account.CloseAccount" => false,
+        "Banking::Account.ApplyFee" => false,
+        "Banking::Account.CorrectFee" => false,
+        "Banking::Account.AccrueInterest" => false,
+        "Banking::Account.CorrectInterest" => false,
+        "Banking::Account.LedgerEntry.Amend" => false,
+        "Banking::Account.LedgerEntry.Reverse" => false,
+        "Banking::OnboardingCase.Open" => true,
+        "Banking::OnboardingCase.Clear" => false,
+        "Banking::OnboardingCase.Decline" => false,
+        "Banking::ATMCard.Issue" => true,
+        "Banking::ATMCard.Rename" => false,
+        "Banking::ATMCard.Withdraw" => false,
+        "Banking::ATMCard.Activate" => false,
+        "Banking::ATMCard.Retire" => false,
+        "Banking::ATMCard.Withdrawal.Dispute" => false,
+        "Banking::CardPayment.Authorize" => true,
+        "Banking::CardPayment.Capture" => false,
+        "Banking::CardPayment.Void" => false,
+        "Banking::CardPayment.Refund" => false,
+        "Banking::CardPayment.Reverse" => false,
+        "Banking::CardPayment.Dispute" => false,
+        "Banking::CardPayment.Chargeback" => false,
+        "Banking::CardPayment.RejectDispute" => false,
+        "Banking::SafeDepositBox.Surrender" => false,
+        "Banking::SafeDepositBox.LogVisit" => false,
+        "Banking::SafeDepositBox.IssueKey" => false,
+        "Banking::SafeDepositBox.Visit.Annotate" => false,
+        "Banking::SafeDepositBox.KeyIssuance.Return" => false,
+        "Banking::Statement.Generate" => true,
+        "Banking::Transfer.Request" => true,
+        "Banking::Transfer.Debited" => false,
+        "Banking::Transfer.Settle" => false,
+        "Banking::Transfer.Credited" => false,
+        "Banking::Transfer.Reverse" => false,
+        "Banking::Transfer.Reject" => false,
+        "Banking::ExternalTransfer.Request" => true,
+        "Banking::ExternalTransfer.SendTransfer" => false,
+        "Banking::ExternalTransfer.Recall" => false,
+        "Banking::ExternalTransfer.Return" => false,
+        "Banking::ScheduledPayment.Schedule" => true,
+        "Banking::ScheduledPayment.Execute" => false,
+        "Banking::ScheduledPayment.Cancel" => false,
+        "Banking::ScheduledPayment.Fail" => false,
+        "Banking::ScheduledPayment.Retry" => false,
+        "Banking::ScheduledPayment.Abandon" => false,
+        _ => false,
+    }
+}
+
+pub fn identity_head_for_aggregate(qualified_name: &str) -> Option<&'static str> {
+    match qualified_name {
+        "Banking::Customer" => Some("reference"),
+        "Banking::Account" => Some("number"),
+        "Banking::OnboardingCase" => Some("reference"),
+        "Banking::ATMCard" => Some("serial"),
+        "Banking::CardPayment" => Some("authorisation"),
+        "Banking::Transfer" => Some("reference"),
+        "Banking::ExternalTransfer" => Some("end_to_end"),
+        "Banking::ScheduledPayment" => Some("instruction"),
+        _ => None,
+    }
+}
+
 pub const QUERIES: &[crate::kernel::QueryDef] = &[
 crate::kernel::QueryDef {
     verb: "Banking::Customer.InGoodStanding",

@@ -195,6 +195,10 @@ else
     f.puts
     f.puts RustProjection::Projector.emit_reference_key_table([[meta_ir[:name], meta_result[:aggregates].map { |a| a[:name] }]])
     f.puts
+    f.puts RustProjection::Projector.emit_creates_table(meta_result[:aggregates])
+    f.puts
+    f.puts RustProjection::Projector.emit_identity_head_table(meta_result[:aggregates])
+    f.puts
     f.puts RustProjection::Projector.emit_query_table(meta_result[:queries])
     f.puts
     f.puts RustProjection::Projector.emit_read_model_table(meta_result[:read_models])
@@ -295,6 +299,10 @@ else
         }).map { |a| a[:name] }]
       }
     )
+    f.puts
+    f.puts RustProjection::Projector.emit_creates_table(merged_aggregates)
+    f.puts
+    f.puts RustProjection::Projector.emit_identity_head_table(merged_aggregates)
     f.puts
     f.puts RustProjection::Projector.emit_query_table(merged_queries)
     f.puts

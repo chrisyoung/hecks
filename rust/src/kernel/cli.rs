@@ -20,7 +20,7 @@
 // generated.
 
 use super::{named_query, orchestrate, query_comparators, read_model, repository, AggregateScan, Event, Json, MutationRecord, PendingCrossDomainReaction, Refusal, SagaInstance, Tables};
-use crate::generated::active::{dispatch_by_name, reference_key_for_aggregate, Store, CROSS_DOMAIN_POLICIES, POLICIES, PROCESS_MANAGERS, QUERIES, READ_MODELS};
+use crate::generated::active::{command_creates, dispatch_by_name, identity_head_for_aggregate, reference_key_for_aggregate, Store, CROSS_DOMAIN_POLICIES, POLICIES, PROCESS_MANAGERS, QUERIES, READ_MODELS};
 use std::collections::HashMap;
 
 pub fn run(input: &str) -> String {
@@ -307,6 +307,8 @@ pub fn run(input: &str) -> String {
             process_managers: PROCESS_MANAGERS,
             reference_key_fn: reference_key_for_aggregate,
             queries: QUERIES,
+            command_creates_fn: command_creates,
+            identity_head_fn: identity_head_for_aggregate,
         };
         if let Err(refusal) = orchestrate(
             &mut store,
