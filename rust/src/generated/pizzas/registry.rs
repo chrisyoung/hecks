@@ -78,12 +78,13 @@ pub fn dispatch_by_name(
 ) -> Result<Vec<crate::kernel::Event>, crate::kernel::Refusal> {
     match verb {
           "Pizzas::Order.CreatePizza" => {
+              let id = crate::generated::pizzas::order::Order::extract_id(args_json)?;
               let args = crate::generated::pizzas::order::CreatePizzaArgs::from_json(args_json)?;
               crate::kernel::check_role(Some("Chef"), "CreatePizza", caller_role)?;
-              let owner_deref = Vec::new();
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Pizzas::Order", &id);
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::pizzas::order::dispatch_create_pizza(&mut store.order, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+              crate::generated::pizzas::order::dispatch_create_pizza(&mut store.order, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Pizzas::Order.AddTopping" => {
               let id = crate::generated::pizzas::order::Order::extract_id(args_json)?;
@@ -102,12 +103,6 @@ pub fn dispatch_by_name(
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
               crate::generated::pizzas::order::dispatch_purchase(&mut store.order, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
-          }
-          "Pizzas::Order.PaymentGateway.Receive" => {
-              let args = crate::generated::pizzas::order::PaymentGatewayReceiveArgs::from_json(args_json)?;
-              crate::kernel::check_reference(&store.order, &args.name, "Order", "name")?;
-              let payload = crate::kernel::Json::overlay(args_json, &args.to_json());
-              crate::generated::pizzas::order::dispatch_operation_paymentgateway_receive(args).map(|events| stamp_payload(events, &payload))
           }
         other => Err(crate::kernel::Refusal::TypeMismatch(format!("unknown command {other:?}"))),
     }

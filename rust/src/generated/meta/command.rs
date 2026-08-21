@@ -1034,7 +1034,7 @@ pub struct RuleArgs {
 }
 
 pub fn dispatch_rule(
-    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: RuleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: RuleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1042,25 +1042,7 @@ pub fn dispatch_rule(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
-        build: Box::new(|| Command {
-            aggregate: None,
-            entity_id: None,
-            name: None,
-            role: None,
-            goal: None,
-            emits: vec![],
-            references: None,
-            attributes: vec![],
-            givens: vec![],
-            ensures: vec![],
-            mutations: vec![],
-            provenance: None,
-            from: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Rule",
         "Bluebook::Command",
         "Command",
@@ -1129,7 +1111,7 @@ pub struct EnsureArgs {
 }
 
 pub fn dispatch_ensure(
-    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: EnsureArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: EnsureArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1137,25 +1119,7 @@ pub fn dispatch_ensure(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
-        build: Box::new(|| Command {
-            aggregate: None,
-            entity_id: None,
-            name: None,
-            role: None,
-            goal: None,
-            emits: vec![],
-            references: None,
-            attributes: vec![],
-            givens: vec![],
-            ensures: vec![],
-            mutations: vec![],
-            provenance: None,
-            from: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Ensure",
         "Bluebook::Command",
         "Command",
@@ -1230,7 +1194,7 @@ pub struct ChangeArgs {
 }
 
 pub fn dispatch_change(
-    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: ChangeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: ChangeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         args.target.check_invariants()?;
         if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove"].contains(&args.op.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\" — got ", args.op.value))); }
@@ -1242,25 +1206,7 @@ pub fn dispatch_change(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
-        build: Box::new(|| Command {
-            aggregate: None,
-            entity_id: None,
-            name: None,
-            role: None,
-            goal: None,
-            emits: vec![],
-            references: None,
-            attributes: vec![],
-            givens: vec![],
-            ensures: vec![],
-            mutations: vec![],
-            provenance: None,
-            from: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Change",
         "Bluebook::Command",
         "Command",
@@ -1333,32 +1279,14 @@ pub struct ActsOnArgs {
 }
 
 pub fn dispatch_acts_on(
-    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: ActsOnArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: ActsOnArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         args.root.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
-        build: Box::new(|| Command {
-            aggregate: None,
-            entity_id: None,
-            name: None,
-            role: None,
-            goal: None,
-            emits: vec![],
-            references: None,
-            attributes: vec![],
-            givens: vec![],
-            ensures: vec![],
-            mutations: vec![],
-            provenance: None,
-            from: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "ActsOn",
         "Bluebook::Command",
         "Command",
@@ -1423,32 +1351,14 @@ pub struct AnnounceArgs {
 }
 
 pub fn dispatch_announce(
-    repo: &mut impl crate::kernel::Repository<Command>, owner_id: &str, name: &str, args: AnnounceArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: AnnounceArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         args.announces.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
-        build: Box::new(|| Command {
-            aggregate: None,
-            entity_id: None,
-            name: None,
-            role: None,
-            goal: None,
-            emits: vec![],
-            references: None,
-            attributes: vec![],
-            givens: vec![],
-            ensures: vec![],
-            mutations: vec![],
-            provenance: None,
-            from: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Announce",
         "Bluebook::Command",
         "Command",

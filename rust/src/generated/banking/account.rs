@@ -855,6 +855,7 @@ pub fn dispatch_open(
         ],
         None,
         |record| {
+        record.customer = Some(args.customer.clone());
         record.number = Some(args.number.clone());
         record.kind = Some(args.kind.clone());
         record.daily_limit = Some(args.daily_limit.clone());

@@ -689,25 +689,14 @@ pub struct AttachArgs {
 }
 
 pub fn dispatch_attach(
-    repo: &mut impl crate::kernel::Repository<Bluebook>, name: &str, args: AttachArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Bluebook>, id: &str, args: AttachArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Bluebook> {
         args.context.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: name.to_string(),
-        build: Box::new(|| Bluebook {
-            name: None,
-            vision: None,
-            classification: None,
-            version: None,
-            formerly_known_as: None,
-            normalisations: vec![],
-            attaches_to: vec![],
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Attach",
         "Bluebook::Bluebook",
         "Bluebook",
@@ -779,7 +768,7 @@ pub struct NormaliseArgs {
 }
 
 pub fn dispatch_normalise(
-    repo: &mut impl crate::kernel::Repository<Bluebook>, name: &str, args: NormaliseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Bluebook>, id: &str, args: NormaliseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Bluebook> {
         args.strategy.check_invariants()?;
         args.source_token.check_invariants()?;
@@ -790,18 +779,7 @@ pub fn dispatch_normalise(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: name.to_string(),
-        build: Box::new(|| Bluebook {
-            name: None,
-            vision: None,
-            classification: None,
-            version: None,
-            formerly_known_as: None,
-            normalisations: vec![],
-            attaches_to: vec![],
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Normalise",
         "Bluebook::Bluebook",
         "Bluebook",

@@ -237,7 +237,7 @@ module RustProjection
         # something appends, which `Vec<T>` (never absent) already
         # represents correctly.
         type = rust_type(attr[:type], list: attr[:list])
-        type = "Option<#{type}>" if !attr[:list] || list_attr_creation_optional?(aggregate, attr[:name])
+        type = "Option<#{type}>" if !attr[:list] || list_attr_creation_optional?(aggregate, attr[:name], value_objects_by_name)
         { "TmplFieldType" => type, "tmpl_field" => rust_ident_field(attr[:name]) }
       end
       field_subs_list << { "TmplFieldType" => "String", "tmpl_field" => rust_ident_field(aggregate[:lifecycle][:field]) } if aggregate[:lifecycle]

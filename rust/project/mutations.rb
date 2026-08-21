@@ -18,9 +18,9 @@ module RustProjection
     # is the negative case that must stay `[]` — the exact regression the
     # 0014 doc's own reverted empty-list-to-null heuristic caused by not
     # distinguishing them.
-    def list_attr_creation_optional?(aggregate, attr_name)
+    def list_attr_creation_optional?(aggregate, attr_name, value_objects_by_name)
       aggregate[:commands].any? do |command|
-        next false unless command[:references].nil? # creating
+        next false unless creates_owner?(aggregate, command, value_objects_by_name)
 
         command[:mutations].any? do |m|
           next false unless m[:op].to_s == "set" && m[:target].to_s == attr_name.to_s && m[:source][:kind] == "argument"
@@ -29,6 +29,107 @@ module RustProjection
           source_attr && source_attr[:optional]
         end
       end
+    end
+
+    # `creates_owner?(aggregate, command, value_objects_by_name)` — REPLACES
+    # `command[:references].nil?` (and the coincidental bare-name matching
+    # `identity_components`, below, used to do) as the "does this command
+    # build the OWNER record from scratch" test.
+    #
+    # WHY `references.nil?` WAS WRONG: `references` is set only when a
+    # command's own `reference_to` names something OTHER than its owner (a
+    # cross-reference attribute — `Aggregate.Attribute`'s own `reference_to
+    # ValueObject, as: :type`) — never by a bare self-reference to the
+    # command's OWN owner, because that self-reference would be a fake one
+    # written purely to flip this heuristic (rejected direction; see
+    # RESTART.md's "Option 1"): the owner a mutating meta-domain command
+    # like `Aggregate.Attribute` acts on is supplied entirely through
+    # ROUTING (`to:`/`with:`), never as a declared argument. So `Aggregate.
+    # Attribute` (attach one attribute to an EXISTING aggregate) ends up
+    # with `references: nil`, exactly like `Aggregate.Declare` (mint a
+    # brand-new Aggregate) — even though only the second one creates.
+    #
+    # THE HONEST TEST, instead: does this command's own mutations, together
+    # with the owner's deterministic defaults (list/optional/literal-
+    # default attributes, and value-object-typed attributes whose OWN
+    # fields are all defaulted), account for EVERY field the owner
+    # declares? A creating command always supplies (or defaults) its whole
+    # record; an acting command mutates a slice of one that already exists
+    # — `Aggregate.Attribute` only ever `sets :attributes, append: {...}`,
+    # an APPEND, never claims to set `:name`/`:description`/... at all.
+    #
+    # THE SAME QUESTION `Runtime::DependencyPlanning::Analyzer#complete_
+    # state?` already answers, correctly, for Ruby's own runtime
+    # (`CommandInterpreter#step_hydrate` reads it as `ctx.plan.complete_
+    # state?`; `creates?`/`references.nil?` is demoted to a secondary
+    # duplicate-check once THAT already decided how to hydrate — see
+    # RESTART.md's own "known risk" note on why the 1725-example Ruby suite
+    # never exercises `creates?` for this exact shape). This is the SAME
+    # computation, restricted to what's staticly knowable from the exported
+    # IR alone (mutations + attributes vs. the aggregate's own attributes),
+    # skipping the `given`/`ensures`/invariant expression walk Analyzer also
+    # does for its OWN `state_reads`/`unresolved_dependencies` — irrelevant
+    # here, since `complete_state?`'s second half (`owner_fields.subset?
+    # (known_writes)`) is unaffected by that walk on a corpus with no
+    # dangling rule reference, and the first half (no unresolved mutation)
+    # is reproduced in full below. Verified byte-for-byte equal to the real
+    # Analyzer's own `complete_state?` across every generated domain and
+    # the meta-domain itself (162/162 commands) before this landed.
+    def creates_owner?(aggregate, command, value_objects_by_name)
+      owner_fields = aggregate[:attributes].map { |a| a[:name].to_s }.to_set
+      owner_fields << aggregate[:lifecycle][:field].to_s if aggregate[:lifecycle]
+
+      known_writes = Set.new
+      aggregate[:attributes].each do |attr|
+        deterministic = attr[:list] || attr[:optional] || !attr[:default].nil?
+        unless deterministic
+          vo = value_objects_by_name[attr[:type]]
+          deterministic = vo && vo[:attributes].all? { |f| !f[:default].nil? }
+        end
+        known_writes << attr[:name].to_s if deterministic
+      end
+      known_writes << aggregate[:lifecycle][:field].to_s if aggregate[:lifecycle]
+
+      payload_fields = command[:attributes].map { |a| a[:name].to_s }.to_set
+      unresolved = false
+
+      # `value` is a Symbol (a command argument, or — when it names an
+      # OWNER field instead — a prior-state read) or a literal, the same
+      # two kinds `classified_source`/`Marks.read` already decode a
+      # mutation's source into. Mirrors Analyzer#analyze_source? exactly:
+      # true only when the value is knowable without reading any PRIOR
+      # state of the record this command is hydrating.
+      known_without_prior_state = lambda do |value|
+        next true unless value.is_a?(Symbol)
+
+        name = value.to_s
+        if payload_fields.include?(name)
+          true
+        elsif owner_fields.include?(name)
+          false
+        else
+          unresolved = true
+          false
+        end
+      end
+
+      command[:mutations].each do |m|
+        target = m[:target].to_s
+        unless owner_fields.include?(target)
+          unresolved = true
+          next
+        end
+
+        if m[:op].to_s == "append"
+          Array(m[:fields]&.values).each { |v| known_without_prior_state.call(append_field_source(v)) }
+        else
+          source = m[:source] || {}
+          value = source[:kind].to_s == "argument" ? source[:name].to_sym : source[:value]
+          known_writes << target if known_without_prior_state.call(value)
+        end
+      end
+
+      !unresolved && owner_fields.subset?(known_writes)
     end
 
     # `append`'s TARGET, resolved to whichever real thing it is — a plain
@@ -220,10 +321,24 @@ module RustProjection
     # external regardless of whether the path was dotted, because a value
     # supplied from outside args is already the resolved scalar the caller
     # read off the owner's own state — there is no `.value` left to walk.
+    #
+    # "DECLARED" MEANS a genuine `:set` mutation TARGETS this head — not
+    # merely "some command attribute happens to share the head's name"
+    # (the bare-name check this used to be). A dozen meta-domain "attach
+    # one child to the owner" commands (`Aggregate.Attribute` et al.) each
+    # declare an attribute coincidentally named the same as one of their
+    # OWNER's identity components (both have a field called `name`) while
+    # never setting the owner's own field at all — their one mutation
+    # APPENDS that attribute into a list, sourced by that argument, which
+    # is an entirely different thing from minting the owner's own id. See
+    # `creates_owner?`'s own header (this file) for the full story; this
+    # method is only ever consulted once that check has already said
+    # `true`, but stays honest on its own terms rather than leaning on the
+    # caller to have filtered first.
     def identity_components(aggregate, command)
       aggregate[:identified_by].map do |path|
         head, *rest = path.split(".")
-        if command[:attributes].any? { |a| a[:name].to_s == head }
+        if command[:mutations].any? { |m| m[:op].to_s == "set" && m[:target].to_s == head }
           if rest.any?
             { expr: "args.#{rust_ident_field(head)}.#{rest.map { |seg| rust_ident_field(seg) }.join('.')}.to_string()", param: nil }
           else
@@ -468,7 +583,7 @@ module RustProjection
           rhs = mutation_set_rhs(mutation[:source], target_attr[:type], command, value_objects_by_name)
           source_attr = mutation[:source][:kind] == "argument" ? command[:attributes].find { |a| a[:name].to_s == mutation[:source][:name].to_s } : nil
 
-          if target_attr[:list] && optional && list_attr_creation_optional?(aggregate, target_attr[:name])
+          if target_attr[:list] && optional && list_attr_creation_optional?(aggregate, target_attr[:name], value_objects_by_name)
             # `CardPayment.Authorize`'s own redundant `sets :tags, to:
             # :tags` (the same "re-set an already-implicit creation
             # attribute" pattern `Purchase`'s own status set already is) —

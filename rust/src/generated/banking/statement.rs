@@ -283,11 +283,11 @@ impl crate::kernel::Fielded for GenerateArgs {
         use crate::kernel::Field;
         use crate::kernel::Value;
         match name {
-            "account" => Some(Field::Value(Value::Str(self.account.clone()))),
             "period" => Some(Field::Nested(&self.period)),
             "opening_balance" => Some(Field::Nested(&self.opening_balance)),
             "closing_balance" => Some(Field::Nested(&self.closing_balance)),
             "generated_on" => Some(Field::Nested(&self.generated_on)),
+            "account" => Some(Field::Value(Value::Str(self.account.clone()))),
             _ => None,
         }
     }
@@ -296,16 +296,16 @@ impl crate::kernel::Fielded for GenerateArgs {
 
 #[derive(Debug, Clone)]
 pub struct GenerateArgs {
-    pub account: String,
     pub period: StatementPeriod,
     pub opening_balance: StatementAmount,
     pub closing_balance: StatementAmount,
     pub generated_on: StatementDate,
     pub frequency: StatementFrequency,
+    pub account: String,
 }
 
 pub fn dispatch_generate(
-    repo: &mut impl crate::kernel::Repository<Statement>, args: GenerateArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Statement>, id: &str, args: GenerateArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Statement> {
         args.period.check_invariants()?;
         args.opening_balance.check_invariants()?;
@@ -315,17 +315,7 @@ pub fn dispatch_generate(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", args.account.to_string(), args.period.value.to_string()),
-        build: Box::new(|| Statement {
-            account: Some(args.account.clone()),
-            period: Some(args.period.clone()),
-            opening_balance: Some(args.opening_balance.clone()),
-            closing_balance: Some(args.closing_balance.clone()),
-            generated_on: Some(args.generated_on.clone()),
-            frequency: Some(args.frequency.clone()),
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Generate",
         "Banking::Statement",
         "Statement",
@@ -337,7 +327,7 @@ pub fn dispatch_generate(
         ],
         None,
         |record| {
-        let _ = record;
+        record.account = Some(args.account.clone());
             Ok(())
         },
         &[
@@ -352,32 +342,32 @@ pub fn dispatch_generate(
 impl GenerateArgs {
     pub fn to_json(&self) -> crate::kernel::Json {
         crate::kernel::Json::Object(vec![
-        ("account".to_string(), crate::kernel::Json::Str(self.account.clone())),
         ("period".to_string(), self.period.to_json()),
         ("opening_balance".to_string(), self.opening_balance.to_json()),
         ("closing_balance".to_string(), self.closing_balance.to_json()),
         ("generated_on".to_string(), self.generated_on.to_json()),
         ("frequency".to_string(), self.frequency.to_json()),
+        ("account".to_string(), crate::kernel::Json::Str(self.account.clone())),
         ])
     }
 }
 
 impl GenerateArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["account", "period", "opening_balance", "closing_balance", "generated_on", "frequency", "id", "reference", "end_to_end"]);
+let unknown = v.unknown_keys(&["period", "opening_balance", "closing_balance", "generated_on", "frequency", "account", "id", "reference", "end_to_end"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Generate does not declare {} — it takes account, period, opening_balance, closing_balance, generated_on, frequency",
+        "Generate does not declare {} — it takes period, opening_balance, closing_balance, generated_on, frequency, account",
         unknown.join(", ")
     )));
 }
         Ok(Self {
-        account: { let x = v.require("account", "GenerateArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("GenerateArgs.account: expected String".to_string()))? },
         period: StatementPeriod::from_json(&v.require("period", "GenerateArgs")?.coerce_single_field("value"))?,
         opening_balance: StatementAmount::from_json(&v.require("opening_balance", "GenerateArgs")?.coerce_single_field("cents"))?,
         closing_balance: StatementAmount::from_json(&v.require("closing_balance", "GenerateArgs")?.coerce_single_field("cents"))?,
         generated_on: StatementDate::from_json(&v.require("generated_on", "GenerateArgs")?.coerce_single_field("value"))?,
         frequency: StatementFrequency::from_json(v.require("frequency", "GenerateArgs")?)?,
+        account: { let x = v.require("account", "GenerateArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("GenerateArgs.account: expected String".to_string()))? },
         })
     }
 }

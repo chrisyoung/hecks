@@ -632,7 +632,7 @@ pub struct GatherArgs {
 }
 
 pub fn dispatch_gather(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: GatherArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: GatherArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
         args.aggregate.check_invariants()?;
         args.r#as.check_invariants()?;
@@ -641,23 +641,7 @@ pub fn dispatch_gather(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| ReadModel {
-            bluebook: None,
-            name: None,
-            description: None,
-            query_name: None,
-            reference_name: None,
-            reference_target: None,
-            aggregate_heads: vec![],
-            options: vec![],
-            group_by: vec![],
-            count: None,
-            median_field: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Gather",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -725,30 +709,14 @@ pub struct GroupByArgs {
 }
 
 pub fn dispatch_group_by(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: GroupByArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: GroupByArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
         args.field.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| ReadModel {
-            bluebook: None,
-            name: None,
-            description: None,
-            query_name: None,
-            reference_name: None,
-            reference_target: None,
-            aggregate_heads: vec![],
-            options: vec![],
-            group_by: vec![],
-            count: None,
-            median_field: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "GroupBy",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -812,30 +780,14 @@ pub struct CountArgs {
 }
 
 pub fn dispatch_count(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: CountArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: CountArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
         if let Some(v) = &args.count { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| ReadModel {
-            bluebook: None,
-            name: None,
-            description: None,
-            query_name: None,
-            reference_name: None,
-            reference_target: None,
-            aggregate_heads: vec![],
-            options: vec![],
-            group_by: vec![],
-            count: args.count.clone(),
-            median_field: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Count",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -899,30 +851,14 @@ pub struct MedianArgs {
 }
 
 pub fn dispatch_median(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: MedianArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: MedianArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
         if let Some(v) = &args.median_field { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| ReadModel {
-            bluebook: None,
-            name: None,
-            description: None,
-            query_name: None,
-            reference_name: None,
-            reference_target: None,
-            aggregate_heads: vec![],
-            options: vec![],
-            group_by: vec![],
-            count: None,
-            median_field: args.median_field.clone(),
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Median",
         "Bluebook::ReadModel",
         "ReadModel",
@@ -992,7 +928,7 @@ pub struct OptionArgs {
 }
 
 pub fn dispatch_option(
-    repo: &mut impl crate::kernel::Repository<ReadModel>, bluebook: &str, name: &str, args: OptionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ReadModel>, id: &str, args: OptionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ReadModel> {
         args.option.check_invariants()?;
         args.key.check_invariants()?;
@@ -1002,23 +938,7 @@ pub fn dispatch_option(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| ReadModel {
-            bluebook: None,
-            name: None,
-            description: None,
-            query_name: None,
-            reference_name: None,
-            reference_target: None,
-            aggregate_heads: vec![],
-            options: vec![],
-            group_by: vec![],
-            count: None,
-            median_field: None,
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Option",
         "Bluebook::ReadModel",
         "ReadModel",

@@ -297,8 +297,8 @@ impl crate::kernel::Fielded for RequestArgs {
         use crate::kernel::Field;
         use crate::kernel::Value;
         match name {
-            "account" => Some(Field::Value(Value::Str(self.account.clone()))),
             "end_to_end" => Some(Field::Nested(&self.end_to_end)),
+            "account" => Some(Field::Value(Value::Str(self.account.clone()))),
             "amount" => Some(Field::Nested(&self.amount)),
             "beneficiary" => Some(Field::Nested(&self.beneficiary)),
             "direction" => Some(Field::Nested(&self.direction)),
@@ -310,15 +310,15 @@ impl crate::kernel::Fielded for RequestArgs {
 
 #[derive(Debug, Clone)]
 pub struct RequestArgs {
-    pub account: String,
     pub end_to_end: EndToEndReference,
+    pub account: String,
     pub amount: ExternalAmount,
     pub beneficiary: BeneficiaryName,
     pub direction: MovementDirection,
 }
 
 pub fn dispatch_request(
-    repo: &mut impl crate::kernel::Repository<ExternalTransfer>, args: RequestArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ExternalTransfer>, id: &str, args: RequestArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ExternalTransfer> {
         args.end_to_end.check_invariants()?;
         args.amount.check_invariants()?;
@@ -329,17 +329,7 @@ pub fn dispatch_request(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: args.end_to_end.value.to_string(),
-        build: Box::new(|| ExternalTransfer {
-            account: Some(args.account.clone()),
-            end_to_end: Some(args.end_to_end.clone()),
-            amount: Some(args.amount.clone()),
-            beneficiary: Some(args.beneficiary.clone()),
-            direction: Some(args.direction.clone()),
-            status: "requested".to_string(),
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Request",
         "Banking::ExternalTransfer",
         "ExternalTransfer",
@@ -351,6 +341,7 @@ pub fn dispatch_request(
         ],
         None,
         |record| {
+        record.account = Some(args.account.clone());
         record.amount = Some(args.amount.clone());
         record.beneficiary = Some(args.beneficiary.clone());
         record.direction = Some(args.direction.clone());
@@ -368,8 +359,8 @@ pub fn dispatch_request(
 impl RequestArgs {
     pub fn to_json(&self) -> crate::kernel::Json {
         crate::kernel::Json::Object(vec![
-        ("account".to_string(), crate::kernel::Json::Str(self.account.clone())),
         ("end_to_end".to_string(), self.end_to_end.to_json()),
+        ("account".to_string(), crate::kernel::Json::Str(self.account.clone())),
         ("amount".to_string(), self.amount.to_json()),
         ("beneficiary".to_string(), self.beneficiary.to_json()),
         ("direction".to_string(), self.direction.to_json()),
@@ -379,16 +370,16 @@ impl RequestArgs {
 
 impl RequestArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["account", "end_to_end", "amount", "beneficiary", "direction", "id", "reference"]);
+let unknown = v.unknown_keys(&["end_to_end", "account", "amount", "beneficiary", "direction", "id", "reference"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Request does not declare {} — it takes account, end_to_end, amount, beneficiary, direction",
+        "Request does not declare {} — it takes end_to_end, account, amount, beneficiary, direction",
         unknown.join(", ")
     )));
 }
         Ok(Self {
-        account: { let x = v.require("account", "RequestArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("RequestArgs.account: expected String".to_string()))? },
         end_to_end: EndToEndReference::from_json(&v.require("end_to_end", "RequestArgs")?.coerce_single_field("value"))?,
+        account: { let x = v.require("account", "RequestArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("RequestArgs.account: expected String".to_string()))? },
         amount: ExternalAmount::from_json(&v.require("amount", "RequestArgs")?.coerce_single_field("cents"))?,
         beneficiary: BeneficiaryName::from_json(&v.require("beneficiary", "RequestArgs")?.coerce_single_field("value"))?,
         direction: MovementDirection::from_json(&v.require("direction", "RequestArgs")?.coerce_single_field("value"))?,

@@ -25,8 +25,9 @@
   {
     "kind": "port_operation",
     "id": "Pizzas::Order.PaymentGateway.Receive",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "names no reference_to Order — PortOperationBuilder#build should already have refused this at declare time, so reaching this is a codegen bug worth investigating, not a domain mistake"
   },
   {
     "kind": "query",

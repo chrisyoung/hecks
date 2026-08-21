@@ -1246,7 +1246,7 @@ pub struct KeywordArgs {
 }
 
 pub fn dispatch_keyword(
-    repo: &mut impl crate::kernel::Repository<Syntax>, name: &str, args: KeywordArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Syntax>, id: &str, args: KeywordArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Syntax> {
         args.position.check_invariants()?;
         args.word.check_invariants()?;
@@ -1266,15 +1266,7 @@ pub fn dispatch_keyword(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: name.to_string(),
-        build: Box::new(|| Syntax {
-            bluebook: None,
-            name: None,
-            keywords: vec![],
-            arguments: vec![],
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Keyword",
         "Bluebook::Syntax",
         "Syntax",
@@ -1386,7 +1378,7 @@ pub struct ArgumentArgs {
 }
 
 pub fn dispatch_argument(
-    repo: &mut impl crate::kernel::Repository<Syntax>, name: &str, args: ArgumentArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Syntax>, id: &str, args: ArgumentArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Syntax> {
         args.position.check_invariants()?;
         args.keyword.check_invariants()?;
@@ -1410,15 +1402,7 @@ pub fn dispatch_argument(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: name.to_string(),
-        build: Box::new(|| Syntax {
-            bluebook: None,
-            name: None,
-            keywords: vec![],
-            arguments: vec![],
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Argument",
         "Bluebook::Syntax",
         "Syntax",

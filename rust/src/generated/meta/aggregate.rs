@@ -1058,32 +1058,14 @@ pub struct IdentifyArgs {
 }
 
 pub fn dispatch_identify(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, name: &str, args: IdentifyArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: IdentifyArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         args.path.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: None,
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Identify",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1161,7 +1143,7 @@ pub struct AttributeArgs {
 }
 
 pub fn dispatch_attribute(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, args: AttributeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: AttributeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         args.name.check_invariants()?;
         args.list.check_invariants()?;
@@ -1174,25 +1156,7 @@ pub fn dispatch_attribute(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), args.name.value.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: Some(args.name.clone()),
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Attribute",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1284,7 +1248,7 @@ pub struct ReferenceArgs {
 }
 
 pub fn dispatch_reference(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, args: ReferenceArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: ReferenceArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         args.name.check_invariants()?;
         args.list.check_invariants()?;
@@ -1297,25 +1261,7 @@ pub fn dispatch_reference(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), args.name.value.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: Some(args.name.clone()),
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Reference",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1407,7 +1353,7 @@ pub struct HoldsArgs {
 }
 
 pub fn dispatch_holds(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, args: HoldsArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: HoldsArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         args.name.check_invariants()?;
         args.list.check_invariants()?;
@@ -1420,25 +1366,7 @@ pub fn dispatch_holds(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), args.name.value.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: Some(args.name.clone()),
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Holds",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1518,7 +1446,7 @@ pub struct LifecycleArgs {
 }
 
 pub fn dispatch_lifecycle(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, name: &str, args: LifecycleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: LifecycleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         args.state_field.check_invariants()?;
         args.state_start.check_invariants()?;
@@ -1526,25 +1454,7 @@ pub fn dispatch_lifecycle(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: None,
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: Some(args.state_field.clone()),
-            state_start: Some(args.state_start.clone()),
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Lifecycle",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1615,7 +1525,7 @@ pub struct TransitionArgs {
 }
 
 pub fn dispatch_transition(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, name: &str, args: TransitionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: TransitionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         args.command.check_invariants()?;
         if let Some(v) = &args.from_state { v.check_invariants()?; }
@@ -1624,25 +1534,7 @@ pub fn dispatch_transition(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: None,
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Transition",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1709,32 +1601,14 @@ pub struct SealArgs {
 }
 
 pub fn dispatch_seal(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, name: &str, args: SealArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: SealArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
 
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: None,
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Seal",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1798,32 +1672,14 @@ pub struct ValueArgs {
 }
 
 pub fn dispatch_value(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, args: ValueArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: ValueArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         args.name.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), args.name.value.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: Some(args.name.clone()),
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Value",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1889,7 +1745,7 @@ pub struct InvariantArgs {
 }
 
 pub fn dispatch_invariant(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, name: &str, args: InvariantArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: InvariantArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1897,25 +1753,7 @@ pub fn dispatch_invariant(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: None,
-            description: args.description.clone(),
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Invariant",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -1984,7 +1822,7 @@ pub struct PreconditionArgs {
 }
 
 pub fn dispatch_precondition(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, name: &str, args: PreconditionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: PreconditionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1992,25 +1830,7 @@ pub fn dispatch_precondition(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: None,
-            description: args.description.clone(),
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Precondition",
         "Bluebook::Aggregate",
         "Aggregate",
@@ -2081,7 +1901,7 @@ pub struct ProjectsArgs {
 }
 
 pub fn dispatch_projects(
-    repo: &mut impl crate::kernel::Repository<Aggregate>, bluebook: &str, args: ProjectsArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Aggregate>, id: &str, args: ProjectsArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Aggregate> {
         args.name.check_invariants()?;
         args.reference.check_invariants()?;
@@ -2090,25 +1910,7 @@ pub fn dispatch_projects(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), args.name.value.to_string()),
-        build: Box::new(|| Aggregate {
-            bluebook: None,
-            name: Some(args.name.clone()),
-            description: None,
-            provenance: None,
-            identified_by: vec![],
-            attributes: vec![],
-            value_objects: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            invariants: vec![],
-            preconditions: vec![],
-            projected_fields: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Projects",
         "Bluebook::Aggregate",
         "Aggregate",

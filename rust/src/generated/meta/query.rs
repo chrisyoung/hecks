@@ -578,7 +578,7 @@ pub struct FilterArgs {
 }
 
 pub fn dispatch_filter(
-    repo: &mut impl crate::kernel::Repository<Query>, owner_id: &str, name: &str, args: FilterArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Query>, id: &str, args: FilterArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Query> {
         args.field.check_invariants()?;
         if !["eq", "ne", "gt", "gte", "lt", "lte", "in", "contains", "none_in_state"].contains(&args.op.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::QueryComparator — \"eq\", \"ne\", \"gt\", \"gte\", \"lt\", \"lte\", \"in\", \"contains\", \"none_in_state\" — got ", args.op.value))); }
@@ -588,22 +588,7 @@ pub fn dispatch_filter(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
-        build: Box::new(|| Query {
-            aggregate: None,
-            entity_id: None,
-            name: None,
-            description: None,
-            order_field: None,
-            order_way: None,
-            limit: None,
-            wheres: vec![],
-            attributes: vec![],
-            options: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Filter",
         "Bluebook::Query",
         "Query",
@@ -677,7 +662,7 @@ pub struct OptionArgs {
 }
 
 pub fn dispatch_option(
-    repo: &mut impl crate::kernel::Repository<Query>, owner_id: &str, name: &str, args: OptionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Query>, id: &str, args: OptionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Query> {
         args.option.check_invariants()?;
         args.key.check_invariants()?;
@@ -687,22 +672,7 @@ pub fn dispatch_option(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", owner_id.to_string(), name.to_string()),
-        build: Box::new(|| Query {
-            aggregate: None,
-            entity_id: None,
-            name: None,
-            description: None,
-            order_field: None,
-            order_way: None,
-            limit: None,
-            wheres: vec![],
-            attributes: vec![],
-            options: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Option",
         "Bluebook::Query",
         "Query",

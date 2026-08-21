@@ -142,7 +142,7 @@ module RustProjection
       # no "identity absent" state. An optional argument feeding it
       # (`Member.Declare`'s own `position`) isn't a `sets` mutation at
       # all, so the checks below never see it; caught here instead.
-      if command[:references].nil?
+      if creates_owner?(aggregate, command, value_objects_by_name)
         aggregate[:identified_by].each do |path|
           head, = path.split(".")
           source_attr = command[:attributes].find { |a| a[:name].to_s == head }
@@ -270,7 +270,7 @@ module RustProjection
     def emit_command(command, aggregate, domain_name, value_objects_by_name, aggregates_by_name)
       record = rust_ident(aggregate[:name])
       cmd    = rust_ident(command[:name])
-      creates = command[:references].nil?
+      creates = creates_owner?(aggregate, command, value_objects_by_name)
       identity = identity_components(aggregate, command)
       identity_extra_params = identity.filter_map { |c| c[:param] }
 
@@ -352,7 +352,7 @@ module RustProjection
             # otherwise (emit_record's default rule: lists are never
             # Option-wrapped) it needs unwrapping with the same `[]`
             # fallback `default_for` gives an UNMATCHED list attribute.
-            if attr[:list] && !list_attr_creation_optional?(aggregate, attr[:name])
+            if attr[:list] && !list_attr_creation_optional?(aggregate, attr[:name], value_objects_by_name)
               "            #{field}: args.#{field}.clone().unwrap_or_default(),"
             else
               "            #{field}: args.#{field}.clone(),"

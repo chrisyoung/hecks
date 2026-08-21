@@ -425,7 +425,7 @@ pub struct BindArgs {
 }
 
 pub fn dispatch_bind(
-    repo: &mut impl crate::kernel::Repository<Policy>, bluebook: &str, name: &str, args: BindArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Policy>, id: &str, args: BindArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Policy> {
         args.key.check_invariants()?;
         args.value.check_invariants()?;
@@ -433,21 +433,7 @@ pub fn dispatch_bind(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", bluebook.to_string(), name.to_string()),
-        build: Box::new(|| Policy {
-            bluebook: None,
-            name: None,
-            aggregate: None,
-            on_event: None,
-            trigger_command: None,
-            target_domain: None,
-            r#where: None,
-            for_each: None,
-            with_spec: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Bind",
         "Bluebook::Policy",
         "Policy",

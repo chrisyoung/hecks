@@ -921,25 +921,14 @@ pub struct CloseArgs {
 }
 
 pub fn dispatch_close(
-    repo: &mut impl crate::kernel::Repository<ValueObject>, aggregate: &str, name: &str, args: CloseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ValueObject>, id: &str, args: CloseArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ValueObject> {
         if let Some(v) = &args.rows { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| ValueObject {
-            aggregate: None,
-            name: None,
-            attributes: vec![],
-            invariants: vec![],
-            rows: args.rows.clone(),
-            members: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Close",
         "Bluebook::ValueObject",
         "ValueObject",
@@ -1005,7 +994,7 @@ pub struct AssertArgs {
 }
 
 pub fn dispatch_assert(
-    repo: &mut impl crate::kernel::Repository<ValueObject>, aggregate: &str, name: &str, args: AssertArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ValueObject>, id: &str, args: AssertArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ValueObject> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1013,18 +1002,7 @@ pub fn dispatch_assert(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| ValueObject {
-            aggregate: None,
-            name: None,
-            attributes: vec![],
-            invariants: vec![],
-            rows: None,
-            members: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Assert",
         "Bluebook::ValueObject",
         "ValueObject",
@@ -1091,25 +1069,14 @@ pub struct MemberArgs {
 }
 
 pub fn dispatch_member(
-    repo: &mut impl crate::kernel::Repository<ValueObject>, aggregate: &str, name: &str, args: MemberArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<ValueObject>, id: &str, args: MemberArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<ValueObject> {
         args.position.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| ValueObject {
-            aggregate: None,
-            name: None,
-            attributes: vec![],
-            invariants: vec![],
-            rows: None,
-            members: vec![],
-            position: Some(args.position.clone()),
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Member",
         "Bluebook::ValueObject",
         "ValueObject",

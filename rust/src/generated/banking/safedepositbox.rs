@@ -483,8 +483,6 @@ impl crate::kernel::Fielded for VisitAnnotateArgs {
         use crate::kernel::Field;
         
         match name {
-            "date" => Some(Field::Nested(&self.date)),
-            "sequence" => Some(Field::Nested(&self.sequence)),
             "note" => Some(Field::Nested(&self.note)),
             _ => None,
         }
@@ -494,16 +492,12 @@ impl crate::kernel::Fielded for VisitAnnotateArgs {
 
 #[derive(Debug, Clone)]
 pub struct VisitAnnotateArgs {
-    pub date: VisitDate,
-    pub sequence: VisitSequence,
     pub note: VisitNote,
 }
 
 impl VisitAnnotateArgs {
     pub fn to_json(&self) -> crate::kernel::Json {
         crate::kernel::Json::Object(vec![
-        ("date".to_string(), self.date.to_json()),
-        ("sequence".to_string(), self.sequence.to_json()),
         ("note".to_string(), self.note.to_json()),
         ])
     }
@@ -513,8 +507,6 @@ impl VisitAnnotateArgs {
 impl VisitAnnotateArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
         Ok(Self {
-        date: VisitDate::from_json(&v.require("date", "VisitAnnotateArgs")?.coerce_single_field("value"))?,
-        sequence: VisitSequence::from_json(&v.require("sequence", "VisitAnnotateArgs")?.coerce_single_field("value"))?,
         note: VisitNote::from_json(&v.require("note", "VisitAnnotateArgs")?.coerce_single_field("text"))?,
         })
     }
@@ -525,8 +517,6 @@ pub fn dispatch_entity_visit_annotate(
     repo: &mut impl crate::kernel::Repository<SafeDepositBox>, parent_id: &str, element_id: &str, element_wants: &str, args: VisitAnnotateArgs,
     mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<SafeDepositBox> {
-        args.date.check_invariants()?;
-        args.sequence.check_invariants()?;
         args.note.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
@@ -779,103 +769,6 @@ impl SafeDepositBox {
 
         by_identity.or(by_id_key).or(by_reference_key).ok_or_else(|| {
             crate::kernel::Refusal::TypeMismatch("SafeDepositBox: no identity found (tried branch_code.value, box_number.value, id, safe_deposit_box)".to_string())
-        })
-    }
-}
-
-impl crate::kernel::Fielded for RentArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        use crate::kernel::Value;
-        match name {
-            "customer" => Some(Field::Value(Value::Str(self.customer.clone()))),
-            "branch_code" => Some(Field::Nested(&self.branch_code)),
-            "box_number" => Some(Field::Nested(&self.box_number)),
-            "size" => Some(Field::Nested(&self.size)),
-            _ => None,
-        }
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct RentArgs {
-    pub customer: String,
-    pub branch_code: BranchCode,
-    pub box_number: BoxNumber,
-    pub size: Size,
-}
-
-pub fn dispatch_rent(
-    repo: &mut impl crate::kernel::Repository<SafeDepositBox>, args: RentArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<SafeDepositBox> {
-        args.branch_code.check_invariants()?;
-        args.box_number.check_invariants()?;
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", args.branch_code.value.to_string(), args.box_number.value.to_string()),
-        build: Box::new(|| SafeDepositBox {
-            customer: Some(args.customer.clone()),
-            branch_code: Some(args.branch_code.clone()),
-            box_number: Some(args.box_number.clone()),
-            size: Some(args.size.clone()),
-            visits: vec![],
-            keys: vec![],
-            status: "vacant".to_string(),
-        }),
-    },
-        "Rent",
-        "Banking::SafeDepositBox",
-        "SafeDepositBox",
-        "branch_code.value, box_number.value",
-        &with_references,
-        &[
-            crate::kernel::GivenSpec { description: "box is vacant", expr: Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("status")), right: Box::new(Expr::Str("vacant".to_string())) } },
-            crate::kernel::GivenSpec { description: "customer is active", expr: Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("customer.status")), right: Box::new(Expr::Str("active".to_string())) } },
-        ],
-        Some(crate::kernel::TransitionCheck { field: "status", from_states: &["vacant"] }),
-        |record| {
-        record.size = Some(args.size.clone());
-        record.status = "rented".to_string();
-            Ok(())
-        },
-        &[
-
-        ],
-        &["BoxRented"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl RentArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(vec![
-        ("customer".to_string(), crate::kernel::Json::Str(self.customer.clone())),
-        ("branch_code".to_string(), self.branch_code.to_json()),
-        ("box_number".to_string(), self.box_number.to_json()),
-        ("size".to_string(), self.size.to_json()),
-        ])
-    }
-}
-
-impl RentArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["customer", "branch_code", "box_number", "size", "id", "reference", "end_to_end"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Rent does not declare {} — it takes customer, branch_code, box_number, size",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        customer: { let x = v.require("customer", "RentArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("RentArgs.customer: expected String".to_string()))? },
-        branch_code: BranchCode::from_json(&v.require("branch_code", "RentArgs")?.coerce_single_field("value"))?,
-        box_number: BoxNumber::from_json(&v.require("box_number", "RentArgs")?.coerce_single_field("value"))?,
-        size: Size::from_json(&v.require("size", "RentArgs")?.coerce_single_field("value"))?,
         })
     }
 }

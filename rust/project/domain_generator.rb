@@ -438,7 +438,7 @@ module RustProjection
             # rather than needing a JSON step shape of its own.
             # An ACTING command's `id` comes from extract_id instead, so
             # it's routable only when THAT is (json_codec.rb's own gap).
-            creates = command[:references].nil?
+            creates = Projector.creates_owner?(aggregate, command, value_objects_by_name)
             # `identity_components` is a CREATING command's own concern
             # only (mutations.rb's own header on `identity_components`:
             # "never called for an acting command") — an acting command's

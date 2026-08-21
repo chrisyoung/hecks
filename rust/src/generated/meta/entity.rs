@@ -643,30 +643,14 @@ pub struct IdentifyArgs {
 }
 
 pub fn dispatch_identify(
-    repo: &mut impl crate::kernel::Repository<Entity>, aggregate: &str, name: &str, args: IdentifyArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Entity>, id: &str, args: IdentifyArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Entity> {
         args.path.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| Entity {
-            aggregate: None,
-            owner: None,
-            name: None,
-            description: None,
-            identified_by: vec![],
-            attributes: vec![],
-            preconditions: vec![],
-            invariants: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Identify",
         "Bluebook::Entity",
         "Entity",
@@ -729,30 +713,14 @@ pub struct SealArgs {
 }
 
 pub fn dispatch_seal(
-    repo: &mut impl crate::kernel::Repository<Entity>, aggregate: &str, name: &str, args: SealArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Entity>, id: &str, args: SealArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Entity> {
 
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| Entity {
-            aggregate: None,
-            owner: None,
-            name: None,
-            description: None,
-            identified_by: vec![],
-            attributes: vec![],
-            preconditions: vec![],
-            invariants: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Seal",
         "Bluebook::Entity",
         "Entity",
@@ -830,7 +798,7 @@ pub struct AttributeArgs {
 }
 
 pub fn dispatch_attribute(
-    repo: &mut impl crate::kernel::Repository<Entity>, aggregate: &str, args: AttributeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Entity>, id: &str, args: AttributeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Entity> {
         args.name.check_invariants()?;
         args.r#type.check_invariants()?;
@@ -844,23 +812,7 @@ pub fn dispatch_attribute(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), args.name.value.to_string()),
-        build: Box::new(|| Entity {
-            aggregate: None,
-            owner: None,
-            name: Some(args.name.clone()),
-            description: None,
-            identified_by: vec![],
-            attributes: vec![],
-            preconditions: vec![],
-            invariants: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Attribute",
         "Bluebook::Entity",
         "Entity",
@@ -940,7 +892,7 @@ pub struct PreconditionArgs {
 }
 
 pub fn dispatch_precondition(
-    repo: &mut impl crate::kernel::Repository<Entity>, aggregate: &str, name: &str, args: PreconditionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Entity>, id: &str, args: PreconditionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Entity> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -948,23 +900,7 @@ pub fn dispatch_precondition(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| Entity {
-            aggregate: None,
-            owner: None,
-            name: None,
-            description: args.description.clone(),
-            identified_by: vec![],
-            attributes: vec![],
-            preconditions: vec![],
-            invariants: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Precondition",
         "Bluebook::Entity",
         "Entity",
@@ -1033,7 +969,7 @@ pub struct InvariantArgs {
 }
 
 pub fn dispatch_invariant(
-    repo: &mut impl crate::kernel::Repository<Entity>, aggregate: &str, name: &str, args: InvariantArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Entity>, id: &str, args: InvariantArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Entity> {
         if let Some(v) = &args.description { v.check_invariants()?; }
         args.canonical.check_invariants()?;
@@ -1041,23 +977,7 @@ pub fn dispatch_invariant(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| Entity {
-            aggregate: None,
-            owner: None,
-            name: None,
-            description: args.description.clone(),
-            identified_by: vec![],
-            attributes: vec![],
-            preconditions: vec![],
-            invariants: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Invariant",
         "Bluebook::Entity",
         "Entity",
@@ -1126,7 +1046,7 @@ pub struct LifecycleArgs {
 }
 
 pub fn dispatch_lifecycle(
-    repo: &mut impl crate::kernel::Repository<Entity>, aggregate: &str, name: &str, args: LifecycleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Entity>, id: &str, args: LifecycleArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Entity> {
         if let Some(v) = &args.state_field { v.check_invariants()?; }
         if let Some(v) = &args.state_start { v.check_invariants()?; }
@@ -1134,23 +1054,7 @@ pub fn dispatch_lifecycle(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| Entity {
-            aggregate: None,
-            owner: None,
-            name: None,
-            description: None,
-            identified_by: vec![],
-            attributes: vec![],
-            preconditions: vec![],
-            invariants: vec![],
-            state_field: args.state_field.clone(),
-            state_start: args.state_start.clone(),
-            transitions: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Lifecycle",
         "Bluebook::Entity",
         "Entity",
@@ -1221,7 +1125,7 @@ pub struct TransitionArgs {
 }
 
 pub fn dispatch_transition(
-    repo: &mut impl crate::kernel::Repository<Entity>, aggregate: &str, name: &str, args: TransitionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+    repo: &mut impl crate::kernel::Repository<Entity>, id: &str, args: TransitionArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Entity> {
         args.command.check_invariants()?;
         if let Some(v) = &args.from_state { v.check_invariants()?; }
@@ -1230,23 +1134,7 @@ pub fn dispatch_transition(
 
     crate::kernel::dispatch(
         repo,
-        crate::kernel::Hydrate::Create {
-        id: format!("{}:{}", aggregate.to_string(), name.to_string()),
-        build: Box::new(|| Entity {
-            aggregate: None,
-            owner: None,
-            name: None,
-            description: None,
-            identified_by: vec![],
-            attributes: vec![],
-            preconditions: vec![],
-            invariants: vec![],
-            state_field: None,
-            state_start: None,
-            transitions: vec![],
-            position: None,
-        }),
-    },
+        crate::kernel::Hydrate::Act { id: id.to_string() },
         "Transition",
         "Bluebook::Entity",
         "Entity",
