@@ -401,7 +401,7 @@ impl crate::kernel::Fielded for Change {
 
 impl Change {
     pub fn check_invariants(&self) -> Result<(), crate::kernel::Refusal> {
-        if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove"].contains(&self.op.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\" — got ", self.op))); }
+        if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove", "delegate"].contains(&self.op.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\", \"delegate\" — got ", self.op))); }
         Ok(())
     }
 }
@@ -800,7 +800,9 @@ pub const KEYWORD_SEED: &[KeywordSeed] = &[
     KeywordSeed { word: "provenance", context: "Command", body: "none", inner: "", opens: "", fills: "provenance", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
     KeywordSeed { word: "reference_to", context: "Command", body: "none", inner: "", opens: "", fills: "references", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
     KeywordSeed { word: "given", context: "Command", body: "source", inner: "", opens: "", fills: "givens", status: "admitted", was: "", resolves_via: "hash_chain", disambiguator: "" },
-    KeywordSeed { word: "sets", context: "Command", body: "none", inner: "", opens: "", fills: "mutations", status: "admitted", was: "then_set", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "sets", context: "Command", body: "none", inner: "", opens: "", fills: "mutations", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "then_set", context: "Command", body: "none", inner: "", opens: "", fills: "mutations", status: "deprecated", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "delegates_to", context: "Command", body: "none", inner: "", opens: "", fills: "mutations", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
     KeywordSeed { word: "emits", context: "Command", body: "none", inner: "", opens: "", fills: "emits", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
     KeywordSeed { word: "attribute", context: "Command", body: "none", inner: "", opens: "", fills: "attributes", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
     KeywordSeed { word: "ensures", context: "Command", body: "source", inner: "", opens: "", fills: "ensures", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
@@ -868,6 +870,17 @@ pub const ARGUMENT_SEED: &[ArgumentSeed] = &[
     ArgumentSeed { keyword: "sets", context: "Command", at: "", named: "multiply", kind: "literal", required: "false", fills: "source", selects: "op=multiply", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
     ArgumentSeed { keyword: "sets", context: "Command", at: "", named: "clamp", kind: "literal", required: "false", fills: "source", selects: "op=clamp", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
     ArgumentSeed { keyword: "sets", context: "Command", at: "", named: "remove", kind: "literal", required: "false", fills: "source", selects: "op=remove", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "1", named: "", kind: "symbol", required: "true", fills: "target", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "", named: "to", kind: "literal", required: "false", fills: "source", selects: "op=set", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "", named: "from", kind: "literal", required: "false", fills: "source", selects: "op=set", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "", named: "append", kind: "literal", required: "false", fills: "source", selects: "op=append", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "", named: "increment", kind: "literal", required: "false", fills: "source", selects: "op=increment", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "", named: "decrement", kind: "literal", required: "false", fills: "source", selects: "op=decrement", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "", named: "multiply", kind: "literal", required: "false", fills: "source", selects: "op=multiply", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "", named: "clamp", kind: "literal", required: "false", fills: "source", selects: "op=clamp", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "then_set", context: "Command", at: "", named: "remove", kind: "literal", required: "false", fills: "source", selects: "op=remove", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "delegates_to", context: "Command", at: "1", named: "", kind: "text", required: "true", fills: "target", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "delegates_to", context: "Command", at: "", named: "with", kind: "literal", required: "false", fills: "source", selects: "op=delegate", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
     ArgumentSeed { keyword: "emits", context: "Command", at: "1", named: "", kind: "text", required: "true", fills: "emits", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
     ArgumentSeed { keyword: "attribute", context: "Command", at: "1", named: "", kind: "symbol", required: "true", fills: "name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
     ArgumentSeed { keyword: "attribute", context: "Command", at: "2", named: "", kind: "constant", required: "true", fills: "type", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
@@ -1197,7 +1210,7 @@ pub fn dispatch_change(
     repo: &mut impl crate::kernel::Repository<Command>, id: &str, args: ChangeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
 ) -> crate::kernel::DispatchResult<Command> {
         args.target.check_invariants()?;
-        if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove"].contains(&args.op.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\" — got ", args.op.value))); }
+        if !["set", "append", "increment", "decrement", "multiply", "clamp", "remove", "delegate"].contains(&args.op.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "op admits Vocabulary::MutationOp — \"set\", \"append\", \"increment\", \"decrement\", \"multiply\", \"clamp\", \"remove\", \"delegate\" — got ", args.op.value))); }
         args.op.check_invariants()?;
         args.field.check_invariants()?;
         args.kind.check_invariants()?;

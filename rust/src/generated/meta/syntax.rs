@@ -640,6 +640,7 @@ pub struct Keyword {
     pub was: Option<KeywordSeedText>,
     pub resolves_via: Option<KeywordSeedText>,
     pub disambiguator: Option<KeywordSeedText>,
+    pub calls: Option<KeywordSeedText>,
     pub status: String,
 }
 
@@ -658,6 +659,7 @@ impl crate::kernel::Fielded for Keyword {
             "was" => self.was.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "resolves_via" => self.resolves_via.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "disambiguator" => self.disambiguator.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "calls" => self.calls.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
             _ => None,
         }
@@ -677,6 +679,7 @@ impl Keyword {
         ("was".to_string(), self.was.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("resolves_via".to_string(), self.resolves_via.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("disambiguator".to_string(), self.disambiguator.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("calls".to_string(), self.calls.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("status".to_string(), crate::kernel::Json::Str(self.status.clone())),
         ])
     }
@@ -695,6 +698,7 @@ impl Keyword {
         was: match v.get("was") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(KeywordSeedText::from_json(&x.coerce_single_field("value"))?), },
         resolves_via: match v.get("resolves_via") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(KeywordSeedText::from_json(&x.coerce_single_field("value"))?), },
         disambiguator: match v.get("disambiguator") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(KeywordSeedText::from_json(&x.coerce_single_field("value"))?), },
+        calls: match v.get("calls") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(KeywordSeedText::from_json(&x.coerce_single_field("value"))?), },
         status: v.require("status", "Keyword")?.as_str().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Keyword.status: expected a string".to_string()))?.to_string(),
         })
     }
@@ -1225,6 +1229,7 @@ impl crate::kernel::Fielded for KeywordArgs {
             "was" => self.was.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "resolves_via" => self.resolves_via.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "disambiguator" => self.disambiguator.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "calls" => self.calls.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -1243,6 +1248,7 @@ pub struct KeywordArgs {
     pub was: Option<KeywordSeedText>,
     pub resolves_via: Option<KeywordSeedText>,
     pub disambiguator: Option<KeywordSeedText>,
+    pub calls: Option<KeywordSeedText>,
 }
 
 pub fn dispatch_keyword(
@@ -1262,6 +1268,7 @@ pub fn dispatch_keyword(
         if let Some(v) = &args.resolves_via { v.check_invariants()?; }
         if let Some(__optional_value) = &args.disambiguator { if !["declared_by"].contains(&__optional_value.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "disambiguator admits Syntax::Disambiguator — \"declared_by\" — got ", __optional_value.value))); } }
         if let Some(v) = &args.disambiguator { v.check_invariants()?; }
+        if let Some(v) = &args.calls { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
 
     crate::kernel::dispatch(
@@ -1277,7 +1284,7 @@ pub fn dispatch_keyword(
         ],
         None,
         |record| {
-        record.keywords.push(Keyword { position: args.position.clone(), word: args.word.clone(), context: args.context.clone(), body: args.body.clone(), inner: args.inner.clone(), opens: args.opens.clone(), fills: args.fills.clone(), was: args.was.clone(), resolves_via: args.resolves_via.clone(), disambiguator: args.disambiguator.clone(), status: "admitted".to_string() });
+        record.keywords.push(Keyword { position: args.position.clone(), word: args.word.clone(), context: args.context.clone(), body: args.body.clone(), inner: args.inner.clone(), opens: args.opens.clone(), fills: args.fills.clone(), was: args.was.clone(), resolves_via: args.resolves_via.clone(), disambiguator: args.disambiguator.clone(), calls: args.calls.clone(), status: "admitted".to_string() });
             Ok(())
         },
         &[
@@ -1302,16 +1309,17 @@ impl KeywordArgs {
         ("was".to_string(), self.was.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("resolves_via".to_string(), self.resolves_via.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("disambiguator".to_string(), self.disambiguator.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("calls".to_string(), self.calls.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
 
 impl KeywordArgs {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["position", "word", "context", "body", "inner", "opens", "fills", "was", "resolves_via", "disambiguator", "id", "name"]);
+let unknown = v.unknown_keys(&["position", "word", "context", "body", "inner", "opens", "fills", "was", "resolves_via", "disambiguator", "calls", "id", "name"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "Keyword does not declare {} — it takes position, word, context, body, inner, opens, fills, was, resolves_via, disambiguator",
+        "Keyword does not declare {} — it takes position, word, context, body, inner, opens, fills, was, resolves_via, disambiguator, calls",
         unknown.join(", ")
     )));
 }
@@ -1326,6 +1334,7 @@ if !unknown.is_empty() {
         was: match v.get("was") { Some(x) => Some(KeywordSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
         resolves_via: match v.get("resolves_via") { Some(x) => Some(KeywordSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
         disambiguator: match v.get("disambiguator") { Some(x) => Some(KeywordSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        calls: match v.get("calls") { Some(x) => Some(KeywordSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
         })
     }
 }
