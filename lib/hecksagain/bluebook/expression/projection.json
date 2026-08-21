@@ -173,6 +173,30 @@
       "category": "string",
       "precedence": 6,
       "arity": 2
+    },
+    {
+      "symbol": ".all?",
+      "category": "block_predicate",
+      "precedence": 6,
+      "arity": 2
+    },
+    {
+      "symbol": ".any?",
+      "category": "block_predicate",
+      "precedence": 6,
+      "arity": 2
+    },
+    {
+      "symbol": ".none?",
+      "category": "block_predicate",
+      "precedence": 6,
+      "arity": 2
+    },
+    {
+      "symbol": ".find",
+      "category": "block_predicate",
+      "precedence": 6,
+      "arity": 2
     }
   ],
   "normalisations": [

@@ -49,16 +49,16 @@ RSpec.describe Hecksagain::Bluebook::Expression::NodeShape do
   # THE OTHER DIRECTION — a real node `Evaluator`/`Resolver` can
   # actually produce that this manifest does not know about would be
   # exactly the kind of silent drift this file exists to catch.
-  # `BlockPredicate`/`Find` are the one KNOWN, DELIBERATE exception —
-  # see node_shape.rb's own header (unadmitted, no settled shape) — so
-  # they're the only names this check is allowed to find missing.
-  it "accounts for every node kind Evaluator#parse and Resolver#parse can actually produce, except the deliberately-deferred two" do
+  # `BlockPredicate`/`Find` were the one known, deliberate exception
+  # (unadmitted, no settled shape) until the "gaps" follow-up pass
+  # admitted them — nothing excluded here any more; a real reverse-drift
+  # now fails this check outright, which is the point.
+  it "accounts for every node kind Evaluator#parse and Resolver#parse can actually produce" do
     evaluator_nodes = Evaluator.constants.grep(/\A[A-Z]/).select { |c| Evaluator.const_get(c).is_a?(Class) && Evaluator.const_get(c) < Struct }
     resolver_nodes = Resolver.constants.grep(/\A[A-Z]/).select { |c| Resolver.const_get(c).is_a?(Class) }
 
     real_names = (evaluator_nodes + resolver_nodes).map(&:to_s) - %w[Operator]
-    deliberately_deferred = %w[BlockPredicate Find]
 
-    expect((real_names - deliberately_deferred).sort).to eq(described_class::NODES.keys.sort)
+    expect(real_names.sort).to eq(described_class::NODES.keys.sort)
   end
 end

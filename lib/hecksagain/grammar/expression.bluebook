@@ -76,11 +76,14 @@ Hecks.bluebook "Expression" do
     end
 
     # HOW the check recognizes this operator's text, not WHERE it binds
-    # (that's precedence) or WHEN it's tried (that's position). Four shapes
+    # (that's precedence) or WHEN it's tried (that's position). Five shapes
     # cover every admitted operator: split at a top-level occurrence
     # (`||`, comparators), strip a leading marker (`!`), strip a trailing
-    # suffix (`.empty?`), or match a call-with-argument pattern
-    # (`.include?(needle)`).
+    # suffix (`.empty?`), match a call-with-argument pattern
+    # (`.include?(needle)`), or open a `{ |x| PREDICATE }` block
+    # (`.all? { ... }`) — the fifth, added once a real operator needed it
+    # (`.all?`/`.any?`/`.none?`/`.find`; `Resolver::BlockPredicate`/`Find`,
+    # resolver/block_predicates.rb) rather than speculatively ahead of one.
     value_object "Strategy" do
       attribute :value, String
       invariant("an operator names how its check recognizes it") { !value.to_s.empty? }
@@ -129,7 +132,7 @@ Hecks.bluebook "Expression" do
         grammar.value == "outer" || grammar.value == "inner"
       end
 
-      given("an operator's check strategy is one the parser actually has") { strategy.value == "top_level_split" || strategy.value == "prefix_match" || strategy.value == "suffix_match" || strategy.value == "call_pattern_match" }
+      given("an operator's check strategy is one the parser actually has") { strategy.value == "top_level_split" || strategy.value == "prefix_match" || strategy.value == "suffix_match" || strategy.value == "call_pattern_match" || strategy.value == "block_predicate_match" }
 
       emits "OperatorProposed"
     end

@@ -1339,6 +1339,198 @@
           "value": ".end_with?"
         }
       }
+    },
+    {
+      "verb": "Expression::Operator.Propose",
+      "args": {
+        "symbol": {
+          "value": ".all?"
+        },
+        "category": {
+          "value": "block_predicate"
+        },
+        "precedence": {
+          "value": 6
+        },
+        "arity": {
+          "value": 2
+        },
+        "grammar": {
+          "value": "inner"
+        },
+        "strategy": {
+          "value": "block_predicate_match"
+        },
+        "position": {
+          "value": 17
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Render",
+      "args": {
+        "symbol": {
+          "value": ".all?"
+        },
+        "target": {
+          "value": "ruby"
+        },
+        "form": {
+          "value": "receiver.all? { |x| predicate }"
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Admit",
+      "args": {
+        "symbol": {
+          "value": ".all?"
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Propose",
+      "args": {
+        "symbol": {
+          "value": ".any?"
+        },
+        "category": {
+          "value": "block_predicate"
+        },
+        "precedence": {
+          "value": 6
+        },
+        "arity": {
+          "value": 2
+        },
+        "grammar": {
+          "value": "inner"
+        },
+        "strategy": {
+          "value": "block_predicate_match"
+        },
+        "position": {
+          "value": 18
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Render",
+      "args": {
+        "symbol": {
+          "value": ".any?"
+        },
+        "target": {
+          "value": "ruby"
+        },
+        "form": {
+          "value": "receiver.any? { |x| predicate }"
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Admit",
+      "args": {
+        "symbol": {
+          "value": ".any?"
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Propose",
+      "args": {
+        "symbol": {
+          "value": ".none?"
+        },
+        "category": {
+          "value": "block_predicate"
+        },
+        "precedence": {
+          "value": 6
+        },
+        "arity": {
+          "value": 2
+        },
+        "grammar": {
+          "value": "inner"
+        },
+        "strategy": {
+          "value": "block_predicate_match"
+        },
+        "position": {
+          "value": 19
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Render",
+      "args": {
+        "symbol": {
+          "value": ".none?"
+        },
+        "target": {
+          "value": "ruby"
+        },
+        "form": {
+          "value": "receiver.none? { |x| predicate }"
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Admit",
+      "args": {
+        "symbol": {
+          "value": ".none?"
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Propose",
+      "args": {
+        "symbol": {
+          "value": ".find"
+        },
+        "category": {
+          "value": "block_predicate"
+        },
+        "precedence": {
+          "value": 6
+        },
+        "arity": {
+          "value": 2
+        },
+        "grammar": {
+          "value": "inner"
+        },
+        "strategy": {
+          "value": "block_predicate_match"
+        },
+        "position": {
+          "value": 20
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Render",
+      "args": {
+        "symbol": {
+          "value": ".find"
+        },
+        "target": {
+          "value": "ruby"
+        },
+        "form": {
+          "value": "receiver.find { |x| predicate }"
+        }
+      }
+    },
+    {
+      "verb": "Expression::Operator.Admit",
+      "args": {
+        "symbol": {
+          "value": ".find"
+        }
+      }
     }
   ]
 }

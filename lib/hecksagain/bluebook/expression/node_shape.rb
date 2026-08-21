@@ -41,10 +41,16 @@
 # PRD 09 already set for `.split`/`.first`/`.last` (`Value::List` carries
 # only a length, not elements).
 #
-# `BlockPredicate`/`Find` (`.all?`/`.any?`/`.none?`/`.find`) are NOT
-# declared here — PRD 09 already deferred them (unadmitted, no settled
-# canonical shape yet), and PRD 11's own Non-goals repeat that deferral
-# rather than deciding it as a side effect of a generator manifest.
+# `BlockPredicate`/`Find` (`.all?`/`.any?`/`.none?`/`.find`) — admitted
+# in the "gaps" follow-up pass, via a fifth `Strategy` value
+# (`block_predicate_match`, expression.bluebook's own `Operator.Propose`
+# given, extended) — PRD 09 deferred them for lack of a settled shape to
+# admit against; that shape now exists, so they're declared here like
+# every other real node. `predicate` is a nested `Expr` — a fully-parsed
+# EVALUATOR ast, not this leaf grammar's own (`resolver/block_predicates.rb`'s
+# own comment on `BlockPredicate`, read directly) — the same "Expr" label
+# every other recursive field already uses, deliberately not a distinct
+# type: it's the identical algebra, just entered from a different leaf.
 module Hecksagain
   module Bluebook
     module Expression
@@ -104,7 +110,11 @@ module Hecksagain
           "First"          => [Field.new(name: :receiver, rust_type: "Expr")].freeze,
           "Last"           => [Field.new(name: :receiver, rust_type: "Expr")].freeze,
           "StartsWith"     => [Field.new(name: :receiver, rust_type: "Expr"), Field.new(name: :substring, rust_type: "String")].freeze,
-          "EndsWith"       => [Field.new(name: :receiver, rust_type: "Expr"), Field.new(name: :substring, rust_type: "String")].freeze
+          "EndsWith"       => [Field.new(name: :receiver, rust_type: "Expr"), Field.new(name: :substring, rust_type: "String")].freeze,
+          "BlockPredicate" => [Field.new(name: :mode, rust_type: "String"), Field.new(name: :receiver, rust_type: "Expr"),
+                               Field.new(name: :param, rust_type: "String"), Field.new(name: :predicate, rust_type: "Expr")].freeze,
+          "Find"           => [Field.new(name: :receiver, rust_type: "Expr"), Field.new(name: :param, rust_type: "String"),
+                               Field.new(name: :predicate, rust_type: "Expr"), Field.new(name: :path, rust_type: "list_of(String)")].freeze
         }.freeze
 
         # Ruby node name -> the real class it's checked against. Declared

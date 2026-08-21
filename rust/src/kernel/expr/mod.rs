@@ -44,6 +44,8 @@ pub enum Expr {
     Last(Box<Expr>),
     StartsWith { receiver: Box<Expr>, substring: String },
     EndsWith { receiver: Box<Expr>, substring: String },
+    BlockPredicate { mode: String, receiver: Box<Expr>, param: String, predicate: Box<Expr> },
+    Find { receiver: Box<Expr>, param: String, predicate: Box<Expr>, path: Vec<String> },
 }
 
 mod logic;

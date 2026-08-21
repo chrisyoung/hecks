@@ -17,6 +17,7 @@ pub mod regex;
 pub mod presence;
 pub mod string;
 pub mod accessor;
+pub mod block_predicate;
 
 /// One variant per real expression-operator category the Ruby
 /// grammar admits, in the order Grammar.admitted_operators's own `category` field declares them. Every match
@@ -38,6 +39,7 @@ pub enum OperatorCategory {
     Presence,
     String,
     Accessor,
+    BlockPredicate,
 }
 
 impl OperatorCategory {
@@ -58,8 +60,9 @@ impl OperatorCategory {
             OperatorCategory::Presence => "presence",
             OperatorCategory::String => "string",
             OperatorCategory::Accessor => "accessor",
+            OperatorCategory::BlockPredicate => "block_predicate",
         }
     }
 
-    pub const ALL: &'static [OperatorCategory] = &[OperatorCategory::Logical, OperatorCategory::Membership, OperatorCategory::Comparison, OperatorCategory::Arithmetic, OperatorCategory::SignTest, OperatorCategory::Sized, OperatorCategory::ToString, OperatorCategory::Regex, OperatorCategory::Presence, OperatorCategory::String, OperatorCategory::Accessor];
+    pub const ALL: &'static [OperatorCategory] = &[OperatorCategory::Logical, OperatorCategory::Membership, OperatorCategory::Comparison, OperatorCategory::Arithmetic, OperatorCategory::SignTest, OperatorCategory::Sized, OperatorCategory::ToString, OperatorCategory::Regex, OperatorCategory::Presence, OperatorCategory::String, OperatorCategory::Accessor, OperatorCategory::BlockPredicate];
 }

@@ -190,6 +190,7 @@ fn category_of(expr: &Expr) -> OperatorCategory {
         Presence { .. } => OperatorCategory::Presence,
         Split { .. } | StartsWith { .. } | EndsWith { .. } => OperatorCategory::String,
         First(..) | Last(..) => OperatorCategory::Accessor,
+        BlockPredicate { .. } | Find { .. } => OperatorCategory::BlockPredicate,
         Int(..) | Float(..) | Str(..) | Bool(..) | Nil | Lookup(..) => {
             unreachable!("interpret's own leaf arms handle these before category_of is ever called")
         }
@@ -233,6 +234,11 @@ fn dispatch_operator(category: OperatorCategory, expr: &Expr, ctx: &EvalContext)
             Expr::First(..) => accessor::first(expr, ctx),
             Expr::Last(..) => accessor::last(expr, ctx),
             _ => Err(Refusal::TypeMismatch(format!("dispatch_operator(Accessor, ..) called with {expr:?} — a router bug"))),
+        },
+        OperatorCategory::BlockPredicate => match expr {
+            Expr::BlockPredicate { .. } => block_predicate::block_predicate(expr, ctx),
+            Expr::Find { .. } => block_predicate::find(expr, ctx),
+            _ => Err(Refusal::TypeMismatch(format!("dispatch_operator(BlockPredicate, ..) called with {expr:?} — a router bug"))),
         },
     }
 }

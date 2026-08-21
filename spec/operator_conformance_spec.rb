@@ -143,14 +143,15 @@ RSpec.describe "the operator domain" do
     # Resolver#parse, previously ungoverned by this ledger entirely (no
     # Rust representation, invisible to bin/rust_kernel_coverage, and
     # this very spec passed without seeing them). .all?/.any?/.none?/
-    # .find remain unadmitted on purpose: they open a `{ |x| ... }`
-    # block, a shape none of the four existing Strategy values
+    # .find admitted after that (the "gaps" follow-up pass) via a fifth
+    # Strategy value, `block_predicate_match` — expression.bluebook's own
+    # `Operator.Propose` given, extended, since none of the original four
     # (top_level_split/prefix_match/suffix_match/call_pattern_match)
-    # describes — PRD 09 scopes a fifth Strategy value as its own
-    # follow-up rather than mis-tagging them to close this list early.
+    # describes a `{ |x| ... }`-opening operator.
     expect(symbols(by_grammar("inner"))).to eq(
       ["+", ".positive?", ".negative?", ".zero?", ".empty?", ".to_s", ".modulo", ".size",
-       ".match?", ".present?", ".blank?", ".split", ".first", ".last", ".start_with?", ".end_with?"]
+       ".match?", ".present?", ".blank?", ".split", ".first", ".last", ".start_with?", ".end_with?",
+       ".all?", ".any?", ".none?", ".find"]
     )
   end
 
@@ -193,7 +194,16 @@ RSpec.describe "the operator domain" do
     ".first"       => -> { Resolver.parse("a.first").is_a?(Resolver::First) },
     ".last"        => -> { Resolver.parse("a.last").is_a?(Resolver::Last) },
     ".start_with?" => -> { Resolver.parse('a.start_with?("{")').is_a?(Resolver::StartsWith) },
-    ".end_with?"   => -> { Resolver.parse('a.end_with?("}")').is_a?(Resolver::EndsWith) }
+    ".end_with?"   => -> { Resolver.parse('a.end_with?("}")').is_a?(Resolver::EndsWith) },
+    # The "gaps" follow-up pass — .all?/.any?/.none? all parse to
+    # BlockPredicate (distinguished by :mode, the same shape
+    # .positive?/.negative?/.zero? already share one probed class for);
+    # .find parses to its own Find node (it hands back the matched
+    # ELEMENT, never a boolean, so it isn't a BlockPredicate mode).
+    ".all?"        => -> { Resolver.parse("a.all? { |x| x.present? }").is_a?(Resolver::BlockPredicate) },
+    ".any?"        => -> { Resolver.parse("a.any? { |x| x.present? }").is_a?(Resolver::BlockPredicate) },
+    ".none?"       => -> { Resolver.parse("a.none? { |x| x.present? }").is_a?(Resolver::BlockPredicate) },
+    ".find"        => -> { Resolver.parse("a.find { |x| x.present? }").is_a?(Resolver::Find) }
   }.freeze
 
   it "implements every admitted structural operator, and no other" do

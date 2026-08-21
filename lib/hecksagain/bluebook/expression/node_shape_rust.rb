@@ -24,8 +24,17 @@
 # see `NodeShape`'s own header for why (no Rust equivalent exists for the
 # first; the second has no Rust variant TODAY, structure would still be
 # safe to generate but is out of this file's stated job of reproducing
-# what already exists). `BlockPredicate`/`Find` are absent because
-# `NodeShape` itself never declared them (unadmitted).
+# what already exists).
+#
+# `BlockPredicate`/`Find` ARE present — admitted in the "gaps" follow-up
+# pass. Their STRUCTURE is real and generated; their INTERPRETATION
+# still refuses, the exact same reason `Split`/`First`/`Last` already
+# do (`expression_operators::string::split`'s own header): both need a
+# real element out of the receiver, and `Value::List` still carries
+# only a length. Carrying the fields structurally now (rather than
+# waiting for that redesign) matches `Split`'s own precedent — its Rust
+# struct keeps `separator` even though `string::split` never reads it
+# before refusing.
 module Hecksagain
   module Bluebook
     module Expression
@@ -90,7 +99,13 @@ module Hecksagain
           "StartsWith"     => Node.new(rust_name: "StartsWith", kind: :struct,
                                        fields: [f(:receiver, "Box<Expr>"), f(:substring, "String")]),
           "EndsWith"       => Node.new(rust_name: "EndsWith", kind: :struct,
-                                       fields: [f(:receiver, "Box<Expr>"), f(:substring, "String")])
+                                       fields: [f(:receiver, "Box<Expr>"), f(:substring, "String")]),
+          "BlockPredicate" => Node.new(rust_name: "BlockPredicate", kind: :struct,
+                                       fields: [f(:mode, "String"), f(:receiver, "Box<Expr>"), f(:param, "String"),
+                                                f(:predicate, "Box<Expr>")]),
+          "Find"           => Node.new(rust_name: "Find", kind: :struct,
+                                       fields: [f(:receiver, "Box<Expr>"), f(:param, "String"),
+                                                f(:predicate, "Box<Expr>"), f(:path, "Vec<String>")])
         }.freeze
 
         module_function
@@ -105,6 +120,7 @@ module Hecksagain
           Or And Not Compare Include IntegerLiteral FloatLiteral StringLiteral BoolLiteral NilLiteral
           Addition SignTest Empty ToS Modulo Size Lookup
           MatchesRegex Presence Split First Last StartsWith EndsWith
+          BlockPredicate Find
         ].freeze
 
         def rust_node_names = ORDER.freeze
