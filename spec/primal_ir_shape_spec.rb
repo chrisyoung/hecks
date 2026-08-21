@@ -33,6 +33,19 @@ RSpec.describe Hecksagain::PrimalIR::Shape do
     expect(described_class.node_names).to eq(described_class::NODES.keys)
   end
 
+  describe "Lifecycle" do
+    it "declares Begin, Continue, and End as fieldless variants, matching the manifest's own empty field lists" do
+      %w[Begin Continue End].each do |variant|
+        expect(described_class::LIFECYCLE_VARIANTS.fetch(variant)).to be_empty
+        expect(IR::Lifecycle.const_get(variant).new.instance_variables).to be_empty
+      end
+    end
+
+    it "declares lifecycle_variant_names in the exact order LIFECYCLE_VARIANTS itself holds them" do
+      expect(described_class.lifecycle_variant_names).to eq(described_class::LIFECYCLE_VARIANTS.keys)
+    end
+  end
+
   describe "Context" do
     it "names every Correlated field the manifest declares, and no others" do
       expect(IR::Context::Correlated.members).to eq(described_class::CONTEXT_VARIANTS.fetch("Correlated").map(&:name))
@@ -56,6 +69,11 @@ RSpec.describe Hecksagain::PrimalIR::Shape do
     it "declares Ephemeral as a fieldless variant, matching the manifest's own empty field list" do
       expect(described_class::PERSISTENCE_VARIANTS.fetch("Ephemeral")).to be_empty
       expect(IR::Persistence::Ephemeral.new.instance_variables).to be_empty
+    end
+
+    it "declares Ended as a fieldless variant, matching the manifest's own empty field list" do
+      expect(described_class::PERSISTENCE_VARIANTS.fetch("Ended")).to be_empty
+      expect(IR::Persistence::Ended.new.instance_variables).to be_empty
     end
 
     it "declares persistence_variant_names in the exact order PERSISTENCE_VARIANTS itself holds them" do

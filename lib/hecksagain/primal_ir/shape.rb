@@ -78,16 +78,24 @@ module Hecksagain
         ].freeze
       }.freeze
 
-      # `Context`/`Persistence`/`Failure` — each a closed, named-variant
-      # enum, not an optional field a branch checks for `nil` (PRD 12's
-      # own "Question 6, checked" — "no hidden mode switch," ported
-      # here unchanged: the Rust shape must not reintroduce the switch
-      # the Ruby shape was built specifically to avoid).
+      # `Context`/`Persistence`/`Failure`/`Lifecycle` — each a closed,
+      # named-variant enum, not an optional field a branch checks for
+      # `nil` (PRD 12's own "Question 6, checked" — "no hidden mode
+      # switch," ported here unchanged: the Rust shape must not
+      # reintroduce the switch the Ruby shape was built specifically to
+      # avoid).
+      LIFECYCLE_VARIANTS = {
+        "Begin"    => [].freeze,
+        "Continue" => [].freeze,
+        "End"      => [].freeze
+      }.freeze
+
       CONTEXT_VARIANTS = {
         "Stateless"  => [].freeze,
         "Correlated" => [
           Field.new(name: :correlation_key, rust_type: "String"),
-          Field.new(name: :memory,          rust_type: "bool")
+          Field.new(name: :memory,          rust_type: "bool"),
+          Field.new(name: :lifecycle,       rust_type: "Lifecycle")
         ].freeze
       }.freeze
 
@@ -103,7 +111,13 @@ module Hecksagain
         "Checkpointed" => [
           Field.new(name: :boundary, rust_type: "String"),
           Field.new(name: :to_state, rust_type: "String")
-        ].freeze
+        ].freeze,
+        # `Lifecycle::End`'s own persistence outcome — deletion, not a
+        # move to a new state (see `../primal_ir.rb`'s own
+        # `Persistence::Ended` comment). Fieldless — nothing to carry;
+        # the CORRELATION being deleted is already known to whichever
+        # caller holds the `Reaction`.
+        "Ended"        => [].freeze
       }.freeze
 
       FAILURE_VARIANTS = {
@@ -130,6 +144,7 @@ module Hecksagain
       # than re-derived from `.keys` at separate call sites that could
       # drift on ordering alone.
       def node_names = NODES.keys.freeze
+      def lifecycle_variant_names = LIFECYCLE_VARIANTS.keys.freeze
       def context_variant_names = CONTEXT_VARIANTS.keys.freeze
       def persistence_variant_names = PERSISTENCE_VARIANTS.keys.freeze
       def failure_variant_names = FAILURE_VARIANTS.keys.freeze

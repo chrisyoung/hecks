@@ -79,8 +79,20 @@ module Hecksagain
 
       def deep_copy(hash) = JSON.parse(JSON.generate(hash), symbolize_names: true)
 
+      # `Lifecycle::Begin` (`ReactionLowering.lower_process_manager_begin`,
+      # see its own comment) — the trigger and initial state are read off
+      # the lowered `reaction` now, not `pm.starts_on`/`pm.states.first`
+      # directly. What stays hand-written, on purpose: the EXISTENCE gate
+      # itself (`@registry.saga_instances[pm.name].key?(correlation)`) —
+      # `Reaction` cannot know the owning process manager's own NAME, only
+      # a correlation FIELD name, so this registry-shaped check has
+      # nowhere else to live. `@executor.match_and_checkpoint?` still does
+      # the real work of writing `instance[:state]` and calling
+      # `on_checkpoint` — `reaction.condition` is `nil` (unconditionally
+      # true), so this only ever WRITES here, never refuses.
       def begin_saga(pm, event, domain)
-        return unless event.name == pm.starts_on
+        reaction = ReactionLowering.lower_process_manager_begin(pm)
+        return unless event.name == reaction.trigger.name
 
         correlation = saga_correlation(pm, event)
         if correlation.to_s.empty?
@@ -92,15 +104,16 @@ module Hecksagain
         created = @registry.saga_mutex.synchronize do
           next false if @registry.saga_instances[pm.name].key?(correlation)
 
-          instance = { state: pm.states.first, memory: event.payload }
+          instance = { memory: event.payload }
+          @executor.match_and_checkpoint?(reaction, state: instance, sources: { payload: event.payload },
+                                          on_checkpoint: ->(_state) { checkpoint(pm, correlation, instance, domain) })
           @registry.saga_instances[pm.name][correlation] = instance
-          checkpoint(pm, correlation, instance, domain)
           true
         end
         return unless created
 
         @registry.saga_log << { process_manager: pm.name, on: event.name,
-                                instance: correlation, born: true, state: pm.states.first }
+                                instance: correlation, born: true, state: reaction.persistence.to_state }
       end
 
       # THE MUTEX COVERS ONLY THE STATE-CHECK-AND-MUTATE-AND-CHECKPOINT
@@ -310,8 +323,20 @@ module Hecksagain
         deliver_leg_dispatches(pm, handler, reaction, event, instance, correlation, domain)
       end
 
+      # `Lifecycle::End` (`ReactionLowering.lower_process_manager_end`,
+      # see its own comment) — the trigger is read off the lowered
+      # `reaction` now, not `pm.ends_on` directly. `pm.ends_on` is
+      # itself optional (a procedure need not declare an ending) —
+      # `reaction.trigger.name` is `nil` in that case too, and `event.
+      # name == nil` is never true, the identical no-op the original
+      # `event.name == pm.ends_on` comparison already gave. What stays
+      # hand-written: the deletion itself — `Persistence::Ended` has no
+      # `ReactionExecutor`-performed effect (see that variant's own
+      # comment), so there is nothing to route through
+      # `match_and_checkpoint?` here at all, unlike `begin_saga`.
       def end_saga(pm, event, domain)
-        return unless event.name == pm.ends_on
+        reaction = ReactionLowering.lower_process_manager_end(pm)
+        return unless event.name == reaction.trigger.name
 
         correlation = saga_correlation(pm, event)
         return if correlation.to_s.empty?

@@ -45,15 +45,23 @@ pub struct Dispatch {
 }
 
 #[derive(Debug, Clone)]
+pub enum Lifecycle {
+    Begin,
+    Continue,
+    End,
+}
+
+#[derive(Debug, Clone)]
 pub enum Context {
     Stateless,
-    Correlated { correlation_key: String, memory: bool },
+    Correlated { correlation_key: String, memory: bool, lifecycle: Lifecycle },
 }
 
 #[derive(Debug, Clone)]
 pub enum Persistence {
     Ephemeral,
     Checkpointed { boundary: String, to_state: String },
+    Ended,
 }
 
 #[derive(Debug, Clone)]

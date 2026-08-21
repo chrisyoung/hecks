@@ -2,8 +2,8 @@
 
 # ADR 0030 Slice 3's own stop-condition check — writes
 # rust/src/kernel/reaction/mod.rs (the `Trigger`/`CommandRef`/
-# `Dispatch`/`Bindings`/`Context`/`Persistence`/`Failure`/`Reaction`
-# struct/enum definitions ONLY — no interpretation logic, no wiring
+# `Dispatch`/`Bindings`/`Lifecycle`/`Context`/`Persistence`/`Failure`/
+# `Reaction` struct/enum definitions ONLY — no interpretation logic, no wiring
 # into rust/src/kernel/orchestrate.rs) from ONE definition:
 # Hecksagain::PrimalIR::Shape (lib/hecksagain/primal_ir/shape.rb) —
 # see that file's own header for why this is a plain manifest, and
@@ -93,6 +93,7 @@ content = <<~RUST
   }
 
   #{node_structs}
+  #{enum_def('Lifecycle', Shape.lifecycle_variant_names, Shape::LIFECYCLE_VARIANTS)}
   #{enum_def('Context', Shape.context_variant_names, Shape::CONTEXT_VARIANTS)}
   #{enum_def('Persistence', Shape.persistence_variant_names, Shape::PERSISTENCE_VARIANTS)}
   #{enum_def('Failure', Shape.failure_variant_names, Shape::FAILURE_VARIANTS)}

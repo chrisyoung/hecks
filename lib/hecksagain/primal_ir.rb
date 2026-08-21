@@ -86,9 +86,31 @@ module Hecksagain
     # not silently wrong — not by inspection.
     Dispatch::VERBATIM = :verbatim
 
+    # WHICH INSTANCE-LIFECYCLE STAGE a `Context::Correlated` reaction
+    # belongs to — `Begin`/`Continue`/`End`, closed and explicit, the
+    # same "no hidden mode switch" discipline every other axis here
+    # already holds. Real gap, found by outside review, not by
+    # inspection: `SagaInterpreter#begin_saga`/`#end_saga` never went
+    # through `Reaction`/`ReactionLowering` at all — they compared
+    # `event.name` against `pm.starts_on`/`pm.ends_on` directly, so the
+    # "shared Reaction kernel" was silently relying on process-manager
+    # PROVENANCE for behavior it claimed to represent explicitly.
+    # `advance_saga`'s own leg is `Continue` — the ONLY stage that ever
+    # existed as a `Reaction` before this. Each variant is a pure tag,
+    # not a struct — everything ELSE a stage needs (which event
+    # triggers it, what state it lands in) already lives on `Trigger`/
+    # `Persistence`, the same way `Context::Stateless`/`Persistence::
+    # Ephemeral`/`Failure::Drop` carry no fields of their own either.
+    module Lifecycle
+      Begin    = Class.new
+      Continue = Class.new
+      End      = Class.new
+    end
+
     module Context
-      Stateless  = Class.new
-      Correlated = Struct.new(:correlation_key, :memory, keyword_init: true)
+      Stateless = Class.new
+      # `lifecycle` — see `Lifecycle`'s own header, immediately above.
+      Correlated = Struct.new(:correlation_key, :memory, :lifecycle, keyword_init: true)
     end
 
     module Persistence
@@ -107,6 +129,18 @@ module Hecksagain
       # failing (a shut drawer's refusal never credited the source
       # drawer back), not by inspection.
       Checkpointed = Struct.new(:boundary, :to_state, keyword_init: true)
+      # A `Lifecycle::End` reaction's own persistence outcome — the
+      # instance's persisted record is DELETED, not moved to a new
+      # state, so it genuinely doesn't fit `Checkpointed` (there is no
+      # `to_state` an ended instance moves to) or `Ephemeral` (a
+      # stateless policy's own "nothing to persist at all" — an ended
+      # correlated instance very much had something persisted, right up
+      # until this reaction). A real, previously-missing third
+      # persistence strategy, found by the same outside review that
+      # found `Lifecycle`'s own gap, not invented ahead of need — `End`
+      # is real, exercised behavior (`SagaInterpreter#end_saga`), not
+      # speculative.
+      Ended = Class.new
     end
 
     module Failure

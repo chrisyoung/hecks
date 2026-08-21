@@ -80,9 +80,73 @@ module Hecksagain
           trigger:     PrimalIR::Trigger.new(name: handler.event_type, qualifier: nil),
           condition:   state_equals(handler.from_state),
           dispatches:  dispatches,
-          context:     PrimalIR::Context::Correlated.new(correlation_key: pm.correlation_head, memory: true),
+          context:     PrimalIR::Context::Correlated.new(correlation_key: pm.correlation_head, memory: true,
+                                                         lifecycle: PrimalIR::Lifecycle::Continue.new),
           persistence: PrimalIR::Persistence::Checkpointed.new(boundary: :before_dispatch, to_state: handler.to_state),
           failure:     PrimalIR::Failure::Managed.new(retry: SagaInterpreter::MAX_DEFECT_RETRIES, compensation: compensation)
+        )
+      end
+
+      # A REAL canonical `ProcessManager` → the bare `PrimalIR::Reaction`
+      # that CREATES one of its instances — `SagaInterpreter#begin_saga`'s
+      # own trigger (`pm.starts_on`) and initial state (`pm.states.
+      # first`), lowered for real instead of read off `pm` directly, the
+      # real gap `Lifecycle`'s own header names (outside review, not
+      # inspection: `begin_saga` never went through `Reaction` at all
+      # before this). `condition: nil` — unconditional, the same as an
+      # unconditional `policy`: there IS a real gate (an instance must
+      # not already exist for this correlation), but it is an EXISTENCE
+      # check against `@registry.saga_instances`, not a value comparison
+      # against already-resolved `state`/`attrs` `Evaluator.interpret`
+      # can express — and `Reaction` genuinely cannot know the owning
+      # process manager's own NAME (the registry's own keying field),
+      # only `correlation_key` (a FIELD name). That gate stays real,
+      # hand-written orchestration in `SagaInterpreter#begin_saga`, on
+      # purpose — the same reason `for_each`'s own query resolution
+      # stays hand-written in `PolicyInterpreter` rather than forced
+      # into this shape. `dispatches: []` — birth fires no command of
+      # its own. `persistence: Checkpointed` fits cleanly even though
+      # nothing is MOVING from a prior state — `to_state: pm.states.
+      # first` is simply the first state this instance is ever
+      # persisted at, and `ReactionExecutor#match_and_checkpoint?`
+      # already handles "persist `state[:state]` unconditionally, no
+      # prior value to compare against" correctly as-is (`condition:
+      # nil` makes the match trivially true).
+      def lower_process_manager_begin(pm)
+        PrimalIR::Reaction.new(
+          trigger:     PrimalIR::Trigger.new(name: pm.starts_on, qualifier: nil),
+          condition:   nil,
+          dispatches:  [],
+          context:     PrimalIR::Context::Correlated.new(correlation_key: pm.correlation_head, memory: false,
+                                                         lifecycle: PrimalIR::Lifecycle::Begin.new),
+          persistence: PrimalIR::Persistence::Checkpointed.new(boundary: :before_dispatch, to_state: pm.states.first),
+          failure:     PrimalIR::Failure::Drop.new
+        )
+      end
+
+      # The bare `PrimalIR::Reaction` that ENDS one of a `ProcessManager`'s
+      # instances — `SagaInterpreter#end_saga`'s own trigger
+      # (`pm.ends_on`), lowered for real. `condition: nil` for the
+      # identical reason `lower_process_manager_begin`'s own comment
+      # gives (the real gate — an instance must EXIST for this
+      # correlation — is an existence check `SagaInterpreter` still owns,
+      # not a value comparison). `dispatches: []` — ending fires no
+      # command of its own. `persistence: Persistence::Ended` — see that
+      # variant's own comment (`../primal_ir.rb`) for why deletion
+      # doesn't fit `Checkpointed`/`Ephemeral`; `ReactionExecutor#
+      # match_and_checkpoint?` never needs to special-case it, since it
+      # only ever acts on `Checkpointed` and otherwise no-ops — the
+      # actual deletion stays `SagaInterpreter#end_saga`'s own job,
+      # unlike `Checkpointed`, which `ReactionExecutor` DOES perform.
+      def lower_process_manager_end(pm)
+        PrimalIR::Reaction.new(
+          trigger:     PrimalIR::Trigger.new(name: pm.ends_on, qualifier: nil),
+          condition:   nil,
+          dispatches:  [],
+          context:     PrimalIR::Context::Correlated.new(correlation_key: pm.correlation_head, memory: false,
+                                                         lifecycle: PrimalIR::Lifecycle::End.new),
+          persistence: PrimalIR::Persistence::Ended.new,
+          failure:     PrimalIR::Failure::Drop.new
         )
       end
 
