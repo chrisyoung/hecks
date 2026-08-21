@@ -112,14 +112,18 @@ RSpec.describe "Reaction survives provenance erasure" do
   end
 
   it "walks the mechanical-criterion table's own 'same stage, different strategy' claim for bindings" do
-    # `Reaction.bindings` for both is the SAME node type
+    # `Reaction.dispatches[*].bindings` for both is the SAME node type
     # (`BindingLowering::ExecutableBinding`) — a real `with_spec` entry
     # on each, resolved through the one shared `BindingLowering.resolve`,
     # never a policy-shaped resolver and a saga-shaped one.
     from_policy = Hecksagain::Runtime::ReactionLowering.lower_policy(policy_with_bindings)
     from_leg    = Hecksagain::Runtime::ReactionLowering.lower_process_manager_leg(process_manager, handler)
 
-    expect(from_policy.bindings).not_to be_empty
-    expect(from_policy.bindings + from_leg.bindings).to all(be_a(Hecksagain::Bluebook::Expression::BindingLowering::ExecutableBinding))
+    policy_bindings = from_policy.dispatches.flat_map(&:bindings)
+    leg_bindings = from_leg.dispatches.flat_map(&:bindings)
+
+    expect(policy_bindings).not_to be_empty
+    expect(leg_bindings).not_to be_empty
+    expect(policy_bindings + leg_bindings).to all(be_a(Hecksagain::Bluebook::Expression::BindingLowering::ExecutableBinding))
   end
 end
