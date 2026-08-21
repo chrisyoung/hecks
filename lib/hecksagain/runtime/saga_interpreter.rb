@@ -1,10 +1,10 @@
 require "json"
 require_relative "saga_interpreter/correlation"
 require_relative "../bluebook/process_manager"
+require_relative "../bluebook/expression/binding_lowering"
 require_relative "errors"
 require_relative "value"
 require_relative "reaction"
-require_relative "binding"
 
 module Hecksagain
   module Runtime
@@ -251,23 +251,37 @@ module Hecksagain
         end
       end
 
-      # ADR 0029's own step 3 — the argument-resolution logic itself is
-      # `Binding.resolve`'s now, shared with `PolicyInterpreter#trigger_args`;
-      # a saga's own source chain is the full one that module supports —
-      # correlation head, then payload, then accumulated memory, in
-      # exactly the priority order this method always checked them in.
-      # `Binding::NOT_FOUND`, not `nil`, is what a source answers to
-      # defer to the next one — `event.payload.key?(value)` (not merely
-      # "payload[value] is truthy") is the ORIGINAL check this ports:
-      # a payload field present with an explicit `nil` value must still
-      # win over memory, not fall through to it.
+      # ADR 0029's own step 3, reconciled onto PRD 10's own lowering —
+      # the argument-resolution logic itself is `BindingLowering`'s now
+      # (`Bluebook::Expression::BindingLowering`, ADR 0030 Slice 2),
+      # shared with `PolicyInterpreter#trigger_args`, not a second,
+      # freshly-written resolver. A saga's own priority chain —
+      # correlation head, then payload, then accumulated memory — is
+      # exactly `BindingLowering`'s own bucket-priority model
+      # (`lower(binding, available_sources: [:correlation, :payload,
+      # :memory])`); the one bucket this chain needs that isn't already
+      # a natural Hash is `:correlation`, built here as the ONE-ENTRY
+      # Hash `{pm.correlation_head => correlation}` — `resolve_reference`'s
+      # own `bucket.key?(reference.name)` check against it reproduces
+      # this method's original `value == pm.correlation_head` comparison
+      # exactly, and `BindingLowering`'s own unconditional final-bucket
+      # fallback (`sources.dig(priority.last, reference.name)`)
+      # reproduces the original's unconditional `instance[:memory][value]`
+      # — a payload field present with an explicit `nil` value still
+      # wins over memory, never falls through to it, because
+      # `resolve_reference` checks `bucket.key?`, not truthiness.
       def dispatch_args(pm, spec, event, instance, correlation)
-        sources = [
-          ->(name) { name == pm.correlation_head ? correlation : Binding::NOT_FOUND },
-          ->(name) { event.payload.key?(name) ? event.payload[name] : Binding::NOT_FOUND },
-          ->(name) { instance[:memory][name] }
-        ]
-        Binding.resolve(spec.with_spec, sources)
+        sources = { correlation: { pm.correlation_head => correlation }, payload: event.payload, memory: instance[:memory] }
+
+        spec.with_spec.to_h do |key, value|
+          executable = Bluebook::Expression::BindingLowering.lower([key, value], available_sources: %i[correlation payload memory])
+          destination, resolved = Bluebook::Expression::BindingLowering.resolve(executable, sources)
+          # A process manager carries facts between aggregate boundaries.  It
+          # must carry a value object's state, not its source aggregate's
+          # runtime type: TransferMoney and Account::Money may share fields
+          # without being the same domain object.
+          [destination, Value.materialize(resolved)]
+        end
       end
 
       def qualified(command_name, domain)

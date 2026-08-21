@@ -4,9 +4,9 @@ require_relative "query_interpreter"
 require_relative "refusal_wording"
 require_relative "value"
 require_relative "../bluebook/expression/evaluator"
+require_relative "../bluebook/expression/binding_lowering"
 require_relative "saga_interpreter"
 require_relative "reaction"
-require_relative "binding"
 
 module Hecksagain
   module Runtime
@@ -191,16 +191,27 @@ module Hecksagain
       # for a fan-out, and before this it could not be written: the whole
       # event rode along, and the target had to declare every field of it
       # whether it read them or not.
-      # ADR 0029's own step 3 — the argument-resolution logic itself is
-      # `Binding.resolve`'s now, shared with `SagaInterpreter#dispatch_args`;
-      # a policy's own source chain is the shortest one that module
-      # supports — a single source, the merged payload — matching
-      # `Binding.resolve`'s own "no `ReactionContext`" case exactly.
+      # ADR 0029's own step 3, reconciled onto PRD 10's own lowering —
+      # the argument-resolution logic itself is `BindingLowering`'s now
+      # (`Bluebook::Expression::BindingLowering`, ADR 0030 Slice 2),
+      # shared with `SagaInterpreter#dispatch_args`, not a second,
+      # freshly-written resolver: a policy's own source is one bucket,
+      # `payload`, matching `BindingLowering`'s own "no correlation, no
+      # memory" case exactly (`lower(binding, available_sources:
+      # [:payload])`).
       def trigger_args(policy, event, extra = {})
         payload = event.payload.transform_keys(&:to_sym).merge(extra)
         return payload if policy.with_spec.to_a.empty?
 
-        args = Binding.resolve(policy.with_spec, [->(name) { payload[name] }])
+        sources = { payload: payload }
+        args = policy.with_spec.to_h do |key, value|
+          executable = Bluebook::Expression::BindingLowering.lower([key, value], available_sources: [:payload])
+          destination, resolved = Bluebook::Expression::BindingLowering.resolve(executable, sources)
+          # Carried as STATE, not as the emitting aggregate's own runtime
+          # type — the same reason a saga materialises: two aggregates may
+          # share a value object's fields without sharing the class.
+          [destination, Value.materialize(resolved)]
+        end
 
         # THE RAW INPUTS `args` WAS RESOLVED FROM — same additive,
         # Ruby-only shape SagaInterpreter#deliver_saga_dispatch's own
