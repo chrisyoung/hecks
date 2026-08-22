@@ -87,6 +87,11 @@ else
   # not beside it the way Runtime::Loader.boot's `directory` (the
   # nested `bluebook/` subfolder one level down) needs its OWN parent.
   target_registry = Hecksagain::Runtime::Registry.new(root: File.expand_path(domain))
+  # Declared BEFORE the block below, not first-assigned inside it — a
+  # block passed to a method call (unlike `if`/`while`) opens its own
+  # local scope, so a variable only ever assigned inside `with_registry
+  # do ... end` would vanish the moment the block returns.
+  domain_bluebook_path = nil
   Hecksagain.with_registry(target_registry) do
     Kernel.load(File.expand_path("../lib/hecksagain/ports/persistence.port", __dir__))
     Kernel.load(File.expand_path("../lib/hecksagain/ports/extraction.port", __dir__))
@@ -100,7 +105,7 @@ else
     # silently (and correctly, for any OTHER unloaded adapter) answers
     # false.
     Kernel.load(File.expand_path("../lib/hecksagain/adapters/driven/postgres_era.adapter", __dir__))
-    Kernel.load(File.join(domain, "bluebook", "#{File.basename(domain)}.bluebook"))
+    Kernel.load(domain_bluebook_path = File.join(domain, "bluebook", "#{File.basename(domain)}.bluebook"))
 
     # ALSO every translations/*.bluebook edge — same directory, same
     # glob, same load-order position Vocabulary's own "LoadOrder" entry
@@ -157,6 +162,20 @@ else
   target_ir[:translations] = json_shaped(
     Hecksagain::Projector::Exporter.translations(target_registry).select { |edge| edge[:domain] == target_domain_name }
   )
+
+  # THE RAW BLUEBOOK SOURCE TEXT — a binding fact same as `lineage`/
+  # `translations` above (not part of `bluebook.to_h`'s own canonical
+  # IR, which describes SHAPE, never the literal text that declared it —
+  # ADR 0001 again), but one a future Rust-side mint needs verbatim:
+  # `hecks_eras.held_text` is this exact string, byte for byte, and the
+  # integrity digest every held era is checked against
+  # (era_store.rb's own `verify_integrity!`) is SHA256 of THIS text, not
+  # of anything re-derived from the parsed IR. Read directly off disk —
+  # the SAME file `Kernel.load` just parsed a few lines up — rather than
+  # reconstructed from `bluebook.to_h`, which would produce a
+  # DIFFERENT (re-serialized, not authored) text and a digest nothing
+  # already stored would ever match.
+  target_ir[:source_text] = File.read(domain_bluebook_path)
 
   # THE SELF-HOSTED LANGUAGE, COMPILED IN TOO. `lib/hecksagain/language/bluebook/`
   # declares what a bluebook IS — Bluebook, Aggregate, Command, ValueObject,
