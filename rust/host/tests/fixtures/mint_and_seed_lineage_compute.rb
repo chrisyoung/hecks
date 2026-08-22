@@ -202,6 +202,6 @@ raw = PG.connect(owner_url).exec("SELECT id, state FROM account_head ORDER BY id
 ground_truth_rows = raw.map { |row| [row["id"], JSON.parse(row["state"])] }
 
 puts JSON.generate({
-  db_name: db_name, app_role: app_role, domain: DOMAIN, era: 2, storage_name: "account",
+                     db_name: db_name, app_role: app_role, domain: DOMAIN, era: 2, storage_name: "account",
   rows: ground_truth_rows
-})
+                   })

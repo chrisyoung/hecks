@@ -55,7 +55,7 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
     built = system("cargo", "build", "--bin", "lineage_harness",
                    chdir: RUST_HOST_DIR, out: File::NULL, err: File::NULL)
     binary = File.join(RUST_HOST_DIR, "target", "debug", "lineage_harness")
-    @lineage_harness_binary = (built && File.executable?(binary)) ? binary : nil
+    @lineage_harness_binary = built && File.executable?(binary) ? binary : nil
   end
 
   def drop_scratch!(db_name, owner_role, app_role)
@@ -111,7 +111,7 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
     by_id_results = run_harness(binary, db_name, app_role, domain, era, by_id_ops)
     by_id_results.each_with_index do |result, index|
       id, expected_state = ruby_rows[index]
-      expect(result["ok"]).to be(true), "read_by_id(#{id.inspect}): #{result["error"]}"
+      expect(result["ok"]).to be(true), "read_by_id(#{id.inspect}): #{result['error']}"
       expect(result["state"]).to eq(expected_state)
     end
   ensure
@@ -133,7 +133,7 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
 
     write_op = {
       "op" => "write", "aggregate" => "#{domain}::Account", "id" => "written-by-rust",
-      "state" => { "amount" => { "cents" => 999 }, "kind" => { "label" => "written-by-rust" } },
+      "state" => { "amount" => { "cents" => 999 }, "kind" => { "label" => "written-by-rust" } }
     }
     results = run_harness(binary, db_name, app_role, domain, era, [write_op])
     expect(results.first["ok"]).to be(true), results.first["error"]
@@ -145,7 +145,7 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
     # a second Rust-side read of the same connection.
     require "pg"
     raw = PG.connect("postgres://#{owner_role}@localhost/#{db_name}")
-              .exec_params("SELECT state FROM account_head WHERE id = $1", ["written-by-rust"])
+            .exec_params("SELECT state FROM account_head WHERE id = $1", ["written-by-rust"])
     expect(raw.ntuples).to eq(1)
     expect(JSON.parse(raw[0]["state"])).to eq(write_op["state"])
   ensure
@@ -217,7 +217,7 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
     built = Hecksagain::Runtime::Instance.new(aggregate: aggregate, id: "p1")
     fields = {
       name: { value: "Margherita" }, pizza: { price_cents: { cents: 1200 }, size: { value: "large" } },
-      toppings: [{ name: "Basil", amount: 3 }], customer_name: { value: "Alice" },
+      toppings: [{ name: "Basil", amount: 3 }], customer_name: { value: "Alice" }
     }
     fields.each { |name, value| built[name] = Hecksagain::Runtime::Value.for(aggregate, name, value) }
     adapter.save(built)

@@ -227,6 +227,6 @@ ground_truth_rows = (translated_era1 + untranslated_era2).map do |id, state|
 end
 
 puts JSON.generate({
-  db_name: db_name, app_role: app_role, domain: DOMAIN, era: 2, storage_name: "account",
+                     db_name: db_name, app_role: app_role, domain: DOMAIN, era: 2, storage_name: "account",
   rows: ground_truth_rows
-})
+                   })
