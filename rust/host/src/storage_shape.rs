@@ -41,7 +41,7 @@ pub const LABEL_LENGTH: usize = 6;
 
 // storage_shape.rb's own FORM_VERSION — bump this in the SAME change
 // that alters `project`/`canonical`'s output below, on BOTH sides.
-pub const FORM_VERSION: i64 = 1;
+pub const FORM_VERSION: i32 = 1;
 
 pub fn mint_hash(ir: &Value) -> String {
     let digest = Sha256::digest(canonical(ir).as_bytes());
