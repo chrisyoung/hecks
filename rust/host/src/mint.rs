@@ -38,6 +38,7 @@
 
 use crate::journal::quote_ident;
 use crate::reference_transform;
+use crate::reference_validate;
 use crate::storage_shape;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -729,9 +730,9 @@ async fn audit_layer_two<C: GenericClient>(
     edges: &[&Edge],
     raw_edges: &[Value],
     watermarks: &std::collections::HashMap<i32, Option<i64>>,
+    after: &std::collections::HashMap<String, Value>,
     violations: &mut Vec<String>,
 ) -> anyhow::Result<()> {
-    let after = translated_latest(client, domain, &aggregate.name, ordinal, edges, watermarks).await?;
     let before = if edges.len() > 1 {
         translated_latest(client, domain, &aggregate.name, ordinal, &edges[..edges.len() - 1], watermarks).await?
     } else {
@@ -814,27 +815,50 @@ fn strip_keys(state: &Value, keys: &std::collections::HashSet<String>) -> Value 
 }
 
 /// The whole mint-time audit, over every lineage-capable aggregate —
-/// `CoverageCheck#audit!`, read directly. Runs BEFORE anything is
-/// minted (over the live compiled chain, plain `SELECT`s, never a
-/// persisted matview), so a refusal leaves no half-born era: the SAME
-/// ordering `Minter#mint!` holds itself to (`audit!` before `lineage.
-/// mint_era!`). Layer 1 (bluebook-alone: types/invariants/lifecycle) is
-/// a separate, still-pending piece of ADR-0030-in-progress's own "full
-/// parity" scope — this function is Layer 2 alone for now, still a real
-/// safety gate on its own (every portable rule Ruby's own audit would
-/// catch a divergence in, this catches too).
+/// `CoverageCheck#audit!`/`Translation::Audit.check`, read directly.
+/// Runs BEFORE anything is minted (over the live compiled chain, plain
+/// `SELECT`s, never a persisted matview), so a refusal leaves no
+/// half-born era: the SAME ordering `Minter#mint!` holds itself to
+/// (`audit!` before `lineage.mint_era!`). Layer 1 (structural:
+/// `reference_validate`) and Layer 2 (`reference_transform`, per-rule
+/// preservation) both run here, over every aggregate — Layer 1's own
+/// documented gap (custom invariant PREDICATE text, not yet evaluated)
+/// is named in `reference_validate`'s own header, not silently absent.
+///
+/// `ir` is the whole `ir.json` `Value` — Layer 1 looks up each
+/// aggregate's own node from `ir.get("aggregates")` by name.
 pub async fn audit_before_mint<C: GenericClient>(
     client: &C,
     domain: &str,
+    ir: &Value,
     aggregates: &[Aggregate],
     ordinal: i32,
     edges: &[&Edge],
     raw_edges: &[Value],
     watermarks: &std::collections::HashMap<i32, Option<i64>>,
 ) -> anyhow::Result<()> {
+    let ir_aggregates: std::collections::HashMap<&str, &Value> = ir
+        .get("aggregates")
+        .and_then(Value::as_array)
+        .map(|list| list.iter().filter_map(|agg| agg.get("name").and_then(Value::as_str).map(|n| (n, agg))).collect())
+        .unwrap_or_default();
+
     let mut violations = Vec::new();
     for aggregate in aggregates {
-        audit_layer_two(client, domain, aggregate, ordinal, edges, raw_edges, watermarks, &mut violations).await?;
+        let after = translated_latest(client, domain, &aggregate.name, ordinal, edges, watermarks).await?;
+
+        // Layer 1 — structural (types/patterns/admits/lifecycle) — over
+        // every record `after` actually holds, matching Ruby's own
+        // `layer_one!(violations, aggregate, after)` exactly.
+        if let Some(aggregate_ir) = ir_aggregates.get(aggregate.name.as_str()) {
+            for (id, state) in &after {
+                violations.extend(reference_validate::validate(aggregate_ir, id, state));
+            }
+        }
+
+        // Layer 2 — per-rule value preservation against the reference
+        // transform, id-set/count conservation.
+        audit_layer_two(client, domain, aggregate, ordinal, edges, raw_edges, watermarks, &after, &mut violations).await?;
     }
     if violations.is_empty() {
         return Ok(());
@@ -1378,7 +1402,7 @@ mod tests {
             "aggregates": [{"name": "Widget", "renames": {"cost": "amount"}}]
         })];
         let watermarks: std::collections::HashMap<i32, Option<i64>> = [(1, None)].into_iter().collect();
-        audit_before_mint(&client, honest_domain, &[aggregate.clone()], 2, &[&honest_edge], &honest_raw_edges, &watermarks)
+        audit_before_mint(&client, honest_domain, &v2_ir, &[aggregate.clone()], 2, &[&honest_edge], &honest_raw_edges, &watermarks)
             .await
             .expect("an honest edge's audit must pass silently");
 
@@ -1397,7 +1421,7 @@ mod tests {
             // still renames it to `amount`. A real divergence.
             "aggregates": [{"name": "Widget", "renames": {"cost": "price"}}]
         })];
-        let error = audit_before_mint(&client, lying_domain, &[aggregate], 2, &[&lying_edge], &lying_raw_edges, &watermarks)
+        let error = audit_before_mint(&client, lying_domain, &v2_ir, &[aggregate], 2, &[&lying_edge], &lying_raw_edges, &watermarks)
             .await
             .expect_err("a declared rename that disagrees with the compiled SQL must refuse");
         let message = format!("{error:#}");

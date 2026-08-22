@@ -24,6 +24,7 @@ mod journal;
 mod lambda_client;
 mod mint;
 mod reference_transform;
+mod reference_validate;
 mod storage_shape;
 mod wasm_runner;
 mod web;
@@ -223,7 +224,7 @@ async fn main() -> Result<(), Error> {
             // has no row yet, matching what Ruby's own audit sees at
             // this same pre-mint moment.
             let watermarks: std::collections::HashMap<i32, Option<i64>> = held.iter().map(|held_era| (held_era.ordinal, held_era.watermark)).collect();
-            mint::audit_before_mint(&client, &domain, &aggregates, ordinal, &chain, &raw_edges, &watermarks)
+            mint::audit_before_mint(&client, &domain, ir, &aggregates, ordinal, &chain, &raw_edges, &watermarks)
                 .await
                 .map_err(|e| format!("{e:#}"))?;
 
