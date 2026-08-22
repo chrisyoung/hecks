@@ -71,7 +71,21 @@ module Hecksagain
           end,
           drops:    aggregate.drops.map(&:to_s),
           retypes:  aggregate.retypes.map { |retype| { from: retype.from, to: retype.to } },
-          computes: aggregate.computes.map { |compute| { from: compute.from, to: compute.to, sql: compute.sql } }
+          computes: aggregate.computes.map { |compute| { from: compute.from, to: compute.to, sql: compute.sql } },
+          # PREVIOUSLY MISSING — found live while planning Rust-side mint
+          # support. `ApprovalDigest.edge_digest` hashes THIS hash, so an
+          # edge carrying only a rekey (no compute) had its approval bind
+          # to nothing rekey-specific at all: any two rekey edges with
+          # otherwise-identical renames/moves/converts/drops/retypes/
+          # computes produced the SAME digest regardless of what their
+          # `rekey sql:` actually said, and a rekey's own SQL could change
+          # without invalidating an existing approval. Same bug shape for
+          # `backfills` (present, just never exported). Fixing this
+          # CHANGES every existing rekey/backfill edge's digest — any
+          # approval already recorded for one is invalidated by this fix
+          # and must be re-reviewed and re-approved.
+          rekeys:    aggregate.rekeys.map { |rekey| { sql: rekey.sql } },
+          backfills: aggregate.backfills.map { |backfill| { name: backfill.name.to_s, default: backfill.default } }
         }
       end
     end
