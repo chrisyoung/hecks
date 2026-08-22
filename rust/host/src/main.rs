@@ -21,6 +21,7 @@ mod field_hints;
 mod ir;
 mod journal;
 mod lambda_client;
+mod storage_shape;
 mod wasm_runner;
 mod web;
 
