@@ -180,6 +180,56 @@ pub fn edge_chain<'a>(edges: &'a [Edge], labels: &[String]) -> anyhow::Result<Ve
         .collect()
 }
 
+// ───────────────────────── boot decision ─────────────────────────
+
+/// What `main()`'s boot gate should do, given every held era for this
+/// domain and this binary's own freshly-computed shape label — pulled
+/// out of `main.rs` as a pure function (no `GenericClient`, no I/O) so
+/// the four-way branch is directly unit-testable without a real
+/// Postgres. `main.rs` matches on this and does nothing else to decide
+/// — every DB-touching consequence (`hold_first`, `edge_chain`,
+/// `approval::check`, `mint_era`) still lives there.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BootDecision {
+    /// A held era already names this exact shape — boot at it,
+    /// whichever ordinal. RLS itself refuses a write if this turns out
+    /// to be superseded by the time a mutation actually lands.
+    UseExisting { ordinal: i32 },
+    /// No held era at all — this domain is brand new to this database.
+    /// Mint era 1 (`mint::hold_first`).
+    HoldFirst,
+    /// The latest held era has a different shape than this binary's
+    /// own — walk the translation-edge chain from it and mint the next
+    /// ordinal (`mint::mint_era`).
+    Mint { ordinal: i32, from_ordinal: i32, from_label: String },
+    /// The latest held era has no label yet (Ruby minted it but never
+    /// named it) — this crate has no bluebook parser to name it with,
+    /// so it can't tell whether that era even matches its own shape.
+    /// Refuse rather than guess.
+    LatestUnnamed { ordinal: i32 },
+}
+
+/// The pure decision itself — mirrors the four branches `main.rs`'s
+/// boot gate used to inline directly. `held` MUST already be in
+/// ordinal order (as `journal::held_eras` returns it).
+pub fn decide_boot_action(held: &[crate::journal::HeldEra], my_label: &str) -> BootDecision {
+    if let Some(matching) = held.iter().find(|held_era| held_era.label.as_deref() == Some(my_label)) {
+        return BootDecision::UseExisting { ordinal: matching.ordinal };
+    }
+    if held.is_empty() {
+        return BootDecision::HoldFirst;
+    }
+    let latest = held.last().expect("checked non-empty above");
+    match &latest.label {
+        None => BootDecision::LatestUnnamed { ordinal: latest.ordinal },
+        Some(label) => BootDecision::Mint {
+            ordinal: latest.ordinal + 1,
+            from_ordinal: latest.ordinal,
+            from_label: label.clone(),
+        },
+    }
+}
+
 // ───────────────────────── provisioning ─────────────────────────
 
 async fn provisioner<C: GenericClient>(client: &C, journal: &str) -> anyhow::Result<bool> {
@@ -877,6 +927,38 @@ mod tests {
 
         let broken = edge_chain(&edges, &["aaa".to_string(), "zzz".to_string()]);
         assert!(broken.is_err(), "no edge leads aaa to zzz -- must refuse, not silently skip");
+    }
+
+    fn held(ordinal: i32, label: Option<&str>) -> journal::HeldEra {
+        journal::HeldEra { ordinal, hash: label.map(|_| "irrelevant".to_string()), label: label.map(str::to_string), held_text: String::new(), watermark: None }
+    }
+
+    // The four branches `main.rs`'s boot gate used to inline directly —
+    // now pure, so each one is provable without a real Postgres.
+    #[test]
+    fn decide_boot_action_covers_all_four_branches() {
+        // No held eras at all -- brand new domain, hold era 1.
+        assert_eq!(decide_boot_action(&[], "abc123"), BootDecision::HoldFirst);
+
+        // A held era already names this exact shape -- boot at it,
+        // even if it's not the LATEST one (an operator could roll back
+        // to an older binary whose shape a prior era already covers).
+        let already_named = vec![held(1, Some("aaa111")), held(2, Some("bbb222"))];
+        assert_eq!(decide_boot_action(&already_named, "aaa111"), BootDecision::UseExisting { ordinal: 1 });
+        assert_eq!(decide_boot_action(&already_named, "bbb222"), BootDecision::UseExisting { ordinal: 2 });
+
+        // Held, but the latest doesn't match this binary's shape -- mint
+        // the next ordinal from the latest's own label.
+        let drifted = vec![held(1, Some("aaa111"))];
+        assert_eq!(
+            decide_boot_action(&drifted, "ccc333"),
+            BootDecision::Mint { ordinal: 2, from_ordinal: 1, from_label: "aaa111".to_string() }
+        );
+
+        // The latest held era has no label yet (Ruby minted it, never
+        // named it) -- refuse rather than guess whether it matches.
+        let unnamed = vec![held(1, Some("aaa111")), held(2, None)];
+        assert_eq!(decide_boot_action(&unnamed, "ccc333"), BootDecision::LatestUnnamed { ordinal: 2 });
     }
 
     // THE END-TO-END PROOF ADR-0030-in-progress exists for: Rust mints
