@@ -38,6 +38,7 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
   RUST_HOST_DIR = File.join(InMemoryDomain::ROOT, "rust", "host")
   SEED_SCRIPT = File.join(RUST_HOST_DIR, "tests", "fixtures", "mint_and_seed_lineage.rb")
   COMPUTE_SEED_SCRIPT = File.join(RUST_HOST_DIR, "tests", "fixtures", "mint_and_seed_lineage_compute.rb")
+  MINT_VIA_RUST_SCRIPT = File.join(RUST_HOST_DIR, "tests", "fixtures", "mint_via_rust_matches_ruby.rb")
 
   before(:all) do
     skip "no reachable Postgres — start one to run this spec" unless PostgresProbe.available?
@@ -56,6 +57,17 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
                    chdir: RUST_HOST_DIR, out: File::NULL, err: File::NULL)
     binary = File.join(RUST_HOST_DIR, "target", "debug", "lineage_harness")
     @lineage_harness_binary = built && File.executable?(binary) ? binary : nil
+  end
+
+  # Same memoization reasoning as `lineage_harness_binary` above — one
+  # more binary out of the SAME crate, built once per suite run.
+  def self.mint_harness_binary
+    return @mint_harness_binary if defined?(@mint_harness_binary)
+
+    built = system("cargo", "build", "--bin", "mint_harness",
+                   chdir: RUST_HOST_DIR, out: File::NULL, err: File::NULL)
+    binary = File.join(RUST_HOST_DIR, "target", "debug", "mint_harness")
+    @mint_harness_binary = built && File.executable?(binary) ? binary : nil
   end
 
   def drop_scratch!(db_name, owner_role, app_role)
@@ -277,6 +289,39 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
     expect(rust_rows.map { |_, state| state.keys }).to all(contain_exactly("kind", "doubled"))
   ensure
     drop_scratch!(db_name, owner_role, app_role) if db_name
+  end
+
+  # ADR-0030-in-progress step 8 — THE ONE EXAMPLE ABOVE WHERE RUST DOES
+  # THE MINTING TOO, not just the reading/writing every earlier example
+  # in this file proves. `mint_via_rust_matches_ruby.rb` does BOTH
+  # sides itself (own header has the full argument): mints era 1, then
+  # era 2 across a real rename edge, independently in Ruby (`Lineage
+  # Manager.check!`/`mint!`) and in Rust (`mint_harness`, the actual
+  # `bootstrap` boot-gate sequence — `decide_boot_action`,
+  # `audit_before_mint`, `mint_era`, not a shortcut), against two
+  # separate scratch databases, writing through each language's own
+  # real generic write path, then hands back both `account_head` views
+  # for this example to diff directly.
+  it "mints the same edge independently in Ruby and in Rust and produces byte-identical account_head views" do
+    mint_binary = self.class.mint_harness_binary
+    skip "cargo build --bin mint_harness failed" unless mint_binary
+    read_binary = self.class.lineage_harness_binary
+    skip "cargo build --bin lineage_harness failed" unless read_binary
+
+    stdout, status = Open3.capture2("ruby", MINT_VIA_RUST_SCRIPT, mint_binary, read_binary)
+    raise "#{File.basename(MINT_VIA_RUST_SCRIPT)} failed:\n#{stdout}" unless status.success?
+
+    result = JSON.parse(stdout)
+    begin
+      expect(result.fetch("rust_rows")).to eq(result.fetch("ruby_rows"))
+    ensure
+      require "pg"
+      admin = PG.connect(dbname: "postgres")
+      admin.exec("DROP DATABASE IF EXISTS #{result.fetch('ruby_db')} WITH (FORCE)")
+      admin.exec("DROP DATABASE IF EXISTS #{result.fetch('rust_db')} WITH (FORCE)")
+      admin.exec("DROP ROLE IF EXISTS #{result.fetch('owner')}")
+      admin.close
+    end
   end
 
   # NOT YET DONE: Compliance::AccountFreezeReview and
