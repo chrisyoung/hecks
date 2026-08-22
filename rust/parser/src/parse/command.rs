@@ -15,6 +15,7 @@ use crate::build::references;
 use crate::canonical;
 use crate::diag::{Diagnostic, ParseResult};
 use crate::ir;
+use crate::keywords;
 use crate::lex::{self, LineShape, Opener, SourceLine};
 use crate::ruby_value;
 
@@ -434,9 +435,7 @@ fn apply_reference_to(
 /// `CommandBuilder#sets` — `to:`/`append:`/`increment:`/`decrement:`/
 /// `multiply:`/`clamp:`/`remove:` names the operation (`Argument#selects`:
 /// `op=set`/`op=append`/`op=increment`/`op=decrement`/`op=multiply`/
-/// `op=clamp`/`op=remove` — `keywords.rs`'s own ArgumentRow table already
-/// declares all seven ; this list is the piece that actually reads them,
-/// so it has to stay in step by hand), and `to:` is now
+/// `op=clamp`/`op=remove`), and `to:` is now
 /// OMITTABLE: `sets :status` alone means "set :status from the argument
 /// of the same name" — `CommandBuilder#sets`'s own omittable case
 /// (`named = { set: target } if named.empty?`). `to:` naming the SAME
@@ -455,17 +454,18 @@ fn apply_reference_to(
 fn build_mutation(file: &str, line: usize, args: &super::ArgumentGateResult) -> ParseResult<ir::Mutation> {
     let target = super::positional_symbol(file, line, "sets", args, 1)?;
 
-    let named: Vec<(&str, &str)> = [
-        ("to", "set"),
-        ("append", "append"),
-        ("increment", "increment"),
-        ("decrement", "decrement"),
-        ("multiply", "multiply"),
-        ("clamp", "clamp"),
-        ("remove", "remove"),
-    ]
-        .into_iter()
-        .filter_map(|(key, op)| super::named_raw(args, key).map(|raw| (op, raw)))
+    // The named-op table itself is NOT hand-typed here — `keywords.rs`'s
+    // own `ARGUMENTS` (generated from syntax.bluebook) already declares
+    // all seven `named: "to"/"append"/.../"remove"` rows for `keyword:
+    // "sets"`, each with `selects: "op=..."` naming the operation. Filter
+    // by BOTH `keyword == "sets"` and a non-empty `named` — `"then_set"`
+    // (deprecated) shares `context: "Command"` and has its own `op=...`
+    // rows too, including a `from` key `sets` doesn't have, so filtering
+    // on `context` alone would silently pull those in.
+    let named: Vec<(&str, &str)> = keywords::ARGUMENTS
+        .iter()
+        .filter(|row| row.keyword == "sets" && !row.named.is_empty())
+        .filter_map(|row| Some((row.selects.strip_prefix("op=")?, super::named_raw(args, row.named)?)))
         .collect();
 
     if named.len() > 1 {
