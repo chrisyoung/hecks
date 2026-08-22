@@ -15,6 +15,7 @@
 // place that sees both at once. The `.wasm` module itself never learns
 // either exists.
 
+mod approval;
 mod auth;
 mod dispatch;
 mod field_hints;

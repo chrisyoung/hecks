@@ -710,7 +710,7 @@ async fn archive_text<C: GenericClient>(client: &C, domain: &str, ordinal: i32, 
     Ok(())
 }
 
-async fn advance_era<C: GenericClient>(client: &C, domain: &str, ordinal: i32) -> anyhow::Result<()> {
+pub(crate) async fn advance_era<C: GenericClient>(client: &C, domain: &str, ordinal: i32) -> anyhow::Result<()> {
     let journal = quote_ident(&journal_table(domain));
     client.batch_execute(&format!("DROP POLICY IF EXISTS hecks_current_era ON {journal}")).await?;
     client
