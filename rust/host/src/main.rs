@@ -134,6 +134,18 @@ async fn main() -> Result<(), Error> {
         .await
         .map_err(|e| format!("provisioning hecks_lambda_journal: {e:#}"))?;
 
+    // `hecks_eras`/`hecks_approvals`/the six `hecks_tr_*` functions —
+    // idempotent, gated by `provisioner?` on the connecting role's own
+    // ownership (mint.rs's own header), so calling this every boot is
+    // exactly as cheap and safe as `journal::ensure_schema` above.
+    // MUST run before the very first `journal::held_eras` call below —
+    // on a truly fresh Postgres instance (no domain has ever minted
+    // anything yet), `hecks_eras` itself doesn't exist until this runs;
+    // found live, by `mint_harness` (ADR-0030-in-progress step 8's own
+    // differential harness) hitting exactly that on a scratch database
+    // no prior test had ever exercised this boot path against.
+    mint::ensure_base(&client, &domain).await.map_err(|e| format!("provisioning hecks_eras for {domain}: {e:#}"))?;
+
     // THE BOOT GATE — no longer a bare `HECKS_ERA` ordinal comparison.
     // This binary computes ITS OWN shape hash (`storage_shape`, over
     // `ir::ir()` — the same `ir.json` sidecar this crate already loads
