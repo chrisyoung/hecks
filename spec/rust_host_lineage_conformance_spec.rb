@@ -37,6 +37,7 @@ require_relative "support/postgres_probe"
 RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
   RUST_HOST_DIR = File.join(InMemoryDomain::ROOT, "rust", "host")
   SEED_SCRIPT = File.join(RUST_HOST_DIR, "tests", "fixtures", "mint_and_seed_lineage.rb")
+  COMPUTE_SEED_SCRIPT = File.join(RUST_HOST_DIR, "tests", "fixtures", "mint_and_seed_lineage_compute.rb")
 
   before(:all) do
     skip "no reachable Postgres — start one to run this spec" unless PostgresProbe.available?
@@ -66,9 +67,9 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
     admin.close
   end
 
-  def seed(db_name, owner_role, app_role)
-    stdout, status = Open3.capture2("ruby", SEED_SCRIPT, db_name, owner_role, app_role)
-    raise "mint_and_seed_lineage.rb failed:\n#{stdout}" unless status.success?
+  def seed(db_name, owner_role, app_role, script: SEED_SCRIPT)
+    stdout, status = Open3.capture2("ruby", script, db_name, owner_role, app_role)
+    raise "#{File.basename(script)} failed:\n#{stdout}" unless status.success?
 
     JSON.parse(stdout)
   end
@@ -237,6 +238,47 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
     drop_scratch!(db_name, owner_role, app_role) if db_name
   end
 
+  # THE COMPUTE/REKEY CASE — the one migration kind with no in-process
+  # Ruby reference implementation anywhere (Ports::Persistence::Lineage#
+  # translate's own header names this explicitly), so its only
+  # verification is the human-approved sample the real audit records —
+  # mint_and_seed_lineage_compute.rb is the first thing in this whole
+  # codebase to drive that approval gate for real from outside
+  # bin/translation_audit itself, then mint a REAL compute-bearing era
+  # on the strength of it. Ground truth here is necessarily Postgres's
+  # own compiled SQL, read directly (see that script's own header for
+  # why that's the honest bar for this specific case, not a weakening).
+  it "reads a compute-migrated era back exactly as Postgres's own compiled SQL produced it, minted only because a real, matching approval was recorded first" do
+    binary = self.class.lineage_harness_binary
+    skip "cargo build --bin lineage_harness failed" unless binary
+
+    suffix = SecureRandom.hex(4)
+    db_name = "rust_host_lineage_compute_#{suffix}"
+    owner_role = "rhlc_owner_#{suffix}"
+    app_role = "rhlc_app_#{suffix}"
+
+    ground_truth = seed(db_name, owner_role, app_role, script: COMPUTE_SEED_SCRIPT)
+    storage_name = ground_truth.fetch("storage_name")
+    domain = ground_truth.fetch("domain")
+    era = ground_truth.fetch("era")
+
+    results = run_harness(binary, db_name, app_role, domain, era, [{ "op" => "read_all", "storage_name" => storage_name }])
+    read_all = results.first
+    expect(read_all["ok"]).to be(true), read_all["error"]
+
+    rust_rows = read_all.fetch("rows").sort_by { |id, _| id }
+    ruby_rows = ground_truth.fetch("rows").sort_by { |id, _| id }
+    expect(rust_rows).to eq(ruby_rows)
+    # The compute actually ran, not just "the mint succeeded" — every
+    # row is genuinely in the POST-compute shape (`doubled`, no
+    # leftover `score`), including the two that existed before the
+    # mint and were translated by it, not just the one written fresh
+    # under era 2.
+    expect(rust_rows.map { |_, state| state.keys }).to all(contain_exactly("kind", "doubled"))
+  ensure
+    drop_scratch!(db_name, owner_role, app_role) if db_name
+  end
+
   # NOT YET DONE: Compliance::AccountFreezeReview and
   # Compliance::BoxSurrenderReview (examples/compliance/bluebook/
   # compliance.hecksagon:8-9) are the other two real, lineage-capable
@@ -245,4 +287,16 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
   # check!, generic read/write, DB round-trip comparison), not a new
   # risk surface Pizzas::Order didn't already cover. Left for whoever
   # next touches this file rather than padded in here for volume alone.
+  #
+  # ALSO NOT YET DONE: `rekey` specifically. It shares compute's exact
+  # approval-gate mechanism (minter.rb's own check treats
+  # `!declared.computes.empty? || !declared.rekeys.empty?` as one
+  # condition) and mint_and_seed_lineage_compute.rb's approval-recording
+  # code already generalizes to it verbatim — only the edge's own rule
+  # (`rekey sql: "..."`, recomputing THE AGGREGATE'S IDENTITY rather
+  # than one field) and this fixture's `identified_by :kind` domain
+  # shape would need to change. Scoped out here as the same kind of
+  # low-marginal-value repetition as the two Compliance aggregates
+  # above: compute already proves the approval gate holds for real; a
+  # rekey fixture would mostly re-prove that same gate a second way.
 end
