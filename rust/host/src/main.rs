@@ -23,6 +23,7 @@ mod ir;
 mod journal;
 mod lambda_client;
 mod mint;
+mod reference_transform;
 mod storage_shape;
 mod wasm_runner;
 mod web;
