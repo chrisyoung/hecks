@@ -37,6 +37,7 @@
 // scan expensive enough to matter.
 
 use crate::journal::quote_ident;
+use crate::reference_transform;
 use crate::storage_shape;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -636,6 +637,211 @@ fn chain_sql(domain: &str, current_name: &str, era: i32, edges: &[&Edge], waterm
     format!("WITH tail AS ({tail}),\n{}\nSELECT ordinal, aggregate_id, operation, state FROM edge_{}", chain.join(",\n"), edges.len())
 }
 
+/// `HeadCompiler#latest_of` — reduces any of the chain SQLs above (run
+/// as a plain `SELECT`, never materialized) to one row per id: the
+/// latest entry, and only if that latest entry was itself a save (a
+/// latest DELETE means this id isn't live, so it's simply absent from
+/// the result, matching Ruby's own `WHERE operation = 'save'` filter).
+async fn latest_of<C: GenericClient>(client: &C, inner_sql: &str) -> anyhow::Result<std::collections::HashMap<String, Value>> {
+    let sql = format!(
+        "SELECT aggregate_id, state FROM (\
+           SELECT DISTINCT ON (aggregate_id) aggregate_id, operation, state \
+           FROM ({inner_sql}) chained ORDER BY aggregate_id, ordinal DESC\
+         ) latest WHERE operation = 'save'"
+    );
+    let rows = client.query(&sql, &[]).await?;
+    Ok(rows.into_iter().map(|row| (row.get::<_, String>("aggregate_id"), row.get::<_, Value>("state"))).collect())
+}
+
+/// The translated tail as it would stand in era `era`, latest entry per
+/// id, saves only — `HeadCompiler#translated_latest`. What the audit
+/// holds up against the reference transform as `after`.
+async fn translated_latest<C: GenericClient>(
+    client: &C,
+    domain: &str,
+    current_name: &str,
+    era: i32,
+    edges: &[&Edge],
+    watermarks: &std::collections::HashMap<i32, Option<i64>>,
+) -> anyhow::Result<std::collections::HashMap<String, Value>> {
+    latest_of(client, &chain_sql(domain, current_name, era, edges, watermarks)).await
+}
+
+/// The UNtranslated ancestor tail, latest entry per id — `HeadCompiler#
+/// ancestor_latest`, the "before" side of every per-rule preservation
+/// check. `era` 1 (no ancestors at all) has an empty tail SQL string;
+/// Ruby short-circuits that case rather than handing Postgres a `WITH
+/// tail AS ()`, and this does too.
+async fn ancestor_latest<C: GenericClient>(
+    client: &C,
+    domain: &str,
+    current_name: &str,
+    era: i32,
+    edges: &[&Edge],
+    watermarks: &std::collections::HashMap<i32, Option<i64>>,
+) -> anyhow::Result<std::collections::HashMap<String, Value>> {
+    let (_, storage_names) = names_by_era(current_name, edges);
+    let tail = ancestor_tail_sql(domain, era, &storage_names, watermarks);
+    if tail.is_empty() {
+        return Ok(std::collections::HashMap::new());
+    }
+    latest_of(client, &format!("SELECT ordinal, era, aggregate_id, operation, state FROM ({tail}) tail_rows")).await
+}
+
+/// One aggregate's raw rule JSON within one raw edge (`ir.json`'s own
+/// `translations` shape, `Exporter.translation_aggregate`'s exported
+/// object) — `Edge#for_aggregate`'s raw-JSON twin, used where the
+/// COMPILED `mint::Edge`/`EdgeAggregate` (SQL text only) isn't enough:
+/// `reference_transform::translate` needs the declarative rules
+/// (renames/moves/converts/drops/backfills) themselves.
+fn raw_declared<'a>(raw_edges: &'a [Value], domain: &str, edge: &Edge, aggregate_name: &str) -> Option<&'a Value> {
+    raw_edges
+        .iter()
+        .find(|candidate| {
+            candidate.get("domain").and_then(Value::as_str) == Some(domain)
+                && candidate.get("from").and_then(Value::as_str) == Some(edge.from.as_str())
+                && candidate.get("to").and_then(Value::as_str) == Some(edge.to.as_str())
+        })
+        .and_then(|raw_edge| raw_edge.get("aggregates").and_then(Value::as_array))
+        .and_then(|aggs| aggs.iter().find(|agg| agg.get("name").and_then(Value::as_str) == Some(aggregate_name)))
+}
+
+/// Layer 2 of the mint-time audit, for one aggregate — `Translation::
+/// Audit::LayerTwo#layer_two!`, read directly: per-rule value
+/// preservation, no leftover source keys, and id-set (or, across a
+/// rekeying edge, record-COUNT) conservation across the edge. Appends
+/// every violation found to `violations` (collected, not raised
+/// immediately — matching Ruby's own `violations << ...` shape, so one
+/// mint reports everything wrong at once); a `reference_transform::
+/// translate` failure (a `Runtime::WiringError`-equivalent hard abort,
+/// e.g. an unmapped convert value) propagates immediately via `?`
+/// instead, exactly like Ruby's own unrescued raise does.
+///
+/// `declared` is the raw rule JSON for this aggregate within the ONE
+/// edge actually being minted this boot (`chain.last()`) — never the
+/// whole chain; a multi-hop drift's earlier edges already minted (and
+/// were already audited) on some prior boot.
+async fn audit_layer_two<C: GenericClient>(
+    client: &C,
+    domain: &str,
+    aggregate: &Aggregate,
+    ordinal: i32,
+    edges: &[&Edge],
+    raw_edges: &[Value],
+    watermarks: &std::collections::HashMap<i32, Option<i64>>,
+    violations: &mut Vec<String>,
+) -> anyhow::Result<()> {
+    let after = translated_latest(client, domain, &aggregate.name, ordinal, edges, watermarks).await?;
+    let before = if edges.len() > 1 {
+        translated_latest(client, domain, &aggregate.name, ordinal, &edges[..edges.len() - 1], watermarks).await?
+    } else {
+        ancestor_latest(client, domain, &aggregate.name, ordinal, edges, watermarks).await?
+    };
+
+    let last_edge = edges.last().expect("mint always audits at least one edge");
+    let declared = raw_declared(raw_edges, domain, last_edge, &aggregate.name);
+    let rekeyed = declared.map(|d| !d.get("rekeys").and_then(Value::as_array).map(Vec::is_empty).unwrap_or(true)).unwrap_or(false);
+
+    if rekeyed {
+        if before.len() != after.len() {
+            violations.push(format!(
+                "{}: the record count changed across a rekeying edge ({} before, {} after) — a rekey must not \
+                 collide two distinct ids onto one, or drop one",
+                aggregate.name,
+                before.len(),
+                after.len()
+            ));
+        }
+    } else {
+        let mut lost: Vec<&String> = before.keys().filter(|id| !after.contains_key(*id)).collect();
+        let mut gained: Vec<&String> = after.keys().filter(|id| !before.contains_key(*id)).collect();
+        if !lost.is_empty() || !gained.is_empty() {
+            lost.sort();
+            gained.sort();
+            violations.push(format!(
+                "{}: the id set changed across the edge (lost {:?}, gained {:?})",
+                aggregate.name, lost, gained
+            ));
+        }
+    }
+
+    let Some(declared) = declared else { return Ok(()) };
+    if rekeyed {
+        return Ok(());
+    }
+
+    let compute_tops: std::collections::HashSet<String> = declared
+        .get("computes")
+        .and_then(Value::as_array)
+        .map(|computes| {
+            computes
+                .iter()
+                .flat_map(|c| [c.get("from"), c.get("to")])
+                .flatten()
+                .filter_map(Value::as_str)
+                .map(|path| path.split('.').next().unwrap_or(path).to_string())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    for (id, state) in &before {
+        let Some(actual_after) = after.get(id) else { continue };
+        let expected = reference_transform::translate(declared, state)?;
+        let expected = strip_keys(&expected, &compute_tops);
+        let actual = strip_keys(actual_after, &compute_tops);
+        if expected != actual {
+            let mut diverged: Vec<String> = expected
+                .as_object()
+                .into_iter()
+                .flat_map(|o| o.keys())
+                .chain(actual.as_object().into_iter().flat_map(|o| o.keys()))
+                .filter(|key| expected.get(key.as_str()) != actual.get(key.as_str()))
+                .cloned()
+                .collect();
+            diverged.sort();
+            diverged.dedup();
+            violations.push(format!("{}#{id}: the translated state diverges from the reference transform at {}", aggregate.name, diverged.join(", ")));
+        }
+    }
+    Ok(())
+}
+
+fn strip_keys(state: &Value, keys: &std::collections::HashSet<String>) -> Value {
+    match state {
+        Value::Object(map) => Value::Object(map.iter().filter(|(k, _)| !keys.contains(*k)).map(|(k, v)| (k.clone(), v.clone())).collect()),
+        other => other.clone(),
+    }
+}
+
+/// The whole mint-time audit, over every lineage-capable aggregate —
+/// `CoverageCheck#audit!`, read directly. Runs BEFORE anything is
+/// minted (over the live compiled chain, plain `SELECT`s, never a
+/// persisted matview), so a refusal leaves no half-born era: the SAME
+/// ordering `Minter#mint!` holds itself to (`audit!` before `lineage.
+/// mint_era!`). Layer 1 (bluebook-alone: types/invariants/lifecycle) is
+/// a separate, still-pending piece of ADR-0030-in-progress's own "full
+/// parity" scope — this function is Layer 2 alone for now, still a real
+/// safety gate on its own (every portable rule Ruby's own audit would
+/// catch a divergence in, this catches too).
+pub async fn audit_before_mint<C: GenericClient>(
+    client: &C,
+    domain: &str,
+    aggregates: &[Aggregate],
+    ordinal: i32,
+    edges: &[&Edge],
+    raw_edges: &[Value],
+    watermarks: &std::collections::HashMap<i32, Option<i64>>,
+) -> anyhow::Result<()> {
+    let mut violations = Vec::new();
+    for aggregate in aggregates {
+        audit_layer_two(client, domain, aggregate, ordinal, edges, raw_edges, watermarks, &mut violations).await?;
+    }
+    if violations.is_empty() {
+        return Ok(());
+    }
+    anyhow::bail!("cannot mint era {ordinal} of {domain}: the audit refused —\n  - {}", violations.join("\n  - "));
+}
+
 /// `compile_head!` — one aggregate's matview + head-snapshot + head
 /// view, for one era, over the FULL (never layered) chain.
 async fn compile_head<C: GenericClient>(
@@ -1077,5 +1283,125 @@ mod tests {
                 ("w2".to_string(), serde_json::json!({"amount": {"cents": 200}, "kind": {"label": "w2"}})),
             ]
         );
+    }
+
+    // Layer 2 PROVEN LIVE, both directions: a raw edge whose declared
+    // rules genuinely agree with what the compiled SQL does passes
+    // silently; one that doesn't (the exact real bug this audit exists
+    // to catch — a scaffolded/hand-edited edge whose declared `renames:`
+    // disagrees with its own `compiled_state_expression`) refuses BEFORE
+    // anything mints, naming the exact divergence. Two domains, one
+    // scratch database, to amortize setup — `audit_before_mint` itself
+    // is the only thing under test, not `mint_era`'s own transaction.
+    #[tokio::test]
+    async fn audit_before_mint_passes_a_true_edge_and_refuses_a_lying_one() {
+        let db = "rust_host_audit_test";
+        let owner = "rust_host_audit_owner";
+
+        let admin = tokio_postgres::connect("host=localhost dbname=postgres", NoTls).await;
+        let (admin_client, admin_connection) = admin.expect("connect to postgres as admin");
+        tokio::spawn(async move {
+            let _ = admin_connection.await;
+        });
+        let _ = admin_client.batch_execute(&format!("DROP DATABASE IF EXISTS {db} WITH (FORCE)")).await;
+        admin_client.batch_execute(&format!("CREATE DATABASE {db}")).await.expect("create scratch db");
+        let _ = admin_client.batch_execute(&format!("DROP ROLE IF EXISTS {owner}")).await;
+        admin_client.batch_execute(&format!("CREATE ROLE {owner} LOGIN")).await.expect("create owner role");
+        admin_client.batch_execute(&format!("GRANT CONNECT ON DATABASE {db} TO {owner}")).await.expect("grant connect");
+
+        let grant = tokio_postgres::connect(&format!("host=localhost dbname={db}"), NoTls).await;
+        let (grant_client, grant_connection) = grant.expect("connect to scratch db as superuser to grant schema rights");
+        tokio::spawn(async move {
+            let _ = grant_connection.await;
+        });
+        grant_client.batch_execute(&format!("GRANT USAGE, CREATE ON SCHEMA public TO {owner}")).await.expect("grant schema rights");
+        grant_client.batch_execute(&format!("ALTER DATABASE {db} OWNER TO {owner}")).await.expect("make owner the db owner");
+
+        let (client, connection) = tokio_postgres::connect(&format!("host=localhost dbname={db} user={owner}"), NoTls).await.expect("connect as owner");
+        tokio::spawn(async move {
+            let _ = connection.await;
+        });
+
+        fn shape(attribute_name: &str) -> Value {
+            serde_json::json!({
+                "name": "AuditTest",
+                "aggregates": [{
+                    "name": "Widget",
+                    "identified_by": ["kind"],
+                    "attributes": [
+                        {"name": attribute_name, "type": "Money", "list": false},
+                        {"name": "kind", "type": "Kind", "list": false}
+                    ],
+                    "value_objects": [
+                        {"name": "Money", "attributes": [{"name": "cents", "type": "Integer", "list": false}]},
+                        {"name": "Kind", "attributes": [{"name": "label", "type": "String", "list": false}]}
+                    ],
+                    "entities": []
+                }]
+            })
+        }
+        let v1_ir = shape("cost");
+        let v2_ir = shape("amount");
+        let aggregate = Aggregate { name: "Widget".to_string(), storage_name: "widget".to_string() };
+        let from_label = storage_shape::mint_label(&v1_ir);
+        let to_label = storage_shape::mint_label(&v2_ir);
+
+        async fn seed_era_one(client: &tokio_postgres::Client, domain: &str, v1_ir: &Value, aggregate: &Aggregate) {
+            hold_first(client, domain, "v1 source text", v1_ir, std::slice::from_ref(aggregate), None).await.expect("hold_first");
+            let config = journal::LineageConfig { domain: domain.to_string(), era: 1 };
+            journal::append_lineage_mutation(
+                client,
+                &config,
+                &journal::Mutation { aggregate: "Widget", id: "w1", operation: "save", state: &serde_json::json!({"cost": {"cents": 100}, "kind": {"label": "w1"}}) },
+            )
+            .await
+            .expect("write w1 under era 1");
+        }
+
+        // ── the honest edge: declared renames genuinely match the
+        // compiled SQL — audit_before_mint must find nothing wrong ──
+        let honest_domain = "AuditPass";
+        seed_era_one(&client, honest_domain, &v1_ir, &aggregate).await;
+        let honest_edge = Edge {
+            from: from_label.clone(),
+            to: to_label.clone(),
+            aggregates: vec![EdgeAggregate {
+                name: "Widget".to_string(),
+                was: None,
+                has_compute_or_rekey: false,
+                compiled_state_expression: "hecks_tr_rename(state, 'cost', 'amount')".to_string(),
+                compiled_id_expression: None,
+            }],
+        };
+        let honest_raw_edges = vec![serde_json::json!({
+            "domain": honest_domain, "from": from_label, "to": to_label,
+            "aggregates": [{"name": "Widget", "renames": {"cost": "amount"}}]
+        })];
+        let watermarks: std::collections::HashMap<i32, Option<i64>> = [(1, None)].into_iter().collect();
+        audit_before_mint(&client, honest_domain, &[aggregate.clone()], 2, &[&honest_edge], &honest_raw_edges, &watermarks)
+            .await
+            .expect("an honest edge's audit must pass silently");
+
+        // ── the lying edge: declared `renames:` claims a DIFFERENT
+        // destination than the compiled SQL actually produces — the
+        // exact real-world bug this audit exists to catch (a
+        // hand-edited or stale scaffold whose declaration and compiled
+        // SQL have drifted apart). Must refuse, naming the divergence,
+        // BEFORE anything mints. ──
+        let lying_domain = "AuditFail";
+        seed_era_one(&client, lying_domain, &v1_ir, &aggregate).await;
+        let lying_edge = honest_edge.clone();
+        let lying_raw_edges = vec![serde_json::json!({
+            "domain": lying_domain, "from": from_label, "to": to_label,
+            // Claims `cost` becomes `price` -- the compiled SQL above
+            // still renames it to `amount`. A real divergence.
+            "aggregates": [{"name": "Widget", "renames": {"cost": "price"}}]
+        })];
+        let error = audit_before_mint(&client, lying_domain, &[aggregate], 2, &[&lying_edge], &lying_raw_edges, &watermarks)
+            .await
+            .expect_err("a declared rename that disagrees with the compiled SQL must refuse");
+        let message = format!("{error:#}");
+        assert!(message.contains("the audit refused"), "{message}");
+        assert!(message.contains("diverges from the reference transform"), "{message}");
     }
 }

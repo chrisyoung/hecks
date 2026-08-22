@@ -215,6 +215,18 @@ async fn main() -> Result<(), Error> {
                 approval::check(&client, &domain, raw_edge, ordinal).await.map_err(|e| format!("{e:#}"))?;
             }
 
+            // Layer 2 of the live audit — CoverageCheck#audit!'s own
+            // ordering: BEFORE anything is minted, over the live
+            // compiled chain (plain SELECTs, never a persisted matview),
+            // so a refusal leaves no half-born era. `watermarks` uses
+            // `held` exactly as fetched above — era `ordinal` genuinely
+            // has no row yet, matching what Ruby's own audit sees at
+            // this same pre-mint moment.
+            let watermarks: std::collections::HashMap<i32, Option<i64>> = held.iter().map(|held_era| (held_era.ordinal, held_era.watermark)).collect();
+            mint::audit_before_mint(&client, &domain, &aggregates, ordinal, &chain, &raw_edges, &watermarks)
+                .await
+                .map_err(|e| format!("{e:#}"))?;
+
             let held_text = ir.get("source_text").and_then(serde_json::Value::as_str).ok_or("ir.json is missing source_text — regenerate with bin/project_rust")?;
             mint::mint_era(&client, &domain, ordinal, &my_hash, &my_label, held_text, &aggregates, &chain, None)
                 .await
