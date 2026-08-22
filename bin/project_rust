@@ -102,6 +102,18 @@ else
     Kernel.load(File.expand_path("../lib/hecksagain/adapters/driven/postgres_era.adapter", __dir__))
     Kernel.load(File.join(domain, "bluebook", "#{File.basename(domain)}.bluebook"))
 
+    # ALSO every translations/*.bluebook edge — same directory, same
+    # glob, same load-order position Vocabulary's own "LoadOrder" entry
+    # gives them (between the domain's own .bluebook and .hecksagon) —
+    # this generator's registry build was never updated to include this
+    # step, so `target_registry.translations` was always empty here,
+    # and `Exporter.translations` (the new `translations` ir.json key)
+    # had nothing real to export. `Dir[]` is already sorted (Ruby's own
+    # glob guarantee, same reason `load_each`'s own `.sort` reads as
+    # redundant to rubocop), so multiple edges in one domain load in a
+    # stable, name-determined order without needing to say so here.
+    Dir[File.join(domain, "bluebook", "translations", "*.bluebook")].each { |file| Kernel.load(file) }
+
     # ALSO the .hecksagon file, not just the .bluebook — this is what
     # actually fires `uses_framework`, which `Kernel.load`s that framework
     # member's own .bluebook into this SAME registry as a side effect
@@ -131,6 +143,20 @@ else
   # (metadata.rs's embedded IR_JSON, the `ir.json` sidecar rust/host
   # already reads at runtime, manifest.json) sees it the same way.
   target_ir[:lineage] = json_shaped(Hecksagain::Projector::Exporter.lineage(target_registry, target_domain_name))
+
+  # SAME SEAM, SAME REASONING — `Exporter.translations` walks the whole
+  # registry (a shared registry can hold another domain's edges too, the
+  # same way it can hold another domain's bluebook via uses_framework),
+  # filtered down to this target domain's own before it ever reaches
+  # `target_ir`. Each edge already carries its own precompiled SQL
+  # (`compiled_state_expression`/`compiled_id_expression` —
+  # Translation::RuleCompiler, the SAME code head_compiler.rb's real
+  # per-mint assembly calls, not a second compiler) — a future
+  # boot-time-mint consumer never needs to compile SQL itself, only
+  # execute what Ruby already compiled.
+  target_ir[:translations] = json_shaped(
+    Hecksagain::Projector::Exporter.translations(target_registry).select { |edge| edge[:domain] == target_domain_name }
+  )
 
   # THE SELF-HOSTED LANGUAGE, COMPILED IN TOO. `lib/hecksagain/language/bluebook/`
   # declares what a bluebook IS — Bluebook, Aggregate, Command, ValueObject,

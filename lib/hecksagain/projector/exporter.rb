@@ -1,5 +1,6 @@
 require "json"
 require_relative "../runtime/era_check"
+require_relative "../translation/rule_compiler"
 
 module Hecksagain
   module Projector
@@ -62,16 +63,16 @@ module Hecksagain
 
       def translation_aggregate(aggregate)
         {
-          name:     aggregate.name,
-          was:      aggregate.was,
-          renames:  aggregate.renames.transform_keys(&:to_s).transform_values(&:to_s),
-          moves:    aggregate.moves.map { |move| { from: move.from, to: move.to } },
-          converts: aggregate.converts.map do |convert|
+          name:                      aggregate.name,
+          was:                       aggregate.was,
+          renames:                   aggregate.renames.transform_keys(&:to_s).transform_values(&:to_s),
+          moves:                     aggregate.moves.map { |move| { from: move.from, to: move.to } },
+          converts:                  aggregate.converts.map do |convert|
             { from: convert.from, to: convert.to, values: convert.values.map { |key, value| [key, value] } }
           end,
-          drops:    aggregate.drops.map(&:to_s),
-          retypes:  aggregate.retypes.map { |retype| { from: retype.from, to: retype.to } },
-          computes: aggregate.computes.map { |compute| { from: compute.from, to: compute.to, sql: compute.sql } },
+          drops:                     aggregate.drops.map(&:to_s),
+          retypes:                   aggregate.retypes.map { |retype| { from: retype.from, to: retype.to } },
+          computes:                  aggregate.computes.map { |compute| { from: compute.from, to: compute.to, sql: compute.sql } },
           # PREVIOUSLY MISSING — found live while planning Rust-side mint
           # support. `ApprovalDigest.edge_digest` hashes THIS hash, so an
           # edge carrying only a rekey (no compute) had its approval bind
@@ -84,8 +85,22 @@ module Hecksagain
           # CHANGES every existing rekey/backfill edge's digest — any
           # approval already recorded for one is invalidated by this fix
           # and must be re-reviewed and re-approved.
-          rekeys:    aggregate.rekeys.map { |rekey| { sql: rekey.sql } },
-          backfills: aggregate.backfills.map { |backfill| { name: backfill.name.to_s, default: backfill.default } }
+          rekeys:                    aggregate.rekeys.map { |rekey| { sql: rekey.sql } },
+          backfills:                 aggregate.backfills.map { |backfill| { name: backfill.name.to_s, default: backfill.default } },
+          # THE PRECOMPILED SQL — the same call head_compiler.rb's own
+          # compile_rules(declared)/id_case(guard, declared) make at
+          # mint time, run here once at build/export time instead. Not
+          # a re-derivation: Translation::RuleCompiler is the ONE place
+          # this expression is built, called from both here and from
+          # head_compiler.rb's real per-mint assembly — so a consumer
+          # embedding this JSON (rust/host's own future boot-time mint)
+          # gets Ruby's own compiler's output verbatim, never a second,
+          # independently-authored SQL compiler that could drift from
+          # this one. `compiled_id_expression` is nil unless this edge
+          # rekeys — the bare `aggregate_id` passthrough head_compiler.rb
+          # itself falls back to for the overwhelming common case.
+          compiled_state_expression: Translation::RuleCompiler.compile_rules(aggregate),
+          compiled_id_expression:    Translation::RuleCompiler.rekeyed?(aggregate) ? Translation::RuleCompiler.compile_id_expression(aggregate) : nil
         }
       end
     end
