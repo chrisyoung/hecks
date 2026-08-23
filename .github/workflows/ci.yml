@@ -7,13 +7,29 @@ name: CI
 # check their own reachability and skip themselves silently otherwise,
 # which would mean this workflow "passing" without ever having run them.
 
+# TWO JOBS, RUN CONCURRENTLY (no `needs:` between them, so GitHub Actions
+# schedules both the moment the workflow starts). Split along the one
+# dependency edge that actually exists: `rspec`'s `io: true` specs
+# (rust_conformance_spec.rb, rust_host_lineage_conformance_spec.rb,
+# codegen_parity_spec.rb, parser_parity_spec.rb) build and run real Rust
+# against Postgres, so that job keeps the Postgres service and the Rust
+# build steps. Everything in `checks` — bin/fuzz, bin/model_check, every
+# bin/rust_coverage call, bin/rust_kernel_coverage — reads only Ruby, the
+# example domains' own IR, and already-committed rust/src/generated/
+# manifests; none of them shell out to cargo or touch Postgres (verified
+# by grepping each for cargo/postgres references — none found), so moving
+# them off the `rspec` job's critical path costs nothing. Locally this
+# split cut wall-clock from ~236s serial to ~187s (rspec-bound, since
+# `checks`'s own ~50s finishes underneath it); in Actions the saving is
+# usually bigger still since the two jobs get separate runners.
+
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
-  test:
+  rspec:
     runs-on: ubuntu-latest
 
     services:
@@ -90,6 +106,17 @@ jobs:
       - name: rspec
         run: bundle exec rspec
 
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
       # DYNAMIC — generates random-but-valid command/query sequences from
       # EVERY example domain's own IR (plus the self-hosted grammar
       # meta-domain) and replays each one, checking every declared
@@ -119,15 +146,17 @@ jobs:
         run: bin/model_check
 
       # THE COVERAGE CHECKER, PER DOMAIN — a different question than the
-      # "Build the Rust conformance binary" and "rspec" steps above ask.
-      # Those check "did Ruby and Rust agree on this script"; this checks
-      # "did bin/project_rust generate SOMETHING for every construct
-      # this domain's own IR declares, at all" — a gap class equivalence
-      # checking is structurally blind to (see bin/rust_coverage's own
-      # header). Reads each domain's already-committed rust/src/
-      # generated/<domain>/manifest.json + ir.json — no build needed
-      # first. Exits non-zero on any un-allowlisted GAP finding; that
-      # exit code IS the gate, nothing here massages it.
+      # `rspec` job's "Build the Rust conformance binary" and "rspec"
+      # steps ask. Those check "did Ruby and Rust agree on this script";
+      # this checks "did bin/project_rust generate SOMETHING for every
+      # construct this domain's own IR declares, at all" — a gap class
+      # equivalence checking is structurally blind to (see
+      # bin/rust_coverage's own header). Reads each domain's
+      # already-committed rust/src/generated/<domain>/manifest.json +
+      # ir.json — no build needed first, which is exactly why this can
+      # live in a job with no Rust build step of its own. Exits non-zero
+      # on any un-allowlisted GAP finding; that exit code IS the gate,
+      # nothing here massages it.
       - name: "rust coverage: pizzas"
         run: bin/rust_coverage pizzas
 
@@ -172,11 +201,12 @@ jobs:
       # THE KERNEL HALF of the same guarantee. bin/project_kernel_
       # capabilities' own enums (AttributeShape/OperatorCategory) already
       # make an exhaustive match over them a compile error the moment the
-      # grammar admits a new capability — enforced for free by "Build the
-      # exemplar module" above, since kernel code isn't behind a domain
-      # feature flag. What THIS step catches is the other half: a
-      # capability whose enum variant compiles clean but has no
-      # rust/src/kernel/<category>/<name>.rs file behind it at all — see
-      # bin/rust_kernel_coverage's own header.
+      # grammar admits a new capability — enforced for free by the `rspec`
+      # job's "Build the exemplar module" step, since kernel code isn't
+      # behind a domain feature flag (and that step running in a different
+      # job doesn't weaken this one — both jobs must pass). What THIS step
+      # catches is the other half: a capability whose enum variant compiles
+      # clean but has no rust/src/kernel/<category>/<name>.rs file behind
+      # it at all — see bin/rust_kernel_coverage's own header.
       - name: rust kernel coverage
         run: bin/rust_kernel_coverage
