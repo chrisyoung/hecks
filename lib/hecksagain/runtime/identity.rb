@@ -60,7 +60,7 @@ module Hecksagain
         # `nil?`, so a canonical text extracted as "" (an expression whose
         # source did not survive extraction) resolved to a REAL, empty-string
         # identity — a record addressable by an id no caller could have meant.
-        return nil if parts.any? { |part| part.nil? || part.empty? }
+        return nil if parts.any? { |part| part.nil? || (part.respond_to?(:empty?) && part.empty?) }
 
         Naming.identity(parts)
       end
