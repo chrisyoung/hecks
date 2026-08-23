@@ -85,9 +85,22 @@ jobs:
       # discipline this workflow already holds Postgres/SQLite to.
       # ubuntu-latest ships a Rust toolchain already; no separate setup
       # action needed.
+      #
+      # `bundle exec` matters here even though bin/project_rust never
+      # touches Bundler itself: run bare, `require "json"` resolves
+      # against whatever `json` gem is highest on the default load path
+      # (ruby/setup-ruby's bundled default, not Gemfile.lock's pinned
+      # 2.7.2) rather than the locked one — harmless to THIS build (its
+      # output feeds `cargo build`, and nothing byte-compares the ir.json/
+      # metadata.rs it writes against git), but confirmed live to reformat
+      # empty-array pretty-printing differently across `json` versions —
+      # `[]` vs `[\n\n]` — which reads as a 900+ line "drift" against the
+      # committed fixtures if anyone naively regenerates+diffs the same
+      # way this step does. `bundle exec` pins it to Gemfile.lock's
+      # version, matching what actually produced the committed files.
       - name: Build the Rust conformance binary
         run: |
-          bin/project_rust examples/banking
+          bundle exec bin/project_rust examples/banking
           cd rust && cargo build --release
 
       # rust/src/exemplar/** — real Rust the codegen in rust/project/*.rb
@@ -98,13 +111,33 @@ jobs:
       - name: Build the exemplar module
         run: cd rust && cargo test --lib
 
-      # The whole suite — corpus, adapters (Postgres and SQLite both
-      # reachable here, so neither skips itself), the guides' own doctests,
-      # the reference golden, the Rust conformance check above (also
-      # provisioned, not skipped), everything bundle exec rspec already
-      # runs locally and at the pre-push hook.
-      - name: rspec
-        run: bundle exec rspec
+      # The whole suite, SPLIT IN TWO the same way .githooks/pre-push
+      # already splits it locally — not by tag content, by SAFETY under
+      # concurrency. `io: true` and `fuzzing: true` specs do real,
+      # uncontrolled things against this ONE checkout: cargo builds
+      # writing into the shared rust/ tree, and — for
+      # spec/project_rust_pipeline_spec.rb and friends — a
+      # before(:context)/after(:context) backup-and-restore of
+      # rust/src/generated and rust/Cargo.toml itself. Running those
+      # under parallel_rspec's multiple worker processes would race two
+      # workers over the same files; running everything else serially
+      # would waste the runner's other cores for no reason. So: the
+      # `~io ~fuzzing` majority runs under parallel_rspec (auto-detects
+      # this runner's core count), then the two tagged categories run
+      # single-process, exactly like the pre-push hook already treats
+      # them. `--tag io --tag fuzzing` on its own (no CI=true reliance)
+      # is what makes the second step run them regardless of environment
+      # — spec_helper.rb's config-level exclusion only fires `unless
+      # ENV["CI"]`, but an explicit `--tag` inclusion always wins over
+      # it either way. Measured locally: the parallel step alone cut
+      # ~172s to ~15s for its 1738 examples; the serial step's 309
+      # examples (real Postgres + cargo work) still take ~118s — ~133s
+      # combined, down from ~165-172s serial-only.
+      - name: "rspec: parallel (everything safe to run concurrently)"
+        run: bundle exec parallel_rspec spec -o "--tag ~io --tag ~fuzzing"
+
+      - name: "rspec: io + fuzzing (serial — real I/O, shared-file mutation)"
+        run: bundle exec rspec --tag io --tag fuzzing
 
   checks:
     runs-on: ubuntu-latest
@@ -135,7 +168,7 @@ jobs:
       # same way every other gate in this workflow does — no special
       # handling here.
       - name: bin/fuzz
-        run: bin/fuzz
+        run: bundle exec bin/fuzz
 
       # Static analysis over the IR — unreachable lifecycle states, dead
       # transitions, saga states no handler chain reaches — facts the
@@ -143,7 +176,7 @@ jobs:
       # member the same way corpus_spec does, plus the language's own
       # meta chapters.
       - name: model check
-        run: bin/model_check
+        run: bundle exec bin/model_check
 
       # THE COVERAGE CHECKER, PER DOMAIN — a different question than the
       # `rspec` job's "Build the Rust conformance binary" and "rspec"
@@ -158,16 +191,16 @@ jobs:
       # on any un-allowlisted GAP finding; that exit code IS the gate,
       # nothing here massages it.
       - name: "rust coverage: pizzas"
-        run: bin/rust_coverage pizzas
+        run: bundle exec bin/rust_coverage pizzas
 
       - name: "rust coverage: embryonaut"
-        run: bin/rust_coverage embryonaut
+        run: bundle exec bin/rust_coverage embryonaut
 
       - name: "rust coverage: governance"
-        run: bin/rust_coverage governance
+        run: bundle exec bin/rust_coverage governance
 
       - name: "rust coverage: identity"
-        run: bin/rust_coverage identity
+        run: bundle exec bin/rust_coverage identity
 
       # FORMERLY KNOWN RED — as of 2026-08-23, clean (0 GAP). Banking's two
       # `read_model` constructs (ComplianceDashboard, CustomerPortfolio) are
@@ -181,7 +214,7 @@ jobs:
       # is unchanged; what's new is the citation that lets the allowlist
       # legitimately defer it instead of leaving it an unallowlisted GAP.
       - name: "rust coverage: banking"
-        run: bin/rust_coverage banking
+        run: bundle exec bin/rust_coverage banking
 
       # FORMERLY ALSO KNOWN RED — as of 2026-08-23, also clean (0 GAP).
       # Bluebook's own `WholeBluebook` read_model (same whole-kind gap as
@@ -196,7 +229,7 @@ jobs:
       # swallowed without a citation; the allowlist's own requirement for
       # one still held.
       - name: "rust coverage: meta"
-        run: bin/rust_coverage meta
+        run: bundle exec bin/rust_coverage meta
 
       # THE KERNEL HALF of the same guarantee. bin/project_kernel_
       # capabilities' own enums (AttributeShape/OperatorCategory) already
@@ -209,4 +242,4 @@ jobs:
       # clean but has no rust/src/kernel/<category>/<name>.rs file behind
       # it at all — see bin/rust_kernel_coverage's own header.
       - name: rust kernel coverage
-        run: bin/rust_kernel_coverage
+        run: bundle exec bin/rust_kernel_coverage
