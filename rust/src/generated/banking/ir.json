@@ -6779,5 +6779,9 @@
     "capable_aggregates": [
 
     ]
-  }
+  },
+  "translations": [
+
+  ],
+  "source_text": "Hecks.bluebook \"Banking\", version: \"v1\" do\n  vision \"Customers hold accounts, accounts move money, and every movement is a transfer that can fail halfway. The domain that has to get it right twice — once in the rules, once in the recovery.\"\n  core\nend\n"
 }
