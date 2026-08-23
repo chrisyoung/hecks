@@ -14,7 +14,7 @@ Hecks.behaviors "PizzasEdgeCases" do
     tests "Pizzas::Order.PaymentGateway.Receive"
     setup  "CreatePizza", name: { value: "Cascade" }, pizza: { price_cents: { cents: 1200 }, size: { value: "large" } }
     setup  "AddTopping",  name: "Cascade", topping: { value: "Basil" }, amount: { value: 1 }
-    input  name: "Cascade", customer_name: { value: "Chris" }, amount: { cents: 1200 }
+    input  to: "Cascade", with: { customer_name: { value: "Chris" }, amount: { cents: 1200 } }
     expect emits: ["PizzaPaymentReceived", "PizzaPurchased"]
   end
 
