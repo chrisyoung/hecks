@@ -116,16 +116,14 @@
   {
     "kind": "command",
     "id": "Bluebook::Command.Argument",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "sets append field(s): attributes.relationship: not a declared field"
+    "generated": true,
+    "routed": true
   },
   {
     "kind": "command",
     "id": "Bluebook::Command.Reference",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "sets append field(s): attributes.relationship: not a declared field"
+    "generated": true,
+    "routed": true
   },
   {
     "kind": "command",
@@ -345,9 +343,8 @@
   {
     "kind": "command",
     "id": "Bluebook::Query.Argument",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "sets append field(s): attributes.relationship: not a declared field"
+    "generated": true,
+    "routed": true
   },
   {
     "kind": "aggregate",
@@ -375,9 +372,8 @@
   {
     "kind": "command",
     "id": "Bluebook::ValueObject.Field",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "sets append field(s): attributes.relationship: not a declared field"
+    "generated": true,
+    "routed": true
   },
   {
     "kind": "command",
@@ -451,9 +447,8 @@
   {
     "kind": "command",
     "id": "Bluebook::Syntax.Argument",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "sets append field(s): arguments.position: not a declared field; arguments.keyword: not a declared field; arguments.context: not a declared field; arguments.at: not a declared field; arguments.named: not a declared field; arguments.kind: not a declared field; arguments.required: not a declared field; arguments.fills: not a declared field; arguments.selects: not a declared field; arguments.pair_key_fills: not a declared field; arguments.pair_value_fills: not a declared field; arguments.pairs_shape: not a declared field; arguments.variadic: not a declared field; arguments.minimum: not a declared field; arguments.coerce: not a declared field; arguments.blank_message: not a declared field"
+    "generated": true,
+    "routed": true
   },
   {
     "kind": "aggregate",

@@ -1425,3 +1425,151 @@ if !unknown.is_empty() {
     }
 }
 
+impl crate::kernel::Fielded for ArgumentArgs {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::Field;
+        use crate::kernel::Value;
+        match name {
+            "position" => Some(Field::Nested(&self.position)),
+            "keyword" => Some(Field::Nested(&self.keyword)),
+            "context" => Some(Field::Nested(&self.context)),
+            "at" => self.at.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "named" => self.named.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "kind" => Some(Field::Nested(&self.kind)),
+            "required" => Some(Field::Nested(&self.required)),
+            "fills" => Some(Field::Nested(&self.fills)),
+            "selects" => self.selects.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "pair_key_fills" => self.pair_key_fills.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "pair_value_fills" => self.pair_value_fills.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "pairs_shape" => self.pairs_shape.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "variadic" => self.variadic.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "minimum" => self.minimum.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "coerce" => self.coerce.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "blank_message" => self.blank_message.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            _ => None,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct ArgumentArgs {
+    pub position: ArgumentPosition,
+    pub keyword: ArgumentSeedText,
+    pub context: ArgumentSeedText,
+    pub at: Option<ArgumentSeedText>,
+    pub named: Option<ArgumentSeedText>,
+    pub kind: ArgumentSeedText,
+    pub required: ArgumentSeedText,
+    pub fills: ArgumentSeedText,
+    pub selects: Option<ArgumentSeedText>,
+    pub pair_key_fills: Option<ArgumentSeedText>,
+    pub pair_value_fills: Option<ArgumentSeedText>,
+    pub pairs_shape: Option<ArgumentSeedText>,
+    pub variadic: Option<ArgumentSeedText>,
+    pub minimum: Option<ArgumentSeedText>,
+    pub coerce: Option<ArgumentSeedText>,
+    pub blank_message: Option<ArgumentSeedText>,
+}
+
+pub fn dispatch_argument(
+    repo: &mut impl crate::kernel::Repository<Syntax>, id: &str, args: ArgumentArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+) -> crate::kernel::DispatchResult<Syntax> {
+        args.position.check_invariants()?;
+        args.keyword.check_invariants()?;
+        if !["File", "Bluebook", "Aggregate", "Entity", "Command", "Query", "ValueObject", "OneOf", "Lifecycle", "Policy", "ProcessManager", "Handler", "ReadModel", "Type", "Hecksagon", "World", "DomainPort", "PortOperation", "Port", "Adapter", "Translation", "TranslationAggregate"].contains(&args.context.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "context admits Syntax::Context — \"File\", \"Bluebook\", \"Aggregate\", \"Entity\", \"Command\", \"Query\", \"ValueObject\", \"OneOf\", \"Lifecycle\", \"Policy\", \"ProcessManager\", \"Handler\", \"ReadModel\", \"Type\", \"Hecksagon\", \"World\", \"DomainPort\", \"PortOperation\", \"Port\", \"Adapter\", \"Translation\", \"TranslationAggregate\" — got ", args.context.value))); }
+        args.context.check_invariants()?;
+        if let Some(v) = &args.at { v.check_invariants()?; }
+        if let Some(v) = &args.named { v.check_invariants()?; }
+        if !["text", "symbol", "number", "flag", "literal", "constant", "pairs", "list"].contains(&args.kind.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "kind admits Syntax::ArgumentKind — \"text\", \"symbol\", \"number\", \"flag\", \"literal\", \"constant\", \"pairs\", \"list\" — got ", args.kind.value))); }
+        args.kind.check_invariants()?;
+        args.required.check_invariants()?;
+        args.fills.check_invariants()?;
+        if let Some(v) = &args.selects { v.check_invariants()?; }
+        if let Some(v) = &args.pair_key_fills { v.check_invariants()?; }
+        if let Some(v) = &args.pair_value_fills { v.check_invariants()?; }
+        if let Some(v) = &args.pairs_shape { v.check_invariants()?; }
+        if let Some(v) = &args.variadic { v.check_invariants()?; }
+        if let Some(v) = &args.minimum { v.check_invariants()?; }
+        if let Some(v) = &args.coerce { v.check_invariants()?; }
+        if let Some(v) = &args.blank_message { v.check_invariants()?; }
+    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+
+    crate::kernel::dispatch(
+        repo,
+        crate::kernel::Hydrate::Act { id: id.to_string() },
+        "Argument",
+        "Bluebook::Syntax",
+        "Syntax",
+        "name.value",
+        &with_references,
+        &[
+
+        ],
+        None,
+        |record| {
+        record.arguments.push(Argument { position: args.position.clone(), keyword: args.keyword.clone(), context: args.context.clone(), at: args.at.clone(), named: args.named.clone(), kind: args.kind.clone(), required: args.required.clone(), fills: args.fills.clone(), selects: args.selects.clone(), pair_key_fills: args.pair_key_fills.clone(), pair_value_fills: args.pair_value_fills.clone(), pairs_shape: args.pairs_shape.clone(), variadic: args.variadic.clone(), minimum: args.minimum.clone(), coerce: args.coerce.clone(), blank_message: args.blank_message.clone(), status: "admitted".to_string() });
+            Ok(())
+        },
+        &[
+
+        ],
+        &["ArgumentAdmitted"],
+        args.to_json(),
+        mutations,
+    )
+}
+
+impl ArgumentArgs {
+    pub fn to_json(&self) -> crate::kernel::Json {
+        crate::kernel::Json::Object(vec![
+        ("position".to_string(), self.position.to_json()),
+        ("keyword".to_string(), self.keyword.to_json()),
+        ("context".to_string(), self.context.to_json()),
+        ("at".to_string(), self.at.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("named".to_string(), self.named.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("kind".to_string(), self.kind.to_json()),
+        ("required".to_string(), self.required.to_json()),
+        ("fills".to_string(), self.fills.to_json()),
+        ("selects".to_string(), self.selects.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("pair_key_fills".to_string(), self.pair_key_fills.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("pair_value_fills".to_string(), self.pair_value_fills.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("pairs_shape".to_string(), self.pairs_shape.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("variadic".to_string(), self.variadic.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("minimum".to_string(), self.minimum.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("coerce".to_string(), self.coerce.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("blank_message".to_string(), self.blank_message.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ])
+    }
+}
+
+impl ArgumentArgs {
+    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
+let unknown = v.unknown_keys(&["position", "keyword", "context", "at", "named", "kind", "required", "fills", "selects", "pair_key_fills", "pair_value_fills", "pairs_shape", "variadic", "minimum", "coerce", "blank_message", "id", "name"]);
+if !unknown.is_empty() {
+    return Err(crate::kernel::Refusal::UnknownArgument(format!(
+        "Argument does not declare {} — it takes position, keyword, context, at, named, kind, required, fills, selects, pair_key_fills, pair_value_fills, pairs_shape, variadic, minimum, coerce, blank_message",
+        unknown.join(", ")
+    )));
+}
+        Ok(Self {
+        position: ArgumentPosition::from_json(&v.require("position", "ArgumentArgs")?.coerce_single_field("value"))?,
+        keyword: ArgumentSeedText::from_json(&v.require("keyword", "ArgumentArgs")?.coerce_single_field("value"))?,
+        context: ArgumentSeedText::from_json(&v.require("context", "ArgumentArgs")?.coerce_single_field("value"))?,
+        at: match v.get("at") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        named: match v.get("named") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        kind: ArgumentSeedText::from_json(&v.require("kind", "ArgumentArgs")?.coerce_single_field("value"))?,
+        required: ArgumentSeedText::from_json(&v.require("required", "ArgumentArgs")?.coerce_single_field("value"))?,
+        fills: ArgumentSeedText::from_json(&v.require("fills", "ArgumentArgs")?.coerce_single_field("value"))?,
+        selects: match v.get("selects") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        pair_key_fills: match v.get("pair_key_fills") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        pair_value_fills: match v.get("pair_value_fills") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        pairs_shape: match v.get("pairs_shape") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        variadic: match v.get("variadic") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        minimum: match v.get("minimum") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        coerce: match v.get("coerce") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        blank_message: match v.get("blank_message") { Some(x) => Some(ArgumentSeedText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        })
+    }
+}
+

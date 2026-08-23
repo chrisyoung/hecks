@@ -121,6 +121,7 @@ pub struct ShapeField {
     pub pattern: Option<String>,
     pub default: Option<String>,
     pub admits: Option<String>,
+    pub relationship: Option<String>,
 }
 
 impl crate::kernel::Fielded for ShapeField {
@@ -135,6 +136,7 @@ impl crate::kernel::Fielded for ShapeField {
             "pattern" => self.pattern.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             "default" => self.default.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             "admits" => self.admits.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
+            "relationship" => self.relationship.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -205,16 +207,17 @@ impl ShapeField {
         ("pattern".to_string(), self.pattern.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ("default".to_string(), self.default.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ("admits".to_string(), self.admits.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
+        ("relationship".to_string(), self.relationship.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
 
 impl ShapeField {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["name", "type", "list", "optional", "pattern", "default", "admits"]);
+let unknown = v.unknown_keys(&["name", "type", "list", "optional", "pattern", "default", "admits", "relationship"]);
 if !unknown.is_empty() {
     return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "ShapeField does not declare {} — it takes name, type, list, optional, pattern, default, admits",
+        "ShapeField does not declare {} — it takes name, type, list, optional, pattern, default, admits, relationship",
         unknown.join(", ")
     )));
 }
@@ -226,6 +229,7 @@ if !unknown.is_empty() {
         pattern: match v.get("pattern") { Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("ShapeField.pattern: expected String".to_string()))?), None => None, },
         default: match v.get("default") { Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("ShapeField.default: expected String".to_string()))?), None => None, },
         admits: match v.get("admits") { Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("ShapeField.admits: expected String".to_string()))?), None => None, },
+        relationship: match v.get("relationship") { Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("ShapeField.relationship: expected String".to_string()))?), None => None, },
         })
     }
 }
@@ -899,6 +903,112 @@ impl ValueObject {
 
         by_identity.or(by_id_key).or(by_reference_key).ok_or_else(|| {
             crate::kernel::Refusal::TypeMismatch("ValueObject: no identity found (tried aggregate, name.value, id, value_object)".to_string())
+        })
+    }
+}
+
+impl crate::kernel::Fielded for FieldArgs {
+    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
+        use crate::kernel::Field;
+        use crate::kernel::Value;
+        match name {
+            "name" => Some(Field::Nested(&self.name)),
+            "type" => Some(Field::Nested(&self.r#type)),
+            "list" => Some(Field::Nested(&self.list)),
+            "optional" => self.optional.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "pattern" => self.pattern.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "default" => self.default.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "admits" => self.admits.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "relationship" => self.relationship.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            _ => None,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct FieldArgs {
+    pub name: ValueObjectName,
+    pub r#type: ValueObjectName,
+    pub list: ValueObjectName,
+    pub optional: Option<ValueObjectName>,
+    pub pattern: Option<ValueObjectText>,
+    pub default: Option<ValueObjectText>,
+    pub admits: Option<ValueObjectText>,
+    pub relationship: Option<ValueObjectText>,
+}
+
+pub fn dispatch_field(
+    repo: &mut impl crate::kernel::Repository<ValueObject>, id: &str, args: FieldArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
+) -> crate::kernel::DispatchResult<ValueObject> {
+        args.name.check_invariants()?;
+        args.r#type.check_invariants()?;
+        args.list.check_invariants()?;
+        if let Some(v) = &args.optional { v.check_invariants()?; }
+        if let Some(v) = &args.pattern { v.check_invariants()?; }
+        if let Some(v) = &args.default { v.check_invariants()?; }
+        if let Some(v) = &args.admits { v.check_invariants()?; }
+        if let Some(v) = &args.relationship { v.check_invariants()?; }
+    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+
+    crate::kernel::dispatch(
+        repo,
+        crate::kernel::Hydrate::Act { id: id.to_string() },
+        "Field",
+        "Bluebook::ValueObject",
+        "ValueObject",
+        "aggregate, name.value",
+        &with_references,
+        &[
+
+        ],
+        None,
+        |record| {
+        record.attributes.push(ShapeField { name: args.name.value.clone(), r#type: args.r#type.value.clone(), list: args.list.value.clone(), default: args.default.clone().map(|v| v.value.clone()), optional: args.optional.clone().map(|v| v.value.clone()), pattern: args.pattern.clone().map(|v| v.value.clone()), admits: args.admits.clone().map(|v| v.value.clone()), relationship: args.relationship.clone().map(|v| v.value.clone()) });
+            Ok(())
+        },
+        &[
+
+        ],
+        &["ShapeFieldAttached"],
+        args.to_json(),
+        mutations,
+    )
+}
+
+impl FieldArgs {
+    pub fn to_json(&self) -> crate::kernel::Json {
+        crate::kernel::Json::Object(vec![
+        ("name".to_string(), self.name.to_json()),
+        ("type".to_string(), self.r#type.to_json()),
+        ("list".to_string(), self.list.to_json()),
+        ("optional".to_string(), self.optional.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("pattern".to_string(), self.pattern.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("default".to_string(), self.default.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("admits".to_string(), self.admits.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("relationship".to_string(), self.relationship.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ])
+    }
+}
+
+impl FieldArgs {
+    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
+let unknown = v.unknown_keys(&["name", "type", "list", "optional", "pattern", "default", "admits", "relationship", "id", "aggregate"]);
+if !unknown.is_empty() {
+    return Err(crate::kernel::Refusal::UnknownArgument(format!(
+        "Field does not declare {} — it takes name, type, list, optional, pattern, default, admits, relationship",
+        unknown.join(", ")
+    )));
+}
+        Ok(Self {
+        name: ValueObjectName::from_json(&v.require("name", "FieldArgs")?.coerce_single_field("value"))?,
+        r#type: ValueObjectName::from_json(&v.require("type", "FieldArgs")?.coerce_single_field("value"))?,
+        list: ValueObjectName::from_json(&v.require("list", "FieldArgs")?.coerce_single_field("value"))?,
+        optional: match v.get("optional") { Some(x) => Some(ValueObjectName::from_json(&x.coerce_single_field("value"))?), None => None, },
+        pattern: match v.get("pattern") { Some(x) => Some(ValueObjectText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        default: match v.get("default") { Some(x) => Some(ValueObjectText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        admits: match v.get("admits") { Some(x) => Some(ValueObjectText::from_json(&x.coerce_single_field("value"))?), None => None, },
+        relationship: match v.get("relationship") { Some(x) => Some(ValueObjectText::from_json(&x.coerce_single_field("value"))?), None => None, },
         })
     }
 }

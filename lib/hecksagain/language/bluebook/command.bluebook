@@ -86,6 +86,7 @@ Hecks.bluebook "Bluebook" do
       # The closed set this value must belong to — see Aggregate::Field, which is
       # the same declaration, spelled for a command's arguments.
       attribute :admits, String, optional: true
+      attribute :relationship, String, optional: true
     end
 
     value_object "Rule" do

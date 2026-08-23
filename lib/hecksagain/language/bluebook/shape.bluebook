@@ -37,6 +37,7 @@ Hecks.bluebook "Bluebook" do
       attribute :default, String
       # The closed set this value must belong to — see Aggregate::Field.
       attribute :admits, String, optional: true
+      attribute :relationship, String, optional: true
       invariant("a field is named") { !name.to_s.empty? }
       invariant("a field has a type") { !type.to_s.empty? }
       invariant("a field's list mode is specified") { !list.to_s.empty? }

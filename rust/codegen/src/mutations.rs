@@ -23,11 +23,24 @@ use std::collections::HashMap;
 
 /// `append`'s TARGET, resolved to whichever real thing it is — a plain
 /// value object or an ENTITY.
+///
+/// LOCAL (an entity this aggregate declares) FIRST, matching
+/// mutations.rb's own header — `value_objects_by_name` is merged DOMAIN-
+/// WIDE (every aggregate's own value objects, so a cross-aggregate reuse
+/// like Translation's own TranslationName resolves at all), but the two
+/// namespaces aren't meant to collide. The self-hosted grammar's own
+/// Bluebook chapter proves they CAN: Command's domain-wide value_object
+/// "Argument" (an ordinary command's own argument row) and Syntax's own
+/// LOCAL entity "Argument" (S14, ADR 0026 — one row of the syntax table
+/// itself) share a name purely by coincidence. Checking local first means
+/// Syntax's OWN Argument entity resolves correctly; every other
+/// aggregate, with no such collision, sees identical behavior either
+/// order.
 pub fn append_element<'a>(aggregate: &'a Json, target_type: &str, value_objects_by_name: &HashMap<String, &'a Json>) -> Option<&'a Json> {
-    if let Some(vo) = value_objects_by_name.get(target_type) {
-        return Some(vo);
+    if let Some(local) = aggregate.get("entities").map(Json::each).unwrap_or(&[]).iter().find(|e| e.get("name").and_then(Json::as_str) == Some(target_type)) {
+        return Some(local);
     }
-    aggregate.get("entities").map(Json::each).unwrap_or(&[]).iter().find(|e| e.get("name").and_then(Json::as_str) == Some(target_type))
+    value_objects_by_name.get(target_type).copied()
 }
 
 /// An entity element's identity, auto-minted at append time — see

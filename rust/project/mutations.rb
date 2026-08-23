@@ -132,9 +132,24 @@ module RustProjection
     # the attribute names neither (a codegen bug if reached; every real
     # append target already passed `unsupported_attribute_types` above).
     def append_element(aggregate, target_type, value_objects_by_name)
-      return value_objects_by_name[target_type] if value_objects_by_name.key?(target_type)
+      # LOCAL FIRST — an aggregate's own nested entity is scoped to that
+      # aggregate; `value_objects_by_name` is merged DOMAIN-WIDE (every
+      # aggregate's own value objects, so a cross-aggregate reuse like
+      # Translation's own TranslationName resolves at all). The two
+      # namespaces aren't meant to collide, but the self-hosted grammar's
+      # own Bluebook chapter proves they CAN: Command's domain-wide
+      # value_object "Argument" (an ordinary command's own argument row)
+      # and Syntax's own LOCAL entity "Argument" (S14, ADR 0026 — one row
+      # of the syntax table itself, keyword/context/at/named/kind/...)
+      # share a name purely by coincidence. Checking local first — same
+      # "the aggregate's own declaration wins" precedent judge.rb's own
+      # cross-aggregate value-object fallback already set — means Syntax's
+      # OWN Argument entity resolves correctly; every other aggregate,
+      # with no such collision, sees identical behavior either order.
+      local = aggregate[:entities].find { |e| e[:name] == target_type }
+      return local if local
 
-      aggregate[:entities].find { |e| e[:name] == target_type }
+      value_objects_by_name[target_type]
     end
 
     # An entity element's identity, auto-minted at append time exactly the

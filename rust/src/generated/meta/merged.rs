@@ -356,6 +356,31 @@ pub fn dispatch_by_name(
               let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
               crate::generated::meta::bluebook::dispatch_normalise(&mut store.bluebook, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
+          "Bluebook::Command.Argument" => {
+              let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
+              let route = invocation.route();
+              let facts_json = invocation.facts();
+              let id = match route { Some(route) => { route.require_depth(0)?; route.aggregate().to_string() }, None => crate::generated::meta::command::Command::extract_id(facts_json)?, };
+              let args = crate::generated::meta::command::ArgumentArgs::from_json(facts_json)?;
+              crate::kernel::check_role(Some("Language"), "Argument", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
+              crate::generated::meta::command::dispatch_argument(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Bluebook::Command.Reference" => {
+              let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
+              let route = invocation.route();
+              let facts_json = invocation.facts();
+              let id = match route { Some(route) => { route.require_depth(0)?; route.aggregate().to_string() }, None => crate::generated::meta::command::Command::extract_id(facts_json)?, };
+              let args = crate::generated::meta::command::ReferenceArgs::from_json(facts_json)?;
+              crate::kernel::check_role(Some("Language"), "Reference", caller_role)?;
+              crate::kernel::check_reference(&store.aggregate, &args.points_at, "Aggregate", "bluebook, name")?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Command", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[crate::kernel::ReferenceSpec { field: "points_at", as_name: "points_at", target: "Bluebook::Aggregate" }], &args);
+              let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
+              crate::generated::meta::command::dispatch_reference(&mut store.command, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
           "Bluebook::Command.Rule" => {
               let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
               let route = invocation.route();
@@ -620,6 +645,30 @@ pub fn dispatch_by_name(
               let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
               crate::generated::meta::query::dispatch_option(&mut store.query, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
+          "Bluebook::Query.Argument" => {
+              let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
+              let route = invocation.route();
+              let facts_json = invocation.facts();
+              let id = match route { Some(route) => { route.require_depth(0)?; route.aggregate().to_string() }, None => crate::generated::meta::query::Query::extract_id(facts_json)?, };
+              let args = crate::generated::meta::query::ArgumentArgs::from_json(facts_json)?;
+              crate::kernel::check_role(Some("Language"), "Argument", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Query", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
+              crate::generated::meta::query::dispatch_argument(&mut store.query, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Bluebook::ValueObject.Field" => {
+              let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
+              let route = invocation.route();
+              let facts_json = invocation.facts();
+              let id = match route { Some(route) => { route.require_depth(0)?; route.aggregate().to_string() }, None => crate::generated::meta::valueobject::ValueObject::extract_id(facts_json)?, };
+              let args = crate::generated::meta::valueobject::FieldArgs::from_json(facts_json)?;
+              crate::kernel::check_role(Some("Language"), "Field", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::ValueObject", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
+              crate::generated::meta::valueobject::dispatch_field(&mut store.valueobject, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
           "Bluebook::ValueObject.Close" => {
               let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
               let route = invocation.route();
@@ -678,6 +727,18 @@ pub fn dispatch_by_name(
               let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
               let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
               crate::generated::meta::syntax::dispatch_keyword(&mut store.syntax, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
+          "Bluebook::Syntax.Argument" => {
+              let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
+              let route = invocation.route();
+              let facts_json = invocation.facts();
+              let id = match route { Some(route) => { route.require_depth(0)?; route.aggregate().to_string() }, None => crate::generated::meta::syntax::Syntax::extract_id(facts_json)?, };
+              let args = crate::generated::meta::syntax::ArgumentArgs::from_json(facts_json)?;
+              crate::kernel::check_role(Some("Language"), "Argument", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Bluebook::Syntax", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
+              crate::generated::meta::syntax::dispatch_argument(&mut store.syntax, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
           "Bluebook::ProcessManager.Handler.Dispatch" => {
               let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
@@ -879,6 +940,8 @@ pub fn command_creates(verb: &str) -> bool {
         "Bluebook::Aggregate.Projects" => false,
         "Bluebook::Bluebook.Attach" => false,
         "Bluebook::Bluebook.Normalise" => false,
+        "Bluebook::Command.Argument" => false,
+        "Bluebook::Command.Reference" => false,
         "Bluebook::Command.Rule" => false,
         "Bluebook::Command.Ensure" => false,
         "Bluebook::Command.Change" => false,
@@ -902,12 +965,15 @@ pub fn command_creates(verb: &str) -> bool {
         "Bluebook::ReadModel.Option" => false,
         "Bluebook::Query.Filter" => false,
         "Bluebook::Query.Option" => false,
+        "Bluebook::Query.Argument" => false,
+        "Bluebook::ValueObject.Field" => false,
         "Bluebook::ValueObject.Close" => false,
         "Bluebook::ValueObject.Assert" => false,
         "Bluebook::ValueObject.Member" => false,
         "Bluebook::ValueObject.Member.Pair" => false,
         "Bluebook::Syntax.Declare" => true,
         "Bluebook::Syntax.Keyword" => false,
+        "Bluebook::Syntax.Argument" => false,
         "Bluebook::Syntax.Keyword.Deprecate" => false,
         "Bluebook::Syntax.Keyword.Retire" => false,
         "Bluebook::Syntax.Argument.Deprecate" => false,

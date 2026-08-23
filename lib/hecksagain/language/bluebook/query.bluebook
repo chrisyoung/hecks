@@ -62,6 +62,7 @@ Hecks.bluebook "Bluebook" do
       attribute :default, String
       # The closed set this value must belong to — see Aggregate::Field.
       attribute :admits, String, optional: true
+      attribute :relationship, String, optional: true
     end
 
     # One entry of one option. `option` names which specification it belongs to
