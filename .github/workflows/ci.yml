@@ -140,34 +140,32 @@ jobs:
       - name: "rust coverage: identity"
         run: bin/rust_coverage identity
 
-      # KNOWN RED, ON PURPOSE. Banking declares two `read_model`
-      # constructs (ComplianceDashboard, CustomerPortfolio) and
-      # `read_model` is an entire construct kind bin/project_rust has no
-      # code path for at all (rust/project/domain_generator.rb's own
-      # "QUERIES AND READ MODELS" comment; docs/HECKS_IMPLEMENTATION_PLAN.md
-      # §8 and docs/decisions/0013 both already name this class of gap).
-      # This step is deliberately left un-excepted rather than swallowed
-      # or `continue-on-error`'d: the gap is real and not fixed here —
-      # closing this red means either a real Rust read_model
-      # implementation, or an entry added to bin/rust_coverage's own
-      # ALLOWLIST citing where read_model is already documented as a
-      # deliberate deferral. Not a change to this file.
+      # FORMERLY KNOWN RED — as of 2026-08-23, clean (0 GAP). Banking's two
+      # `read_model` constructs (ComplianceDashboard, CustomerPortfolio) are
+      # now on bin/rust_coverage's own ALLOWLIST, citing rust/project/
+      # read_models.rb's header note on group_by/rootless read models being
+      # a main-only concept this generator doesn't cover, plus rust/project/
+      # queries.rb's own eligibility argument. The underlying gap class
+      # (read_model has no Rust code path at all —
+      # rust/project/domain_generator.rb's "QUERIES AND READ MODELS"
+      # comment; docs/HECKS_IMPLEMENTATION_PLAN.md §8, docs/decisions/0013)
+      # is unchanged; what's new is the citation that lets the allowlist
+      # legitimately defer it instead of leaving it an unallowlisted GAP.
       - name: "rust coverage: banking"
         run: bin/rust_coverage banking
 
-      # ALSO KNOWN RED — discovered wiring this step in, not previously
-      # documented anywhere. Bluebook (the language's own self-hosting
-      # meta chapter) fails this same check for two reasons: its own
-      # `WholeBluebook` read_model (the same whole-kind gap as banking's,
-      # above), plus 19 per-instance gaps with no existing doc citation
-      # — mostly "optional argument feeds a non-optional target" on
-      # `then_set append` shapes, plus two commands whose identity needs
-      # an extra caller-supplied parameter no JSON step shape carries.
-      # Unlike banking's read_model gap, bin/rust_coverage's own
-      # ALLOWLIST correctly refuses to swallow these (its header
-      # requires a doc citation, not an invented one) — left red and
-      # unallowlisted here for the same reason, not investigated or
-      # fixed as part of wiring this CI step.
+      # FORMERLY ALSO KNOWN RED — as of 2026-08-23, also clean (0 GAP).
+      # Bluebook's own `WholeBluebook` read_model (same whole-kind gap as
+      # banking's, above) and its 19 per-instance gaps (mostly "optional
+      # argument feeds a non-optional target" on `then_set append` shapes,
+      # plus two commands needing an extra caller-supplied identity
+      # parameter no JSON step shape carries) are now all on
+      # bin/rust_coverage's ALLOWLIST with doc citations — see rust/project/
+      # commands.rb's #optional_source_mismatches, rust/project/
+      # read_models.rb's header, and rust/project/domain_generator.rb's
+      # manifest_entry gap_class: "structural" comment. Nothing here was
+      # swallowed without a citation; the allowlist's own requirement for
+      # one still held.
       - name: "rust coverage: meta"
         run: bin/rust_coverage meta
 
