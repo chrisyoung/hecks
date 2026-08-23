@@ -1,5 +1,6 @@
 require_relative "../errors"
 require_relative "../refusal_wording"
+require_relative "../value"
 
 module Hecksagain
   module Runtime
@@ -90,7 +91,7 @@ module Hecksagain
         def validate_reference_values(domain, target, held, list:)
           values = list ? Array(held) : [held]
           values.each do |value|
-            key = value.to_s
+            key = reference_key(value)
             next if key.empty?
             next if @registry.repository(domain, target).find(key)
 
@@ -99,6 +100,32 @@ module Hecksagain
                                         target: target.name, heads: target.identity_heads.join(", "),
                                         key: key.inspect)
           end
+        end
+
+        # `value` is the referenced record's own id, EXACTLY as `Identity.of`
+        # would build it for that record — a bare scalar for a single-field
+        # identity (the overwhelming common case; Banking's own plain
+        # `reference_to Customer` holds one already, so `Value.
+        # materialize_unwrapped` is a no-op passthrough here), or a
+        # `Naming.identity`-joined string for a compound one
+        # (`belongs_to Translation, as: :translation_ref` — Translation's
+        # own `identified_by :domain, :from, :to`, THREE fields). Before
+        # this, plain `value.to_s` on that compound case's own coerced
+        # Value hit Ruby's default `Object#to_s` (a raw, run-to-run-random
+        # memory address) instead of joining the record's real id — found
+        # live via bin/fuzz on the self-hosted "translation" domain
+        # (replay_is_deterministic), the SAME class of gap `Identity.from`
+        # already had for a compound `identified_by`'s own bare (undotted)
+        # attribute paths. `materialize_unwrapped` recurses a multi-
+        # attribute value object to a plain Hash keyed by attribute name,
+        # in declaration order — `Naming.identity` on `.values` reproduces
+        # the identical join `Identity.of` itself would produce for the
+        # SAME fields.
+        def reference_key(value)
+          unwrapped = Value.materialize_unwrapped(value)
+          return Naming.identity(unwrapped.values).to_s if unwrapped.is_a?(Hash)
+
+          unwrapped.to_s
         end
 
         # A related record's OWN fields, reachable by name from `given`/

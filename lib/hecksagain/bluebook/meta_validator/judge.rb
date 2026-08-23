@@ -406,7 +406,53 @@ module Hecksagain
           return points_at(row, id) if append.verb == "Reference"
           return value unless "#{category}.#{list_name}" == "Aggregate.attributes"
 
-          Naming.identity([id, value])
+          Naming.identity([owning_aggregate_id(id, value), value])
+        end
+
+        # `id` NAMES THE ATTRIBUTE'S OWN AGGREGATE, not necessarily the
+        # value object's — Wave 7's own translation.bluebook/translation_
+        # aggregate.bluebook split proved the difference live:
+        # TranslationAggregate's own `was`/every rename-rule's own `from`/
+        # `to`/... all deliberately reuse the SIBLING "Translation"
+        # aggregate's own `TranslationName` (that file's own header:
+        # "the shared TranslationName every non-identity field below
+        # uses"), a real, intentional cross-aggregate reuse — not the
+        # local-only ownership every OTHER real domain in this corpus
+        # happens to have used until now.
+        #
+        # `id` (already `Naming.identity([chapter, aggregate])`-joined)
+        # only ever composes with the LOCAL aggregate for real, non-
+        # entity-owned attributes — an entity's own `id` never matches
+        # any TOP-LEVEL aggregate here, so `local` stays nil and this
+        # returns `id` unchanged, exactly the prior behavior. Same for
+        # every attribute whose type IS locally declared (the overwhelming
+        # common case, Banking's own Customer/Account included) — this
+        # only ever changes the answer when the local aggregate does NOT
+        # declare `value` itself, falling back to the first (declaration-
+        # order) OTHER aggregate in the SAME chapter that does.
+        def owning_aggregate_id(id, value)
+          local = @bluebook.aggregates.find { |aggregate| Naming.identity([@bluebook.name, aggregate.name]) == id }
+          return id unless local
+          return id if names?(local, value)
+
+          owner = @bluebook.aggregates.find { |aggregate| aggregate != local && names?(aggregate, value) }
+          return id unless owner
+
+          Naming.identity([@bluebook.name, owner.name])
+        end
+
+        # Whichever construct kind `value` actually is — a value object
+        # (Attribute) or an entity this aggregate holds (Holds); `cell`'s
+        # own caller already knows which verb it dispatches, but not
+        # which collection to search here without re-deriving that same
+        # decision, so this simply checks both. The self-hosted grammar's
+        # own Bluebook:Syntax#attributes proved entities need the same
+        # cross-aggregate fallback value objects do — Syntax's own
+        # `Argument`-typed attribute names Command's entity, not one of
+        # Syntax's own.
+        def names?(aggregate, value)
+          aggregate.value_objects.any? { |vo| vo.hecks_name == value } ||
+            aggregate.entities.any? { |entity| entity.hecks_name == value }
         end
 
         # Which verb an attribute row belongs to. The plan cannot decide this — all

@@ -93,7 +93,29 @@ module Hecksagain
         # never mentioned.
         attribute = construct.identity_heads.include?(head) ? construct.attribute(head) : nil
         raw       = args[head]
-        attribute ? Value.for_attribute(value_owner, attribute, raw) : raw
+        return raw unless attribute
+
+        # AN ID IS ALWAYS A SCALAR — same contract the dotted branch above
+        # already keeps, just reached a different way here: a BARE
+        # (undotted) identity path names one of THIS construct's own
+        # declared attributes directly, and when that attribute's type is
+        # a value object (Translation's own compound `identified_by
+        # :domain, :from, :to`, each typed `TranslationDomainName`/
+        # `TranslationEraName`), `Value.for_attribute` coerces it into a
+        # real single-field Value wrapper — never unwrapped before this,
+        # so `Naming.identity`'s own plain `Array#join` (`Naming.identity`'s
+        # own header: parts must already be scalars) fell through to
+        # Ruby's default `Object#to_s`, leaking a raw, run-to-run-random
+        # memory address (`#<Hecksagain::Runtime::Value:0x...>`) into
+        # every refusal quoting this identity — found live via bin/fuzz on
+        # the self-hosted "translation" domain (replay_is_deterministic:
+        # the SAME address never repeats, so two replays of the
+        # identical steps produced different histories the moment a
+        # Translation went missing). `materialize_unwrapped` is the
+        # SAME single-field-VO-recurses-to-its-bare-scalar helper
+        # `read_model_interpreter.rb` already uses for exactly this
+        # unwrap; passthrough for anything that isn't a Value at all.
+        Value.materialize_unwrapped(Value.for_attribute(value_owner, attribute, raw)).to_s
       end
 
       # How an identity READS when the runtime has to name it in a refusal — the
