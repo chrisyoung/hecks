@@ -1,13 +1,16 @@
 #!/usr/bin/env ruby
 
-# Projects a booted domain's own lifecycles into Mermaid state
-# diagrams — the projection itself is Projections::Diagrams (see its
-# own header for why Mermaid, and why lifecycles-only for now); this
-# boots the given domain, finds its one real chapter, and asks the
-# registry for it. spec/diagrams_spec.rb re-projects through the same
-# call and refuses a diff, so a lifecycle changing without regenerating
-# fails the ordinary suite, the same way rust/parser/src/keywords.rs
-# already does for the grammar.
+# Projects a booted domain's own shape into Mermaid diagrams — one
+# stateDiagram-v2 per lifecycle-bearing aggregate/entity, one
+# erDiagram for the whole domain's has_many/has_one/belongs_to/
+# reference_to relationships, one flowchart for the whole domain's
+# command-emits-event-triggers-policy dispatch chains. The projection
+# itself is Projections::Diagrams (see its own header for why
+# Mermaid); this boots the given domain, finds its one real chapter,
+# and asks the registry for it. spec/diagrams_spec.rb re-projects
+# through the same call and refuses a diff, so any of these changing
+# without regenerating fails the ordinary suite, the same way
+# rust/parser/src/keywords.rs already does for the grammar.
 #
 #   bin/project_diagrams <domain-path> <ChapterName>
 #   bin/project_diagrams examples/pizzas Pizzas
@@ -30,7 +33,7 @@ written = Hecks::Projector.write(
 )
 
 if written.empty?
-  puts "#{chapter_name} declares no lifecycle yet — nothing to project"
+  puts "#{chapter_name} declares no lifecycle, relationship, or dispatch to project yet"
 else
   puts "wrote #{written.size} diagram(s) to #{directory}:"
   written.each { |path| puts "  #{path}" }
