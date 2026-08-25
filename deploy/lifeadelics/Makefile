@@ -8,11 +8,11 @@
 # cross-linker — install once with `pip3 install cargo-lambda` or
 # `brew install cargo-lambda`.
 
-HOST_DIR := /Users/christopheryoung/Projects/hecks/.claude/worktrees/experience-public-routes/rust/host
+HOST_DIR := /Users/christopheryoung/Projects/hecks/.claude/worktrees/deploy-lifeadelics/rust/host
 # `domain_name`, matching bin/project_wasm's own target_mod_name
 # (a Rust-build-pipeline naming convention, not AWS resource
 # identity — see HECKS_WASM_PATH's own comment above).
-WASM     := /Users/christopheryoung/Projects/hecks/.claude/worktrees/experience-public-routes/rust/dist/lifeadelics.wasm
+WASM     := /Users/christopheryoung/Projects/hecks/.claude/worktrees/deploy-lifeadelics/rust/dist/lifeadelics.wasm
 
 build-LifeadelicsFunction:
 	@command -v cargo-lambda >/dev/null 2>&1 || { \
@@ -27,7 +27,7 @@ build-LifeadelicsFunction:
 # field). `bin/project_wasm` recompiles fast enough that "always
 # rebuild" is the safe default, matching rust/host's own bootstrap
 # build just below, which was never guarded this way to begin with.
-	cd /Users/christopheryoung/Projects/hecks/.claude/worktrees/experience-public-routes && bin/project_wasm /tmp/lifeadelics
+	cd /Users/christopheryoung/Projects/hecks/.claude/worktrees/deploy-lifeadelics && bin/project_wasm /tmp/lifeadelics
 	@rustup target list --installed 2>/dev/null | grep -qx aarch64-unknown-linux-gnu || rustup target add aarch64-unknown-linux-gnu
 # `rustup run stable`, not a bare `cargo lambda` — same reasoning
 # bin/project_wasm's own Makefile-equivalent line holds itself to: a
@@ -39,7 +39,7 @@ build-LifeadelicsFunction:
 	cd $(HOST_DIR) && rustup run stable cargo lambda build --release --arm64
 	cp $(HOST_DIR)/target/lambda/bootstrap/bootstrap $(ARTIFACTS_DIR)/bootstrap
 	cp $(WASM) $(ARTIFACTS_DIR)/lifeadelics.wasm
-	cp /Users/christopheryoung/Projects/hecks/.claude/worktrees/experience-public-routes/rust/dist/lifeadelics.ir.json $(ARTIFACTS_DIR)/lifeadelics.ir.json
+	cp /Users/christopheryoung/Projects/hecks/.claude/worktrees/deploy-lifeadelics/rust/dist/lifeadelics.ir.json $(ARTIFACTS_DIR)/lifeadelics.ir.json
 
 # `sam build <resource>` WIPES .aws-sam/build/ entirely before
 # building just the one resource named -- confirmed live: building
@@ -64,7 +64,7 @@ restore-LifeadelicsFunction-build:
 	@mkdir -p .aws-sam/build/LifeadelicsFunction
 	cp $(HOST_DIR)/target/lambda/bootstrap/bootstrap .aws-sam/build/LifeadelicsFunction/bootstrap
 	cp $(WASM) .aws-sam/build/LifeadelicsFunction/lifeadelics.wasm
-	cp /Users/christopheryoung/Projects/hecks/.claude/worktrees/experience-public-routes/rust/dist/lifeadelics.ir.json .aws-sam/build/LifeadelicsFunction/lifeadelics.ir.json
+	cp /Users/christopheryoung/Projects/hecks/.claude/worktrees/deploy-lifeadelics/rust/dist/lifeadelics.ir.json .aws-sam/build/LifeadelicsFunction/lifeadelics.ir.json
 	ruby -e 'lines = File.readlines(".aws-sam/build/template.yaml"); start = lines.index { |l| l.strip == "LifeadelicsFunction:" } or raise "restore-LifeadelicsFunction-build: LifeadelicsFunction resource not found in built template"; idx = (start+1...lines.length).find { |i| lines[i] =~ /CodeUri:/ } or raise "restore-LifeadelicsFunction-build: no CodeUri line found under LifeadelicsFunction"; lines[idx] = lines[idx].sub(/CodeUri:.*/, "CodeUri: LifeadelicsFunction"); File.write(".aws-sam/build/template.yaml", lines.join)'
 
 # `make mint-era` — takes hecks-lifeadelics's RDS instance from freshly
@@ -77,7 +77,7 @@ restore-LifeadelicsFunction-build:
 # as its own sibling stack, uses it for one Ruby boot over an SSM
 # tunnel, then deletes it — nothing from this target is left running
 # afterward.
-ROOT      := /Users/christopheryoung/Projects/hecks/.claude/worktrees/experience-public-routes
+ROOT      := /Users/christopheryoung/Projects/hecks/.claude/worktrees/deploy-lifeadelics
 DOMAIN    := /tmp/lifeadelics
 STACK     := hecks-lifeadelics
 BASTION_STACK := hecks-lifeadelics-bastion
