@@ -36,6 +36,26 @@ build-LifeadelicsFunction:
 # toolchain that never saw `rustup target add`, and fails with
 # "can't find crate for `core`" for the cross target even though
 # `rustup target list --installed` reports it present.
+# macOS -> Linux arm64 cross-compiling by default routes through
+# zig (cargo-lambda's own bundled cargo-zigbuild) — every zig
+# release checked so far (0.15.2, 0.16.0) rejects
+# `-Wl,--fix-cortex-a53-843419`, a flag rustc's own
+# aarch64-unknown-linux-gnu target emits unconditionally: "error:
+# unsupported linker arg: --fix-cortex-a53-843419", found live on
+# THIS domain's own very first real deploy attempt (upstream:
+# https://github.com/ziglang/zig/issues, no fix released yet as of
+# this comment). Not fixable by a flag here — it's zig's own `zig
+# cc` argument-translation layer refusing before rustc's link step
+# ever runs. If this build fails with that error, cargo-lambda has
+# a real, documented non-zig, non-Docker fallback: `-c cargo` (or
+# `CARGO_LAMBDA_COMPILER=cargo`) plus a real GNU cross-toolchain —
+# `brew tap messense/macos-cross-toolchains && brew install
+# aarch64-unknown-linux-gnu` (this flag has worked in real
+# binutils/LLD since 2018; only zig's own translation of it is the
+# gap), then set `CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=
+# aarch64-linux-gnu-gcc` with that toolchain's own bin/ on PATH.
+# Confirmed working end to end (a real `sam deploy` against a real
+# Lambda) the same day this comment was written.
 	cd $(HOST_DIR) && rustup run stable cargo lambda build --release --arm64
 	cp $(HOST_DIR)/target/lambda/bootstrap/bootstrap $(ARTIFACTS_DIR)/bootstrap
 	cp $(WASM) $(ARTIFACTS_DIR)/lifeadelics.wasm
