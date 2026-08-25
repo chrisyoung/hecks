@@ -116,13 +116,12 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 ```
 
-**VS Code**: there's no packaged extension yet. The generic-LSP-client
-extensions on the marketplace (e.g. one that runs an arbitrary command
-over stdio for a configured file glob) work against this binary as-is —
-point them at `rust/lsp/target/debug/hecks-lsp` for `**/*.bluebook` and
-`**/*.hecksagon`. A real extension would just be that config plus a
-`languages`/`grammars` contribution (see the top-level tooling report
-for the syntax-highlighting gap this would also want to close).
+**VS Code**: `editors/vscode/` (repo root) is a minimal real extension —
+see its own README for build/install steps. Not published to the
+marketplace; installed locally (copy into your extensions directory, or
+F5 an Extension Development Host). It contributes no syntax highlighting
+grammar (a separate gap — see the top-level tooling report), just the
+language client wiring.
 
 ## Testing it without an editor
 
