@@ -200,6 +200,7 @@ pub const REFUSED: &str = "refused";
 /// by whoever owns the map (`kernel/cli.rs` — deliberately NOT a `Store`
 /// field: process managers are domain-level, not per-aggregate, and
 /// nothing about `Store`'s own generated shape needs to know they exist).
+#[derive(Clone)]
 pub struct SagaInstance {
     pub state: String,
     pub memory: Json,
@@ -413,6 +414,63 @@ pub fn orchestrate<S: AggregateScan>(
 /// `PolicyInterpreter#where_holds?` — true with no `where`, else the
 /// predicate over the payload (`Json` is `Fielded`, json.rs); an
 /// evaluation that cannot resolve reads as not holding.
+/// `Literal.read` (`lib/hecks/literal.rb`), the scalar cases only — a
+/// policy's `trigger ..., with: { rank: "officer" }` rides the wire
+/// ALREADY `Literal.render`'d (`reactions.rb`'s own `with_spec_expr`
+/// comment: "so a Symbol keeps its leading colon and stays
+/// distinguishable from a literal string of the same spelling"), so
+/// `binding` here is never the bare value — a String literal arrives as
+/// `"\"officer\""` (its own quote marks are part of the wire text, not
+/// this function's own formatting), an Integer as `"1"`, `nil`/`true`/
+/// `false` bare. Found live: the un-decoded wire text was passed straight
+/// through as a JSON string verbatim (`Json::str(binding.to_string())`),
+/// so `Rank::from_json` saw the literal 9 characters `"officer"` (quotes
+/// included) instead of the 7-character value `officer` and refused —
+/// `Roster::Roster.Honor`'s own real trigger, `where { number.value == 1
+/// }`, never actually fired in Rust before this. Hash/Array cases are
+/// Ruby's own `Literal.render`/`.read`, not built here — no policy
+/// `with:` literal in the corpus is one yet (`.strip_prefix(':')`'s own
+/// caller only ever routes a NON-symbol binding here for a scalar), and
+/// building either without a real corpus example to verify against would
+/// be exactly the guessed-at generality this codebase's own staging
+/// discipline argues against.
+fn read_literal_wire(binding: &str) -> Json {
+    if binding == "nil" {
+        return Json::Null;
+    }
+    if binding == "true" {
+        return Json::Bool(true);
+    }
+    if binding == "false" {
+        return Json::Bool(false);
+    }
+    if let Ok(i) = binding.parse::<i64>() {
+        return Json::int(i);
+    }
+    if let Ok(f) = binding.parse::<f64>() {
+        return Json::Num(f);
+    }
+    if binding.len() >= 2 && binding.starts_with('"') && binding.ends_with('"') {
+        let inner = &binding[1..binding.len() - 1];
+        let mut unescaped = String::with_capacity(inner.len());
+        let mut chars = inner.chars();
+        while let Some(c) = chars.next() {
+            if c == '\\' {
+                if let Some(next) = chars.next() {
+                    unescaped.push(next);
+                    continue;
+                }
+            }
+            unescaped.push(c);
+        }
+        return Json::str(unescaped);
+    }
+    // A bare word `Literal.read` also tolerates (its own comment: "a
+    // closed set's members and a few hand-written fields... never
+    // rendered") — passed through as-is, matching that same tolerance.
+    Json::str(binding.to_string())
+}
+
 fn where_holds(where_expr: Option<fn() -> Expr>, event: &Event) -> bool {
     let Some(build) = where_expr else { return true };
     let ctx = EvalContext { args: &event.payload, instance: &NoFields };
@@ -462,6 +520,19 @@ fn trigger_args(policy: &PolicyRule, event: &Event, extra: Option<(&str, String)
         return Json::Object(source);
     }
 
+    // THE EMITTING RECORD'S OWN IDENTITY IS A FACT A PROJECTION MAY READ
+    // — `PolicyInterpreter#emitter_identity`: offered under the emitting
+    // aggregate's own identity head, to an EXPLICIT projection only, never
+    // over a value the payload itself carries. A cross-aggregate reaction
+    // (chess's per-game Graveyard, fed from every piece's own Captured
+    // event) names its receiver this way — `with: { label: :label }` —
+    // and `split_routed_args` below routes it as `to`.
+    if let Some(head) = (tables.identity_head_fn)(&event.aggregate) {
+        if !event.id.is_empty() && !source.iter().any(|(name, _)| name == head) {
+            source.push((head.to_string(), Json::str(event.id.clone())));
+        }
+    }
+
     let projected = policy
         .with_spec
         .iter()
@@ -472,7 +543,7 @@ fn trigger_args(policy: &PolicyRule, event: &Event, extra: Option<(&str, String)
                     .find(|(held, _)| held == field)
                     .map(|(_, held)| held.clone())
                     .unwrap_or(Json::Null),
-                None => Json::str((*binding).to_string()),
+                None => read_literal_wire(binding),
             };
             ((*name).to_string(), value)
         })
@@ -1032,6 +1103,40 @@ fn compensate<S: AggregateScan>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // `read_literal_wire` — a policy `with:` literal rides the wire
+    // already `Literal.render`'d (`reactions.rb`'s own `with_spec_expr`),
+    // so the un-decoded text is never the real value. Found live:
+    // `Roster::Roster.Honor`'s own `trigger ..., with: { rank: "officer"
+    // }` passed the RAW wire text `"officer"` (9 chars, quotes included)
+    // straight through as a JSON string, and `Rank::from_json` refused
+    // it — the trigger silently never fired.
+    #[test]
+    fn decodes_a_quoted_string_literal_back_to_its_bare_value() {
+        assert_eq!(read_literal_wire("\"officer\""), Json::str("officer"));
+    }
+
+    #[test]
+    fn unescapes_an_embedded_quote_or_backslash_the_same_way_literal_quote_escaped_it() {
+        assert_eq!(read_literal_wire("\"a\\\"b\\\\c\""), Json::str("a\"b\\c"));
+    }
+
+    #[test]
+    fn decodes_the_bare_scalar_forms_literal_render_never_quotes() {
+        assert_eq!(read_literal_wire("nil"), Json::Null);
+        assert_eq!(read_literal_wire("true"), Json::Bool(true));
+        assert_eq!(read_literal_wire("false"), Json::Bool(false));
+        assert_eq!(read_literal_wire("42"), Json::int(42));
+        assert_eq!(read_literal_wire("3.5"), Json::Num(3.5));
+    }
+
+    #[test]
+    fn passes_a_bare_unrendered_word_through_unchanged() {
+        // `Literal.read`'s own tolerance (lib/hecks/literal.rb): a
+        // closed set's members and a few hand-written fields are stored
+        // as plain text that was never rendered at all.
+        assert_eq!(read_literal_wire("officer"), Json::str("officer"));
+    }
 
     fn pm(correlates_by: &'static str) -> ProcessManagerDef {
         ProcessManagerDef {
