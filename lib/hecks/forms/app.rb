@@ -81,9 +81,24 @@ module Hecks
         raise RouteNotFound, "#{domain.inspect} is not exposed by this app — declared chapters: #{@exposed.join(', ')}"
       end
 
+      # H12 (docs/audits/2026-08-10-main-bug-audit.md) — splitting on the
+      # FIRST "." truncated any identity value containing a dot (an email
+      # `identified_by { email.address }`, a decimal-ish reference — an
+      # aggregate's identity is free-form unless its value object declares
+      # a `pattern:`, see S3 in the same audit) at its own first dot, so
+      # `reference.value=c.1` 404'd everywhere: detail page, JSON view, and
+      # its own index-table link. Only a LITERAL trailing ".html"/".json"
+      # now counts as a format — every other dot in the segment is just
+      # part of the identity. An identity that itself happens to end in
+      # exactly ".html" or ".json" is still ambiguous with a real format
+      # suffix (the same tension any extension-based content-negotiation
+      # scheme has), but that was already true before this fix and is not
+      # this bug.
       def split_format(segment)
-        name, format = segment.to_s.split(".", 2)
-        [name, format || "json"]
+        segment = segment.to_s
+        return [Regexp.last_match(1), Regexp.last_match(2)] if segment =~ /\A(.*)\.(html|json)\z/
+
+        [segment, "json"]
       end
 
       # ---- home -------------------------------------------------------
@@ -157,7 +172,9 @@ module Hecks
       def submit_command(request, domain, aggregate, command, action)
         raw, envelope = submitted_command(request, aggregate, command)
         result = @dispatcher.dispatch("#{domain}::#{aggregate.hecks_name}.#{command.hecks_name}", **envelope)
-        redirect("/#{domain}/#{aggregate.hecks_name}/#{result.id}.html")
+        # L12 — the id is free-form (S3), so it must be percent-encoded as
+        # a path segment here, not just interpolated raw.
+        redirect("/#{domain}/#{aggregate.hecks_name}/#{Escape.url(result.id)}.html")
       rescue *Runtime::DOMAIN_REFUSALS, ArgumentError, TypeError, JSON::ParserError => e
         status = e.is_a?(Runtime::NotFound) ? 404 : 422
         command_form(domain, aggregate, command, action, status: status, values: raw, error: e)

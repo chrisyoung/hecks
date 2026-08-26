@@ -611,4 +611,21 @@ RSpec.describe "the expression sublanguage" do
       expect(evaluate("pending + extras.size == 3", { pending: 2 }, { extras: [1] })).to be(true)
     end
   end
+
+  # S2 (docs/audits/2026-08-10-main-bug-audit.md) — `Resolver#walk_path`
+  # used to read a dotted step with `current[segment.to_sym] ||
+  # current[segment]`, which drops a genuinely-stored `false` to `nil`
+  # (`false || …` falls through to the other key spelling). A dotted
+  # lookup that lands on a `false` member used to answer as though the
+  # member were entirely absent.
+  describe "dotted lookup onto a stored false" do
+    it "reads a false-valued nested member as itself, not as absent" do
+      expect(evaluate("flags.active == false", { flags: { active: false } })).to be(true)
+      expect(evaluate("flags.active == true",  { flags: { active: false } })).to be(false)
+    end
+
+    it "still reads a true-valued nested member" do
+      expect(evaluate("flags.active == true", { flags: { active: true } })).to be(true)
+    end
+  end
 end

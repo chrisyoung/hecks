@@ -191,7 +191,13 @@ module Hecks
       # to remove. It rides `comparable` for the same reason a where-clause does : an
       # identity is a value object, and `to_s` on one is an OBJECT ADDRESS — a sort key
       # that differs run to run, which is worse than the store order it replaced.
-      def cell(row, key) = row[key.to_sym] || row[key.to_s]
+      # `key?` decides which spelling answers, never `||` — a row whose
+      # value is a genuinely-held `false` must not fall through to the
+      # other spelling (usually absent) and land on `nil`.
+      def cell(row, key)
+        sym = key.to_sym
+        row.key?(sym) ? row[sym] : row[key.to_s]
+      end
 
       # A sub-list row is identified by its PARENT and then its own key : two
       # entities under different parents can share a sequence, so the parent has

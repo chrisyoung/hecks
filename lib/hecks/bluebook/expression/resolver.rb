@@ -544,13 +544,20 @@ module Hecks
         # `found_of` (the `Find` node's own path projection) can walk a
         # `.find { ... }`-produced element the identical way `lookup`
         # walks a plain attribute path, rather than duplicating the
-        # `value[segment.to_sym] || value[segment]` step twice in this
-        # file.
+        # symbol-or-string key step twice in this file. `key?` decides
+        # which spelling answers — a bare `||` between the two would
+        # treat a genuinely-held `false` the same as an absent key and
+        # fall through to the other spelling, landing on `nil`.
         def walk_path(value, segments)
           segments.reduce(value) do |current, segment|
             break nil unless current.respond_to?(:[])
 
-            current[segment.to_sym] || current[segment]
+            if current.is_a?(Hash)
+              sym = segment.to_sym
+              current.key?(sym) ? current[sym] : current[segment]
+            else
+              current[segment]
+            end
           end
         end
 

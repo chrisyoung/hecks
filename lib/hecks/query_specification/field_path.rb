@@ -31,7 +31,11 @@ module Hecks
       # plain row hash); the rest read through whatever each step holds. A
       # stored nested value object is a plain hash by the time it is read
       # back, keyed by symbol in memory and by string off a wire decode,
-      # so both spellings are tried.
+      # so both spellings are tried — `key?` first, never `||`, because
+      # `||` falls through a genuinely-stored `false` to the OTHER
+      # spelling (usually absent) and returns `nil` instead. The seal
+      # admits boolean leaves (`SCALAR_PRIMITIVES` below), so a `false`
+      # here is a real, held answer, not a missing one.
       def dig(holder, field)
         return nil if field.nil?
 
@@ -40,7 +44,11 @@ module Hecks
 
       def read(current, segment)
         return nil if current.nil?
-        return current[segment.to_sym] || current[segment] if current.is_a?(Hash)
+
+        if current.is_a?(Hash)
+          sym = segment.to_sym
+          return current.key?(sym) ? current[sym] : current[segment]
+        end
 
         current[segment]
       end

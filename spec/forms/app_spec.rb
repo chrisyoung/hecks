@@ -2,6 +2,7 @@ require "spec_helper"
 require "hecks/forms"
 require "rack/test"
 require "json"
+require "uri"
 
 RSpec.describe Hecks::Forms::App do
   include Rack::Test::Methods
@@ -177,6 +178,110 @@ RSpec.describe Hecks::Forms::App do
       expect(last_response.status).to eq(200)
       expect(last_response.body).to include("Register")
       expect(last_response.body).to include("/Banking/Customer/c1.html")
+    end
+  end
+
+  # H12 — CustomerNumber's own `pattern:` is `[^ \t\n\r]` (just "no
+  # whitespace"), so a dot is a perfectly legal identity value — an email
+  # `identified_by { email.address }` or any decimal-ish reference would hit
+  # this same way. `reference.value=c.1` is the audit's own live repro
+  # (docs/audits/2026-08-10-main-bug-audit.md, H12).
+  describe "a record id containing a dot" do
+    def register_dotted
+      post "/Banking/Customer/Register.html", "reference.value" => "c.1", "name.given" => "Ada",
+                                                "name.family" => "Lovelace", "email.address" => "ada@example.com"
+    end
+
+    it "redirects to the dotted id's own detail page, not a truncated one" do
+      register_dotted
+      expect(last_response.status).to eq(302)
+      expect(last_response.headers["location"]).to eq("/Banking/Customer/c.1.html")
+    end
+
+    it "the detail page (.html) resolves the full id, not just the part before the first dot" do
+      register_dotted
+      get "/Banking/Customer/c.1.html"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to include("c.1")
+    end
+
+    it "the bare/JSON path resolves the full id" do
+      register_dotted
+      get "/Banking/Customer/c.1"
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include("application/json")
+      expect(JSON.parse(last_response.body)["id"]).to eq("c.1")
+    end
+
+    it "an explicit .json request resolves the full id" do
+      register_dotted
+      get "/Banking/Customer/c.1.json"
+      expect(last_response.status).to eq(200)
+      expect(JSON.parse(last_response.body)["id"]).to eq("c.1")
+    end
+
+    it "the index page links to the dotted id's own (unambiguous) detail page" do
+      register_dotted
+      get "/Banking/Customer.html"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to include("/Banking/Customer/c.1.html")
+    end
+  end
+
+  # L12 — the id is HTML-escaped everywhere it's rendered, but a raw `&`,
+  # `+`, `?`, or `#` in an href/query-string position still corrupts the
+  # link (a stray `&` smuggles a second query parameter, `#` truncates the
+  # path at a fragment, etc). CustomerNumber's pattern permits all four.
+  describe "a record id containing URL-syntax characters" do
+    MALICIOUS_ID = "a&b+c?d#e"
+
+    def register_malicious
+      post "/Banking/Customer/Register.html", "reference.value" => MALICIOUS_ID, "name.given" => "Ada",
+                                                "name.family" => "Lovelace", "email.address" => "ada@example.com"
+    end
+
+    # Rack::Test's own `get(path)` parses `path` as a URI string BEFORE it
+    # ever reaches the app — a raw "?"/"#" in it is parsed as Rack::Test's
+    # OWN query/fragment separator, not delivered to us at all, and a
+    # percent-encoded path is left percent-ENCODED in PATH_INFO instead of
+    # decoded. Neither matches a real deployment: every real Rack server
+    # decodes percent-escapes into PATH_INFO before the app ever sees it
+    # (that decode step is what a browser navigating our own rendered href
+    # actually triggers). Setting PATH_INFO directly bypasses Rack::Test's
+    # URI parsing and hands the app exactly what production would.
+    def get_with_raw_path_info(path)
+      get "/", {}, "PATH_INFO" => path
+    end
+
+    it "percent-encodes the id in the redirect Location after create" do
+      register_malicious
+      expect(last_response.status).to eq(302)
+      expect(last_response.headers["location"]).to eq("/Banking/Customer/#{URI.encode_www_form_component(MALICIOUS_ID)}.html")
+    end
+
+    it "the index page's own link to the record is percent-encoded in the href, and still HTML-escaped as link text" do
+      register_malicious
+      get "/Banking/Customer.html"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to include("href=\"/Banking/Customer/#{URI.encode_www_form_component(MALICIOUS_ID)}.html\"")
+      # link text is the raw id, HTML-escaped (not percent-encoded) —
+      # readable, and the & doesn't get interpreted as an entity start
+      expect(last_response.body).to include(Hecks::Forms::Escape.html(MALICIOUS_ID))
+      # the raw id must never appear unescaped/unencoded
+      expect(last_response.body).not_to include(%(>#{MALICIOUS_ID}<))
+    end
+
+    it "resolves via the id a browser decodes back out of the percent-encoded href it was linked with" do
+      register_malicious
+      get_with_raw_path_info("/Banking/Customer/#{MALICIOUS_ID}.html")
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to include(Hecks::Forms::Escape.html(MALICIOUS_ID))
+    end
+
+    it "percent-encodes the id in a record's own command links (?to=)" do
+      register_malicious
+      get_with_raw_path_info("/Banking/Customer/#{MALICIOUS_ID}.html")
+      expect(last_response.body).to include("?to=#{URI.encode_www_form_component(MALICIOUS_ID)}")
     end
   end
 
