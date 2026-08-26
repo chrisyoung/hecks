@@ -1,6 +1,6 @@
 # The language uses everything it declares, and what it does not use is a sub-language
 
-**Status:** Accepted — not yet implemented. Depends on ADR 0025's principle 4 (a word earns its place by being used) and on `MetaValidator.defer`, which landed in `97dfdf9` and made the language bootable as an ordinary domain in the first place.
+**Status:** Accepted — implemented. The self-use gate landed as `spec/self_use_spec.rb` (S16), modelled on `spec/fuzzing/meta_domain_coverage_spec.rb` as this decision specifies. All three commissioned remodels landed too: `Paging` was extracted as its own attached sub-language (`lib/hecks/language/bluebook/attaches/paging.bluebook`); `Keyword`/`Argument` carry a real `lifecycle :status` with declared transitions in place of the old plain-attribute `Status`; `Member`, `Dispatch`, and `Handler` are genuine entities of `ValueObject`, `Handler`, and `ProcessManager` respectively (S14, S17). Verified directly against the live grammar: `entity` (5 real declarations), `lifecycle`/`transition` (2), and `ensures` (1) are now genuinely used by the language's own definition. `policy`, `process_manager`, `provenance`, `group_by`, `authorize`, and `generic` remain honest, itemized `SELF_USE_KNOWN_GAPS` entries in the gate, each carrying a one-line reason rather than a silent exemption — per this decision's own Consequences section, that is the intended steady state, not a shortfall. Depends on ADR 0025's principle 4 (a word earns its place by being used) and on `MetaValidator.defer`, which landed in `97dfdf9` and made the language bootable as an ordinary domain in the first place.
 
 ## Context
 
@@ -80,12 +80,6 @@ A related consequence, accepted: the set of legal words in a body becomes a func
 
 - Whether `expression` and `translation` are retrofitted to the same seam mechanism. They attach differently today, and unifying them is not required for paging to move.
 - Whether the self-use gate applies to each sub-language against its own corpus, or only to the core. A `Paging` sub-language used by banking and not by the language is fine; the question is what the rule *says* rather than what happens to be true.
-
-## Implementation note
-
-The self-use gate has landed as `spec/self_use_spec.rb`, modelled on `spec/fuzzing/meta_domain_coverage_spec.rb` as this decision specifies, and is green. Verified directly against the live grammar rather than trusting the numbers above: `entity` (5 real declarations), `lifecycle`/`transition` (2), and `ensures` (1) are now genuinely used by the language's own definition; `policy`, `process_manager`, `provenance`, `group_by`, `authorize`, and `generic` remain honest, itemized `SELF_USE_KNOWN_GAPS` entries, each carrying a one-line reason rather than a silent exemption.
-
-Separately from the gate itself, this repository's history also already carries all three remodels this decision commissions: `Paging` was extracted as its own attached sub-language (`lib/hecks/language/bluebook/attaches/paging.bluebook`), `Keyword`/`Argument` carry a real `lifecycle :status` with declared transitions in place of the old plain-attribute `Status`, and `Member`/`Dispatch`/`Handler` are genuine entities of `ValueObject`/`Handler`/`ProcessManager` respectively. The `Status:` line above is left as-is pending an explicit decision on this point — this note only records what a fresh read of the working tree found already true.
 
 ## Rejected alternatives
 
