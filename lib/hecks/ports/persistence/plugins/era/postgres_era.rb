@@ -404,9 +404,9 @@ module Hecks
 
         if entry.save?
           @db.exec_params(
-            "INSERT INTO #{quoted_head_snapshot} (id, ordinal, state) VALUES ($1, $2, $3) " \
-            "ON CONFLICT (id) DO UPDATE SET ordinal = EXCLUDED.ordinal, state = EXCLUDED.state " \
-            "WHERE #{quoted_head_snapshot}.ordinal < EXCLUDED.ordinal",
+            "INSERT INTO #{quoted_head_snapshot} (id, ordinal, operation, state) VALUES ($1, $2, 'save', $3) " \
+            "ON CONFLICT (id) DO UPDATE SET ordinal = EXCLUDED.ordinal, operation = EXCLUDED.operation, " \
+            "state = EXCLUDED.state WHERE #{quoted_head_snapshot}.ordinal < EXCLUDED.ordinal",
             [entry.id, ordinal, state_json]
           )
           # SAME TRANSACTION, SAME ORDINAL — every field cache stays
@@ -419,7 +419,30 @@ module Hecks
             @lineage.upsert_field_cache_row!(cache_table, entry.id, ordinal, state_json, query_expression(field))
           end
         else
-          @db.exec_params("DELETE FROM #{quoted_head_snapshot} WHERE id = $1", [entry.id])
+          # A TOMBSTONE ROW, NOT A BARE DELETE — H3 (docs/audits/2026-08-
+          # 10-main-bug-audit.md). `DELETE FROM head_snapshot` used to be
+          # the whole story here, which is correct in isolation but wrong
+          # once an ancestor era is in the picture: for a record carried
+          # into this era from an ancestor, removing this era's row left
+          # NOTHING on the current-era side of `compile_head!`'s union to
+          # outrank the ancestor matview's own (still-present, still
+          # `save`) row, so `DISTINCT ON` picked the ancestor's row and
+          # the "deleted" record kept reading back forever. Upserting a
+          # tombstone (`operation = 'delete'`, `state` NULL) instead
+          # means this era always has ITS OWN newest-ordinal row for the
+          # id, exactly like a real re-save already did ("re-saves are
+          # masked correctly" — the audit's own phrasing for why that
+          # half of this was never broken) — it just carries `operation
+          # = 'delete'` instead of `'save'`, so `head_view`'s own `WHERE
+          # operation = 'save'` still correctly hides it. Ordinal-guarded
+          # the same as every other upsert here, so an out-of-order
+          # replay can never let a stale delete clobber a newer save.
+          @db.exec_params(
+            "INSERT INTO #{quoted_head_snapshot} (id, ordinal, operation, state) VALUES ($1, $2, 'delete', NULL) " \
+            "ON CONFLICT (id) DO UPDATE SET ordinal = EXCLUDED.ordinal, operation = EXCLUDED.operation, " \
+            "state = EXCLUDED.state WHERE #{quoted_head_snapshot}.ordinal < EXCLUDED.ordinal",
+            [entry.id, ordinal]
+          )
           @field_caches.each_value { |cache_table| @lineage.delete_field_cache_row!(cache_table, entry.id) }
         end
 
