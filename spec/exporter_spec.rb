@@ -11,7 +11,7 @@ RSpec.describe Hecks::Projector::Exporter do
   describe ".translation_hash / rekey coverage" do
     def edge_with_rekey(sql)
       aggregate = Hecks::Bluebook::TranslationAggregate.new(
-        name: "Order",
+        name:   "Order",
         rekeys: [Hecks::Bluebook::TranslationRekey.new(sql)]
       )
       Hecks::Bluebook::Translation.new(domain: "Pizzas", from: "aaaa", to: "bbbb", aggregates: [aggregate])

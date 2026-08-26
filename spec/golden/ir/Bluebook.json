@@ -8458,17 +8458,17 @@
               "admits": null,
               "default": null,
               "list": false,
-              "name": "name",
+              "name": "type",
               "optional": false,
               "pattern": null,
               "relationship": null,
-              "type": "EntityText"
+              "type": "Reference<ValueObject>"
             },
             {
               "admits": null,
               "default": null,
               "list": false,
-              "name": "type",
+              "name": "name",
               "optional": false,
               "pattern": null,
               "relationship": null,
@@ -8564,6 +8564,238 @@
             }
           ],
           "name": "Attribute",
+          "provenance": null,
+          "references": null,
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "points_at",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "Reference<Aggregate>"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "name",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "list",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "optional",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "pattern",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "default",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "admits",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "relationship",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            }
+          ],
+          "emits": [
+            "PieceReferenceAttached"
+          ],
+          "ensures": [
+
+          ],
+          "from": null,
+          "givens": [
+
+          ],
+          "goal": "Attach an attribute that points at another aggregate's head",
+          "mutations": [
+            {
+              "fields": {
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "relationship": ":relationship",
+                "type": ":points_at"
+              },
+              "op": "append",
+              "sign": "",
+              "target": "attributes"
+            }
+          ],
+          "name": "Reference",
+          "provenance": null,
+          "references": null,
+          "role": "Language"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "holds",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "Reference<Entity>"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "name",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "list",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "optional",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "pattern",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "default",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "admits",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "relationship",
+              "optional": true,
+              "pattern": null,
+              "relationship": null,
+              "type": "EntityText"
+            }
+          ],
+          "emits": [
+            "PieceHeld"
+          ],
+          "ensures": [
+
+          ],
+          "from": null,
+          "givens": [
+
+          ],
+          "goal": "Attach an attribute whose type is a piece nested inside this one",
+          "mutations": [
+            {
+              "fields": {
+                "admits": ":admits",
+                "default": ":default",
+                "list": ":list",
+                "name": ":name",
+                "optional": ":optional",
+                "pattern": ":pattern",
+                "relationship": ":relationship",
+                "type": ":holds"
+              },
+              "op": "append",
+              "sign": "",
+              "target": "attributes"
+            }
+          ],
+          "name": "Holds",
           "provenance": null,
           "references": null,
           "role": "Language"
@@ -21952,6 +22184,7 @@
     }
   ],
   "classification": "core",
+  "formerly_known_as": null,
   "ir_version": 1,
   "name": "Bluebook",
   "policies": [

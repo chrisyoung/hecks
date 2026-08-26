@@ -2844,6 +2844,7 @@
     }
   ],
   "classification": null,
+  "formerly_known_as": null,
   "ir_version": 1,
   "name": "Hecksagon",
   "policies": [

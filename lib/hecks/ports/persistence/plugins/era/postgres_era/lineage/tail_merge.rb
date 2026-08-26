@@ -74,6 +74,7 @@ module Hecks
               compile_head!(aggregate, era, label, edges, full: true)
             end
 
+            # rubocop:disable-next Metrics/BlockLength
             winners.each do |id, side|
               aggregates.each do |aggregate|
                 state =

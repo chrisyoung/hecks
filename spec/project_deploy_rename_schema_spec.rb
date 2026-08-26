@@ -127,6 +127,7 @@ RSpec.describe "bin/project_deploy's rename-schema OLD/NEW allowlist, in its own
     # the doubled form) -- undo that to get the real regex grep runs.
     pattern = Regexp.new(raw_pattern.sub(/\$\$\z/, "$"))
 
+    # rubocop:disable RSpec/IteratedExpectation -- each item gets its own failure message
     %w[old_schema NewSchema _leading_underscore a Z9 tenant_42].each do |safe|
       expect(safe).to match(pattern), "expected #{safe.inspect} to be accepted as a safe schema name"
     end
@@ -139,9 +140,10 @@ RSpec.describe "bin/project_deploy's rename-schema OLD/NEW allowlist, in its own
       "$(touch pwned)",
       "1leading_digit",
       "",
-      "bad-dash",
+      "bad-dash"
     ].each do |unsafe|
       expect(unsafe).not_to match(pattern), "expected #{unsafe.inspect} to be rejected as an unsafe schema name"
     end
+    # rubocop:enable RSpec/IteratedExpectation
   end
 end

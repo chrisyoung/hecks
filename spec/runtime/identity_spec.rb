@@ -42,4 +42,51 @@ RSpec.describe Hecks::Runtime::Identity do
       expect(described_class.of(construct, { flag: {} })).to be_nil
     end
   end
+
+  # M18 (docs/audits/2026-08-10-main-bug-audit.md,
+  # docs/audits/2026-08-11-bug-triage.md) — `Identity.of` used to check
+  # a derived part with a bare `part.empty?`, which raises `NoMethodError`
+  # on any part that isn't a String (an Integer, an Array, a Hash — the
+  # exact shape a reference-typed identity head can resolve to when its
+  # own attribute lookup falls through). Re-verified against the CURRENT
+  # file: the blank-part guard now checks `part.respond_to?(:empty?)`
+  # first, so a non-string part is compared by identity/`nil?` alone and
+  # never reaches a bare `.empty?` call — these lock that in as a
+  # regression rather than a `NoMethodError` reappearing silently.
+  describe ".of with a non-string identity part (a reference-typed head)" do
+    # `attribute(name)` returns nil — the same "not found, coerce
+    # nothing" branch `Identity.from`'s bare (undotted) reader falls
+    # through on a head whose own attribute lookup doesn't resolve
+    # (a saga's already-resolved correlation key, `from`'s own comment)
+    # — `raw` is handed back exactly as given, whatever type it is.
+    IdentityNonStringFakeConstruct = Struct.new(:identity_paths, :identity_heads) do
+      def attribute(_name) = nil
+    end
+
+    it "does not raise NoMethodError when a bare identity part is an Integer" do
+      construct = IdentityNonStringFakeConstruct.new(["thing"], [:thing])
+
+      expect { described_class.of(construct, { thing: 5 }) }.not_to raise_error
+      expect(described_class.of(construct, { thing: 5 })).to eq("5")
+    end
+
+    it "does not raise NoMethodError when a bare identity part is an Array" do
+      construct = IdentityNonStringFakeConstruct.new(["thing"], [:thing])
+
+      expect { described_class.of(construct, { thing: [1, 2] }) }.not_to raise_error
+    end
+
+    it "does not raise NoMethodError when a bare identity part is a Hash" do
+      construct = IdentityNonStringFakeConstruct.new(["thing"], [:thing])
+
+      expect { described_class.of(construct, { thing: { a: 1 } }) }.not_to raise_error
+    end
+
+    it "does not raise NoMethodError when a bare identity part is false" do
+      construct = IdentityNonStringFakeConstruct.new(["thing"], [:thing])
+
+      expect { described_class.of(construct, { thing: false }) }.not_to raise_error
+      expect(described_class.of(construct, { thing: false })).to eq("false")
+    end
+  end
 end

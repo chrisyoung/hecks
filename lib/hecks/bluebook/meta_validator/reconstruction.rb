@@ -238,7 +238,12 @@ module Hecks
             # Symbol there — the IR was not uniform about it, and only a round trip
             # ever said so.
             identified_by: identity_paths(row),
-            attributes:    Array(row[:attributes]).map { |field| shape_field(field) },
+            # `text(row[:aggregate])` — the OWNING aggregate, the same one
+            # `Judge#owning_aggregate_ref` resolved this piece's own
+            # attribute types against on the way in, so reconstruction reads
+            # a value-object-typed attribute back the identical way an
+            # aggregate's own is (`Shapes#shape_field`'s own comment).
+            attributes:    Array(row[:attributes]).map { |field| shape_field(field, text(row[:aggregate])) },
             # ADR 0028 — the SAME shape `aggregate(row)`'s own
             # `preconditions:` reads two hand-typed methods up, read by
             # hand for the identical reason: `entity(row)` is hand-typed

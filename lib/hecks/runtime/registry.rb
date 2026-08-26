@@ -45,9 +45,11 @@ module Hecks
         # GUARDS `saga_instances`' OWN mutation+checkpoint sequence
         # (`SagaInterpreter`'s 4 write points, §7) — the same shape of
         # hazard this codebase's own prior audit already flagged for
-        # `@reaction_depth`, a thread-shared dispatcher ivar with no
-        # lock, made meaningfully easier to hit once a persistence write
-        # sits in the same critical section. Held across the in-memory
+        # `Dispatcher#reenter`'s reaction-depth counter (M20: a
+        # thread-shared ivar with no lock, since fixed by moving it to
+        # `Thread.current`, dispatcher.rb), made meaningfully easier to
+        # hit here once a persistence write sits in the same critical
+        # section. Held across the in-memory
         # mutation AND the checkpoint write together, never across a
         # saga's own dispatch cascade — see `SagaInterpreter#advance_saga`'s
         # own comment for why that distinction matters (non-reentrant

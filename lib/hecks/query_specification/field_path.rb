@@ -50,6 +50,16 @@ module Hecks
           return current.key?(sym) ? current[sym] : current[segment]
         end
 
+        # M5 — "or nil, never raise" is this method's whole contract, and
+        # an Array broke it: `Array#[]` demands an Integer index, so
+        # `current[segment]` (a String) raised `TypeError` straight
+        # through `dig` instead of answering nil. A dotted path stepping
+        # INTO a list_of attribute (`where "tags.name" == "x"` against a
+        # bare list, rather than each element) has no single member a
+        # bare index would name anyway — nil is the honest answer, the
+        # same one a dangling reference or a missing key already gets.
+        return nil if current.is_a?(Array)
+
         current[segment]
       end
 

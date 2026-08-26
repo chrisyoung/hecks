@@ -35,6 +35,20 @@ RSpec.describe Hecks::QuerySpecification::FieldPath do
       expect(described_class.dig({ flags: { other: true } }, "flags.active")).to be_nil
     end
 
+    # M5 (docs/audits/2026-08-10-main-bug-audit.md) — `.dig`/`.read`'s own
+    # contract is "the held value, or nil — never a raise". Stepping a
+    # dotted path onto an Array (a `list_of` attribute, or any other
+    # Array a stored hash happens to hold) broke it: `Array#[]` demands
+    # an Integer/Range index, so `current[segment]` (a String) raised a
+    # raw `TypeError` straight through `dig` instead of answering nil.
+    it "reads nil rather than raising when a dotted path steps onto an Array" do
+      expect { described_class.dig({ items: [1, 2, 3] }, "items.name") }.not_to raise_error
+      expect(described_class.dig({ items: [1, 2, 3] }, "items.name")).to be_nil
+    end
+
+    it "reads nil rather than raising when the Array is nested deeper in the path" do
+      expect(described_class.dig({ board: { items: %w[a b] } }, "board.items.name")).to be_nil
+    end
   end
 
   describe ".read" do
@@ -48,6 +62,10 @@ RSpec.describe Hecks::QuerySpecification::FieldPath do
 
     it "falls through to the string spelling only when the symbol key is truly absent" do
       expect(described_class.read({ "active" => false }, "active")).to be(false)
+    end
+
+    it "reads nil for an Array holder rather than raising TypeError" do
+      expect(described_class.read([1, 2, 3], "name")).to be_nil
     end
   end
 end

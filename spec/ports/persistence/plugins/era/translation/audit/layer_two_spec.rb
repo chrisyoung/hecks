@@ -20,7 +20,7 @@ RSpec.describe "Layer 2's cross-execution equivalence gate and dotted-member com
 
   def declared_with_compute(from:, to:)
     Hecks::Bluebook::TranslationAggregate.new(
-      name: "Product",
+      name:     "Product",
       computes: [Hecks::Bluebook::TranslationCompute.new(from, to, "irrelevant sql")]
     )
   end
