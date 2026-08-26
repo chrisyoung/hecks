@@ -1748,7 +1748,34 @@ rename_schema_recipe =
     # that were the real answer, not a connectivity failure wearing
     # its name — which is exactly why `TUNNEL_READY` gates that branch
     # explicitly rather than trusting empty results at face value.
-    \t@[ -n "$(OLD)" ] && [ -n "$(NEW)" ] || { echo "usage: make rename-schema OLD=<old-schema> NEW=<new-schema>"; exit 1; }
+    #
+    # OLD/NEW ARE ALLOWLISTED AS BARE IDENTIFIERS, not SQL-escaped, before
+    # either one reaches a psql command line: both get interpolated
+    # straight into the `nspname = '...'` lookups above and the
+    # `ALTER SCHEMA "..." RENAME TO "..."` below, and a schema name can't
+    # be bound as a parameter the way a value can — quoting/escaping an
+    # identifier is exactly the kind of thing that's easy to get subtly
+    # wrong, so instead of trying, this refuses anything that isn't
+    # `^[A-Za-z_][A-Za-z0-9_]*$` outright. `make` runs this recipe as an
+    # operator command, not user-facing web input, but it still executes
+    # against production RDS, so a typo'd or copy-pasted `OLD`/`NEW`
+    # containing quotes or `;` must fail loudly here, before either
+    # tunnel or query, rather than run as-is.
+    #
+    # `$$OLD`/`$$NEW` HERE, NOT `$(OLD)`/`$(NEW)`: this check itself has
+    # to read the value without Make ever splicing its raw text into the
+    # recipe line, or a value containing `;`/`"` would break out of THIS
+    # line's shell command and run before the pattern match ever sees it
+    # — confirmed live, the same way the tunnel-restart behavior above
+    # was. `$$OLD` instead reads the real shell environment variable
+    # `make` already exports for command-line-assigned vars, so the
+    # value is one opaque string to the shell no matter what characters
+    # it contains. Once a value's passed this gate it's provably just
+    # `[A-Za-z0-9_]`, so the existing `$(OLD)`/`$(NEW)` splices further
+    # below (already written before this fix, reused as-is) are safe.
+    \t@[ -n "$$OLD" ] && [ -n "$$NEW" ] || { echo "usage: make rename-schema OLD=<old-schema> NEW=<new-schema>"; exit 1; }
+    \t@echo "$$OLD" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*$$' || { echo "invalid OLD schema name -- schema names must match ^[A-Za-z_][A-Za-z0-9_]*$$, refusing to touch SQL"; exit 1; }
+    \t@echo "$$NEW" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*$$' || { echo "invalid NEW schema name -- schema names must match ^[A-Za-z_][A-Za-z0-9_]*$$, refusing to touch SQL"; exit 1; }
     \t@echo "Looking up $(STACK)'s VPC/security group..."
     \t#{STACK_OUTPUTS.map { |o| %($(eval #{o[:var]} := $(shell aws cloudformation describe-stacks --stack-name $(STACK) --query "Stacks[0].Outputs[?OutputKey=='#{o[:key]}'].OutputValue" --output text))) }.join("\n\t")}
     \t@echo "Deploying the temporary bastion stack $(BASTION_STACK)..."

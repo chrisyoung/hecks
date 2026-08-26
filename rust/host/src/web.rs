@@ -104,8 +104,40 @@ fn extract_cookies(body: &Value) -> HashMap<String, String> {
     map
 }
 
+// H11 (docs/audits/2026-08-10-main-bug-audit.md) — this secret HMAC-signs
+// every session cookie AND OAuth `state` parameter (auth.rs's own
+// `session_cookie`/`verify_state`), and `parse_session_cookie` treats
+// anything that verifies against it as a trusted session, bypassing the
+// `session.is_none()` -> `/login` redirect gate entirely. Unset OR
+// empty used to fail OPEN here (`unwrap_or_default()`), signing every
+// cookie with a publicly-known empty-string key instead of refusing to
+// serve — unlike every other required var this crate reads (main.rs's
+// own `DATABASE_URL`/`HECKS_DOMAIN`/`HECKS_IR_PATH`, each a hard `?`
+// that refuses to boot rather than silently defaulting). Not required
+// at main.rs's own top-level boot, deliberately: unlike those vars,
+// SESSION_SECRET is genuinely absent for a domain with no web layer at
+// all (Banking/Pizzas's own template.yaml never sets it) — this only
+// has to refuse the moment a request actually needs it, i.e. here.
 fn session_secret() -> String {
-    std::env::var("SESSION_SECRET").unwrap_or_default()
+    let secret = std::env::var("SESSION_SECRET").unwrap_or_default();
+    if let Err(e) = validate_session_secret(&secret) {
+        panic!("{e}");
+    }
+    secret
+}
+
+// Pure and separately unit-tested from the panic above — same split
+// main.rs's own `mint::decide_boot_action` already uses for its boot
+// gate (a pure decision function, panicking/erroring only at the one
+// call site that owns process lifecycle).
+fn validate_session_secret(secret: &str) -> Result<(), String> {
+    if secret.is_empty() {
+        Err("SESSION_SECRET is required and must not be empty -- refusing to sign/verify session \
+             cookies and OAuth state with a publicly-known empty-string HMAC key"
+            .to_string())
+    } else {
+        Ok(())
+    }
 }
 
 fn redirect_uri() -> String {
@@ -1518,6 +1550,17 @@ mod tests {
     // command persisting this exact id used to render live, executable
     // markup for every later viewer of the index row or record page.
     const MALICIOUS_ID: &str = r#"x"><script>alert(1)</script>"#;
+
+    // H11 (docs/audits/2026-08-10-main-bug-audit.md) — an unset or empty
+    // SESSION_SECRET must never be treated as valid: `session_secret()`
+    // used to silently fall back to `""`, HMAC-signing every session
+    // cookie and OAuth `state` with a publicly-known empty key instead
+    // of refusing to serve.
+    #[test]
+    fn validate_session_secret_refuses_empty_or_unset() {
+        assert!(validate_session_secret("").is_err());
+        assert!(validate_session_secret("s3cret").is_ok());
+    }
 
     #[test]
     fn action_link_escapes_the_link_text_and_percent_encodes_the_query_value() {
