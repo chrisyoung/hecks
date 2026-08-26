@@ -309,8 +309,31 @@ module Hecks
         end
       end
 
+      # The journal carries FORCE ROW LEVEL SECURITY with exactly two
+      # policies — hecks_current_era's INSERT and hecks_read_all's
+      # SELECT (advance_era! above) — and no DELETE policy at all, for
+      # anyone. FORCE means even the table's own owner is fenced by
+      # that (only an actual Postgres superuser or a role granted
+      # BYPASSRLS sits above it — see lineage.rb's own header), so a
+      # plain `DELETE ... WHERE aggregate = $1` from an ordinary
+      # connection silently matches zero rows: no privilege error, no
+      # exception, just a no-op that looks like success. Counting
+      # before and comparing to what the DELETE itself reports is what
+      # tells "nothing to delete" apart from "RLS silently ate the
+      # delete" — the same row count, from the same statement, either
+      # way, with no separate query racing the DELETE for an answer.
       def reset!
-        @db.exec_params("DELETE FROM #{@lineage.quoted_journal} WHERE aggregate = $1", [table])
+        before = @db.exec_params(
+          "SELECT count(*) FROM #{@lineage.quoted_journal} WHERE aggregate = $1", [table]
+        )[0]["count"].to_i
+        result = @db.exec_params("DELETE FROM #{@lineage.quoted_journal} WHERE aggregate = $1", [table])
+        if before.positive? && result.cmd_tuples.zero?
+          raise Runtime::WiringError,
+                "reset! deleted 0 of #{before} row(s) for #{table} in #{@lineage.quoted_journal} — " \
+                "FORCE ROW LEVEL SECURITY admits no DELETE policy on the journal, so this connection's " \
+                "DELETE silently matched nothing. reset! only works connected as an actual Postgres " \
+                "superuser or a role granted BYPASSRLS, not as the provisioner or an app role."
+        end
         self
       end
 
