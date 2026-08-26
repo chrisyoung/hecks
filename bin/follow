@@ -62,8 +62,8 @@ loop do
       puts JSON.generate(
         "aggregate" => storage_name,
         "operation" => entry.operation,
-        "id" => entry.id,
-        "state" => entry.state
+        "id"        => entry.id,
+        "state"     => entry.state
       )
     end
     watched[storage_name][1] = entries.size
