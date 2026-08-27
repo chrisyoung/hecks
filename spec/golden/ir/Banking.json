@@ -929,7 +929,7 @@
           "name": "ApplyFee",
           "provenance": null,
           "references": "Account",
-          "role": null
+          "role": "System"
         },
         {
           "attributes": [
@@ -995,7 +995,7 @@
           "name": "CorrectFee",
           "provenance": null,
           "references": "Account",
-          "role": null
+          "role": "Back office"
         },
         {
           "attributes": [
@@ -1047,7 +1047,7 @@
           "name": "AccrueInterest",
           "provenance": null,
           "references": "Account",
-          "role": null
+          "role": "System"
         },
         {
           "attributes": [
@@ -1107,7 +1107,7 @@
           "name": "CorrectInterest",
           "provenance": null,
           "references": "Account",
-          "role": null
+          "role": "Back office"
         }
       ],
       "description": "A balance belonging to one customer, and the ledger that explains how it got there.",
@@ -2382,6 +2382,10 @@
             {
               "canonical": "account.status == \"open\"",
               "description": "account is open"
+            },
+            {
+              "canonical": "status == \"active\"",
+              "description": "card is active"
             }
           ],
           "goal": "Take cash out at a machine",
@@ -3058,7 +3062,7 @@
           "name": "Capture",
           "provenance": null,
           "references": "CardPayment",
-          "role": null
+          "role": "System"
         },
         {
           "attributes": [
@@ -3092,7 +3096,7 @@
           "name": "Void",
           "provenance": null,
           "references": "CardPayment",
-          "role": null
+          "role": "System"
         },
         {
           "attributes": [
@@ -3126,7 +3130,7 @@
           "name": "Refund",
           "provenance": null,
           "references": "CardPayment",
-          "role": null
+          "role": "System"
         },
         {
           "attributes": [
@@ -3160,7 +3164,7 @@
           "name": "Reverse",
           "provenance": null,
           "references": "CardPayment",
-          "role": null
+          "role": "System"
         },
         {
           "attributes": [
@@ -3245,7 +3249,7 @@
           "name": "Chargeback",
           "provenance": null,
           "references": "CardPayment",
-          "role": null
+          "role": "Compliance officer"
         },
         {
           "attributes": [
@@ -3279,7 +3283,7 @@
           "name": "RejectDispute",
           "provenance": null,
           "references": "CardPayment",
-          "role": null
+          "role": "Compliance officer"
         }
       ],
       "description": "A card authorisation that either settles, is voided before settlement, or becomes a post-settlement dispute.",
@@ -5371,7 +5375,7 @@
           "name": "Request",
           "provenance": null,
           "references": null,
-          "role": null
+          "role": "Customer"
         },
         {
           "attributes": [
@@ -5405,7 +5409,7 @@
           "name": "SendTransfer",
           "provenance": null,
           "references": "ExternalTransfer",
-          "role": null
+          "role": "System"
         },
         {
           "attributes": [
@@ -5439,7 +5443,7 @@
           "name": "Recall",
           "provenance": null,
           "references": "ExternalTransfer",
-          "role": null
+          "role": "Customer"
         },
         {
           "attributes": [
@@ -5473,7 +5477,7 @@
           "name": "Return",
           "provenance": null,
           "references": "ExternalTransfer",
-          "role": null
+          "role": "System"
         }
       ],
       "description": "A transfer sent beyond the bank, where a recall is an instruction and a return is the external network's outcome.",
@@ -5834,7 +5838,7 @@
           "name": "Schedule",
           "provenance": null,
           "references": null,
-          "role": null
+          "role": "Customer"
         },
         {
           "attributes": [
@@ -5868,7 +5872,7 @@
           "name": "Execute",
           "provenance": null,
           "references": "ScheduledPayment",
-          "role": null
+          "role": "System"
         },
         {
           "attributes": [
@@ -5902,7 +5906,7 @@
           "name": "Cancel",
           "provenance": null,
           "references": "ScheduledPayment",
-          "role": null
+          "role": "Customer"
         },
         {
           "attributes": [

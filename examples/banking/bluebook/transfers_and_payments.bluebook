@@ -199,6 +199,8 @@ Hecks.bluebook "Banking" do
     end
 
     command "Request" do
+      role "Customer"
+
       attribute :end_to_end, EndToEndReference
       given("customer is active")
       given("account is open")
@@ -210,6 +212,8 @@ Hecks.bluebook "Banking" do
     end
 
     command "SendTransfer" do
+      role "System"
+
       reference_to ExternalTransfer
       given("customer is active")
       given("account is open")
@@ -218,6 +222,8 @@ Hecks.bluebook "Banking" do
     end
 
     command "Recall" do
+      role "Customer"
+
       reference_to ExternalTransfer
       given("customer is active")
       given("transfer is sent")
@@ -226,6 +232,8 @@ Hecks.bluebook "Banking" do
     end
 
     command "Return" do
+      role "System"
+
       reference_to ExternalTransfer
       given("customer is active")
       given("transfer is sent")
@@ -296,6 +304,8 @@ Hecks.bluebook "Banking" do
     end
 
     command "Schedule" do
+      role "Customer"
+
       attribute :instruction, InstructionReference
       given("customer is active")
       given("account is open")
@@ -307,6 +317,8 @@ Hecks.bluebook "Banking" do
     end
 
     command "Execute" do
+      role "System"
+
       reference_to ScheduledPayment
       given("customer is active")
       given("account is open")
@@ -315,6 +327,8 @@ Hecks.bluebook "Banking" do
     end
 
     command "Cancel" do
+      role "Customer"
+
       reference_to ScheduledPayment
       given("customer is active")
       given("account is open")
