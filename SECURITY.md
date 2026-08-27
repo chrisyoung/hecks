@@ -17,10 +17,9 @@ the maintainer without ever becoming a public issue, and keeps
 discussion, a fix, and the disclosure timeline attached to one thread.
 
 **Alternative: email.**
-`[SECURITY-CONTACT-EMAIL-PLACEHOLDER — maintainer: replace with a real
-monitored address before this file ships]`. If you'd rather not use
-GitHub at all, use this instead; expect slower turnaround than the
-advisory form since it depends on the address actually being watched.
+chris@embryonaut.ai. If you'd rather not use GitHub at all, use this
+instead; expect slower turnaround than the advisory form since it
+depends on the address actually being watched.
 
 Please do not open a public issue for a suspected vulnerability.
 
