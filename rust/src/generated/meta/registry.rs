@@ -1275,6 +1275,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Bluebook::Bluebook.Called",
@@ -1285,6 +1286,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Bluebook::Command.DeclaredIn",
@@ -1295,6 +1297,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Bluebook::Entity.DeclaredIn",
@@ -1305,6 +1308,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Bluebook::Policy.DeclaredIn",
@@ -1315,6 +1319,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Bluebook::ProcessManager.DeclaredIn",
@@ -1325,6 +1330,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Bluebook::ReadModel.DeclaredIn",
@@ -1335,6 +1341,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Bluebook::Query.DeclaredIn",
@@ -1345,6 +1352,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Bluebook::ValueObject.DeclaredIn",
@@ -1355,6 +1363,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 ];
 

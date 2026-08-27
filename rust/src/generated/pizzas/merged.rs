@@ -320,6 +320,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Pizzas::Order.CostingLessThan",
@@ -330,6 +331,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Pizzas::Order.Expensive",
@@ -340,6 +342,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Governance::RoleAssignment.AssignmentsForActor",
@@ -350,6 +353,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Governance::RoleTransition.Allowed",
@@ -361,6 +365,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 ];
 

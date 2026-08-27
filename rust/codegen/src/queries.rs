@@ -148,7 +148,7 @@ fn kind_name(kind: FieldKind) -> &'static str {
 
 /// A whole declared query's own eligibility.
 pub fn query_skip_reason(query: &Json, aggregate: &Json, value_objects_by_name: &HashMap<String, &Json>) -> Option<String> {
-    let extra_keys = ["cursor", "consistency", "freshness", "authorization", "inspection"];
+    let extra_keys = ["cursor", "consistency", "freshness", "inspection"];
     let extras: Vec<&str> = extra_keys.iter().filter(|k| query.get(k).is_some()).copied().collect();
     if !extras.is_empty() {
         return Some(format!("declares {} — out of scope for this generator (rust/project/queries.rb's own header has the full argument)", extras.join(", ")));
@@ -166,6 +166,10 @@ pub fn query_skip_reason(query: &Json, aggregate: &Json, value_objects_by_name: 
         if let Some(reason) = query_where_skip_reason(where_clause, aggregate, value_objects_by_name) {
             return Some(reason);
         }
+    }
+
+    if let Some(reason) = declared_authorization_skip_reason(query.get("authorization"), aggregate, value_objects_by_name) {
+        return Some(reason);
     }
 
     if let Some(reason) = declared_order_by_skip_reason(query.get("order_by"), aggregate, value_objects_by_name) {
@@ -222,6 +226,24 @@ pub fn declared_offset_skip_reason(offset: Option<&Json>) -> Option<String> {
 fn is_plain_integer(raw: &str) -> bool {
     let s = raw.strip_prefix('-').unwrap_or(raw);
     !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
+}
+
+/// Same reasoning as `rust/project/queries.rb`'s own `declared_
+/// authorization_skip_reason`: `AuthorizationSpec#to_h` is `{policy:,
+/// tenant:}`; a `nil` tenant is a genuine no-op in Ruby (`Runtime::
+/// TenantScope.apply`'s own `return declared unless tenant`), never
+/// disqualifying. A real tenant needs the same field-validity check any
+/// other where-clause field gets — constructed as the exact synthetic
+/// arg-bound where shape and run through `query_where_skip_reason`
+/// wholesale, rather than duplicating that check.
+pub fn declared_authorization_skip_reason(authorization: Option<&Json>, aggregate: &Json, value_objects_by_name: &HashMap<String, &Json>) -> Option<String> {
+    let tenant = authorization.and_then(|a| a.get("tenant")).map(Json::to_s)?;
+    let synthetic_where = Json::Object(vec![
+        ("field".to_string(), Json::String(tenant.clone())),
+        ("op".to_string(), Json::String("eq".to_string())),
+        ("value".to_string(), Json::String(format!(":{tenant}"))),
+    ]);
+    query_where_skip_reason(&synthetic_where, aggregate, value_objects_by_name)
 }
 
 pub fn emit_query_order_by(order_by: &Json, null_semantics: Option<&Json>) -> String {
@@ -306,6 +328,29 @@ pub fn query_conditions(query: &Json) -> Vec<Condition> {
             }
         })
         .collect()
+}
+
+/// `Runtime::TenantScope.apply`'s own synthetic clause, ported at codegen
+/// time — see `rust/project/queries.rb`'s own `query_conditions_with_
+/// authorization` for the full reasoning (including why this is
+/// deliberately NOT folded into `query_conditions` itself).
+pub fn query_conditions_with_authorization(query: &Json) -> Vec<Condition> {
+    let mut conditions = query_conditions(query);
+    if let Some(tenant) = query.get("authorization").and_then(|a| a.get("tenant")).map(Json::to_s) {
+        conditions.push(Condition { field: tenant.clone(), op: "eq".to_string(), arg: Some(tenant), literal: None });
+    }
+    conditions
+}
+
+/// `TenantAuth`'s own compiled form — `None` unless a real tenant is
+/// declared (see `declared_authorization_skip_reason`'s own comment).
+pub fn emit_query_authorization(query_name: &str, authorization: Option<&Json>) -> Option<String> {
+    let tenant = authorization.and_then(|a| a.get("tenant")).map(Json::to_s)?;
+    Some(format!(
+        "crate::kernel::named_query::TenantAuth {{ query_name: {}, tenant_field: {} }}",
+        naming::ruby_inspect_string(query_name),
+        naming::ruby_inspect_string(&tenant)
+    ))
 }
 
 // `Vocabulary::QueryComparator` itself declares NINE names (`none_in_state`
@@ -402,6 +447,7 @@ pub struct QueryDef {
     pub order_by: Option<String>,
     pub offset: Option<String>,
     pub limit: Option<String>,
+    pub authorization: Option<String>,
 }
 
 pub fn emit_query_def(query_def: &QueryDef) -> String {
@@ -418,15 +464,19 @@ pub fn emit_query_def(query_def: &QueryDef) -> String {
         Some(l) => format!("Some({l})"),
         None => "None".to_string(),
     };
+    let authorization = match &query_def.authorization {
+        Some(a) => format!("Some({a})"),
+        None => "None".to_string(),
+    };
 
     format!(
-        "crate::kernel::QueryDef {{\n    verb: {},\n    aggregate: {},\n    conditions: &[\n{conditions}\n    ],\n    order_by: {order_by},\n    offset: {offset},\n    limit: {limit},\n}},",
+        "crate::kernel::QueryDef {{\n    verb: {},\n    aggregate: {},\n    conditions: &[\n{conditions}\n    ],\n    order_by: {order_by},\n    offset: {offset},\n    limit: {limit},\n    authorization: {authorization},\n}},",
         naming::ruby_inspect_string(&query_def.verb),
         naming::ruby_inspect_string(&query_def.aggregate)
     )
 }
 
-const QUERY_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::QueryDef {\n    verb: \"tmpl_verb\",\n    aggregate: \"tmpl_aggregate\",\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::query_ordering::OrderBy { field: \"tmpl_order_field\", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),\n    offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),\n    limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),\n},";
+const QUERY_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::QueryDef {\n    verb: \"tmpl_verb\",\n    aggregate: \"tmpl_aggregate\",\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::query_ordering::OrderBy { field: \"tmpl_order_field\", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),\n    offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),\n    limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),\n    authorization: Some(crate::kernel::named_query::TenantAuth { query_name: \"tmpl_query_name\", tenant_field: \"tmpl_tenant_field\" }),\n},";
 
 pub fn emit_query_table(exemplar: &Exemplar, query_defs: &[QueryDef]) -> String {
     let rows: Vec<String> = query_defs.iter().map(emit_query_def).collect();

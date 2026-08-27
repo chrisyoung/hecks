@@ -1166,6 +1166,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "reference", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Customer.Suspended",
@@ -1176,6 +1177,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "reference", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: Some(crate::kernel::query_ordering::Limit::Literal(50)),
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Customer.NotGoodStanding",
@@ -1186,6 +1188,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "reference", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Account.Open",
@@ -1196,6 +1199,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "number", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Account.Overdrawn",
@@ -1206,6 +1210,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "balance", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: Some(crate::kernel::query_ordering::Limit::Literal(100)),
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Account.HighBalance",
@@ -1216,6 +1221,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "balance", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Account.StrictlyAbove",
@@ -1226,6 +1232,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "balance", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Account.AtMost",
@@ -1236,6 +1243,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "balance", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Account.Reachable",
@@ -1246,6 +1254,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "number", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::Account.OpenForCustomer",
@@ -1257,6 +1266,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "number", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::OnboardingCase.Screening",
@@ -1267,6 +1277,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "reference", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::ATMCard.Active",
@@ -1277,6 +1288,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "nickname", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Last }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::ATMCard.ByFee",
@@ -1287,6 +1299,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "daily_fee", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),
     limit: Some(crate::kernel::query_ordering::Limit::Literal(3)),
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::CardPayment.Pending",
@@ -1297,6 +1310,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::CardPayment.Disputed",
@@ -1307,6 +1321,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::CardPayment.Flagged",
@@ -1317,6 +1332,19 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
+},
+crate::kernel::QueryDef {
+    verb: "Banking::SafeDepositBox.Rented",
+    aggregate: "Banking::SafeDepositBox",
+    conditions: &[
+        crate::kernel::QueryCondition { field: "status", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Literal("rented") },
+        crate::kernel::QueryCondition { field: "branch_code", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("branch_code") },
+    ],
+    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "branch_code", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
+    offset: None,
+    limit: None,
+    authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "Rented", tenant_field: "branch_code" }),
 },
 crate::kernel::QueryDef {
     verb: "Banking::Transfer.InFlight",
@@ -1327,6 +1355,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "status", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::ExternalTransfer.Sent",
@@ -1337,6 +1366,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Banking::ScheduledPayment.Due",
@@ -1347,6 +1377,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "due_on", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
+    authorization: None,
 },
 ];
 

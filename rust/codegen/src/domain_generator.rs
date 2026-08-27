@@ -751,10 +751,11 @@ pub fn generate(
             query_defs.push(queries::QueryDef {
                 verb: format!("{domain_name}::{agg_name}.{query_name}"),
                 aggregate: format!("{domain_name}::{agg_name}"),
-                conditions: queries::query_conditions(query),
+                conditions: queries::query_conditions_with_authorization(query),
                 order_by: query.get("order_by").map(|ob| queries::emit_query_order_by(ob, query.get("null_semantics"))),
                 offset: query.get("offset").map(queries::emit_query_offset),
                 limit: query.get("limit").map(queries::emit_query_limit),
+                authorization: queries::emit_query_authorization(query_name, query.get("authorization")),
             });
         }
     }

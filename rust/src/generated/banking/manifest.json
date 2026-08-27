@@ -496,9 +496,7 @@
   {
     "kind": "query",
     "id": "Banking::SafeDepositBox.Rented",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "declares authorization — out of scope for this generator (rust/project/queries.rb's own header has the full argument)"
+    "generated": true
   },
   {
     "kind": "query",

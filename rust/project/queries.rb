@@ -20,7 +20,7 @@ module RustProjection
     # `query_where_skip_reason`/`declared_order_by_skip_reason`/
     # `declared_offset_skip_reason`/`declared_limit_skip_reason` below:
     #
-    #   cursor / consistency / freshness / authorization /
+    #   cursor / consistency / freshness /
     #   inspection / use_index — every one of these is a real capability
     #   `Ports::Query::InMemory`/`TenantScope` implements and this
     #   generator does not attempt to port, the SAME boundary
@@ -31,16 +31,24 @@ module RustProjection
     #   in-memory interpreter path" case-by-case audit for the AGGREGATE-
     #   query side of that argument, so it stays conservative rather than
     #   assume the read-model finding transfers unexamined). `offset`/
-    #   `null_semantics` used to be in this list too — Phase 10
-    #   (equivalence-gap plan) ported both for real: `offset` the identical
-    #   Literal/Arg shape `limit` already had (`declared_offset_skip_
-    #   reason`/`emit_query_offset` below — read models gained it too, a
-    #   separate round); `null_semantics` a top-level `nulls :first`/`:last`
-    #   override folded straight into the generated `OrderBy` struct
-    #   (`query_ordering::NullsMode` — that type's own header has the full
-    #   argument for why an unrecognized/absent mode safely falls back to
-    #   the pre-existing direction-dependent default rather than needing a
-    #   refusal case at all).
+    #   `null_semantics`/`authorization` used to be in this list too —
+    #   Phase 10 (equivalence-gap plan) ported all three for real: `offset`
+    #   the identical Literal/Arg shape `limit` already had
+    #   (`declared_offset_skip_reason`/`emit_query_offset` below — read
+    #   models gained it too, a separate round); `null_semantics` a
+    #   top-level `nulls :first`/`:last` override folded straight into the
+    #   generated `OrderBy` struct (`query_ordering::NullsMode` — that
+    #   type's own header has the full argument for why an unrecognized/
+    #   absent mode safely falls back to the pre-existing direction-
+    #   dependent default rather than needing a refusal case at all);
+    #   `authorization` (TenantScope) a synthetic `field == args[tenant]`
+    #   condition baked into `conditions` at codegen time PLUS an explicit
+    #   presence check on the wire arg (`named_query::TenantAuth` —
+    #   `declared_authorization_skip_reason`/`emit_query_authorization`
+    #   below have the full argument, including why `authorize policy`
+    #   with no `tenant:` is a genuine no-op rather than a gap; read models
+    #   still refuse a declared `authorize` outright, unchanged — this is
+    #   a QUERY-only port, no real corpus read model to prove it against).
     #
     #   an order_by field that doesn't reduce to a plain JSON string or
     #   number (a hop, an entity-scoped field, a list_of field, a
@@ -233,7 +241,7 @@ module RustProjection
     # function returns for a still-excluded query is always the REAL
     # remaining one, never a stale one order_by/limit merely used to mask.
     def query_skip_reason(query, aggregate, value_objects_by_name)
-      extras = %i[cursor consistency freshness authorization inspection].select { |k| query[k] }
+      extras = %i[cursor consistency freshness inspection].select { |k| query[k] }
       return "declares #{extras.join(', ')} — out of scope for this generator (rust/project/queries.rb's own " \
              "header has the full argument)" if extras.any?
       return "declares use_index, out of scope for the same reason the extras above are" if Array(query[:index_hints]).any?
@@ -245,6 +253,9 @@ module RustProjection
         return reason if reason
       end
 
+      auth_reason = declared_authorization_skip_reason(query[:authorization], aggregate, value_objects_by_name)
+      return auth_reason if auth_reason
+
       order_reason = declared_order_by_skip_reason(query[:order_by], aggregate, value_objects_by_name)
       return order_reason if order_reason
 
@@ -252,6 +263,24 @@ module RustProjection
       return offset_reason if offset_reason
 
       declared_limit_skip_reason(query[:limit])
+    end
+
+    # `authorize policy, tenant: :field`'s own content check —
+    # `AuthorizationSpec#to_h` is `{policy:, tenant:}`, `tenant` `nil`
+    # unless declared. A `nil` tenant is a REAL, harmless no-op in Ruby
+    # too (`Runtime::TenantScope.apply`'s own `return declared unless
+    # tenant`), not merely unsupported — matched here by simply not
+    # disqualifying it. A real tenant needs the SAME field-validity check
+    # any other where-clause field gets: constructing the exact synthetic
+    # arg-bound where shape `query_conditions_with_authorization` below
+    # will actually compile and reusing `query_where_skip_reason`
+    # wholesale, rather than re-deriving a parallel field check.
+    def declared_authorization_skip_reason(authorization, aggregate, value_objects_by_name)
+      tenant = authorization && authorization[:tenant]
+      return nil unless tenant
+
+      synthetic_where = { field: tenant, op: "eq", value: ":#{tenant}" }
+      query_where_skip_reason(synthetic_where, aggregate, value_objects_by_name)
     end
 
     # `Query`'s own `order_by`/`limit` content check — MOVED here from
@@ -405,6 +434,38 @@ module RustProjection
       end
     end
 
+    # `Runtime::TenantScope.apply`'s own synthetic clause — `Scoped#wheres
+    # = __getobj__.wheres + [@clause]`, `@clause` a `WhereClause.new(field:
+    # tenant, op: "eq", value: tenant)`. Ported at CODEGEN TIME instead of
+    # runtime, since the compiled shape never varies: always `Eq` against
+    # an Arg named for the same field. Appended (not prepended) — matching
+    # Ruby's own `+`, though AND has no order sensitivity here anyway.
+    # Deliberately a QUERY-only concern: a read model's own `conditions`
+    # reuses `query_conditions` wholesale for its `wheres`, but read models
+    # still refuse a declared `authorize` outright (`read_models.rb`'s own
+    # eligibility gate, unchanged) — folding this into `query_conditions`
+    # itself would have silently extended TenantScope to read models with
+    # no real corpus case to prove it against, so this stays a separate,
+    # QUERY-call-site-only append (`domain_generator.rb`'s own
+    # `query_defs <<`) instead.
+    def query_conditions_with_authorization(query)
+      tenant = query[:authorization] && query[:authorization][:tenant]
+      return query_conditions(query) unless tenant
+
+      query_conditions(query) << { field: tenant.to_s, op: "eq", arg: tenant.to_s, literal: nil }
+    end
+
+    # `TenantAuth`'s own compiled form — `nil` unless a real tenant is
+    # declared (an `authorize policy` with no `tenant:` is a genuine no-op,
+    # per `declared_authorization_skip_reason`'s own comment; nothing to
+    # compile for it at all, matching Ruby exactly).
+    def emit_query_authorization(query_name, authorization)
+      tenant = authorization && authorization[:tenant]
+      return nil unless tenant
+
+      "crate::kernel::named_query::TenantAuth { query_name: #{query_name.to_s.inspect}, tenant_field: #{tenant.to_s.inspect} }"
+    end
+
     # `where[:op]` (one of `Hecks::QuerySpecification::Common::
     # COMPARATORS`, grammar-validated at bluebook declare time —
     # `admits: "Vocabulary::QueryComparator"`) to its Rust `QueryComparator`
@@ -469,6 +530,7 @@ module RustProjection
       order_by = query_def[:order_by] ? "Some(#{query_def[:order_by]})" : "None"
       offset = query_def[:offset] ? "Some(#{query_def[:offset]})" : "None"
       limit = query_def[:limit] ? "Some(#{query_def[:limit]})" : "None"
+      authorization = query_def[:authorization] ? "Some(#{query_def[:authorization]})" : "None"
 
       <<~RUST.rstrip
         crate::kernel::QueryDef {
@@ -480,6 +542,7 @@ module RustProjection
             order_by: #{order_by},
             offset: #{offset},
             limit: #{limit},
+            authorization: #{authorization},
         },
       RUST
     end
@@ -502,6 +565,7 @@ module RustProjection
           order_by: Some(crate::kernel::query_ordering::OrderBy { field: "tmpl_order_field", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),
           offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),
           limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),
+          authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "tmpl_query_name", tenant_field: "tmpl_tenant_field" }),
       },
     RUST
 

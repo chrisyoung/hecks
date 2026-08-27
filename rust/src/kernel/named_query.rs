@@ -52,7 +52,7 @@
 // callers (a read model choosing among several aggregate heads; a query
 // ordering/capping its own single result set directly, with no head
 // selection at all).
-use super::{query_comparators::QueryComparator, query_ordering, repository, AggregateScan, Json, Refusal};
+use super::{query_comparators::QueryComparator, query_ordering, repository, AggregateScan, Json, Refusal, RefusalSite};
 
 /// ONE declared query, compiled. `verb` is the fully-qualified
 /// "Domain::Aggregate.QueryName" `kernel/cli.rs`'s STRING-form "query" step
@@ -79,6 +79,48 @@ pub struct QueryDef {
     /// runs this BEFORE `limit` — see that function's own header for why.
     pub offset: Option<query_ordering::Offset>,
     pub limit: Option<query_ordering::Limit>,
+    /// `None` for the ordinary case — no declared `authorize`, or one
+    /// declared with no `tenant:` (`Runtime::TenantScope.apply`'s own
+    /// `return declared unless tenant` — a REAL, harmless no-op in Ruby
+    /// too, not merely unsupported). See `TenantAuth`'s own doc for what
+    /// this actually does.
+    pub authorization: Option<TenantAuth>,
+}
+
+/// `authorize policy, tenant: :field` — Phase 10 of the equivalence-gap
+/// plan. Ground truth: `Runtime::TenantScope.apply` (lib/hecks/runtime/
+/// tenant_scope.rb), read directly. That module's own header is explicit
+/// about what this is and is not: "the boundary itself, made mandatory...
+/// whether THIS caller actually holds `policy` for THIS tenant needs real
+/// identity infrastructure this runtime does not have — that stays a
+/// named, open gap." `policy` itself is never read by `TenantScope.apply`
+/// at all (only `.tenant` is) — this generator matches that exactly,
+/// carrying no `policy` field here either.
+///
+/// TWO EFFECTS, both ported: (1) `args.key?(tenant)` must hold or Ruby
+/// raises `Unauthorized`/`tenant_required` — `run_cross_domain` below
+/// checks this explicitly, since a QUIETLY missing arg would otherwise
+/// resolve through `QueryConditionValue::Arg`'s own `unwrap_or(Json::
+/// Null)` miss-is-null reading and just filter to an empty (or wrong)
+/// result instead of refusing. (2) a synthetic `field == args[tenant]`
+/// where-clause gets ANDed onto the query's own declared ones
+/// (`Scoped#wheres = __getobj__.wheres + [@clause]`) — baked in at
+/// CODEGEN TIME here instead (`rust/project/queries.rb`'s own
+/// `query_conditions` appends it), since the compiled shape never
+/// changes: always `Eq` against `QueryConditionValue::Arg(tenant_field)`.
+/// `tenant_field` doing double duty as both the where-clause FIELD name
+/// and the wire ARG key name is Ruby's own convention, not an accident —
+/// `TenantScope.apply`'s `tenant = tenant.to_sym` is the one value both
+/// checks and the synthetic clause all read.
+#[derive(Debug, Clone, Copy)]
+pub struct TenantAuth {
+    /// The query's own bare declared name (`IR::Query#name` — "Rented,"
+    /// never the qualified "SafeDepositBox.Rented" verb) — `{query}` in
+    /// `RefusalSite::UnauthorizedTenantRequired`'s own template, matching
+    /// `RefusalWording.render("Unauthorized", "tenant_required", query:
+    /// declared.name, field: tenant)`'s exact placeholder value.
+    pub query_name: &'static str,
+    pub tenant_field: &'static str,
 }
 
 /// ONE where clause, compiled — `field`/`comparator` read exactly like the
@@ -163,6 +205,15 @@ pub fn run_cross_domain(
     args: &Json,
     cross_domain: &[(&str, &dyn AggregateScan)],
 ) -> Result<Vec<(String, Json)>, Refusal> {
+    if let Some(auth) = &def.authorization {
+        if args.get(auth.tenant_field).is_none() {
+            return Err(Refusal::Unauthorized(RefusalSite::UnauthorizedTenantRequired.render(&[
+                ("query", auth.query_name),
+                ("field", auth.tenant_field),
+            ])));
+        }
+    }
+
     let mut entries = store
         .scan(def.aggregate)
         .ok_or_else(|| Refusal::TypeMismatch(format!("unknown aggregate {:?}", def.aggregate)))?;

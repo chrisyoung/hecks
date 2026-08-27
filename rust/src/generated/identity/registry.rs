@@ -217,6 +217,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 ];
 

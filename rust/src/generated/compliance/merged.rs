@@ -366,6 +366,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::QueryDef {
     verb: "Governance::RoleTransition.Allowed",
@@ -377,6 +378,7 @@ crate::kernel::QueryDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 ];
 
