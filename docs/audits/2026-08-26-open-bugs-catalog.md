@@ -4,17 +4,17 @@ _Every issue from the original 186 has now been investigated live against
 current `main` (see
 [`2026-08-26-issue-tracker-reconciliation-plan.md`](2026-08-26-issue-tracker-reconciliation-plan.md)
 for how the 186 got there) and every remaining question was put to the
-user directly for a product decision. **Result: 1 issue stays open.**
-Everything else — 25 issues that were "confirmed still open, needs a
-product call" as of the last update to this doc — has since been closed,
-each with an evidence comment on its own GitHub issue citing this
-decision round. This file is now a record of *why*, not a live worklist._
+user directly for a product decision. **Result: 0 issues open.** All 26
+issues that were "confirmed still open, needs a product call" as of the
+last update to this doc have since been closed, each with an evidence
+comment on its own GitHub issue citing this decision round. This file is
+now a record of *why*, not a live worklist._
 
-## The one issue still open
+## The one issue that stayed open briefly, then got closed anyway
 
-| # | What | Why it stays open |
+| # | What | What happened |
 | --- | --- | --- |
-| [#145](https://github.com/chrisyoung/hecks/issues/145) | driving-adapter grammar + raw-adapter bug fix | Deliberate future work, per this repo's own survey doc (`docs/hecks-survey-what-we-wish-we-had.md`) — left open on purpose as a tracked marker, not promoted to active work and not closed |
+| [#145](https://github.com/chrisyoung/hecks/issues/145) | driving-adapter grammar + raw-adapter bug fix | Deliberate future work, per this repo's own survey doc (`docs/hecks-survey-what-we-wish-we-had.md`) — initially left open on purpose as a tracked marker, then closed on explicit follow-up request. If this becomes active work later, file fresh rather than reopening. |
 
 ## What got closed, and why (grouped by decision)
 
