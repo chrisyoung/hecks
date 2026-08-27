@@ -1,0 +1,55 @@
+# Phase 10's remaining backlog, scoped by direct investigation — none of it is a same-shape repeat
+
+**Status:** Investigated, not implemented (except read-model `authorize` — see the UPDATE below, which this ADR itself predicted and a later round in the same session went on to ship). ADR 0040 shipped four real Phase 10 items in this session's first pass (declared-query `offset`, read-model `offset`, `nulls :first`/`:last`, `authorize`/TenantScope for queries) — all four shared one property that made them tractable in a single low-risk pass: each mapped directly onto kernel machinery (`QueryCondition`/`QueryConditionValue::Arg`, `query_ordering::apply`) that already existed for a sibling feature, and each had exactly one real, motivating corpus declaration to prove a fix against. This ADR documents, by reading the actual code rather than guessing, why every item covered below does NOT share that property — so a future round scopes correctly instead of re-deriving this.
+
+## `corrects` — the one that looked smallest, and had a real surprise in it
+
+Real corpus motivation is strong: `Banking::Account.CorrectFee` (`examples/banking/bluebook/deposit_accounts.bluebook`) is the only declared `corrects` in the whole corpus, and it uses the SIMPLE shape — explicit `sets` mutations alongside `corrects "FeeApplied", reason: "..."`, not the `reverses: true` derived shape (see below for why that second shape is its own, separate, harder problem).
+
+**What's genuinely easy, confirmed by reading `MutationApplier#apply` directly**: `:corrects` is a REAL no-op at mutation-application time — "it targets no field on THIS instance... whatever field this correction actually changes is an ORDINARY declared... mutation of its own, applied by one of the branches above like any other." For `CorrectFee` specifically, that means `corrects "FeeApplied"` compiles to literally nothing, and the two mutations that DO real work (`sets :balance, increment: :amount` / `sets :fees_cents, decrement: :amount`) are PLAIN increment/decrement — already fully supported by the generator today. Porting this half is genuinely small: allow `"corrects"` into `commands.rb`'s `unsupported_ops` allow-list, add a `when "corrects" then nil` arm to `mutations.rb`'s case (mirroring `"delegate"`'s existing one), done.
+
+**What's NOT small, found by reading `CommandRules::Admissibility#enforce_correction_target` directly** — the actual reason `CorrectFee` refuses when it should:
+
+```ruby
+def enforce_correction_target(instance, aggregate, command, domain:)
+  command.mutations.each do |mutation|
+    next unless mutation.op == :corrects
+    event_key  = "#{domain}::#{aggregate.hecks_name}"
+    event_name = mutation.target.to_s
+    next if @registry.event_log.any? do |event|
+      event.name == event_name && event.aggregate == event_key && event.id == instance.id
+    end
+    raise NothingToCorrect, "..."
+  end
+end
+```
+
+This checks whether THIS SPECIFIC instance has ever emitted the named event, against `@registry.event_log` — a full, queryable, per-instance event history. **Confirmed directly: no such structure exists anywhere in the Rust kernel today** (`grep -rln "event_log\|EventLog\|emitted_events" rust/src/kernel/*.rs` — zero matches). `kernel/cli.rs`'s own `events` output field is a flat list built up DURING one replay run, for reporting/comparison — not a queryable, per-instance history `dispatch_by_name` could consult mid-dispatch to answer "has aggregate X, id Y, ever emitted event Z." Porting `enforce_correction_target` for real means adding genuinely new state — either a per-instance emitted-event-name index threaded through the `Store`/dispatch pipeline (touches every aggregate's own generated code, not just ones using `corrects`), or some other mechanism not yet designed. This is real, separate kernel-architecture work, not a codegen wiring task — the same class of gap ADR 0036 (PostgresEra concurrency) documented rather than rushed.
+
+**A second, independently-flagged reason not to touch `reverses: true` at all right now**: `AggregateBuilder#seal_correction_targets`'s own comment (`lib/hecks/bluebook/dsl/aggregate_builder.rb`) is explicit that `append`/`remove` reversal "LOOK symmetric but are not reliably so... collapsing one shape into the other correctly needs the target list's own value-object field names, not just the mutation's own recorded shape — a real gap, left for a follow-on round rather than guessed at here." That's Ruby's OWN authors declining to fully solve this; porting it to Rust before Ruby's own derivation is complete would mean chasing a moving, partially-unspecified target.
+
+## `group_by`/`count`/`median` — a new aggregation concept, not a new option
+
+Confirmed by grep: real usage spans `read_model_interpreter.rb`, `read_model_builder.rb`, AND multiple adapter-level query builders (`postgres.rb`, `d1.rb`, `sqlite.rb`, `heki.rb`, `memory.rb`) — meaning even Ruby's own implementation isn't one function to port, it's a cross-adapter aggregation concept with per-adapter query-building logic. `query_ordering::apply`'s existing shared tail (sort/offset/limit) has no analogue for "compute a scalar or a grouped-and-nested structure over the matched set" — this needs a genuinely new kernel primitive, not a field added to an existing struct.
+
+## `multiply`/`clamp`/`remove` — structurally close, but zero real corpus motivation and real edge-case nuance
+
+`CommandRules::Arithmetic#multiply`/`#clamp` (read directly) share `#arithmetic`'s own `rewrap_arithmetic_result`/VO-combine machinery — structurally, a plausible extension of the SAME code path `increment`/`decrement` already use in `rust/project/mutations.rb`. But: **no real command in this corpus declares `multiply`, `clamp`, or `remove`** (confirmed by grep across every `examples/*/bluebook/*.bluebook`) — every other capability this session shipped had a real, single motivating declaration to write a red-before/green-after fixture against; these would need a synthetic one invented from scratch, the weaker discipline this whole plan's own verification section was built to avoid. The Ruby implementations also carry real, non-obvious edge cases already fixed once each (`current ||= 0` for a genuinely-absent field, `unwrap_single_numeric_field` for a VO-wrapped amount against a bare numeric current) — porting these without a real fixture to catch a missed case is exactly the kind of "looks done, isn't" risk this session's own discipline (red before green, against something real) exists to catch.
+
+## `list_of` with `admits:`/`pattern:` — the generator's own comment already says why not
+
+`rust/project/commands.rb`'s own `constraint_list_problems`: "no real command in this corpus declares one... a per-element check is new, unverified surface, not a mechanical extension of the scalar case." Same shape as `multiply`/`clamp`/`remove` — zero real motivation, explicitly flagged as unverified by the code that already refuses it.
+
+## UPDATE (same session) — read-model `authorize` shipped after all, on a purpose-built fixture
+
+This ADR's own prediction, right below, held: the query-side port's pattern (`TenantAuth`, the synthetic condition, the presence check) transferred to read models directly, with zero new kernel types — `ReadModelDef` just gained `authorization: Option<named_query::TenantAuth>`, reusing the exact struct the query-side port already defined. The one real cost the "no real corpus read model declares one" gap actually imposed: no fixture to reuse, so a purpose-built one was needed (a temp copy of `examples/banking`, never committed, with one new read model declaring `authorize`) — genuine extra work, but not a design risk, exactly as predicted. See `docs/decisions/0040`'s own "UPDATE — read-model authorize too" for the full shipped writeup, including a real `git stash`-recovery near-miss building that fixture caused.
+
+This is the ONE exception to "not yet investigated"/"structurally close but no real motivation" below — everything else in this ADR remains open exactly as scoped.
+
+## `cursor`/`consistency`, cross-aggregate door-argument type-bridging — not yet investigated this round
+
+Not read closely this session (time/effort budget went to the five items ADR 0040 shipped plus the investigation above).
+
+## The honest bottom line
+
+Five real Phase 10 items shipped this session (ADR 0040) — four with a real corpus fixture, one (read-model `authorize`) on a purpose-built one. Of the six still open: `corrects` and `group_by`/`count`/`median` need genuinely new kernel/adapter infrastructure this session did not build (`corrects`'s own mechanical half — the no-op mutation, the allow-list entry — IS small and DOES have real corpus motivation, `Banking::Account.CorrectFee`, but shipping it alone, without the admissibility check that makes `corrects` mean anything, would be worse than not shipping — a `CorrectFee` that silently accepts correcting an event that never happened); `multiply`/`clamp`/`remove` and `list_of admits:/pattern:` are structurally close to existing patterns but have zero real corpus motivation to verify a fix against, which is the specific discipline every one of this session's real fixes leaned on; `cursor`/`consistency` and cross-aggregate door-argument bridging are simply not yet investigated. None of the six is a same-shape repeat of what ADR 0040 already proved out — each needs its own dedicated round.

@@ -1600,6 +1600,7 @@ crate::kernel::read_model::ReadModelDef {
     order_by: None,
     offset: None,
     limit: None,
+    authorization: None,
 },
 crate::kernel::read_model::ReadModelDef {
     verb: "Banking.ComplianceDashboard",
@@ -1615,5 +1616,6 @@ crate::kernel::read_model::ReadModelDef {
     order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "amount", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(5)),
     limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
+    authorization: None,
 },
 ];

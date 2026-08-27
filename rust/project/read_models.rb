@@ -52,7 +52,7 @@ module RustProjection
     # WHAT THIS STILL DELIBERATELY DOES NOT COVER, AND WHY — read together
     # with `read_model_skip_reason` below:
     #
-    #   `cursor`/`consistency`/`authorization` (TenantScope) /
+    #   `cursor`/`consistency`/
     #   `inspection` — real
     #   capabilities `Ports::Query::InMemory`/`Ports::Query::Ordering`/
     #   `TenantScope` implement that this generator does not port, the
@@ -61,13 +61,21 @@ module RustProjection
     #   applied consistently here now that where/order_by/limit
     #   themselves have crossed over. `freshness`/`use_index` are NOT in
     #   this list — see `READ_MODEL_BARE_KEYS` below for why tolerating
-    #   them is honest, not a shortcut. `offset`/`null_semantics` used to
-    #   be in this list too — Phase 10 (equivalence-gap plan) ported both,
-    #   reusing `queries.rb`'s own `declared_offset_skip_reason`/
-    #   `emit_query_order_by`'s own `null_semantics_variant` directly (no
-    #   read-model-specific content check needed for either — the exact
-    #   same Literal/Arg shape and the exact same Native-fallback mapping
-    #   apply whether the declaring construct was a Query or a ReadModel).
+    #   them is honest, not a shortcut. `offset`/`null_semantics`/
+    #   `authorization` used to be in this list too — Phase 10
+    #   (equivalence-gap plan) ported all three, reusing `queries.rb`'s own
+    #   `declared_offset_skip_reason`/`emit_query_order_by`'s own
+    #   `null_semantics_variant`/`declared_authorization_skip_reason`
+    #   directly (no read-model-specific content check needed for any of
+    #   them — the exact same shapes/fallback rules apply whether the
+    #   declaring construct was a Query or a ReadModel). `authorization`
+    #   specifically has no real corpus read model to prove it against
+    #   today (unlike the AGGREGATE-query port, which closed a real,
+    #   previously-refused `Banking::SafeDepositBox.Rented`) — ADR 0041
+    #   has the honest accounting of why it was ported anyway (the
+    #   mechanism is byte-identical to the already-proven query path, not
+    #   new design) and what's verified against instead (a purpose-built
+    #   fixture).
     #
     #   A `where`/`order_by` whose own field this generator can't safely
     #   express — a hop through a reference, an entity-scoped field, a
@@ -127,7 +135,8 @@ module RustProjection
     # read model carries it now, `[]` when nothing was declared — and it
     # has to be checked by VALUE instead, explicitly, right below.
     READ_MODEL_BARE_KEYS = %i[name description reference_name reference_target query_name aggregate_heads
-                              wheres order_by offset limit freshness index_hints group_by null_semantics].freeze
+                              wheres order_by offset limit freshness index_hints group_by null_semantics
+                              authorization].freeze
 
     # One declared read model's own eligibility — `nil` (clean) or a
     # specific, honest reason string, the same "one gate every other
@@ -165,7 +174,7 @@ module RustProjection
 
     def read_model_options_skip_reason(extra)
       "declares #{extra.map(&:to_s).sort.join(', ')} — out of scope for this generator: cursor/" \
-        "consistency/authorization(TenantScope)/inspection are real " \
+        "consistency/inspection are real " \
         "capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator " \
         "does not port (this file's own header has the full argument, the same boundary queries.rb already " \
         "draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — " \
@@ -206,6 +215,16 @@ module RustProjection
         reason = query_where_skip_reason(where, aggregate, value_objects_by_name)
         return "eligible head #{head[:aggregate]}'s own #{reason}" if reason
       end
+
+      # `declared_authorization_skip_reason` — reused from `queries.rb`
+      # wholesale (it's already generic over "some aggregate, some
+      # authorization hash," nothing query-specific in it), aimed at the
+      # ELIGIBLE HEAD's own aggregate — `read_model_filtered_head_as`
+      # above already treats a real `authorization.tenant` as one of the
+      # things that makes a head eligible in the first place, the same
+      # way Ruby's own `filtered_head_name` does.
+      auth_reason = declared_authorization_skip_reason(read_model[:authorization], aggregate, value_objects_by_name)
+      return auth_reason if auth_reason
 
       # `declared_order_by_skip_reason`/`declared_limit_skip_reason` — moved
       # to `queries.rb` (2026-08-11), not defined here: a declared AGGREGATE
@@ -391,10 +410,11 @@ module RustProjection
         reference_name: read_model[:reference_name].to_s,
         heads: heads,
         filtered_head: eligible_as&.to_s,
-        conditions: eligible_as ? query_conditions(read_model) : [],
+        conditions: eligible_as ? query_conditions_with_authorization(read_model) : [],
         order_by: eligible_as && read_model[:order_by] ? emit_read_model_order_by(read_model[:order_by], read_model[:null_semantics]) : nil,
         offset: eligible_as && read_model[:offset] ? emit_read_model_offset(read_model[:offset]) : nil,
         limit: eligible_as && read_model[:limit] ? emit_read_model_limit(read_model[:limit]) : nil,
+        authorization: eligible_as ? emit_query_authorization(read_model[:name], read_model[:authorization]) : nil,
       }
     end
 
@@ -405,6 +425,7 @@ module RustProjection
       order_by = read_model_def[:order_by] ? "Some(#{read_model_def[:order_by]})" : "None"
       offset = read_model_def[:offset] ? "Some(#{read_model_def[:offset]})" : "None"
       limit = read_model_def[:limit] ? "Some(#{read_model_def[:limit]})" : "None"
+      authorization = read_model_def[:authorization] ? "Some(#{read_model_def[:authorization]})" : "None"
 
       <<~RUST.rstrip
         crate::kernel::read_model::ReadModelDef {
@@ -420,6 +441,7 @@ module RustProjection
             order_by: #{order_by},
             offset: #{offset},
             limit: #{limit},
+            authorization: #{authorization},
         },
       RUST
     end
@@ -455,6 +477,7 @@ module RustProjection
           order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "tmpl_order_field", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),
           offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),
           limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
+          authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "tmpl_query_name", tenant_field: "tmpl_tenant_field" }),
       },
     RUST
 

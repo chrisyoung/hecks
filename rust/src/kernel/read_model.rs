@@ -34,7 +34,7 @@
 // `QuerySpecification::Common::NullPolicy` (lib/hecks/ports/query/,
 // lib/hecks/query_specification/common/null_policy.rb) for exactly
 // what `apply_filtered_head_options` below ports — all read directly.
-use super::{query_ordering, repository, AggregateScan, Json, QueryCondition, QueryConditionValue, Refusal};
+use super::{named_query, query_ordering, repository, AggregateScan, Json, QueryCondition, QueryConditionValue, Refusal, RefusalSite};
 
 /// ONE reference attribute on a NON-ROOT head's own aggregate — "this
 /// aggregate carries a field named `field` that is `Reference<X>`, where
@@ -140,6 +140,23 @@ pub struct ReadModelDef {
     /// to refuse ANY declared `offset` outright, unconditionally.
     pub offset: Option<ReadModelOffset>,
     pub limit: Option<ReadModelLimit>,
+    /// `authorize policy, tenant: :field` — reuses `named_query::
+    /// TenantAuth` directly (same struct, no read-model-local type):
+    /// `Runtime::TenantScope.apply` is the SAME function for a Query and
+    /// a ReadModel (`ReadModelInterpreter#project`'s own `model =
+    /// TenantScope.apply(model, args)`, called BEFORE the eligible head's
+    /// own conditions/order/limit are applied — matching `run`'s own call
+    /// order below, right after `reference_id` resolves). `query_name`
+    /// still reads correctly for a read model's own bare declared name
+    /// (`IR::ReadModel#name`), the same field `RefusalSite::
+    /// UnauthorizedTenantRequired`'s own `{query}` placeholder expects
+    /// regardless of which construct declared it. No real corpus read
+    /// model declares one yet — ported ahead of a real example existing,
+    /// unlike every other Phase 10 item this session shipped, because the
+    /// mechanism is otherwise byte-identical to the already-proven query
+    /// path; verified against a purpose-built fixture instead (see the
+    /// ADR).
+    pub authorization: Option<named_query::TenantAuth>,
 }
 
 /// The lookup `kernel/cli.rs`'s STRING-form "query" step dispatches
@@ -255,6 +272,7 @@ mod snake_alias_tests {
             order_by: None,
             offset: None,
             limit: None,
+            authorization: None,
         }];
 
         assert!(find(&table, "Banking.CustomerPortfolio").is_some());
@@ -304,6 +322,19 @@ pub fn run(store: &impl AggregateScan, def: &ReadModelDef, args: &Json) -> Resul
         .and_then(Json::as_str)
         .ok_or_else(|| Refusal::TypeMismatch(format!("{}: missing reference argument {:?}", def.verb, def.reference_name)))?
         .to_string();
+
+    // Same check, same position (right after the reference id resolves,
+    // before any head is computed), as `ReadModelInterpreter#project`'s
+    // own `model = TenantScope.apply(model, args)` — see `named_query::
+    // run_cross_domain`'s own identical check for the full reasoning.
+    if let Some(auth) = &def.authorization {
+        if args.get(auth.tenant_field).is_none() {
+            return Err(Refusal::Unauthorized(RefusalSite::UnauthorizedTenantRequired.render(&[
+                ("query", auth.query_name),
+                ("field", auth.tenant_field),
+            ])));
+        }
+    }
 
     let (root_heads, other_heads): (Vec<&ReadModelHead>, Vec<&ReadModelHead>) = def.heads.iter().partition(|head| head.is_root);
 

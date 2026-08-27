@@ -35,6 +35,7 @@ crate::kernel::read_model::ReadModelDef {
     order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "tmpl_order_field", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),
     offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),
     limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
+    authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "tmpl_query_name", tenant_field: "tmpl_tenant_field" }),
 },
 ];
 // TMPL:read_model_table END

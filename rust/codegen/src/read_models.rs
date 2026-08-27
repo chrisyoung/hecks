@@ -7,7 +7,7 @@ use crate::json::Json;
 use crate::queries;
 use std::collections::HashMap;
 
-const READ_MODEL_BARE_KEYS: &[&str] = &["name", "description", "reference_name", "reference_target", "query_name", "aggregate_heads", "wheres", "order_by", "offset", "limit", "freshness", "index_hints", "group_by", "null_semantics"];
+const READ_MODEL_BARE_KEYS: &[&str] = &["name", "description", "reference_name", "reference_target", "query_name", "aggregate_heads", "wheres", "order_by", "offset", "limit", "freshness", "index_hints", "group_by", "null_semantics", "authorization"];
 
 pub fn read_model_skip_reason(read_model: &Json, aggregates_by_name: &HashMap<String, &Json>, unsupported_names: &[String]) -> Option<String> {
     let keys: Vec<&str> = match read_model {
@@ -45,7 +45,7 @@ fn read_model_options_skip_reason(extra: &[&str]) -> String {
     let mut sorted: Vec<&str> = extra.to_vec();
     sorted.sort();
     format!(
-        "declares {} — out of scope for this generator: cursor/consistency/authorization(TenantScope)/inspection are real capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator does not port (this file's own header has the full argument, the same boundary queries.rb already draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — neither is read by the in-memory interpreter path this kernel matches",
+        "declares {} — out of scope for this generator: cursor/consistency/inspection are real capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator does not port (this file's own header has the full argument, the same boundary queries.rb already draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — neither is read by the in-memory interpreter path this kernel matches",
         sorted.join(", ")
     )
 }
@@ -80,6 +80,10 @@ fn read_model_options_content_skip_reason(read_model: &Json, aggregates_by_name:
         if let Some(reason) = queries::query_where_skip_reason(where_clause, aggregate, &value_objects_by_name) {
             return Some(format!("eligible head {aggregate_name}'s own {reason}"));
         }
+    }
+
+    if let Some(reason) = queries::declared_authorization_skip_reason(read_model.get("authorization"), aggregate, &value_objects_by_name) {
+        return Some(reason);
     }
 
     if let Some(reason) = queries::declared_order_by_skip_reason(read_model.get("order_by"), aggregate, &value_objects_by_name) {
@@ -191,6 +195,7 @@ pub struct ReadModelDef {
     pub order_by: Option<String>,
     pub offset: Option<String>,
     pub limit: Option<String>,
+    pub authorization: Option<String>,
 }
 
 pub fn read_model_def(domain_name: &str, read_model: &Json, aggregates_by_name: &HashMap<String, &Json>) -> ReadModelDef {
@@ -205,16 +210,18 @@ pub fn read_model_def(domain_name: &str, read_model: &Json, aggregates_by_name: 
         .collect();
 
     let eligible_as = read_model_filtered_head_as(read_model);
+    let read_model_name = read_model.get("name").map(Json::to_s).unwrap_or_default();
 
     ReadModelDef {
-        verb: format!("{domain_name}.{}", read_model.get("name").map(Json::to_s).unwrap_or_default()),
+        verb: format!("{domain_name}.{read_model_name}"),
         reference_name: read_model.get("reference_name").map(Json::to_s).unwrap_or_default(),
         heads,
         filtered_head: eligible_as.clone(),
-        conditions: if eligible_as.is_some() { queries::query_conditions(read_model) } else { Vec::new() },
+        conditions: if eligible_as.is_some() { queries::query_conditions_with_authorization(read_model) } else { Vec::new() },
         order_by: if eligible_as.is_some() { read_model.get("order_by").map(|ob| emit_read_model_order_by(ob, read_model.get("null_semantics"))) } else { None },
         offset: if eligible_as.is_some() { read_model.get("offset").map(emit_read_model_offset) } else { None },
         limit: if eligible_as.is_some() { read_model.get("limit").map(emit_read_model_limit) } else { None },
+        authorization: if eligible_as.is_some() { queries::emit_query_authorization(&read_model_name, read_model.get("authorization")) } else { None },
     }
 }
 
@@ -237,15 +244,19 @@ pub fn emit_read_model_def(rmd: &ReadModelDef) -> String {
         Some(l) => format!("Some({l})"),
         None => "None".to_string(),
     };
+    let authorization = match &rmd.authorization {
+        Some(a) => format!("Some({a})"),
+        None => "None".to_string(),
+    };
 
     format!(
-        "crate::kernel::read_model::ReadModelDef {{\n    verb: {},\n    reference_name: {},\n    heads: &[\n{heads}\n    ],\n    filtered_head: {filtered_head},\n    conditions: &[\n{conditions}\n    ],\n    order_by: {order_by},\n    offset: {offset},\n    limit: {limit},\n}},",
+        "crate::kernel::read_model::ReadModelDef {{\n    verb: {},\n    reference_name: {},\n    heads: &[\n{heads}\n    ],\n    filtered_head: {filtered_head},\n    conditions: &[\n{conditions}\n    ],\n    order_by: {order_by},\n    offset: {offset},\n    limit: {limit},\n    authorization: {authorization},\n}},",
         crate::naming::ruby_inspect_string(&rmd.verb),
         crate::naming::ruby_inspect_string(&rmd.reference_name)
     )
 }
 
-const READ_MODEL_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::read_model::ReadModelDef {\n    verb: \"tmpl_verb\",\n    reference_name: \"tmpl_reference_name\",\n    heads: &[\n        crate::kernel::read_model::ReadModelHead {\n            aggregate: \"tmpl_aggregate\",\n            as_name: \"tmpl_as_name\",\n            many: true,\n            is_root: false,\n            reference_fields: &[\n                crate::kernel::read_model::ReferenceField { target_aggregate: \"tmpl_target_aggregate\", field: \"tmpl_field\" },\n            ],\n        },\n    ],\n    filtered_head: Some(\"tmpl_as_name\"),\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: \"tmpl_order_field\", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),\n    offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),\n    limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),\n},";
+const READ_MODEL_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::read_model::ReadModelDef {\n    verb: \"tmpl_verb\",\n    reference_name: \"tmpl_reference_name\",\n    heads: &[\n        crate::kernel::read_model::ReadModelHead {\n            aggregate: \"tmpl_aggregate\",\n            as_name: \"tmpl_as_name\",\n            many: true,\n            is_root: false,\n            reference_fields: &[\n                crate::kernel::read_model::ReferenceField { target_aggregate: \"tmpl_target_aggregate\", field: \"tmpl_field\" },\n            ],\n        },\n    ],\n    filtered_head: Some(\"tmpl_as_name\"),\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: \"tmpl_order_field\", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),\n    offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),\n    limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),\n    authorization: Some(crate::kernel::named_query::TenantAuth { query_name: \"tmpl_query_name\", tenant_field: \"tmpl_tenant_field\" }),\n},";
 
 pub fn emit_read_model_table(exemplar: &Exemplar, read_model_defs: &[ReadModelDef]) -> String {
     let rows: Vec<String> = read_model_defs.iter().map(emit_read_model_def).collect();
