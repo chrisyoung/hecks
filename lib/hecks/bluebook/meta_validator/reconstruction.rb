@@ -207,9 +207,22 @@ module Hecks
         # at a time.
         def members_row(row) = members_of(row)
 
+        # THE KEY IS STRINGIFIED, NEVER THE VALUE — the same split
+        # `Bluebook::ValueObject#to_h`'s own `members:` emission makes
+        # (lib/hecks/bluebook/value_object.rb, L7 docs/audits/
+        # 2026-08-11-bug-triage.md). `Pair.value` is declared `String`
+        # (shape.bluebook), but a real pair can hold whatever native Ruby
+        # type the source member line actually wrote (`StatementFrequency`'s
+        # own `retention_months: 84`, examples/banking/bluebook/
+        # statements.bluebook) — `text` already unwraps the stored Value to
+        # that real type, so calling `.to_s` here erased it a second time,
+        # on the side spec/round_trip_spec.rb compares straight against a
+        # fresh raw load (`Reconstruction.of` directly, no Assembly in
+        # between): `declared 84, read back "84"` the moment `to_h` stopped
+        # erasing it on the OTHER side and this one kept erasing it alone.
         def members_of(value_object_row)
           Array(value_object_row[:members]).map do |member|
-            Array(member[:pairs]).map { |pair| [text(pair[:key]).to_s, text(pair[:value]).to_s] }
+            Array(member[:pairs]).map { |pair| [text(pair[:key]).to_s, text(pair[:value])] }
           end
         end
 

@@ -137,6 +137,21 @@ module Hecks
         aggregate = find_aggregate(chapter, aggregate_name)
         domain = chapter.name
 
+        # L11 (docs/audits/2026-08-10-main-bug-audit.md) — a record's own
+        # id is free-form (S3) and can collide with one of its own
+        # aggregate's command/query names ("Close", "Overdrawn", ...).
+        # A GET for such an id must still be able to reach that RECORD's
+        # own detail page when a record with that literal id actually
+        # exists — checking the verb first (the previous order) meant a
+        # record unlucky enough to be named after a real verb could never
+        # be viewed again. POST never means "view a record" at all
+        # (`record_route` only ever answers GET), so command submission
+        # there is unambiguous and is left to match the verb first, same
+        # as before.
+        if request.get? && (instance = @registry.repository(domain, aggregate).find(verb_or_id))
+          return record_route(request, domain, aggregate, verb_or_id, format, instance: instance)
+        end
+
         if (command = aggregate.command(verb_or_id))
           return command_route(request, domain, aggregate, command, format)
         end
@@ -238,14 +253,23 @@ module Hecks
         args = Params.extract(fields, asked)
         rows = @dispatcher.query("#{domain}::#{aggregate.hecks_name}.#{query.hecks_name}", **args)
         [rows.map { |row| Record.new(row[:id], row.reject { |k, _| k == :id }) }, nil]
-      rescue *Runtime::DOMAIN_REFUSALS, ArgumentError, TypeError => e
+      # L10 (docs/audits/2026-08-10-main-bug-audit.md) — `Params.extract`
+      # (params.rb's `extract_list`) reads a list-of-value-object line as
+      # JSON (the honest fallback for a multi-attribute list element this
+      # prototype's textarea doesn't build a second widget for). A caller
+      # who types a non-JSON line into that field raises `JSON::ParserError`
+      # BEFORE dispatch ever sees it — both command submission paths
+      # already rescue it (`submit_command`, `command_json`); this one
+      # didn't, so a malformed list-of-VO query 500'd instead of showing
+      # the same 422 every other bad-input path shows.
+      rescue *Runtime::DOMAIN_REFUSALS, ArgumentError, TypeError, JSON::ParserError => e
         [nil, e]
       end
 
-      def record_route(request, domain, aggregate, id, format)
+      def record_route(request, domain, aggregate, id, format, instance: nil)
         return respond(405, "text/plain", "GET only") unless request.get?
 
-        instance = @registry.repository(domain, aggregate).find(id)
+        instance ||= @registry.repository(domain, aggregate).find(id)
         return not_found(aggregate, id, format) unless instance
         # id LAST — same reasoning as the other JSON-serializing call
         # sites in this file (see aggregate_route's own comment).

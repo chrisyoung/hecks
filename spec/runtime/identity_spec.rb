@@ -41,6 +41,21 @@ RSpec.describe Hecks::Runtime::Identity do
 
       expect(described_class.of(construct, { flag: {} })).to be_nil
     end
+
+    # R4 (docs/audits/2026-08-11-bug-triage.md) — the Rust kernel's own
+    # `to_id_component` (rust/src/kernel/json.rs) used to accept an
+    # empty-string identity component and persist a record under it, a
+    # real, live divergence from THIS behavior: an empty string names
+    # nothing here, the same as a genuinely absent part, and the WHOLE
+    # identity is refused (`nil`) rather than resolving to a blank-but-
+    # real id. `to_id_component_refuses_an_empty_string`
+    # (rust/src/kernel/json.rs's own `#[cfg(test)]` module) is the same
+    # proof on the Rust side.
+    it "refuses (nil) a blank-string identity part — the same as an absent one" do
+      construct = IdentityOfFakeConstruct.new(["flag.active"])
+
+      expect(described_class.of(construct, { flag: { active: "" } })).to be_nil
+    end
   end
 
   # M18 (docs/audits/2026-08-10-main-bug-audit.md,

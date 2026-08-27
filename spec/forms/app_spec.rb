@@ -150,6 +150,72 @@ RSpec.describe Hecks::Forms::App do
     end
   end
 
+  # L10 (docs/audits/2026-08-10-main-bug-audit.md) — `run_query`'s own
+  # rescue clause listed every domain refusal plus ArgumentError/TypeError,
+  # but not `JSON::ParserError` — the one error a malformed line in a
+  # list-of-VALUE-OBJECT query parameter actually raises
+  # (`Params.extract_list`'s own JSON fallback for a multi-attribute list
+  # element; a single-attribute VO like Banking's own `Tag`/`CustomerNumber`
+  # unwraps to a plain scalar and never hits that branch at all). Both
+  # command submission paths already rescue it (`submit_command`,
+  # `command_json`); this was the same defect on the query side. No
+  # Banking fixture query happens to take a list-of-multi-attribute-VO
+  # parameter, so this spins up a tiny dedicated domain rather than
+  # bending a shared fixture other specs also depend on.
+  describe "a query with a list-of-value-object parameter" do
+    def app
+      @app ||= begin
+        registry = Hecks::Runtime::Registry.new
+        Hecks.with_registry(registry) do
+          Kernel.load(InMemoryDomain::PERSISTENCE_PORT)
+          Kernel.load(InMemoryDomain::EXTRACTION_PORT)
+          Kernel.load(InMemoryDomain::MEMORY_ADAPTER)
+          Kernel.load(InMemoryDomain::PRISM_ADAPTER)
+
+          Hecks.bluebook("ListQueryDomain") do
+            aggregate("Basket") do
+              identified_by :basket_id
+
+              value_object("Item") do
+                attribute :name, String
+                attribute :qty, Integer
+              end
+
+              query("BySpecs") do
+                attribute :items, list_of(Item)
+              end
+            end
+          end
+
+          Hecks.hecksagon("ListQueryDomain") do
+            ::ListQueryDomain::Basket.persisted_by("Memory")
+          end
+        end
+        registry.verify!
+        Hecks::Forms::App.new(registry: registry, exposed: ["ListQueryDomain"])
+      end
+    end
+
+    it "answers 422 (not 500) for a malformed line, bare/JSON path" do
+      get "/ListQueryDomain/Basket/BySpecs?items=not-json"
+      expect(last_response.status).to eq(422)
+      body = JSON.parse(last_response.body)
+      expect(body["error"]).to eq("ParserError")
+    end
+
+    it "answers 422 (not 500) for a malformed line, .html path, with the error rendered" do
+      get "/ListQueryDomain/Basket/BySpecs.html?items=not-json"
+      expect(last_response.status).to eq(422)
+      expect(last_response.body).to include("ParserError")
+    end
+
+    it "still runs cleanly for a well-formed line" do
+      get "/ListQueryDomain/Basket/BySpecs?items=#{URI.encode_www_form_component(JSON.generate(name: 'bolt', qty: 3))}"
+      expect(last_response.status).to eq(200)
+      expect(JSON.parse(last_response.body)).to eq([])
+    end
+  end
+
   describe "a record's own page" do
     before { register_ada }
 
@@ -168,6 +234,60 @@ RSpec.describe Hecks::Forms::App do
       get "/Banking/Customer/nope"
       expect(last_response.status).to eq(404)
       expect(JSON.parse(last_response.body)["error"]).to eq("NotFound")
+    end
+  end
+
+  # L11 (docs/audits/2026-08-10-main-bug-audit.md) — a record's own id is
+  # free-form (S3) and can collide with a command/query name on its own
+  # aggregate ("Close" is one of Customer's own command names). Checking
+  # the verb first (the old order) meant such a record's own detail page
+  # could never be reached again — a GET always resolved to the
+  # command/query instead. POST never views a record at all
+  # (`record_route` only ever answers GET), so command submission for a
+  # DIFFERENT record must stay unaffected.
+  describe "a record whose id collides with a command/query name" do
+    def register_named(id)
+      post "/Banking/Customer/Register.html", "reference.value" => id, "name.given" => "Ada",
+                                                "name.family" => "Lovelace", "email.address" => "ada@example.com"
+    end
+
+    it "the record's own detail page (.html) still wins over a command sharing its name" do
+      register_named("Close") # "Close" is also Customer's own command name
+
+      get "/Banking/Customer/Close.html"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to include("status: active") # the RECORD's state, not a command form
+      expect(last_response.body).not_to include("<form")
+    end
+
+    it "the record's own detail page (bare/JSON) still wins over a command sharing its name" do
+      register_named("Close")
+
+      get "/Banking/Customer/Close"
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include("application/json")
+      expect(JSON.parse(last_response.body)["id"]).to eq("Close")
+    end
+
+    it "the record's own detail page still wins over a query sharing its name" do
+      register_named("Suspended") # "Suspended" is also Customer's own query name
+
+      get "/Banking/Customer/Suspended.html"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to include("status: active")
+      expect(last_response.body).not_to include("<h2>Results")
+    end
+
+    it "does not disturb submitting the command for a DIFFERENT (non-colliding) record" do
+      register_named("Close")
+      register_ada # id "c1", no collision
+
+      post "/Banking/Customer/Close.html", "to" => "c1"
+      expect(last_response.status).to eq(302)
+      expect(last_response.headers["location"]).to eq("/Banking/Customer/c1.html")
+
+      get "/Banking/Customer/c1.html"
+      expect(last_response.body).to include("status: closed")
     end
   end
 

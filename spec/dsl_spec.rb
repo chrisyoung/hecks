@@ -590,6 +590,41 @@ RSpec.describe "the DSL surface" do
       )
     end
 
+    # L7 (docs/audits/2026-08-11-bug-triage.md, Tier 7) — `to_h`'s own
+    # `members:` emission used to call `.to_s` on every member field value,
+    # so `minor_units: 2` (a genuine Integer, `currency.members` above
+    # proves it) crossed the wire as the STRING `"2"` — indistinguishable
+    # from a member some other row spelled as text. Only the field NAME is
+    # a Ruby symbol that has to become a string for the wire; the value's
+    # own type is real information (`Bluebook::Attribute#to_h`'s own
+    # `default:` already preserves it the same way, unstringified) and
+    # `to_h` should not be the place that erases it.
+    it "to_h preserves a member field's own declared type, not just its String spelling" do
+      registry = in_registry do
+        Hecks.bluebook("Coins") do
+          aggregate("Coin") do
+            identified_by :id
+
+            attribute :currency, Currency
+
+            value_object("Currency") do
+              attribute :code,        String
+              attribute :minor_units, Integer
+
+              member code: "USD", minor_units: 2
+              member code: "JPY", minor_units: 0
+            end
+          end
+        end
+      end
+
+      currency = registry.bluebooks["Coins"].aggregates.first.value_objects.first
+
+      expect(currency.to_h[:members]).to eq(
+        [[["code", "USD"], ["minor_units", 2]], [["code", "JPY"], ["minor_units", 0]]]
+      )
+    end
+
     it "refuses an empty member" do
       expect do
         in_registry do
@@ -1674,6 +1709,23 @@ RSpec.describe "the DSL surface" do
       expect(machine.target_for("Advance", "a")).to eq("b")
       expect(machine.target_for("Advance", "b")).to eq("c")
       expect(machine.states).to eq(["a", "b", "c"])
+    end
+
+    it "lifecycle refuses to guess a target when no declared from: admits the current state" do
+      machine = build_aggregate("Stalled") do
+        lifecycle :status, default: "a" do
+          transition "Advance" => "b", from: "a"
+          transition "Advance" => "c", from: "b"
+        end
+      end.lifecycle
+
+      # "z" admits neither declared "Advance" transition — this used to
+      # silently fall back to the FIRST one ("b"), a wrong answer for a
+      # state no transition actually admits, rather than the loud
+      # refusal every real dispatch path gets from
+      # CommandRules::Admissibility#admissible_transition.
+      expect { machine.target_for("Advance", "z") }
+        .to raise_error(Hecks::Runtime::WiringError, /no transition for "Advance" admits state "z"/)
     end
 
     it "entity declares an identity-bearing member inside the boundary" do
