@@ -460,7 +460,7 @@ module Hecks
           end
 
           @mutations << Mutation.new(target: event.to_s, op: :corrects,
-                                      source: { as: as&.to_s, reason: reason.to_s, reverses: reverses })
+                                     source: { as: as&.to_s, reason: reason.to_s, reverses: reverses })
         end
 
         def build
