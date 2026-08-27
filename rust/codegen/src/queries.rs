@@ -109,16 +109,23 @@ pub fn query_where_skip_reason(where_clause: &Json, aggregate: &Json, value_obje
         ));
     }
     if COMPARATORS_NEEDING_NUMERIC_FIDELITY.contains(&op.as_str()) {
+        if kind == FieldKind::Number {
+            return None;
+        }
         return Some(format!(
-            "where clause on {} uses op {} against a LITERAL value — gt/gte/lt/lte need real Json::Num-vs-Json::Str fidelity this generator can't recover from the exported IR (WhereClause#to_h renders every literal through QuerySpecification.render_value's own .to_s)",
+            "where clause on {} uses op {} against a LITERAL value whose target field doesn't reduce to a plain JSON number (kind: {}) — gt/gte/lt/lte only mean anything against a number (query_comparators.rs's own `ordered?` gate)",
             naming::ruby_inspect_string(&field),
-            naming::ruby_inspect_string(&op)
+            naming::ruby_inspect_string(&op),
+            kind_name(kind)
         ));
     }
     if COMPARATORS_EXEMPT_FROM_LITERAL_TYPING.contains(&op.as_str()) {
         return None;
     }
     if kind == FieldKind::String {
+        return None;
+    }
+    if kind == FieldKind::Number {
         return None;
     }
 
@@ -281,17 +288,17 @@ fn query_comparator_variant(op: &str) -> &'static str {
 }
 
 /// `condition[:literal].inspect` — Ruby's own generic `Object#inspect`,
-/// called on whatever `Literal.read` returned. In EVERY real corpus query
-/// this is a plain String (`query_where_skip_reason` only lets a literal
-/// comparator through when `kind == :string`, except `in`/`contains`,
-/// which the real corpus never uses with anything but a hand-written
-/// string value either) — so only the String case is exercised, but every
-/// case is mirrored for fidelity with Ruby's own `.inspect` regardless of
-/// comparator, matching what `bin/project_rust` would actually emit if it
-/// were ever reached (a bare, unquoted Integer/Float/Bool/nil `.inspect`
-/// embedded where `QueryConditionValue::Literal` expects a `&str` would be
-/// a pre-existing Ruby-side landmine, not something to "fix" silently
-/// here — Ruby is the reference implementation, ADR 0010).
+/// called on whatever `Literal.read` returned. Used for the `Literal`
+/// (string/bool/nil/symbol/hash/array) branch only — `emit_query_
+/// condition_value` (below) intercepts `Int`/`Float` BEFORE this
+/// function ever runs, emitting `QueryConditionValue::NumericLiteral`
+/// instead. That split closes what used to be a real landmine here: a
+/// bare, unquoted Integer/Float `.inspect` embedded where
+/// `QueryConditionValue::Literal` expects a `&str` would have been a
+/// compile error the moment `query_where_skip_reason` ever let a numeric-
+/// kind field's literal through -- fixed by giving numeric literals their
+/// own properly-typed variant instead, mirroring `rust/project/
+/// queries.rb`'s own identical fix.
 fn literal_inspect(lit: &Literal) -> String {
     match lit {
         Literal::Str(s) => naming::ruby_inspect_string(s),
@@ -319,7 +326,20 @@ fn ruby_float_inspect(n: f64) -> String {
 pub fn emit_query_condition_value(condition: &Condition) -> String {
     match &condition.arg {
         Some(arg) => format!("crate::kernel::QueryConditionValue::Arg({})", naming::ruby_inspect_string(arg)),
-        None => format!("crate::kernel::QueryConditionValue::Literal({})", literal_inspect(condition.literal.as_ref().unwrap())),
+        None => {
+            let lit = condition.literal.as_ref().unwrap();
+            // `query_where_skip_reason` only lets a bare Integer/Float
+            // literal reach here once the TARGET FIELD is already proven
+            // numeric-kind -- the literal's own variant is sufficient to
+            // pick the emitted `QueryConditionValue`, no need to
+            // re-derive kind a second time (mirrors
+            // rust/project/queries.rb's own identical reasoning).
+            match lit {
+                Literal::Int(n) => format!("crate::kernel::QueryConditionValue::NumericLiteral({})", ruby_float_inspect(*n as f64)),
+                Literal::Float(n) => format!("crate::kernel::QueryConditionValue::NumericLiteral({})", ruby_float_inspect(*n)),
+                _ => format!("crate::kernel::QueryConditionValue::Literal({})", literal_inspect(lit)),
+            }
+        }
     }
 }
 

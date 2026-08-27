@@ -98,6 +98,19 @@ pub enum QueryConditionValue {
     /// unrecoverable from the exported IR, so those queries simply have no
     /// row at all rather than a wrong or silently-approximated one.
     Literal(&'static str),
+    /// A `gt`/`gte`/`lt`/`lte` (or a numeric-kind `eq`/`ne`) literal,
+    /// baked in as a real `f64` at codegen time rather than wire text --
+    /// `rust/project/queries.rb`'s `query_where_skip_reason` only lets
+    /// one of these reach here when `query_field_kind` has already
+    /// proven the target field numeric-shaped (Integer/Float, or a
+    /// value object that collapses to one), so there's no string-vs-
+    /// number ambiguity left to resolve here: the field being numeric
+    /// is what makes it safe, not the literal text's own shape. Resolves
+    /// to `Json::Num`, never `Json::Float` -- a query condition's own
+    /// value is a comparison operand, never serialised back to a
+    /// caller, so the Int-vs-Float wire distinction `Json::Float`
+    /// exists to preserve doesn't apply here.
+    NumericLiteral(f64),
     /// A caller-bound Symbol — the declared query's OWN attribute name,
     /// read off THIS call's `args` object at dispatch time. Missing
     /// entirely reads as `Json::Null`, mirroring Ruby's own
@@ -148,6 +161,7 @@ pub fn run_cross_domain(
     for condition in def.conditions {
         let want = match condition.value {
             QueryConditionValue::Literal(text) => Json::Str(text.to_string()),
+            QueryConditionValue::NumericLiteral(n) => Json::Num(n),
             QueryConditionValue::Arg(name) => args.get(name).cloned().unwrap_or(Json::Null),
         };
         entries =

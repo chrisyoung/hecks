@@ -421,6 +421,7 @@ fn apply_filtered_head_options(mut rows: Vec<(String, Json)>, def: &ReadModelDef
     for condition in def.conditions {
         let want = match condition.value {
             QueryConditionValue::Literal(text) => Json::Str(text.to_string()),
+            QueryConditionValue::NumericLiteral(n) => Json::Num(n),
             QueryConditionValue::Arg(name) => args.get(name).cloned().unwrap_or(Json::Null),
         };
         rows = repository::filter_entries(rows, condition.field, condition.comparator, &want);

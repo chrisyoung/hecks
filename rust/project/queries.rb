@@ -193,12 +193,15 @@ module RustProjection
                "the same honest-refusal-over-silently-wrong choice this generator makes everywhere else"
       end
       if COMPARATORS_NEEDING_NUMERIC_FIDELITY.include?(op)
-        return "where clause on #{field.inspect} uses op #{op.inspect} against a LITERAL value — gt/gte/lt/lte need " \
-               "real Json::Num-vs-Json::Str fidelity this generator can't recover from the exported IR " \
-               "(WhereClause#to_h renders every literal through QuerySpecification.render_value's own .to_s)"
+        return nil if kind == :number
+
+        return "where clause on #{field.inspect} uses op #{op.inspect} against a LITERAL value whose target " \
+               "field doesn't reduce to a plain JSON number (kind: #{kind}) — gt/gte/lt/lte only mean anything " \
+               "against a number (query_comparators.rs's own `ordered?` gate)"
       end
       return nil if COMPARATORS_EXEMPT_FROM_LITERAL_TYPING.include?(op)
       return nil if kind == :string
+      return nil if kind == :number
 
       "where clause on #{field.inspect} uses op #{op.inspect} against a LITERAL value whose target field doesn't " \
         "reduce to a plain JSON string (kind: #{kind}) — its true wire type can't be recovered from the exported IR"
@@ -365,6 +368,14 @@ module RustProjection
     def emit_query_condition_value(condition)
       if condition[:arg]
         "crate::kernel::QueryConditionValue::Arg(#{condition[:arg].inspect})"
+      elsif condition[:literal].is_a?(Numeric)
+        # `query_where_skip_reason` only lets a bare Integer/Float literal
+        # (never a String, since `Literal.read` only ever returns Numeric
+        # for genuinely numeric-shaped, unquoted source text) reach here
+        # once the TARGET FIELD is already proven numeric-kind — so the
+        # literal's own Ruby class is sufficient to pick the variant,
+        # no need to re-derive kind a second time.
+        "crate::kernel::QueryConditionValue::NumericLiteral(#{Float(condition[:literal]).inspect})"
       else
         "crate::kernel::QueryConditionValue::Literal(#{condition[:literal].inspect})"
       end
