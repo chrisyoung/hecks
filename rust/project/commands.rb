@@ -489,7 +489,28 @@ module RustProjection
         source = command[:attributes].find { |a| a[:name].to_s == source_name }
         next if source.nil? && attr[:optional]
         return "#{label}: target argument #{attr[:name]} has no source on the door" unless source
-        unless source[:type].to_s == attr[:type].to_s && !!source[:list] == !!attr[:list]
+        return "#{label}: door argument #{source_name} is a list, target wants a scalar (or vice versa) — not generated yet" if !!source[:list] != !!attr[:list]
+        # `bridgeable_value_types?`, not exact type-name equality — the
+        # SAME question `mutation_set_rhs` already answers for a `sets`
+        # RHS, and the right one here too: `with_aliases`/`from_json`
+        # (`CommandInterpreter#step_delegate_to_entity`, read directly —
+        # `ctx.args.merge(delegation.source.to_h { |target_key,
+        # source_key| [target_key, ctx.args[source_key]] })`) copies the
+        # door's OWN raw wire value under the target's key and lets the
+        # TARGET's own coercion (`Value.for`) make sense of it — Ruby
+        # never once compares the two ARGUMENTS' declared type names to
+        # each other. Confirmed empirically (docs/decisions/0045): a
+        # purpose-built door whose own argument was a differently-named
+        # single-field VO wrapping the identical scalar as the target's
+        # own declared type dispatched correctly through real Ruby, no
+        # refusal — exact-name equality was refusing something Ruby
+        # genuinely supports. `bridgeable_value_types?` is the already-
+        # audited "is copying source into target semantically sound"
+        # check (field-name alignment for two VOs, closed-set member
+        # coverage, scalar-representation equivalence) — exactly the
+        # question the JSON-level alias-then-deserialize mechanism cares
+        # about, since it never does a typed Rust-level field copy either.
+        unless bridgeable_value_types?(source[:type].to_s, attr[:type].to_s, value_objects_by_name)
           return "#{label}: door argument #{source_name} is #{source[:type]}, target wants #{attr[:type]} — not generated yet"
         end
         return "#{label}: optional door argument #{source_name} feeds required #{attr[:name]}" if source[:optional] && !attr[:optional]

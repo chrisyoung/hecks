@@ -525,7 +525,18 @@ pub fn delegate_skip_reason(command: &Json, aggregate: &Json, value_objects_by_n
             }
             return Some(format!("{label}: target argument {name} has no source on the door"));
         };
-        if crate::attr::type_name(source) != crate::attr::type_name(attr) || crate::attr::list(source) != crate::attr::list(attr) {
+        if crate::attr::list(source) != crate::attr::list(attr) {
+            return Some(format!("{label}: door argument {source_name} is a list, target wants a scalar (or vice versa) — not generated yet"));
+        }
+        // `bridgeable_value_types`, not exact type-name equality — see
+        // rust/project/commands.rs's own comment on this same check
+        // (docs/decisions/0045) for the full reasoning: the JSON-level
+        // alias-then-deserialize delegate mechanism never compares the
+        // two arguments' declared type names to each other, only Ruby's
+        // real behavior does (nothing, empirically confirmed) — so this
+        // generator shouldn't either, past the same semantic-soundness
+        // check `mutation_set_rhs`'s own RHS already trusts.
+        if !crate::bridging::bridgeable_value_types(crate::attr::type_name(source), crate::attr::type_name(attr), value_objects_by_name) {
             return Some(format!("{label}: door argument {source_name} is {}, target wants {} — not generated yet", crate::attr::type_name(source), crate::attr::type_name(attr)));
         }
         if crate::attr::optional(source) && !crate::attr::optional(attr) {
