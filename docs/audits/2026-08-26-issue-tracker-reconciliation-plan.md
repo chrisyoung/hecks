@@ -1,9 +1,16 @@
 # Issue-tracker reconciliation plan — 2026-08-26
 
-_Prompted by a critique agent's claim of "186 open issues." That count is
-correct as a raw `gh issue list --state open` tally, but it is not a live
-backlog — see below. This doc is the plan for closing the gap between the
-tracker and reality, not a plan to hand-fix 186 bugs._
+_Prompted by a critique agent's claim of "186 open issues." That count was
+correct as a raw `gh issue list --state open` tally, but it was not a live
+backlog — see below. **Update, same day:** Phase 1 executed for the
+guard/`then_set`/validation-shaped `qa-legacy` issues — 115 issues verified
+fixed against current `main` (per-command-block parse, not a title guess)
+and closed with an individual evidence comment each. **186 → 71 open.**
+Remaining: 8 confirmed-real gaps (see table below), 18 `qa-legacy` issues of
+a different shape (runtime crashes, `one_of` enforcement, missing `role` —
+need live dispatch to verify, not static grep), the 38-issue
+`hecks-hecksagain` epic, and 7 misc issues — none of the last three groups
+verified yet, none closed._
 
 ## Headline finding
 
@@ -87,20 +94,62 @@ symptom-issues against current source — but no one has run a **fresh**
 line-by-line audit against `main` since the sweep landed. Confidence is
 high, not certain.
 
-## Plan
+## Phase 1 — done for the guard/then_set/validation issues
 
-**Phase 1 — Reconcile the 186 GitHub issues (bulk, evidence-cited, batched)**
-1. For the 141 `qa-legacy` issues: script a check (title → entity/command →
-   grep the relevant `.bluebook` for the named guard/`then_set`) across all
-   9 source files properly (today's manual spot-check regex was too naive
-   for full automation — needs real parsing of nested `entity`/`command`
-   blocks, not a flat regex). Close each confirmed-fixed issue with a
-   comment linking #161/#164/#141 and the exact line now satisfying it.
-   Anything the script can't confirm gets hand-reviewed, not auto-closed.
+Built a real parser (`do`/`end` depth tracking, not a flat regex — the
+corpus has no single-line `do...end`, verified first) that extracts every
+`command` block scoped to its actual enclosing `aggregate`/`entity`, so
+`Transfer.Reverse` and `LedgerEntry.Reverse` don't cross-contaminate each
+other's guard text the way a flat regex did on the first pass. For each of
+the 141 `qa-legacy` issues matching the "Entity.Command Missing X" title
+shape:
+
+- Looked up the command by (entity, command name); where the name didn't
+  resolve, checked for a rename (`Account.Freeze`→`FreezeAccount`,
+  `SafeDepositBox.Create`→`Rent`, `ExternalTransfer.Send`→`SendTransfer`)
+  before concluding the command doesn't exist.
+- Checked the specific guard/`then_set`/validation field the issue named
+  against the command's current `given(...)`/`sets`/`then_set` lines.
+- Hand-reviewed every case the script couldn't confirm cleanly (12 cases —
+  title-phrasing false negatives where the guard was present but didn't
+  literally contain "status guard", plus genuine remaining gaps) rather
+  than trusting the automated pass alone.
+
+**Result: 115 closed** (each with an issue-specific comment quoting the
+current command block and the PR/issue that fixed it), **8 confirmed still
+open** (real gaps, left alone — see table), **18 left unverified** (a
+different bug shape — runtime crashes and validation-enforcement claims
+that need live dispatch to check, not a static guard/field read).
+
+### Confirmed still-open (do not close)
+
+| Issue | Gap |
+| --- | --- |
+| #310 | `Transfer.Request` never `sets`/`then_set`s its own `:reference` identity field — unlike `Account.Open`'s `sets :number`, which does persist its identity the same way |
+| #308 | `Transfer.Request` has no destination-account/customer validation — only source-side guards |
+| #305 | `Transfer.Reject` has no destination validation |
+| #301 | `Transfer.Debited` has no destination validation |
+| #293 | `ScheduledPayment.Schedule` declares `attribute :instruction` but never `sets` it |
+| #278 | `SafeDepositBox.Rent` has no customer-status guard (only `given("box is vacant")`) |
+| #257 | `ExternalTransfer.Request` declares `attribute :end_to_end` but never `sets` it |
+| #229 | `CardPayment.Authorize` declares `attribute :authorisation` but never `sets` it |
+
+## Remaining plan
+
+**Phase 1b — the other 63 open issues, not yet touched**
+1. The 18 non-guard-shaped `qa-legacy` issues (runtime crashes like
+   "Command.name Returns Nil", `one_of` enforcement gaps, missing `role`
+   fields, negative-amount acceptance) need live dispatch against the
+   current runtime to verify — a static grep can't confirm a crash is
+   fixed or a validation now refuses. Write small repro scripts per issue,
+   run them, close or confirm accordingly.
 2. For the 38 `hecks-hecksagain` issues: check each `1855be0-*` item
-   against the commit log (most already appear to have landed — e.g. #141
-   is visibly in production use above). Close what's shipped; leave what
-   isn't.
+   against the commit log. Note: the module was renamed `Hecksagain` →
+   `Hecks` at some point — a plain keyword grep against current `lib/`
+   came up empty for several (e.g. `redirects_native`), which could mean
+   genuinely unimplemented, or could mean renamed again during the
+   migration. Needs the rename mapping confirmed before trusting a grep
+   miss as "still open."
 3. For the 7 unlabeled issues (#173, #170, #167, #164, #161, #101, #75):
    handle individually — #167/#164/#161 are the root-cause PRs themselves
    and may already be merged (verify and close); #101 (fuzzer crash) and
