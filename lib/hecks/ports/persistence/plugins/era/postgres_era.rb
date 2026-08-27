@@ -157,7 +157,22 @@ module Hecks
         # boots a held-but-superseded era and keeps writing its own
         # partition); a directly-instantiated adapter defaults to the
         # newest.
-        @era = self.class.setting(settings, :era, default: @lineage.current_era)
+        #
+        # NOT `self.class.setting(...)` here — RepositoryFactory#build
+        # always merges `era: registry.resolved_eras[domain]` into
+        # settings, so the key is genuinely PRESENT (not absent) for
+        # any domain the era boot gate hasn't resolved yet (or that
+        # doesn't have one at all), just holding `nil`. `setting`'s own
+        # presence-over-truthiness discipline (correct for a field like
+        # `:role`, where a stored `false` is a real, distinct answer
+        # from "unset") does the wrong thing for `:era` specifically:
+        # `nil` can never be a meaningful era override — only a real
+        # ordinal or "not resolved, self-resolve" ever apply — so
+        # coalescing here, not `setting`'s presence check, is what
+        # actually honors this comment's own "defaults to the newest"
+        # promise.
+        @era = settings.key?(:era) ? settings[:era] : settings["era"]
+        @era ||= @lineage.current_era
         # Unconditional and idempotent, regardless of era — belt-and-
         # suspenders self-healing (compile_head! already ensures this for
         # a freshly-minted era's own name; ensure_first_head! for era 1's)
