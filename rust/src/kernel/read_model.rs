@@ -14,10 +14,11 @@
 // reference id, plus one or more OTHER aggregate heads found by scanning
 // and matching a reference attribute back to an already-projected
 // root/sibling row, PLUS (as of 2026-08-11) a declared `where`/`order_by`/
-// `limit` on the ONE eligible many-side head (`filtered_head`, below) —
-// `IR::ReadModel#to_h` now spells these three on the wire (`read_models.rb`'s
-// own header has the history: it didn't used to). Still no `offset`/
-// `cursor`/`consistency`/`authorize`(TenantScope)/`nulls` beyond the
+// `limit` on the ONE eligible many-side head (`filtered_head`, below), PLUS
+// (as of Phase 10, equivalence-gap plan) that same head's own `offset` too —
+// `IR::ReadModel#to_h` now spells these four on the wire (`read_models.rb`'s
+// own header has the history: it didn't used to). Still no `cursor`/
+// `consistency`/`authorize`(TenantScope)/`nulls` beyond the
 // default/`inspect_query` — real capabilities `Ports::Query::InMemory`/
 // `TenantScope` implement that this generator still doesn't port, the SAME
 // boundary `rust/project/queries.rb` already draws for a declared AGGREGATE
@@ -91,6 +92,18 @@ pub type ReadModelOrderBy = query_ordering::OrderBy;
 /// args).to_i`, lib/hecks/ports/query/in_memory.rb).
 pub type ReadModelLimit = query_ordering::Limit;
 
+/// A read model's own declared `offset N`, applying to `ReadModelDef::
+/// filtered_head` alone — same alias reasoning as `ReadModelLimit` just
+/// above (`query_ordering::Offset` is itself `pub type Offset = Limit` —
+/// see that module's own header): ground truth `Ports::Query::InMemory.
+/// execute`'s own `matched.first(resolve(declared.limit.value, args).
+/// to_i) if declared.limit` sits right after its own `skipped = declared.
+/// offset ? matched.drop(...) : matched` — the SAME two-field shape a
+/// declared AGGREGATE query already has (`named_query::QueryDef::offset`,
+/// Phase 10 of the equivalence-gap plan), ported here the moment
+/// `read_models.rb`'s own eligibility gate stopped refusing it.
+pub type ReadModelOffset = query_ordering::Offset;
+
 /// ONE declared `report "X" do ... end` block, compiled — the read-model
 /// analogue of `named_query::QueryDef`. `verb` is the "Domain.Name" wire
 /// string `kernel::cli.rs`'s STRING-form "query" step matches a read-model
@@ -122,6 +135,10 @@ pub struct ReadModelDef {
     pub filtered_head: Option<&'static str>,
     pub conditions: &'static [QueryCondition],
     pub order_by: Option<ReadModelOrderBy>,
+    /// `None` for every read model before Phase 10 (equivalence-gap
+    /// plan) ported this — `read_models.rb`'s own eligibility gate used
+    /// to refuse ANY declared `offset` outright, unconditionally.
+    pub offset: Option<ReadModelOffset>,
     pub limit: Option<ReadModelLimit>,
 }
 
@@ -236,6 +253,7 @@ mod snake_alias_tests {
             filtered_head: None,
             conditions: &[],
             order_by: None,
+            offset: None,
             limit: None,
         }];
 
@@ -400,10 +418,9 @@ fn record_matches(record: &Json, head: &ReadModelHead, projected: &[(&'static st
     })
 }
 
-/// THE ELIGIBLE HEAD'S OWN where/order_by/limit — `Ports::Query::InMemory.
-/// execute`, ported for exactly the subset `read_models.rb`'s own
-/// eligibility gate admits (offset deliberately excluded — out of scope,
-/// same as every OTHER option that generator still refuses). Where-
+/// THE ELIGIBLE HEAD'S OWN where/order_by/offset/limit — `Ports::Query::
+/// InMemory.execute`, ported for exactly the subset `read_models.rb`'s own
+/// eligibility gate admits. Where-
 /// filtering reuses `repository::filter_entries` chained per condition —
 /// exactly `named_query::run`'s own AND, never reimplemented. Order/limit
 /// are `query_ordering::apply` (kernel/query_ordering.rs) — EXTRACTED from
@@ -427,11 +444,5 @@ fn apply_filtered_head_options(mut rows: Vec<(String, Json)>, def: &ReadModelDef
         rows = repository::filter_entries(rows, condition.field, condition.comparator, &want);
     }
 
-    // `offset: None` — a read model has no `ReadModelDef::offset` field at
-    // all (`read_models.rb`'s own eligibility gate still refuses a
-    // declared `offset` unchanged; only `named_query::QueryDef` gained
-    // one, Phase 10 of the equivalence-gap plan). `apply`'s signature grew
-    // this param for that one new caller; this one just always passes
-    // `None`, exactly as if the param didn't exist for it.
-    query_ordering::apply(rows, def.order_by.as_ref(), None, def.limit.as_ref(), args)
+    query_ordering::apply(rows, def.order_by.as_ref(), def.offset.as_ref(), def.limit.as_ref(), args)
 }

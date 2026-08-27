@@ -33,6 +33,7 @@ crate::kernel::read_model::ReadModelDef {
         },
     ],
     order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "tmpl_order_field", descending: true }),
+    offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),
     limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
 },
 ];

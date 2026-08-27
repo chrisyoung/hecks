@@ -1554,6 +1554,22 @@ crate::kernel::read_model::ReadModelDef {
 
     ],
     order_by: None,
+    offset: None,
     limit: None,
+},
+crate::kernel::read_model::ReadModelDef {
+    verb: "Banking.ComplianceDashboard",
+    reference_name: "account",
+    heads: &[
+        crate::kernel::read_model::ReadModelHead { aggregate: "Banking::Account", as_name: "account", many: false, is_root: true, reference_fields: &[] },
+        crate::kernel::read_model::ReadModelHead { aggregate: "Banking::CardPayment", as_name: "card_payments", many: true, is_root: false, reference_fields: &[crate::kernel::read_model::ReferenceField { target_aggregate: "Banking::Account", field: "account" }, crate::kernel::read_model::ReferenceField { target_aggregate: "Banking::Customer", field: "disputed_by" }] },
+    ],
+    filtered_head: Some("card_payments"),
+    conditions: &[
+        crate::kernel::QueryCondition { field: "status", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Literal("disputed") },
+    ],
+    order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "amount", descending: true }),
+    offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(5)),
+    limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
 },
 ];
