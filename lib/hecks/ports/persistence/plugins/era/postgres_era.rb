@@ -67,12 +67,30 @@ module Hecks
         )
       end
 
+      # BOTH SPELLINGS OF A SETTING ARE HONORED — a world's settings hash
+      # may arrive symbol-keyed (built straight in Ruby) or string-keyed
+      # (round-tripped through JSON), and a domain that names one is not
+      # obligated to also skip the other. `key?` decides which spelling
+      # actually exists, never `||` — `||` cannot tell a genuinely stored
+      # `false` apart from an absent key, and would silently prefer the
+      # OTHER spelling (or `default`) instead of returning the real, held
+      # answer. See Hecks::QuerySpecification::FieldPath#read for the same
+      # discipline applied to stored state instead of settings.
+      def self.setting(settings, key, default: nil)
+        return settings[key] if settings.key?(key)
+
+        str_key = key.to_s
+        return settings[str_key] if settings.key?(str_key)
+
+        default
+      end
+
       def self.connect_for(name, settings)
         # LAZY, ON PURPOSE — same reasoning as Sqlite's own initialize:
         # a domain that never wires PostgresEra should never need the gem.
         require "pg"
 
-        declared = settings[:database] || settings["database"]
+        declared = setting(settings, :database)
         if declared.to_s.empty?
           raise Runtime::WiringError,
                 "#{name} binds PostgresEra, which needs a database connection, " \
@@ -94,7 +112,7 @@ module Hecks
         # TABLE ... SET SCHEMA migrations transparent to the rest of the
         # adapter. A domain with no `schema` setting keeps Postgres's
         # own default search_path (public), same as before this existed.
-        schema = settings[:schema] || settings["schema"]
+        schema = setting(settings, :schema)
         if schema.to_s != ""
           # THE SCHEMA ITSELF, IDEMPOTENTLY — a domain naming a `schema:`
           # nobody has created yet used to fail on its FIRST table-
@@ -132,14 +150,14 @@ module Hecks
         # The domain names the journal (one journal per lineage). The
         # factory injects it; a directly-instantiated adapter (specs,
         # consoles) journals under the aggregate's own name.
-        @domain = (settings[:domain] || settings["domain"] || aggregate.storage_name).to_s
+        @domain = self.class.setting(settings, :domain, default: aggregate.storage_name).to_s
         @lineage = Lineage.new(@db, @domain)
         @lineage.ensure_base!
         # The era gate resolves which era this boot IS (an old checkout
         # boots a held-but-superseded era and keeps writing its own
         # partition); a directly-instantiated adapter defaults to the
         # newest.
-        @era = settings[:era] || settings["era"] || @lineage.current_era
+        @era = self.class.setting(settings, :era, default: @lineage.current_era)
         # Unconditional and idempotent, regardless of era — belt-and-
         # suspenders self-healing (compile_head! already ensures this for
         # a freshly-minted era's own name; ensure_first_head! for era 1's)
