@@ -84,8 +84,26 @@ module Hecks
               end
             elsif ['"', "'"].include?(char)
               result << yield(buffer)
-              buffer = char.to_s
-              quote = char
+              # `.dup`, NOT `char.to_s` (a same-object no-op on an already-
+              # String `char`) — without it, `buffer = char; quote = char`
+              # alias the SAME String, and the very next `buffer << char`
+              # a few lines up mutates them both: `quote` silently grows
+              # past its own single character, `char == quote` never
+              # matches again for the rest of the string, and everything
+              # after the true closing quote reads as "still inside a
+              # string" forever — never reaching the final line's `yield`
+              # at all. MASKED by every existing spec here, which only
+              # checks that quoted CONTENTS survive untouched (the M7 fix
+              # this method exists for) — that still holds by accident
+              # once the bug make the "outside" branch unreachable. Found
+              # live: a multi-line `given`/`ensures` block whose ONLY
+              # quoted literal closes before a later line — the newline
+              # and that later line's own indentation went uncollapsed,
+              # diverging from `hecks-parse`'s own (correct) single-space
+              # join. `spec/parser_parity_spec.rb`, roster's "a front-row
+              # seat takes a member of age".
+              buffer = char.dup
+              quote = char.dup
             else
               buffer << char
             end

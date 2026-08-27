@@ -119,6 +119,47 @@ pub fn unquote_for_symbol(rest: &str) -> String {
     unquote(rest)
 }
 
+/// `Assembly::Marks#unmark_scalar` (lib/hecks/bluebook/assembly/marks.rb)
+/// — a value object's own MEMBER field, where the language stores every
+/// value as bare text and the real Ruby type has to be guessed back from
+/// the shape of it. Deliberately narrower than `read`, above, and NOT a
+/// call to it: a member field is never spelled with `Literal.render`'s
+/// own conventions (no `:` prefix for a Symbol, no `"..."` quoting for a
+/// String) — `read`'s quoted-string/symbol/adjacent-string-literal/nil
+/// branches don't apply here at all, and a bare word that isn't
+/// true/false/int/float stays exactly the String it already was, same
+/// as Ruby's own final `text` fallthrough (a closed set admits words far
+/// more often than symbols, `read`'s own header comment already amended
+/// for this same reason).
+///
+/// Found live: `hecks-parse`'s own member-row emission (emit.rs) hard-
+/// coded every value as a JSON string, unconditionally — no such
+/// unmarking at all — so a member field like `Expression::CanonicalForm`'s
+/// own `position: 1` round-tripped as `"1"` where Ruby's assembled IR
+/// (which this parser's ir.json has to byte-match) carries a real
+/// Integer. Confirmed via `spec/parser_parity_spec.rb`, four real corpus
+/// domains (banking, bluebook_language, roster, expression) — whichever
+/// declares a value object member with an int/bool-shaped value.
+pub fn unmark_scalar(value: &str) -> Value {
+    if value == "true" {
+        return Value::Bool(true);
+    }
+    if value == "false" {
+        return Value::Bool(false);
+    }
+    if is_integer(value) {
+        if let Ok(n) = value.parse::<i64>() {
+            return Value::Int(n);
+        }
+    }
+    if is_float(value) {
+        if let Ok(f) = value.parse::<f64>() {
+            return Value::Float(f);
+        }
+    }
+    Value::Str(value.to_string())
+}
+
 pub fn read(text: &str) -> Value {
     let raw = text.trim();
     if raw.is_empty() || raw == "nil" {

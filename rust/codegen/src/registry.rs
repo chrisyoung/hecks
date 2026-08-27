@@ -34,6 +34,20 @@ pub struct CommandEntry {
     /// `reactions.rs`'s own `emit_command_attributes_table` reads this;
     /// see its header for the full argument.
     pub attributes: Vec<String>,
+    /// R3 (docs/audits/2026-08-11-bug-triage.md) — VO invariant/admits/
+    /// pattern checks, rendered as ready-to-splice lines
+    /// (`commands::invariant_checks_for`'s own doc comment has the
+    /// per-attribute logic). Precomputed at `CommandEntry` construction
+    /// time, where `value_objects_by_name` is already in scope, rather
+    /// than re-deriving it from a raw `Json` command here — the same
+    /// division of labor `attributes`, just above, already uses.
+    /// Spliced into the router match-arm's own body BEFORE `role`/
+    /// `reference_checks`, matching Ruby's own DISPATCH_ORDER (this
+    /// module's header, `emit_registry`) — found missing entirely here:
+    /// `rust/project/registry.rb` got R3's fix; this file, its Rust-
+    /// native mirror, never did. `spec/codegen_parity_spec.rb`, every
+    /// domain with a command that takes a non-closed-set VO argument.
+    pub invariant_check_lines: Vec<String>,
     pub role: Option<String>,
 }
 
@@ -48,6 +62,8 @@ pub struct EntityCommandEntry {
     /// THIS COMMAND'S OWN DECLARED ATTRIBUTE NAMES (R1) — see
     /// `CommandEntry`'s own identical field, above.
     pub attributes: Vec<String>,
+    /// R3 — see `CommandEntry`'s own identical field, above.
+    pub invariant_check_lines: Vec<String>,
     pub role: Option<String>,
     /// `entity_name:`/`entity_identity_reading:` — carried in
     /// `domain_generator.rb`'s own `entity_commands` hash (its own
@@ -293,6 +309,11 @@ pub fn emit_registry(exemplar: &Exemplar, aggregates: &[AggregateEntry]) -> Stri
                 "let args = {mod_path}::{}::from_json(facts_json)?;",
                 c.args_struct
             ));
+            // R3 (docs/audits/2026-08-11-bug-triage.md) — VO invariant/
+            // admits/pattern checks BEFORE role_line/reference_lines,
+            // matching Ruby's own DISPATCH_ORDER (this module's own
+            // header) and `rust/project/registry.rb`'s identical splice.
+            body.extend(c.invariant_check_lines.iter().cloned());
             if let Some(rl) = role_line {
                 if !rl.is_empty() {
                     body.push(rl);
@@ -344,6 +365,8 @@ pub fn emit_registry(exemplar: &Exemplar, aggregates: &[AggregateEntry]) -> Stri
                 ),
                 format!("let args = {mod_path}::{}::from_json(facts_json)?;", c.args_struct),
             ];
+            // R3 — see the aggregate arm's own identical splice, above.
+            body.extend(c.invariant_check_lines.iter().cloned());
             if let Some(rl) = role_line {
                 body.push(rl);
             }
@@ -530,6 +553,8 @@ mod tests {
                     ],
                     reference_checks: Vec::new(),
                     reference_specs: Vec::new(),
+                    attributes: Vec::new(),
+                    invariant_check_lines: Vec::new(),
                     role: None,
                 },
                 CommandEntry {
@@ -541,6 +566,8 @@ mod tests {
                     identity_extra_params: Vec::new(),
                     reference_checks: Vec::new(),
                     reference_specs: Vec::new(),
+                    attributes: Vec::new(),
+                    invariant_check_lines: Vec::new(),
                     role: None,
                 },
             ],
@@ -552,6 +579,8 @@ mod tests {
                 args_struct: "VisitAnnotateArgs".to_string(),
                 reference_checks: Vec::new(),
                 reference_specs: Vec::new(),
+                attributes: Vec::new(),
+                invariant_check_lines: Vec::new(),
                 role: None,
                 entity_name: "Visit".to_string(),
                 entity_identity_reading: "date, sequence".to_string(),

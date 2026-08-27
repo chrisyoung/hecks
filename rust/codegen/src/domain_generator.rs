@@ -461,6 +461,12 @@ pub fn generate(
                         .iter()
                         .map(|a| a.get("name").map(Json::to_s).unwrap_or_default())
                         .collect(),
+                    invariant_check_lines: commands::invariant_checks_for(
+                        exemplar,
+                        command,
+                        &aggregates_by_name,
+                        &value_objects_by_name,
+                    ),
                     role: command.get("role").map(Json::to_s),
                     entity_name: entity
                         .get("name")
@@ -589,6 +595,12 @@ pub fn generate(
                     .iter()
                     .map(|a| a.get("name").map(Json::to_s).unwrap_or_default())
                     .collect(),
+                invariant_check_lines: commands::invariant_checks_for(
+                    exemplar,
+                    command,
+                    &aggregates_by_name,
+                    &value_objects_by_name,
+                ),
                 role: command.get("role").map(Json::to_s),
             });
         }
