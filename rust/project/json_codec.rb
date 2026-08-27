@@ -20,15 +20,44 @@ module RustProjection
     # `TypeMismatch numeric_field`'s own template (`refusal_wording.rb`):
     # `"{type}.{field} expects {expected}, got {offered}"` — `offered` is
     # `value.inspect` on the Ruby side, `Json::inspect` (json.rs) on this
-    # one. Scoped to `Integer`/`Float` specifically (the template's own
-    # name) — a `String` scalar mismatch keeps `json_type_error`'s own
+    # one.
+    #
+    # PRD 04's own generated-sequence fuzzer bridge (spec/
+    # rust_conformance_fuzz_spec.rb) found this comment's OWN premise
+    # stale: "a String scalar mismatch keeps `json_type_error`'s own
     # generic wording, since nothing in this corpus exercises Ruby's own
-    # wording for THAT shape and this generator shouldn't guess at it.
+    # wording for THAT shape" — a random sequence reached
+    # `Pizzas::Order.AddTopping` with an Array offered for
+    # `ToppingName.value` (String-typed) the same day this was checked,
+    # and Ruby's actual wording for exactly that ("ToppingName.value
+    # expects String, got [3,8]") comes from `Value::Coercion
+    # #check_scalar_shapes` — the SAME "numeric_field" template, fired
+    # for a `String`/`TrueClass`/`FalseClass` field ONLY when the offered
+    # value is `Array`/`Hash`-shaped (`COMPOSITE_SHAPES`) — deliberately
+    # LAXER than `check_numeric_fields`: a bare Integer/Bool standing in
+    # for a String is tolerated on the Ruby side (that file's own
+    # comment: "the language's own self-hosted grammar validation hands
+    # a String-typed field... a raw Integer walk-index on purpose... has
+    # always been tolerated"), so this fix is scoped to the SAME
+    # composite-shape case, not to "any scalar-type mismatch at all" —
+    # widening `.as_str()`'s own OWN failure (fires for CROSS-Integer/
+    # Bool mismatches too, which Ruby tolerates) to the proper wording
+    # would misrepresent a case Ruby doesn't even refuse. Emitted as a
+    # RUNTIME check (codegen has no way to know the offered value's
+    # actual shape ahead of time) — `value_var` is always a plain,
+    # already-bound variable at every real call site (`scalar_from_json_
+    # expr`/`scalar_from_json_value_expr`, both comment this directly),
+    # so referencing it twice here is free, not a re-evaluation risk.
     def scalar_type_error(struct_name, key, scalar_type, value_var)
-      return json_type_error(struct_name, key, scalar_type) unless %w[Integer Float].include?(scalar_type)
+      return json_type_error(struct_name, key, scalar_type) unless %w[Integer Float String].include?(scalar_type)
 
       template = "#{struct_name}.#{key} expects #{scalar_type}, got {}"
-      "crate::kernel::Refusal::TypeMismatch(format!(#{template.inspect}, #{value_var}.inspect()))"
+      proper = "crate::kernel::Refusal::TypeMismatch(format!(#{template.inspect}, #{value_var}.inspect()))"
+      return proper if scalar_type != "String"
+
+      generic = json_type_error(struct_name, key, scalar_type)
+      "if matches!(#{value_var}, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) " \
+        "{ #{proper} } else { #{generic} }"
     end
 
     SCALAR_JSON_ACCESSOR = { "String" => "as_str", "Integer" => "as_i64", "Float" => "as_f64" }.freeze

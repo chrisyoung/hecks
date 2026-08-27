@@ -330,6 +330,15 @@ crate::kernel::QueryDef {
     limit: None,
 },
 crate::kernel::QueryDef {
+    verb: "Pizzas::Order.Expensive",
+    aggregate: "Pizzas::Order",
+    conditions: &[
+        crate::kernel::QueryCondition { field: "pizza.price_cents.cents", comparator: crate::kernel::query_comparators::QueryComparator::Gt, value: crate::kernel::QueryConditionValue::NumericLiteral(1000.0) },
+    ],
+    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false }),
+    limit: None,
+},
+crate::kernel::QueryDef {
     verb: "Governance::RoleAssignment.AssignmentsForActor",
     aggregate: "Governance::RoleAssignment",
     conditions: &[

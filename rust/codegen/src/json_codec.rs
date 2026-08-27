@@ -13,12 +13,27 @@ pub fn json_type_error(struct_name: &str, key: &str, expectation: &str) -> Strin
     format!("crate::kernel::Refusal::TypeMismatch({}.to_string())", naming::ruby_inspect_string(&format!("{struct_name}.{key}: expected {expectation}")))
 }
 
+// See rust/project/json_codec.rb's own (much longer) comment on this
+// exact function for the full story: PRD 04's generated-sequence fuzzer
+// bridge found a real, generated `String` scalar mismatch
+// (`Pizzas::Order.AddTopping`'s `ToppingName.value` given an Array) whose
+// Rust wording didn't match Ruby's own `Value::Coercion
+// #check_scalar_shapes` ("numeric_field" template, fired only when the
+// offered value is Array/Hash-shaped — Ruby tolerates any OTHER scalar
+// mismatch for a String field, so this stays scoped to composite shapes
+// only, checked at RUNTIME since codegen can't know the offered value's
+// shape ahead of time).
 pub fn scalar_type_error(struct_name: &str, key: &str, scalar_type: &str, value_var: &str) -> String {
-    if scalar_type != "Integer" && scalar_type != "Float" {
+    if scalar_type != "Integer" && scalar_type != "Float" && scalar_type != "String" {
         return json_type_error(struct_name, key, scalar_type);
     }
     let template = format!("{struct_name}.{key} expects {scalar_type}, got {{}}");
-    format!("crate::kernel::Refusal::TypeMismatch(format!({}, {value_var}.inspect()))", naming::ruby_inspect_string(&template))
+    let proper = format!("crate::kernel::Refusal::TypeMismatch(format!({}, {value_var}.inspect()))", naming::ruby_inspect_string(&template));
+    if scalar_type != "String" {
+        return proper;
+    }
+    let generic = json_type_error(struct_name, key, scalar_type);
+    format!("if matches!({value_var}, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) {{ {proper} }} else {{ {generic} }}")
 }
 
 pub fn scalar_json_accessor(scalar_type: &str) -> &'static str {
