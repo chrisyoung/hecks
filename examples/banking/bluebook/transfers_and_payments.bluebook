@@ -80,6 +80,7 @@ Hecks.bluebook "Banking" do
       sets :narrative
       sets :source
       sets :destination
+      sets :reference
 
       emits "TransferRequested"
     end
@@ -206,6 +207,7 @@ Hecks.bluebook "Banking" do
       sets :amount
       sets :beneficiary
       sets :direction
+      sets :end_to_end
       emits "ExternalTransferRequested"
     end
 
@@ -303,6 +305,7 @@ Hecks.bluebook "Banking" do
       sets :amount
       sets :recipient
       sets :due_on
+      sets :instruction
       emits "PaymentScheduled"
     end
 

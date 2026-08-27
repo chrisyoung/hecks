@@ -242,6 +242,7 @@ Hecks.bluebook "Banking" do
       sets :amount
       sets :merchant
       sets :tags
+      sets :authorisation
       emits "CardAuthorized"
     end
 

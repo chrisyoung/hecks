@@ -3009,6 +3009,15 @@
                 "name": "tags"
               },
               "target": "tags"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "authorisation"
+              },
+              "target": "authorisation"
             }
           ],
           "name": "Authorize",
@@ -4834,6 +4843,15 @@
                 "name": "destination"
               },
               "target": "destination"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "reference"
+              },
+              "target": "reference"
             }
           ],
           "name": "Request",
@@ -5356,6 +5374,15 @@
                 "name": "direction"
               },
               "target": "direction"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "end_to_end"
+              },
+              "target": "end_to_end"
             }
           ],
           "name": "Request",
@@ -5819,6 +5846,15 @@
                 "name": "due_on"
               },
               "target": "due_on"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "instruction"
+              },
+              "target": "instruction"
             }
           ],
           "name": "Schedule",
