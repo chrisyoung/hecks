@@ -6,9 +6,8 @@ for how the original 186 got here). Each entry below was **investigated
 live** against current `main` — not left open by default, not guess-closed
 either. Every one has an evidence comment on its own GitHub issue._
 
-**Status: 21 of 21 known batches investigated; one batch (18 issues,
-runtime crashes / validation gaps) still running as of this writing — this
-doc will get a final update adding its results.**
+**Status: all batches complete.** Every one of the original 186 open
+issues has now been investigated live against current `main`.
 
 ---
 
@@ -108,37 +107,57 @@ mechanism alongside it (build it)?
 
 ---
 
-## Group 6 — Needs its own investigation (3 issues)
+## Group 6 — Needs its own investigation (4 issues)
 
 | # | What |
 | --- | --- |
 | [#136](https://github.com/chrisyoung/hecks/issues/136) | item 1855be0-g catch-all stubs + `one_of`/`identified_by` fixes |
+| [#141](https://github.com/chrisyoung/hecks/issues/141) | `CommandBuilder#given` default description + named-condition guards |
 | [#139](https://github.com/chrisyoung/hecks/issues/139) | `BluebookBuilder#category`, free-form second classification axis |
 | [#112](https://github.com/chrisyoung/hecks/issues/112) | `IR.render_value` spells an `IR::TemplateSpec` instead of raising |
 
 - #136: the one real bug inside it is already fixed differently/better than proposed; the rest contradicts current deliberate design.
+- #141: the useful part it proposed (named-condition `given("...")` shorthand) is already live and used throughout the banking corpus; the remaining specific asks in this issue have no corpus need and the issue's own text admits "no real semantics."
 - #139: no corpus need yet; would require grammar registration + a golden-fixture regen with nothing real to verify it against.
 - #112: the described architecture (`IR::TemplateSpec`, a `template()` construct) doesn't exist anywhere in current `Hecks::IR` — the issue predates a redesign.
 
 ---
 
-## Not yet in this catalog
+## Group 7 — Documented, deliberate design (runtime/validation batch) (5 issues)
 
-18 issues (runtime crashes, `one_of` enforcement gaps, missing `role`
-fields, negative-amount acceptance — the highest-bug-density batch by
-design) are still being investigated as of this writing. This catalog will
-be updated with their outcome once that batch completes.
+The last batch investigated (18 `qa-legacy` issues, the highest bug-density
+one by design — runtime crashes and validation-enforcement claims). 13 of
+18 turned out already fixed or fixed in this pass (see the fixed-bugs
+tally in the reconciliation plan doc); these 5 are deliberate design,
+each with a citation to the doc/spec that documents it:
+
+| # | Ask | Why it stays open |
+| --- | --- | --- |
+| [#195](https://github.com/chrisyoung/hecks/issues/195) | `ATMCard.Issue` should reject zero daily fee | Negative is already rejected by an existing invariant; zero is intentionally allowed (a documented example) |
+| [#191](https://github.com/chrisyoung/hecks/issues/191) | `Account.Credit` should check `daily_limit` | Documented, deliberate design — `daily_limit` applies elsewhere, not to `Credit` (`docs/implemented/guides/commands.md`) |
+| [#190](https://github.com/chrisyoung/hecks/issues/190) | `CustomerStanding` should enforce a `one_of` | Deliberately free-form today — passing specs rely on arbitrary strings |
+| [#185](https://github.com/chrisyoung/hecks/issues/185) | `Pizzas.Order.Purchase` should refuse underpayment | Would contradict the documented "external fact" design (`docs/implemented/guides/wiring.md`) |
+| [#181](https://github.com/chrisyoung/hecks/issues/181) | Bundle of 3 structural IR sub-claims | All 3 confirmed working-as-designed; left open pending human confirmation on the bundled issue rather than unilaterally closed |
+
+**Recommended next step**: same as Group 1 — a product/design call on each, not more investigation.
+
+---
 
 ## Summary table
 
 | Group | Count | Common thread |
 | --- | --- | --- |
-| 1 — Deliberate design | 4 | Literal fix = regression |
+| 1 — Deliberate design (transfers/vault) | 4 | Literal fix = regression |
 | 2 — `redirects_native` trio | 3 | One settled question, three tickets |
 | 3 — Vendored, no consumer | 4 | Pre-rename code, nothing uses it here |
 | 4 — Genuinely absent features | 5 | Real feature work, not a bug |
 | 5 — Superseded by `ReadModel` | 1 | Scoping call needed |
-| 6 — Needs its own look | 3 | Mixed |
-| **Total confirmed open** | **20** | — |
+| 6 — Needs its own look | 4 | Mixed |
+| 7 — Deliberate design (runtime/validation) | 5 | Same shape as Group 1 |
+| **Total confirmed open** | **26** | — |
 
-Plus the 18-issue batch still in flight.
+All 186 original issues accounted for: 160 closed (real fixes landed
+across this reconciliation plus this session's own work, and issues
+already resolved by prior unrelated work, verified live rather than
+trusted — see the individual PRs for exact per-issue evidence), 26 remain
+open, every one with a documented reason on its own GitHub issue.
