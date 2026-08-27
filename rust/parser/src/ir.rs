@@ -350,7 +350,10 @@ pub struct ValueObject {
     pub attributes: Vec<Attribute>,
     pub invariants: Vec<Invariant>,
     pub closed_set: bool,
-    pub members: Vec<Vec<(String, String)>>, // each member: ordered (field, text-value) pairs
+    // each member: ordered (field, typed-value) pairs — typed, not text, so
+    // an Integer/Float/Bool-declared attribute round-trips to the same JSON
+    // type Ruby's own emits_ir gives it, not a stringified copy.
+    pub members: Vec<Vec<(String, crate::ruby_value::Value)>>,
 }
 
 /// `ReadModelBuilder#add_aggregate_head`'s own row shape

@@ -240,7 +240,7 @@ fn install_inline_closed_set(
     vo.closed_set = true;
     vo.members = values
         .iter()
-        .map(|value| vec![(field.to_string(), value.clone())])
+        .map(|value| vec![(field.to_string(), ruby_value::Value::Str(value.clone()))])
         .collect();
     Ok(())
 }
@@ -253,7 +253,7 @@ fn push_member(
     file: &str,
     line: usize,
     args: &super::ArgumentGateResult,
-    members: &mut Vec<Vec<(String, String)>>,
+    members: &mut Vec<Vec<(String, ruby_value::Value)>>,
 ) -> ParseResult<()> {
     if args.named.is_empty() {
         return Err(Diagnostic::new(
@@ -265,7 +265,7 @@ fn push_member(
     let fields = args
         .named
         .iter()
-        .map(|(field, raw)| (field.clone(), ruby_value::to_s(&ruby_value::read(raw))))
+        .map(|(field, raw)| (field.clone(), ruby_value::read(raw)))
         .collect();
     members.push(fields);
     Ok(())

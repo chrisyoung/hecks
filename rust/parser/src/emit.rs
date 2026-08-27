@@ -260,7 +260,7 @@ fn value_object_json(v: &ir::ValueObject) -> JsonValue {
                                 .map(|(field, value)| {
                                     JsonValue::Array(vec![
                                         JsonValue::str(field.clone()),
-                                        JsonValue::str(value.clone()),
+                                        ruby_value_json(value),
                                     ])
                                 })
                                 .collect(),
