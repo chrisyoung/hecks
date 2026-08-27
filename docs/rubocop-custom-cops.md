@@ -28,57 +28,53 @@ Currently present:
 - `lib/rubocop/cop/hecks/thread_shared_ivar_mutation.rb` —
   `Hecks::ThreadSharedIvarMutation`. Flags plain `@ivar` mutation outside
   `initialize` on the thread-shared `Dispatcher`/`Registry` singletons.
+- `lib/rubocop/cop/hecks/sequential_hash_rename_in_loop.rb` —
+  `Hecks::SequentialHashRenameInLoop`. Flags `hash[new] = hash.delete(old)`
+  inside a loop — the M27 shape (docs/audits/2026-08-10-main-bug-audit.md,
+  docs/audits/2026-08-11-bug-triage.md) that lost data on any rename swap
+  or chain, because each rule's write became the next rule's read target
+  against the SAME hash before the pass finished.
 
-## Wiring a cop into the real `rubocop` run (not yet done)
+## Wiring into the real `rubocop` run (done)
 
-Right now these cops are opt-in — proven by their own specs, and
-runnable ad hoc (`bundle exec rubocop --require
+All three cops above are wired into `.rubocop.yml`'s `require:` list and
+each has an `Enabled: true` stanza, so they now run as part of the same
+`bundle exec rubocop -c .rubocop.yml` invocation `.githooks/pre-push`
+already runs on every push — no more ad hoc `--require`/`--only` needed
+to exercise them for real. `Hecks/FallbackHashLookup` carries no
+`Include`/`Exclude` scoping (the `[]`/`[]` `||` shape it matches has no
+legitimate use anywhere in this codebase); `Hecks/ThreadSharedIvarMutation`
+is scoped via `Include` to `Dispatcher`/`Registry` alone, matching its own
+stanza's comment in `.rubocop.yml`.
+
+A full-tree run at wiring time (`bundle exec rubocop -c .rubocop.yml`)
+came back with 0 offenses across all three cops — including
+`Hecks/FallbackHashLookup`, whose earlier ad hoc run (see below) had
+found real pre-existing instances; those were fixed by the time this
+pass landed, so nothing needed an `Exclude` entry in `.rubocop_todo.yml`
+alongside the new `require:` entries.
+
+`.github/workflows/ci.yml`'s `checks:` job also now runs
+`bundle exec rubocop -c .rubocop.yml` as its own step, in the same
+integration pass that wired these three cops in — not only
+`.githooks/pre-push`, which is opt-in per clone and bypassable with
+`--no-verify`. See that step's own comment in `ci.yml` for the reasoning.
+Nothing about that step is custom-cop-specific: it is the exact command
+the pre-push hook already runs, picking up whatever `.rubocop.yml`
+requires.
+
+## A historical note on `bundle exec rubocop --only Hecks/FallbackHashLookup`
+
+Before this cop was wired in, running it against the whole tree ahead of
+time (`bundle exec rubocop --require
 ./lib/rubocop/cop/hecks/fallback_hash_lookup.rb --only
-Hecks/FallbackHashLookup`) — but NOT yet part of the `bundle exec
-rubocop` invocation `.githooks/pre-push` runs on every push, because
-`.rubocop.yml` doesn't `require` them yet. Wiring one in is two small
-additions to `.rubocop.yml`:
-
-```yaml
-# alongside the existing `plugins:` key
-require:
-  - ./lib/rubocop/cop/hecks/fallback_hash_lookup
-  - ./lib/rubocop/cop/hecks/thread_shared_ivar_mutation
-
-# a normal cop config stanza, same shape as any other cop in this file
-Hecks/FallbackHashLookup:
-  Enabled: true
-Hecks/ThreadSharedIvarMutation:
-  Enabled: true
-```
-
-`require:` (a plain file require) and `plugins:` (the newer
-lint-roller plugin API `rubocop-rspec` 3.x uses) coexist fine in the
-same `.rubocop.yml` — they are independent RuboCop config keys.
-
-Left undone here deliberately: `.rubocop.yml` is a single shared file
-several cops are landing custom rules into around the same time: a
-single agent editing it removes the others' in-flight cops in a
-conflicting merge. Wiring both `require:` entries and both cop stanzas
-in one pass, once every custom cop for this effort has landed, avoids
-that. Once wired, no further CI change is needed either —
-`.github/workflows/ci.yml` doesn't run `rubocop` itself today (only
-`.githooks/pre-push` does); if CI ever grows a `rubocop` job, it needs
-nothing custom cop-specific, just the same `bundle exec rubocop -c
-.rubocop.yml` the pre-push hook already runs, which picks up whatever
-`.rubocop.yml` requires.
-
-## A note on `bundle exec rubocop --only Hecks/FallbackHashLookup` today
-
-Running the cop against the whole tree ahead of wiring
-(`bundle exec rubocop --require
-./lib/rubocop/cop/hecks/fallback_hash_lookup.rb --only
-Hecks/FallbackHashLookup`) finds real, PRE-EXISTING instances of this
+Hecks/FallbackHashLookup`) found real, PRE-EXISTING instances of this
 shape that were never part of the Tiers 1-5 fix set — mostly
 `settings[:key] || settings["key"]` in the storage adapters (`d1.rb`,
 `heki.rb`, `lambda.rb`, `postgres.rb`, `sqlite.rb`, the era plugin's
 `postgres_era.rb` and `era_resolver.rb`), plus a handful of one-off
 spots (`bin/fuzz`, `lib/hecks/bluebook/dsl/word_gate.rb`,
 `lib/hecks/facade/cli_door.rb`, and a few specs reading fixture hashes
-by either-spelling key). Fixing those is out of scope for the cop
-itself — flagged here for a follow-up pass, not silently patched.
+by either-spelling key). Those were fixed separately (out of scope for
+the cop itself), which is why wiring it in above found the tree already
+clean.

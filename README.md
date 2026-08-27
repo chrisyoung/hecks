@@ -416,15 +416,64 @@ The `.bluebook` file never names a backend, so it never changes.
 
 **Dispatch.** Ruby is the reference implementation. `rust/` is a second
 dispatch runtime, generated from the same canonical IR and checked
-against Ruby continuously: `spec/codegen_parity_spec.rb` holds Rust's
-generated output byte-identical to Ruby's, `spec/rust_conformance_spec.rb`
-runs the same corpus scripts through the compiled binary and diffs the
-result against Ruby's. `bin/project_rust` generates typed Rust structs
-and enums for every value object, entity, and aggregate record; `given`/
-`ensures`/mutation logic stays data, interpreted at runtime by one small
-kernel (`rust/src/kernel/{expr,dispatch}.rs`) that walks it the way
+against Ruby on every push: `spec/codegen_parity_spec.rb` holds Rust's
+generated output byte-identical to Ruby's, and `spec/rust_conformance_spec.rb`
+replays 16 pinned fixture scripts — against the `banking`, `pizzas`, and
+`roster` example domains — through the compiled binary, diffing
+instances, events, refusals, reactions, sagas, and query rows against
+Ruby's byte-for-byte, with a small number of named, cited exceptions (a
+cross-domain policy-delivery gap and one malformed-payload
+check-ordering gap, both matched by stable signature, never swept
+silently). `bin/project_rust` generates typed Rust structs and enums for
+every value object, entity, and aggregate record; `given`/`ensures`/
+mutation logic stays data, interpreted at runtime by one small kernel
+(`rust/src/kernel/{expr,dispatch}.rs`) that walks it the way
 `CommandInterpreter#call` does in Ruby. The parser is generated too, not
 hand-written a second time.
+
+That parity is proven on the pinned fixtures, not the whole corpus, and
+the gap is real: replaying `spec/corpus/banking.json` in full (258 steps,
+far more varied than any pinned script) against the compiled binary turns
+up genuine divergence — a policy-triggered reaction's `AccountDebited`/
+`AccountCredited` event carries an extra `reference` field in Rust that
+Ruby's own record omits, and the two sides disagree on refusal count (180
+from Ruby, 190 from Rust, on the same script), wording, and order, since
+they don't always check the same thing first for the same bad input.
+Only 4 of the 10 domains under `spec/corpus/` have a Rust build to
+compare against at all today (`banking`, `compliance`, `pizzas`,
+`roster`); `chess` (the newest example domain) has never been run
+through `bin/project_rust`, and the framework/grammar chapters
+(`governance`, `identity`, `console_settings`, `expression`,
+`translation` — `lib/hecks/framework` and `lib/hecks/grammar`) have no
+Cargo feature of their own to build, only folded in as dependencies of
+banking's build. Closing the full-corpus gap is ongoing work, tracked
+alongside [`docs/audits/2026-08-11-bug-triage.md`](docs/audits/2026-08-11-bug-triage.md)'s
+R1–R4.
+
+Named/declared aggregate queries and `read_model` ("report") execution
+in Rust cover a real, proven subset — not "no Rust path at all": a
+wheres-only, single-aggregate field-comparator query (plus its own
+`order_by`/`limit` on a plain field) and a bare read model declaring no
+`where`/`order_by`/`limit`/`offset`/`freshness`/`authorization`/
+`index_hints` execute for real and match Ruby byte-for-byte
+(`Banking.CustomerPortfolio`, one of the 16 pinned fixtures). A query or
+read model outside that shape — `Banking.ComplianceDashboard`'s
+`freshness`/`index_hints`, `Banking::Account.OpenForSuspendedCustomers`,
+`Banking::ATMCard.ByFee` — refuses with an explicit "is not generated
+for this domain" error in Rust instead of running; both sides are
+documented, allowlisted gaps (`rust/project/queries.rb`,
+`rust/project/read_models.rb`, `bin/rust_coverage`'s own allowlist), not
+silent wrong answers.
+
+Also since the 2026-08-10 audit: `cargo build --features banking` — then
+a hard failure, because Cargo has no notion of mutually-exclusive
+features and the default domain's own feature stayed enabled alongside
+it — now succeeds, verified live. A generated `#[cfg(not(any(...)))]`
+guard backs the default domain's re-export off whenever another domain
+feature is present, and a domain name is validated against Rust
+keyword/identifier rules and Cargo's own reserved `Cargo.toml` keys
+before it's used, unescaped, as a directory name, a module identifier,
+and a feature key all at once.
 
 [Running a runtime](docs/implemented/guides/running-a-runtime.md) has
 what a third dispatch runtime, in a different language, needs field by
@@ -543,6 +592,7 @@ replace.
 | `bin/backfill_era_projections` | Proactively backfills `hecks_eras.held_projection` for every row of one domain that predates that column — an explicit, operator-run vers... |
 | `bin/behaviors` | Runs `.behaviors` files — hand-curated examples of how to use a domain, in domain vocabulary — and reports pass/fail/error per test. bin/... |
 | `bin/canonicalise` | Sorts a JSON document's object keys, recursively — key order is not semantics, so a diff a human reads should not have to notice it moved. |
+| `bin/check_engine_agreement` | THE SHAPE OF BUG THIS GUARDS AGAINST: `Ports::Query::InMemory` (the path a Memory- or Heki-backed aggregate query actually runs) and `Run... |
 | `bin/codemod_hoist_local_givens` | A CODEMOD, not an agent — for the corpus duplication `bin/query_ir duplicates` surfaces directly: two or more commands under the SAME own... |
 | `bin/codemod_implicit_append_fields` | A CODEMOD, not an agent — for the class of redundancy `CommandBuilder#resolve_append_fields!` (lib/hecks/bluebook/dsl/ command_builder.rb... |
 | `bin/console` | Boots a domain (pizzas by default) and drops into IRB with its door installed — the fastest way to dispatch a real command by hand. bin/c... |
@@ -557,6 +607,7 @@ replace.
 | `bin/hecks_query_ir_mcp` | AN MCP SERVER exposing Hecks::QueryIR's two queries as tools, so a coding agent calls them directly instead of shelling out to `bin/query... |
 | `bin/history` | Prints every journal entry a domain's append-only adapters hold, as JSON — the full write history, not just the current head. bin/history... |
 | `bin/ir` | Prints a booted domain's IR as JSON — the same `to_h` the golden specs pin and StorageShape hashes into an era, for reading rather than a... |
+| `bin/lint_deploy_recipes` | A MECHANICAL guard against the "blind trust" bug class fixed in bin/project_deploy under H13/H14/L20 (docs/audits/ 2026-08-11-bug-triage.... |
 | `bin/merge_tail` | Tail-merge: the one deliberate command. It marks a business event — an old app retiring — never a shape change. One transaction: advance ... |
 | `bin/model_check` | STATIC ANALYSIS OVER THE IR — unreachable lifecycle states, transitions nothing can ever fire, saga states no handler chain reaches, a co... |
 | `bin/narrate` | A domain, read back in English — projected from its own bluebook. bin/narrate # list every domain in this checkout bin/narrate examples/b... |
@@ -589,6 +640,7 @@ replace.
 | `bin/smoke_test` | BOOTS A REAL DOMAIN AND ACTUALLY DISPATCHES AGAINST IT — the sibling `bin/model_check` never had. That tool proves a bluebook is STRUCTUR... |
 | `bin/statements` | Prints a booted domain's own declared facts as plain English sentences — the projection itself is Projections::Statements (see its own he... |
 | `bin/stores` | Prints every aggregate's current records, as JSON — the head, not the journal (bin/history prints the full write history instead). bin/st... |
+| `bin/stress_concurrency_specs` | WHY A SINGLE `rspec` RUN IS NOT ENOUGH FOR THIS CLASS OF BUG: every spec below proves a thread-safety property by forcing one specific in... |
 | `bin/translation_audit` | The audit derives its assertions. Layer 1: every translated state passes the new era's types, invariants, and lifecycle. Layer 2: the com... |
 <!-- generated:end -->
 
