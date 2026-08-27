@@ -44,12 +44,12 @@ fn command_skip_reason_with(command: &Json, aggregate: &Json, value_objects_by_n
     let mut unsupported_ops: Vec<String> = Vec::new();
     for m in mutations_list {
         let op = m.get("op").map(Json::to_s).unwrap_or_default();
-        if !["append", "set", "increment", "decrement", "delegate"].contains(&op.as_str()) && !unsupported_ops.contains(&op) {
+        if !["append", "set", "increment", "decrement", "multiply", "delegate"].contains(&op.as_str()) && !unsupported_ops.contains(&op) {
             unsupported_ops.push(op);
         }
     }
     if !unsupported_ops.is_empty() {
-        return Some(format!("sets op(s) {} not generated yet (only append/set/increment/decrement/delegate are)", unsupported_ops.join(", ")));
+        return Some(format!("sets op(s) {} not generated yet (only append/set/increment/decrement/multiply/delegate are)", unsupported_ops.join(", ")));
     }
 
     if let Some(problem) = delegate_skip_reason(command, aggregate, value_objects_by_name) {
@@ -110,7 +110,7 @@ fn command_skip_reason_with(command: &Json, aggregate: &Json, value_objects_by_n
         return Some(format!("sets :{} sources an argument no single-field rewrap can bridge to the target's type — not generated yet", mismatched_sets.join(", ")));
     }
 
-    let arithmetic_targets: Vec<&Json> = mutations_list.iter().filter(|m| ["increment", "decrement"].contains(&m.get("op").map(Json::to_s).unwrap_or_default().as_str())).collect();
+    let arithmetic_targets: Vec<&Json> = mutations_list.iter().filter(|m| ["increment", "decrement", "multiply"].contains(&m.get("op").map(Json::to_s).unwrap_or_default().as_str())).collect();
     let unsupported_arithmetic: Vec<String> = arithmetic_targets
         .iter()
         .filter(|m| {
@@ -123,7 +123,7 @@ fn command_skip_reason_with(command: &Json, aggregate: &Json, value_objects_by_n
         .map(|m| m.get("target").map(Json::to_s).unwrap_or_default())
         .collect();
     if !unsupported_arithmetic.is_empty() {
-        return Some(format!("sets :{} increment/decrement amount or target field isn't bridgeable — not generated yet", unsupported_arithmetic.join(", ")));
+        return Some(format!("sets :{} increment/decrement/multiply amount or target field isn't bridgeable — not generated yet", unsupported_arithmetic.join(", ")));
     }
 
     let optional_problems = optional_source_mismatches_with(command, aggregate, value_objects_by_name, creating_possible);

@@ -458,6 +458,23 @@ fn emit_mutation_line_body(
                 &[("tmpl_field", target_field.to_string()), ("tmpl_current_placeholder()", current), ("tmpl_updated_placeholder()", if optional { format!("Some({updated})") } else { updated })],
             )
         }
+        "multiply" => {
+            // Port of rust/project/mutations.rb's own `when "multiply"` —
+            // see that file's comment for the full argument (reuses the
+            // SAME `arithmetic_target_field`/`arithmetic_amount_expr`
+            // pairing `increment`/`decrement` use, `*` in place of `sign`,
+            // deliberately scoped to the same Integer-field subset).
+            let (target_attr, integer_field) = crate::bridging::arithmetic_target_field(mutation, aggregate, value_objects_by_name).expect("arithmetic target must resolve");
+            let vo_type = naming::rust_ident(crate::attr::type_name(target_attr));
+            let field_ident = naming::rust_ident_field(&integer_field);
+            let amount_expr = crate::bridging::arithmetic_amount_expr(mutation.get("source").unwrap_or(&Json::Null), command, value_objects_by_name, &integer_field).expect("arithmetic amount must resolve");
+            let current = if optional { format!("record.{target_field}.clone().unwrap()") } else { format!("record.{target_field}.clone()") };
+            let updated = format!("{vo_type} {{ {field_ident}: current.{field_ident} * ({amount_expr}), ..current }}");
+            exemplar.render(
+                "mutation_arithmetic",
+                &[("tmpl_field", target_field.to_string()), ("tmpl_current_placeholder()", current), ("tmpl_updated_placeholder()", if optional { format!("Some({updated})") } else { updated })],
+            )
+        }
         other => panic!("unsupported mutation op {other:?} — command_skip_reason should have caught this"),
     }
 }

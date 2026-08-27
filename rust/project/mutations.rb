@@ -745,6 +745,42 @@ module RustProjection
           "tmpl_current_placeholder()" => current,
           "tmpl_updated_placeholder()" => (optional ? "Some(#{updated})" : updated)
         )
+      when "multiply"
+        # Phase 10 (equivalence-gap plan) — `CommandRules::Arithmetic
+        # #multiply`, read directly: "Same raw-vs-value-object branch shape
+        # as #arithmetic/#arithmetic_value_object, reused rather than
+        # duplicated verb-for-verb (a Proc picks the actual arithmetic;
+        # everything else... is identical to the additive pair)." This
+        # generator's own eligibility check (`command_skip_reason`'s
+        # `arithmetic_targets`) already folds `multiply` into the SAME
+        # `arithmetic_target_field`/`arithmetic_amount_expr` pairing
+        # `increment`/`decrement` use — the only real difference here is
+        # `*` in place of `sign`, no `sign` field to read at all (`multiply`
+        # carries none — `Vocabulary::MutationOp`'s own `sign: ""`).
+        #
+        # DELIBERATELY SCOPED to the SAME Integer-field subset `increment`/
+        # `decrement` already are — `arithmetic_target_field`'s own
+        # `integer_field_of` only ever matches an `Integer`-typed member,
+        # never `Float`, even though Ruby's own `#multiply` (like
+        # `#arithmetic`) was widened from Integer to `Numeric` (migration
+        # plan task 4, i106) — real corpus `Float` VOs (`DailyFee.amount`)
+        # are NOT reachable through this generator's own `multiply`
+        # support, the same pre-existing Integer-only scope
+        # `increment`/`decrement` already carry, not a new gap introduced
+        # here. Widening `integer_field_of` to `Numeric` for all three ops
+        # together is real, separate follow-on work, not attempted here.
+        target_attr, integer_field = arithmetic_target_field(mutation, aggregate, value_objects_by_name)
+        vo_type = rust_ident(target_attr[:type])
+        field_ident = rust_ident_field(integer_field)
+        amount_expr = arithmetic_amount_expr(mutation[:source], command, value_objects_by_name, integer_field)
+        current = optional ? "record.#{target_field}.clone().unwrap()" : "record.#{target_field}.clone()"
+        updated = "#{vo_type} { #{field_ident}: current.#{field_ident} * (#{amount_expr}), ..current }"
+        Exemplar.render(
+          "mutation_arithmetic",
+          "tmpl_field" => target_field,
+          "tmpl_current_placeholder()" => current,
+          "tmpl_updated_placeholder()" => (optional ? "Some(#{updated})" : updated)
+        )
       end
     end
   end

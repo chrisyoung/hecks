@@ -43,8 +43,8 @@ module RustProjection
     end
 
     def command_skip_reason(command, aggregate, value_objects_by_name, creating_possible: true)
-      unsupported_ops = command[:mutations].reject { |m| %w[append set increment decrement delegate].include?(m[:op].to_s) }.map { |m| m[:op] }.uniq
-      return "sets op(s) #{unsupported_ops.join(', ')} not generated yet (only append/set/increment/decrement/delegate are)" if unsupported_ops.any?
+      unsupported_ops = command[:mutations].reject { |m| %w[append set increment decrement multiply delegate].include?(m[:op].to_s) }.map { |m| m[:op] }.uniq
+      return "sets op(s) #{unsupported_ops.join(', ')} not generated yet (only append/set/increment/decrement/multiply/delegate are)" if unsupported_ops.any?
 
       delegate_problem = delegate_skip_reason(command, aggregate, value_objects_by_name)
       return delegate_problem if delegate_problem
@@ -92,20 +92,26 @@ module RustProjection
       end.map { |m| m[:target] }
       return "sets :#{mismatched_sets.join(', ')} sources an argument no single-field rewrap can bridge to the target's type — not generated yet" if mismatched_sets.any?
 
-      # `:increment`/`:decrement` — Ruby's real `arithmetic_value_object`
-      # (command_rules/arithmetic.rb, read directly) finds the ONE field
-      # that's `Integer` in both the target VO and the (already
-      # target-type-coerced) amount, and changes only that field. Bridgeable
-      # when the target names such a field AND the amount resolves to a raw
-      # integer expression — `arithmetic_amount_expr`, above, is the same
-      # "can we generate this" / "here's how" pairing `bridgeable_value_types?`/
-      # `value_rhs` already use for `:set`.
-      arithmetic_targets = command[:mutations].select { |m| %w[increment decrement].include?(m[:op].to_s) }
+      # `:increment`/`:decrement`/`:multiply` — Ruby's real
+      # `arithmetic_value_object`/`multiply` (command_rules/arithmetic.rb,
+      # read directly) both find the ONE field that's `Integer` in both the
+      # target VO and the (already target-type-coerced) amount, and change
+      # only that field — `multiply` differs from `arithmetic_value_object`
+      # ONLY in which Proc does the combining (`{ |c, a| c * a }` vs `current
+      # + sign*amount`), never in which field is eligible or how the amount
+      # is resolved, so this generator's own eligibility check and amount-
+      # resolution are shared across all three ops, matching Ruby's own
+      # shared `unwrap_single_numeric_field`/shared-numeric-field-matching
+      # machinery. Bridgeable when the target names such a field AND the
+      # amount resolves to a raw integer expression — `arithmetic_amount_
+      # expr`, above, is the same "can we generate this" / "here's how"
+      # pairing `bridgeable_value_types?`/`value_rhs` already use for `:set`.
+      arithmetic_targets = command[:mutations].select { |m| %w[increment decrement multiply].include?(m[:op].to_s) }
       unsupported_arithmetic = arithmetic_targets.reject do |m|
         target = arithmetic_target_field(m, aggregate, value_objects_by_name)
         target && arithmetic_amount_expr(m[:source], command, value_objects_by_name, target[1])
       end.map { |m| m[:target] }
-      return "sets :#{unsupported_arithmetic.join(', ')} increment/decrement amount or target field isn't bridgeable — not generated yet" if unsupported_arithmetic.any?
+      return "sets :#{unsupported_arithmetic.join(', ')} increment/decrement/multiply amount or target field isn't bridgeable — not generated yet" if unsupported_arithmetic.any?
 
       optional_problems = optional_source_mismatches(command, aggregate, value_objects_by_name, creating_possible: creating_possible)
       return "optional argument feeds a non-optional target: #{optional_problems.join('; ')} — not generated yet" if optional_problems.any?
