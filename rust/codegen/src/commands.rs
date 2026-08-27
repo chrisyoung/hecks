@@ -44,12 +44,12 @@ fn command_skip_reason_with(command: &Json, aggregate: &Json, value_objects_by_n
     let mut unsupported_ops: Vec<String> = Vec::new();
     for m in mutations_list {
         let op = m.get("op").map(Json::to_s).unwrap_or_default();
-        if !["append", "set", "increment", "decrement", "multiply", "delegate"].contains(&op.as_str()) && !unsupported_ops.contains(&op) {
+        if !["append", "set", "increment", "decrement", "multiply", "clamp", "delegate"].contains(&op.as_str()) && !unsupported_ops.contains(&op) {
             unsupported_ops.push(op);
         }
     }
     if !unsupported_ops.is_empty() {
-        return Some(format!("sets op(s) {} not generated yet (only append/set/increment/decrement/multiply/delegate are)", unsupported_ops.join(", ")));
+        return Some(format!("sets op(s) {} not generated yet (only append/set/increment/decrement/multiply/clamp/delegate are)", unsupported_ops.join(", ")));
     }
 
     if let Some(problem) = delegate_skip_reason(command, aggregate, value_objects_by_name) {
@@ -124,6 +124,24 @@ fn command_skip_reason_with(command: &Json, aggregate: &Json, value_objects_by_n
         .collect();
     if !unsupported_arithmetic.is_empty() {
         return Some(format!("sets :{} increment/decrement/multiply amount or target field isn't bridgeable — not generated yet", unsupported_arithmetic.join(", ")));
+    }
+
+    // `:clamp` — see rust/project/commands.rs's own comment on this same
+    // check for the full reasoning. No amount to resolve at all; the
+    // target half is identical to increment/decrement/multiply, the
+    // bounds half is `clamp_bounds_ints` (bridging.rs).
+    let clamp_targets: Vec<&Json> = mutations_list.iter().filter(|m| m.get("op").map(Json::to_s).unwrap_or_default() == "clamp").collect();
+    let unsupported_clamp: Vec<String> = clamp_targets
+        .iter()
+        .filter(|m| {
+            let target = crate::bridging::arithmetic_target_field(m, aggregate, value_objects_by_name);
+            let bounds = m.get("source").and_then(crate::bridging::clamp_bounds_ints);
+            target.is_none() || bounds.is_none()
+        })
+        .map(|m| m.get("target").map(Json::to_s).unwrap_or_default())
+        .collect();
+    if !unsupported_clamp.is_empty() {
+        return Some(format!("sets :{} clamp target field or bounds isn't bridgeable — not generated yet", unsupported_clamp.join(", ")));
     }
 
     let optional_problems = optional_source_mismatches_with(command, aggregate, value_objects_by_name, creating_possible);

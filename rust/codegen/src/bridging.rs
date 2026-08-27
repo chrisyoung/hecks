@@ -354,6 +354,26 @@ pub fn arithmetic_amount_expr(source: &Json, command: &Json, value_objects_by_na
     None
 }
 
+/// `clamp:`'s own bounds — always a literal two-element `[min, max]`
+/// Array of Integers. `None` for anything else (a non-literal source, a
+/// wrong-length Array, a non-Integer bound — this crate's own Integer-
+/// only scope, matching `integer_field_of`/`arithmetic_target_field`).
+/// See `rust/project/bridging.rb`'s own `clamp_bounds_ints` — the two
+/// generators' shared reasoning lives there.
+pub fn clamp_bounds_ints(source: &Json) -> Option<(i64, i64)> {
+    if source.get("kind").map(Json::to_s).unwrap_or_default() != "literal" {
+        return None;
+    }
+    let value = source.get("value")?;
+    let items = value.as_array()?;
+    if items.len() != 2 {
+        return None;
+    }
+    let Json::Int(min) = &items[0] else { return None };
+    let Json::Int(max) = &items[1] else { return None };
+    Some((*min, *max))
+}
+
 /// An aggregate attribute a CREATING command's own arguments never
 /// mention — `Runtime::Instance.defaults`/`.default_for`, read directly.
 pub fn creation_default_rhs(attr: &Json, value_objects_by_name: &HashMap<String, &Json>) -> Option<String> {

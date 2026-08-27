@@ -781,6 +781,33 @@ module RustProjection
           "tmpl_current_placeholder()" => current,
           "tmpl_updated_placeholder()" => (optional ? "Some(#{updated})" : updated)
         )
+      when "clamp"
+        # Phase 10 (equivalence-gap plan) — `CommandRules::Arithmetic
+        # #clamp`, read directly: bounds the CURRENT value into
+        # `[min, max]`, no "amount" argument at all — `mutation.source`
+        # is always a literal pair (`clamp_bounds_ints`, bridging.rb),
+        # never an argument reference, so there is no
+        # `arithmetic_amount_expr` call here at all, unlike increment/
+        # decrement/multiply. The TARGET half is identical to those
+        # three (`arithmetic_target_field`, same Integer-VO-field scope).
+        # Rust's own `i64::clamp(self, min, max)` (via `Ord::clamp`)
+        # matches Ruby's `Integer#clamp(min, max)` exactly: below `min`
+        # returns `min`, above `max` returns `max`, otherwise unchanged
+        # — and both panic/raise identically for a malformed `min > max`
+        # bound, which is not a real runtime path either engine reaches
+        # for a bluebook-declared literal pair.
+        target_attr, integer_field = arithmetic_target_field(mutation, aggregate, value_objects_by_name)
+        vo_type = rust_ident(target_attr[:type])
+        field_ident = rust_ident_field(integer_field)
+        min, max = clamp_bounds_ints(mutation[:source])
+        current = optional ? "record.#{target_field}.clone().unwrap()" : "record.#{target_field}.clone()"
+        updated = "#{vo_type} { #{field_ident}: current.#{field_ident}.clamp(#{min}, #{max}), ..current }"
+        Exemplar.render(
+          "mutation_arithmetic",
+          "tmpl_field" => target_field,
+          "tmpl_current_placeholder()" => current,
+          "tmpl_updated_placeholder()" => (optional ? "Some(#{updated})" : updated)
+        )
       end
     end
   end

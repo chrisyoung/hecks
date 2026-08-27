@@ -97,7 +97,7 @@
     "id": "Banking::Account.CorrectFee",
     "generated": false,
     "gap_class": "per_instance",
-    "reason": "sets op(s) corrects not generated yet (only append/set/increment/decrement/delegate are)"
+    "reason": "sets op(s) corrects not generated yet (only append/set/increment/decrement/multiply/clamp/delegate are)"
   },
   {
     "kind": "command",

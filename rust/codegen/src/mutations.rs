@@ -475,6 +475,25 @@ fn emit_mutation_line_body(
                 &[("tmpl_field", target_field.to_string()), ("tmpl_current_placeholder()", current), ("tmpl_updated_placeholder()", if optional { format!("Some({updated})") } else { updated })],
             )
         }
+        "clamp" => {
+            // Port of rust/project/mutations.rb's own `when "clamp"` — see
+            // that file's comment for the full argument. No amount
+            // argument to resolve at all (`mutation.source` is always a
+            // literal `[min, max]` pair — `clamp_bounds_ints`, bridging.rs)
+            // — the target half is the SAME `arithmetic_target_field` pairing
+            // increment/decrement/multiply use. Rust's own `i64::clamp`
+            // matches Ruby's `Integer#clamp(min, max)` exactly.
+            let (target_attr, integer_field) = crate::bridging::arithmetic_target_field(mutation, aggregate, value_objects_by_name).expect("clamp target must resolve");
+            let vo_type = naming::rust_ident(crate::attr::type_name(target_attr));
+            let field_ident = naming::rust_ident_field(&integer_field);
+            let (min, max) = mutation.get("source").and_then(crate::bridging::clamp_bounds_ints).expect("clamp bounds must resolve");
+            let current = if optional { format!("record.{target_field}.clone().unwrap()") } else { format!("record.{target_field}.clone()") };
+            let updated = format!("{vo_type} {{ {field_ident}: current.{field_ident}.clamp({min}, {max}), ..current }}");
+            exemplar.render(
+                "mutation_arithmetic",
+                &[("tmpl_field", target_field.to_string()), ("tmpl_current_placeholder()", current), ("tmpl_updated_placeholder()", if optional { format!("Some({updated})") } else { updated })],
+            )
+        }
         other => panic!("unsupported mutation op {other:?} — command_skip_reason should have caught this"),
     }
 }

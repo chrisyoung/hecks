@@ -43,8 +43,8 @@ module RustProjection
     end
 
     def command_skip_reason(command, aggregate, value_objects_by_name, creating_possible: true)
-      unsupported_ops = command[:mutations].reject { |m| %w[append set increment decrement multiply delegate].include?(m[:op].to_s) }.map { |m| m[:op] }.uniq
-      return "sets op(s) #{unsupported_ops.join(', ')} not generated yet (only append/set/increment/decrement/multiply/delegate are)" if unsupported_ops.any?
+      unsupported_ops = command[:mutations].reject { |m| %w[append set increment decrement multiply clamp delegate].include?(m[:op].to_s) }.map { |m| m[:op] }.uniq
+      return "sets op(s) #{unsupported_ops.join(', ')} not generated yet (only append/set/increment/decrement/multiply/clamp/delegate are)" if unsupported_ops.any?
 
       delegate_problem = delegate_skip_reason(command, aggregate, value_objects_by_name)
       return delegate_problem if delegate_problem
@@ -112,6 +112,23 @@ module RustProjection
         target && arithmetic_amount_expr(m[:source], command, value_objects_by_name, target[1])
       end.map { |m| m[:target] }
       return "sets :#{unsupported_arithmetic.join(', ')} increment/decrement/multiply amount or target field isn't bridgeable — not generated yet" if unsupported_arithmetic.any?
+
+      # `:clamp` — Ruby's real `Arithmetic#clamp` (read directly): "a
+      # genuinely different shape [from #arithmetic/#multiply] -- its
+      # source is always a literal [min, max] pair, never an argument
+      # reference -- and it bounds the CURRENT value rather than
+      # combining it with an amount." No `arithmetic_amount_expr` to
+      # resolve at all — the ELIGIBLE TARGET half is identical to
+      # increment/decrement/multiply (`arithmetic_target_field`, the
+      # same Integer-VO-field scope, not widened here either), but the
+      # bounds themselves need their own check: a literal two-element
+      # Array of Integers, exactly the shape `classified_source` always
+      # produces for a `clamp:` mutation (`clamp_bounds_ints`, below).
+      clamp_targets = command[:mutations].select { |m| m[:op].to_s == "clamp" }
+      unsupported_clamp = clamp_targets.reject do |m|
+        arithmetic_target_field(m, aggregate, value_objects_by_name) && clamp_bounds_ints(m[:source])
+      end.map { |m| m[:target] }
+      return "sets :#{unsupported_clamp.join(', ')} clamp target field or bounds isn't bridgeable — not generated yet" if unsupported_clamp.any?
 
       optional_problems = optional_source_mismatches(command, aggregate, value_objects_by_name, creating_possible: creating_possible)
       return "optional argument feeds a non-optional target: #{optional_problems.join('; ')} — not generated yet" if optional_problems.any?
