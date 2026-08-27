@@ -260,12 +260,7 @@ fn value_object_json(v: &ir::ValueObject) -> JsonValue {
                                 .map(|(field, value)| {
                                     JsonValue::Array(vec![
                                         JsonValue::str(field.clone()),
-                                        // `Assembly::Marks#member` — every
-                                        // member value is UNMARKED, not
-                                        // spelled verbatim (ruby_value.rs's
-                                        // own header comment on
-                                        // `unmark_scalar`).
-                                        ruby_value_json(&ruby_value::unmark_scalar(value)),
+                                        ruby_value_json(value),
                                     ])
                                 })
                                 .collect(),

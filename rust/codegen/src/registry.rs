@@ -47,6 +47,10 @@ pub struct CommandEntry {
     /// `rust/project/registry.rb` got R3's fix; this file, its Rust-
     /// native mirror, never did. `spec/codegen_parity_spec.rb`, every
     /// domain with a command that takes a non-closed-set VO argument.
+    /// `commands.rs::emit_command` already runs these a second time
+    /// inside the generated dispatch fn itself; redundant on the
+    /// success path, and the reason this router's own copy is safe to
+    /// run first regardless.
     pub invariant_check_lines: Vec<String>,
     pub role: Option<String>,
 }

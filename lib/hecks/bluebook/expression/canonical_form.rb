@@ -84,24 +84,29 @@ module Hecks
               end
             elsif ['"', "'"].include?(char)
               result << yield(buffer)
-              # `.dup`, NOT `char.to_s` (a same-object no-op on an already-
-              # String `char`) — without it, `buffer = char; quote = char`
-              # alias the SAME String, and the very next `buffer << char`
-              # a few lines up mutates them both: `quote` silently grows
-              # past its own single character, `char == quote` never
-              # matches again for the rest of the string, and everything
-              # after the true closing quote reads as "still inside a
-              # string" forever — never reaching the final line's `yield`
-              # at all. MASKED by every existing spec here, which only
-              # checks that quoted CONTENTS survive untouched (the M7 fix
-              # this method exists for) — that still holds by accident
-              # once the bug make the "outside" branch unreachable. Found
-              # live: a multi-line `given`/`ensures` block whose ONLY
-              # quoted literal closes before a later line — the newline
-              # and that later line's own indentation went uncollapsed,
-              # diverging from `hecks-parse`'s own (correct) single-space
-              # join. `spec/parser_parity_spec.rb`, roster's "a front-row
-              # seat takes a member of age".
+              # `char.dup`, not `char.to_s` (a no-op on a String — always
+              # returns self, never a copy) and not `+char` either
+              # (`String#+@` only dups a FROZEN receiver; `each_char`'s
+              # yielded strings aren't frozen, so `+char` is just as
+              # much a no-op here). Without a REAL copy, `buffer` and
+              # `quote` alias the same mutable object: the very next
+              # `buffer << char` grows `quote` right along with it, so
+              # `char == quote` can only ever compare a single character
+              # against an ever-lengthening string and never closes the
+              # literal — everything after a predicate's first quoted
+              # string silently skipped normalisation for the rest of
+              # the text, undetected because passing text through
+              # unnormalised is silent. MASKED by every existing spec
+              # here, which only checks that quoted CONTENTS survive
+              # untouched (the M7 fix this method exists for) — that
+              # still holds by accident once the bug makes the "outside"
+              # branch unreachable. Found live: a multi-line `given`/
+              # `ensures` block whose ONLY quoted literal closes before a
+              # later line — the newline and that later line's own
+              # indentation went uncollapsed, diverging from
+              # `hecks-parse`'s own (correct) single-space join.
+              # `spec/parser_parity_spec.rb`, roster's "a front-row seat
+              # takes a member of age".
               buffer = char.dup
               quote = char.dup
             else
