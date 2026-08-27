@@ -20,7 +20,7 @@ module RustProjection
     # `query_where_skip_reason`/`declared_order_by_skip_reason`/
     # `declared_offset_skip_reason`/`declared_limit_skip_reason` below:
     #
-    #   cursor / consistency / freshness / authorization / null_semantics /
+    #   cursor / consistency / freshness / authorization /
     #   inspection / use_index — every one of these is a real capability
     #   `Ports::Query::InMemory`/`TenantScope` implements and this
     #   generator does not attempt to port, the SAME boundary
@@ -30,12 +30,17 @@ module RustProjection
     #   generator hasn't been given the same "neither is ever read by the
     #   in-memory interpreter path" case-by-case audit for the AGGREGATE-
     #   query side of that argument, so it stays conservative rather than
-    #   assume the read-model finding transfers unexamined). `offset`
-    #   used to be in this list too — Phase 10 (equivalence-gap plan)
-    #   ported it for real, the identical Literal/Arg shape `limit` already
-    #   had (`declared_offset_skip_reason`/`emit_query_offset` below —
-    #   read models still refuse a declared `offset`, unchanged; only a
-    #   declared AGGREGATE query gained it).
+    #   assume the read-model finding transfers unexamined). `offset`/
+    #   `null_semantics` used to be in this list too — Phase 10
+    #   (equivalence-gap plan) ported both for real: `offset` the identical
+    #   Literal/Arg shape `limit` already had (`declared_offset_skip_
+    #   reason`/`emit_query_offset` below — read models gained it too, a
+    #   separate round); `null_semantics` a top-level `nulls :first`/`:last`
+    #   override folded straight into the generated `OrderBy` struct
+    #   (`query_ordering::NullsMode` — that type's own header has the full
+    #   argument for why an unrecognized/absent mode safely falls back to
+    #   the pre-existing direction-dependent default rather than needing a
+    #   refusal case at all).
     #
     #   an order_by field that doesn't reduce to a plain JSON string or
     #   number (a hop, an entity-scoped field, a list_of field, a
@@ -228,7 +233,7 @@ module RustProjection
     # function returns for a still-excluded query is always the REAL
     # remaining one, never a stale one order_by/limit merely used to mask.
     def query_skip_reason(query, aggregate, value_objects_by_name)
-      extras = %i[cursor consistency freshness authorization null_semantics inspection].select { |k| query[k] }
+      extras = %i[cursor consistency freshness authorization inspection].select { |k| query[k] }
       return "declares #{extras.join(', ')} — out of scope for this generator (rust/project/queries.rb's own " \
              "header has the full argument)" if extras.any?
       return "declares use_index, out of scope for the same reason the extras above are" if Array(query[:index_hints]).any?
@@ -318,9 +323,33 @@ module RustProjection
     # (which resolves to the exact same type — either spelling compiles to
     # the same struct — but a declared AGGREGATE query has no read-model
     # baggage to route through, so it spells the shared type's own name).
-    def emit_query_order_by(order_by)
+    # `null_semantics` is a SEPARATE, sibling top-level query key in Ruby's
+    # own IR (`QuerySpecification::Common::Options#null_semantics`, not
+    # nested inside `order_by` there) — passed in alongside rather than
+    # read off `order_by` itself, and folded into the one Rust struct that
+    # only ever means anything together with a declared order.
+    def emit_query_order_by(order_by, null_semantics = nil)
       descending = order_by[:direction].to_s == "desc" ? "true" : "false"
-      "crate::kernel::query_ordering::OrderBy { field: #{order_by[:field].to_s.inspect}, descending: #{descending} }"
+      "crate::kernel::query_ordering::OrderBy { field: #{order_by[:field].to_s.inspect}, descending: #{descending}, " \
+        "nulls: #{null_semantics_variant(null_semantics)} }"
+    end
+
+    # `QuerySpecification::Common::NullPolicy.order`'s own `case policy&.
+    # mode.to_s; when "first"...when "last"...else...` — ported to a
+    # lookup with the SAME fallback: `nulls(mode)` (lib/hecks/
+    # query_specification/common/dsl.rb) accepts anything, unvalidated, so
+    # a genuinely declared but unrecognized mode reads as "native" in Ruby
+    # too, never a refusal there — `Hash#fetch`'s own default arm matches
+    # that exactly. `null_semantics` itself is `nil` for the ordinary case
+    # (no declared `nulls` at all — `Query#to_h`'s own `extra_options_to_h`
+    # already strips a `{mode: "native"}` null_semantics off the wire
+    # entirely, so ANY value reaching here came from a real, non-default
+    # `nulls` declaration).
+    NULLS_MODE_VARIANTS = { "first" => "First", "last" => "Last" }.freeze
+
+    def null_semantics_variant(null_semantics)
+      mode = null_semantics && null_semantics[:mode].to_s
+      "crate::kernel::query_ordering::NullsMode::#{NULLS_MODE_VARIANTS.fetch(mode, 'Native')}"
     end
 
     # `limit`'s own compiled form — `declared_limit_skip_reason` already
@@ -470,7 +499,7 @@ module RustProjection
                   value: crate::kernel::QueryConditionValue::Literal("tmpl_literal"),
               },
           ],
-          order_by: Some(crate::kernel::query_ordering::OrderBy { field: "tmpl_order_field", descending: true }),
+          order_by: Some(crate::kernel::query_ordering::OrderBy { field: "tmpl_order_field", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),
           offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),
           limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),
       },

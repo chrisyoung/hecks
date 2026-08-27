@@ -220,7 +220,7 @@ crate::kernel::QueryDef {
     conditions: &[
         crate::kernel::QueryCondition { field: "status", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Literal("available") },
     ],
-    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false }),
+    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
 },
@@ -230,7 +230,7 @@ crate::kernel::QueryDef {
     conditions: &[
         crate::kernel::QueryCondition { field: "pizza.price_cents.cents", comparator: crate::kernel::query_comparators::QueryComparator::Lt, value: crate::kernel::QueryConditionValue::Arg("ceiling") },
     ],
-    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false }),
+    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
 },
@@ -240,7 +240,7 @@ crate::kernel::QueryDef {
     conditions: &[
         crate::kernel::QueryCondition { field: "pizza.price_cents.cents", comparator: crate::kernel::query_comparators::QueryComparator::Gt, value: crate::kernel::QueryConditionValue::NumericLiteral(1000.0) },
     ],
-    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false }),
+    order_by: Some(crate::kernel::query_ordering::OrderBy { field: "name", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
 },

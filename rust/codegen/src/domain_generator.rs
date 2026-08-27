@@ -752,7 +752,7 @@ pub fn generate(
                 verb: format!("{domain_name}::{agg_name}.{query_name}"),
                 aggregate: format!("{domain_name}::{agg_name}"),
                 conditions: queries::query_conditions(query),
-                order_by: query.get("order_by").map(queries::emit_query_order_by),
+                order_by: query.get("order_by").map(|ob| queries::emit_query_order_by(ob, query.get("null_semantics"))),
                 offset: query.get("offset").map(queries::emit_query_offset),
                 limit: query.get("limit").map(queries::emit_query_limit),
             });

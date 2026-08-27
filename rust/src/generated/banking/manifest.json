@@ -471,9 +471,7 @@
   {
     "kind": "query",
     "id": "Banking::ATMCard.Active",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "declares null_semantics — out of scope for this generator (rust/project/queries.rb's own header has the full argument)"
+    "generated": true
   },
   {
     "kind": "query",
@@ -532,21 +530,21 @@
     "id": "Banking::DisputedPaymentCount",
     "generated": false,
     "gap_class": "per_instance",
-    "reason": "declares count — out of scope for this generator: cursor/consistency/authorization(TenantScope)/null_semantics beyond the default/inspection are real capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator does not port (this file's own header has the full argument, the same boundary queries.rb already draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — neither is read by the in-memory interpreter path this kernel matches"
+    "reason": "declares count — out of scope for this generator: cursor/consistency/authorization(TenantScope)/inspection are real capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator does not port (this file's own header has the full argument, the same boundary queries.rb already draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — neither is read by the in-memory interpreter path this kernel matches"
   },
   {
     "kind": "read_model",
     "id": "Banking::DisputedPaymentMedian",
     "generated": false,
     "gap_class": "per_instance",
-    "reason": "declares median_field — out of scope for this generator: cursor/consistency/authorization(TenantScope)/null_semantics beyond the default/inspection are real capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator does not port (this file's own header has the full argument, the same boundary queries.rb already draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — neither is read by the in-memory interpreter path this kernel matches"
+    "reason": "declares median_field — out of scope for this generator: cursor/consistency/authorization(TenantScope)/inspection are real capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator does not port (this file's own header has the full argument, the same boundary queries.rb already draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — neither is read by the in-memory interpreter path this kernel matches"
   },
   {
     "kind": "read_model",
     "id": "Banking::AccountsByKind",
     "generated": false,
     "gap_class": "per_instance",
-    "reason": "declares group_by — out of scope for this generator: cursor/consistency/authorization(TenantScope)/null_semantics beyond the default/inspection are real capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator does not port (this file's own header has the full argument, the same boundary queries.rb already draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — neither is read by the in-memory interpreter path this kernel matches"
+    "reason": "declares group_by — out of scope for this generator: cursor/consistency/authorization(TenantScope)/inspection are real capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator does not port (this file's own header has the full argument, the same boundary queries.rb already draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — neither is read by the in-memory interpreter path this kernel matches"
   },
   {
     "kind": "policy",

@@ -32,7 +32,7 @@ crate::kernel::read_model::ReadModelDef {
             value: crate::kernel::QueryConditionValue::Literal("tmpl_literal"),
         },
     ],
-    order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "tmpl_order_field", descending: true }),
+    order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "tmpl_order_field", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),
     offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),
     limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
 },

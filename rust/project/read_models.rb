@@ -53,7 +53,7 @@ module RustProjection
     # with `read_model_skip_reason` below:
     #
     #   `cursor`/`consistency`/`authorization` (TenantScope) /
-    #   `null_semantics` beyond the default/`inspection` — real
+    #   `inspection` — real
     #   capabilities `Ports::Query::InMemory`/`Ports::Query::Ordering`/
     #   `TenantScope` implement that this generator does not port, the
     #   SAME boundary `queries.rb` already draws for a declared AGGREGATE
@@ -61,11 +61,13 @@ module RustProjection
     #   applied consistently here now that where/order_by/limit
     #   themselves have crossed over. `freshness`/`use_index` are NOT in
     #   this list — see `READ_MODEL_BARE_KEYS` below for why tolerating
-    #   them is honest, not a shortcut. `offset` used to be in this list
-    #   too — Phase 10 (equivalence-gap plan) ported it, reusing the exact
-    #   Literal/Arg content check `queries.rb`'s own `declared_offset_
-    #   skip_reason` already draws for a declared AGGREGATE query's own
-    #   `offset`.
+    #   them is honest, not a shortcut. `offset`/`null_semantics` used to
+    #   be in this list too — Phase 10 (equivalence-gap plan) ported both,
+    #   reusing `queries.rb`'s own `declared_offset_skip_reason`/
+    #   `emit_query_order_by`'s own `null_semantics_variant` directly (no
+    #   read-model-specific content check needed for either — the exact
+    #   same Literal/Arg shape and the exact same Native-fallback mapping
+    #   apply whether the declaring construct was a Query or a ReadModel).
     #
     #   A `where`/`order_by` whose own field this generator can't safely
     #   express — a hop through a reference, an entity-scoped field, a
@@ -125,7 +127,7 @@ module RustProjection
     # read model carries it now, `[]` when nothing was declared — and it
     # has to be checked by VALUE instead, explicitly, right below.
     READ_MODEL_BARE_KEYS = %i[name description reference_name reference_target query_name aggregate_heads
-                              wheres order_by offset limit freshness index_hints group_by].freeze
+                              wheres order_by offset limit freshness index_hints group_by null_semantics].freeze
 
     # One declared read model's own eligibility — `nil` (clean) or a
     # specific, honest reason string, the same "one gate every other
@@ -163,7 +165,7 @@ module RustProjection
 
     def read_model_options_skip_reason(extra)
       "declares #{extra.map(&:to_s).sort.join(', ')} — out of scope for this generator: cursor/" \
-        "consistency/authorization(TenantScope)/null_semantics beyond the default/inspection are real " \
+        "consistency/authorization(TenantScope)/inspection are real " \
         "capabilities Ports::Query::InMemory/Ports::Query::Ordering/TenantScope implement that this generator " \
         "does not port (this file's own header has the full argument, the same boundary queries.rb already " \
         "draws for a declared AGGREGATE query); freshness/use_index are never disqualifying on their own — " \
@@ -321,10 +323,16 @@ module RustProjection
     # emit one, and picks the same style precedent already set).
     # `order_by`'s own compiled form — `descending` collapses Ruby's own
     # `direction.to_s == "desc"` test once, at codegen time, matching
-    # `kernel/read_model.rs`'s own `ReadModelOrderBy`.
-    def emit_read_model_order_by(order_by)
+    # `kernel/read_model.rs`'s own `ReadModelOrderBy`. `null_semantics` is
+    # a separate, sibling top-level read-model key, same as it is for a
+    # declared AGGREGATE query — `queries.rb`'s own `null_semantics_
+    # variant` reused directly rather than duplicated (`ReadModelOrderBy`
+    # is `query_ordering::OrderBy` itself, an alias — the compiled `nulls:`
+    # field means the identical thing either spelling is read through).
+    def emit_read_model_order_by(order_by, null_semantics = nil)
       descending = order_by[:direction].to_s == "desc" ? "true" : "false"
-      "crate::kernel::read_model::ReadModelOrderBy { field: #{order_by[:field].to_s.inspect}, descending: #{descending} }"
+      "crate::kernel::read_model::ReadModelOrderBy { field: #{order_by[:field].to_s.inspect}, descending: #{descending}, " \
+        "nulls: #{null_semantics_variant(null_semantics)} }"
     end
 
     # `limit`'s own compiled form — the identical Literal/Arg split
@@ -384,7 +392,7 @@ module RustProjection
         heads: heads,
         filtered_head: eligible_as&.to_s,
         conditions: eligible_as ? query_conditions(read_model) : [],
-        order_by: eligible_as && read_model[:order_by] ? emit_read_model_order_by(read_model[:order_by]) : nil,
+        order_by: eligible_as && read_model[:order_by] ? emit_read_model_order_by(read_model[:order_by], read_model[:null_semantics]) : nil,
         offset: eligible_as && read_model[:offset] ? emit_read_model_offset(read_model[:offset]) : nil,
         limit: eligible_as && read_model[:limit] ? emit_read_model_limit(read_model[:limit]) : nil,
       }
@@ -444,7 +452,7 @@ module RustProjection
                   value: crate::kernel::QueryConditionValue::Literal("tmpl_literal"),
               },
           ],
-          order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "tmpl_order_field", descending: true }),
+          order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: "tmpl_order_field", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),
           offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),
           limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
       },

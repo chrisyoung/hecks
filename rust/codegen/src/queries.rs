@@ -148,7 +148,7 @@ fn kind_name(kind: FieldKind) -> &'static str {
 
 /// A whole declared query's own eligibility.
 pub fn query_skip_reason(query: &Json, aggregate: &Json, value_objects_by_name: &HashMap<String, &Json>) -> Option<String> {
-    let extra_keys = ["cursor", "consistency", "freshness", "authorization", "null_semantics", "inspection"];
+    let extra_keys = ["cursor", "consistency", "freshness", "authorization", "inspection"];
     let extras: Vec<&str> = extra_keys.iter().filter(|k| query.get(k).is_some()).copied().collect();
     if !extras.is_empty() {
         return Some(format!("declares {} — out of scope for this generator (rust/project/queries.rb's own header has the full argument)", extras.join(", ")));
@@ -224,9 +224,26 @@ fn is_plain_integer(raw: &str) -> bool {
     !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
 }
 
-pub fn emit_query_order_by(order_by: &Json) -> String {
+pub fn emit_query_order_by(order_by: &Json, null_semantics: Option<&Json>) -> String {
     let descending = order_by.get("direction").map(Json::to_s).unwrap_or_default() == "desc";
-    format!("crate::kernel::query_ordering::OrderBy {{ field: {}, descending: {descending} }}", naming::ruby_inspect_string(&order_by.get("field").map(Json::to_s).unwrap_or_default()))
+    format!(
+        "crate::kernel::query_ordering::OrderBy {{ field: {}, descending: {descending}, nulls: {} }}",
+        naming::ruby_inspect_string(&order_by.get("field").map(Json::to_s).unwrap_or_default()),
+        null_semantics_variant(null_semantics)
+    )
+}
+
+/// Same reasoning as `rust/project/queries.rb`'s own `null_semantics_
+/// variant`: `nulls(mode)` accepts anything, unvalidated, so an
+/// unrecognized mode falls back to `Native`, matching `NullPolicy.order`'s
+/// own `else` arm exactly rather than needing a refusal case.
+pub fn null_semantics_variant(null_semantics: Option<&Json>) -> &'static str {
+    let mode = null_semantics.and_then(|ns| ns.get("mode")).map(Json::to_s).unwrap_or_default();
+    match mode.as_str() {
+        "first" => "crate::kernel::query_ordering::NullsMode::First",
+        "last" => "crate::kernel::query_ordering::NullsMode::Last",
+        _ => "crate::kernel::query_ordering::NullsMode::Native",
+    }
 }
 
 pub fn emit_query_limit(limit: &Json) -> String {
@@ -409,7 +426,7 @@ pub fn emit_query_def(query_def: &QueryDef) -> String {
     )
 }
 
-const QUERY_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::QueryDef {\n    verb: \"tmpl_verb\",\n    aggregate: \"tmpl_aggregate\",\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::query_ordering::OrderBy { field: \"tmpl_order_field\", descending: true }),\n    offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),\n    limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),\n},";
+const QUERY_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::QueryDef {\n    verb: \"tmpl_verb\",\n    aggregate: \"tmpl_aggregate\",\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::query_ordering::OrderBy { field: \"tmpl_order_field\", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),\n    offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),\n    limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),\n},";
 
 pub fn emit_query_table(exemplar: &Exemplar, query_defs: &[QueryDef]) -> String {
     let rows: Vec<String> = query_defs.iter().map(emit_query_def).collect();
