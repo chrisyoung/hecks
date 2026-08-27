@@ -73,7 +73,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "AccountNumber")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("AccountNumber.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "AccountNumber")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("AccountNumber.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("AccountNumber.value: expected String".to_string()) })? },
         })
     }
 }
@@ -342,7 +342,7 @@ if !unknown.is_empty() {
 }
         Ok(Self {
         cents: match v.get("cents") { Some(x) => x.as_i64().ok_or_else(|| crate::kernel::Refusal::TypeMismatch(format!("Money.cents expects Integer, got {}", x.inspect())))?, None => 0 },
-        currency: match v.get("currency") { Some(x) => x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Money.currency: expected String".to_string()))?, None => "USD".to_string() },
+        currency: match v.get("currency") { Some(x) => x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Money.currency expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Money.currency: expected String".to_string()) })?, None => "USD".to_string() },
         })
     }
 }
@@ -435,7 +435,7 @@ if !unknown.is_empty() {
 }
         Ok(Self {
         cents: { let x = v.require("cents", "PositiveMoney")?; x.as_i64().ok_or_else(|| crate::kernel::Refusal::TypeMismatch(format!("PositiveMoney.cents expects Integer, got {}", x.inspect())))? },
-        currency: match v.get("currency") { Some(x) => x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("PositiveMoney.currency: expected String".to_string()))?, None => "USD".to_string() },
+        currency: match v.get("currency") { Some(x) => x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("PositiveMoney.currency expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("PositiveMoney.currency: expected String".to_string()) })?, None => "USD".to_string() },
         })
     }
 }
@@ -556,7 +556,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        text: { let x = v.require("text", "Narrative")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Narrative.text: expected String".to_string()))? },
+        text: { let x = v.require("text", "Narrative")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Narrative.text expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Narrative.text: expected String".to_string()) })? },
         })
     }
 }
@@ -907,7 +907,7 @@ impl Account {
 impl Account {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
         Ok(Self {
-        customer: match v.get("customer") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Account.customer: expected String".to_string()))?), },
+        customer: match v.get("customer") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Account.customer expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Account.customer: expected String".to_string()) })?), },
         number: match v.get("number") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(AccountNumber::from_json(&x.coerce_single_field("value"))?), },
         balance: match v.get("balance") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(Money::from_json(x)?), },
         kind: match v.get("kind") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(AccountKind::from_json(&x.coerce_single_field("name"))?), },
@@ -1049,7 +1049,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        customer: { let x = v.require("customer", "OpenArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("OpenArgs.customer: expected String".to_string()))? },
+        customer: { let x = v.require("customer", "OpenArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("OpenArgs.customer expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("OpenArgs.customer: expected String".to_string()) })? },
         number: AccountNumber::from_json(&v.require("number", "OpenArgs")?.coerce_single_field("value"))?,
         kind: AccountKind::from_json(&v.require("kind", "OpenArgs")?.coerce_single_field("name"))?,
         daily_limit: DailyLimit::from_json(&v.require("daily_limit", "OpenArgs")?.coerce_single_field("cents"))?,
@@ -1595,95 +1595,6 @@ if !unknown.is_empty() {
         Ok(Self {
         amount: PositiveMoney::from_json(v.require("amount", "ApplyFeeArgs")?)?,
         narrative: Narrative::from_json(&v.require("narrative", "ApplyFeeArgs")?.coerce_single_field("text"))?,
-        })
-    }
-}
-
-impl crate::kernel::Fielded for CorrectFeeArgs {
-    fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
-        use crate::kernel::Field;
-        
-        match name {
-            "amount" => Some(Field::Nested(&self.amount)),
-            _ => None,
-        }
-    }
-
-    fn items(&self, name: &str) -> Option<Vec<crate::kernel::Field<'_>>> {
-        #[allow(unused_imports)]
-        use crate::kernel::{Field, Value};
-        match name {
-
-            _ => None,
-        }
-    }
-
-    fn as_scalar(&self) -> Option<crate::kernel::Value> {
-        None
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct CorrectFeeArgs {
-    pub amount: PositiveMoney,
-}
-
-pub fn dispatch_correct_fee(
-    repo: &mut impl crate::kernel::Repository<Account>, id: &str, args: CorrectFeeArgs, mutations: &mut Vec<crate::kernel::MutationRecord>, owner_deref: Vec<(&'static str, crate::kernel::DerefNode)>, command_deref: Vec<(&'static str, crate::kernel::DerefNode)>,
-) -> crate::kernel::DispatchResult<Account> {
-        args.amount.check_invariants()?;
-    let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
-
-    crate::kernel::dispatch(
-        repo,
-        crate::kernel::Hydrate::Act { id: id.to_string() },
-        "CorrectFee",
-        "Banking::Account",
-        "Account",
-        "number.value",
-        &with_references,
-        &[
-            crate::kernel::GivenSpec { description: "customer is active", expr: Expr::Compare { op: crate::kernel::Comparison { less_than: false, equal: true, negated: false }, left: Box::new(Expr::Lookup("customer.status")), right: Box::new(Expr::Str("active".to_string())) } },
-            crate::kernel::GivenSpec { description: "a correction cannot exceed collected fees", expr: Expr::Compare { op: crate::kernel::Comparison { less_than: true, equal: false, negated: true }, left: Box::new(Expr::Lookup("fees_cents.cents")), right: Box::new(Expr::Lookup("amount.cents")) } },
-        ],
-        Some(crate::kernel::TransitionCheck { field: "status", from_states: &["open"] }),
-        |record| {
-        { let current = record.balance.clone().unwrap(); record.balance = Some(Money { cents: current.cents + (args.amount.cents), ..current }); }
-        { let current = record.fees_cents.clone().unwrap(); record.fees_cents = Some(Money { cents: current.cents - (args.amount.cents), ..current }); }
-            Ok(())
-        },
-        &[
-
-        ],
-        &["FeeCorrected"],
-        args.to_json(),
-        mutations,
-    )
-}
-
-impl CorrectFeeArgs {
-    pub fn to_json(&self) -> crate::kernel::Json {
-        crate::kernel::Json::Object(
-            vec![        ("amount".to_string(), self.amount.to_json()),]
-                .into_iter()
-                .filter(|(_, v)| !matches!(v, crate::kernel::Json::Null))
-                .collect(),
-        )
-    }
-}
-
-impl CorrectFeeArgs {
-    pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
-let unknown = v.unknown_keys(&["amount", "id", "account", "number", "reference", "end_to_end"]);
-if !unknown.is_empty() {
-    return Err(crate::kernel::Refusal::UnknownArgument(format!(
-        "CorrectFee does not declare {} — it takes amount",
-        unknown.join(", ")
-    )));
-}
-        Ok(Self {
-        amount: PositiveMoney::from_json(v.require("amount", "CorrectFeeArgs")?)?,
         })
     }
 }

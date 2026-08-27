@@ -58,7 +58,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "AuthorisationCode")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("AuthorisationCode.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "AuthorisationCode")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("AuthorisationCode.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("AuthorisationCode.value: expected String".to_string()) })? },
         })
     }
 }
@@ -207,7 +207,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "MerchantName")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("MerchantName.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "MerchantName")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("MerchantName.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("MerchantName.value: expected String".to_string()) })? },
         })
     }
 }
@@ -282,7 +282,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "Tag")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Tag.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "Tag")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Tag.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Tag.value: expected String".to_string()) })? },
         })
     }
 }
@@ -344,8 +344,8 @@ impl CardPayment {
 impl CardPayment {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
         Ok(Self {
-        account: match v.get("account") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("CardPayment.account: expected String".to_string()))?), },
-        disputed_by: match v.get("disputed_by") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("CardPayment.disputed_by: expected String".to_string()))?), },
+        account: match v.get("account") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("CardPayment.account expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("CardPayment.account: expected String".to_string()) })?), },
+        disputed_by: match v.get("disputed_by") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("CardPayment.disputed_by expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("CardPayment.disputed_by: expected String".to_string()) })?), },
         authorisation: match v.get("authorisation") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(AuthorisationCode::from_json(&x.coerce_single_field("value"))?), },
         amount: match v.get("amount") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(PaymentAmount::from_json(&x.coerce_single_field("cents"))?), },
         merchant: match v.get("merchant") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(MerchantName::from_json(&x.coerce_single_field("value"))?), },
@@ -452,6 +452,7 @@ pub fn dispatch_authorize(
         record.amount = Some(args.amount.clone());
         record.merchant = Some(args.merchant.clone());
         record.tags = args.tags.clone();
+        record.authorisation = Some(args.authorisation.clone());
             Ok(())
         },
         &[
@@ -490,7 +491,7 @@ if !unknown.is_empty() {
         Ok(Self {
         authorisation: AuthorisationCode::from_json(&v.require("authorisation", "AuthorizeArgs")?.coerce_single_field("value"))?,
         tags: match v.get("tags") { Some(x) => Some(x.as_array().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("AuthorizeArgs.tags: expected an array".to_string()))?.iter().map(Tag::from_json).collect::<Result<Vec<_>, crate::kernel::Refusal>>()?), None => None, },
-        account: { let x = v.require("account", "AuthorizeArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("AuthorizeArgs.account: expected String".to_string()))? },
+        account: { let x = v.require("account", "AuthorizeArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("AuthorizeArgs.account expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("AuthorizeArgs.account: expected String".to_string()) })? },
         amount: PaymentAmount::from_json(&v.require("amount", "AuthorizeArgs")?.coerce_single_field("cents"))?,
         merchant: MerchantName::from_json(&v.require("merchant", "AuthorizeArgs")?.coerce_single_field("value"))?,
         })
@@ -934,7 +935,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        disputed_by: { let x = v.require("disputed_by", "DisputeArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("DisputeArgs.disputed_by: expected String".to_string()))? },
+        disputed_by: { let x = v.require("disputed_by", "DisputeArgs")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("DisputeArgs.disputed_by expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("DisputeArgs.disputed_by: expected String".to_string()) })? },
         })
     }
 }

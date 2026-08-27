@@ -1273,6 +1273,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "bluebook", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("bluebook") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false }),
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -1282,6 +1283,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "name", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("name") },
     ],
     order_by: None,
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -1291,6 +1293,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "aggregate", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("aggregate") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false }),
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -1300,6 +1303,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "aggregate", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("aggregate") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false }),
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -1309,6 +1313,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "bluebook", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("bluebook") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false }),
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -1318,6 +1323,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "bluebook", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("bluebook") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false }),
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -1327,6 +1333,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "bluebook", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("bluebook") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false }),
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -1336,6 +1343,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "aggregate", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("aggregate") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false }),
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -1345,6 +1353,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "aggregate", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("aggregate") },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "position", descending: false }),
+    offset: None,
     limit: None,
 },
 ];

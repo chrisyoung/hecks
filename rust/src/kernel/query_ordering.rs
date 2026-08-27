@@ -72,14 +72,27 @@ pub enum Limit {
     Arg(&'static str),
 }
 
+/// A declared `offset N` reuses `Limit` directly rather than a separate
+/// `Offset` enum — `Runtime::QueryInterpreter#interpret`'s own
+/// `resolve_query_value(declared.offset.value, args).to_i` is the
+/// IDENTICAL Literal/Arg resolution `declared.limit.value` already gets
+/// (both ride `QuerySpecification.render_value`'s same wire encoding),
+/// so two fields with the same shape and the same resolution rule share
+/// one Rust type instead of duplicating it. Only `named_query::QueryDef`
+/// carries this field today — `read_model::ReadModelDef` still refuses a
+/// declared `offset` at codegen time (`read_models.rb`'s own eligibility
+/// gate, unchanged by this), so `apply`'s `offset` param is always `None`
+/// on that caller's path.
+pub type Offset = Limit;
+
 /// THE SHARED TAIL of both callers' own answer: sort by identity, layer a
-/// declared order on top if there is one, cap at a declared limit if
-/// there is one. Where-FILTERING happens before this runs and is each
-/// caller's own job (`repository::filter_entries`, chained per condition
-/// — identical in both `read_model::apply_filtered_head_options` and
-/// `named_query::run`, so there was nothing to extract there; the
-/// dedicated logic to a query/read model was never the filtering, it was
-/// always this tail).
+/// declared order on top if there is one, skip a declared offset if there
+/// is one, cap at a declared limit if there is one. Where-FILTERING
+/// happens before this runs and is each caller's own job
+/// (`repository::filter_entries`, chained per condition — identical in
+/// both `read_model::apply_filtered_head_options` and `named_query::run`,
+/// so there was nothing to extract there; the dedicated logic to a
+/// query/read model was never the filtering, it was always this tail).
 ///
 /// TIER 1 — IDENTITY. `Ports::Query::Ordering.apply`'s own header: "the
 /// identity tier is what makes an ask total" — every answer is sorted by
@@ -93,11 +106,28 @@ pub enum Limit {
 /// no-op then, but a caller declaring ONLY `order_by`/`limit` (no `where`
 /// at all) still needs the same identity base Ruby's own two-tier scheme
 /// guarantees on every path.
-pub fn apply(mut rows: Vec<(String, Json)>, order_by: Option<&OrderBy>, limit: Option<&Limit>, args: &Json) -> Vec<(String, Json)> {
+///
+/// OFFSET FIRST, THEN LIMIT — `Runtime::QueryInterpreter#interpret`'s own
+/// order: `skipped = declared.offset ? ordered.drop(...) : ordered;
+/// capped = declared.limit ? skipped.first(...) : skipped` — the order
+/// SQL means by `LIMIT n OFFSET m` (skip m, then take n of what's left),
+/// not the reverse.
+pub fn apply(
+    mut rows: Vec<(String, Json)>,
+    order_by: Option<&OrderBy>,
+    offset: Option<&Offset>,
+    limit: Option<&Limit>,
+    args: &Json,
+) -> Vec<(String, Json)> {
     rows.sort_by(|a, b| a.0.cmp(&b.0));
 
     if let Some(order_by) = order_by {
         rows = apply_declared_order(rows, order_by);
+    }
+
+    if let Some(offset) = offset {
+        let n = resolve_limit(offset, args).min(rows.len());
+        rows.drain(0..n);
     }
 
     if let Some(limit) = limit {

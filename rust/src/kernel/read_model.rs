@@ -427,5 +427,11 @@ fn apply_filtered_head_options(mut rows: Vec<(String, Json)>, def: &ReadModelDef
         rows = repository::filter_entries(rows, condition.field, condition.comparator, &want);
     }
 
-    query_ordering::apply(rows, def.order_by.as_ref(), def.limit.as_ref(), args)
+    // `offset: None` — a read model has no `ReadModelDef::offset` field at
+    // all (`read_models.rb`'s own eligibility gate still refuses a
+    // declared `offset` unchanged; only `named_query::QueryDef` gained
+    // one, Phase 10 of the equivalence-gap plan). `apply`'s signature grew
+    // this param for that one new caller; this one just always passes
+    // `None`, exactly as if the param didn't exist for it.
+    query_ordering::apply(rows, def.order_by.as_ref(), None, def.limit.as_ref(), args)
 }

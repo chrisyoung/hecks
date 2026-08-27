@@ -41,10 +41,16 @@ module RustConformanceHelpers
       reaction["delivered"] == false
   end
 
-  # THE FIXED CORPUS'S OWN NARROW LIST — two verbs, found and named by
-  # hand against a small, curated set of fixtures. Kept exactly as-is for
-  # rust_conformance_spec.rb's own byte-for-byte proof.
-  KNOWN_REFUSAL_GAP_VERBS = %w[Banking.ComplianceDashboard Banking::ATMCard.ByFee].freeze
+  # THE FIXED CORPUS'S OWN NARROW LIST — found and named by hand against a
+  # small, curated set of fixtures. `Banking::ATMCard.ByFee` used to be
+  # here too (a declared query's own `offset`, structurally refused) —
+  # removed once Phase 10 (equivalence-gap plan) ported `offset` for real
+  # and `bin/project_rust examples/banking` was re-run to pick it up:
+  # spec/corpus/rust_conformance/named_queries_order_limit.json now
+  # matches byte-for-byte with no tolerance needed for this verb at all
+  # (confirmed directly — this fixture failed with exactly this one
+  # mismatch before the fix, passed clean after).
+  KNOWN_REFUSAL_GAP_VERBS = %w[Banking.ComplianceDashboard].freeze
 
   def known_refusal_gap?(entry)
     KNOWN_REFUSAL_GAP_VERBS.include?(entry.key?("verb") ? entry["verb"] : entry["query"])

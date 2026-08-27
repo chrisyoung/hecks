@@ -95,8 +95,9 @@
   {
     "kind": "command",
     "id": "Banking::Account.CorrectFee",
-    "generated": true,
-    "routed": true
+    "generated": false,
+    "gap_class": "per_instance",
+    "reason": "sets op(s) corrects not generated yet (only append/set/increment/decrement/delegate are)"
   },
   {
     "kind": "command",
@@ -477,9 +478,7 @@
   {
     "kind": "query",
     "id": "Banking::ATMCard.ByFee",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "declares offset — out of scope for this generator (rust/project/queries.rb's own header has the full argument)"
+    "generated": true
   },
   {
     "kind": "query",

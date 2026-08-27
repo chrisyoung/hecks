@@ -74,7 +74,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "BranchCode")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("BranchCode.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "BranchCode")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("BranchCode.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("BranchCode.value: expected String".to_string()) })? },
         })
     }
 }
@@ -297,7 +297,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "VisitDate")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("VisitDate.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "VisitDate")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("VisitDate.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("VisitDate.value: expected String".to_string()) })? },
         })
     }
 }
@@ -357,7 +357,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        text: { let x = v.require("text", "VisitNote")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("VisitNote.text: expected String".to_string()))? },
+        text: { let x = v.require("text", "VisitNote")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("VisitNote.text expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("VisitNote.text: expected String".to_string()) })? },
         })
     }
 }
@@ -432,7 +432,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "KeySerial")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("KeySerial.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "KeySerial")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("KeySerial.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("KeySerial.value: expected String".to_string()) })? },
         })
     }
 }
@@ -894,7 +894,7 @@ impl SafeDepositBox {
 impl SafeDepositBox {
     pub fn from_json(v: &crate::kernel::Json) -> Result<Self, crate::kernel::Refusal> {
         Ok(Self {
-        customer: match v.get("customer") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("SafeDepositBox.customer: expected String".to_string()))?), },
+        customer: match v.get("customer") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("SafeDepositBox.customer expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("SafeDepositBox.customer: expected String".to_string()) })?), },
         branch_code: match v.get("branch_code") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(BranchCode::from_json(&x.coerce_single_field("value"))?), },
         box_number: match v.get("box_number") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(BoxNumber::from_json(&x.coerce_single_field("value"))?), },
         size: match v.get("size") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(Size::from_json(&x.coerce_single_field("value"))?), },

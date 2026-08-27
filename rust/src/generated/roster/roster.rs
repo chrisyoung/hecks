@@ -58,7 +58,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "RosterName")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("RosterName.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "RosterName")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("RosterName.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("RosterName.value: expected String".to_string()) })? },
         })
     }
 }
@@ -118,7 +118,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "Motto")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Motto.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "Motto")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Motto.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Motto.value: expected String".to_string()) })? },
         })
     }
 }
@@ -310,7 +310,7 @@ if !unknown.is_empty() {
     )));
 }
         Ok(Self {
-        value: { let x = v.require("value", "MemberId")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| crate::kernel::Refusal::TypeMismatch("MemberId.value: expected String".to_string()))? },
+        value: { let x = v.require("value", "MemberId")?; x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("MemberId.value expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("MemberId.value: expected String".to_string()) })? },
         })
     }
 }

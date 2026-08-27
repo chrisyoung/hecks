@@ -10,9 +10,10 @@
 // SCOPE: exactly the subset `rust/project/queries.rb`'s own
 // `query_skip_reason` admits — one or more field-comparator conditions,
 // ANDed together, against a single aggregate's OWN attributes, PLUS (as of
-// 2026-08-11) a declared `order_by`/`limit` on that same result set —
+// 2026-08-11) a declared `order_by`/`limit` on that same result set, PLUS
+// (as of Phase 10, equivalence-gap plan) a declared `offset` on it too —
 // still no cursor/consistency/freshness/authorization/null_semantics/
-// inspection/index_hints/offset; no where clause hopping through a
+// inspection/index_hints; no where clause hopping through a
 // reference; no literal comparator value whose true JSON type the
 // exported IR can't recover; no order_by field that doesn't reduce to a
 // plain JSON string or number. A declared query outside that subset
@@ -23,17 +24,21 @@
 // GROUND TRUTH: `Runtime::QueryInterpreter#interpret`
 // (lib/hecks/runtime/query_interpreter.rb), read directly — for THIS
 // subset specifically (no hop), `interpret` and its own differential twin
-// `reference_interpret` are PROVABLY the identical answer, order_by/limit
-// included: both share the exact same `ordered`/`capped` sequence —
-// `ordered = ordered(matched, declared.order_by, declared.null_semantics)`
-// then `capped = declared.limit ? ordered.first(resolve_query_value(
-// declared.limit.value, args).to_i) : ordered` — applied AFTER the where
+// `reference_interpret` are PROVABLY the identical answer, order_by/
+// offset/limit included: both share the exact same `ordered`/`skipped`/
+// `capped` sequence — `ordered = ordered(matched, declared.order_by,
+// declared.null_semantics)`, then `skipped = declared.offset ? ordered.
+// drop(resolve_query_value(declared.offset.value, args).to_i) : ordered`
+// (OFFSET FIRST — SQL's own `LIMIT n OFFSET m` order, not the reverse),
+// then `capped = declared.limit ? skipped.first(resolve_query_value(
+// declared.limit.value, args).to_i) : skipped` — applied AFTER the where
 // clauses (`matched`), which is the only place the two interpreters ever
 // differ (`reference_where_holds?` vs plain `where_holds?`); a hop-free
 // where clause makes `reference_where_holds?` fall straight through to
 // `where_holds?` via its own early return (`return where_holds?(clause,
-// record, args) unless step`), so order_by/limit run on an IDENTICAL
-// `matched` set either way, never a second, separately-computed answer.
+// record, args) unless step`), so order_by/offset/limit run on an
+// IDENTICAL `matched` set either way, never a second, separately-computed
+// answer.
 // `kernel/cli.rs`'s STRING-form dispatch leans on exactly this property
 // to report `reference_rows` as a clone of `rows` rather than actually
 // re-running a second walk.
@@ -69,6 +74,10 @@ pub struct QueryDef {
     pub aggregate: &'static str,
     pub conditions: &'static [QueryCondition],
     pub order_by: Option<query_ordering::OrderBy>,
+    /// `None` for the ordinary case (no declared `offset`, true for every
+    /// declared query before this field existed). `query_ordering::apply`
+    /// runs this BEFORE `limit` — see that function's own header for why.
+    pub offset: Option<query_ordering::Offset>,
     pub limit: Option<query_ordering::Limit>,
 }
 
@@ -168,7 +177,7 @@ pub fn run_cross_domain(
             repository::filter_entries_cross_domain(entries, condition.field, condition.comparator, &want, cross_domain);
     }
 
-    Ok(query_ordering::apply(entries, def.order_by.as_ref(), def.limit.as_ref(), args))
+    Ok(query_ordering::apply(entries, def.order_by.as_ref(), def.offset.as_ref(), def.limit.as_ref(), args))
 }
 
 /// The lookup `kernel/cli.rs`'s STRING-form "query" step dispatches

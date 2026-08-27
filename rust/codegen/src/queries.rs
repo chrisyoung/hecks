@@ -148,7 +148,7 @@ fn kind_name(kind: FieldKind) -> &'static str {
 
 /// A whole declared query's own eligibility.
 pub fn query_skip_reason(query: &Json, aggregate: &Json, value_objects_by_name: &HashMap<String, &Json>) -> Option<String> {
-    let extra_keys = ["offset", "cursor", "consistency", "freshness", "authorization", "null_semantics", "inspection"];
+    let extra_keys = ["cursor", "consistency", "freshness", "authorization", "null_semantics", "inspection"];
     let extras: Vec<&str> = extra_keys.iter().filter(|k| query.get(k).is_some()).copied().collect();
     if !extras.is_empty() {
         return Some(format!("declares {} — out of scope for this generator (rust/project/queries.rb's own header has the full argument)", extras.join(", ")));
@@ -169,6 +169,10 @@ pub fn query_skip_reason(query: &Json, aggregate: &Json, value_objects_by_name: 
     }
 
     if let Some(reason) = declared_order_by_skip_reason(query.get("order_by"), aggregate, value_objects_by_name) {
+        return Some(reason);
+    }
+
+    if let Some(reason) = declared_offset_skip_reason(query.get("offset")) {
         return Some(reason);
     }
 
@@ -200,6 +204,21 @@ pub fn declared_limit_skip_reason(limit: Option<&Json>) -> Option<String> {
     Some(format!("declares limit {} — not a literal integer or a caller-bound Symbol arg, so this generator can't compile a real limit count from it", naming::ruby_inspect_string(&raw)))
 }
 
+/// `offset`'s own content check — same shape as `declared_limit_skip_
+/// reason` just above (see `rust/project/queries.rb`'s own
+/// `declared_offset_skip_reason` for the full reasoning); kept a
+/// separately-named function for the same reason that file's does — so
+/// the reason string names "offset", not "limit".
+pub fn declared_offset_skip_reason(offset: Option<&Json>) -> Option<String> {
+    let offset = offset?;
+    let raw = offset.get("value").map(Json::to_s).unwrap_or_default();
+    if raw.starts_with(':') || is_plain_integer(&raw) {
+        return None;
+    }
+
+    Some(format!("declares offset {} — not a literal integer or a caller-bound Symbol arg, so this generator can't compile a real offset count from it", naming::ruby_inspect_string(&raw)))
+}
+
 fn is_plain_integer(raw: &str) -> bool {
     let s = raw.strip_prefix('-').unwrap_or(raw);
     !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
@@ -216,6 +235,17 @@ pub fn emit_query_limit(limit: &Json) -> String {
         return format!("crate::kernel::query_ordering::Limit::Arg({})", naming::ruby_inspect_string(arg));
     }
     format!("crate::kernel::query_ordering::Limit::Literal({})", ruby_to_i(&raw))
+}
+
+/// `crate::kernel::query_ordering::Offset` is `pub type Offset = Limit`
+/// (see that module's own doc comment); `Limit::Literal(1)` and
+/// `Offset::Literal(1)` construct the identical value, but a human
+/// reading a generated `offset:` field seeing `Limit::Literal(...)` would
+/// reasonably read that as a bug — same reasoning, same fix, as
+/// `rust/project/queries.rb`'s own `emit_query_offset`: reuse
+/// `emit_query_limit`'s computation, swap only the spelled type name.
+pub fn emit_query_offset(offset: &Json) -> String {
+    emit_query_limit(offset).replace("query_ordering::Limit::", "query_ordering::Offset::")
 }
 
 fn ruby_to_i(s: &str) -> i64 {
@@ -353,6 +383,7 @@ pub struct QueryDef {
     pub aggregate: String,
     pub conditions: Vec<Condition>,
     pub order_by: Option<String>,
+    pub offset: Option<String>,
     pub limit: Option<String>,
 }
 
@@ -362,19 +393,23 @@ pub fn emit_query_def(query_def: &QueryDef) -> String {
         Some(o) => format!("Some({o})"),
         None => "None".to_string(),
     };
+    let offset = match &query_def.offset {
+        Some(o) => format!("Some({o})"),
+        None => "None".to_string(),
+    };
     let limit = match &query_def.limit {
         Some(l) => format!("Some({l})"),
         None => "None".to_string(),
     };
 
     format!(
-        "crate::kernel::QueryDef {{\n    verb: {},\n    aggregate: {},\n    conditions: &[\n{conditions}\n    ],\n    order_by: {order_by},\n    limit: {limit},\n}},",
+        "crate::kernel::QueryDef {{\n    verb: {},\n    aggregate: {},\n    conditions: &[\n{conditions}\n    ],\n    order_by: {order_by},\n    offset: {offset},\n    limit: {limit},\n}},",
         naming::ruby_inspect_string(&query_def.verb),
         naming::ruby_inspect_string(&query_def.aggregate)
     )
 }
 
-const QUERY_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::QueryDef {\n    verb: \"tmpl_verb\",\n    aggregate: \"tmpl_aggregate\",\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::query_ordering::OrderBy { field: \"tmpl_order_field\", descending: true }),\n    limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),\n},";
+const QUERY_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::QueryDef {\n    verb: \"tmpl_verb\",\n    aggregate: \"tmpl_aggregate\",\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::query_ordering::OrderBy { field: \"tmpl_order_field\", descending: true }),\n    offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),\n    limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),\n},";
 
 pub fn emit_query_table(exemplar: &Exemplar, query_defs: &[QueryDef]) -> String {
     let rows: Vec<String> = query_defs.iter().map(emit_query_def).collect();

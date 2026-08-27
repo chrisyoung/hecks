@@ -18,19 +18,24 @@ module RustProjection
     #
     # WHAT THIS DELIBERATELY DOES NOT COVER, and why — read together with
     # `query_where_skip_reason`/`declared_order_by_skip_reason`/
-    # `declared_limit_skip_reason` below:
+    # `declared_offset_skip_reason`/`declared_limit_skip_reason` below:
     #
-    #   offset / cursor / consistency / freshness / authorization /
-    #   null_semantics / inspection / use_index — every one of these is a
-    #   real capability `Ports::Query::InMemory`/`TenantScope` implements
-    #   and this generator does not attempt to port, the SAME boundary
+    #   cursor / consistency / freshness / authorization / null_semantics /
+    #   inspection / use_index — every one of these is a real capability
+    #   `Ports::Query::InMemory`/`TenantScope` implements and this
+    #   generator does not attempt to port, the SAME boundary
     #   `read_models.rb` draws for a declared read model's own eligible
     #   head (that file's own header has the full argument — including WHY
     #   freshness/use_index are tolerated there and NOT here: this
     #   generator hasn't been given the same "neither is ever read by the
     #   in-memory interpreter path" case-by-case audit for the AGGREGATE-
     #   query side of that argument, so it stays conservative rather than
-    #   assume the read-model finding transfers unexamined).
+    #   assume the read-model finding transfers unexamined). `offset`
+    #   used to be in this list too — Phase 10 (equivalence-gap plan)
+    #   ported it for real, the identical Literal/Arg shape `limit` already
+    #   had (`declared_offset_skip_reason`/`emit_query_offset` below —
+    #   read models still refuse a declared `offset`, unchanged; only a
+    #   declared AGGREGATE query gained it).
     #
     #   an order_by field that doesn't reduce to a plain JSON string or
     #   number (a hop, an entity-scoped field, a list_of field, a
@@ -223,7 +228,7 @@ module RustProjection
     # function returns for a still-excluded query is always the REAL
     # remaining one, never a stale one order_by/limit merely used to mask.
     def query_skip_reason(query, aggregate, value_objects_by_name)
-      extras = %i[offset cursor consistency freshness authorization null_semantics inspection].select { |k| query[k] }
+      extras = %i[cursor consistency freshness authorization null_semantics inspection].select { |k| query[k] }
       return "declares #{extras.join(', ')} — out of scope for this generator (rust/project/queries.rb's own " \
              "header has the full argument)" if extras.any?
       return "declares use_index, out of scope for the same reason the extras above are" if Array(query[:index_hints]).any?
@@ -237,6 +242,9 @@ module RustProjection
 
       order_reason = declared_order_by_skip_reason(query[:order_by], aggregate, value_objects_by_name)
       return order_reason if order_reason
+
+      offset_reason = declared_offset_skip_reason(query[:offset])
+      return offset_reason if offset_reason
 
       declared_limit_skip_reason(query[:limit])
     end
@@ -282,6 +290,27 @@ module RustProjection
         "can't compile a real limit count from it"
     end
 
+    # `offset`'s own content check — the IDENTICAL shape `declared_limit_
+    # skip_reason` just above already checks: `QuerySpecification.
+    # render_value` puts `offset`'s own literal value on the wire exactly
+    # the way `limit`'s does (`OffsetSpec`/`LimitSpec` are both a bare
+    # `value:`, no separate encoding), so a real literal integer or a
+    # caller-bound Symbol arg is the same two-case test either field ever
+    # needs. Kept as its own named function (rather than calling
+    # `declared_limit_skip_reason(offset)` directly from `query_skip_
+    # reason`) purely so a reader following `query_skip_reason`'s own
+    # sequence of checks sees "offset" named in the reason it returns,
+    # not "limit" borrowed for a field it didn't actually name.
+    def declared_offset_skip_reason(offset)
+      return nil unless offset
+
+      raw = offset[:value].to_s
+      return nil if raw.start_with?(":") || raw.match?(/\A-?\d+\z/)
+
+      "declares offset #{raw.inspect} — not a literal integer or a caller-bound Symbol arg, so this generator " \
+        "can't compile a real offset count from it"
+    end
+
     # `order_by`'s own compiled form — the identical `descending` collapse
     # `read_models.rb`'s own `emit_read_model_order_by` already does,
     # aimed at the canonical `crate::kernel::query_ordering::OrderBy` path
@@ -304,6 +333,18 @@ module RustProjection
 
       "crate::kernel::query_ordering::Limit::Literal(#{raw.to_i})"
     end
+
+    # `offset`'s own compiled form — `crate::kernel::query_ordering::
+    # Offset` is `pub type Offset = Limit` (query_ordering.rs's own
+    # comment has the reasoning: identical Literal/Arg shape, identical
+    # resolution rule, one field with two names rather than two separate
+    # types). Rust itself doesn't care which name resolves the variant —
+    # `Limit::Literal(1)` and `Offset::Literal(1)` construct the identical
+    # value — but a human reading a generated `offset:` field seeing
+    # `Limit::Literal(...)` would reasonably read that as a bug, so this
+    # reuses `emit_query_limit`'s own computation (never duplicated) and
+    # swaps only the spelled type name in the result.
+    def emit_query_offset(offset) = emit_query_limit(offset).sub("query_ordering::Limit::", "query_ordering::Offset::")
 
     # `query_skip_reason` already returned `nil` for this query — every
     # where clause is either Symbol-valued (an `arg:`) or a safely-typed
@@ -387,13 +428,17 @@ module RustProjection
         "value: #{emit_query_condition_value(condition)} },"
     end
 
-    # `order_by`/`limit` are only ever populated when `query_skip_reason`
-    # already confirmed their content is generable (`nil` for a query that
-    # declares neither, matching `named_query.rs`'s own `QueryDef` header:
-    # "the ordinary case, and the ONLY case before 2026-08-11").
+    # `order_by`/`offset`/`limit` are only ever populated when
+    # `query_skip_reason` already confirmed their content is generable
+    # (`nil` for a query that declares none of them, matching
+    # `named_query.rs`'s own `QueryDef` header: "the ordinary case, and
+    # the ONLY case before 2026-08-11" for order_by/limit; `offset` joined
+    # the same "nil unless generable" convention when it was ported,
+    # Phase 10 of the equivalence-gap plan).
     def emit_query_def(query_def)
       conditions = query_def[:conditions].map { |c| "        #{emit_query_condition(c)}" }.join("\n")
       order_by = query_def[:order_by] ? "Some(#{query_def[:order_by]})" : "None"
+      offset = query_def[:offset] ? "Some(#{query_def[:offset]})" : "None"
       limit = query_def[:limit] ? "Some(#{query_def[:limit]})" : "None"
 
       <<~RUST.rstrip
@@ -404,6 +449,7 @@ module RustProjection
         #{conditions}
             ],
             order_by: #{order_by},
+            offset: #{offset},
             limit: #{limit},
         },
       RUST
@@ -425,6 +471,7 @@ module RustProjection
               },
           ],
           order_by: Some(crate::kernel::query_ordering::OrderBy { field: "tmpl_order_field", descending: true }),
+          offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),
           limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),
       },
     RUST

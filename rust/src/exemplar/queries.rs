@@ -8,7 +8,10 @@
 // `ReadModelDef` reaches through the `read_model::ReadModelOrderBy`/
 // `ReadModelLimit` aliases (kernel/read_model.rs); this file spells the
 // canonical path directly since `QueryDef` has no read-model alias to go
-// through.
+// through. `offset` (Phase 10, equivalence-gap plan) is `query_ordering::
+// Offset`, a bare `pub type Offset = Limit` — same reasoning, one more
+// field reusing the identical shared type rather than a new one; a
+// declared read model still has no `offset` field at all.
 #![allow(dead_code, unused_variables)]
 
 // `const` context can't call a non-`const` function — the same reason
@@ -30,6 +33,7 @@ crate::kernel::QueryDef {
         },
     ],
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "tmpl_order_field", descending: true }),
+    offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),
     limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),
 },
 ];

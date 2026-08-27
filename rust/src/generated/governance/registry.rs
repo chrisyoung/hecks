@@ -245,6 +245,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "actor_id", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("actor_id") },
     ],
     order_by: None,
+    offset: None,
     limit: None,
 },
 crate::kernel::QueryDef {
@@ -255,6 +256,7 @@ crate::kernel::QueryDef {
         crate::kernel::QueryCondition { field: "to_role", comparator: crate::kernel::query_comparators::QueryComparator::Eq, value: crate::kernel::QueryConditionValue::Arg("to_role") },
     ],
     order_by: None,
+    offset: None,
     limit: None,
 },
 ];
