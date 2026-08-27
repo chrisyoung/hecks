@@ -34,7 +34,15 @@ module Hecks
         # — falls back to the aggregate's own name for a directly-
         # instantiated adapter (specs), same fallback shape Postgres's
         # own @domain already uses.
-        @domain    = (settings[:domain] || settings["domain"] || aggregate.name).to_s
+        @domain    = (
+          if settings.key?(:domain)
+            settings[:domain]
+          elsif settings.key?("domain")
+            settings["domain"]
+          else
+            aggregate.name
+          end
+        ).to_s
 
         FileUtils.mkdir_p(File.dirname(@path))
       end
@@ -137,8 +145,23 @@ module Hecks
         replay_journal(snapshot)
       end
 
+      # `dir: :default` — a bare Symbol, the framework's own convention
+      # for "a DECLARED value that resolves by convention, never a silent
+      # fallback" — used to crash `File.join` outright
+      # (`TypeError: no implicit conversion of Symbol into String`):
+      # `resolve_path` only ever checked for a MISSING `dir` setting,
+      # never a Symbol one. Treated the same as no setting at all — falls
+      # back to the existing "data" default, not a new special case.
       def resolve_path(settings, root)
-        declared = settings[:dir] || settings["dir"] || "data"
+        declared =
+          if settings.key?(:dir)
+            settings[:dir]
+          elsif settings.key?("dir")
+            settings["dir"]
+          else
+            "data"
+          end
+        declared = "data" if declared == :default
         dir      = declared.start_with?("/") ? declared : File.join(root || Dir.pwd, declared)
 
         File.join(dir, "#{@aggregate.storage_name}.heki")

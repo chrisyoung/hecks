@@ -140,6 +140,15 @@ RSpec.describe Hecks::Adapters::Heki do
       expect(adapter.each_saga.to_a).to eq([["Onboarding", "c1", "start", {}]])
       expect(other.each_saga.to_a).to eq([["Onboarding", "c1", "different", {}]])
     end
+
+    # `settings[:domain] || settings["domain"] || aggregate.name` used to
+    # coerce a genuinely stored `false` at :domain into the aggregate-name
+    # fallback — indistinguishable from :domain being absent entirely.
+    it "reads a `false`-valued :domain setting back as itself, not the aggregate-name fallback" do
+      falsy_domain = described_class.new(aggregate: aggregate, settings: { dir: ".", domain: false }, root: @dir)
+
+      expect(falsy_domain.instance_variable_get(:@domain)).to eq("false")
+    end
   end
 
   describe "the file format" do
@@ -174,6 +183,32 @@ RSpec.describe Hecks::Adapters::Heki do
       rewritten.save(instance("p1", name: { value: "Margherita" }))
 
       expect(File.binread(File.join(@dir, "order.heki"))).to eq(first)
+    end
+  end
+
+  describe "resolve_path" do
+    # Issue #129: `dir: :default` (a bare Symbol) used to crash
+    # `File.join` with `TypeError: no implicit conversion of Symbol
+    # into String` — resolve_path only ever checked for a MISSING
+    # `dir` setting, never a Symbol one.
+    it "treats a bare :default Symbol the same as no dir setting at all" do
+      defaulted = described_class.new(aggregate: aggregate, settings: { dir: :default }, root: @dir)
+      absent    = described_class.new(aggregate: aggregate, settings: {}, root: @dir)
+
+      expect(defaulted.path).to eq(absent.path)
+      expect(defaulted.path).to eq(File.join(@dir, "data", "order.heki"))
+    end
+
+    it "still honors a real declared string path" do
+      adapter = described_class.new(aggregate: aggregate, settings: { dir: "custom" }, root: @dir)
+
+      expect(adapter.path).to eq(File.join(@dir, "custom", "order.heki"))
+    end
+
+    it "still falls back to \"data\" when dir is truly absent" do
+      adapter = described_class.new(aggregate: aggregate, settings: {}, root: @dir)
+
+      expect(adapter.path).to eq(File.join(@dir, "data", "order.heki"))
     end
   end
 

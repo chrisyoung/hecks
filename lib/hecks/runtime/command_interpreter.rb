@@ -130,6 +130,12 @@ module Hecks
 
       def step_enforce_givens(ctx)
         step(:enforce_givens) {
+          # STRUCTURAL, before the declared givens — the same ordering
+          # NotFound/AlreadyExists already get at hydration: "does the
+          # fact this command's corrects names even exist" is not a
+          # domain rule an author wrote, it is a precondition for the
+          # domain rules to mean anything at all.
+          @rules.enforce_correction_target(ctx.instance, ctx.aggregate, ctx.command, domain: ctx.domain)
           @rules.enforce_givens(ctx.instance, ctx.command, ctx.args, domain: ctx.domain,
                                 declaring: ctx.aggregate, parent: ctx.instance)
         }
@@ -364,7 +370,7 @@ module Hecks
                                                      offered: Rendering.describe(id)))
         end
 
-        Instance.new(aggregate: aggregate, id: id)
+        Instance.new(aggregate: aggregate, id: id, args: args)
       end
 
       def hydrate_complete_state(repository, aggregate, command, args, route, strategy)
@@ -398,7 +404,7 @@ module Hecks
                                                      offered: Rendering.describe(id)))
         end
 
-        Instance.new(aggregate: aggregate, id: id)
+        Instance.new(aggregate: aggregate, id: id, args: args)
       end
 
       # A complete command may still depend on prior state: lifecycle guards
@@ -441,7 +447,7 @@ module Hecks
                                                      offered: Rendering.describe(id)))
         end
 
-        found ? found.dup : Instance.new(aggregate: aggregate, id: id)
+        found ? found.dup : Instance.new(aggregate: aggregate, id: id, args: args)
       end
 
       # THE JOIN, THE DIG, AND THE READING — all shared with `EntityInterpreter`
