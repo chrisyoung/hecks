@@ -110,6 +110,10 @@ pub fn bluebook_json(bb: &ir::Bluebook) -> JsonValue {
             JsonValue::opt_str(&bb.classification),
         ),
         (
+            "formerly_known_as".to_string(),
+            JsonValue::opt_str(&bb.formerly_known_as),
+        ),
+        (
             "aggregates".to_string(),
             JsonValue::Array(bb.aggregates.iter().map(aggregate_json).collect()),
         ),
