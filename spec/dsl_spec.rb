@@ -2536,7 +2536,10 @@ RSpec.describe "the DSL surface" do
     end
 
     it "sets to: a symbol reads a command argument — a genuine remap, a different field" do
-      mutation = build_command("CmdSetArg") { sets :status, to: :new_status }.mutations.first
+      mutation = build_command("CmdSetArg") do
+        attribute :new_status, Tag
+        sets :status, to: :new_status
+      end.mutations.first
 
       expect([mutation.target, mutation.op]).to eq([:status, :set])
       expect(mutation.to_h[:source]).to eq(kind: "argument", name: "new_status")
@@ -2678,7 +2681,10 @@ RSpec.describe "the DSL surface" do
     end
 
     it "sets increment: reads a command argument to add" do
-      mutation = build_command("CmdInc") { sets :balance, increment: :amount }.mutations.first
+      mutation = build_command("CmdInc") do
+        attribute :amount, Size
+        sets :balance, increment: :amount
+      end.mutations.first
 
       expect([mutation.target, mutation.op]).to eq([:balance, :increment])
       expect(mutation.to_h[:source]).to eq(kind: "argument", name: "amount")
@@ -2730,6 +2736,25 @@ RSpec.describe "the DSL surface" do
 
       expect(command.attribute(:balance)).to be_nil
       expect(command.mutations.first.to_h[:source]).to eq(kind: "literal", value: "balance")
+    end
+
+    # THE REMAP'S OWN NEGATIVE CASE — `to: :symbol` naming something the
+    # command never declares at all (a typo, not a legitimately absent
+    # optional argument — CommandRules::Arithmetic#resolve_source's own
+    # header has the full distinction). Unlike the bare self-referential
+    # shape below, this is CommandBuilder#refuse_unknown_argument_sources!'s
+    # own refusal, not AggregateBuilder's — the source and target names
+    # genuinely differ here, so there is no downstream target-shaped
+    # check to defer to.
+    it "sets to: a symbol naming no declared attribute refuses at command build time, not silently forever nil" do
+      expect { build_command("CmdUnknownRemap") { sets :status, to: :nonexistent_arg } }
+        .to raise_error(Hecks::Bluebook::DSL::Malformed,
+                        /resolves :nonexistent_arg from its arguments, but Do declares no nonexistent_arg attribute/)
+    end
+
+    it "sets increment: a symbol naming no declared attribute refuses the same way" do
+      expect { build_command("CmdUnknownIncrement") { sets :balance, increment: :nonexistent_arg } }
+        .to raise_error(Hecks::Bluebook::DSL::Malformed, /resolves :nonexistent_arg from its arguments/)
     end
 
     # THE NEGATIVE CASE — neither the command nor the owner declares the
