@@ -563,8 +563,12 @@ across the full suite, alongside `bin/model_check` and `bin/fuzz`):
 
 **Experimental or partial:**
 
-- Property-based fuzzing only runs against the Memory adapter; Sqlite
-  and Postgres are unexercised by it.
+- Property-based fuzzing defaults to the Memory adapter but also runs
+  against real Sqlite and Postgres (`bin/fuzz --adapter sqlite|postgres`
+  — Postgres needs a real reachable local server and is noticeably
+  slower per seed, so pass smaller `--seeds`/`--steps` than the default
+  sweep). Whether a reference-hop query field (`owner/field`) can be
+  *queried*, not just indexed, against a SQL adapter is still open.
 - The query DSL has no aggregation yet — no `count`, `sum`, `group_by`.
 - `PostgresEra`'s schema-evolution/translation system works and is
   exercised in CI, but has open, documented gaps in

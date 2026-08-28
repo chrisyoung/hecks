@@ -17,9 +17,9 @@ The clearest signal in the whole tree is the survey's own closing pick — an ex
 
 ### Highest-signal items from the rest of the corpus
 
-- **Reaction-depth race (PRD 01)** — `@reaction_depth` in `dispatcher.rb` is an unguarded thread-shared ivar: a live, already-diagnosed, unfixed concurrency bug. Small and ready now.
-- **Fuzzer against real adapters (PRD 02)** — the whole property-testing arc has only ever run against the Memory adapter, never Sqlite or Postgres. Largest PRD in scope; unblocks PRDs 03 and 08.
-- **Audit Tier 1, findings H3–H5** — open data-loss bugs in era-migration and rekey machinery. The most severe unresolved findings anywhere in the docs.
+- ~~**Reaction-depth race (PRD 01)**~~ — **Fixed.** `reenter` in `dispatcher.rb` reads/writes `Thread.current[:hecks_reaction_depth]`, not a shared ivar; verified live 2026-08-27.
+- ~~**Fuzzer against real adapters (PRD 02)**~~ — **Fixed.** `IsolatedBoot`/`bin/fuzz` support `--adapter memory|sqlite|postgres` (`memory` unchanged default). Sqlite runs at roughly Memory's own cost with zero extra config; Postgres needs a real reachable local server (same reachability gate every other real-Postgres spec in this repo uses) and pays a real round trip per dispatch — noticeably slower, so reach for smaller `--seeds`/`--steps` than the Memory/Sqlite default rather than treating it as a like-for-like swap. Running it against `examples/banking` surfaced a real, previously-unreachable bug on first use (Postgres's `SchemaBuilder#index_field!` mishandled a reference-hop query field — `owner/field`, the language's own cross-aggregate query-path convention — as a plain identifier, producing invalid SQL and blocking boot entirely); fixed alongside this PRD, `lib/hecks/adapters/driven/postgres/schema_builder.rb`. Whether a hop-path field can be *queried* (not just indexed) against a SQL adapter at all is a separate, still-open question this fix doesn't answer.
+- ~~**Audit Tier 1, findings H3–H5**~~ — **Fixed**, verified live/against real Postgres 2026-08-27 (era-migrated-delete tombstoning, rekey SQL folded into the approval digest, dotted-compute no longer exempting its whole parent attribute from the Layer-2 gate).
 - **Drivers / Gates / mailboxes / OutboundEvent / derivability gauge** — a coherent "operational surface around the bus" that `hecks` has built and hecks lacks entirely (survey items 3, 5, 6, 7, 8).
 - **ADR 0025's DSL cleanup** — a fully sequenced 15-step plan; the single largest concretely-scoped item among the decision records.
 - **Query-DSL aggregation** — `count / sum / avg / min / max` plus `group_by`. Flagged as the sharpest, most requested gap in the query language.
@@ -142,8 +142,8 @@ Five smaller, more mechanical planning docs — each scoped to a concrete engine
 
 `docs/prds/` — eight proposals, in the priority order the README itself gives.
 
-- **01 · Reaction-depth race.** Guard `@reaction_depth` with a mutex, mirroring the existing `@saga_mutex` fix; add a concurrent-dispatch stress test.
-- **02 · Fuzzer against real adapters.** Give `IsolatedBoot` a real-adapter mode — Sqlite required, Postgres behind an `io: true` flag — so the 15-property battery runs against real persistence, not only Memory.
+- ~~**01 · Reaction-depth race.**~~ **Done**, differently than proposed: `Thread.current[:hecks_reaction_depth]` rather than a mutex — a reaction cascade re-enters `reenter` on the SAME thread, which a non-reentrant `Mutex` can't guard (see that method's own comment in `dispatcher.rb`), so per-thread ambient state (the same idiom `Runtime::Caller` already uses) fits better than the PRD's original mutex proposal.
+- ~~**02 · Fuzzer against real adapters.**~~ **Done**: `bin/fuzz --adapter memory|sqlite|postgres` (`memory` default, unchanged). Postgres is a real CLI flag with its own reachability check, rather than an RSpec `io: true` tag — `bin/fuzz` is a script, not a spec suite, so it has no tag mechanism to gate on; the flag is the equivalent decision (nothing runs Postgres mode without asking for it by name).
 - **03 · Mutation application agreement.** A differential gate across adapters for `append/remove/multiply/clamp/increment/decrement/set`, mirroring the query-agreement spec that already found four real bugs.
 - **04 · Rust conformance fuzzing.** Bridge randomized sequences into the existing Ruby-vs-Rust byte-for-byte conformance spec; run any divergence through the existing shrinker.
 - **05 · Numeric boundary coverage.** Widen integer and float edge cases (Int64/Bignum, NaN/Infinity/-0.0) and trace each through coercion, `multiply`, and `clamp` for silent corruption.
