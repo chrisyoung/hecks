@@ -89,7 +89,7 @@ Hecks.bluebook "Banking" do
       sets :generated_on
       sets :frequency
 
-      emits "StatementGenerated"
+      emits StatementGenerated
     end
   end
 

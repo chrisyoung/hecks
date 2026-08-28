@@ -13033,7 +13033,11 @@
               ],
               [
                 "fills",
-                "starts_on"
+                ""
+              ],
+              [
+                "calls",
+                "starts_on_impl"
               ]
             ],
             [
@@ -13059,7 +13063,11 @@
               ],
               [
                 "fills",
-                "ends_on"
+                ""
+              ],
+              [
+                "calls",
+                "ends_on_impl"
               ]
             ],
             [
@@ -13422,6 +13430,36 @@
               ],
               [
                 "kind",
+                "constant"
+              ],
+              [
+                "required",
+                true
+              ],
+              [
+                "fills",
+                "starts_on"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "starts_on"
+              ],
+              [
+                "context",
+                "ProcessManager"
+              ],
+              [
+                "at",
+                1
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
                 "text"
               ],
               [
@@ -13431,6 +13469,36 @@
               [
                 "fills",
                 "starts_on"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "ends_on"
+              ],
+              [
+                "context",
+                "ProcessManager"
+              ],
+              [
+                "at",
+                1
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                true
+              ],
+              [
+                "fills",
+                "ends_on"
               ]
             ],
             [

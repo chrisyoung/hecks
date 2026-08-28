@@ -6827,7 +6827,7 @@
     {
       "for_each": "Account.OpenForCustomer",
       "name": "FreezeAccountsOnSuspension",
-      "on_event": "CustomerSuspended",
+      "on_event": "Customer.CustomerSuspended",
       "target_domain": null,
       "trigger_command": "Account.FreezeAccount",
       "where": null,
@@ -6841,7 +6841,7 @@
     {
       "for_each": null,
       "name": "NotifyOnClosure",
-      "on_event": "AccountClosed",
+      "on_event": "Account.AccountClosed",
       "target_domain": "Notifications",
       "trigger_command": "Notifications.Send",
       "where": null,
@@ -6852,7 +6852,7 @@
     {
       "for_each": null,
       "name": "ReviewOnBoxSurrender",
-      "on_event": "BoxSurrendered",
+      "on_event": "SafeDepositBox.BoxSurrendered",
       "target_domain": "Compliance",
       "trigger_command": "BoxSurrenderReview.Open",
       "where": null,
@@ -6863,7 +6863,7 @@
     {
       "for_each": null,
       "name": "FlagKeyReturn",
-      "on_event": "KeyReturnDue",
+      "on_event": "SafeDepositBox.KeyReturnDue",
       "target_domain": "Notifications",
       "trigger_command": "Notifications.Send",
       "where": null,

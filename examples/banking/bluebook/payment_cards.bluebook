@@ -94,7 +94,7 @@ Hecks.bluebook "Banking" do
         given("card is not retired") { parent.status != "retired" }
         sets :narrative
 
-        emits "WithdrawalDisputed"
+        emits WithdrawalDisputed
       end
 
       query "Recent" do
@@ -127,7 +127,7 @@ Hecks.bluebook "Banking" do
       sets :serial
       sets :daily_fee
 
-      emits "ATMCardIssued"
+      emits ATMCardIssued
     end
 
     # LIFECYCLE STATE AS A COMMAND GUARDS (S10, ADR 0025) — `from:`
@@ -151,7 +151,7 @@ Hecks.bluebook "Banking" do
       given("customer is active")
       sets :nickname
 
-      emits "ATMCardRenamed"
+      emits ATMCardRenamed
     end
 
     command "Withdraw", from: "active" do
@@ -168,7 +168,7 @@ Hecks.bluebook "Banking" do
 
       sets :withdrawals, append: { cents: :cents, narrative: :narrative }
 
-      emits "CashWithdrawn"
+      emits CashWithdrawn
     end
 
     command "Activate", from: "issued" do
@@ -177,7 +177,7 @@ Hecks.bluebook "Banking" do
 
       reference_to ATMCard
       given("customer is active")
-      emits "ATMCardActivated"
+      emits ATMCardActivated
     end
 
     command "Retire", from: ["issued", "active"] do
@@ -186,7 +186,7 @@ Hecks.bluebook "Banking" do
 
       reference_to ATMCard
       given("customer is active")
-      emits "ATMCardRetired"
+      emits ATMCardRetired
     end
 
     # `nulls :last` (S13, ADR 0025, coverage standard) — an unnamed
@@ -306,7 +306,7 @@ Hecks.bluebook "Banking" do
       sets :merchant
       sets :tags
       sets :authorisation
-      emits "CardAuthorized"
+      emits CardAuthorized
     end
 
     # LIFECYCLE STATE AS COMMAND GUARDS (S10, ADR 0025) — every `from:`
@@ -318,7 +318,7 @@ Hecks.bluebook "Banking" do
       reference_to CardPayment
       given("customer is active")
       given("account is open")
-      emits "CardCaptured"
+      emits CardCaptured
     end
 
     command "Void", from: "authorized" do
@@ -327,7 +327,7 @@ Hecks.bluebook "Banking" do
       reference_to CardPayment
       given("customer is active")
       given("account is open")
-      emits "CardVoided"
+      emits CardVoided
     end
 
     command "Refund", from: "captured" do
@@ -336,7 +336,7 @@ Hecks.bluebook "Banking" do
       reference_to CardPayment
       given("customer is active")
       given("account is open")
-      emits "CardRefunded"
+      emits CardRefunded
     end
 
     command "Reverse", from: "captured" do
@@ -345,7 +345,7 @@ Hecks.bluebook "Banking" do
       reference_to CardPayment
       given("customer is active")
       given("account is open")
-      emits "CardReversed"
+      emits CardReversed
     end
 
     command "Dispute", from: ["captured", "refunded"] do
@@ -372,7 +372,7 @@ Hecks.bluebook "Banking" do
 
       sets :disputed_by
 
-      emits "CardDisputed"
+      emits CardDisputed
     end
 
     command "Chargeback", from: "disputed" do
@@ -381,7 +381,7 @@ Hecks.bluebook "Banking" do
       reference_to CardPayment
       given("customer is active")
       given("account is open")
-      emits "CardChargedBack"
+      emits CardChargedBack
     end
 
     command "RejectDispute", from: "disputed" do
@@ -390,7 +390,7 @@ Hecks.bluebook "Banking" do
       reference_to CardPayment
       given("customer is active")
       given("account is open")
-      emits "CardDisputeRejected"
+      emits CardDisputeRejected
     end
 
     query "Pending" do
