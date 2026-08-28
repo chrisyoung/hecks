@@ -61,6 +61,11 @@ RSpec.describe "The corpus" do
     end
   end
 
+  # CORPUS_MEMBERS is an Array of [stem, bluebook] pairs (see its own
+  # definition above), not a Hash — Style/HashEachMethods' `.each_value`
+  # rewrite assumed otherwise from the `|_stem, bluebook|` block shape
+  # alone and raised NoMethodError at load time. False positive.
+  # rubocop:disable-next Style/HashEachMethods
   CORPUS_MEMBERS.each do |_stem, bluebook|
     next unless bluebook
 

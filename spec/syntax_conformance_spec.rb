@@ -504,6 +504,9 @@ RSpec.describe "the declared syntax" do
       next if generically_dispatched?(word, context)
 
       params  = method_for(word, context).parameters
+      # `params` is Method#parameters — an Array of [kind, name] pairs, not a
+      # Hash. False positive from Style/HashSlice's block-shape matching.
+      # rubocop:disable-next Style/HashSlice
       taken   = params.select { |kind, _| %i[key keyreq].include?(kind) }.map { |_, name| name.to_s }
       spelled = args.reject { |row| row[:named].empty? }.map { |row| row[:named] }.uniq
       allowed = taken + RESERVED_KEY.fetch([word, context], [])
@@ -560,6 +563,8 @@ RSpec.describe "the declared syntax" do
                                   "declared optional"
       end
 
+      # Same false positive as above: `params` is an Array, not a Hash.
+      # rubocop:disable-next Style/HashSlice, Style/HashEachMethods
       params.select { |kind, _| kind == :keyreq }.each do |_, name|
         row = args.find { |candidate| candidate[:named] == name.to_s }
         next if row.nil?

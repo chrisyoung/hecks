@@ -94,7 +94,7 @@ module Hecks
             matches = appeared.select { |_, candidate| candidate == signature }.keys
             taken = rules.filter_map { |rule| rule[:to] if %i[rename move].include?(rule[:kind]) }
             matches -= taken
-            if matches.size == 1 && vanished.count { |_, other| other == signature } == 1
+            if matches.size == 1 && vanished.one? { |_, other| other == signature }
               target = matches.first
               kind = path.include?(".") || target.include?(".") ? :move : :rename
               rules << { kind: kind, from: path, to: target }

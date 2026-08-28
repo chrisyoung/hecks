@@ -15,7 +15,7 @@ pub mod roster;
 // no matter which domain that resolves to.
 //
 // DOMAIN FEATURES ARE MUTUALLY EXCLUSIVE (R5) — Cargo has no native
-// concept of that, and `default = ["roster"]` in
+// concept of that, and `default = ["pizzas"]` in
 // Cargo.toml stays enabled unless a build passes
 // `--no-default-features`, so a plain `cargo build --features banking`
 // used to enable BOTH the default domain's feature and banking's,
@@ -41,9 +41,9 @@ pub use compliance::merged as active;
 pub use embryonaut::merged as active;
 #[cfg(feature = "meta")]
 pub use meta::merged as active;
-#[cfg(feature = "pizzas")]
+#[cfg(all(feature = "pizzas", not(any(feature = "banking", feature = "compliance", feature = "embryonaut", feature = "meta", feature = "roster"))))]
 pub use pizzas::merged as active;
-#[cfg(all(feature = "roster", not(any(feature = "banking", feature = "compliance", feature = "embryonaut", feature = "meta", feature = "pizzas"))))]
+#[cfg(feature = "roster")]
 pub use roster::merged as active;
 
 // Explicit conflict guard — see point 2 above. Only fires when TWO
@@ -56,17 +56,17 @@ compile_error!("domain features are mutually exclusive — enable only one of: b
 compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both banking and embryonaut are enabled)");
 #[cfg(all(feature = "banking", feature = "meta"))]
 compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both banking and meta are enabled)");
-#[cfg(all(feature = "banking", feature = "pizzas"))]
-compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both banking and pizzas are enabled)");
+#[cfg(all(feature = "banking", feature = "roster"))]
+compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both banking and roster are enabled)");
 #[cfg(all(feature = "compliance", feature = "embryonaut"))]
 compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both compliance and embryonaut are enabled)");
 #[cfg(all(feature = "compliance", feature = "meta"))]
 compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both compliance and meta are enabled)");
-#[cfg(all(feature = "compliance", feature = "pizzas"))]
-compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both compliance and pizzas are enabled)");
+#[cfg(all(feature = "compliance", feature = "roster"))]
+compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both compliance and roster are enabled)");
 #[cfg(all(feature = "embryonaut", feature = "meta"))]
 compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both embryonaut and meta are enabled)");
-#[cfg(all(feature = "embryonaut", feature = "pizzas"))]
-compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both embryonaut and pizzas are enabled)");
-#[cfg(all(feature = "meta", feature = "pizzas"))]
-compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both meta and pizzas are enabled)");
+#[cfg(all(feature = "embryonaut", feature = "roster"))]
+compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both embryonaut and roster are enabled)");
+#[cfg(all(feature = "meta", feature = "roster"))]
+compile_error!("domain features are mutually exclusive — enable only one of: banking, compliance, embryonaut, meta, pizzas, roster (both meta and roster are enabled)");

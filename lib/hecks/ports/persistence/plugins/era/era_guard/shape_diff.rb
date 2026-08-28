@@ -64,7 +64,7 @@ module Hecks
           return false if attribute.list?
 
           value_object = aggregate.value_object(attribute.type)
-          return false if value_object && value_object.attributes.all? { |field| !field.default.nil? }
+          return false if value_object&.attributes&.all? { |field| !field.default.nil? }
 
           true
         end

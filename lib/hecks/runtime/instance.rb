@@ -46,12 +46,12 @@ module Hecks
       end
 
       def self.defaults(aggregate)
-        state = aggregate.attributes.each_with_object({}) do |attr, acc|
+        state = aggregate.attributes.to_h do |attr|
           # FROZEN, like a list that has had something appended to it.
           # An untouched list is the easiest one to miss and the easiest
           # to mutate: nothing has replaced it yet, so a caller pushing
           # into it writes straight into the aggregate's own state.
-          acc[attr.name] = attr.list? ? Freezer.deep([]) : default_for(aggregate, attr)
+          [attr.name, attr.list? ? Freezer.deep([]) : default_for(aggregate, attr)]
         end
         state[aggregate.lifecycle.field.to_sym] = aggregate.lifecycle.default if aggregate.lifecycle
         state
@@ -64,7 +64,7 @@ module Hecks
         return nil unless aggregate.respond_to?(:value_object)
 
         value_object = aggregate.value_object(attribute.type)
-        return nil unless value_object && value_object.attributes.all? { |field| !field.default.nil? }
+        return nil unless value_object&.attributes&.all? { |field| !field.default.nil? }
 
         Value.build(value_object, {}, aggregate)
       end

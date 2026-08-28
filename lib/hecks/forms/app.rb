@@ -196,7 +196,7 @@ module Hecks
       end
 
       def command_json(request, domain, aggregate, command)
-        return json(200, command.to_h) if request.get? && request.GET.reject { |k, _| k == "format" }.empty?
+        return json(200, command.to_h) if request.get? && request.GET.except("format").empty?
         return respond(405, "text/plain", "GET or POST only") unless request.post?
 
         _, envelope = submitted_command(request, aggregate, command)
@@ -213,7 +213,7 @@ module Hecks
         return respond(405, "text/plain", "GET only") unless request.get?
 
         params = request.GET
-        asked = params.reject { |k, _| k == "format" }
+        asked = params.except("format")
         return query_json(domain, aggregate, query, asked) if format != "html"
 
         query_html(domain, aggregate, query, asked)
@@ -252,7 +252,7 @@ module Hecks
       def run_query(domain, aggregate, query, fields, asked)
         args = Params.extract(fields, asked)
         rows = @dispatcher.query("#{domain}::#{aggregate.hecks_name}.#{query.hecks_name}", **args)
-        [rows.map { |row| Record.new(row[:id], row.reject { |k, _| k == :id }) }, nil]
+        [rows.map { |row| Record.new(row[:id], row.except(:id)) }, nil]
       # L10 (docs/audits/2026-08-10-main-bug-audit.md) — `Params.extract`
       # (params.rb's `extract_list`) reads a list-of-value-object line as
       # JSON (the honest fallback for a multi-attribute list element this

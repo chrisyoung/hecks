@@ -19,7 +19,7 @@ require "hecks"
 require "hecks/query_ir"
 require "json"
 
-STDOUT.sync = true
+$stdout.sync = true
 
 PROTOCOL_VERSION = "2024-11-05"
 

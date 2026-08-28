@@ -290,17 +290,40 @@ Lint/UnusedBlockArgument:
 # excluded from the default local run, part of pre-push) was run
 # after autocorrect.
 #
-# THE PATTERN ACROSS ALL THREE — SoleNestedConditional (a duplicate
+# THE PATTERN ACROSS ALL FOUR — SoleNestedConditional (a duplicate
 # condition), UnusedBlockArgument (broken DSL reflection),
 # ScatteredSetup (an early-return moved past code that has to run
-# unconditionally): every one of them RESTRUCTURES control flow or
-# code ORDER, not just formatting. So rather than keep discovering
-# these one at a time and disabling each newly-found offender,
-# `--autocorrect` in this repo is now run scoped to an explicit
-# ALLOWLIST (Layout/*, plus the two Style cops reconfigured above to
-# match this codebase's own convention) — see the skill/doc note on
-# `bin/... rubocop` usage. Every cop OUTSIDE that allowlist is
-# report-only: a real signal in `.rubocop_todo.yml` and in ordinary
-# `rubocop` runs, never blind-applied.
+# unconditionally), and CombinableLoops (below): every one of them
+# RESTRUCTURES control flow or code ORDER, not just formatting. So
+# rather than keep discovering these one at a time and disabling each
+# newly-found offender, `--autocorrect` in this repo is now run scoped
+# to an explicit ALLOWLIST (Layout/*, plus the two Style cops
+# reconfigured above to match this codebase's own convention) — see
+# the skill/doc note on `bin/... rubocop` usage. Every cop OUTSIDE
+# that allowlist is report-only: a real signal in `.rubocop_todo.yml`
+# and in ordinary `rubocop` runs, never blind-applied.
 RSpec/ScatteredSetup:
+  Enabled: false
+
+# THE FOURTH, found paying down .rubocop_todo.yml's backlog: Style/
+# CombinableLoops flags two separate `.each`-shaped loops over the
+# same receiver as one that could be merged, but its `--autocorrect-
+# all` doesn't just interleave the bodies — on
+# lib/hecks/runtime/dispatcher.rb#dispatch it merged `announced.each {
+# ... @policies.react ... }` and a second `announced.each { ...
+# @sagas.advance ... }` into one loop body (a real behavior change:
+# every event's saga now advances before the NEXT event's policies
+# react, rather than every event finishing policy-reaction before any
+# saga advances), and on lib/hecks/bluebook/dsl/aggregate_builder.rb#
+# seal_correction_targets it went further and produced an outright
+# SYNTAX ERROR — the first loop's closing `}` was deleted, the second
+# loop's `@commands.each do |command|` opener was deleted with it, and
+# the final `end` became a stray `}`, leaving `command` referenced
+# with no enclosing block. Caught by the full suite (a plain
+# Lint/Syntax parse failure on the aggregate_builder.rb case; the
+# dispatcher.rb interleaving is subtler and would need a targeted
+# ordering test to catch on its own — not currently proven safe by the
+# suite, just not yet disproven). Disabled rather than autocorrected
+# for the same reason as the three above.
+Style/CombinableLoops:
   Enabled: false

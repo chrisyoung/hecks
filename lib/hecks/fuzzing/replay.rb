@@ -408,7 +408,7 @@ module Hecks
         # counts as something to check now that `admissible_transition`
         # is reproduced below; skipping it here would just move the
         # exact gap that call was added to close one line earlier.
-        has_transition = aggregate.lifecycle && aggregate.lifecycle.transitions_for(command.hecks_name).any?
+        has_transition = aggregate.lifecycle&.transitions_for(command.hecks_name)&.any?
         return nil if command.givens.empty? && !command.from && !has_transition
 
         reference_key = command.references.to_s.empty? ? nil : Naming.reference_key(command.references)
@@ -475,7 +475,7 @@ module Hecks
       # args (parent OR element) don't resolve.
       def build_mutation_trace(runtime, verb, args)
         domain_name, aggregate_name, command_name = Naming.split_verb(verb)
-        return nil unless command_name && command_name.include?(".")
+        return nil unless command_name&.include?(".")
 
         aggregate = runtime.registry.bluebook(domain_name)&.aggregate(aggregate_name)
         return nil unless aggregate
@@ -483,7 +483,7 @@ module Hecks
         entity_name, entity_command_name = command_name.split(".", 2)
         entity  = aggregate.entities.find { |candidate| candidate.hecks_name == entity_name }
         command = entity&.command(entity_command_name)
-        return nil unless command && command.mutations.any?
+        return nil unless command&.mutations&.any?
 
         reference_key = command.references.to_s.empty? ? nil : Naming.reference_key(command.references)
         parent_id = Runtime::Identity.of(aggregate, args) ||

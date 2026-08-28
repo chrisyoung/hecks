@@ -48,7 +48,7 @@ def domains
   Dir.glob(File.join(ROOT, "**/*.hecksagon"))
      .map    { |path| File.basename(File.dirname(path)) == "bluebook" ? File.dirname(path, 2) : File.dirname(path) }
      .map    { |path| path.delete_prefix("#{ROOT}/") }
-     .reject { |path| path.match?(IGNORED) }
+     .grep_v(IGNORED)
      .uniq.sort
 end
 

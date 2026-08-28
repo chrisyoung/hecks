@@ -32,8 +32,8 @@ RSpec.describe Hecks::Bluebook::Synthesizer do
     end
 
     it "gives a boolean type false" do
-      expect(described_class.scalar_for("TrueClass")).to eq(false)
-      expect(described_class.scalar_for("FalseClass")).to eq(false)
+      expect(described_class.scalar_for("TrueClass")).to be(false)
+      expect(described_class.scalar_for("FalseClass")).to be(false)
     end
 
     it "gives anything else a marker string" do

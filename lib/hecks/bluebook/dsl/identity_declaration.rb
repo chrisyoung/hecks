@@ -184,7 +184,7 @@ module Hecks
 
           raise Malformed, "#{@name}.identified_by names no field" unless path
 
-          paths = Ports::Extraction.canonical(path).to_s.split(" ").reject(&:empty?)
+          paths = Ports::Extraction.canonical(path).to_s.split.reject(&:empty?)
           raise Malformed, "#{@name}.identified_by names no field" if paths.empty?
 
           @identity_paths = paths

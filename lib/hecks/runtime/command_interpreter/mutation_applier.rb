@@ -122,17 +122,15 @@ module Hecks
           fields       = mutation.source.transform_values { |source| resolve_append_source(source, instance, args) }
           element_type = aggregate.attribute(mutation.target)&.type
           value_object = aggregate.value_object(element_type)
-          if value_object
-            value_object.attributes.each do |attribute|
-              held = fields[attribute.name]
-              # A SINGLE-FIELD VALUE unwraps to its scalar so it bridges
-              # into the element's own (differently named) wrapper; a
-              # MULTI-FIELD one (a `state(:en_passant_square)` Square
-              # copied off the record) has no scalar to stand in for it
-              # and is handed across whole — `Value.for_attribute` keeps a
-              # value of the element field's own type as it is.
-              fields[attribute.name] = Value.scalar(held) if held.is_a?(Value) && held.to_h.size == 1
-            end
+          value_object&.attributes&.each do |attribute|
+            held = fields[attribute.name]
+            # A SINGLE-FIELD VALUE unwraps to its scalar so it bridges
+            # into the element's own (differently named) wrapper; a
+            # MULTI-FIELD one (a `state(:en_passant_square)` Square
+            # copied off the record) has no scalar to stand in for it
+            # and is handed across whole — `Value.for_attribute` keeps a
+            # value of the element field's own type as it is.
+            fields[attribute.name] = Value.scalar(held) if held.is_a?(Value) && held.to_h.size == 1
           end
           element = if value_object
                       Value.build(value_object, fields,

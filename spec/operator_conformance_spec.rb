@@ -339,7 +339,7 @@ RSpec.describe "the operator domain" do
     # of any regeneration.
     require "hecks/grammar"
     stranded = Hecks::Grammar.self_bearing_operators
-                             .reject { |symbol, _| symbols(ADMITTED).include?(symbol) }
+                             .except(*symbols(ADMITTED))
 
     expect(stranded).to be_empty,
                         stranded.map { |symbol, sites|

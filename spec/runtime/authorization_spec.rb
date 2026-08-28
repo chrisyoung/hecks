@@ -108,7 +108,7 @@ RSpec.describe "role-based command rejections" do
     Hecks.as_caller(role: "Customer") { Order.place!(ref: { value: "o1" }) }
 
     reaction = runtime.reactions.first
-    expect(reaction[:delivered]).to eq(true)
+    expect(reaction[:delivered]).to be(true)
     expect(Order.find("o1").events.map(&:name)).to include("OrderPrepared")
   end
 

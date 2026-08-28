@@ -103,7 +103,7 @@ module Hecks
         # Declared order preserved in the OUTPUT — only the
         # computation above needed reordering, not what a caller sees
         # back.
-        heads = model.aggregate_heads.each_with_object({}) { |head, report| report[head[:as]] = rows_by_as[head[:as]] }
+        heads = model.aggregate_heads.to_h { |head| [head[:as], rows_by_as[head[:as]]] }
         grouped_head = group_by_target(model, bluebook)
         reduced_head = aggregation_target(model, bluebook)
         [heads.each_with_object({}) do |(as, value), out|

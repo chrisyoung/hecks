@@ -167,6 +167,6 @@ RSpec.describe "Hecks::Fuzzing::Replay.fan_out_findings" do
     findings = flag(runtime, "c1", "high")
     history = { fan_outs: findings }
 
-    expect(Hecks::Fuzzing::Properties.fanout_dispatches_once_per_matching_row(history)).to eq(true)
+    expect(Hecks::Fuzzing::Properties.fanout_dispatches_once_per_matching_row(history)).to be(true)
   end
 end

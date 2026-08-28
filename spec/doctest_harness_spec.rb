@@ -77,7 +77,7 @@ RSpec.describe Doctest do
       ```
     MD
 
-    expect(Doctest.run(path)).to be(true)
+    expect(described_class.run(path)).to be(true)
   end
 
   it "names the guide's TRUE line when a claim fails" do
@@ -91,7 +91,7 @@ RSpec.describe Doctest do
       ```
     MD
 
-    expect { Doctest.run(path) }.to raise_error(Doctest::Mismatch) { |error|
+    expect { described_class.run(path) }.to raise_error(Doctest::Mismatch) { |error|
       expect(error.message).to include("#{path}:6")
       expect(error.message).to include("expected: 3").and include("actual:   2")
     }
@@ -104,7 +104,7 @@ RSpec.describe Doctest do
       ```
     MD
 
-    expect { Doctest.run(path) }
+    expect { described_class.run(path) }
       .to raise_error(Doctest::Mismatch, /no refusal at all/)
   end
 
@@ -115,7 +115,7 @@ RSpec.describe Doctest do
       ```
     MD
 
-    expect(Doctest.run(path)).to be(true)
+    expect(described_class.run(path)).to be(true)
   end
 
   it "runs a later declaration block as a second wave, its own boot" do
@@ -157,7 +157,7 @@ RSpec.describe Doctest do
       ```
     MD
 
-    expect(Doctest.run(path)).to be(true)
+    expect(described_class.run(path)).to be(true)
   end
 
   it "refuses a claim marker on a line that does not parse alone" do
@@ -168,12 +168,12 @@ RSpec.describe Doctest do
       ```
     MD
 
-    expect { Doctest.run(path) }
+    expect { described_class.run(path) }
       .to raise_error(Doctest::Malformed, /single-line expression/)
   end
 
   it "passes a guide with nothing to run" do
-    expect(Doctest.run(guide("# just prose\n\nno fences at all\n"))).to be(true)
+    expect(described_class.run(guide("# just prose\n\nno fences at all\n"))).to be(true)
   end
 
   it "reads declared domains and the postgres pragma" do
@@ -191,11 +191,11 @@ RSpec.describe Doctest do
       ```
     MD
 
-    parsed = Doctest.parse(path)
+    parsed = described_class.parse(path)
     expect(parsed.postgres).to be(true)
     # Only the fresh `Hecks.bluebook` invention counts as OWNED — the
     # hecksagon/world block wires an already-declared chapter and is not
     # itself an invented name (see declared_domains' own comment).
-    expect(Doctest.declared_domains(parsed)).to contain_exactly("DoctestSampleB")
+    expect(described_class.declared_domains(parsed)).to contain_exactly("DoctestSampleB")
   end
 end

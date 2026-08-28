@@ -255,9 +255,9 @@ module Hecks
     # resolved chapter-wide reference.
     def declaration_count(rules)
       declared = rules.select { |r| r.location.end_with?(" (declared)") }
-      declared_owners = declared.map { |r| owner_of(r.location) }.to_set
+      declared_owners = declared.to_set { |r| owner_of(r.location) }
       declared_given_roots = declared.select { |r| r.kind == "given" }
-                                     .map { |r| owner_of(r.location).split(".").first }.to_set
+                                     .to_set { |r| owner_of(r.location).split(".").first }
 
       standalone = rules.reject do |r|
         owner = owner_of(r.location)
@@ -359,6 +359,10 @@ module Hecks
     # was never supposed to have this touchpoint at all.
     def reconstruction_reads?(name, field)
       method_name = RECONSTRUCTION_METHODS[name]
+      # rubocop:disable-next Style/ReturnNilInPredicateMethodDefinition -- nil vs
+      # false is a deliberate distinction here: nil means "not applicable" (no
+      # hand-typed method to check), false means "applicable, and it fails" —
+      # see the spec's own "not-applicable (nil), not false" example.
       return nil unless method_name
 
       file, start_line = Hecks::Bluebook::MetaValidator::Reconstruction.instance_method(method_name).source_location

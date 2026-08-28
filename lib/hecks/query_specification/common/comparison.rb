@@ -44,7 +44,7 @@ module Hecks
           value = value.to_h if value.is_a?(Runtime::Value)
           return value unless value.is_a?(Hash)
 
-          numerics = value.values.select { |field| field.is_a?(Numeric) }
+          numerics = value.values.grep(Numeric)
           return numerics.first if numerics.size == 1
           return value.values.first if value.size == 1
 

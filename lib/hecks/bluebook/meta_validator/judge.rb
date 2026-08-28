@@ -99,7 +99,7 @@ module Hecks
           value
         end
 
-        def args(pairs) = pairs.reject { |_, value| value.nil? }
+        def args(pairs) = pairs.compact
 
         def offer(label)
           yield

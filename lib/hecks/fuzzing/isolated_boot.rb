@@ -277,7 +277,7 @@ module Hecks
       # never wires is simply unread, not broken.
       def rewrite_bindings!(copy, adapter_name)
         Dir.glob(File.join(copy, "**", "*.hecksagon")).each do |path|
-          lines = File.readlines(path).reject { |line| line.match?(/\bprojected_by\s*\(?\s*"/) }
+          lines = File.readlines(path).grep_v(/\bprojected_by\s*\(?\s*"/)
           File.write(path, lines.join.gsub(/persisted_by\s*\(?\s*"[^"]+"\s*\)?/, "persisted_by(\"#{adapter_name}\")"))
         end
       end

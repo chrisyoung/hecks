@@ -147,6 +147,10 @@ module Hecks
         member = if path.empty? && value
                    hash = value.is_a?(Runtime::Value) ? value.to_h : value
                    numeric = hash.is_a?(Hash) && hash.find { |_key, item| item.is_a?(Numeric) }
+                   # NOT &.-able: `numeric` can be `false` (hash.is_a?(Hash) came
+                   # back false) as well as nil (.find came back empty) — `&.`
+                   # only guards nil, so `false.first` raises. False positive.
+                   # rubocop:disable-next Style/SafeNavigation
                    numeric ? numeric.first : nil
                  end
         member ||= if path.empty? && attribute && value_object?(attribute)

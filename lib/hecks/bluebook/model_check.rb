@@ -163,6 +163,11 @@ module Hecks
         reached = Set.new([lifecycle.default])
         loop do
           grown = false
+          # `transitions` is an Array of [from, transition]-shaped entries
+          # (Lifecycle#transitions), not a Hash — Style/HashEachMethods'
+          # `each_value` rewrite assumed otherwise from the block shape
+          # alone. False positive.
+          # rubocop:disable-next Style/HashEachMethods
           lifecycle.transitions.each do |_, transition|
             next if reached.include?(transition.target)
             next if transition.constrained? && Array(transition.from).none? { |source| reached.include?(source) }

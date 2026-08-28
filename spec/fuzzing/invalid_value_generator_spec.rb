@@ -61,7 +61,7 @@ RSpec.describe Hecks::Fuzzing::InvalidValueGenerator do
       random = Random.new(5)
       values = Array.new(60) { described_class.corrupt(held, aggregate, random: random) }
 
-      expect(values.none? { |value| value.is_a?(Integer) }).to be(true)
+      expect(values.none?(Integer)).to be(true)
     end
 
     # Built directly rather than drawn from banking, because banking types its

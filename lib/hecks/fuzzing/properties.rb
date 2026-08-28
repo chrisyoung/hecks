@@ -240,7 +240,7 @@ module Hecks
         first  = Replay.call(domain_path, steps, adapter: adapter)
         second = Replay.call(domain_path, steps, adapter: adapter)
 
-        comparable = ->(history) { history.reject { |key, _| [:bluebook, :bluebooks].include?(key) } }
+        comparable = ->(history) { history.except(:bluebook, :bluebooks) }
         return true if comparable.call(first) == comparable.call(second)
 
         "two replays of the same #{steps.length} steps produced different histories"
@@ -317,7 +317,7 @@ module Hecks
           next if asked[:error] || !asked[:query].is_a?(String) || !asked[:query].include?("::")
 
           declared = query_for_verb(bluebooks, asked[:query])
-          next unless declared && declared.order_by && (declared.offset || declared.limit)
+          next unless declared&.order_by && (declared.offset || declared.limit)
 
           domain, aggregate_name, = Naming.split_verb(asked[:query])
           args = asked[:args] || {}
@@ -1089,7 +1089,7 @@ module Hecks
           next unless name && domain == bluebook.name
 
           model = bluebook.read_model(name)
-          next unless model && model.group_by.any?
+          next unless model&.group_by&.any?
 
           grouped_head = model.aggregate_heads.find { |head| head[:many] }
           next unless grouped_head

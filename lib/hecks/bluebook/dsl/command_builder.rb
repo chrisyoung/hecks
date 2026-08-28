@@ -565,8 +565,8 @@ module Hecks
           # it for an ordering accident this language has never required
           # authors to avoid. rubocop's Style/CombinableLoops can't see
           # that dependency — it only sees two `@mutations.each` calls
-          # back to back — so it's disabled here, not satisfied.
-          # rubocop:disable-next Style/CombinableLoops
+          # back to back — which is exactly why it's disabled repo-wide
+          # (see .rubocop.yml) rather than satisfied.
           @mutations.each { |mutation| refuse_unknown_argument_sources!(mutation) }
         end
 

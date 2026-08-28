@@ -63,7 +63,7 @@ module Hecks
             actual = strip_compute_paths(normalize(after[id]), compute_paths)
             next if expected == actual
 
-            diverged = (expected.keys | actual.keys).select { |key| expected[key] != actual[key] }
+            diverged = (expected.keys | actual.keys).reject { |key| expected[key] == actual[key] }
             violations << "#{aggregate.name}##{id}: the translated state diverges from the reference " \
                           "transform at #{diverged.sort.join(', ')}"
           end

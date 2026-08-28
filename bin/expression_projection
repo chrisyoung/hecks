@@ -78,7 +78,7 @@ end
 # every future boot; refuse to write it, naming each operator and where
 # the language stands on it.
 admitted = operators.map { |row| row[:symbol] }
-stranded = Hecks::Grammar.self_bearing_operators.reject { |symbol, _| admitted.include?(symbol) }
+stranded = Hecks::Grammar.self_bearing_operators.except(*admitted)
 unless stranded.empty?
   abort stranded.map { |symbol, sites|
     "#{symbol} is self-bearing — the language's own predicates evaluate through it " \

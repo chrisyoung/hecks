@@ -157,7 +157,7 @@ RSpec.describe "Rust conformance (native binary)", :io do
       # Rust to; Rust's own compiled binary has no equivalent field at
       # all, so it's stripped here rather than becoming a permanent,
       # meaningless diff.
-      ruby_queries = JSON.parse(JSON.generate(ruby_result[:queries].map { |q| q.reject { |k, _| k == :instances_at } }))
+      ruby_queries = JSON.parse(JSON.generate(ruby_result[:queries].map { |q| q.except(:instances_at) }))
       ruby_sagas = JSON.parse(JSON.generate(ruby_result[:sagas]))
 
       stdout, status = Open3.capture2(binary, stdin_data: JSON.generate({ "steps" => steps }))

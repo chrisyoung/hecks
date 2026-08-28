@@ -62,7 +62,7 @@ RSpec.describe Hecks::Adapters::Postgres, :io do
     db = PG.connect(dbname: PLAIN_POSTGRES_SPEC_DB)
     columns = db.exec_params(
       "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = $1", ["order"]
-    ).each_with_object({}) { |row, memo| memo[row["column_name"]] = row["data_type"] }
+    ).to_h { |row| [row["column_name"], row["data_type"]] }
     db.close
 
     expect(columns["id"]).to eq("text")

@@ -141,7 +141,7 @@ module Hecks
 
       def decode_for(aggregate, row)
         fields = aggregate.attributes.map { |attribute| [attribute.name, attribute] }
-        if (lifecycle = aggregate.lifecycle) && !fields.any? { |name, _| name == lifecycle.field }
+        if (lifecycle = aggregate.lifecycle) && fields.none? { |name, _| name == lifecycle.field }
           fields << [lifecycle.field, nil]
         end
         # `projects` FIELDS (S12, ADR 0025) NEED READING BACK TOO — `project`

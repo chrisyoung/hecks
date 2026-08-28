@@ -61,21 +61,9 @@ Lint/IneffectiveAccessModifier:
     - 'lib/hecks/fqn.rb'
 
 # Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Lint/Loop:
-  Exclude:
-    - 'bin/fuzz'
-
-# Offense count: 1
 Lint/NoReturnInBeginEndBlocks:
   Exclude:
     - 'lib/hecks/grammar.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Lint/NonAtomicFileOperation:
-  Exclude:
-    - 'bin/project_cli'
 
 # Offense count: 31
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -95,15 +83,6 @@ Lint/RedundantDirGlobSort:
     - 'spec/plurality_coverage_spec.rb'
     - 'spec/rust_conformance_spec.rb'
     - 'spec/support/doctest_names.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: AllowedMethods, InferNonNilReceiver, AdditionalNilMethods.
-# AllowedMethods: instance_of?, kind_of?, is_a?, eql?, respond_to?, equal?
-# AdditionalNilMethods: present?, blank?, try, try!
-Lint/RedundantSafeNavigation:
-  Exclude:
-    - 'lib/hecks/runtime/value/coercion.rb'
 
 # Offense count: 1
 # Configuration parameters: AllowRBSInlineAnnotation.
@@ -225,18 +204,6 @@ Naming/PredicatePrefix:
   Exclude:
     - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
 
-# Offense count: 26
-# This cop supports unsafe autocorrection (--autocorrect-all).
-RSpec/BeEq:
-  Exclude:
-    - 'spec/adapters/driven/postgres_era/field_cache_spec.rb'
-    - 'spec/bluebook/synthesizer_spec.rb'
-    - 'spec/dsl_spec.rb'
-    - 'spec/fuzzing/fan_out_spec.rb'
-    - 'spec/fuzzing/properties_spec.rb'
-    - 'spec/query_ir_spec.rb'
-    - 'spec/runtime/authorization_spec.rb'
-
 # Offense count: 33
 RSpec/BeforeAfterAll:
   Enabled: false
@@ -247,15 +214,6 @@ RSpec/BeforeAfterAll:
 RSpec/ContextWording:
   Exclude:
     - 'spec/runtime/read_model_interpreter_spec.rb'
-
-# Offense count: 10
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: SkipBlocks, EnforcedStyle, OnlyStaticConstants.
-# SupportedStyles: described_class, explicit
-RSpec/DescribedClass:
-  Exclude:
-    - 'spec/doctest_harness_spec.rb'
-    - 'spec/rust_project/exemplar_spec.rb'
 
 # Offense count: 44
 # Configuration parameters: Max, CountAsOne.
@@ -317,20 +275,6 @@ RSpec/NoExpectationExample:
     - 'spec/adapters/query_agreement_spec.rb'
     - 'spec/ir_golden_spec.rb'
 
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-RSpec/Output:
-  Exclude:
-    - 'spec/support/ruby_codegen_prelude.rb'
-
-# Offense count: 3
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: Strict, EnforcedStyle, AllowedExplicitMatchers.
-# SupportedStyles: inflected, explicit
-RSpec/PredicateMatcher:
-  Exclude:
-    - 'spec/shadow_parse_spec.rb'
-
 # Offense count: 9
 RSpec/RemoveConst:
   Exclude:
@@ -363,37 +307,6 @@ Style/AccessModifierDeclarations:
     - 'lib/hecks/runtime/value/coercion.rb'
 
 # Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/ArrayIntersect:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/bluebook_builder.rb'
-
-# Offense count: 5
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: AllowedReceivers.
-Style/CollectionCompact:
-  Exclude:
-    - 'bin/model_check'
-    - 'lib/hecks/bluebook/meta_validator/judge.rb'
-    - 'lib/hecks/bluebook/meta_validator/world_judge.rb'
-    - 'spec/model_check_spec.rb'
-    - 'spec/parser_parity_spec.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/CollectionQuerying:
-  Exclude:
-    - 'lib/hecks/ports/persistence/plugins/era/translation/scaffold/differ.rb'
-
-# Offense count: 3
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/CombinableLoops:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
-    - 'lib/hecks/bluebook/meta_validator/judge.rb'
-    - 'lib/hecks/runtime/dispatcher.rb'
-
-# Offense count: 1
 Style/DocumentDynamicEvalDefinition:
   Exclude:
     - 'spec/expression_spec.rb'
@@ -402,80 +315,6 @@ Style/DocumentDynamicEvalDefinition:
 # Configuration parameters: AllowedConstants.
 Style/Documentation:
   Enabled: false
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/GlobalStdStream:
-  Exclude:
-    - 'bin/hecks_query_ir_mcp'
-
-# Offense count: 4
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: AllowedReceivers.
-# AllowedReceivers: Thread.current
-Style/HashEachMethods:
-  Exclude:
-    - 'bin/fuzz'
-    - 'lib/hecks/bluebook/model_check.rb'
-    - 'spec/corpus_spec.rb'
-    - 'spec/syntax_conformance_spec.rb'
-
-# Offense count: 11
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/HashExcept:
-  Exclude:
-    - 'bin/expression_projection'
-    - 'lib/hecks/forms/app.rb'
-    - 'lib/hecks/query_specification/common/options.rb'
-    - 'lib/hecks/ports/persistence/plugins/era/translation/audit/layer_two.rb'
-    - 'spec/codegen_parity_spec.rb'
-    - 'spec/operator_conformance_spec.rb'
-    - 'spec/round_trip_spec.rb'
-    - 'spec/rust_conformance_spec.rb'
-
-# Offense count: 3
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/HashSlice:
-  Exclude:
-    - 'spec/codegen_parity_spec.rb'
-    - 'spec/syntax_conformance_spec.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/HashTransformValues:
-  Exclude:
-    - 'lib/hecks/bluebook/meta_validator/syntax_boot.rb'
-
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/IdenticalConditionalBranches:
-  Exclude:
-    - 'lib/hecks/ports/persistence/plugins/era/translation/scaffold/renderer.rb'
-
-# Offense count: 5
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: InverseMethods, InverseBlocks.
-Style/InverseMethods:
-  Exclude:
-    - 'lib/hecks/adapters/driven/postgres/codec.rb'
-    - 'lib/hecks/adapters/driven/sqlite/codec.rb'
-    - 'lib/hecks/adapters/driven/sqlite/projection.rb'
-    - 'lib/hecks/bluebook/meta_validator/reconstruction.rb'
-    - 'lib/hecks/ports/persistence/plugins/era/translation/audit/layer_two.rb'
-
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/MapJoin:
-  Exclude:
-    - 'spec/model_check_spec.rb'
-
-# Offense count: 4
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/MapToSet:
-  Exclude:
-    - 'lib/hecks/fuzzing/sequence_generator/catalog.rb'
-    - 'lib/hecks/query_ir.rb'
-    - 'spec/rust_conformance_spec.rb'
 
 # Offense count: 4
 Style/MultilineBlockChain:
@@ -506,93 +345,10 @@ Style/OptionalBooleanParameter:
     - 'lib/hecks/bluebook/dsl/command_builder.rb'
 
 # Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/PredicateWithKind:
-  Exclude:
-    - 'spec/fuzzing/invalid_value_generator_spec.rb'
-
-# Offense count: 5
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/ReduceToHash:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/bluebook_builder.rb'
-    - 'lib/hecks/runtime/instance.rb'
-    - 'lib/hecks/runtime/read_model_interpreter.rb'
-    - 'lib/hecks/runtime/value.rb'
-    - 'spec/adapters/driven/postgres_spec.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: Methods.
-Style/RedundantArgument:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/identity_declaration.rb'
-
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/RedundantEach:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/bluebook_builder.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/RedundantInterpolation:
-  Exclude:
-    - 'bin/run'
-
-# Offense count: 10
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/RedundantSort:
-  Exclude:
-    - 'bin/model_check'
-    - 'spec/corpus_spec.rb'
-    - 'spec/model_check_spec.rb'
-    - 'spec/parser_parity_spec.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: AllowedMethods, AllowedPatterns.
-Style/ReturnNilInPredicateMethodDefinition:
-  Exclude:
-    - 'lib/hecks/query_ir.rb'
-
-# Offense count: 12
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: ConvertCodeThatCanStartToReturnNil, AllowedMethods, MaxChainLength.
-# AllowedMethods: present?, blank?, presence, try, try!
-Style/SafeNavigation:
-  Exclude:
-    - 'lib/hecks/adapters/driven/sql_query_builder.rb'
-    - 'lib/hecks/bluebook/dsl/bluebook_builder.rb'
-    - 'lib/hecks/fuzzing/properties.rb'
-    - 'lib/hecks/fuzzing/replay.rb'
-    - 'lib/hecks/query_specification/common/authorization_spec.rb'
-    - 'lib/hecks/runtime/command_interpreter/mutation_applier.rb'
-    - 'lib/hecks/runtime/entity_interpreter.rb'
-    - 'lib/hecks/ports/persistence/plugins/era/era_guard/shape_diff.rb'
-    - 'lib/hecks/runtime/instance.rb'
-
-# Offense count: 1
 # Configuration parameters: Max.
 Style/SafeNavigationChainLength:
   Exclude:
     - 'lib/hecks/fuzzing/properties.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/SelectByKind:
-  Exclude:
-    - 'lib/hecks/query_specification/common/comparison.rb'
-
-# Offense count: 5
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/SelectByRegexp:
-  Exclude:
-    - 'bin/docs'
-    - 'bin/fuzz'
-    - 'bin/project_cli'
-    - 'bin/project_oidc'
-    - 'lib/hecks/fuzzing/isolated_boot.rb'
 
 # Offense count: 14
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -620,11 +376,3 @@ Style/SymbolProc:
     - 'lib/hecks/bluebook/behaviour/traits.rb'
     - 'spec/operator_conformance_spec.rb'
     - 'spec/self_use_spec.rb'
-
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: forbid_for_all_comparison_operators, forbid_for_equality_operators_only, require_for_all_comparison_operators, require_for_equality_operators_only
-Style/YodaCondition:
-  Exclude:
-    - 'spec/ports/persistence/remote_runtime_spec.rb'

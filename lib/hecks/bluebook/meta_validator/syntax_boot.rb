@@ -239,8 +239,8 @@ module Hecks
         end
 
         def stringify(row)
-          row.to_h.each_with_object({}) do |(key, cell), out|
-            out[key] = scalar(cell).to_s
+          row.to_h.transform_values do |cell|
+            scalar(cell).to_s
           end
         end
 

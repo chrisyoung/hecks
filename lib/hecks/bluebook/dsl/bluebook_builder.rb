@@ -446,7 +446,7 @@ module Hecks
           target        = lookup[command_ref]
           source_shape  = event_name && event_shape_for(event_name, aggregates)
           memory_shape  = pm && event_shape_for(pm.starts_on, aggregates)
-          correlation   = pm && pm.correlates_by && pm.correlation_head
+          correlation   = pm&.correlates_by && pm.correlation_head
           # A POLICY'S SOURCE ALSO CARRIES THE EMITTER'S OWN IDENTITY —
           # `PolicyInterpreter#emitter_identity`, the runtime half of this.
           # An entity command's event never declares its aggregate's
@@ -540,7 +540,7 @@ module Hecks
         # instead — this walks the whole chapter once per `#build`, not
         # a hot path worth memoising at that cost.
         def self.event_emitters(aggregates)
-          each_command(aggregates).each_with_object(Hash.new { |h, k| h[k] = [] }) do |(owner, command), index|
+          each_command(aggregates).with_object(Hash.new { |h, k| h[k] = [] }) do |(owner, command), index|
             command.emits.each { |event_name| index[event_name] << [owner, command] }
           end
         end
@@ -625,7 +625,7 @@ module Hecks
         end
 
         def self.command_lookup(aggregates)
-          each_command(aggregates).each_with_object({}) do |(owner, command), index|
+          each_command(aggregates).with_object({}) do |(owner, command), index|
             index["#{owner}.#{command.hecks_name}"] = command
           end
         end
@@ -657,8 +657,8 @@ module Hecks
         # hierarchy is real and safe) — excluded the same way the
         # direct-pair check already excluded it.
         def self.validate_no_bidirectional_references!(aggregates)
-          edges = aggregates.each_with_object({}) do |aggregate, index|
-            index[aggregate.hecks_name] = aggregate.reference_targets.uniq.reject { |target| target == aggregate.hecks_name }
+          edges = aggregates.to_h do |aggregate|
+            [aggregate.hecks_name, aggregate.reference_targets.uniq.reject { |target| target == aggregate.hecks_name }]
           end
 
           cycle = find_reference_cycle(edges)
@@ -1005,7 +1005,7 @@ module Hecks
         def self.emitting_commands(events, aggregates)
           aggregates.flat_map do |aggregate|
             commands = aggregate.commands + aggregate.entities.flat_map(&:commands)
-            commands.select { |command| (command.emits.map(&:to_s) & events).any? }
+            commands.select { |command| command.emits.map(&:to_s).intersect?(events) }
                     .map { |command| [aggregate, command] }
           end
         end

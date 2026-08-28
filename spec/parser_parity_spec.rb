@@ -59,8 +59,8 @@ RSpec.describe "Rust parser parity (hecks-parse)", :io do
   # loads it right after the `.bluebook`, and `hecks-parse chapter` needs
   # it fed the same way for a REAL_PARITY_MEMBERS comparison.
   def self.hecksagon_in(domain)
-    Dir.glob(File.join(domain, "bluebook", "*.hecksagon")).sort.first ||
-      Dir.glob(File.join(domain, "*.hecksagon")).sort.first
+    Dir.glob(File.join(domain, "bluebook", "*.hecksagon")).min ||
+      Dir.glob(File.join(domain, "*.hecksagon")).min
   end
 
   PARITY_EXAMPLE_ROOTS = Dir.glob(File.join(InMemoryDomain::ROOT, "examples", "*")).select do |path|
@@ -129,7 +129,7 @@ RSpec.describe "Rust parser parity (hecks-parse)", :io do
     # `lib/hecks/language/bluebook/bluebook.bluebook` — one of the
     # concept files, not the whole member.
     [["bluebook_language", PARITY_LANGUAGE_GRAMMAR_FILES]]
-  ).reject { |_stem, path| path.nil? }.freeze
+  ).compact.freeze
 
   # EVERY MEMBER WAS PENDING AT STAGE 1, each with the SAME honest reason.
   # STAGE 2 removed "pizzas" — it got a REAL byte-match assertion instead

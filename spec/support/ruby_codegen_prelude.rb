@@ -137,13 +137,10 @@ extra_fields: lifecycle_extra_field(aggregate), aggregate: aggregate))
     FileUtils.mkdir_p(out_dir)
     ir[:aggregates].each do |aggregate|
       text = aggregate_prelude(aggregate, source_label)
-      if text.nil?
-        puts "skipping #{aggregate[:name]}: unsupported attribute type(s)"
-        next
-      end
+      next if text.nil?
+
       path = File.join(out_dir, "#{aggregate[:name].downcase}.rs")
       File.write(path, text)
-      puts "wrote #{path}"
     end
   ensure
     AGGREGATES_BY_NAME.delete(source_label)

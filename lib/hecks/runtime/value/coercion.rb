@@ -216,7 +216,7 @@ module Hecks
         # `build`, so a nested field's own default is filled in before its
         # own invariants read it.
         def normalize_composite_fields(aggregate, value_object, fields)
-          return fields unless aggregate&.respond_to?(:value_object)
+          return fields unless aggregate.respond_to?(:value_object)
 
           value_object.attributes.each do |attribute|
             next if attribute.list? || !fields.key?(attribute.name)

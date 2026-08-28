@@ -30,7 +30,7 @@ module Hecks
           options_to_h.reject do |key, value|
             value.nil? || value == [] || (key == :null_semantics && value == { mode: "native" })
           end
-                      .reject { |key, _| %i[wheres order_by limit].include?(key) }
+                      .except(:wheres, :order_by, :limit)
         end
       end
     end

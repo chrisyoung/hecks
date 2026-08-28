@@ -379,7 +379,7 @@ RSpec.describe "PostgresEra field cache — Track C validation", :io do
     elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
 
     backfill_thread.join(10)
-    expect(backfill_thread.status).to eq(false) # finished, not still running / not dead-from-error
+    expect(backfill_thread.status).to be(false) # finished, not still running / not dead-from-error
     expect(elapsed).to be < 1.0 # nowhere near the ~3s the full slow backfill takes end to end
   ensure
     backfill_db&.close

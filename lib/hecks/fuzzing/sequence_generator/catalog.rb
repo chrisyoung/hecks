@@ -58,7 +58,7 @@ module Hecks
             populators: populators(runtime),
             # Which aggregates this corpus can actually make one of — the ones
             # `satisfiable?` is entitled to wait for.
-            creatable: creating.map { |entry| entry[:aggregate].hecks_name }.to_set }
+            creatable: creating.to_set { |entry| entry[:aggregate].hecks_name } }
         end
 
         # Which command, on which aggregate, appends to which entity list — so a

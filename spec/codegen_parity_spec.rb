@@ -172,6 +172,13 @@ RSpec.describe "Rust codegen parity (hecks-codegen)", :io do
     expect(CODEGEN_CORPUS_MEMBERS).not_to be_empty
   end
 
+  # CODEGEN_CORPUS_MEMBERS is an Array of [name, loader] pairs, not a Hash
+  # (see its own definition above) — Style/HashSlice's autocorrect assumed
+  # otherwise from the `|name, _|` block shape alone and rewrote this to
+  # `.slice(*WHOLE_FILE_MEMBERS)`, which is Array#slice (start/length or
+  # index/range args, not a splat of keys) and raised ArgumentError at
+  # load time. False positive — the receiver isn't a Hash.
+  # rubocop:disable-next Style/HashSlice
   CODEGEN_CORPUS_MEMBERS.select { |name, _| WHOLE_FILE_MEMBERS.include?(name) }.each do |name, ir_loader|
     it "#{name}: Rust hecks-codegen's FULL domain .rs output (every aggregate file + registry.rs + mod.rs) is byte-identical to Ruby's" do
       ir = ir_loader.call
@@ -226,6 +233,10 @@ RSpec.describe "Rust codegen parity (hecks-codegen)", :io do
     end
   end
 
+  # Same false positive as above (Style/HashSlice): CODEGEN_CORPUS_MEMBERS
+  # is an Array, not a Hash, so Style/HashExcept's `.except(*array)`
+  # rewrite is Array#except (not a real method) rather than Hash#except.
+  # rubocop:disable-next Style/HashExcept
   CODEGEN_CORPUS_MEMBERS.reject { |name, _| WHOLE_FILE_MEMBERS.include?(name) }.each do |name, ir_loader|
     it "#{name}: Rust hecks-codegen's prelude .rs output is byte-identical to Ruby's, per aggregate" do
       ir = ir_loader.call

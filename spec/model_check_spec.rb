@@ -23,7 +23,7 @@ RSpec.describe "the model checker" do
       # copy of this comment. Fixtures under spec/fixtures/model_check/
       # have none, so this is a no-op for every test but the real corpus.
       hecksagon = if File.directory?(bluebook)
-                    Dir.glob(File.join(bluebook, "*.hecksagon")).sort.first
+                    Dir.glob(File.join(bluebook, "*.hecksagon")).min
                   else
                     bluebook.sub(/\.bluebook\z/, ".hecksagon")
                   end
@@ -211,7 +211,7 @@ RSpec.describe "the model checker" do
       MODEL_CHECK_EXAMPLE_ROOTS.map { |domain| [File.basename(domain), bluebook_in(domain)] } +
       MODEL_CHECK_GRAMMAR_CHAPTERS.map { |chapter| [File.basename(chapter, ".bluebook"), chapter] } +
       MODEL_CHECK_FRAMEWORK_MEMBERS.map { |member| [File.basename(member, ".bluebook"), member] }
-    ).reject { |_, source| source.nil? }.freeze
+    ).compact.freeze
 
     # The SAME constant bin/model_check reads — one table, not a copy.
     MODEL_CHECK_ALLOWED = Hecks::Bluebook::ModelCheck::ALLOWED_FINDINGS
@@ -248,7 +248,7 @@ RSpec.describe "the model checker" do
         allowed  = MODEL_CHECK_ALLOWED.fetch(name, [])
 
         unnamed = errors.reject { |f| allowed.include?([f.kind, f.subject]) }
-        expect(unnamed).to be_empty, unnamed.map(&:to_s).join("\n")
+        expect(unnamed).to be_empty, unnamed.join("\n")
       end
     end
 
@@ -269,7 +269,7 @@ RSpec.describe "the model checker" do
         next unless chapter
 
         errors = Hecks::Bluebook::ModelCheck.call(chapter).select { |f| f.severity == :error }
-        expect(errors).to be_empty, errors.map(&:to_s).join("\n")
+        expect(errors).to be_empty, errors.join("\n")
       end
     end
   end

@@ -143,7 +143,7 @@ end
 # strips the steps that were never relevant to the finding.
 def shrink(domain, steps, signature, adapter = :memory)
   current = steps.dup
-  begin
+  loop do
     changed = false
     index = 0
     while index < current.length
@@ -160,7 +160,8 @@ def shrink(domain, steps, signature, adapter = :memory)
         index += 1
       end
     end
-  end while changed
+    break unless changed
+  end
   shrink_arguments(domain, current, signature, adapter)
 end
 
@@ -193,7 +194,7 @@ def shrink_arguments(domain, steps, signature, adapter = :memory)
     original_keys = args_of(step)
     next unless original_keys.is_a?(Hash)
 
-    original_keys.keys.each do |key|
+    original_keys.each_key do |key|
       current_args = args_of(step)
       trimmed = current_args.reject { |name, _| name == key }
       candidate = steps.map(&:dup)
@@ -325,7 +326,7 @@ EXCLUDED_FROM_SWEEP = %r{
 def sweepable_domains(root)
   Dir.chdir(root) do
     Dir.glob("**/*.bluebook")
-       .reject { |path| path.match?(EXCLUDED_FROM_SWEEP) }
+       .grep_v(EXCLUDED_FROM_SWEEP)
        .map { |path| File.dirname(path) }
        .map { |dir| File.basename(dir) == "bluebook" ? File.dirname(dir) : dir }
        .uniq.sort

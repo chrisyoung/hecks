@@ -202,12 +202,12 @@ module Hecks
         def apply_renames(state, renames)
           snapshot = renames.filter_map { |old_name, new_name| [old_name, new_name, state[old_name]] if state.key?(old_name) }
           snapshot.each { |old_name, _new_name, _value| state.delete(old_name) }
-          # rubocop:disable Style/CombinableLoops -- NOT combinable: a swap
-          # (:a<->:b) needs every delete done before any write, or the first
-          # rename's write becomes the second rename's delete target — see
-          # this method's own comment above.
+          # NOT combinable (Style/CombinableLoops is disabled repo-wide, see
+          # .rubocop.yml, for exactly this reason): a swap (:a<->:b) needs
+          # every delete done before any write, or the first rename's write
+          # becomes the second rename's delete target — see this method's
+          # own comment above.
           snapshot.each { |_old_name, new_name, value| state[new_name] = value }
-          # rubocop:enable Style/CombinableLoops
         end
 
         def apply_drop(state, name)

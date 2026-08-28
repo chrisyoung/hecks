@@ -1892,7 +1892,7 @@ RSpec.describe "the DSL surface" do
           end
         end.queries.first
 
-        expect(found.attributes.first.optional?).to eq(true)
+        expect(found.attributes.first.optional?).to be(true)
       end
 
       it "leaves a block parameter alone when nothing on the owner matches it — no attribute silently invented" do
