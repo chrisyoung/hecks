@@ -71,7 +71,20 @@ module Hecks
 
       def handler(row)
         Build.call("Handler", row,
-                   dispatches: Array(row[:dispatches]).map { |leg| Build.call("Dispatch", leg) })
+                   dispatches: Array(row[:dispatches]).map { |leg| dispatch(leg) })
+      end
+
+      # `reverses` — a PLAIN HASH on the declaration (`Reconstruction#
+      # dispatch`'s own comment for why), built into the real
+      # `DispatchSpec` its own field actually is by recursing through
+      # THIS SAME method, one level in — the identical move `handler`
+      # itself takes into `dispatches`, one level up. `nil` when there
+      # is nothing to reverse; `Build.call` never sees a `reverses:`
+      # key it does not know how to read either way, the same reason
+      # `reverses` never joined `Contract#fields` at all.
+      def dispatch(row)
+        reverses = row[:reverses] && dispatch(row[:reverses])
+        Build.call("Dispatch", row, reverses: reverses)
       end
     end
   end

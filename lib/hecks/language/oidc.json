@@ -197,6 +197,16 @@
       "role": "Language"
     },
     {
+      "scope": "bluebook:process_manager.handler.dispatch.bind_reversal",
+      "verb": "Bluebook::ProcessManager.Handler.Dispatch.BindReversal",
+      "role": "Language"
+    },
+    {
+      "scope": "bluebook:process_manager.handler.dispatch.reverses",
+      "verb": "Bluebook::ProcessManager.Handler.Dispatch.Reverses",
+      "role": "Language"
+    },
+    {
       "scope": "bluebook:process_manager.state",
       "verb": "Bluebook::ProcessManager.State",
       "role": "Language"

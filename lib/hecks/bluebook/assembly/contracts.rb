@@ -266,15 +266,37 @@ module Hecks
         # the same entry ProcessManager's own contract carries above) —
         # never a stored field on `DispatchSpec` itself, exactly like
         # `handler` before it.
+        # `reverses_command_name`/`reverses_with_spec` — FOLDED, the SAME
+        # kind `Lifecycle`'s own `state_field`/`default` claim (one IR
+        # OBJECT, `DispatchSpec#reverses`, feeding two separate language
+        # fields): `Readings#field_value`'s own `contract.folded`
+        # branch reads `node.reverses.to_h[:command_name]` /
+        # `[:with_spec]` for the JUDGE'S offering side, nil-safe when
+        # there is no reversal at all (`through`'s own `return nil
+        # unless held`). `reverses_with_spec` ALSO needs its own row
+        # shaper (`reverses_with_spec_rows`, readings.rb) for the
+        # JUDGE'S list-offering side — the with_spec pairs still need
+        # one "BindReversal" append per pair, the same reason
+        # `with_spec` itself needs `with_spec_rows`, one level deeper.
+        # `Reconstruction#dispatch` reads the two flat fields back off
+        # the row and assembles the nested `DispatchSpec` by hand — a
+        # nested OBJECT is not one of the shapes `declaration()`'s own
+        # generic per-field hash-build can produce, the identical reason
+        # `handler`/`process_manager` pass a `:children` list through
+        # `extra:` instead.
         "Dispatch"       => Contract.new(
           holder: DispatchSpec, make: :new,
           fields: {
             command_name: [:command_name, :plain],
             with_spec:    [:with_spec,    :bindings]
           },
-          rows: { with_spec: :with_spec_rows },
+          rows: { with_spec: :with_spec_rows, reverses_with_spec: :reverses_with_spec_rows },
           reads: { with_spec: [:from, :with_spec] },
-          derived: { position: :walk }
+          derived: {
+            position:              :walk,
+            reverses_command_name: [:folded, :reverses, :command_name],
+            reverses_with_spec:    [:folded, :reverses, :with_spec]
+          }
         ),
 
         # S14, ADR 0026 — Syntax/Keyword/Argument are never built via

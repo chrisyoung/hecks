@@ -617,6 +617,7 @@
           "dispatches": [
             {
               "command_name": "Drawer.Take",
+              "reverses": null,
               "with_spec": [
                 [
                   "number",
@@ -641,6 +642,7 @@
           "dispatches": [
             {
               "command_name": "Wire.Moved",
+              "reverses": null,
               "with_spec": [
                 [
                   "wire",
@@ -650,6 +652,7 @@
             },
             {
               "command_name": "Drawer.Put",
+              "reverses": null,
               "with_spec": [
                 [
                   "number",
@@ -674,6 +677,7 @@
           "dispatches": [
             {
               "command_name": "Wire.Landed",
+              "reverses": null,
               "with_spec": [
                 [
                   "wire",
@@ -690,6 +694,7 @@
           "dispatches": [
             {
               "command_name": "Drawer.Put",
+              "reverses": null,
               "with_spec": [
                 [
                   "number",
@@ -707,6 +712,7 @@
             },
             {
               "command_name": "Wire.Returned",
+              "reverses": null,
               "with_spec": [
                 [
                   "wire",

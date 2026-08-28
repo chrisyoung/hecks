@@ -6285,6 +6285,7 @@
           "dispatches": [
             {
               "command_name": "Account.Open",
+              "reverses": null,
               "with_spec": [
                 [
                   "customer",
@@ -6334,6 +6335,24 @@
           "dispatches": [
             {
               "command_name": "Account.Debit",
+              "reverses": {
+                "command_name": "Account.Credit",
+                "reverses": null,
+                "with_spec": [
+                  [
+                    "number",
+                    ":source"
+                  ],
+                  [
+                    "amount",
+                    ":amount"
+                  ],
+                  [
+                    "narrative",
+                    "{text: \"transfer reversed\"}"
+                  ]
+                ]
+              },
               "with_spec": [
                 [
                   "number",
@@ -6362,6 +6381,7 @@
           "dispatches": [
             {
               "command_name": "Transfer.Debited",
+              "reverses": null,
               "with_spec": [
                 [
                   "transfer",
@@ -6371,6 +6391,7 @@
             },
             {
               "command_name": "Account.Credit",
+              "reverses": null,
               "with_spec": [
                 [
                   "number",
@@ -6399,6 +6420,7 @@
           "dispatches": [
             {
               "command_name": "Transfer.Credited",
+              "reverses": null,
               "with_spec": [
                 [
                   "transfer",
@@ -6415,6 +6437,7 @@
           "dispatches": [
             {
               "command_name": "Transfer.Settle",
+              "reverses": null,
               "with_spec": [
                 [
                   "transfer",
@@ -6430,24 +6453,8 @@
         {
           "dispatches": [
             {
-              "command_name": "Account.Credit",
-              "with_spec": [
-                [
-                  "number",
-                  ":source"
-                ],
-                [
-                  "amount",
-                  ":amount"
-                ],
-                [
-                  "narrative",
-                  "{text: \"transfer reversed\"}"
-                ]
-              ]
-            },
-            {
               "command_name": "Transfer.Reverse",
+              "reverses": null,
               "with_spec": [
                 [
                   "transfer",
@@ -6478,6 +6485,7 @@
           "dispatches": [
             {
               "command_name": "ExternalTransfer.SendTransfer",
+              "reverses": null,
               "with_spec": [
                 [
                   "end_to_end",
@@ -6494,6 +6502,7 @@
           "dispatches": [
             {
               "command_name": "ExternalTransfer.Return",
+              "reverses": null,
               "with_spec": [
                 [
                   "end_to_end",

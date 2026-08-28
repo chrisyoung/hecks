@@ -101,6 +101,15 @@ RSpec.describe "the model checker" do
       expect(finding.message).to include('"LegFinished"')
     end
 
+    it "finds a reverses declared where the saga has no handler answering a refusal" do
+      finding = findings.find { |f| f.kind == :unarmed_reversal && f.subject == "UnarmedSaga" }
+      expect(finding.message).to include("Leg.Request reverses Leg.Request")
+    end
+
+    it "does not flag a reverses on a saga that DOES answer a refusal — LegSaga has none to flag" do
+      expect(findings.select { |f| f.subject == "LegSaga" }.map(&:kind)).not_to include(:unarmed_reversal)
+    end
+
     it "never flags the REFUSED compensation leg as a deaf handler" do
       # The compensating leg answers "refused", a synthetic trigger no
       # command ever emits by name — the one handler this domain's own
