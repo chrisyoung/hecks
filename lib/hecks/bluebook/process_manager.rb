@@ -35,12 +35,42 @@ module Hecks
     # word — so here they are two objects, and a procedure either has a saga or
     # does not.
     #
-    # `undoes` is the ordered list of commands the compensation sends. Today that
-    # order is the AUTHOR's, written by hand in one `on :refused` leg, and the
-    # runtime does not know which legs actually completed. When compensation
-    # moves beside each dispatch — `reverses` on the step it reverses — this is
-    # where the completed ones, newest first, will live. The shape is already
-    # right for it; only the source of the order changes.
+    # STATIC, BUILD-TIME-ONLY — NOT the runtime's own compensation path.
+    # `undoes`/`reversals` exist for `model_check.rb`'s own reachability
+    # check (`pm.saga?`/`pm.saga.from_state`) and nothing else; the live
+    # dispatcher (`Runtime::SagaInterpreter#unwind`) never reads this
+    # struct at all — it looks up `pm.handler_for(REFUSED).dispatches`
+    # directly, every time. Fixing the ordering question ONLY here would
+    # change nothing a real caller ever sees; it would need to move at
+    # the runtime call site too.
+    #
+    # `undoes` is the ordered list of commands the compensation sends. Today
+    # that order is the AUTHOR's, written by hand in one `on :refused` leg —
+    # the runtime does not track which forward legs actually completed, so
+    # compensation always replays this same fixed list, in this same fixed
+    # order, however it was reached.
+    #
+    # CONFIRMED, NOT ASSUMED: as of this comment, that is a real but
+    # CURRENTLY INERT gap, not a live bug. Every process_manager in the
+    # example corpus was checked directly — only one saga (Banking's
+    # `Settlement`, transfers_and_payments.bluebook) has a compensating
+    # leg with more than one dispatch (two: reverse the debit, reverse
+    # the transfer), and its forward legs form a strict, unbranching FSM
+    # chain (`requested → awaiting_credit → awaiting_credit → settled`,
+    # no `where`/guard branching) that can only ever reach `:refused`
+    # from the ONE state that means "the debit already happened." So
+    # declared order and actual-completion order are the same order, by
+    # construction, every time, for the one real example that would
+    # otherwise exercise this at all — building actual-completion-order
+    # replay against that single, non-differentiating example would be
+    # "a new [capability] invented speculatively for a population of
+    # one" (`rust/host/src/checkout.rs`'s own header, same reasoning one
+    # boundary over) — not a fix for anything currently wrong.
+    # The moment a SECOND saga exists whose forward legs can complete
+    # out of declared order (a guard/where branch, or two independent
+    # legs with no ordering dependency between them) AND whose
+    # compensation needs to know which of them actually ran, this
+    # becomes real and worth building for real — not before.
     #
     # NAMING COLLISION, KNOWN AND DELIBERATE — `command`'s own `corrects
     # event, reverses: true` (docs/implemented/decisions/0036-corrects-
@@ -50,6 +80,8 @@ module Hecks
     # a past DISPATCH. Whoever builds THIS feature should read that ADR
     # first and make a deliberate choice — reuse `reverses`'s meaning
     # here too, or pick another word — rather than colliding by accident.
+    # ADR 0036 itself already carries the reciprocal cross-reference —
+    # confirmed current, no drift, nothing to update there.
     Saga = Struct.new(:trigger, :from_state, :to_state, :reversals, keyword_init: true) do
       def undoes = reversals.map(&:command_name)
 
