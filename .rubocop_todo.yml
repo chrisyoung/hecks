@@ -40,7 +40,7 @@ Metrics/AbcSize:
 Metrics/BlockLength:
   Exclude:
     - 'bin/rust_coverage'
-    - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
+    - 'lib/hecks/bluebook/dsl/aggregate_builder/sealing.rb'
     - 'lib/hecks/bluebook/project_register.rb'
     - 'lib/hecks/fuzzing/replay.rb'
 
@@ -54,7 +54,6 @@ Metrics/BlockNesting:
 # Configuration parameters: CountComments, Max, CountAsOne.
 Metrics/ClassLength:
   Exclude:
-    - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
     - 'lib/hecks/bluebook/dsl/bluebook_builder.rb'
 
 # Offense count: 37
