@@ -727,7 +727,11 @@ fn react_policies<S: AggregateScan>(
             // says what the TRIGGER is given, and the fan-out is asking
             // a different question (WHICH rows) in the event's own
             // vocabulary.
-            let rows = match named_query::run(store, def, &event.payload) {
+            // `None` — a policy's own for_each fan-out is system-triggered,
+            // the same `Caller.without` reasoning this file's own
+            // same-domain reaction dispatch already carries (no caller
+            // role to assert for a query a policy runs on its own behalf).
+            let rows = match named_query::run(store, def, &event.payload, None) {
                 Ok(rows) => rows,
                 Err(refusal) => {
                     reaction_log.push(record(vec![

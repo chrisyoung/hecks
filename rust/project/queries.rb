@@ -458,12 +458,16 @@ module RustProjection
     # `TenantAuth`'s own compiled form — `nil` unless a real tenant is
     # declared (an `authorize policy` with no `tenant:` is a genuine no-op,
     # per `declared_authorization_skip_reason`'s own comment; nothing to
-    # compile for it at all, matching Ruby exactly).
+    # compile for it at all, matching Ruby exactly). `policy` rides along
+    # too, carried but NOT enforced (TenantAuth's own Rust-side doc
+    # comment has the full reasoning — Ruby's own TenantScope.apply never
+    # reads it either).
     def emit_query_authorization(query_name, authorization)
       tenant = authorization && authorization[:tenant]
       return nil unless tenant
 
-      "crate::kernel::named_query::TenantAuth { query_name: #{query_name.to_s.inspect}, tenant_field: #{tenant.to_s.inspect} }"
+      policy = authorization[:policy]
+      "crate::kernel::named_query::TenantAuth { query_name: #{query_name.to_s.inspect}, tenant_field: #{tenant.to_s.inspect}, policy: #{policy.to_s.inspect} }"
     end
 
     # `where[:op]` (one of `Hecks::QuerySpecification::Common::
@@ -565,7 +569,7 @@ module RustProjection
           order_by: Some(crate::kernel::query_ordering::OrderBy { field: "tmpl_order_field", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),
           offset: Some(crate::kernel::query_ordering::Offset::Literal(1)),
           limit: Some(crate::kernel::query_ordering::Limit::Literal(5)),
-          authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "tmpl_query_name", tenant_field: "tmpl_tenant_field" }),
+          authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "tmpl_query_name", tenant_field: "tmpl_tenant_field", policy: "tmpl_policy" }),
       },
     RUST
 

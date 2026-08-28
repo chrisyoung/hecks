@@ -192,9 +192,16 @@ pub fn run(input: &str) -> String {
         //   default) — refuses cleanly too, never a wrong (empty-but-
         //   silent) answer and never a panic.
         if let Some(query) = step.get("query") {
+            // Same "role" key a command step's own `caller_role` already
+            // reads (line ~358, below) — a query step carries it the
+            // identical way. Threaded through purely so it's available to
+            // a FUTURE `authorize policy` enforcement pass (TenantAuth's
+            // own doc comment) — `run` doesn't check it against anything
+            // yet.
+            let caller_role = step.get("role").and_then(Json::as_str);
             match query {
                 Json::Str(question) if question.contains("::") => match named_query::find(QUERIES, question) {
-                    Some(def) => match named_query::run(&store, def, args) {
+                    Some(def) => match named_query::run(&store, def, args, caller_role) {
                         Ok(entries) => {
                             let rows = Json::Array(entries.into_iter().map(|(id, record)| repository::row_json(id, record)).collect());
                             query_results.push(Json::obj(vec![

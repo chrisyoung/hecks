@@ -1523,7 +1523,7 @@ crate::kernel::QueryDef {
     order_by: Some(crate::kernel::query_ordering::OrderBy { field: "branch_code", descending: false, nulls: crate::kernel::query_ordering::NullsMode::Native }),
     offset: None,
     limit: None,
-    authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "Rented", tenant_field: "branch_code" }),
+    authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "Rented", tenant_field: "branch_code", policy: "vault_access" }),
 },
 crate::kernel::QueryDef {
     verb: "Banking::Transfer.InFlight",
