@@ -74,7 +74,12 @@ Hecks.bluebook "Banking" do
 
       # DECLARED ONCE, ON THE PIECE (ADR 0028) — Amend and Reverse both
       # need the same two facts about the AGGREGATE they belong to;
-      # each used to retype both predicates verbatim.
+      # each used to retype both predicates verbatim. "customer is
+      # active" is now ALSO the chapter-wide declaration
+      # `SafeDepositBox::Visit` (safe_deposit_boxes.bluebook) bare-
+      # references as `declared_by: "Account.LedgerEntry"` — the same
+      # scope `AggregateBuilder#given_impl`'s own chapter-wide sharing
+      # already offers aggregates, one level down onto their own pieces.
       given("customer is active") { parent.customer.status == "active" }
       given("account is open")    { parent.status == "open" }
 

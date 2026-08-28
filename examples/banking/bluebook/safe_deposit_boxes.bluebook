@@ -95,16 +95,24 @@ Hecks.bluebook "Banking" do
       # field, can tell those two apart).
       invariant("a written note is not blank") { !note || !note.text.to_s.empty? }
 
-      # DECLARED ONCE, SHARED ACROSS SIBLING PIECES — not just this
-      # piece's own commands (round 4's own reach), but ANY piece
-      # nested under the SAME aggregate: `KeyIssuance.Return`, below,
-      # references both bare rather than retyping the identical
-      # `parent.`-qualified predicate a second time. Neither can
-      # reference SafeDepositBox's OWN "customer is active" instead —
-      # a genuinely different canonical (`customer.status`, not
-      # `parent.customer.status`), the wrong relative path for a
+      # REFERENCED, NOT REDECLARED (chapter-wide, ENTITY-scoped sharing)
+      # — `Account::LedgerEntry`'s own declaration, in
+      # deposit_accounts.bluebook, byte-identical: both read
+      # `parent.customer.status == "active"`, since both pieces reach
+      # "the customer" the same way (a direct `reference_to Customer`
+      # on their own aggregate). `declared_by:` omitted — exactly one
+      # piece in this chapter declares "customer is active" with a
+      # block today, the same "common case" `AggregateBuilder#given`'s
+      # own chapter-wide sharing already takes one level up.
+      # `KeyIssuance.Return`, below, still bare-references this SAME
+      # description at the COMMAND level — the existing same-aggregate
+      # cross-entity pool this write-through still populates either way
+      # (EntityBuilder#given_impl's own comment). Cannot reference
+      # SafeDepositBox's OWN aggregate-level "customer is active"
+      # instead — a genuinely different canonical (`customer.status`,
+      # not `parent.customer.status`), the wrong relative path for a
       # piece's own command to evaluate.
-      given("customer is active") { parent.customer.status == "active" }
+      given("customer is active")
       given("box is rented") { parent.status == "rented" }
 
       lifecycle :state, default: "logged" do
