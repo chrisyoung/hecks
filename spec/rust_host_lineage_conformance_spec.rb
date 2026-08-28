@@ -243,7 +243,8 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", :io do
     fields.each { |name, value| built[name] = Hecks::Runtime::Value.for(aggregate, name, value) }
     adapter.save(built)
 
-    results = run_harness(binary, db_name, app_role, "Pizzas", 1, [{ "op" => "read_by_id", "storage_name" => "order", "id" => "p1" }])
+    results = run_harness(binary, db_name, app_role, "Pizzas", 1,
+                          [{ "op" => "read_by_id", "storage_name" => "order", "id" => "p1" }])
     expect(results.first["ok"]).to be(true), results.first["error"]
 
     # Compared field-by-field, not as one deep #eq — Instance#[] answers

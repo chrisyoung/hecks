@@ -671,7 +671,9 @@ RSpec.describe "the declared syntax" do
 
   def self.all_meta_aggregates
     registry     = Hecks::Bluebook::MetaValidator.grammar_registry
-    aggregates   = %w[Bluebook Hecksagon World Port Adapter Translation].flat_map { |chapter| registry.bluebook(chapter).aggregates }
+    aggregates   = %w[Bluebook Hecksagon World Port Adapter Translation].flat_map do |chapter|
+      registry.bluebook(chapter).aggregates
+    end
     aggregates + aggregates.flat_map { |a| a.entities.flat_map { |entity| all_entities(entity) } }
   end
 

@@ -292,7 +292,8 @@ RSpec.describe "the language's own rules" do
   # true.
   it "seals an aggregate that is fully declared" do
     value_object_id = id_of("Bluebook::ValueObject.Declare", aggregate: @aggregate_id, name: v("X"))
-    @runtime.dispatch("Bluebook::Aggregate.Attribute", to: @aggregate_id, with: { name: v("x"), type: value_object_id, list: v("false") })
+    @runtime.dispatch("Bluebook::Aggregate.Attribute", to:   @aggregate_id,
+                                                       with: { name: v("x"), type: value_object_id, list: v("false") })
 
     expect { @runtime.dispatch("Bluebook::Aggregate.Seal", to: @aggregate_id) }.not_to raise_error
   end

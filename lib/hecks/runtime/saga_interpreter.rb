@@ -175,7 +175,8 @@ module Hecks
       # instance at all", `unwind`'s doesn't), then this: log the real
       # observed transition, run the leg's dispatches, and clear the
       # pending marker once that cascade — however it ended — is done.
-      def settle_transition(process_manager, event, handler, instance, correlation, domain, record, pre_state, drain_compensations: false)
+      def settle_transition(process_manager, event, handler, instance, correlation, domain, record, pre_state,
+                            drain_compensations: false)
         # `from:`/`to:` are the INSTANCE'S OWN real pre/post state — read
         # back from `instance` itself, never re-derived from `handler.
         # from_state`/`handler.to_state` a second time. `Properties.saga_

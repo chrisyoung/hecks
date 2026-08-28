@@ -291,8 +291,12 @@ module Hecks
       def resolver_boolean_leaves(depth)
         leaves(:boolean) +
           resolver_numeric_leaves(depth).flat_map { |n| ["#{n}.positive?", "#{n}.negative?", "#{n}.zero?"] } +
-          bounded(:string, depth).flat_map { |s| ["#{s}.present?", "#{s}.blank?", "#{s}.match?(/a/)", "#{s}.start_with?(\"a\")", "#{s}.end_with?(\"a\")"] } +
-          (sample(numeric_array_productions(depth)) + sample(string_array_productions(depth)) + bounded(:array, depth)).map { |x| "#{x}.empty?" } +
+          bounded(:string, depth).flat_map do |s|
+            ["#{s}.present?", "#{s}.blank?", "#{s}.match?(/a/)", "#{s}.start_with?(\"a\")", "#{s}.end_with?(\"a\")"]
+          end +
+          (sample(numeric_array_productions(depth)) + sample(string_array_productions(depth)) + bounded(:array, depth)).map do |x|
+            "#{x}.empty?"
+          end +
           sample(block_predicate_productions(depth))
       end
 
@@ -404,8 +408,11 @@ module Hecks
           # documents (`"0 + 0.positive?"` would parse as `0 + (0
           # .positive?)`, not `(0 + 0).positive?`).
           resolver_numeric_leaves(depth - 1).flat_map { |n| ["#{n}.positive?", "#{n}.negative?", "#{n}.zero?"] } +
-          (str + sample(numeric_array_productions(depth - 1)) + sample(string_array_productions(depth - 1)) + bounded(:array, depth - 1))
-          .map { |x| "#{x}.empty?" } +
+          (str + sample(numeric_array_productions(depth - 1)) + sample(string_array_productions(depth - 1)) + bounded(:array,
+                                                                                                                      depth - 1))
+          .map do |x|
+            "#{x}.empty?"
+          end +
           str.map { |s| "#{s}.match?(/a/)" } +
           str.flat_map { |s| ["#{s}.present?", "#{s}.blank?"] } +
           str.flat_map { |s| ["#{s}.start_with?(\"a\")", "#{s}.end_with?(\"a\")"] } +
@@ -461,8 +468,12 @@ module Hecks
       def include_productions(depth)
         str = bounded(:string, depth)
         pairs(str).map { |haystack, needle| "#{haystack}.include?(#{needle})" } +
-          sample(numeric_array_productions(depth)).product(bounded(:numeric, depth)).map { |arr, needle| "#{arr}.include?(#{needle})" } +
-          sample(string_array_productions(depth)).product(bounded(:string, depth)).map { |arr, needle| "#{arr}.include?(#{needle})" }
+          sample(numeric_array_productions(depth)).product(bounded(:numeric, depth)).map do |arr, needle|
+            "#{arr}.include?(#{needle})"
+          end +
+          sample(string_array_productions(depth)).product(bounded(:string, depth)).map do |arr, needle|
+            "#{arr}.include?(#{needle})"
+          end
       end
 
       # SAMPLED, NOT A FULL CROSS PRODUCT — a full `list.product(list)`

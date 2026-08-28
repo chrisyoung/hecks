@@ -99,7 +99,8 @@ module Hecks
           return { "op" => "bool", "value" => false } if node.haystack.elements.empty?
 
           equalities = node.haystack.elements.map do |element|
-            { "op" => "compare", "cmp" => emit_comparison(EQ), "left" => emit_resolver(node.needle), "right" => emit_resolver(element) }
+            { "op" => "compare", "cmp" => emit_comparison(EQ), "left" => emit_resolver(node.needle),
+"right" => emit_resolver(element) }
           end
           equalities.reduce { |left, right| { "op" => "or", "left" => left, "right" => right } }
         end
@@ -128,7 +129,8 @@ module Hecks
           when Resolver::ArrayLiteral
             { "op" => "array", "elements" => node.elements.map { |element| emit_resolver(element) } }
           when Resolver::MatchesRegex
-            { "op" => "matches_regex", "receiver" => emit_resolver(node.receiver), "pattern" => node.pattern, "flags" => node.flags }
+            { "op" => "matches_regex", "receiver" => emit_resolver(node.receiver), "pattern" => node.pattern,
+"flags" => node.flags }
           when Resolver::Presence
             { "op" => "presence", "receiver" => emit_resolver(node.receiver), "negated" => node.negated }
           when Resolver::Assignment

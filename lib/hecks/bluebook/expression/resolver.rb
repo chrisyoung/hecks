@@ -245,14 +245,23 @@ module Hecks
           return Assignment.new(receiver: parse(Regexp.last_match(1)), negated: false) if expr =~ /\A(.+)\.set\?\z/
           return Assignment.new(receiver: parse(Regexp.last_match(1)), negated: true)  if expr =~ /\A(.+)\.unset\?\z/
 
-          return Split.new(receiver: parse(Regexp.last_match(1)), separator: Regexp.last_match(2)) if expr =~ /\A(.+)\.split\("([^"]*)"\)\z/
+          if expr =~ /\A(.+)\.split\("([^"]*)"\)\z/
+            return Split.new(receiver:  parse(Regexp.last_match(1)),
+                             separator: Regexp.last_match(2))
+          end
 
           return First.new(receiver: parse(Regexp.last_match(1))) if expr =~ /\A(.+)\.first\z/
           return Last.new(receiver: parse(Regexp.last_match(1))) if expr =~ /\A(.+)\.last\z/
 
-          return StartsWith.new(receiver: parse(Regexp.last_match(1)), substring: Regexp.last_match(2)) if expr =~ /\A(.+)\.start_with\?\("([^"]*)"\)\z/
+          if expr =~ /\A(.+)\.start_with\?\("([^"]*)"\)\z/
+            return StartsWith.new(receiver:  parse(Regexp.last_match(1)),
+                                  substring: Regexp.last_match(2))
+          end
 
-          return EndsWith.new(receiver: parse(Regexp.last_match(1)), substring: Regexp.last_match(2)) if expr =~ /\A(.+)\.end_with\?\("([^"]*)"\)\z/
+          if expr =~ /\A(.+)\.end_with\?\("([^"]*)"\)\z/
+            return EndsWith.new(receiver:  parse(Regexp.last_match(1)),
+                                substring: Regexp.last_match(2))
+          end
 
           block_opener = parse_block_opener(expr)
           return block_opener if block_opener

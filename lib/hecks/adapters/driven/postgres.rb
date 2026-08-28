@@ -128,7 +128,10 @@ module Hecks
         order_sql = "ORDER BY id"
         if order_by
           name = order_by.to_s.split(".").first
-          raise Runtime::WiringError, "#{@aggregate.name} has no attribute #{order_by.inspect} to order by" unless @aggregate.lifecycle&.field.to_s == name || @aggregate.attribute(name)
+          unless @aggregate.lifecycle&.field.to_s == name || @aggregate.attribute(name)
+            raise Runtime::WiringError,
+                  "#{@aggregate.name} has no attribute #{order_by.inspect} to order by"
+          end
 
           spec = QuerySpecification::Common::OrderBy.new(field: order_by, direction: direction)
           order_sql = "ORDER BY #{order_clause(spec, nil)}"
@@ -294,7 +297,8 @@ module Hecks
           "ON CONFLICT (domain, process_manager, correlation) DO UPDATE " \
           "SET state = EXCLUDED.state, memory = EXCLUDED.memory, " \
           "completed_compensations = EXCLUDED.completed_compensations, updated_at = now()",
-          [@domain, process_manager.to_s, correlation.to_s, state.to_s, JSON.generate(memory), JSON.generate(completed_compensations)]
+          [@domain, process_manager.to_s, correlation.to_s, state.to_s, JSON.generate(memory),
+           JSON.generate(completed_compensations)]
         )
       end
 

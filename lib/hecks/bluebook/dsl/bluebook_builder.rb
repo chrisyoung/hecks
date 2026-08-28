@@ -45,7 +45,10 @@ module Hecks
         # Two different versions are a real contradiction, not load order.
         def adopt_version(version)
           return if version.nil?
-          raise Malformed, "#{@name} declares both version #{@version.inspect} and #{version.inspect}" if @version && @version.to_s != version.to_s
+          if @version && @version.to_s != version.to_s
+            raise Malformed,
+                  "#{@name} declares both version #{@version.inspect} and #{version.inspect}"
+          end
 
           @version = version
         end

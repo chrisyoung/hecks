@@ -176,7 +176,11 @@ RSpec.describe "the operator domain" do
     ".to_s"        => -> { Resolver.parse("a.to_s").is_a?(Resolver::ToS) },
     ".size"        => -> { Resolver.parse("a.size").is_a?(Resolver::Size) },
     ".any?"        => -> { Resolver.parse("a.any? { |x| x }").then { |n| n.is_a?(Resolver::BlockPredicate) && n.mode == :any } },
-    ".none?"       => -> { Resolver.parse("a.none? { |x| x }").then { |n| n.is_a?(Resolver::BlockPredicate) && n.mode == :none } },
+    ".none?"       => lambda {
+      Resolver.parse("a.none? { |x| x }").then do |n|
+        n.is_a?(Resolver::BlockPredicate) && n.mode == :none
+      end
+    },
     ".all?"        => -> { Resolver.parse("a.all? { |x| x }").then { |n| n.is_a?(Resolver::BlockPredicate) && n.mode == :all } },
     ".find"        => -> { Resolver.parse("a.find { |x| x }.b").is_a?(Resolver::Find) },
     ".match?"      => -> { Resolver.parse("a.match?(/x/)").is_a?(Resolver::MatchesRegex) },

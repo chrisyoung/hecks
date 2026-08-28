@@ -195,7 +195,8 @@ module Hecks
           # no event carried" — `AccountDebited` never declares `:reference`,
           # only `TransferRequested` (`pm.starts_on`) does, and that is
           # where the value is genuinely still coming from.
-          def check_with_spec!(command_ref, event_name, with_spec, lookup, label, aggregates, correlation_heads, process_manager: nil)
+          def check_with_spec!(command_ref, event_name, with_spec, lookup, label, aggregates, correlation_heads,
+                               process_manager: nil)
             target        = lookup[command_ref]
             source_shape  = event_name && event_shape_for(event_name, aggregates)
             memory_shape  = process_manager && event_shape_for(process_manager.starts_on, aggregates)
@@ -213,7 +214,12 @@ module Hecks
             identity_sources = process_manager.nil? && event_name ? event_identity_heads_for(event_name, aggregates) : []
 
             with_spec.each do |field, source|
-              raise Malformed, "#{label}'s with: names #{field.inspect}, which #{command_ref} does not declare" if target && !command_declares?(target, field, aggregates, correlation_heads)
+              if target && !command_declares?(
+                target, field, aggregates, correlation_heads
+              )
+                raise Malformed,
+                      "#{label}'s with: names #{field.inspect}, which #{command_ref} does not declare"
+              end
 
               next unless source.is_a?(::Symbol)
               next if source == correlation

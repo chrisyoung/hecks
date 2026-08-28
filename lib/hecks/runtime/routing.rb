@@ -35,7 +35,9 @@ module Hecks
                 "to: for an entity command needs #{entity_depth} entity " \
                 "#{entity_depth == 1 ? 'identity' : 'identities'} after the aggregate — got #{entities.size}"
         end
-        raise TypeMismatch, "to: contains a blank entity identity" if entities.any? { |identity| identity.nil? || identity.to_s.empty? }
+        raise TypeMismatch, "to: contains a blank entity identity" if entities.any? do |identity|
+          identity.nil? || identity.to_s.empty?
+        end
 
         Envelope.new(aggregate: aggregate, entities: entities)
       end
@@ -45,7 +47,10 @@ module Hecks
       # choosing the explicit envelope cannot smuggle receiver identity back
       # into the payload.
       def payload(command, with:, legacy:)
-        raise TypeMismatch, "dispatch takes command facts in with:, not both with: and loose keyword arguments" if with && !legacy.empty?
+        if with && !legacy.empty?
+          raise TypeMismatch,
+                "dispatch takes command facts in with:, not both with: and loose keyword arguments"
+        end
 
         return legacy unless with
         raise TypeMismatch, "with: must be a hash of command facts" unless with.is_a?(Hash)

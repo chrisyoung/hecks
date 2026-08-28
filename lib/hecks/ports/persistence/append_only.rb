@@ -95,7 +95,10 @@ module Hecks
         end
 
         def atomic_put(instance, insert_only: false)
-          raise Runtime::WiringError, "#{@adapter.class} advertises no atomic_put persistence capability" unless capabilities.include?(:atomic_put) && @adapter.respond_to?(:atomic_put)
+          unless capabilities.include?(:atomic_put) && @adapter.respond_to?(:atomic_put)
+            raise Runtime::WiringError,
+                  "#{@adapter.class} advertises no atomic_put persistence capability"
+          end
 
           entry = Entry.new(operation: "save", id: instance.id.to_s, state: instance.state.dup)
           status = @adapter.atomic_put(entry, insert_only: insert_only)

@@ -57,11 +57,13 @@ RSpec.describe "Rust numeric coercion — overflow/out-of-range refuses cleanly 
       # builds correctly today — see the fix report — so fall back to
       # that rather than skipping outright if the bracketed-empty-array
       # declaration this regex expects ever changes shape.
-      return system("cargo", "build", "--features", domain_feature, chdir: NUMERIC_COERCION_RUST_DIR, out: File::NULL, err: File::NULL) &&
+      return system("cargo", "build", "--features", domain_feature, chdir: NUMERIC_COERCION_RUST_DIR,
+                    out: File::NULL, err: File::NULL) &&
              pick_binary
     end
 
-    built = system("cargo", "build", "--no-default-features", "--features", domain_feature, chdir: NUMERIC_COERCION_RUST_DIR, out: File::NULL, err: File::NULL)
+    built = system("cargo", "build", "--no-default-features", "--features", domain_feature,
+                   chdir: NUMERIC_COERCION_RUST_DIR, out: File::NULL, err: File::NULL)
     built ? pick_binary : nil
   end
 
@@ -87,11 +89,14 @@ RSpec.describe "Rust numeric coercion — overflow/out-of-range refuses cleanly 
   def overflow_steps
     [
       { "verb" => "Banking::Customer.Register",
-        "args" => { "reference" => { "value" => "CUST-OVERFLOW" }, "name" => { "given" => "Ada", "family" => "Lovelace" }, "email" => { "address" => "ada@example.com" } } },
+        "args" => { "reference" => { "value" => "CUST-OVERFLOW" }, "name" => { "given" => "Ada", "family" => "Lovelace" },
+"email" => { "address" => "ada@example.com" } } },
       { "verb" => "Banking::Account.Open",
-        "args" => { "number" => { "value" => "acct-overflow" }, "kind" => { "name" => "current" }, "daily_limit" => { "cents" => 50_000 }, "customer" => "CUST-OVERFLOW" } },
+        "args" => { "number" => { "value" => "acct-overflow" }, "kind" => { "name" => "current" },
+"daily_limit" => { "cents" => 50_000 }, "customer" => "CUST-OVERFLOW" } },
       { "verb" => "Banking::Account.Credit",
-        "args" => { "amount" => { "cents" => 10_000, "currency" => "USD" }, "narrative" => { "text" => "Opening deposit" }, "number" => { "value" => "acct-overflow" } } },
+        "args" => { "amount" => { "cents" => 10_000, "currency" => "USD" }, "narrative" => { "text" => "Opening deposit" },
+"number" => { "value" => "acct-overflow" } } },
       { "verb" => "Banking::Account.LedgerEntry.Amend",
         "args" => { "sequence" => { "value" => 1 }, "adjustment" => { "cents" => OVERFLOWING_ADJUSTMENT, "currency" => "USD" },
                     "narrative" => { "text" => "A correction too large to add" }, "number" => { "value" => "acct-overflow" } } }
@@ -138,9 +143,11 @@ RSpec.describe "Rust numeric coercion — overflow/out-of-range refuses cleanly 
   def out_of_range_steps
     [
       { "verb" => "Banking::Customer.Register",
-        "args" => { "reference" => { "value" => "CUST-HUGE" }, "name" => { "given" => "Grace", "family" => "Hopper" }, "email" => { "address" => "grace@example.com" } } },
+        "args" => { "reference" => { "value" => "CUST-HUGE" }, "name" => { "given" => "Grace", "family" => "Hopper" },
+"email" => { "address" => "grace@example.com" } } },
       { "verb" => "Banking::Account.Open",
-        "args" => { "number" => { "value" => "acct-huge-limit" }, "kind" => { "name" => "current" }, "daily_limit" => { "cents" => HUGE_OUT_OF_RANGE }, "customer" => "CUST-HUGE" } }
+        "args" => { "number" => { "value" => "acct-huge-limit" }, "kind" => { "name" => "current" },
+"daily_limit" => { "cents" => HUGE_OUT_OF_RANGE }, "customer" => "CUST-HUGE" } }
     ]
   end
 

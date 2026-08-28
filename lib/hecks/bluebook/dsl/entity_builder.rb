@@ -79,7 +79,10 @@ module Hecks
         # full metaprogrammed dispatch convention.
         # rubocop:disable Naming/PredicatePrefix
         def has_many_impl(type, as: nil, **options)
-          raise Malformed, "#{@name}.has_many takes no #{options.keys.first}: — an empty list already means none" unless options.empty?
+          unless options.empty?
+            raise Malformed,
+                  "#{@name}.has_many takes no #{options.keys.first}: — an empty list already means none"
+          end
 
           plural = Naming.demodulise(type)
           relationship_attribute(Naming.singularize(plural), :has_many,

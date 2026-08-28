@@ -467,7 +467,11 @@ RSpec.describe "the generated diagrams" do
     expect(diagram).to include("Banking[(Banking)] -.->|attaches| Governance[(Governance)]")
     expect(diagram).to include("Banking[(Banking)] -.->|attaches| Identity[(Identity)]")
     expect(diagram).to include("Banking[(Banking)] -->|reaches across| Compliance[(Compliance)]")
-    expect(diagram.lines.count { |line| line.include?("|reaches across| Compliance") }).to eq(1) # ReviewOnFreeze AND ReviewOnBoxSurrender both target it
+    expect( # ReviewOnFreeze AND ReviewOnBoxSurrender both target it
+      diagram.lines.count do |line|
+        line.include?("|reaches across| Compliance")
+      end
+    ).to eq(1)
   end
 
   it "generates a real, non-empty frameworks.mmd for pizzas too — attaches Governance, reaches across nothing" do

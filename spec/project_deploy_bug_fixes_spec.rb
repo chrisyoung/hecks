@@ -254,7 +254,8 @@ RSpec.describe "bin/project_deploy — H13/H14/M28/M29 regressions", :io do
           # chain to the shell — replicate that before checking syntax.
           script = chain.join("\n").sub(/\A@/, "").gsub("$$", "$")
           _stdout, stderr, status = Open3.capture3("bash", "-n", stdin_data: script)
-          expect(status.success?).to be(true), "invalid shell chain in #{generated_dir}'s deploy: recipe:\n#{stderr}\n---\n#{script}"
+          expect(status.success?).to be(true),
+                                     "invalid shell chain in #{generated_dir}'s deploy: recipe:\n#{stderr}\n---\n#{script}"
         end
       end
     end

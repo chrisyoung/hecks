@@ -174,7 +174,10 @@ module Hecks
             # is the untyped default (falls all the way back to a minted
             # `:id` the runtime itself never declared as an attribute
             # either), which still needs exactly the old minting behavior.
-            args[parent_key] ||= identity_shaped(aggregate, aggregate.identified_by, ValueGenerator.random_id(@random), aggregate) unless composite_identity?(aggregate)
+            unless composite_identity?(aggregate)
+              args[parent_key] ||= identity_shaped(aggregate, aggregate.identified_by, ValueGenerator.random_id(@random),
+                                                   aggregate)
+            end
           else
             scalar = pick_known(aggregate.hecks_name)
             args[parent_key] = identity_shaped(aggregate, aggregate.identified_by, scalar, aggregate)

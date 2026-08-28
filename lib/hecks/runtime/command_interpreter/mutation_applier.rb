@@ -24,7 +24,12 @@ module Hecks
           # branch's own comment below); merging would blur that distinction.
           case mutation.op
           when :set
-            value = mutation.source.is_a?(StateRef) ? instance[mutation.source.name] : @rules.resolve_source(mutation.source, args)
+            value = if mutation.source.is_a?(StateRef)
+                      instance[mutation.source.name]
+                    else
+                      @rules.resolve_source(mutation.source,
+                                            args)
+                    end
             instance[mutation.target] = Value.for(aggregate, mutation.target, value)
           when :append
             instance[mutation.target] = appended(instance, aggregate, mutation, args)

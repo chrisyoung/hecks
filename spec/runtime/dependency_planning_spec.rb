@@ -132,7 +132,8 @@ RSpec.describe Hecks::Runtime::DependencyPlanning do
     let(:narrative) { field(:narrative, String) }
 
     let(:root_aggregate) do
-      Hecks::Bluebook::Aggregate.new(name: "Account", attributes: [status, field(:number, String)], commands: [], identified_by: [:number])
+      Hecks::Bluebook::Aggregate.new(name: "Account", attributes: [status, field(:number, String)], commands: [],
+                                     identified_by: [:number])
     end
 
     let(:amend) do

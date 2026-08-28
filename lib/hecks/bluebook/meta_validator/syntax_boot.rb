@@ -85,7 +85,9 @@ module Hecks
 
         def same_chapters?(cached, current)
           cached.size == current.size &&
-            cached.zip(current).all? { |(cached_name, cached_chapter), (name, chapter)| cached_name == name && cached_chapter.equal?(chapter) }
+            cached.zip(current).all? do |(cached_name, cached_chapter), (name, chapter)|
+              cached_name == name && cached_chapter.equal?(chapter)
+            end
         end
 
         def boot

@@ -91,7 +91,8 @@ RSpec.describe "hecks-build (rust/build) pipeline parity", :io do
   end
 
   def run_hecks_build!(domain)
-    _out, err, status = Open3.capture3({ "PATH" => ENV.fetch("PATH", nil) }, HECKS_BUILD_BINARY, domain, "--no-build", chdir: HB_ROOT)
+    _out, err, status = Open3.capture3({ "PATH" => ENV.fetch("PATH", nil) }, HECKS_BUILD_BINARY, domain, "--no-build",
+                                       chdir: HB_ROOT)
     raise "hecks-build #{domain} --no-build failed:\n#{err}" unless status.success?
   end
 

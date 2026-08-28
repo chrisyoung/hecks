@@ -101,9 +101,15 @@ module Hecks
         def answers(name) = @answers << name.to_sym
 
         def build
-          raise Malformed, "#{@name} declares both a verb and operations — a port is one or the other, not both" if @verb && !@operations.empty?
+          if @verb && !@operations.empty?
+            raise Malformed,
+                  "#{@name} declares both a verb and operations — a port is one or the other, not both"
+          end
 
-          return MetaValidator.call_port(Port.new(name: @name, verb: @verb, signal: @signal, answers: @answers)) if @verb || (@legacy_bare_port && @operations.empty?)
+          if @verb || (@legacy_bare_port && @operations.empty?)
+            return MetaValidator.call_port(Port.new(name: @name, verb: @verb, signal: @signal,
+                                                    answers: @answers))
+          end
 
           raise Malformed, "#{@name} declares no verb and no operations" if @operations.empty?
 

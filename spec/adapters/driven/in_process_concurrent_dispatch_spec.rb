@@ -30,7 +30,10 @@ RSpec.describe "concurrent dispatch against one process-local aggregate (Heki/Me
       # `boot`: `registry.verify!` checks a usable DEFAULT adapter exists
       # regardless of which one this domain actually binds.
       Kernel.load(InMemoryDomain::MEMORY_ADAPTER)
-      Kernel.load(File.join(InMemoryDomain::ROOT, "lib/hecks/adapters/driven/#{adapter_name.downcase}.adapter")) unless adapter_name == "Memory"
+      unless adapter_name == "Memory"
+        Kernel.load(File.join(InMemoryDomain::ROOT,
+                              "lib/hecks/adapters/driven/#{adapter_name.downcase}.adapter"))
+      end
       Kernel.load(InMemoryDomain::PRISM_ADAPTER)
 
       Hecks.bluebook("ConcurrencyGap") do

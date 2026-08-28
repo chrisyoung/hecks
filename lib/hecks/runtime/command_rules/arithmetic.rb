@@ -193,7 +193,11 @@ module Hecks
         def multiply(current, amount, target)
           current ||= 0
 
-          return combine_value_object(current, amount, target, "multiply") { |c, a| c * a } if current.is_a?(Value) && amount.is_a?(Value)
+          if current.is_a?(Value) && amount.is_a?(Value)
+            return combine_value_object(current, amount, target, "multiply") do |c, a|
+              c * a
+            end
+          end
 
           # Same absent-`current`, VO-wrapped-`amount` gap as `#arithmetic`
           # — see that method's own comment.

@@ -236,7 +236,12 @@ module Hecks
             # ensure_base! at all — only lazily, on first reattest! — so a
             # domain that never needed one must not be forced through an
             # UPDATE against a table that doesn't exist.
-            @db.exec_params("UPDATE hecks_attestations SET domain = $1 WHERE domain = $2", [@domain, @formerly_known_as]) if @db.exec_params("SELECT to_regclass($1)", ["hecks_attestations"])[0]["to_regclass"]
+            if @db.exec_params(
+              "SELECT to_regclass($1)", ["hecks_attestations"]
+            )[0]["to_regclass"]
+              @db.exec_params("UPDATE hecks_attestations SET domain = $1 WHERE domain = $2",
+                              [@domain, @formerly_known_as])
+            end
 
             @db.exec("COMMIT")
           rescue PG::LockNotAvailable

@@ -69,13 +69,19 @@ module Hecks
         when nil
           raise Runtime::TypeMismatch, "this command does not take a receiver in to:" unless route.nil?
         when :aggregate
-          raise Runtime::TypeMismatch, "to: must name the receiving aggregate identity" if route.nil? || route.to_s.empty? || route.is_a?(Hash)
+          if route.nil? || route.to_s.empty? || route.is_a?(Hash)
+            raise Runtime::TypeMismatch,
+                  "to: must name the receiving aggregate identity"
+          end
         when :entity
           raise Runtime::TypeMismatch, "to: for an entity command must contain aggregate: and entity:" unless route.is_a?(Hash)
 
           extra = route.keys - [:aggregate, :entity]
           missing = [:aggregate, :entity].select { |key| route[key].nil? || route[key].to_s.empty? }
-          raise Runtime::TypeMismatch, "to: for an entity command must contain only aggregate: and entity:" unless extra.empty? && missing.empty?
+          unless extra.empty? && missing.empty?
+            raise Runtime::TypeMismatch,
+                  "to: for an entity command must contain only aggregate: and entity:"
+          end
         else
           raise ArgumentError, "unknown receiver kind #{receiver.inspect}"
         end

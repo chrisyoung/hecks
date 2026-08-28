@@ -72,7 +72,11 @@ module Hecks
         parts << identity_sentence(aggregate)
 
         refs = aggregate.attributes.select(&:reference?)
-        parts << "Each one is linked to #{to_sentence_list(refs.map { |r| "#{a_or_an(r.type.target_name)} #{r.type.target_name}" })}." unless refs.empty?
+        unless refs.empty?
+          parts << "Each one is linked to #{to_sentence_list(refs.map do |r|
+            "#{a_or_an(r.type.target_name)} #{r.type.target_name}"
+          end)}."
+        end
 
         parts << lifecycle_narrative(aggregate)
         parts << verbs_narrative(aggregate, depth + 1)
@@ -139,10 +143,18 @@ module Hecks
         sentences << "This is how a new #{holder.hecks_name} comes into being." if command.acts_on.nil?
 
         arguments = command.attributes.reject(&:reference?)
-        sentences << "It takes #{to_sentence_list(arguments.map { |a| Forms::Humanize.label(a.name.to_s).downcase })}." unless arguments.empty?
+        unless arguments.empty?
+          sentences << "It takes #{to_sentence_list(arguments.map do |a|
+            Forms::Humanize.label(a.name.to_s).downcase
+          end)}."
+        end
 
         refs = command.attributes.select(&:reference?)
-        sentences << "It's aimed at one existing #{to_sentence_list(refs.map { |r| r.type.target_name })}, by id." unless refs.empty?
+        unless refs.empty?
+          sentences << "It's aimed at one existing #{to_sentence_list(refs.map do |r|
+            r.type.target_name
+          end)}, by id."
+        end
 
         conditions = conditions_of(command, holder)
         sentences << "It only goes through if #{conditions.join('; ')}." unless conditions.empty?
@@ -169,7 +181,11 @@ module Hecks
           froms = lifecycle.transitions.filter_map do |name, transition|
             Array(transition.from) if name.to_s == command.hecks_name
           end.flatten.uniq
-          conditions << "its `#{lifecycle.field}` is currently #{to_sentence_list(froms.map { |f| "`#{f}`" }, conj: 'or')}" unless froms.empty?
+          unless froms.empty?
+            conditions << "its `#{lifecycle.field}` is currently #{to_sentence_list(froms.map do |f|
+              "`#{f}`"
+            end, conj: 'or')}"
+          end
         end
 
         conditions + command.givens.map(&:description)

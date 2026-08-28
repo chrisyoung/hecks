@@ -278,7 +278,12 @@ module Hecks
             cut = held.find { |candidate| candidate[:ordinal] == era }&.dig(:watermark)
             declared = edges.last[:translation].for_aggregate(names[:current][edges.size])
             expression = declared ? Translation::RuleCompiler.compile_rules(declared) : "state"
-            id_column = Translation::RuleCompiler.rekeyed?(declared) ? Translation::RuleCompiler.id_case("operation = 'save'", declared) : "aggregate_id"
+            id_column = if Translation::RuleCompiler.rekeyed?(declared)
+                          Translation::RuleCompiler.id_case("operation = 'save'",
+                                                            declared)
+                        else
+                          "aggregate_id"
+                        end
 
             <<~SQL
               WITH layered AS (
@@ -302,7 +307,12 @@ module Hecks
               declared = edge[:translation].for_aggregate(names[:current][index + 1])
               expression = declared ? Translation::RuleCompiler.compile_rules(declared) : "state"
               guard = "era <= #{index + 1} AND operation = 'save'"
-              id_column = Translation::RuleCompiler.rekeyed?(declared) ? Translation::RuleCompiler.id_case(guard, declared) : "aggregate_id"
+              id_column = if Translation::RuleCompiler.rekeyed?(declared)
+                            Translation::RuleCompiler.id_case(guard,
+                                                              declared)
+                          else
+                            "aggregate_id"
+                          end
               "edge_#{index + 1} AS (SELECT ordinal, era, #{id_column}, operation, " \
                 "CASE WHEN #{guard} THEN #{expression} ELSE state END AS state " \
                 "FROM #{index.zero? ? 'tail' : "edge_#{index}"})"

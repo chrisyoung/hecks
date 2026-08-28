@@ -160,7 +160,10 @@ module Hecks
         def has_many_impl(type, as: nil, **legacy_options)
           return legacy_has_many(type, as: as, optional: legacy_options.fetch(:optional, false)) if MetaValidator.shadow_parsing?
 
-          raise Malformed, "#{@name}.has_many takes no #{legacy_options.keys.first}: — an empty list already means none" unless legacy_options.empty?
+          unless legacy_options.empty?
+            raise Malformed,
+                  "#{@name}.has_many takes no #{legacy_options.keys.first}: — an empty list already means none"
+          end
 
           plural = Naming.demodulise(type)
           target = Naming.singularize(plural)

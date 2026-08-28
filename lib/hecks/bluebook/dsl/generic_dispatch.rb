@@ -269,7 +269,8 @@ module Hecks
             # would silently execute as a no-op instead of raising the
             # same "not yet implemented" refusal a genuinely unmigrated
             # word already gets.
-            raise Runtime::WiringError, "no dispatcher handles shape #{shape[:kind].inspect} — add one before shape_for can produce it"
+            raise Runtime::WiringError,
+                  "no dispatcher handles shape #{shape[:kind].inspect} — add one before shape_for can produce it"
           end
         end
 
@@ -333,7 +334,9 @@ module Hecks
           raise ArgumentError, "wrong number of arguments (given #{args.size}, expected 0)" unless args.empty?
 
           rows = MetaValidator::SyntaxBoot.call[:keywords]
-          siblings = rows.count { |k| k[:context] == keyword[:context] && k[:fills] == keyword[:fills] && k[:status] != "retired" }
+          siblings = rows.count do |k|
+            k[:context] == keyword[:context] && k[:fills] == keyword[:fills] && k[:status] != "retired"
+          end
           value = siblings > 1 ? keyword[:word].to_sym : true
 
           builder.instance_variable_set(:"@#{keyword[:fills]}", value)

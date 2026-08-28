@@ -284,7 +284,10 @@ module Hecks
               # can come from either), so anything that isn't one of the
               # two guard classes is left OUT of guard_checks entirely —
               # inconclusive, not a claimed pass.
-              guard_checks << guard_check.merge(actual_refused: true, actual_kind: e.class.name) if guard_check && GUARD_REFUSAL_CLASSES.include?(e.class)
+              if guard_check && GUARD_REFUSAL_CLASSES.include?(e.class)
+                guard_checks << guard_check.merge(actual_refused: true,
+                                                  actual_kind:    e.class.name)
+              end
             end
           end
 

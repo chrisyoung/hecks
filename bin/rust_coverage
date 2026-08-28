@@ -96,14 +96,17 @@ require "json"
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
-domain = ARGV.shift or abort "usage: bin/rust_coverage <generated-module-name>  (e.g. pizzas, banking, embryonaut, governance, identity)"
+domain = ARGV.shift or abort "usage: bin/rust_coverage <generated-module-name>  " \
+                             "(e.g. pizzas, banking, embryonaut, governance, identity)"
 
 generated_root = File.expand_path("../rust/src/generated", __dir__)
 mod_dir = File.join(generated_root, domain)
-Dir.exist?(mod_dir) or abort "#{mod_dir}: no such generated module — run bin/project_rust first, or check rust/src/generated/ for the actual directory name"
+Dir.exist?(mod_dir) or abort "#{mod_dir}: no such generated module — run bin/project_rust first, or check " \
+                             "rust/src/generated/ for the actual directory name"
 
 ir_path = File.join(mod_dir, "ir.json")
-File.exist?(ir_path) or abort "#{ir_path}: missing — this generated tree predates ir.json (bin/project_rust writes it now); re-run bin/project_rust for this domain"
+File.exist?(ir_path) or abort "#{ir_path}: missing — this generated tree predates ir.json (bin/project_rust " \
+                              "writes it now); re-run bin/project_rust for this domain"
 ir = JSON.parse(File.read(ir_path), symbolize_names: true)
 
 # ── EXPECTED CONSTRUCTS, DERIVED DIRECTLY FROM IR — independent of
@@ -183,7 +186,13 @@ def derive_manifest_from_source(payload, mod_dir)
     aggregate_generated = File.exist?(aggregate_file)
     manifest << {
       kind: "aggregate", id: aggregate_id, generated: aggregate_generated,
-      **(aggregate_generated ? {} : { gap_class: "per_instance", reason: "fallback mode: no #{File.basename(aggregate_file)} found under #{mod_dir}" })
+      **(if aggregate_generated
+           {}
+         else
+           { gap_class: "per_instance",
+             reason:    "fallback mode: no #{File.basename(aggregate_file)} found " \
+                        "under #{mod_dir}" }
+         end)
     }
 
     aggregate.fetch(:commands).each do |command|
@@ -191,7 +200,15 @@ def derive_manifest_from_source(payload, mod_dir)
       routed = routed_verbs.include?(verb)
       manifest << {
         kind: "command", id: verb, generated: routed, routed: routed,
-        **(routed ? {} : { gap_class: "per_instance", reason: "fallback mode: no \"#{verb}\" match arm in registry.rs — this checkout can't re-run bin/project_rust for this domain to get a real manifest, so this only says the verb isn't ROUTED; it can't say whether a dispatch_* function exists but is merely unrouted, or was never generated at all" })
+        **(if routed
+             {}
+           else
+             { gap_class: "per_instance",
+               reason:    "fallback mode: no \"#{verb}\" match arm in registry.rs — this checkout " \
+                          "can't re-run bin/project_rust for this domain to get a real manifest, so " \
+                          "this only says the verb isn't ROUTED; it can't say whether a dispatch_* " \
+                          "function exists but is merely unrouted, or was never generated at all" }
+           end)
       }
     end
 
@@ -203,7 +220,13 @@ def derive_manifest_from_source(payload, mod_dir)
         routed = routed_verbs.include?(verb)
         manifest << {
           kind: "entity_command", id: verb, generated: routed, routed: routed,
-          **(routed ? {} : { gap_class: "per_instance", reason: "fallback mode: no \"#{verb}\" match arm in registry.rs (see command's own fallback note above — same caveat applies)" })
+          **(if routed
+               {}
+             else
+               { gap_class: "per_instance",
+                 reason:    "fallback mode: no \"#{verb}\" match arm in registry.rs (see command's " \
+                            "own fallback note above — same caveat applies)" }
+             end)
         }
       end
     end
@@ -214,7 +237,12 @@ def derive_manifest_from_source(payload, mod_dir)
         routed = routed_verbs.include?(verb)
         manifest << {
           kind: "port_operation", id: verb, generated: routed, routed: routed,
-          **(routed ? {} : { gap_class: "per_instance", reason: "fallback mode: no \"#{verb}\" match arm in registry.rs" })
+          **(if routed
+               {}
+             else
+               { gap_class: "per_instance",
+                 reason:    "fallback mode: no \"#{verb}\" match arm in registry.rs" }
+             end)
         }
       end
     end
@@ -222,7 +250,8 @@ def derive_manifest_from_source(payload, mod_dir)
     aggregate.fetch(:queries).each do |query|
       manifest << {
         kind: "query", id: "#{aggregate_id}.#{query.fetch(:name)}", generated: false, gap_class: "whole_kind",
-        reason: 'the "query" construct has no generated code path at all — matches kernel/cli.rs\'s own refusal for a "query" step ("query steps are not generated yet")'
+        reason: 'the "query" construct has no generated code path at all — matches kernel/cli.rs\'s own ' \
+                'refusal for a "query" step ("query steps are not generated yet")'
       }
     end
   end
@@ -230,7 +259,8 @@ def derive_manifest_from_source(payload, mod_dir)
   payload.fetch(:read_models).each do |read_model|
     manifest << {
       kind: "read_model", id: "#{domain_name}::#{read_model.fetch(:name)}", generated: false, gap_class: "whole_kind",
-      reason: 'the "read_model" construct has no generated code path at all — a distinct construct from "query" (ReadModel, a cross-aggregate ask) that happens to share the same fate'
+      reason: 'the "read_model" construct has no generated code path at all — a distinct construct from ' \
+              '"query" (ReadModel, a cross-aggregate ask) that happens to share the same fate'
     }
   end
 
@@ -248,11 +278,15 @@ def derive_manifest_from_source(payload, mod_dir)
   # can't actually promise across the board).
   payload.fetch(:policies).each do |policy|
     manifest << { kind: "policy", id: "#{domain_name}::#{policy.fetch(:name)}", generated: nil,
-                  reason: "fallback mode cannot verify policy routing from registry.rs alone (the generated policy table carries no policy name, only event/target-verb data) — this domain's real manifest.json would need bin/project_rust re-run against its own Bluebook source, which isn't in this checkout" }
+                  reason: "fallback mode cannot verify policy routing from registry.rs alone (the generated " \
+                          "policy table carries no policy name, only event/target-verb data) — this domain's " \
+                          "real manifest.json would need bin/project_rust re-run against its own Bluebook " \
+                          "source, which isn't in this checkout" }
   end
   payload.fetch(:process_managers).each do |pm|
     manifest << { kind: "process_manager", id: "#{domain_name}::#{pm.fetch(:name)}", generated: nil,
-                  reason: "fallback mode does not attempt process-manager verification either, for consistency with the policy caveat above" }
+                  reason: "fallback mode does not attempt process-manager verification either, for " \
+                          "consistency with the policy caveat above" }
   end
 
   # UNCONDITIONALLY generated, same as domain_generator.rb's own manifest
@@ -264,8 +298,11 @@ def derive_manifest_from_source(payload, mod_dir)
   # generic over storage_name and already compiled in unconditionally —
   # true for any domain's payload.json that names one, fallback mode or not.
   payload.fetch(:lineage, {}).fetch(:capable_aggregates, []).each do |aggregate|
-    manifest << { kind: "lineage_aggregate", id: "#{domain_name}::#{aggregate.fetch(:name)}", generated: true, routed: true,
-                  reason: "read via rust/host's journal::read_lineage_head_all/_by_id, written via journal::append_lineage_mutation — both generic over storage_name, verified independent of this domain's own manifest.json" }
+    manifest << { kind: "lineage_aggregate", id: "#{domain_name}::#{aggregate.fetch(:name)}",
+                  generated: true, routed: true,
+                  reason: "read via rust/host's journal::read_lineage_head_all/_by_id, written via " \
+                          "journal::append_lineage_mutation — both generic over storage_name, verified " \
+                          "independent of this domain's own manifest.json" }
   end
 
   manifest
@@ -276,7 +313,8 @@ if File.exist?(manifest_path)
   manifest = JSON.parse(File.read(manifest_path), symbolize_names: true)
   mode = :manifest
 else
-  warn "#{domain}: no manifest.json — falling back to regex-derived coverage from registry.rs (see this file's own \"Fallback mode\" header for exactly what that can and can't tell you)"
+  warn "#{domain}: no manifest.json — falling back to regex-derived coverage from registry.rs (see this " \
+       "file's own \"Fallback mode\" header for exactly what that can and can't tell you)"
   manifest = derive_manifest_from_source(ir, mod_dir)
   mode = :fallback
 end
@@ -319,7 +357,10 @@ ALLOWLIST = [
     # "structural"` (domain_generator.rb's own manifest_entry, not
     # "per_instance" — this isn't a one-off skip, it's every command any
     # doubly-nested entity will ever declare) already names.
-    reason_match: /\Aentity nested two levels deep \(.+\) — kernel::cli\.rs's JSON router and registry\.rs's dispatch table both resolve one level of Aggregate\.Entity\.Command, not two\z/,
+    reason_match: /
+      \Aentity\ nested\ two\ levels\ deep\ \(.+\)\ —\ kernel::cli\.rs's\ JSON\ router\ and\ registry\.rs's
+      \ dispatch\ table\ both\ resolve\ one\ level\ of\ Aggregate\.Entity\.Command,\ not\ two\z
+    /x,
     doc:          "rust/project/domain_generator.rb (the manifest_entry this exact gap_class: \"structural\" comment sits " \
                   "beside) and rust/codegen/src/domain_generator.rs's identical, mirrored comment",
     note:         "Confirmed against a real run (2026-08-16): bin/rust_coverage meta's only entity_command GAP is " \
@@ -415,7 +456,8 @@ ALLOWLIST = [
     # on-disk manifest.json (every OTHER domain's manifest was
     # regenerated by this change and no longer says this).
     reason_match: %r{no generated code path at all — matches kernel/cli\.rs's own refusal},
-    doc:          "rust/src/generated/embryonaut/registry.rs and merged.rs (own HAND-PATCHED notes, both files, right above their empty QUERIES const)",
+    doc:          "rust/src/generated/embryonaut/registry.rs and merged.rs (own HAND-PATCHED notes, both " \
+                  "files, right above their empty QUERIES const)",
     note:         "Embryonaut's own bluebook source isn't available in this repository, so bin/project_rust can't be " \
                   "re-run against it here to give it a fresh manifest.json the way banking/pizzas/governance/identity/meta " \
                   "all just got. Its registry.rs/merged.rs already carry a HAND-PATCHED, honestly-empty `QUERIES` const " \
@@ -564,8 +606,9 @@ manifest_ids = manifest.each_with_object(Hash.new do |h, k|
 end) { |entry, index| index[entry[:kind].to_sym] << entry[:id] }
 unaccounted = expected_from_ir(ir).reject { |kind, id| manifest_ids[kind].include?(id) }.map do |kind, id|
   { kind: kind.to_s, id: id, generated: false, gap_class: "unaccounted",
-    reason: "expected per ir.json, but #{mode == :manifest ? 'manifest.json' : 'the fallback deriver'} has NO entry for it at all — " \
-            "not even a recorded skip; the generator's own accounting missed this construct entirely" }
+    reason: "expected per ir.json, but #{mode == :manifest ? 'manifest.json' : 'the fallback deriver'} " \
+            "has NO entry for it at all — not even a recorded skip; the generator's own accounting " \
+            "missed this construct entirely" }
 end
 
 findings = manifest + unaccounted

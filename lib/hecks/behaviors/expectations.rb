@@ -141,11 +141,17 @@ module Hecks
         before = runtime.registry.event_log.length
         result = dispatch_command(runtime, verb, test.input)
 
-        return fail_result(test, "expected refused: #{test.expect[:refused].inspect} but dispatch succeeded") if test.expect.key?(:refused)
+        if test.expect.key?(:refused)
+          return fail_result(test,
+                             "expected refused: #{test.expect[:refused].inspect} but dispatch succeeded")
+        end
 
         if (expected_emits = test.expect[:emits])
           actual = runtime.registry.event_log[before..].map(&:name)
-          return fail_result(test, "expected emits: #{expected_emits.inspect}, got #{actual.inspect}") unless actual == expected_emits
+          unless actual == expected_emits
+            return fail_result(test,
+                               "expected emits: #{expected_emits.inspect}, got #{actual.inspect}")
+          end
         end
 
         check_ok(test) || check_fields(test, settled_state(runtime, verb, result)) || pass_result(test)
@@ -209,7 +215,10 @@ module Hecks
       def run_query(test, runtime, verb)
         rows = runtime.query(verb, **test.input)
 
-        return fail_result(test, "expected refused: #{test.expect[:refused].inspect} but the query succeeded") if test.expect.key?(:refused)
+        if test.expect.key?(:refused)
+          return fail_result(test,
+                             "expected refused: #{test.expect[:refused].inspect} but the query succeeded")
+        end
 
         if (expected = test.expect[:count])
           count = if rows.is_a?(Array)

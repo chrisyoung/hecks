@@ -370,7 +370,9 @@ module Hecks
       def_line = lines[start_line - 1]
       indent = def_line[/\A\s*/]
 
-      body = lines[start_line..].take_while { |line| line.strip.empty? || line[/\A\s*/].size > indent.size || !line.lstrip.start_with?("def ") }
+      body = lines[start_line..].take_while do |line|
+        line.strip.empty? || line[/\A\s*/].size > indent.size || !line.lstrip.start_with?("def ")
+      end
       body.join.include?("#{field}:")
     end
     private_class_method :reconstruction_reads?

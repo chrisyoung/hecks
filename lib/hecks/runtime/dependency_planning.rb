@@ -102,7 +102,11 @@ module Hecks
           # (`Banking::Withdrawal.Dispute`'s own `parent.account_customer_
           # status`, ATMCard's projected field, is a real, live example).
           aggregate.projected_fields.each { |field| @owner_fields << field.name } if aggregate.respond_to?(:projected_fields)
-          root_aggregate.projected_fields.each { |field| @root_owner_fields << field.name } if root_aggregate.respond_to?(:projected_fields)
+          if root_aggregate.respond_to?(:projected_fields)
+            root_aggregate.projected_fields.each do |field|
+              @root_owner_fields << field.name
+            end
+          end
           @payload_fields = command.attributes.to_set(&:name)
           @state_reads = Set.new
           @payload_reads = Set.new

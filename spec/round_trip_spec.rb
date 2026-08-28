@@ -143,7 +143,8 @@ RSpec.describe "a bluebook dispatched in and read back out" do
         back, refusals = read_back(bluebook)
 
         expect(refusals).to be_empty, "the language refused it: #{refusals.inspect}"
-        expect(differences(strip_invariant_ast(strip_ports(canonical(bluebook.to_h.slice(*back.keys)))), strip_invariant_ast(canonical(back)))).to be_empty
+        expect(differences(strip_invariant_ast(strip_ports(canonical(bluebook.to_h.slice(*back.keys)))),
+                           strip_invariant_ast(canonical(back)))).to be_empty
       end
     end
   end

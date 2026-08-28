@@ -46,7 +46,10 @@ module Hecks
         # than narrowed.
         unless rootless || model.group_by.any? || model.count? || model.median_field
           repository = @registry.read_repository(domain, bluebook.aggregate(model.reference_target))
-          return repository.query_read_model(domain, model, args, bluebook) if repository.respond_to?(:query_read_model) && repository.adapter.respond_to?(:query_read_model)
+          if repository.respond_to?(:query_read_model) && repository.adapter.respond_to?(:query_read_model)
+            return repository.query_read_model(domain, model, args,
+                                               bluebook)
+          end
         end
 
         # ROOT FIRST, ALWAYS — regardless of `include` order in the

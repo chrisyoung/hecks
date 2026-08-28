@@ -44,7 +44,8 @@ module QueryAgreementD1Probe
 
     @available =
       begin
-        if ENV.fetch("CLOUDFLARE_ACCOUNT_ID", nil) && ENV.fetch("CLOUDFLARE_D1_DATABASE_ID", nil) && ENV["CLOUDFLARE_D1_API_TOKEN"]
+        if ENV.fetch("CLOUDFLARE_ACCOUNT_ID",
+                     nil) && ENV.fetch("CLOUDFLARE_D1_DATABASE_ID", nil) && ENV["CLOUDFLARE_D1_API_TOKEN"]
           Hecks::Adapters::D1::Connection.new(
             account_id:  ENV.fetch("CLOUDFLARE_ACCOUNT_ID"),
             database_id: ENV.fetch("CLOUDFLARE_D1_DATABASE_ID"),
@@ -60,7 +61,8 @@ module QueryAgreementD1Probe
   end
 end
 
-RSpec.describe "adapter agreement — declared queries answer identically across Memory, Sqlite, PostgresEra, plain Postgres, and D1", :io do
+RSpec.describe "adapter agreement — declared queries answer identically across Memory, Sqlite, PostgresEra, plain Postgres, and D1",
+               :io do
   AGREEMENT_DB = "hecks_query_agreement_spec".freeze
   # A SEPARATE scratch database from PostgresEra's own AGREEMENT_DB above
   # — both engines run against the same live server in the same test

@@ -146,7 +146,8 @@ RSpec.describe Hecks::Behaviors::Expectations do
 
     def create_setup(name)
       Hecks::Behaviors::TestSetup.new(command: "CreatePizza",
-                                      args:    { name: { value: name }, pizza: { price_cents: { cents: 900 }, size: { value: "small" } } })
+                                      args:    { name:  { value: name },
+                                                 pizza: { price_cents: { cents: 900 }, size: { value: "small" } } })
     end
 
     def query_test(setups:, expect:)

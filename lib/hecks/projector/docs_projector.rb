@@ -284,7 +284,11 @@ module Hecks
         froms = lifecycle && lifecycle.transitions.filter_map do |name, transition|
           Array(transition.from) if name.to_s == command.hecks_name
         end.flatten.uniq
-        refusals << "`#{lifecycle.field}` is anything other than #{froms.map { |f| "`#{f}`" }.join(' or ')}" if froms && !froms.empty?
+        if froms && !froms.empty?
+          refusals << "`#{lifecycle.field}` is anything other than #{froms.map do |f|
+            "`#{f}`"
+          end.join(' or ')}"
+        end
 
         command.attributes.select(&:reference?).each do |reference|
           refusals << "no `#{reference.type.target_name}` exists for the id given as `#{reference.name}`"
