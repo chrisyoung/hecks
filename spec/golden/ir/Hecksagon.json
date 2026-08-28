@@ -286,6 +286,16 @@
           "pattern": null,
           "relationship": null,
           "type": "PortSignal"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": true,
+          "name": "answers",
+          "optional": false,
+          "pattern": null,
+          "relationship": null,
+          "type": "PortAnswer"
         }
       ],
       "commands": [
@@ -425,6 +435,44 @@
             ]
           ],
           "name": "PortSignal"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": false,
+          "invariants": [
+            {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
+              "canonical": "!value.to_s.empty?",
+              "description": "an answer names a real method"
+            }
+          ],
+          "members": [
+
+          ],
+          "name": "PortAnswer"
         },
         {
           "attributes": [
@@ -674,6 +722,32 @@
               [
                 "fills",
                 "signal"
+              ]
+            ],
+            [
+              [
+                "word",
+                "answers"
+              ],
+              [
+                "context",
+                "DomainPort"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "answers"
               ]
             ]
           ],
@@ -985,6 +1059,36 @@
               [
                 "fills",
                 "signal"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "answers"
+              ],
+              [
+                "context",
+                "DomainPort"
+              ],
+              [
+                "at",
+                1
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                true
+              ],
+              [
+                "fills",
+                "answers"
               ]
             ],
             [

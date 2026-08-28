@@ -264,3 +264,19 @@ Whether calling this resource port answers with a value (`:reply`) or fires an e
 runtime.registry.ports["Ledger"].signal  # => :reply
 ```
 
+## answers
+
+<!-- generated:begin word=answers -->
+`answers answers` — fills `answers`
+
+| argument | kind | required | fills |
+|---|---|---|---|
+| positional 1 | symbol | true | answers |
+<!-- generated:end -->
+
+`port.md`'s own `answers` — reachable here too because a bare-`verb` `DomainPort` is registered as the exact same `IR::Port` a standalone `.port` file builds (this page's own `signal` section, just above, says why). Only meaningful alongside `verb`, same as `signal`; an `operation`-shaped port has nothing to `respond_to?` here — each operation answers on its own. `extraction.port`'s own real declaration is `answers :canonical`, migrated to build through this same DomainPort door.
+
+```ruby
+runtime.registry.ports["extraction"].answers  # => [:canonical]
+```
+

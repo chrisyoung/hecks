@@ -2874,16 +2874,13 @@ RSpec.describe "the DSL surface" do
       expect(registry.bluebook("DomPortVerb").aggregate("Thing").port("Checkout")).to be_nil
     end
 
-    # `signal` (unlike `verb`) has no KeywordSeed row of its own under
-    # the DomainPort context (checked directly: lib/hecks/language/
-    # hecksagon/domain_port.bluebook lists operation/tells/asks/verb,
-    # not signal) — an ordinary `def`, exactly like PortBuilder's own,
-    # is what makes it admitted at all, not the generic table-driven
-    # dispatch `verb` already had. Also proves DomainPortBuilder's
-    # bare-verb fallback produces a `Port` byte-identical to what
-    # PortBuilder itself builds for the same input — the migration
-    # every bare `.port` file (projection.port's own `signal :effect`
-    # is the one real, non-default case in the corpus) depends on.
+    # Proves DomainPortBuilder's bare-verb fallback produces a `Port`
+    # byte-identical to what PortBuilder itself builds for the same
+    # input — the migration every bare `.port` file depends on.
+    # `signal :effect` (projection.port's own, the one non-default
+    # signal in the corpus) and `answers` (extraction.port's own
+    # `answers :canonical`, the one real corpus use of the word) are
+    # both real, live cases, not hypothetical ones.
     it "signal builds the same Port PortBuilder itself would, non-default value included" do
       via_domain_port = Hecks::Bluebook::DSL::DomainPortBuilder.build("projection") { verb "projected_by"; signal :effect }
       via_port_builder = Hecks::Bluebook::DSL::PortBuilder.build("projection") { verb "projected_by"; signal :effect }
@@ -2891,6 +2888,15 @@ RSpec.describe "the DSL surface" do
       expect(via_domain_port).to be_a(Hecks::Bluebook::Port)
       expect(via_domain_port.to_h).to eq(via_port_builder.to_h)
       expect(via_domain_port.signal).to eq(:effect)
+    end
+
+    it "answers builds the same Port PortBuilder itself would" do
+      via_domain_port = Hecks::Bluebook::DSL::DomainPortBuilder.build("extraction") { verb "extracted_by"; signal :reply; answers :canonical }
+      via_port_builder = Hecks::Bluebook::DSL::PortBuilder.build("extraction") { verb "extracted_by"; signal :reply; answers :canonical }
+
+      expect(via_domain_port).to be_a(Hecks::Bluebook::Port)
+      expect(via_domain_port.to_h).to eq(via_port_builder.to_h)
+      expect(via_domain_port.answers).to eq([:canonical])
     end
 
     it "refuses a port declaring both a verb and operations" do
