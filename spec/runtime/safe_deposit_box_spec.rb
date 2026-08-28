@@ -129,7 +129,7 @@ RSpec.describe "a composite-identified aggregate with two entities" do
     expect do
       runtime.dispatch("Banking::SafeDepositBox.LogVisit", branch_code: { value: "DOWNTOWN" }, box_number: { value: 12 },
                                                             date: { value: "2026-01-05" }, sequence: { value: 1 })
-    end.to raise_error(Hecks::Runtime::GivenNotMet, /only a rented box is opened/)
+    end.to raise_error(Hecks::Runtime::LifecycleRefused, /moves it only from "rented"/)
   end
 
   it "refuses to return a key that is not issued" do
@@ -143,7 +143,7 @@ RSpec.describe "a composite-identified aggregate with two entities" do
     expect do
       runtime.dispatch("Banking::SafeDepositBox.KeyIssuance.Return", branch_code: { value: "DOWNTOWN" }, box_number: { value: 12 },
                                                                       serial: { value: "KEY-1" })
-    end.to raise_error(Hecks::Runtime::GivenNotMet, /only an issued key is returned/)
+    end.to raise_error(Hecks::Runtime::LifecycleRefused, /moves it only from "issued"/)
   end
 
   it "announces two facts from one dispatch, and refuses a second surrender" do
@@ -157,7 +157,7 @@ RSpec.describe "a composite-identified aggregate with two entities" do
 
     expect do
       runtime.dispatch("Banking::SafeDepositBox.Surrender", branch_code: { value: "DOWNTOWN" }, box_number: { value: 12 })
-    end.to raise_error(Hecks::Runtime::GivenNotMet, /only a rented box is surrendered/)
+    end.to raise_error(Hecks::Runtime::LifecycleRefused, /moves it only from "rented"/)
   end
 
   it "answers a query with the closed-set attribute the inline shorthand declared" do
