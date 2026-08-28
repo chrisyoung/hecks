@@ -2,17 +2,19 @@
 //! dedup, and the `many:`/`as:` shape each `aggregate_heads` row carries
 //! (`ReadModelBuilder#add_aggregate_head`).
 //!
-//! STAGE 3: `aggregate_heads` below, called from `parse::read_model`,
-//! confirmed real by console_settings.bluebook's `Styles`/`Curated`
-//! reports — both ROOTLESS (no `reference_to`, `parse::read_model`
-//! refuses that word as not-yet-implemented), so `reference_target` is
-//! always `None` here for now and every `include`d head is `many: true`
-//! (`target != reference_target` is vacuously true against `None`).
-//! `group_by`'s own field list needs no derivation beyond "the bare
-//! symbol names given" — handled directly in `parse::read_model` instead
-//! of a function here, the same "trivial enough not to need its own
-//! module function" call `build/query_derive.rs`'s own header already
-//! makes for `sets`' four named forms living beside `where`'s.
+//! `aggregate_heads` below, called from `parse::read_model`, handles both
+//! shapes for real: ROOTLESS (no `reference_to` — confirmed real by
+//! console_settings.bluebook's `Styles`/`Curated` reports, every
+//! `include`d head `many: true`) and ROOTED (`reference_to` declared —
+//! confirmed real, and under live byte-exact parity testing today, by
+//! Banking's `CustomerPortfolio`/`ComplianceDashboard`), correctly
+//! splitting `many: target != reference_target` for whichever
+//! `reference_target` is passed in. `group_by`'s own field list needs no
+//! derivation beyond "the bare symbol names given" — handled directly in
+//! `parse::read_model` instead of a function here, the same "trivial
+//! enough not to need its own module function" call
+//! `build/query_derive.rs`'s own header already makes for `sets`' four
+//! named forms living beside `where`'s.
 
 use crate::build::naming;
 use crate::diag::{Diagnostic, ParseResult};

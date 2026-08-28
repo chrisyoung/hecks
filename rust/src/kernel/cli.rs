@@ -142,11 +142,12 @@ pub fn run(input: &str) -> String {
         //     compiled domain's own `QUERIES` table (rust/project/
         //     registry.rb's `emit_query_table`) carries a row for — the
         //     subset expressible as one or more field-comparator
-        //     conditions against a single aggregate's OWN attributes
-        //     (queries.rb's own header has the full eligibility argument:
-        //     no order_by/limit/cursor/.../index_hints, no reference-
-        //     hopping where clause, no type-unrecoverable literal
-        //     comparator).
+        //     conditions against a single aggregate's OWN attributes,
+        //     PLUS (as of 2026-08-11/Phase 10) a declared `order_by`/
+        //     `limit`/`offset` on that same result set (queries.rb's own
+        //     header has the full eligibility argument for what's still
+        //     out: no cursor/.../index_hints, no reference-hopping where
+        //     clause, no type-unrecoverable literal comparator).
         //
         //     "Banking.CustomerPortfolio" (no "::") — a READ MODEL, a
         //     cross-aggregate ask spined on a root fetched by reference id
@@ -155,12 +156,16 @@ pub fn run(input: &str) -> String {
         //     declared read models this compiled domain's own
         //     `READ_MODELS` table carries a row for — a root aggregate
         //     fetched by reference id plus reference-matched sibling
-        //     heads, no `where`/`order_by`/`limit`/`offset`/`cursor`/
-        //     `consistency`/`freshness`/`authorize`/`nulls`/
-        //     `inspect_query`/`use_index` (read_models.rb's own header has
-        //     the full eligibility argument, including why `where`/
-        //     `order_by`/`limit` specifically are a STRUCTURAL gap in the
-        //     canonical IR itself, not merely unported). Unlike a named
+        //     heads, PLUS (as of 2026-08-11/Phase 10) a declared `where`/
+        //     `order_by`/`limit`/`offset` on the ONE eligible many-side
+        //     head. Still no `cursor`/`consistency`/`freshness`/
+        //     `authorize`/`nulls`/`inspect_query`/`use_index`
+        //     (read_models.rb's own header has the full eligibility
+        //     argument). The one remaining STRUCTURAL gap in the canonical
+        //     IR itself is a `where`/`order_by` field that hops through a
+        //     reference to a DIFFERENT aggregate than the eligible head's
+        //     own — see read_models.rb's own header for why that
+        //     specifically stays ungenerated. Unlike a named
         //     aggregate query, a read model has no reference-interpreter
         //     twin at all (`Runtime::Dispatcher#reference_query`'s own
         //     comment: "Read models have no reference twin"), so its own

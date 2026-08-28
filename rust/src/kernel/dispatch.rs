@@ -10,12 +10,15 @@
 // checks on the raw args (still called before `dispatch` even starts,
 // mirroring `normalize_args` running before `hydrate`).
 //
-// NOT YET GENERIC HERE, flagged rather than silently assumed away:
-// `enforce_role_mismatch` (no role checking generated yet).
-// `resolve_references` IS generated now, but not in THIS function — see
-// `check_reference` (repository.rs) and its call sites in the generated
-// `registry.rs` (`reactions.rb`'s `emit_reference_check`), the one place
-// with access to every OTHER aggregate's repo, not just this command's own.
+// NOT GENERIC HERE, BUT NOT MISSING EITHER: role checking (`check_role`,
+// repository.rs, ADR 0019) and reference resolution (`check_reference`,
+// repository.rs) both live in the GENERATED `registry.rs`/`merged.rs` call
+// sites, not in this hand-written generic dispatch function — the one
+// place with access to every OTHER aggregate's repo, not just this
+// command's own, for reference checks, and the natural place to read a
+// command's own declared `role:` for role checks. This function stays
+// generic by construction: nothing here needs to change per command shape
+// for either check to already be enforced.
 
 use super::expr::{interpret, EvalContext, Expr, Field, Fielded, Value, WithOld, WithParent};
 use super::refusal_wording::RefusalSite;
