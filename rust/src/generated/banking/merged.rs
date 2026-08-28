@@ -1595,10 +1595,43 @@ crate::kernel::QueryDef {
 },
 ];
 
+pub fn group_by_accountsbykind(rows: Vec<(String, crate::kernel::Json)>) -> crate::kernel::Json {
+    let unwrapped: Vec<crate::kernel::Json> = rows
+        .into_iter()
+        .map(|(id, record)| {
+            let wrapped = crate::kernel::repository::row_json(id, record);
+            match wrapped {
+                crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(
+                    fields
+                        .into_iter()
+                        .filter(|(k, _)| k == "customer" || k == "number" || k == "balance" || k == "kind" || k == "daily_limit" || k == "ledger" || k == "fees_cents" || k == "interest_cents" || k == "id" || k == "status")
+                        .map(|(k, v)| {
+                            let new_v = match k.as_str() {
+            "customer" => v,
+                    "number" => match v { crate::kernel::Json::Object(fields) => fields.into_iter().find(|(k, _)| k == "value").map(|(_, field_value)| field_value).unwrap_or(crate::kernel::Json::Null), other => other },
+                    "balance" => match v { crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(fields.into_iter().map(|(k, v)| { let new_v = match k.as_str() { "cents" => v, "currency" => v, _ => v }; (k, new_v) }).collect()), other => other },
+                    "kind" => match v { crate::kernel::Json::Object(fields) => fields.into_iter().find(|(k, _)| k == "name").map(|(_, field_value)| field_value).unwrap_or(crate::kernel::Json::Null), other => other },
+                    "daily_limit" => match v { crate::kernel::Json::Object(fields) => fields.into_iter().find(|(k, _)| k == "cents").map(|(_, field_value)| field_value).unwrap_or(crate::kernel::Json::Null), other => other },
+                    "ledger" => match v { crate::kernel::Json::Array(items) => crate::kernel::Json::Array(items.into_iter().map(|item| match item { crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(fields.into_iter().map(|(k, v)| { let new_v = match k.as_str() { "sequence" => match v { crate::kernel::Json::Object(fields) => fields.into_iter().find(|(k, _)| k == "value").map(|(_, field_value)| field_value).unwrap_or(crate::kernel::Json::Null), other => other }, "amount" => match v { crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(fields.into_iter().map(|(k, v)| { let new_v = match k.as_str() { "cents" => v, "currency" => v, _ => v }; (k, new_v) }).collect()), other => other }, "narrative" => match v { crate::kernel::Json::Object(fields) => fields.into_iter().find(|(k, _)| k == "text").map(|(_, field_value)| field_value).unwrap_or(crate::kernel::Json::Null), other => other }, "direction" => match v { crate::kernel::Json::Object(fields) => fields.into_iter().find(|(k, _)| k == "value").map(|(_, field_value)| field_value).unwrap_or(crate::kernel::Json::Null), other => other }, _ => v }; (k, new_v) }).collect()), other => other }).collect()), other => other },
+                    "fees_cents" => match v { crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(fields.into_iter().map(|(k, v)| { let new_v = match k.as_str() { "cents" => v, "currency" => v, _ => v }; (k, new_v) }).collect()), other => other },
+                    "interest_cents" => match v { crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(fields.into_iter().map(|(k, v)| { let new_v = match k.as_str() { "cents" => v, "currency" => v, _ => v }; (k, new_v) }).collect()), other => other },
+                                _ => v,
+                            };
+                            (k, new_v)
+                        })
+                        .collect(),
+                ),
+                other => other,
+            }
+        })
+        .collect();
+    crate::kernel::read_model::nest(unwrapped, &["kind", "number"])
+}
+
 pub const READ_MODELS: &[crate::kernel::read_model::ReadModelDef] = &[
 crate::kernel::read_model::ReadModelDef {
     verb: "Banking.CustomerPortfolio",
-    reference_name: "customer",
+    reference_name: Some("customer"),
     heads: &[
         crate::kernel::read_model::ReadModelHead { aggregate: "Banking::Customer", as_name: "customer", many: false, is_root: true, reference_fields: &[] },
         crate::kernel::read_model::ReadModelHead { aggregate: "Banking::Account", as_name: "accounts", many: true, is_root: false, reference_fields: &[crate::kernel::read_model::ReferenceField { target_aggregate: "Banking::Customer", field: "customer" }] },
@@ -1616,10 +1649,11 @@ crate::kernel::read_model::ReadModelDef {
     offset: None,
     limit: None,
     authorization: None,
+    group_by: None,
 },
 crate::kernel::read_model::ReadModelDef {
     verb: "Banking.ComplianceDashboard",
-    reference_name: "account",
+    reference_name: Some("account"),
     heads: &[
         crate::kernel::read_model::ReadModelHead { aggregate: "Banking::Account", as_name: "account", many: false, is_root: true, reference_fields: &[] },
         crate::kernel::read_model::ReadModelHead { aggregate: "Banking::CardPayment", as_name: "card_payments", many: true, is_root: false, reference_fields: &[crate::kernel::read_model::ReferenceField { target_aggregate: "Banking::Account", field: "account" }, crate::kernel::read_model::ReferenceField { target_aggregate: "Banking::Customer", field: "disputed_by" }] },
@@ -1632,5 +1666,22 @@ crate::kernel::read_model::ReadModelDef {
     offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(5)),
     limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
     authorization: None,
+    group_by: None,
+},
+crate::kernel::read_model::ReadModelDef {
+    verb: "Banking.AccountsByKind",
+    reference_name: None,
+    heads: &[
+        crate::kernel::read_model::ReadModelHead { aggregate: "Banking::Account", as_name: "accounts", many: true, is_root: false, reference_fields: &[crate::kernel::read_model::ReferenceField { target_aggregate: "Banking::Customer", field: "customer" }] },
+    ],
+    filtered_head: None,
+    conditions: &[
+
+    ],
+    order_by: None,
+    offset: None,
+    limit: None,
+    authorization: None,
+    group_by: Some(group_by_accountsbykind),
 },
 ];

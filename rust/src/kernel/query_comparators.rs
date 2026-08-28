@@ -243,7 +243,7 @@ fn as_f64(value: &Json) -> f64 {
 /// scalar, except inside `members`, which maps it over an Array's own
 /// elements (a `list_of` field's members, each comparable-reduced
 /// individually first, the same as a bare scalar field already is).
-fn to_s(value: &Json) -> String {
+pub(crate) fn to_s(value: &Json) -> String {
     match value {
         Json::Str(s) => s.clone(),
         Json::Num(n) if n.fract() == 0.0 && n.abs() < 1e15 => (*n as i64).to_string(),

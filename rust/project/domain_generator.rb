@@ -849,6 +849,12 @@ module RustProjection
         f.puts
         f.puts Projector.emit_query_table(query_defs)
         f.puts
+        read_model_defs.each do |rmd|
+          next unless rmd[:group_by_fn_body]
+
+          f.puts rmd[:group_by_fn_body]
+          f.puts
+        end
         f.puts Projector.emit_read_model_table(read_model_defs)
       end
       puts "wrote #{registry_path}"

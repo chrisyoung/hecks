@@ -130,7 +130,12 @@ pub type ReadModelOffset = query_ordering::Offset;
 #[derive(Debug, Clone, Copy)]
 pub struct ReadModelDef {
     pub verb: &'static str,
-    pub reference_name: &'static str,
+    /// `None` for a ROOTLESS read model (`ReadModelInterpreter#project`'s
+    /// own `rootless = model.reference_target.nil?`) — no `reference_to`
+    /// declared at all, so there is no caller-supplied id argument to
+    /// require or resolve; every head reads its own aggregate's WHOLE
+    /// table instead (see `run`'s own rootless branch, below).
+    pub reference_name: Option<&'static str>,
     pub heads: &'static [ReadModelHead],
     pub filtered_head: Option<&'static str>,
     pub conditions: &'static [QueryCondition],
@@ -157,6 +162,21 @@ pub struct ReadModelDef {
     /// path; verified against a purpose-built fixture instead (see the
     /// ADR).
     pub authorization: Option<named_query::TenantAuth>,
+    /// `group_by :field, ...` — `ReadModelInterpreter#group_by_target`/
+    /// `#nest`, read directly: nests the ONE many-side head's own rows,
+    /// one level per declared field, unwrapping any single-attribute
+    /// value object along the way (`Value.materialize_unwrapped`). This
+    /// CANNOT be one more data-driven field the way `offset`/`order_by`
+    /// already are — which field is "single-attribute" is a TYPE-LEVEL
+    /// fact `run`'s own generic body has no access to once it's holding
+    /// already-serialized `Json` — so it's a per-read-model GENERATED
+    /// function instead (`rust/project/read_models.rb`'s own
+    /// `emit_group_by_transform`), reusing the exact `sole_field_of`
+    /// codegen-time type knowledge `bridging.rb` already has for `sets`/
+    /// `append`. Applied to whichever head `group_by_target` names — the
+    /// one `many`-side head this read model declares (`seal_group_by`'s
+    /// own build-time check already refuses more than one).
+    pub group_by: Option<fn(Vec<(String, Json)>) -> Json>,
 }
 
 /// The lookup `kernel/cli.rs`'s STRING-form "query" step dispatches
@@ -181,6 +201,61 @@ pub struct ReadModelDef {
 /// accepted-spelling set than Ruby's own. `matches_snake_alias` below
 /// closes it without touching codegen at all: still one row, one spelling
 /// baked in, checked against both of the two spellings Ruby itself accepts.
+/// `ReadModelInterpreter#nest`, ported directly — one level of nesting
+/// per declared `group_by` field, in DECLARED order; the leaf is the row
+/// with every grouped field already stripped, one per level, matching
+/// Ruby's own `row.reject { |key, _| key == field }`. ASSUMES the full
+/// `group_by` path uniquely identifies one row (Ruby's own comment, same
+/// scope limit): `stripped.first`/`group.first` below silently keeps
+/// only the first row when several share the same full key path.
+///
+/// This is HAND-WRITTEN ONCE, HERE — unlike the per-field unwrap
+/// (`rust/project/read_models.rb`'s own `emit_group_by_transform`,
+/// generated per read model because it needs codegen-time TYPE
+/// knowledge), grouping-and-stripping is purely structural: it only
+/// ever asks "does this JSON object have a field named X," never what
+/// TYPE that field is. `Json`'s own `PartialEq` derive makes the group
+/// key comparable directly, no per-type dispatch needed.
+///
+/// Grouping is a Vec-based linear scan, not a `HashMap`, for two real
+/// reasons: `Json` has no `Hash` impl (a nested `Object`/`Array` key
+/// isn't hashable the way a bare scalar is, and `group_by :field` can
+/// name a VALUE OBJECT field before this transform's own unwrap step
+/// ever simplifies it away), and Ruby's own `Hash#group_by` already
+/// preserves first-occurrence order — a `HashMap` would need its own
+/// separate order-tracking to match that, no simpler than this.
+pub fn nest(rows: Vec<Json>, fields: &[&str]) -> Json {
+    let (field, rest) = fields.split_first().expect("nest called with empty fields — read_model_skip_reason should refuse a group_by with none");
+    let mut groups: Vec<(Json, Vec<Json>)> = Vec::new();
+    for row in rows {
+        let (key, stripped) = match row {
+            Json::Object(pairs) => {
+                let key = pairs.iter().find(|(k, _)| k == field).map(|(_, v)| v.clone()).unwrap_or(Json::Null);
+                let stripped = Json::Object(pairs.into_iter().filter(|(k, _)| k != field).collect());
+                (key, stripped)
+            }
+            other => (Json::Null, other),
+        };
+        match groups.iter_mut().find(|(k, _)| *k == key) {
+            Some((_, group)) => group.push(stripped),
+            None => groups.push((key, vec![stripped])),
+        }
+    }
+    Json::Object(
+        groups
+            .into_iter()
+            .map(|(key, group)| {
+                let value = if rest.is_empty() { group.into_iter().next().unwrap_or(Json::Null) } else { nest(group, rest) };
+                // `Hash#[]=` implicitly stringifies a non-String key the
+                // moment it's used as a JSON object key — `query_
+                // comparators::to_s` already does exactly Ruby's own
+                // `.to_s` conversion, reused rather than duplicated.
+                (super::query_comparators::to_s(&key), value)
+            })
+            .collect(),
+    )
+}
+
 pub fn find<'a>(table: &'a [ReadModelDef], verb: &str) -> Option<&'a ReadModelDef> {
     table.iter().find(|def| def.verb == verb || matches_snake_alias(def.verb, verb))
 }
@@ -317,11 +392,18 @@ mod snake_alias_tests {
 /// happen to be right, is what makes THAT a fact about today's corpus, not
 /// a silent assumption this interpreter depends on.
 pub fn run(store: &impl AggregateScan, def: &ReadModelDef, args: &Json) -> Result<Json, Refusal> {
-    let reference_id = args
-        .get(def.reference_name)
-        .and_then(Json::as_str)
-        .ok_or_else(|| Refusal::TypeMismatch(format!("{}: missing reference argument {:?}", def.verb, def.reference_name)))?
-        .to_string();
+    let reference_id = match def.reference_name {
+        Some(name) => Some(
+            args.get(name)
+                .and_then(Json::as_str)
+                .ok_or_else(|| Refusal::TypeMismatch(format!("{}: missing reference argument {name:?}", def.verb)))?
+                .to_string(),
+        ),
+        // ROOTLESS (`ReadModelInterpreter#project`'s own `rootless =
+        // model.reference_target.nil?`) — no caller-supplied id to
+        // require or resolve at all.
+        None => None,
+    };
 
     // Same check, same position (right after the reference id resolves,
     // before any head is computed), as `ReadModelInterpreter#project`'s
@@ -344,10 +426,19 @@ pub fn run(store: &impl AggregateScan, def: &ReadModelDef, args: &Json) -> Resul
     // never just the immediately-preceding one.
     let mut projected: Vec<(&'static str, Vec<(String, Json)>)> = Vec::new();
     let mut rows_by_as: std::collections::HashMap<&'static str, (bool, Vec<(String, Json)>)> = std::collections::HashMap::new();
+    let mut grouped_heads: std::collections::HashSet<&'static str> = std::collections::HashSet::new();
 
     for head in root_heads.into_iter().chain(other_heads) {
-        let mut rows = if head.is_root {
-            vec![fetch_root(store, head, &reference_id)?]
+        let mut rows = if reference_id.is_none() {
+            // ROOTLESS — `ReadModelInterpreter#project`'s own `elsif
+            // rootless ... records(bluebook, domain, head[:aggregate])`:
+            // each head reads its own aggregate's WHOLE table,
+            // independently — no cross-referencing against `projected`
+            // at all (`is_root` is meaningless here; a rootless model
+            // declares no reference_to target for any head to equal).
+            store.scan(head.aggregate).ok_or_else(|| Refusal::TypeMismatch(format!("unknown aggregate {:?}", head.aggregate)))?
+        } else if head.is_root {
+            vec![fetch_root(store, head, reference_id.as_deref().unwrap())?]
         } else {
             scan_matching(store, head, &projected)?
         };
@@ -362,6 +453,21 @@ pub fn run(store: &impl AggregateScan, def: &ReadModelDef, args: &Json) -> Resul
         // never fires before `reference_id` above has already resolved it.
         if def.filtered_head == Some(head.as_name) {
             rows = apply_filtered_head_options(rows, def, args);
+        }
+
+        // `group_by :field, ...` — applies to the ONE many-side head this
+        // read model declares (`ReadModelInterpreter#group_by_target`'s
+        // own `target = model.aggregate_heads.find { |head| head[:many] }`
+        // — `seal_group_by`'s build-time check already refuses more than
+        // one many-side head existing at all when `group_by` is
+        // declared, so "the first `many` head" and "the only eligible
+        // one" are the same fact). Recorded in `grouped_heads` — the
+        // generated transform does its OWN `row_json`-equivalent
+        // wrapping internally (matching Ruby's own `row(record) =
+        // record.to_h`), so the output loop below must NOT wrap it
+        // again, unlike an ordinary head's own rows.
+        if def.group_by.is_some() && head.many {
+            grouped_heads.insert(head.as_name);
         }
 
         projected.push((head.aggregate, rows.clone()));
@@ -388,7 +494,12 @@ pub fn run(store: &impl AggregateScan, def: &ReadModelDef, args: &Json) -> Resul
         let (many, rows) = rows_by_as
             .remove(head.as_name)
             .expect("every head in def.heads was computed in the loop above — as_name is unique per read model (ReadModelBuilder#add_aggregate_head)");
-        let value = if many {
+        let value = if grouped_heads.contains(head.as_name) {
+            // Already fully formed by the generated transform (its own
+            // `row_json`-equivalent wrapping done internally) — must NOT
+            // be wrapped again the way an ordinary head's rows are.
+            (def.group_by.expect("grouped_heads is only ever populated when def.group_by is Some"))(rows)
+        } else if many {
             Json::Array(rows.into_iter().map(|(id, record)| repository::row_json(id, record)).collect())
         } else {
             rows.into_iter().next().map(|(id, record)| repository::row_json(id, record)).unwrap_or(Json::Null)

@@ -164,6 +164,8 @@ RSpec.describe "Rust conformance (native binary)", io: true do
       expect(status).to be_success, "#{binary} exited #{status.exitstatus}:\n#{stdout}"
 
       rust_output = JSON.parse(stdout)
+      strip_emitted_flags!(rust_output["instances"])
+      strip_emitted_flags!(rust_output["queries"])
 
       expect(rust_output["instances"]).to eq(ruby_instances)
       expect(rust_output["events"]).to eq(ruby_events)

@@ -839,6 +839,12 @@ pub fn generate(
         &queries::emit_query_table(exemplar, &query_defs),
     );
     puts_blank(&mut registry_rs);
+    for rmd in &read_model_defs {
+        if let Some(body) = &rmd.group_by_fn_body {
+            puts_str(&mut registry_rs, body);
+            puts_blank(&mut registry_rs);
+        }
+    }
     puts_str(
         &mut registry_rs,
         &read_models::emit_read_model_table(exemplar, &read_model_defs),

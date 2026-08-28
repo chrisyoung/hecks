@@ -148,15 +148,16 @@ module RustProjection
 
       # A GENUINE `group_by` declaration (a non-empty value, not just the
       # key's own unconditional presence — see `READ_MODEL_BARE_KEYS`'s
-      # own comment) is real scope this generator doesn't cover, the exact
-      # gap `main`'s own rootless-read-model work opened: no rootless
-      # concept, no nesting-by-field concept, nothing here to bake it into.
-      # Checked before the `reference_to`/root-fetch check below on
-      # purpose — a rootless, `group_by`'d read model (`AccountsByKind`)
-      # has no `reference_target` at all, and reporting THAT as "no
-      # matching aggregate head" would be a true but misleading reason
-      # next to the real, honest one this check gives instead.
-      return read_model_options_skip_reason([:group_by]) if Array(read_model[:group_by]).any?
+      # own comment). Checked before the `reference_to`/root-fetch check
+      # below on purpose — a rootless, `group_by`'d read model
+      # (`AccountsByKind`) has no `reference_target` at all, and reporting
+      # THAT as "no matching aggregate head" would be a true but
+      # misleading reason next to the real, honest one this check gives
+      # instead. Ported for the ONE real shape the corpus declares — a
+      # SINGLE rootless head, group_by alone (no where/order/limit/
+      # offset/count/median/authorize alongside it) — see
+      # `group_by_skip_reason`.
+      return group_by_skip_reason(read_model, aggregates_by_name, unsupported_names) if Array(read_model[:group_by]).any?
 
       heads = read_model[:aggregate_heads]
       root = heads.find { |head| head[:aggregate].to_s == read_model[:reference_target].to_s }
@@ -275,6 +276,43 @@ module RustProjection
       return "includes #{head[:aggregate]}, which this domain never declares" unless target
       return "includes #{head[:aggregate]}, which this generator couldn't itself generate " \
              "(unsupported attribute type — see this domain's own aggregate-level manifest entry)" if unsupported_names.include?(head[:aggregate])
+
+      nil
+    end
+
+    # `group_by`'s own eligibility — deliberately narrow, the ONE real
+    # shape the corpus declares (`Banking::AccountsByKind`): a single
+    # ROOTLESS head (`ReadModelInterpreter#group_by_target`'s own
+    # `target = model.aggregate_heads.find { |head| head[:many] }` only
+    # ever needs to consider one candidate when there's only one head at
+    # all), group_by alone — no where/order/limit/offset/count/median/
+    # authorize declared alongside it, each its own genuinely different
+    # shape this generator doesn't ALSO attempt to combine with grouping
+    # in the same pass. `seal_group_by`'s own build-time refusal (Ruby)
+    # already guarantees at most one many-side head when group_by is
+    # declared at all — this doesn't re-derive that, only refuses
+    # generating anything this narrower slice doesn't cover yet.
+    def group_by_skip_reason(read_model, aggregates_by_name, unsupported_names)
+      heads = read_model[:aggregate_heads]
+      return "declares group_by across #{heads.size} aggregate heads — not generated yet (only a single, rootless head is)" if heads.size != 1
+      return "declares group_by on a NON-rootless read model (reference_to #{read_model[:reference_target]}) — not generated yet" unless read_model[:reference_target].nil?
+      return "declares group_by alongside count/median — not generated yet" if read_model[:count] || read_model[:median_field]
+      return "declares group_by alongside where/order_by/limit/offset — not generated yet" if Array(read_model[:wheres]).any? || read_model[:order_by] || read_model[:limit] || read_model[:offset]
+      return "declares group_by with an authorize policy — not generated yet" if read_model[:authorization]
+
+      head = heads.first
+      reason = read_model_head_skip_reason(head, aggregates_by_name, unsupported_names)
+      return reason if reason
+
+      aggregate = aggregates_by_name[head[:aggregate]]
+      lifecycle_field = aggregate[:lifecycle] && aggregate[:lifecycle][:field].to_s
+      Array(read_model[:group_by]).each do |row|
+        field_s = row[:field].to_s
+        next if aggregate[:attributes].any? { |a| a[:name].to_s == field_s }
+        next if field_s == lifecycle_field
+
+        return "group_by names #{field_s.inspect}, but #{aggregate[:name]} declares no such attribute — not generated yet"
+      end
 
       nil
     end
@@ -404,10 +442,12 @@ module RustProjection
       end
 
       eligible_as = read_model_filtered_head_as(read_model)
+      group_by_fields = Array(read_model[:group_by]).map { |row| row[:field].to_s }
+      group_by_fn_name = group_by_fields.any? ? "group_by_#{read_model[:name].to_s.downcase}" : nil
 
       {
         verb: "#{domain_name}.#{read_model[:name]}",
-        reference_name: read_model[:reference_name].to_s,
+        reference_name: read_model[:reference_name] ? read_model[:reference_name].to_s : nil,
         heads: heads,
         filtered_head: eligible_as&.to_s,
         conditions: eligible_as ? query_conditions_with_authorization(read_model) : [],
@@ -415,7 +455,108 @@ module RustProjection
         offset: eligible_as && read_model[:offset] ? emit_read_model_offset(read_model[:offset]) : nil,
         limit: eligible_as && read_model[:limit] ? emit_read_model_limit(read_model[:limit]) : nil,
         authorization: eligible_as ? emit_query_authorization(read_model[:name], read_model[:authorization]) : nil,
+        group_by_fn: group_by_fn_name,
+        group_by_fn_body: group_by_fn_name ? emit_group_by_transform(group_by_fn_name, aggregates_by_name[read_model[:aggregate_heads].first[:aggregate]], group_by_fields) : nil,
       }
+    end
+
+    # The generated function `ReadModelDef.group_by` names by value
+    # (`fn(Vec<(String, Json)>) -> Json`) — `kernel/read_model.rs`'s own
+    # header on why this can't be one more data-driven field the way
+    # `offset`/`order_by` already are: which field is a single-attribute
+    # value object is a TYPE-LEVEL fact this generator has at Ruby-codegen
+    # time but the kernel's own generic `run` function never does once
+    # it's holding already-serialized `Json`.
+    #
+    # Three real jobs, in order: (1) `repository::row_json`-equivalent —
+    # add `id` back (Rust's own generated `to_json()` never carries it,
+    # unlike a live Ruby record's `to_h`); (2) keep ONLY this aggregate's
+    # own real declared attributes (+ lifecycle, + id) — EXCLUDING any
+    # synthetic field a DIFFERENT Phase 10 capability may have added to
+    # the record's own JSON shape (`corrects`'s own `emitted_*` flags,
+    # ADR 0049 — real Rust-only bookkeeping with no Ruby analog, which
+    # `Instance#to_h` never carries either); (3) recursively unwrap every
+    # single-attribute value object along the way (`unwrap_json_expr`),
+    # matching `Value.materialize_unwrapped` exactly. `kernel::read_model
+    # ::nest` (hand-written once, purely structural — no type knowledge
+    # needed for grouping/stripping itself) does the actual nesting.
+    def emit_group_by_transform(fn_name, aggregate, group_by_fields)
+      value_objects_by_name = aggregate[:value_objects].to_h { |vo| [vo[:name].to_s, vo] }
+      lifecycle_field = aggregate[:lifecycle] && aggregate[:lifecycle][:field].to_s
+      kept_keys = aggregate[:attributes].map { |a| a[:name].to_s } + ["id"] + (lifecycle_field ? [lifecycle_field] : [])
+      keep_cond = kept_keys.map { |k| "k == #{k.inspect}" }.join(" || ")
+
+      arms = aggregate[:attributes].map do |a|
+        unwrapped = unwrap_json_expr("v", a[:type].to_s, a[:list], aggregate, value_objects_by_name)
+        "#{a[:name].to_s.inspect} => #{unwrapped},"
+      end.join("\n                    ")
+
+      fields_literal = "&[#{group_by_fields.map(&:inspect).join(', ')}]"
+
+      <<~RUST.rstrip
+        pub fn #{fn_name}(rows: Vec<(String, crate::kernel::Json)>) -> crate::kernel::Json {
+            let unwrapped: Vec<crate::kernel::Json> = rows
+                .into_iter()
+                .map(|(id, record)| {
+                    let wrapped = crate::kernel::repository::row_json(id, record);
+                    match wrapped {
+                        crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(
+                            fields
+                                .into_iter()
+                                .filter(|(k, _)| #{keep_cond})
+                                .map(|(k, v)| {
+                                    let new_v = match k.as_str() {
+                    #{arms}
+                                        _ => v,
+                                    };
+                                    (k, new_v)
+                                })
+                                .collect(),
+                        ),
+                        other => other,
+                    }
+                })
+                .collect();
+            crate::kernel::read_model::nest(unwrapped, #{fields_literal})
+        }
+      RUST
+    end
+
+    # `Value.materialize_unwrapped`, ported directly — a single-attribute
+    # value object (`AccountKind{name: "current"}`) unwraps to its own
+    # bare field (`"current"`); a multi-attribute one, or an ENTITY
+    # (`Account.ledger`'s own `LedgerEntry`, which never appears in
+    # `value_objects_by_name` at all — entities and value objects are
+    # separate IR constructs), keeps its own object shape but recurses
+    # into EACH of its own declared fields the same way; a bare scalar
+    # (String/Integer/Float/Reference) or an unrecognized composite type
+    # passes through unchanged. `list:` wraps the same logic in an
+    # `Array` map — a list of value objects and a list of entities are
+    # unwrapped identically either way, matching Ruby's own
+    # `when Array then value.map { |item| materialize_unwrapped(item) }`,
+    # which never special-cases what the array HOLDS.
+    def unwrap_json_expr(expr, type_name, list, aggregate, value_objects_by_name)
+      if list
+        inner = unwrap_json_expr("item", type_name, false, aggregate, value_objects_by_name)
+        return "match #{expr} { crate::kernel::Json::Array(items) => crate::kernel::Json::Array(items.into_iter().map(|item| #{inner}).collect()), other => other }"
+      end
+
+      vo = value_objects_by_name[type_name]
+      entity = (aggregate[:entities] || []).find { |e| e[:name].to_s == type_name.to_s }
+      fields_meta = vo ? vo[:attributes] : (entity ? entity[:attributes] : nil)
+      return expr unless fields_meta
+
+      if vo && fields_meta.size == 1
+        field = fields_meta.first
+        unwrapped = unwrap_json_expr("field_value", field[:type].to_s, field[:list], aggregate, value_objects_by_name)
+        return "match #{expr} { crate::kernel::Json::Object(fields) => fields.into_iter().find(|(k, _)| k == #{field[:name].to_s.inspect}).map(|(_, field_value)| #{unwrapped}).unwrap_or(crate::kernel::Json::Null), other => other }"
+      end
+
+      inner_arms = fields_meta.map do |f|
+        unwrapped = unwrap_json_expr("v", f[:type].to_s, f[:list], aggregate, value_objects_by_name)
+        "#{f[:name].to_s.inspect} => #{unwrapped},"
+      end.join(" ")
+      "match #{expr} { crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(fields.into_iter().map(|(k, v)| { let new_v = match k.as_str() { #{inner_arms} _ => v }; (k, new_v) }).collect()), other => other }"
     end
 
     def emit_read_model_def(read_model_def)
@@ -426,11 +567,13 @@ module RustProjection
       offset = read_model_def[:offset] ? "Some(#{read_model_def[:offset]})" : "None"
       limit = read_model_def[:limit] ? "Some(#{read_model_def[:limit]})" : "None"
       authorization = read_model_def[:authorization] ? "Some(#{read_model_def[:authorization]})" : "None"
+      reference_name = read_model_def[:reference_name] ? "Some(#{read_model_def[:reference_name].inspect})" : "None"
+      group_by = read_model_def[:group_by_fn] ? "Some(#{read_model_def[:group_by_fn]})" : "None"
 
       <<~RUST.rstrip
         crate::kernel::read_model::ReadModelDef {
             verb: #{read_model_def[:verb].inspect},
-            reference_name: #{read_model_def[:reference_name].inspect},
+            reference_name: #{reference_name},
             heads: &[
         #{heads}
             ],
@@ -442,6 +585,7 @@ module RustProjection
             offset: #{offset},
             limit: #{limit},
             authorization: #{authorization},
+            group_by: #{group_by},
         },
       RUST
     end
@@ -454,7 +598,7 @@ module RustProjection
     READ_MODEL_TABLE_ROW_PLACEHOLDER = <<~RUST.rstrip
       crate::kernel::read_model::ReadModelDef {
           verb: "tmpl_verb",
-          reference_name: "tmpl_reference_name",
+          reference_name: Some("tmpl_reference_name"),
           heads: &[
               crate::kernel::read_model::ReadModelHead {
                   aggregate: "tmpl_aggregate",
@@ -478,6 +622,7 @@ module RustProjection
           offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),
           limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
           authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "tmpl_query_name", tenant_field: "tmpl_tenant_field" }),
+          group_by: None,
       },
     RUST
 

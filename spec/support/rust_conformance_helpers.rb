@@ -23,6 +23,29 @@ module RustConformanceHelpers
     File.executable?(binary) ? binary : nil
   end
 
+  # `corrects`'s own per-record flag fields (`emitted_<event>`, docs/
+  # decisions/0049) are a Rust-only implementation detail riding along
+  # with the generic snapshot mechanism — Ruby's own records never carry
+  # them (its equivalent, `@registry.event_log`, lives on the REGISTRY,
+  # never on a record's own `to_h`). They can surface on ANY comparison
+  # surface a raw record reaches through — `instances`, but also
+  # `queries` (a query answer embeds the same record shape) — so this
+  # walks the whole Rust output recursively rather than special-casing
+  # each surface one at a time, the same way `bin/rust_conformance`'s own
+  # comment cites `spec/codegen_parity_spec.rb`'s precedent of excluding
+  # generator/implementation artifacts from a check that exists to
+  # verify BEHAVIOR, not internal representation.
+  def strip_emitted_flags!(value)
+    case value
+    when Hash
+      value.reject! { |k, _| k.start_with?("emitted_") }
+      value.each_value { |v| strip_emitted_flags!(v) }
+    when Array
+      value.each { |v| strip_emitted_flags!(v) }
+    end
+    value
+  end
+
   # See rust_conformance_spec.rb's own extensive comment on this exact
   # exclusion (a cross-domain policy match Ruby's single-process boot
   # delivers in-process but Rust's kernel genuinely cannot know the
