@@ -408,7 +408,7 @@ RSpec.describe "Rust parser parity (hecks-parse)", io: true do
   # the self-hosted meta-domain's own round trip.
   def self.strip_invariant_ast(node)
     case node
-    when Hash then node.reject { |k, _| k == :ast }.transform_values { |v| strip_invariant_ast(v) }
+    when Hash then node.except(:ast).transform_values { |v| strip_invariant_ast(v) }
     when Array then node.map { |v| strip_invariant_ast(v) }
     else node
     end

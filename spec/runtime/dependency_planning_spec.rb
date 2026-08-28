@@ -151,7 +151,7 @@ RSpec.describe Hecks::Runtime::DependencyPlanning do
     it "resolves against the ENTITY's own fields when no root_aggregate is given — the pre-fix, still-real default for a plain aggregate command" do
       plan = described_class::Analyzer.call(aggregate: ledger_entry, command: amend)
 
-      expect(plan.unresolved_dependencies).to eq(['parent.status does not name parent aggregate state'])
+      expect(plan.unresolved_dependencies).to eq(["parent.status does not name parent aggregate state"])
     end
 
     it "resolves parent.* against the ROOT aggregate's own fields when root_aggregate: is given, matching EntityInterpreter's real call site" do

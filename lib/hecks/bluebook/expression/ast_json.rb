@@ -98,10 +98,10 @@ module Hecks
 
           return { "op" => "bool", "value" => false } if node.haystack.elements.empty?
 
-          node.haystack.elements
-              .map { |element| { "op" => "compare", "cmp" => emit_comparison(EQ),
-                                  "left" => emit_resolver(node.needle), "right" => emit_resolver(element) } }
-              .reduce { |left, right| { "op" => "or", "left" => left, "right" => right } }
+          equalities = node.haystack.elements.map do |element|
+            { "op" => "compare", "cmp" => emit_comparison(EQ), "left" => emit_resolver(node.needle), "right" => emit_resolver(element) }
+          end
+          equalities.reduce { |left, right| { "op" => "or", "left" => left, "right" => right } }
         end
 
         def emit_resolver(node)
