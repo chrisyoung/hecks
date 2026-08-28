@@ -83,7 +83,7 @@ S8 is security-affecting — **add the new check before removing the old one**, 
 
 | slice | depends on |
 |---|---|
-| **S7 — reactions** (one state-machine vocabulary, first-class command refs) | S0a, S0b, S6 | **Confirmed still open, 2026-08-27.** `starts_on "TransferRequested"` / `ends_on "TransferSettled"` are still live in `examples/banking/bluebook/transfers_and_payments.bluebook`'s `Settlement` process manager — the ADR says these should be retired, with states being whatever the transitions name (same as an aggregate's lifecycle). Command references ARE already first-class (see S6's row) — that half is done. |
+| ~~**S7 — reactions**~~ (one state-machine vocabulary, first-class command refs) | S0a, S0b, S6 | **Corrected 2026-08-27 — my earlier "confirmed still open" call above was wrong.** `starts_on`/`ends_on` are a deliberate, correct keep, not an oversight: `Settlement`'s `ends_on "TransferSettled"` names an event none of its own transitions handle, so deriving it from the transition graph would be wrong for this real corpus member — see the ADR's own amended text. States ARE already derived from `transition` everywhere else (`ProcessManagerBuilder#derived_states`); old `state`/`transition:` forms are gone. Command references are already first-class (`dispatch Account::Debit`). The ONE real remaining piece — event triggers as bare constants (`transition AccountDebited => ...`) instead of quoted strings — is blocked on S6 (events first-class), not an S7-specific gap. **Effectively done pending S6.** |
 | **S12 — `projects` and the boundary rule** | S0a, S6, S7, S10, S11 |
 | **S13 — coverage standard** (corpus uses / written exemptions for the 11) | everything |
 
