@@ -624,8 +624,10 @@ before assuming a capability exists that isn't demonstrated above.
 
 ## Quickstart
 
-There is no published gem. You clone the repository, and the
-repository is the tool:
+hecks is [published on RubyGems](https://rubygems.org/gems/hecks), but
+the quickstart below clones the repository instead, since the example
+domains it runs (`examples/banking`, `examples/pizzas`) live in the
+repo, not in the gem:
 
 ```sh
 git clone https://github.com/heckslabs/hecks
