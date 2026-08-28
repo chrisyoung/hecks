@@ -51,6 +51,35 @@
 // fixed here (a different subsystem, a different task), but flagged
 // plainly rather than silently discovered and dropped.
 //
+// EQUIVALENCE-GAP PLAN 3.4 (orphaned `Payments::Payment` sweep) —
+// ALSO CONSIDERED, ALSO DECLINED, checked against this same absence
+// rather than assumed compatible with it. The DETECTION half is
+// genuinely buildable correctly: `registrations_route`'s own
+// `Payment.Initiate`/`Registration.Request` calls (below) already
+// prove `reference` and `registration_id` are the SAME string, so "a
+// Payment whose reference has no matching Registration" is a real,
+// answerable query via `instances_for` against both prefixes, no
+// guessing required. The ACTION half is not: the plan's own text
+// already names the reason ("confirm the exact command name once
+// domain source is available, or coordinate with whoever owns the
+// private Lifeadelics repo") — this checkout has no way to know
+// whether `Payments::Payment` even DECLARES a command for
+// flagging/expiring a record, let alone its name or payload shape,
+// since (as above) no `.bluebook` source for it exists here at all.
+// Worse than 3.3's own case in one respect: even a route implementing
+// ONLY the detection half would be entirely unverifiable in this
+// checkout — `web.rs`'s own `lifeadelics_wasm_path()` test helper
+// expects `rust/dist/lifeadelics.wasm`, which does not exist (the
+// SAME absence 3.3's own investigation already confirmed), so there
+// is no compiled artifact left to run new Lifeadelics-specific code
+// against at all, not even to prove the read-only half correct.
+// Shipping new, production-facing code with zero verification path in
+// this environment — not "narrower than planned," genuinely untestable
+// — is a different and worse thing than declining outright. The real
+// admin-route stopgap the plan describes remains real, worthwhile,
+// buildable follow-up work — in the repo that actually holds
+// Lifeadelics' own source and can compile/test against it, not here.
+//
 // MOCK BY DEFAULT, REAL STRIPE OPT-IN — mirrors the Ruby app's own
 // choice exactly (MockStripeAdapter unconditionally in every
 // environment except a real deploy — bin/smoke_test's own header: "the
