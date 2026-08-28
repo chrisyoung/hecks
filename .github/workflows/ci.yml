@@ -108,6 +108,25 @@ jobs:
           rustup target add wasm32-wasip1 --toolchain stable
           rustup target add wasm32-wasip1
 
+      # The runtime half of the same gap — a compiled .wasm is only
+      # useful with a WASI-preview1 host to run it under, and
+      # bin/rust_conformance's own `.wasm` branch shells out to
+      # `wasmtime run` (docs/decisions/0012-wasm-via-wasi-stdio.md).
+      # ubuntu-latest carries neither the CLI nor a package for it —
+      # confirmed live: the wasm32 target fix alone got bin/project_wasm
+      # producing a real .wasm, then bin/rust_conformance failed one
+      # step later with plain ENOENT on `wasmtime`. Pinned to the SAME
+      # 47.0.3 rust/host/Cargo.toml already depends on (as a library,
+      # separately) — not because the CLI and the embedding API need to
+      # match, but because a CI failure from those two silently
+      # drifting is exactly the kind of thing worth not inventing here.
+      - name: Install wasmtime
+        run: |
+          curl -sL "https://github.com/bytecodealliance/wasmtime/releases/download/v47.0.3/wasmtime-v47.0.3-x86_64-linux.tar.xz" \
+            | tar xJ -C /tmp
+          sudo mv /tmp/wasmtime-v47.0.3-x86_64-linux/wasmtime /usr/local/bin/wasmtime
+          wasmtime --version
+
       # `bundle exec` matters here even though bin/project_rust never
       # touches Bundler itself: run bare, `require "json"` resolves
       # against whatever `json` gem is highest on the default load path
