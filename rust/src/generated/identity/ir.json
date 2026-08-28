@@ -46,9 +46,7 @@
             }
           ],
           "closed_set": false,
-          "members": [
-
-          ]
+          "members": []
         }
       ],
       "commands": [
@@ -69,15 +67,9 @@
               "relationship": null
             }
           ],
-          "givens": [
-
-          ],
-          "ensures": [
-
-          ],
-          "mutations": [
-
-          ],
+          "givens": [],
+          "ensures": [],
+          "mutations": [],
           "emits": [
             "IdentityRegistered"
           ],
@@ -85,25 +77,13 @@
           "provenance": null
         }
       ],
-      "invariants": [
-
-      ],
-      "preconditions": [
-
-      ],
-      "projected_fields": [
-
-      ],
+      "invariants": [],
+      "preconditions": [],
+      "projected_fields": [],
       "lifecycle": null,
-      "entities": [
-
-      ],
-      "queries": [
-
-      ],
-      "ports": [
-
-      ],
+      "entities": [],
+      "queries": [],
+      "ports": [],
       "provenance": null
     },
     {
@@ -176,9 +156,7 @@
             }
           ],
           "closed_set": false,
-          "members": [
-
-          ]
+          "members": []
         },
         {
           "name": "Issuer",
@@ -201,9 +179,7 @@
             }
           ],
           "closed_set": false,
-          "members": [
-
-          ]
+          "members": []
         },
         {
           "name": "Subject",
@@ -226,9 +202,7 @@
             }
           ],
           "closed_set": false,
-          "members": [
-
-          ]
+          "members": []
         }
       ],
       "commands": [
@@ -279,15 +253,9 @@
               "relationship": null
             }
           ],
-          "givens": [
-
-          ],
-          "ensures": [
-
-          ],
-          "mutations": [
-
-          ],
+          "givens": [],
+          "ensures": [],
+          "mutations": [],
           "emits": [
             "ExternalIdentifierLinked"
           ],
@@ -295,19 +263,11 @@
           "provenance": null
         }
       ],
-      "invariants": [
-
-      ],
-      "preconditions": [
-
-      ],
-      "projected_fields": [
-
-      ],
+      "invariants": [],
+      "preconditions": [],
+      "projected_fields": [],
       "lifecycle": null,
-      "entities": [
-
-      ],
+      "entities": [],
       "queries": [
         {
           "name": "ResolvedBy",
@@ -350,24 +310,14 @@
           "limit": null
         }
       ],
-      "ports": [
-
-      ],
+      "ports": [],
       "provenance": null
     }
   ],
-  "read_models": [
-
-  ],
-  "policies": [
-
-  ],
-  "process_managers": [
-
-  ],
-  "attaches_to": [
-
-  ],
+  "read_models": [],
+  "policies": [],
+  "process_managers": [],
+  "attaches_to": [],
   "canonical_form": [
     {
       "strategy": "collapse_whitespace",
