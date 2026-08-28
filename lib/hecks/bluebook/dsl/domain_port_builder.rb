@@ -27,6 +27,7 @@ module Hecks
           @owner            = owner
           @operations       = []
           @signal           = :reply
+          @answers          = []
           @legacy_bare_port = legacy_bare_port
         end
 
@@ -88,10 +89,21 @@ module Hecks
         def verb(value)   = @verb = value.to_s
         def signal(value) = @signal = value.to_sym
 
+        # THE METHOD CONTRACT — `PortBuilder#answers`'s own twin, added
+        # here after the fact: a `.port` file migrated to parse through
+        # this builder (the repoint `lib/hecks.rb#port`'s own comment
+        # describes) can still declare one (`extraction.port`'s own
+        # `answers :canonical`, real, live corpus text) — this builder's
+        # bare-verb fallback needs to carry it through to the same `Port`
+        # object `PortBuilder` itself would have built, or the migration
+        # would silently drop a method-contract check for any `.port`
+        # file that uses this word.
+        def answers(name) = @answers << name.to_sym
+
         def build
           raise Malformed, "#{@name} declares both a verb and operations — a port is one or the other, not both" if @verb && !@operations.empty?
 
-          return MetaValidator.call_port(Port.new(name: @name, verb: @verb, signal: @signal)) if @verb || (@legacy_bare_port && @operations.empty?)
+          return MetaValidator.call_port(Port.new(name: @name, verb: @verb, signal: @signal, answers: @answers)) if @verb || (@legacy_bare_port && @operations.empty?)
 
           raise Malformed, "#{@name} declares no verb and no operations" if @operations.empty?
 
