@@ -173,10 +173,10 @@ Hecks.bluebook "Banking" do
       role "Branch clerk"
       goal "Assign the box to a customer"
 
-      attribute :customer,    CustomerNumber
       attribute :branch_code, BranchCode
       attribute :box_number,  BoxNumber
       attribute :size,        Size
+      given("customer is active")
       given("box is vacant") { status == "vacant" }
 
       sets :customer
