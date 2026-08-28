@@ -136,9 +136,6 @@ module RustProjection
       optional_problems = optional_source_mismatches(command, aggregate, value_objects_by_name, creating_possible: creating_possible)
       return "optional argument feeds a non-optional target: #{optional_problems.join('; ')} — not generated yet" if optional_problems.any?
 
-      constraint_problems = constraint_list_problems(command)
-      return constraint_problems.join('; ') if constraint_problems.any?
-
       nil
     end
 
@@ -239,13 +236,40 @@ module RustProjection
     # either way, since an entity command's own `command[:attributes]` has
     # the exact same shape an aggregate command's does. Two independent
     # concerns per attribute: the EXISTING nested-VO-invariant recursion
-    # (`args.field.check_invariants()?`, unchanged), and the NEW `admits:`/
-    # `pattern:` constraint check (`constraints.rb`) — a command/entity-
-    # command argument's own usage-level declaration, the OTHER door from
-    # `types.rb`'s own value-object-field-level check. `attr[:list]`
-    # attributes are skipped for the constraint check specifically — no
-    # `admits:`/`pattern:` usage in this corpus is ever list-typed, and
-    # checking each element generically would be new, unverified surface.
+    # (`args.field.check_invariants()?`, unchanged), and a command/entity-
+    # command argument's own usage-level `admits:` constraint
+    # (`constraints.rb`) — the OTHER door from `types.rb`'s own value-
+    # object-field-level check.
+    #
+    # `pattern:` at THIS usage-level door is deliberately NOT checked —
+    # docs/decisions/0043/0051 found, by tracing `Runtime::
+    # CommandInterpreter`'s full dispatch pipeline exhaustively and
+    # confirming live against Ruby's real interpreter, that a bare
+    # command-attribute's OWN `pattern:` is NEVER enforced by Ruby: `Value#
+    # check_patterns` fires only from `build`, which fires only when the
+    # attribute's type resolves to an actual value object and gets
+    # rebuilt — a usage-level `pattern:` on a scalar command argument has
+    # no VO to build at all, so it is silently accepted, whether or not
+    # that argument is ever a mutation source. Generating a check here
+    # made Rust STRICTER than Ruby (the opposite direction from every
+    # other gap this plan closed) — removed rather than kept, per ADR
+    # 0010 (Ruby is the reference implementation; Rust conforms to it,
+    # not the other way around). `admits:` at this SAME door is genuinely
+    # different: it fires unconditionally from `normalize_args`'s own
+    # `admit_declared_set` call, for every declared argument present in
+    # the payload, regardless of mutation usage — confirmed enforced,
+    # kept exactly as it was.
+    #
+    # `attr[:list]` attributes are skipped for the `admits:` check too —
+    # `admit_declared_set` is reached only via `Value.for_attribute`'s
+    # SCALAR branch (a list attribute returns early into
+    # `hydrate_entity_list` instead, before ever reaching it) — so a list
+    # attribute's own `admits:`/`pattern:` is unenforced by Ruby exactly
+    # like a scalar's `pattern:` is; no check is generated for either, on
+    # any list attribute, matching that silent acceptance rather than
+    # refusing to generate the command at all (this file used to refuse
+    # via `constraint_list_problems`, since removed — real, confirmed
+    # non-enforcement isn't a gap to name, it's the actual answer).
     def invariant_checks_for(command, aggregates_by_name, value_objects_by_name)
       command[:attributes].flat_map do |attr|
         field = rust_ident_field(attr[:name])
@@ -253,25 +277,14 @@ module RustProjection
 
         unless attr[:list]
           # RAW FIELD EXPRESSION, UNCONDITIONALLY — `types.rb`'s own value-
-          # object-field door (the OTHER caller of `emit_admits_check`/
-          # `emit_pattern_check`) passes `self.#{field}` raw and never wraps
-          # the result itself, trusting `constraints.rb`'s own internal
-          # `optional_scalar_expr`/`wrap_if_optional` to do the ENTIRE
-          # optional-handling, self-contained. This door used to pre-
-          # substitute "v" AND wrap the result in its own outer
-          # `if let Some(v) = ...` — double-wrapping whenever an attribute
-          # was BOTH `optional: true` and carried `admits:`/`pattern:`
-          # (`&&Type` where `&Type` was expected, a real `cargo build`
-          # failure), because `constraints.rb` unconditionally wraps again
-          # for any `attr[:optional]` attribute. No command/entity-command
-          # argument in the corpus combined the two until `Keyword#
-          # resolves_via`/`#disambiguator` (Round I, self-hosted grammar) —
-          # found regenerating `rust/src/generated/meta/syntax.rs` for the
-          # first time since that round landed.
+          # object-field door (the OTHER caller of `emit_admits_check`)
+          # passes `self.#{field}` raw and never wraps the result itself,
+          # trusting `constraints.rb`'s own internal `optional_scalar_expr`/
+          # `wrap_if_optional` to do the ENTIRE optional-handling, self-
+          # contained.
           value_expr = "args.#{field}"
-          constraints = [emit_admits_check(value_expr, attr, aggregates_by_name, value_objects_by_name),
-                         emit_pattern_check(value_expr, attr, attr[:name].to_s, value_objects_by_name)].compact
-          constraints.each { |c| lines << "        #{c}" }
+          constraint = emit_admits_check(value_expr, attr, aggregates_by_name, value_objects_by_name)
+          lines << "        #{constraint}" if constraint
         end
 
         if value_objects_by_name.key?(attr[:type]) && !value_objects_by_name[attr[:type]][:closed_set]
@@ -283,18 +296,6 @@ module RustProjection
         end
 
         lines
-      end
-    end
-
-    # A LIST-typed attribute carrying `admits:`/`pattern:` — no real
-    # command in this corpus declares one, and `invariant_checks_for`
-    # deliberately skips the constraint check for list attributes (a
-    # per-element check is new, unverified surface, not a mechanical
-    # extension of the scalar case) — skipped loudly rather than silently
-    # dropping a constraint the IR actually declares.
-    def constraint_list_problems(command)
-      command[:attributes].select { |attr| attr[:list] && (attr[:admits] || attr[:pattern]) }.map do |attr|
-        "#{attr[:name]} is a list carrying admits:/pattern: — not generated yet"
       end
     end
 

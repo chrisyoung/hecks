@@ -45,3 +45,5 @@ Separately, `spec/rust_conformance_spec.rb` and `spec/rust_conformance_fuzz_spec
 ## What's still out of scope
 
 `count`/`median_field` — genuinely need a two-head-join framework (correlating a "counted" aggregate against a "counting" one), not an extension of this rootless/function-pointer design. Left for a future round, same as ADR 0041 already scoped.
+
+**UPDATE (same session)**: this framing was wrong. `docs/decisions/0052` ships both — they turn out to need no two-head-join framework at all, reusing the SAME single-root, single-filtered-many-side-head machinery `ComplianceDashboard` already exercises (`DisputedPaymentCount`/`DisputedPaymentMedian` are rooted, not rootless, unlike `AccountsByKind`), reducing the filtered row set instead of returning it as rows.

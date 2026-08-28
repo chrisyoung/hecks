@@ -37,6 +37,8 @@ crate::kernel::read_model::ReadModelDef {
     limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
     authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "tmpl_query_name", tenant_field: "tmpl_tenant_field" }),
     group_by: None,
+    count: false,
+    median_field: None,
 },
 ];
 // TMPL:read_model_table END

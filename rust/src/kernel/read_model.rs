@@ -34,7 +34,7 @@
 // `QuerySpecification::Common::NullPolicy` (lib/hecks/ports/query/,
 // lib/hecks/query_specification/common/null_policy.rb) for exactly
 // what `apply_filtered_head_options` below ports — all read directly.
-use super::{named_query, query_ordering, repository, AggregateScan, Json, QueryCondition, QueryConditionValue, Refusal, RefusalSite};
+use super::{named_query, query_comparators, query_ordering, repository, AggregateScan, Json, QueryCondition, QueryConditionValue, Refusal, RefusalSite};
 
 /// ONE reference attribute on a NON-ROOT head's own aggregate — "this
 /// aggregate carries a field named `field` that is `Reference<X>`, where
@@ -177,6 +177,29 @@ pub struct ReadModelDef {
     /// one `many`-side head this read model declares (`seal_group_by`'s
     /// own build-time check already refuses more than one).
     pub group_by: Option<fn(Vec<(String, Json)>) -> Json>,
+    /// `count` — a bare marker, `true` when declared. UNLIKE `group_by`,
+    /// this needs no per-read-model generated function at all: "how many
+    /// rows" needs no type-level knowledge to compute, just the already-
+    /// materialized, already-`where`/`order_by`/`limit`/`offset`-filtered
+    /// row set the SAME `filtered_head`/`apply_filtered_head_options`
+    /// machinery `ComplianceDashboard` already exercises today. Applied
+    /// to the ONE `many`-side head (`seal_aggregation`'s own build-time
+    /// check already refuses more than one, and refuses combining with
+    /// `median_field`/`group_by`) — `run`'s own output loop finds it the
+    /// same way the `group_by` branch already does, via `head.many`, not
+    /// a separately-named target field.
+    pub count: bool,
+    /// `median :field` — the declared numeric field's own median across
+    /// the same one `many`-side head. ALSO no per-read-model generated
+    /// function: unlike `group_by`'s own recursive, multi-attribute,
+    /// whole-row unwrap (genuinely type-directed), a median only ever
+    /// unwraps ONE field, and `query_comparators::comparable` is already
+    /// a fully generic, RUNTIME, structural VO-unwrap (numeric-member-
+    /// wins-or-sole-member-wins) — the exact same one `where`/`order_by`
+    /// already reuse for the identical purpose. `Runtime::
+    /// ReadModelInterpreter#median`, ported directly in the `median`
+    /// function below.
+    pub median_field: Option<&'static str>,
 }
 
 /// The lookup `kernel/cli.rs`'s STRING-form "query" step dispatches
@@ -254,6 +277,47 @@ pub fn nest(rows: Vec<Json>, fields: &[&str]) -> Json {
             })
             .collect(),
     )
+}
+
+/// `Runtime::ReadModelInterpreter#median`, ported directly. THE STANDARD
+/// DEFINITION: an ODD count's median is its one true middle value —
+/// returned as `comparable` reduced it (whichever `Json` numeric variant
+/// that was, `Num` or `Float`, exactly like Ruby's own `values[middle]`,
+/// unconverted); an EVEN count's median is the AVERAGE of its two middle
+/// values, ALWAYS `Json::Float` — Ruby's own `/2.0` forces float division
+/// regardless of whether the two summed values were themselves Integers.
+/// An EMPTY collection (every row's own field absent/null, or no rows at
+/// all) has no median: `Json::Null`, not zero — a caller cannot mistake
+/// "nothing to average" for "the values averaged to zero", matching
+/// Ruby's own `nil`.
+///
+/// Reuses `query_comparators::comparable` — the same one-level VO-unwrap
+/// `where`/`order_by` already give a value-object-carrying field, so
+/// `median :amount` on an `Amount{cents}` field reads the same scalar an
+/// `order_by :amount` comparison already would. `field` is always a bare,
+/// top-level attribute name — `aggregation_skip_reason`'s own generator-
+/// side check (`rust/project/read_models.rb`) already confirmed it names
+/// a real, numeric attribute before this ever runs, the same way `Ruby`'s
+/// own `aggregation_target` checks once, at read time, rather than this
+/// function re-deriving or re-checking it per row.
+fn median(rows: &[(String, Json)], field: &'static str) -> Json {
+    let mut values: Vec<Json> = rows
+        .iter()
+        .filter_map(|(_, row)| row.get(field))
+        .map(query_comparators::comparable)
+        .filter(|value| !matches!(value, Json::Null))
+        .collect();
+    if values.is_empty() {
+        return Json::Null;
+    }
+    values.sort_by(|a, b| query_comparators::as_f64(a).partial_cmp(&query_comparators::as_f64(b)).unwrap_or(std::cmp::Ordering::Equal));
+
+    let middle = values.len() / 2;
+    if values.len() % 2 == 1 {
+        values[middle].clone()
+    } else {
+        Json::Float((query_comparators::as_f64(&values[middle - 1]) + query_comparators::as_f64(&values[middle])) / 2.0)
+    }
 }
 
 pub fn find<'a>(table: &'a [ReadModelDef], verb: &str) -> Option<&'a ReadModelDef> {
@@ -499,6 +563,16 @@ pub fn run(store: &impl AggregateScan, def: &ReadModelDef, args: &Json) -> Resul
             // `row_json`-equivalent wrapping done internally) — must NOT
             // be wrapped again the way an ordinary head's rows are.
             (def.group_by.expect("grouped_heads is only ever populated when def.group_by is Some"))(rows)
+        } else if many && def.count {
+            // `value.length`, ported directly — `rows` here is already
+            // the SAME post-`apply_filtered_head_options` set `group_by`
+            // would nest, or (when no where/order_by/limit/offset is
+            // declared alongside `count` at all) the plain scan-matched
+            // set — either way, exactly the rows `seal_aggregation`
+            // guarantees this is the one eligible `many`-side head for.
+            Json::Num(rows.len() as f64)
+        } else if many && def.median_field.is_some() {
+            median(&rows, def.median_field.expect("checked by the branch guard"))
         } else if many {
             Json::Array(rows.into_iter().map(|(id, record)| repository::row_json(id, record)).collect())
         } else {

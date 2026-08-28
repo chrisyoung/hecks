@@ -156,11 +156,6 @@ fn command_skip_reason_with(command: &Json, aggregate: &Json, value_objects_by_n
         return Some(format!("optional argument feeds a non-optional target: {} — not generated yet", optional_problems.join("; ")));
     }
 
-    let constraint_problems = constraint_list_problems(command);
-    if !constraint_problems.is_empty() {
-        return Some(constraint_problems.join("; "));
-    }
-
     None
 }
 
@@ -246,7 +241,21 @@ fn optional_source_mismatches_with(command: &Json, aggregate: &Json, value_objec
     problems
 }
 
-/// Shared by `emit_command`/`emit_entity_command`.
+/// Shared by `emit_command`/`emit_entity_command`. `pattern:` at this
+/// usage-level door is deliberately NOT checked (docs/decisions/0051) —
+/// confirmed, by tracing `Runtime::CommandInterpreter`'s full dispatch
+/// pipeline exhaustively and against Ruby's real interpreter, that a
+/// bare command-attribute's own `pattern:` is never enforced: `check_
+/// patterns` fires only via a value object's own `build`, which a usage-
+/// level scalar attribute never triggers. Generating a check here made
+/// Rust STRICTER than Ruby — removed per ADR 0010 (Ruby is the reference
+/// implementation). `admits:` at this same door IS genuinely enforced
+/// unconditionally by Ruby's own `normalize_args`, so it's kept exactly
+/// as it was. List attributes get NEITHER check (`admit_declared_set` is
+/// reached only via the scalar branch of `Value.for_attribute` — a list
+/// attribute returns early into `hydrate_entity_list` first) — matching
+/// that silent non-enforcement, rather than refusing to generate the
+/// command at all the way `constraint_list_problems` used to (removed).
 pub fn invariant_checks_for(exemplar: &Exemplar, command: &Json, aggregates_by_name: &HashMap<String, &Json>, value_objects_by_name: &HashMap<String, &Json>) -> Vec<String> {
     let attrs = command.get("attributes").map(Json::each).unwrap_or(&[]);
     let mut lines: Vec<String> = Vec::new();
@@ -255,23 +264,12 @@ pub fn invariant_checks_for(exemplar: &Exemplar, command: &Json, aggregates_by_n
         let field = naming::rust_ident_field(crate::attr::name(attr));
 
         if !crate::attr::list(attr) {
-            // RAW FIELD EXPRESSION, UNCONDITIONALLY — port of `rust/project/
-            // commands.rb#invariant_checks_for`'s own fix; see that file's
-            // comment for the full argument. `types.rs`'s own value-object-
-            // field door passes `self.{field}` raw and never wraps the
-            // result itself, trusting `constraints.rs`'s own internal
-            // optional-handling to be self-contained — this door used to
-            // double-wrap whenever an attribute was BOTH `optional: true`
-            // and carried `admits:`/`pattern:`, a real compile failure.
+            // RAW FIELD EXPRESSION, UNCONDITIONALLY — `types.rs`'s own
+            // value-object-field door passes `self.{field}` raw and never
+            // wraps the result itself, trusting `constraints.rs`'s own
+            // internal optional-handling to be self-contained.
             let value_expr = format!("args.{field}");
-            let constraints: Vec<String> = [
-                crate::constraints::emit_admits_check(exemplar, &value_expr, attr, aggregates_by_name, value_objects_by_name),
-                crate::constraints::emit_pattern_check(exemplar, &value_expr, attr, &crate::attr::name(attr).to_string(), value_objects_by_name),
-            ]
-            .into_iter()
-            .flatten()
-            .collect();
-            for c in constraints {
+            if let Some(c) = crate::constraints::emit_admits_check(exemplar, &value_expr, attr, aggregates_by_name, value_objects_by_name) {
                 lines.push(format!("        {c}"));
             }
         }
@@ -296,17 +294,6 @@ pub fn invariant_checks_for(exemplar: &Exemplar, command: &Json, aggregates_by_n
     }
 
     lines
-}
-
-/// A LIST-typed attribute carrying `admits:`/`pattern:` — no real command
-/// generates one; skipped loudly rather than silently dropping it.
-pub fn constraint_list_problems(command: &Json) -> Vec<String> {
-    let attrs = command.get("attributes").map(Json::each).unwrap_or(&[]);
-    attrs
-        .iter()
-        .filter(|attr| crate::attr::list(attr) && (crate::attr::admits(attr).is_some() || crate::attr::pattern(attr).is_some()))
-        .map(|attr| format!("{} is a list carrying admits:/pattern: — not generated yet", crate::attr::name(attr)))
-        .collect()
 }
 
 /// ONE emitter for every command shape `kernel::dispatch` can run.

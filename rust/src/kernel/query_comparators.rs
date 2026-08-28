@@ -231,7 +231,13 @@ fn ordered(held: &Json, want: &Json) -> bool {
 /// `unwrap`ing so this stays a total function like everything else in
 /// this kernel, never a panic over a comparator this crate's own JSON
 /// parser could never actually hand it (a non-`Num` `Json` value).
-fn as_f64(value: &Json) -> f64 {
+///
+/// `pub(crate)` (not private) since `read_model.rs`'s own `median`
+/// function reuses it for the identical "read this as a float for
+/// comparison/averaging" purpose `gt`/`gte`/`lt`/`lte` already need it
+/// for — the same `pub(crate)` treatment `to_s`, below, already got for
+/// an analogous reuse (`nest`'s own JSON-object-key stringification).
+pub(crate) fn as_f64(value: &Json) -> f64 {
     match value {
         Json::Num(n) | Json::Float(n) => *n,
         _ => f64::NAN,

@@ -136,7 +136,7 @@ module RustProjection
     # has to be checked by VALUE instead, explicitly, right below.
     READ_MODEL_BARE_KEYS = %i[name description reference_name reference_target query_name aggregate_heads
                               wheres order_by offset limit freshness index_hints group_by null_semantics
-                              authorization].freeze
+                              authorization count median_field].freeze
 
     # One declared read model's own eligibility — `nil` (clean) or a
     # specific, honest reason string, the same "one gate every other
@@ -170,7 +170,10 @@ module RustProjection
         return reason if reason
       end
 
-      read_model_options_content_skip_reason(read_model, aggregates_by_name)
+      reason = read_model_options_content_skip_reason(read_model, aggregates_by_name)
+      return reason if reason
+
+      aggregation_skip_reason(read_model, aggregates_by_name)
     end
 
     def read_model_options_skip_reason(extra)
@@ -242,6 +245,41 @@ module RustProjection
       return offset_reason if offset_reason
 
       declared_limit_skip_reason(read_model[:limit])
+    end
+
+    # `count`/`median`'s own eligibility, checked LAST — after the
+    # ordinary where/order_by/limit/offset content check already passed
+    # for the eligible head, since both real corpus declarations
+    # (`DisputedPaymentCount`/`DisputedPaymentMedian`) reuse that SAME
+    # `where(status: "disputed")` machinery `ComplianceDashboard` already
+    # generates unchanged — `count`/`median` are reductions of the
+    # already-filtered row set, not a separate shape needing its own root/
+    # head eligibility check the way `group_by`'s narrower rootless-only
+    # slice did. `seal_aggregation` (Ruby, build time) already guarantees
+    # exactly one many-side head, and mutual exclusion with `group_by`/
+    # with each other, by the time this ever runs — this doesn't re-derive
+    # either. `count` needs no further check at all (a bare row count has
+    # nothing to validate); `median`'s own FIELD is the one genuinely new
+    # thing to confirm: does it name a real attribute on the eligible
+    # many-side head's own aggregate, and is it numeric (`Runtime::
+    # ReadModelInterpreter#aggregation_target`'s own check, ported here via
+    # `query_field_kind` — the SAME "comparable reduces to a JSON number"
+    # rule the generated `kernel::read_model::median` function's own
+    # runtime reduction relies on, reused rather than re-derived).
+    def aggregation_skip_reason(read_model, aggregates_by_name)
+      return nil unless read_model[:median_field]
+
+      target = read_model[:aggregate_heads].find { |head| head[:many] }
+      aggregate = aggregates_by_name[target[:aggregate]]
+      value_objects_by_name = aggregate[:value_objects].to_h { |vo| [vo[:name], vo] }
+
+      field = read_model[:median_field].to_s
+      kind = query_field_kind(aggregate, field, value_objects_by_name)
+      return "median names #{field.inspect}, but #{target[:aggregate]} declares no such attribute — not generated yet" if kind == :unknown
+      return "median names #{field.inspect} on #{target[:aggregate]}, which is not numeric — median needs a numeric " \
+             "field (a bare number, or a value object carrying one) — not generated yet" unless kind == :number
+
+      nil
     end
 
     # A REAL, NEWLY-CONFIRMED BOUNDARY, distinct from every other gap
@@ -457,6 +495,8 @@ module RustProjection
         authorization: eligible_as ? emit_query_authorization(read_model[:name], read_model[:authorization]) : nil,
         group_by_fn: group_by_fn_name,
         group_by_fn_body: group_by_fn_name ? emit_group_by_transform(group_by_fn_name, aggregates_by_name[read_model[:aggregate_heads].first[:aggregate]], group_by_fields) : nil,
+        count: !!read_model[:count],
+        median_field: read_model[:median_field] ? read_model[:median_field].to_s : nil,
       }
     end
 
@@ -569,6 +609,8 @@ module RustProjection
       authorization = read_model_def[:authorization] ? "Some(#{read_model_def[:authorization]})" : "None"
       reference_name = read_model_def[:reference_name] ? "Some(#{read_model_def[:reference_name].inspect})" : "None"
       group_by = read_model_def[:group_by_fn] ? "Some(#{read_model_def[:group_by_fn]})" : "None"
+      count = read_model_def[:count] ? "true" : "false"
+      median_field = read_model_def[:median_field] ? "Some(#{read_model_def[:median_field].inspect})" : "None"
 
       <<~RUST.rstrip
         crate::kernel::read_model::ReadModelDef {
@@ -586,6 +628,8 @@ module RustProjection
             limit: #{limit},
             authorization: #{authorization},
             group_by: #{group_by},
+            count: #{count},
+            median_field: #{median_field},
         },
       RUST
     end
@@ -623,6 +667,8 @@ module RustProjection
           limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),
           authorization: Some(crate::kernel::named_query::TenantAuth { query_name: "tmpl_query_name", tenant_field: "tmpl_tenant_field" }),
           group_by: None,
+          count: false,
+          median_field: None,
       },
     RUST
 

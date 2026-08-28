@@ -7,7 +7,7 @@ use crate::json::Json;
 use crate::queries;
 use std::collections::HashMap;
 
-const READ_MODEL_BARE_KEYS: &[&str] = &["name", "description", "reference_name", "reference_target", "query_name", "aggregate_heads", "wheres", "order_by", "offset", "limit", "freshness", "index_hints", "group_by", "null_semantics", "authorization"];
+const READ_MODEL_BARE_KEYS: &[&str] = &["name", "description", "reference_name", "reference_target", "query_name", "aggregate_heads", "wheres", "order_by", "offset", "limit", "freshness", "index_hints", "group_by", "null_semantics", "authorization", "count", "median_field"];
 
 pub fn read_model_skip_reason(read_model: &Json, aggregates_by_name: &HashMap<String, &Json>, unsupported_names: &[String]) -> Option<String> {
     let keys: Vec<&str> = match read_model {
@@ -38,7 +38,11 @@ pub fn read_model_skip_reason(read_model: &Json, aggregates_by_name: &HashMap<St
         }
     }
 
-    read_model_options_content_skip_reason(read_model, aggregates_by_name)
+    if let Some(reason) = read_model_options_content_skip_reason(read_model, aggregates_by_name) {
+        return Some(reason);
+    }
+
+    aggregation_skip_reason(read_model, aggregates_by_name)
 }
 
 fn read_model_options_skip_reason(extra: &[&str]) -> String {
@@ -95,6 +99,33 @@ fn read_model_options_content_skip_reason(read_model: &Json, aggregates_by_name:
     }
 
     queries::declared_limit_skip_reason(read_model.get("limit"))
+}
+
+/// `count`/`median`'s own eligibility — mirrors `rust/project/
+/// read_models.rb`'s own `aggregation_skip_reason` exactly. `seal_
+/// aggregation` (Ruby, build time) already guarantees exactly one
+/// many-side head, and mutual exclusion with `group_by`/with each other,
+/// by the time this ever runs — this doesn't re-derive either. `count`
+/// needs no further check (a bare row count has nothing to validate);
+/// `median`'s own FIELD is the one genuinely new thing to confirm.
+fn aggregation_skip_reason(read_model: &Json, aggregates_by_name: &HashMap<String, &Json>) -> Option<String> {
+    let median_field = read_model.get("median_field")?;
+    let field = Json::to_s(median_field);
+
+    let heads = read_model.get("aggregate_heads").map(Json::each).unwrap_or(&[]);
+    let target = heads.iter().find(|h| h.get("many").map(Json::as_bool).unwrap_or(false))?;
+    let aggregate_name = target.get("aggregate").map(Json::to_s).unwrap_or_default();
+    let aggregate = aggregates_by_name.get(&aggregate_name)?;
+    let vos = aggregate.get("value_objects").map(Json::each).unwrap_or(&[]);
+    let value_objects_by_name: HashMap<String, &Json> = vos.iter().map(|vo| (vo.get("name").and_then(Json::as_str).unwrap_or("").to_string(), vo)).collect();
+
+    match queries::query_field_kind(aggregate, &field, &value_objects_by_name) {
+        queries::FieldKind::Unknown => Some(format!("median names {field:?}, but {aggregate_name} declares no such attribute — not generated yet")),
+        queries::FieldKind::Number => None,
+        _ => Some(format!(
+            "median names {field:?} on {aggregate_name}, which is not numeric — median needs a numeric field (a bare number, or a value object carrying one) — not generated yet"
+        )),
+    }
 }
 
 /// `group_by`'s own eligibility — mirrors `rust/project/read_models.rb`'s
@@ -241,6 +272,8 @@ pub struct ReadModelDef {
     pub authorization: Option<String>,
     pub group_by_fn: Option<String>,
     pub group_by_fn_body: Option<String>,
+    pub count: bool,
+    pub median_field: Option<String>,
 }
 
 pub fn read_model_def(domain_name: &str, read_model: &Json, aggregates_by_name: &HashMap<String, &Json>) -> ReadModelDef {
@@ -278,6 +311,8 @@ pub fn read_model_def(domain_name: &str, read_model: &Json, aggregates_by_name: 
         authorization: if eligible_as.is_some() { queries::emit_query_authorization(&read_model_name, read_model.get("authorization")) } else { None },
         group_by_fn,
         group_by_fn_body,
+        count: read_model.get("count").is_some(),
+        median_field: read_model.get("median_field").map(Json::to_s),
     }
 }
 
@@ -312,9 +347,14 @@ pub fn emit_read_model_def(rmd: &ReadModelDef) -> String {
         Some(f) => format!("Some({f})"),
         None => "None".to_string(),
     };
+    let count = if rmd.count { "true" } else { "false" };
+    let median_field = match &rmd.median_field {
+        Some(f) => format!("Some({})", crate::naming::ruby_inspect_string(f)),
+        None => "None".to_string(),
+    };
 
     format!(
-        "crate::kernel::read_model::ReadModelDef {{\n    verb: {},\n    reference_name: {reference_name},\n    heads: &[\n{heads}\n    ],\n    filtered_head: {filtered_head},\n    conditions: &[\n{conditions}\n    ],\n    order_by: {order_by},\n    offset: {offset},\n    limit: {limit},\n    authorization: {authorization},\n    group_by: {group_by},\n}},",
+        "crate::kernel::read_model::ReadModelDef {{\n    verb: {},\n    reference_name: {reference_name},\n    heads: &[\n{heads}\n    ],\n    filtered_head: {filtered_head},\n    conditions: &[\n{conditions}\n    ],\n    order_by: {order_by},\n    offset: {offset},\n    limit: {limit},\n    authorization: {authorization},\n    group_by: {group_by},\n    count: {count},\n    median_field: {median_field},\n}},",
         crate::naming::ruby_inspect_string(&rmd.verb)
     )
 }
@@ -389,7 +429,7 @@ fn unwrap_json_expr(expr: &str, type_name: &str, list: bool, aggregate: &Json, v
     format!("match {expr} {{ crate::kernel::Json::Object(fields) => crate::kernel::Json::Object(fields.into_iter().map(|(k, v)| {{ let new_v = match k.as_str() {{ {inner_arms} _ => v }}; (k, new_v) }}).collect()), other => other }}")
 }
 
-const READ_MODEL_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::read_model::ReadModelDef {\n    verb: \"tmpl_verb\",\n    reference_name: Some(\"tmpl_reference_name\"),\n    heads: &[\n        crate::kernel::read_model::ReadModelHead {\n            aggregate: \"tmpl_aggregate\",\n            as_name: \"tmpl_as_name\",\n            many: true,\n            is_root: false,\n            reference_fields: &[\n                crate::kernel::read_model::ReferenceField { target_aggregate: \"tmpl_target_aggregate\", field: \"tmpl_field\" },\n            ],\n        },\n    ],\n    filtered_head: Some(\"tmpl_as_name\"),\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: \"tmpl_order_field\", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),\n    offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),\n    limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),\n    authorization: Some(crate::kernel::named_query::TenantAuth { query_name: \"tmpl_query_name\", tenant_field: \"tmpl_tenant_field\" }),\n    group_by: None,\n},";
+const READ_MODEL_TABLE_ROW_PLACEHOLDER: &str = "crate::kernel::read_model::ReadModelDef {\n    verb: \"tmpl_verb\",\n    reference_name: Some(\"tmpl_reference_name\"),\n    heads: &[\n        crate::kernel::read_model::ReadModelHead {\n            aggregate: \"tmpl_aggregate\",\n            as_name: \"tmpl_as_name\",\n            many: true,\n            is_root: false,\n            reference_fields: &[\n                crate::kernel::read_model::ReferenceField { target_aggregate: \"tmpl_target_aggregate\", field: \"tmpl_field\" },\n            ],\n        },\n    ],\n    filtered_head: Some(\"tmpl_as_name\"),\n    conditions: &[\n        crate::kernel::QueryCondition {\n            field: \"tmpl_field\",\n            comparator: crate::kernel::query_comparators::QueryComparator::Eq,\n            value: crate::kernel::QueryConditionValue::Literal(\"tmpl_literal\"),\n        },\n    ],\n    order_by: Some(crate::kernel::read_model::ReadModelOrderBy { field: \"tmpl_order_field\", descending: true, nulls: crate::kernel::query_ordering::NullsMode::Last }),\n    offset: Some(crate::kernel::read_model::ReadModelOffset::Literal(1)),\n    limit: Some(crate::kernel::read_model::ReadModelLimit::Literal(5)),\n    authorization: Some(crate::kernel::named_query::TenantAuth { query_name: \"tmpl_query_name\", tenant_field: \"tmpl_tenant_field\" }),\n    group_by: None,\n    count: false,\n    median_field: None,\n},";
 
 pub fn emit_read_model_table(exemplar: &Exemplar, read_model_defs: &[ReadModelDef]) -> String {
     let rows: Vec<String> = read_model_defs.iter().map(emit_read_model_def).collect();
