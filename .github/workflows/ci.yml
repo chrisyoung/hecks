@@ -84,8 +84,17 @@ jobs:
       # without one — the same "provision it for real, don't skip"
       # discipline this workflow already holds Postgres/SQLite to.
       # ubuntu-latest ships a Rust toolchain already; no separate setup
-      # action needed.
-      #
+      # action needed for the native build below. The wasm32-wasip1
+      # TARGET is a different story — spec/project_deploy_parity_gate_spec.rb
+      # (Phase 8, the equivalence-gap plan) shells out to bin/project_wasm,
+      # which cross-compiles for it, and ubuntu-latest's default rustup
+      # install has no target but the host's own. Installing it once here
+      # is cheap (~15s) and lets that spec's own "wasm32-wasip1 isn't
+      # installed" abort message — otherwise the whole reason to add this
+      # step in the first place — never fire in CI.
+      - name: Install the wasm32-wasip1 target
+        run: rustup target add wasm32-wasip1
+
       # `bundle exec` matters here even though bin/project_rust never
       # touches Bundler itself: run bare, `require "json"` resolves
       # against whatever `json` gem is highest on the default load path
