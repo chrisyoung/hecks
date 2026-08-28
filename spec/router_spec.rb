@@ -311,6 +311,6 @@ number: { value: "ACC-1" }, balance: { cents: 0 } }] }
                "Hecks.bluebook #{domain.inspect}#{version_clause} do\n#{body}\nend\n")
     world = ["Hecks.world #{domain.inspect} do", "  realm #{realm.inspect}", ("  latest #{latest.inspect}" if latest),
              "end"].compact
-    File.write(File.join(directory, "#{directory_name}.world"), world.join("\n") + "\n")
+    File.write(File.join(directory, "#{directory_name}.world"), "#{world.join("\n")}\n")
   end
 end

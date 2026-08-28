@@ -92,9 +92,7 @@ module Hecks
         renders = HOST.fetch(name).fetch(:renders, {})
         width   = fields.map { |f| f.to_s.length }.max.to_i
 
-        "emits_ir(\n" +
-          fields.map { |f| "  #{"#{f}:".ljust(width + 1)} #{renders.fetch(f, ":#{f}")}" }.join(",\n") +
-          "\n)"
+        "emits_ir(\n#{fields.map { |f| "  #{"#{f}:".ljust(width + 1)} #{renders.fetch(f, ":#{f}")}" }.join(",\n")}\n)"
       end
 
       # WHAT THE CONSTRUCT EMITS: what the language declares, less every

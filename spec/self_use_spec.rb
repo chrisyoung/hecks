@@ -92,7 +92,7 @@ RSpec.describe "the language uses everything the core grammar declares" do
     "policy"                 => -> { SELF_USE_LANGUAGE.aggregates.sum { |a| a.policies.size } + SELF_USE_LANGUAGE.policies.size },
     "process_manager"        => -> { SELF_USE_LANGUAGE.process_managers.size },
     "ensures"                => -> { every_command.sum { |c| c.ensures.to_a.size } },
-    "provenance"             => -> { every_command.count { |c| c.provenance } },
+    "provenance"             => -> { every_command.count(&:provenance) },
     "group_by"               => -> { SELF_USE_LANGUAGE.read_models.count { |r| !r.group_by.to_a.empty? } },
     "authorize"              => -> { every_query.count(&:authorization) },
     # ADR 0026's own Consequences section, verbatim: "`generic` is a

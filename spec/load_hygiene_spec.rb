@@ -87,8 +87,8 @@ RSpec.describe "load hygiene", :io do
     colliding = definitions.select { |name, files| files.uniq.size > 1 && !shared_values.include?(name) }
 
     expect(colliding).to be_empty,
-                         "spec files sharing a top-level constant name:\n" +
-                         colliding.map { |name, files| "  #{name}: #{files.uniq.join(', ')}" }.join("\n")
+                         "spec files sharing a top-level constant name:\n" \
+                         "#{colliding.map { |name, files| "  #{name}: #{files.uniq.join(', ')}" }.join("\n")}"
   end
 
   # ADR 0033's own contract, exercised the one way that can catch it: a

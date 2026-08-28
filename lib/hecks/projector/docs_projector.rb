@@ -52,7 +52,7 @@ module Hecks
         out << chapter_header(bluebook, depth) unless only
         Array(aggregates(bluebook, only)).each { |aggregate| out << aggregate_section(aggregate, only ? depth : depth + 1) }
         out << closing(bluebook, depth + 1) unless only
-        out.compact.join("\n").rstrip + "\n"
+        "#{out.compact.join("\n").rstrip}\n"
       end
 
       # A NAME THAT NAMES NOTHING IS REFUSED, not answered with an empty
@@ -179,7 +179,7 @@ module Hecks
         value_object = value_object_for(attribute, holder)
         inner =
           if value_object
-            "{ " + value_object.attributes.map { |f| "#{f.name}: #{f.type}" }.join(", ") + " }"
+            "{ #{value_object.attributes.map { |f| "#{f.name}: #{f.type}" }.join(', ')} }"
           else
             attribute.type.to_s
           end

@@ -107,6 +107,6 @@ RSpec.describe Hecks::Bluebook::ProjectLoader do
       ("  latest #{latest.inspect}" if latest),
       "end"
     ].compact
-    File.write(File.join(directory, "#{name}.world"), lines.join("\n") + "\n")
+    File.write(File.join(directory, "#{name}.world"), "#{lines.join("\n")}\n")
   end
 end

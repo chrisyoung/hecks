@@ -86,10 +86,10 @@ unless stranded.empty?
   }.join("\n")
 end
 
-content = JSON.pretty_generate(
+content = "#{JSON.pretty_generate(
   operators:      operators,
   normalisations: Hecks::Grammar.admitted_normalisations(dispatcher)
-) + "\n"
+)}\n"
 
 if ARGV.include?("--stdout")
   print content

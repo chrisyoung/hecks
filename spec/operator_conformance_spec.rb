@@ -325,7 +325,7 @@ RSpec.describe "the operator domain" do
     declared = DISPATCHER.registry.bluebook("Expression").aggregate("Normalisation")
                          .value_object("Rule").members.map(&:to_h)
 
-    expect(declared).to eq(CanonicalForm::RULES.map { |rule| rule.to_h })
+    expect(declared).to eq(CanonicalForm::RULES.map(&:to_h))
   end
 
   it "admits every operator the language itself stands on" do

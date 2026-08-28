@@ -181,7 +181,7 @@ module Hecks
           name = arg[:at].to_s.empty? ? "`#{arg[:named]}:`" : "positional #{arg[:at]}"
           lines << "| #{name} | #{arg[:kind]} | #{arg[:required]} | #{arg[:fills]} |"
         end
-        lines.join("\n") + "\n"
+        "#{lines.join("\n")}\n"
       end
 
       def render_index

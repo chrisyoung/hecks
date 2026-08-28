@@ -261,29 +261,20 @@ Style/OneClassPerFile:
 Style/MutableConstant:
   Enabled: false
 
-# Offense count: 14
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: Mode.
+# A FIFTH real autocorrect-corruption bug, found paying down this same
+# offense elsewhere in the file (see .rubocop.yml's "THE PATTERN ACROSS
+# ALL FOUR", now five): `%(...)` percent-literals allow a literal,
+# unescaped `"` inside them — `row = %(keyword: "#{keyword}", ) +
+# %(context: "#{context}", ) + ...` builds one row of `.bluebook` grammar
+# text this way. Style/StringConcatenation's autocorrect merged the
+# `%()` segments into ONE double-quoted string but botched the
+# re-escaping badly: several `\"` pairs collapsed to a single stray `"`
+# or vanished outright, producing `keyword: "vision, context: Bluebook,
+# at: ,named: "locale, ...` — a real corruption of the text
+# Grammar::Evolve.propose_argument writes into a live grammar file,
+# caught by spec/evolve_spec.rb (4 failures). Reverted; this file was
+# already in the ORIGINAL Style/StringConcatenation Exclude list before
+# this pass — read that as "known unsafe here," not "not yet gotten to."
 Style/StringConcatenation:
   Exclude:
-    - 'bin/expression_projection'
-    - 'lib/hecks/doc/reference.rb'
     - 'lib/hecks/grammar/evolve.rb'
-    - 'lib/hecks/projections/model.rb'
-    - 'lib/hecks/projections/vocabulary.rb'
-    - 'lib/hecks/projector/docs_projector.rb'
-    - 'spec/adapters/driven/heki_spec.rb'
-    - 'spec/bluebook/project_loader_spec.rb'
-    - 'spec/load_hygiene_spec.rb'
-    - 'spec/router_spec.rb'
-    - 'spec/syntax_conformance_spec.rb'
-
-# Offense count: 3
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: AllowMethodsWithArguments, AllowedMethods, AllowedPatterns, AllowComments.
-# AllowedMethods: define_method
-Style/SymbolProc:
-  Exclude:
-    - 'lib/hecks/bluebook/behaviour/traits.rb'
-    - 'spec/operator_conformance_spec.rb'
-    - 'spec/self_use_spec.rb'

@@ -454,7 +454,7 @@ RSpec.describe "the declared syntax" do
       expect(answered.include?(row[:word].to_sym) || generically_dispatched?(row[:word], row[:context])).to be(true),
                                                                                                             "#{row[:context]}.#{row[:word]} — the new spelling has no builder"
       expect(answered).to include(row[:was].to_sym),
-                          "#{row[:context]}.#{row[:word]} was #{row[:was]}, and the old " + "spelling stopped parsing — a rename never strands the old era"
+                          "#{row[:context]}.#{row[:word]} was #{row[:was]}, and the old spelling stopped parsing — a rename never strands the old era"
       expect(row[:was]).not_to eq(row[:word]), "#{row[:context]}.#{row[:word]} renames itself"
     end
   end
@@ -477,8 +477,8 @@ RSpec.describe "the declared syntax" do
                     .select { |row| self.class.words_answered_by(row[:context]).include?(row[:word].to_sym) }
 
     expect(early).to be_empty,
-                     early.map { |row| "#{row[:context]}.#{row[:word]}" }.join(", ") +
-                     " — proposed, but the builder already answers; run bin/evolve admit"
+                     "#{early.map { |row| "#{row[:context]}.#{row[:word]}" }.join(', ')} " \
+                     "— proposed, but the builder already answers; run bin/evolve admit"
   end
 
   it "leaves every retired word unanswered — answered means it never left" do
@@ -486,8 +486,8 @@ RSpec.describe "the declared syntax" do
                         .select { |row| self.class.words_answered_by(row[:context]).include?(row[:word].to_sym) }
 
     expect(lingering).to be_empty,
-                         lingering.map { |row| "#{row[:context]}.#{row[:word]}" }.join(", ") +
-                         " — retired, but the builder still answers"
+                         "#{lingering.map { |row| "#{row[:context]}.#{row[:word]}" }.join(', ')} " \
+                         "— retired, but the builder still answers"
   end
 
   # ------------------------------------------------------ arguments ⇄ signature
