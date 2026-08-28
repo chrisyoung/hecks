@@ -1,6 +1,14 @@
 # The DSL names one idea one way, and a word earns its place by being used
 
-**Status:** Accepted — not yet implemented. Sequenced work plan at the end of this document.
+**Status:** Accepted — partially implemented. Sequenced work plan at the
+end of this document, but **read
+[`docs/dsl-work-slices.md`](../dsl-work-slices.md) first** — it re-cuts
+this plan into parallelizable slices (S0a-S13) and tracks real, current,
+per-slice status against the code, which has moved since this ADR's text
+was written (two corrections inline below: `has_many`/`has_one`/
+`belongs_to` were kept, not deleted; `then_set`→`sets` already landed).
+Trust that doc's status table over this one's prose before starting any
+slice — this document records the *decision*, not a live status feed.
 
 ## Context
 
@@ -45,7 +53,9 @@ Four principles, and the decisions that follow from them.
 
   This is what makes dropping `_id` possible rather than merely desirable. `Naming.reference_hop` currently derives the traversal name from the field name — `account_id` donates `account` to the hop, and a field named `account` would force `account_account`. An explicit operator removes the derivation, and with it `HopPath.hop_head?`'s disambiguation rule (*"a real LOCAL attribute of that name wins first"*), which exists only to arbitrate the collision.
 - On a `Handle`, **`piece.account` hydrates the record and `piece[:account]` reads the raw id.** The bracket form already reads as raw storage. This preserves today's hydrating accessor and moves only the id read.
-- **`has_many`, `has_one`, and `belongs_to` are deleted**, and nothing replaces them. All three were `reference_to` with a different minted name — now the default — so they have no work left. `has_many` additionally lied: it singularised its target and minted one scalar, so `film.backers` reads `nil` and never `[]`. Combined corpus uses: one.
+- ~~**`has_many`, `has_one`, and `belongs_to` are deleted**, and nothing replaces them.~~ **Superseded (2026-08-27) — kept, not deleted.** All three were `reference_to` with a different minted name at the time this ADR was written, so deletion looked free. Since then, a separate slice (referenced in `spec/evolve_spec.rb:45-47` as "S17/ADR 0026's relationship-cardinality slice") deliberately un-deprecated all three — they build and dispatch for real today (`aggregate_builder.rb`/`entity_builder.rb`'s `has_many_impl`/`has_one_impl`/`belongs_to_impl`), not merely refuse outside `shadow_parse`. That's a real, working, presumably-relied-on part of the live DSL now, not dead syntax nobody got around to removing — deleting it would be a regression, not a cleanup. `has_many`'s original bug (`film.backers` singularising and reading `nil` instead of `[]`) needs verifying separately; if it still reproduces, fix it in place rather than deleting the construct.
+
+  **What this changes for S2 (references, the sequenced-work-plan slice this decision lives under):** scope narrows to the `_id`-minting removal and the new `/` hop-traversal operator. `reference_to`, `has_many`, `has_one`, and `belongs_to` all stay as words; only the identity-suffix minting and the overloaded `.` traversal are what's actually being fixed. See `docs/dsl-work-slices.md`'s S2 entry, which should be read alongside this note before starting that slice.
 
   No one-to-many word is added. Owned `entity` declarations, `list_of` value fields, and the many side pointing back at the one side already cover every case in five domains — which is also the shape Vernon argues for, since a root holding a collection of foreign roots is the pattern to avoid.
 - **The no-bidirectional rule becomes acyclic within a chapter.** Today `validate_no_bidirectional_references!` catches direct pairs only; `A → B → C → A` passes, and `hop_path.rb:11` records that as deliberate (*"explicitly declines to take a position on a longer ring"*). Self-reference stays legal — `parent.parent.name` for a hierarchy is real and safe. Cross-chapter rings are unreachable rather than unchecked: `Reference#resolve` is scoped to its own chapter by construction, so a cross-chapter reference is a dangling name, not an edge. If cross-domain references ever become resolvable edges, this rule has to move to a registry-wide phase.
@@ -84,7 +94,7 @@ Four principles, and the decisions that follow from them.
 
 ### Commands
 
-- **`sets` everywhere.** The grammar already declares it with `was: "then_set"`; the corpus is 143 `then_set` and zero `sets`. `then_set` reads as sequencing, which is a promise the language does not keep — mutations are a declared set, not an ordered one.
+- ~~**`sets` everywhere.** The grammar already declares it with `was: "then_set"`; the corpus is 143 `then_set` and zero `sets`.~~ **Done, ahead of this ADR's own sequencing (verified 2026-08-27).** The corpus is now 119 `sets` and 1 `then_set` — the reverse of the count above, and that one surviving `then_set` is the deliberately-kept `deprecated` grammar row `spec/evolve_spec.rb:47-49` describes, refusing live and readable only via `shadow_parse`. `then_set` reads as sequencing, which is a promise the language does not keep — mutations are a declared set, not an ordered one.
 - **`to:` is omittable when it is the identity, and the redundant form is refused.** All 35 `to:` mappings in live bluebooks are `x → x`. `sets :opening, to: :starting_balance` still spells a genuine remap. `increment:`, `decrement:`, and `append:` are unaffected — they name a genuinely different source.
 
   Inferring the mutation entirely from a declared attribute was rejected: a command attribute that feeds only a `given` (`Debit`'s `amount`, guarding the balance) would silently start writing a field.

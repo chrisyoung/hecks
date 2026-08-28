@@ -38,7 +38,7 @@ The exception worth knowing: **`attribute` rows appear under Aggregate, Entity, 
 
 These two block most of what follows and are independent of each other, so run them together.
 
-### S0a — `shadow_parse` reads a legacy grammar
+### S0a — `shadow_parse` reads a legacy grammar — DONE, verified 2026-08-27
 
 **Why first:** frozen era text is parsed by the *live* DSL — `shadow_parse` is a plain `Kernel.eval` run at boot, at mint, and during tamper detection, and the text is SHA-256-locked to `held_digest`. **No word can be removed until history can still be read.**
 
@@ -46,7 +46,7 @@ These two block most of what follows and are independent of each other, so run t
 **Blocks:** S1, S3, S4, S5 — every slice that deletes a spelling.
 **Done when:** a bluebook using `identified_by { number.value }` refuses in live source and parses in `shadow_parse`, with a spec covering both directions.
 
-### S0b — the scoped-constant bridge
+### S0b — the scoped-constant bridge — DONE, verified 2026-08-27
 
 **Why first:** verified by probe — once a facade exists, `Widget` is a real module, so `Widget::Make` hits the default `Module#const_missing` and the shim is never reached. Without this, first-class events and command references cannot be spelled as constants at all.
 
@@ -60,9 +60,9 @@ These two block most of what follows and are independent of each other, so run t
 | slice | owns | corpus blast radius |
 |---|---|---|
 | **S1 — identity** | `identified_by` rows (Aggregate, Entity); `attribute_collector.rb`, `aggregate_builder.rb`, `entity_builder.rb`, meta-validator identity judge | 12 constant-form + 4 block-form declarations |
-| **S2 — references** | `reference_to`/`has_*` rows (Aggregate, Entity); `naming.rb`, `hop_path.rb`, `handle.rb`, `query_interpreter.rb`, `sql_query_builder.rb`, `bluebook_builder.rb` | **243 `reference_to` sites, every dispatch call, every hop path** — by far the largest |
+| **S2 — references** | `reference_to` rows (Aggregate, Entity); `naming.rb`, `hop_path.rb`, `handle.rb`, `query_interpreter.rb`, `sql_query_builder.rb`, `bluebook_builder.rb` | **243 `reference_to` sites, every dispatch call, every hop path** — by far the largest. **Scope narrowed 2026-08-27:** ADR 0025's own text said to delete `has_many`/`has_one`/`belongs_to`; they were deliberately kept live instead (a separate slice un-deprecated them for real — `spec/evolve_spec.rb:45-47`), amended in the ADR. S2 is now just `_id`-minting removal + the new `/` hop operator — `has_*` rows are NOT part of this slice's deletion scope. |
 | **S4 — reads** | Query + ReadModel rows; `query_builder.rb`, `read_model_builder.rb` | 5 `report` → `read_model`, 3 inert-word deletions |
-| **S5 — commands** | Command rows; `command_builder.rb`, `mutation_applier.rb` | 143 `then_set` → `sets`, 35 redundant `to:` |
+| ~~**S5 — commands**~~ | ~~Command rows; `command_builder.rb`, `mutation_applier.rb`~~ | **DONE, verified 2026-08-27.** Corpus is 119 `sets` / 1 `then_set` (the deliberately-kept deprecated row); `from:` absent from the corpus entirely; `sets :target, to: :target` self-mapping is refused (`command_builder.rb:277-281`); `MutationApplier#apply` has its `else raise Runtime::WiringError` guard (`mutation_applier.rb:94`). This table's own count was stale — check the live code before trusting either this row or the ADR text's count. |
 | **S8 — role → Governance** | `role` row (Command); `command_rules/authorization.rb`, `hecksagon_builder.rb` | 103 `role` declarations, plus a `uses_framework` line per hecksagon |
 | **S11 — absence** | `era_guard/shape_diff.rb`, `command_rules/admissibility.rb` (`GuardState`) | none — pure runtime |
 
