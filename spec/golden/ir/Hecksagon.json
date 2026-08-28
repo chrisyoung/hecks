@@ -333,6 +333,19 @@
           "closed_set": false,
           "invariants": [
             {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
               "canonical": "!value.to_s.empty?",
               "description": "a port is named"
             }
@@ -358,6 +371,19 @@
           "closed_set": false,
           "invariants": [
             {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
               "canonical": "!value.to_s.empty?",
               "description": "a verb is named"
             }
@@ -1300,6 +1326,19 @@
           "closed_set": false,
           "invariants": [
             {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
               "canonical": "!value.to_s.empty?",
               "description": "a hecksagon names its domain"
             }
@@ -1325,6 +1364,19 @@
           "closed_set": false,
           "invariants": [
             {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
               "canonical": "!value.to_s.empty?",
               "description": "a subscription names an event"
             }
@@ -1350,6 +1402,19 @@
           "closed_set": false,
           "invariants": [
             {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
               "canonical": "!value.to_s.empty?",
               "description": "a framework member is named"
             }
@@ -1375,6 +1440,19 @@
           "closed_set": false,
           "invariants": [
             {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
               "canonical": "!value.to_s.empty?",
               "description": "a vendored bluebook is named"
             }
@@ -2040,6 +2118,19 @@
           "closed_set": false,
           "invariants": [
             {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
               "canonical": "!value.to_s.empty?",
               "description": "an operation is named"
             }
@@ -2097,6 +2188,19 @@
           "closed_set": false,
           "invariants": [
             {
+              "ast": {
+                "expr": {
+                  "op": "empty",
+                  "receiver": {
+                    "op": "to_s",
+                    "receiver": {
+                      "op": "lookup",
+                      "path": "value"
+                    }
+                  }
+                },
+                "op": "not"
+              },
               "canonical": "!value.to_s.empty?",
               "description": "an emitted event is named"
             }
