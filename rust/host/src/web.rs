@@ -57,13 +57,17 @@ pub async fn render(
     // (Registration, and vendored Payments::Payment's PaymentGateway
     // port), the pragmatic working version for lifeadelics today rather
     // than a new IR-driven "outbound port"/"webhook signature scheme"
-    // capability with no second domain to prove it against (checkout.rs's
-    // own header has the fuller reasoning). Checked BEFORE the ir()/
-    // HECKS_IR_PATH gate below, deliberately: lifeadelics declares no
-    // `web "Rust"` (Shared mode, no generic FieldShape UI — the same
-    // shape Banking's own Shared-mode deploy already uses), so
-    // HECKS_IR_PATH is never set for it and `ir()` always returns None
-    // here; neither of these two routes needs a domain_ir at all.
+    // capability with no second domain to prove it against — considered
+    // for real (equivalence-gap plan 3.3) and declined, not merely
+    // never attempted; checkout.rs's own header has the full reasoning,
+    // including a separate, real `HECKS_IR_PATH`/`rust_web` contradiction
+    // that surfaced investigating it, unrelated to Lifeadelics
+    // specifically. Checked BEFORE the ir()/HECKS_IR_PATH gate below,
+    // deliberately: lifeadelics declares no `web "Rust"` (Shared mode, no
+    // generic FieldShape UI — the same shape Banking's own Shared-mode
+    // deploy already uses), so HECKS_IR_PATH is never set for it and
+    // `ir()` always returns None here; neither of these two routes needs
+    // a domain_ir at all.
     if config.domain == "Lifeadelics" {
         let stripe_signature = body.get("headers").and_then(|h| h.get("stripe-signature")).and_then(|v| v.as_str()).unwrap_or("");
         if let Some(response) = checkout_route(method, path, &raw_body, stripe_signature, client, wasm_path, config, invoker).await {

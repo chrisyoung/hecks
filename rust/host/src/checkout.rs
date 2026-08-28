@@ -15,6 +15,42 @@
 // the fuller reasoning) rather than a new IR capability invented
 // speculatively for a population of one.
 //
+// EQUIVALENCE-GAP PLAN 3.3 — CONSIDERED, DECLINED, checked directly
+// against this checkout rather than assumed: population here is
+// actually ZERO reachable examples, not one. There is no Lifeadelics
+// `.bluebook`/`.hecksagon` source anywhere in this checkout to design a
+// second `signature_scheme`/`opens_external_call` DSL word against —
+// deploy/lifeadelics{,-demo} were deleted outright (`eb3bd853`, commit
+// message: "generated from ephemeral /tmp paths during tool testing,
+// not the real client config... which already lives in
+// ~/Projects/lifeadelics/deploy-aws"), and `rust/dist/` carries no
+// `lifeadelics.{wasm,ir.json}` either — every artifact this task would
+// need to validate against, gone, not merely out of reach in a private
+// repo. A synthetic-only fixture would be the ONLY thing exercising new
+// IR/DSL surface this checkout could ever build, the same "invented
+// generality with no real backing" reasoning process_manager.rb's own
+// Saga/undoes comment already declines building compensation-ordering
+// for — except that item at least had one real corpus example (Banking's
+// Settlement saga) to check a design against; this has none.
+//
+// A SEPARATE, REAL BLOCKER surfaced investigating this anyway, worth
+// recording even though the feature above stays declined: the plan's
+// own proposed gate ("does `domain_ir` declare an `external_gateways`
+// entry") cannot work as designed for Lifeadelics regardless, because
+// `web.rs`'s own header (below) states `ir()` never resolves for a
+// Shared-mode domain at all — `HECKS_IR_PATH` is only emitted by
+// `bin/project_deploy` when `rust_web` is true (that script's own
+// `rust_web ? %(\n HECKS_IR_PATH: ...) : ""` conditional), yet
+// `rust/host/src/main.rs`'s own boot sequence reads `ir::ir().ok_or(...)?`
+// UNCONDITIONALLY, for every domain regardless of web mode — confirmed
+// live against Banking's own committed `deploy/banking/template.yaml`
+// (Shared/`AuthType: AWS_IAM`, confirming `rust_web == false` there),
+// which genuinely carries no `HECKS_IR_PATH` key at all. That is a real,
+// separate, currently-live contradiction between `main.rs` and
+// `bin/project_deploy` — unrelated to Lifeadelics specifically, not
+// fixed here (a different subsystem, a different task), but flagged
+// plainly rather than silently discovered and dropped.
+//
 // MOCK BY DEFAULT, REAL STRIPE OPT-IN — mirrors the Ruby app's own
 // choice exactly (MockStripeAdapter unconditionally in every
 // environment except a real deploy — bin/smoke_test's own header: "the
