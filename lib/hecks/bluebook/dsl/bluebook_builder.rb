@@ -92,8 +92,8 @@ module Hecks
         # chapter's own top-level shape is written with it), so also
         # named in GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
         def aggregate_impl(name, &block)
-          @aggregates << AggregateBuilder.build(name, chapter_named_givens:   @chapter_named_givens,
-                                                      chapter_pending_givens: @chapter_pending_givens,
+          @aggregates << AggregateBuilder.build(name, chapter_named_givens:          @chapter_named_givens,
+                                                      chapter_pending_givens:        @chapter_pending_givens,
                                                       chapter_entity_named_givens:   @chapter_entity_named_givens,
                                                       chapter_entity_pending_givens: @chapter_entity_pending_givens, &block)
         end

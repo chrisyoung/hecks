@@ -1283,7 +1283,7 @@ RSpec.describe "the DSL surface" do
       end
 
       referencer_piece = registry.bluebook("SplitEntityGiven").aggregates
-                                  .find { |a| a.hecks_name == "Referencer" }.entities.first
+                                 .find { |a| a.hecks_name == "Referencer" }.entities.first
       expect(referencer_piece.preconditions.map(&:canonical)).to eq(["true"])
     end
 
