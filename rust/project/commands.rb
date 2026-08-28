@@ -43,8 +43,11 @@ module RustProjection
     end
 
     def command_skip_reason(command, aggregate, value_objects_by_name, creating_possible: true)
-      unsupported_ops = command[:mutations].reject { |m| %w[append set increment decrement multiply clamp delegate].include?(m[:op].to_s) }.map { |m| m[:op] }.uniq
-      return "sets op(s) #{unsupported_ops.join(', ')} not generated yet (only append/set/increment/decrement/multiply/clamp/delegate are)" if unsupported_ops.any?
+      unsupported_ops = command[:mutations].reject { |m| %w[append set increment decrement multiply clamp delegate corrects].include?(m[:op].to_s) }.map { |m| m[:op] }.uniq
+      return "sets op(s) #{unsupported_ops.join(', ')} not generated yet (only append/set/increment/decrement/multiply/clamp/delegate/corrects are)" if unsupported_ops.any?
+
+      corrects = corrects_of(command)
+      return "corrects #{corrects[:target]}, reverses: true — the derived append/remove-reversal shape is a real, separate gap Ruby's own authors haven't finished designing (AggregateBuilder#seal_correction_targets's own comment) — not generated yet" if corrects && corrects_reverses?(corrects)
 
       delegate_problem = delegate_skip_reason(command, aggregate, value_objects_by_name)
       return delegate_problem if delegate_problem
@@ -349,8 +352,8 @@ module RustProjection
 
       invariant_checks = invariant_checks_for(command, aggregates_by_name, value_objects_by_name)
 
-      given_specs = command[:givens].map do |given|
-        "            crate::kernel::GivenSpec { description: #{rust_string_literal(given[:description])}, expr: #{ExprEmitter.emit_predicate(given[:canonical])} },"
+      given_specs = corrects_given_specs(command) + command[:givens].map do |given|
+        "            crate::kernel::GivenSpec { description: #{rust_string_literal(given[:description])}, expr: #{ExprEmitter.emit_predicate(given[:canonical])}, corrects_event: None },"
       end
 
       ensures_specs = command[:ensures].map do |rule|
@@ -361,7 +364,9 @@ module RustProjection
       transition_arg =
         transition_check_arg(transition)
 
-      mutation_lines = command[:mutations].map { |m| emit_mutation_line(m, aggregate, command, value_objects_by_name) }
+      mutation_lines = command[:mutations].reject { |m| m[:op].to_s == "corrects" }
+                                          .map { |m| emit_mutation_line(m, aggregate, command, value_objects_by_name) }
+      mutation_lines.concat(corrects_flag_mutation_lines(command, aggregate))
       # advance_lifecycle: unconditional once a transition applies at all —
       # see kernel/dispatch.rs's TransitionCheck comment for why this lives
       # here, as one more line in the SAME closure, rather than as its own
@@ -424,6 +429,7 @@ module RustProjection
           end
         end
         record_fields << "            #{rust_ident_field(aggregate[:lifecycle][:field])}: #{aggregate[:lifecycle][:default].inspect}.to_string()," if aggregate[:lifecycle]
+        correctable_event_names(aggregate).each { |name| record_fields << "            #{corrects_flag_field(name)}: false," }
 
         hydrate = <<~RUST.rstrip
           crate::kernel::Hydrate::Create {
@@ -464,6 +470,89 @@ module RustProjection
       )
 
       "#{emit_fielded_flat("#{cmd}Args", command[:attributes], value_objects_by_name)}\n\n#[derive(Debug, Clone)]\n#{args_struct.join("\n")}\n\n#{dispatch_fn}"
+    end
+
+    # `corrects "EventName", reason: "..."` — `CommandRules::Admissibility
+    # #enforce_correction_target`, read directly: "structural, before the
+    # declared givens... has THIS record actually [emitted the named
+    # event] yet." Ported as a synthetic, PREPENDED GivenSpec (see
+    # `corrects_given_specs`) whose `expr` reads a per-record boolean
+    # field this same generator also arranges to set — `corrects_flag_field`
+    # names it, `corrects_flag_targets` (domain_generator.rb) finds every
+    # aggregate needing one, and `mutations.rb`'s own corrects-flag mutation
+    # line sets it whenever a command emitting the named event succeeds.
+    #
+    # `reverses: true` is the SEPARATE, harder derived-mutation shape
+    # `AggregateBuilder#seal_correction_targets`'s own comment (read
+    # directly) says Ruby's OWN authors have not finished designing
+    # ("append/remove reversal LOOK symmetric but are not reliably so...
+    # a real gap, left for a follow-on round") — refused here rather than
+    # guessed at, matching that same deferral.
+    def corrects_of(command) = command[:mutations].find { |m| m[:op].to_s == "corrects" }
+
+    def corrects_reverses?(mutation) = !!(mutation[:source].is_a?(Hash) && mutation[:source][:value].is_a?(Hash) && mutation[:source][:value][:reverses])
+
+    # `emitted_fee_applied`, from `"FeeApplied"` — a plain, deterministic
+    # snake_case rendering (never bluebook-author-visible; this is a
+    # SYNTHETIC field name, not a spelling the language exposes), shared
+    # between the record's own struct field and every reader/writer of it.
+    def corrects_flag_field(event_name) = "emitted_#{event_name.to_s.gsub(/([a-z0-9])([A-Z])/, '\1_\2').downcase}"
+
+    def corrects_given_specs(command)
+      corrects = corrects_of(command)
+      return [] unless corrects
+
+      event_name = corrects[:target].to_s
+      ["            crate::kernel::GivenSpec { description: \"\", " \
+       "expr: crate::kernel::Expr::Lookup(#{corrects_flag_field(event_name).inspect}), " \
+       "corrects_event: Some(#{event_name.inspect}) },"]
+    end
+
+    # Every event name ANY command on this aggregate names in a `corrects`
+    # mutation — the set a record needs its own flag field for at all.
+    # Aggregate-wide (not per-command), the same scope `AggregateBuilder
+    # #seal_correction_targets`'s own build-time check already reads
+    # (`command_skip_reason`'s own header on that check's other half).
+    def correctable_event_names(aggregate)
+      aggregate[:commands].flat_map { |c| c[:mutations] }
+                          .select { |m| m[:op].to_s == "corrects" }
+                          .map { |m| m[:target].to_s }.uniq
+    end
+
+    # `extra_fields:` entries for `corrects`'s own per-record flag fields
+    # (`emit_to_json_flat`/`emit_from_json_state`, json_codec.rb) — the
+    # SAME mechanism `lifecycle_extra_field` already uses for the
+    # lifecycle field, reused rather than duplicated so this rides along
+    # with the record's own ordinary JSON round-trip automatically (and
+    # therefore with whatever generic snapshot mechanism a host already
+    # persists that JSON through — `rust/host`'s own `hecks_lambda_
+    # snapshot.seed jsonb` column, confirmed by reading `journal.rs`
+    # directly, needs no schema change of its own for this).
+    def corrects_extra_fields(aggregate)
+      correctable_event_names(aggregate).map do |ev|
+        field = corrects_flag_field(ev)
+        deserialize_rhs = "match v.require(#{field.inspect}, #{aggregate[:name].to_s.inspect})? { " \
+          "crate::kernel::Json::Bool(b) => *b, " \
+          "_ => return Err(#{json_type_error(aggregate[:name].to_s, field, 'a boolean')}) }"
+        [field, "crate::kernel::Json::Bool(self.#{field})", deserialize_rhs]
+      end
+    end
+
+    # THE OTHER HALF of `corrects` — read directly, `MutationApplier#apply`'s
+    # own `:corrects` branch is a no-op (nothing here targets a field on
+    # the SAME command's own instance), but a LATER command's own
+    # `enforce_correction_target` needs to observe that this event
+    # happened at all. Ruby's real `@registry.event_log` (a full, ambient
+    # history) makes this free; this generator has no such history to
+    # consult, so it stamps the SAME fact forward onto the record itself,
+    # at the moment the correctable event is actually emitted — an
+    # ADDITIVE mutation line, appended after every declared one, for
+    # every command whose own `emits` list names an event some `corrects`
+    # mutation elsewhere on this aggregate targets.
+    def corrects_flag_mutation_lines(command, aggregate)
+      correctable = correctable_event_names(aggregate)
+      Array(command[:emits]).map(&:to_s).uniq.select { |name| correctable.include?(name) }
+                            .map { |name| "        record.#{corrects_flag_field(name)} = true;" }
     end
 
     # `delegates_to "Entity.Command", with: { … }` — the `:delegate`
@@ -558,7 +647,7 @@ module RustProjection
       target_args_name = "#{element_record}#{rust_ident(target[:name])}EntityArgs"
       aliases = delegate_mapping(delegation).map { |target_key, source_key| "(#{target_key.inspect}, #{source_key.inspect})" }
       given_specs = target[:givens].map do |given|
-        "            crate::kernel::GivenSpec { description: #{rust_string_literal(given[:description])}, expr: #{ExprEmitter.emit_predicate(given[:canonical])} },"
+        "            crate::kernel::GivenSpec { description: #{rust_string_literal(given[:description])}, expr: #{ExprEmitter.emit_predicate(given[:canonical])}, corrects_event: None },"
       end
       ensures_specs = target[:ensures].map do |rule|
         "            crate::kernel::EnsuresSpec { description: #{rust_string_literal(rule[:description])}, expr: #{ExprEmitter.emit_predicate(rule[:canonical])} },"
@@ -670,7 +759,7 @@ module RustProjection
       invariant_checks = invariant_checks_for(command, aggregates_by_name, value_objects_by_name)
 
       given_specs = command[:givens].map do |given|
-        "            crate::kernel::GivenSpec { description: #{rust_string_literal(given[:description])}, expr: #{ExprEmitter.emit_predicate(given[:canonical])} },"
+        "            crate::kernel::GivenSpec { description: #{rust_string_literal(given[:description])}, expr: #{ExprEmitter.emit_predicate(given[:canonical])}, corrects_event: None },"
       end
 
       ensures_specs = command[:ensures].map do |rule|

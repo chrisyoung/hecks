@@ -805,7 +805,7 @@ pub fn dispatch_option(
         "owner_id, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "an option is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("option.value"))))))) },
+            crate::kernel::GivenSpec { description: "an option is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("option.value"))))))), corrects_event: None },
         ],
         None,
         |record| {

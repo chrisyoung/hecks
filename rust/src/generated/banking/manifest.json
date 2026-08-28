@@ -95,9 +95,8 @@
   {
     "kind": "command",
     "id": "Banking::Account.CorrectFee",
-    "generated": false,
-    "gap_class": "per_instance",
-    "reason": "sets op(s) corrects not generated yet (only append/set/increment/decrement/multiply/clamp/delegate are)"
+    "generated": true,
+    "routed": true
   },
   {
     "kind": "command",

@@ -1286,7 +1286,7 @@ pub fn dispatch_identify(
         "bluebook, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "an identity part names something", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("path.value"))))))) },
+            crate::kernel::GivenSpec { description: "an identity part names something", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("path.value"))))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -1925,7 +1925,7 @@ pub fn dispatch_seal(
         "bluebook, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "an aggregate says what it is known by", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::Lookup("identified_by"))))) },
+            crate::kernel::GivenSpec { description: "an aggregate says what it is known by", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::Lookup("identified_by"))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -2102,8 +2102,8 @@ pub fn dispatch_invariant(
         "bluebook, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a rule says what it means", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("description.value"))))))) },
-            crate::kernel::GivenSpec { description: "a rule survives extraction", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("canonical.value"))))))) },
+            crate::kernel::GivenSpec { description: "a rule says what it means", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("description.value"))))))), corrects_event: None },
+            crate::kernel::GivenSpec { description: "a rule survives extraction", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("canonical.value"))))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -2195,8 +2195,8 @@ pub fn dispatch_precondition(
         "bluebook, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a rule says what it means", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("description.value"))))))) },
-            crate::kernel::GivenSpec { description: "a rule survives extraction", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("canonical.value"))))))) },
+            crate::kernel::GivenSpec { description: "a rule says what it means", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("description.value"))))))), corrects_event: None },
+            crate::kernel::GivenSpec { description: "a rule survives extraction", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("canonical.value"))))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -2291,9 +2291,9 @@ pub fn dispatch_projects(
         "bluebook, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a projected field is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("name.value"))))))) },
-            crate::kernel::GivenSpec { description: "a projected field reads through a reference", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("reference.value"))))))) },
-            crate::kernel::GivenSpec { description: "a projected field names a remote field", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("remote_field.value"))))))) },
+            crate::kernel::GivenSpec { description: "a projected field is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("name.value"))))))), corrects_event: None },
+            crate::kernel::GivenSpec { description: "a projected field reads through a reference", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("reference.value"))))))), corrects_event: None },
+            crate::kernel::GivenSpec { description: "a projected field names a remote field", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("remote_field.value"))))))), corrects_event: None },
         ],
         None,
         |record| {

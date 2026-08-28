@@ -1541,8 +1541,8 @@ pub fn dispatch_rule(
         "owner_id, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a rule says what it means", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("description.value"))))))) },
-            crate::kernel::GivenSpec { description: "a rule survives extraction", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("canonical.value"))))))) },
+            crate::kernel::GivenSpec { description: "a rule says what it means", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("description.value"))))))), corrects_event: None },
+            crate::kernel::GivenSpec { description: "a rule survives extraction", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("canonical.value"))))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -1634,8 +1634,8 @@ pub fn dispatch_ensure(
         "owner_id, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a rule says what it means", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("description.value"))))))) },
-            crate::kernel::GivenSpec { description: "a rule survives extraction", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("canonical.value"))))))) },
+            crate::kernel::GivenSpec { description: "a rule says what it means", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("description.value"))))))), corrects_event: None },
+            crate::kernel::GivenSpec { description: "a rule survives extraction", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("canonical.value"))))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -1737,8 +1737,8 @@ pub fn dispatch_change(
         "owner_id, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a mutation names a target", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("target.value"))))))) },
-            crate::kernel::GivenSpec { description: "a mutation does something", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("op.value"))))))) },
+            crate::kernel::GivenSpec { description: "a mutation names a target", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("target.value"))))))), corrects_event: None },
+            crate::kernel::GivenSpec { description: "a mutation does something", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("op.value"))))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -1833,8 +1833,8 @@ pub fn dispatch_acts_on(
         "owner_id, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a command names what it acts on", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("root.value"))))))) },
-            crate::kernel::GivenSpec { description: "a command acts on ONE root", expr: Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("references.value"))))) },
+            crate::kernel::GivenSpec { description: "a command names what it acts on", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("root.value"))))))), corrects_event: None },
+            crate::kernel::GivenSpec { description: "a command acts on ONE root", expr: Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("references.value"))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -1921,7 +1921,7 @@ pub fn dispatch_announce(
         "owner_id, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "an event is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("announces.value"))))))) },
+            crate::kernel::GivenSpec { description: "an event is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("announces.value"))))))), corrects_event: None },
         ],
         None,
         |record| {

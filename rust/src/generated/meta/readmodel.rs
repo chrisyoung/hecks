@@ -858,7 +858,7 @@ pub fn dispatch_group_by(
         "bluebook, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a group_by field is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("field.value"))))))) },
+            crate::kernel::GivenSpec { description: "a group_by field is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("field.value"))))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -1032,7 +1032,7 @@ pub fn dispatch_median(
         "bluebook, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "a median field is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("median_field.value"))))))) },
+            crate::kernel::GivenSpec { description: "a median field is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("median_field.value"))))))), corrects_event: None },
         ],
         None,
         |record| {
@@ -1128,7 +1128,7 @@ pub fn dispatch_option(
         "bluebook, name.value",
         &with_references,
         &[
-            crate::kernel::GivenSpec { description: "an option is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("option.value"))))))) },
+            crate::kernel::GivenSpec { description: "an option is named", expr: Expr::Not(Box::new(Expr::Empty(Box::new(Expr::ToS(Box::new(Expr::Lookup("option.value"))))))), corrects_event: None },
         ],
         None,
         |record| {

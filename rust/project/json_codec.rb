@@ -438,14 +438,20 @@ module RustProjection
         Exemplar.render("field_assignment", "tmpl_ident" => ident, "tmpl_rhs_placeholder()" => rhs)
       end
 
-      # `extra_fields` carries `(key, to_json-serialize-expr)` pairs
-      # (`lifecycle_extra_field`'s own shape) — from_json only needs the
-      # KEY back; the lifecycle field is always a plain, required
-      # String, matching `emit_record`/`emit_entity`'s own never-
-      # Option-wrapped struct field for it.
-      extra_field_exprs = extra_fields.map do |key, _serialize_expr|
+      # `extra_fields` carries `(key, to_json-serialize-expr[, deserialize_rhs])`
+      # tuples (`lifecycle_extra_field`'s own shape) — from_json only needs
+      # the KEY back, plus (as of `corrects`'s own per-record flag field,
+      # `corrects_extra_fields`) an explicit `deserialize_rhs` for anything
+      # that ISN'T the lifecycle field's own always-String shape: the
+      # lifecycle field is always a plain, required String, matching
+      # `emit_record`/`emit_entity`'s own never-Option-wrapped struct field
+      # for it, but a synthetic `bool` flag needs a different reader
+      # entirely. Third tuple element optional — omitted (nil), the
+      # lifecycle-shaped String reader below still applies, so every
+      # existing `extra_fields` caller keeps working unchanged.
+      extra_field_exprs = extra_fields.map do |key, _serialize_expr, deserialize_rhs|
         ident = rust_ident_field(key)
-        rhs = "v.require(#{key.inspect}, #{struct_name.inspect})?.as_str()" \
+        rhs = deserialize_rhs || "v.require(#{key.inspect}, #{struct_name.inspect})?.as_str()" \
           ".ok_or_else(|| #{json_type_error(struct_name, key, 'a string')})?.to_string()"
         Exemplar.render("field_assignment", "tmpl_ident" => ident, "tmpl_rhs_placeholder()" => rhs)
       end

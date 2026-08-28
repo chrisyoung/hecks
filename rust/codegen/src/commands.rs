@@ -44,12 +44,19 @@ fn command_skip_reason_with(command: &Json, aggregate: &Json, value_objects_by_n
     let mut unsupported_ops: Vec<String> = Vec::new();
     for m in mutations_list {
         let op = m.get("op").map(Json::to_s).unwrap_or_default();
-        if !["append", "set", "increment", "decrement", "multiply", "clamp", "delegate"].contains(&op.as_str()) && !unsupported_ops.contains(&op) {
+        if !["append", "set", "increment", "decrement", "multiply", "clamp", "delegate", "corrects"].contains(&op.as_str()) && !unsupported_ops.contains(&op) {
             unsupported_ops.push(op);
         }
     }
     if !unsupported_ops.is_empty() {
-        return Some(format!("sets op(s) {} not generated yet (only append/set/increment/decrement/multiply/clamp/delegate are)", unsupported_ops.join(", ")));
+        return Some(format!("sets op(s) {} not generated yet (only append/set/increment/decrement/multiply/clamp/delegate/corrects are)", unsupported_ops.join(", ")));
+    }
+
+    if let Some(corrects) = crate::bridging::corrects_of(command) {
+        if crate::bridging::corrects_reverses(corrects) {
+            let event = corrects.get("target").map(Json::to_s).unwrap_or_default();
+            return Some(format!("corrects {event}, reverses: true — the derived append/remove-reversal shape is a real, separate gap Ruby's own authors haven't finished designing (AggregateBuilder#seal_correction_targets's own comment) — not generated yet"));
+        }
     }
 
     if let Some(problem) = delegate_skip_reason(command, aggregate, value_objects_by_name) {
@@ -327,14 +334,12 @@ pub fn emit_command(exemplar: &Exemplar, command: &Json, aggregate: &Json, domai
     let invariant_checks = invariant_checks_for(exemplar, command, aggregates_by_name, value_objects_by_name);
 
     let givens = command.get("givens").map(Json::each).unwrap_or(&[]);
-    let given_specs: Vec<String> = givens
-        .iter()
-        .map(|g| {
-            let description = g.get("description").and_then(Json::as_str).unwrap_or("");
-            let canonical = g.get("canonical").and_then(Json::as_str).unwrap_or("");
-            format!("            crate::kernel::GivenSpec {{ description: {}, expr: {} }},", naming::ruby_inspect_string(description), crate::expr_emitter::emit_predicate(canonical))
-        })
-        .collect();
+    let mut given_specs: Vec<String> = crate::bridging::corrects_given_specs(command);
+    given_specs.extend(givens.iter().map(|g| {
+        let description = g.get("description").and_then(Json::as_str).unwrap_or("");
+        let canonical = g.get("canonical").and_then(Json::as_str).unwrap_or("");
+        format!("            crate::kernel::GivenSpec {{ description: {}, expr: {}, corrects_event: None }},", naming::ruby_inspect_string(description), crate::expr_emitter::emit_predicate(canonical))
+    }));
 
     let ensures = command.get("ensures").map(Json::each).unwrap_or(&[]);
     let ensures_specs: Vec<String> = ensures
@@ -357,7 +362,31 @@ pub fn emit_command(exemplar: &Exemplar, command: &Json, aggregate: &Json, domai
     };
 
     let mutations_list = command.get("mutations").map(Json::each).unwrap_or(&[]);
-    let mut mutation_lines: Vec<String> = mutations_list.iter().map(|m| mutations::emit_mutation_line(exemplar, m, aggregate, command, value_objects_by_name, true)).collect();
+    let mut mutation_lines: Vec<String> = mutations_list
+        .iter()
+        .filter(|m| m.get("op").map(Json::to_s).unwrap_or_default() != "corrects")
+        .map(|m| mutations::emit_mutation_line(exemplar, m, aggregate, command, value_objects_by_name, true))
+        .collect();
+    // `corrects`'s own OTHER half — see `rust/project/commands.rb`'s own
+    // `corrects_flag_mutation_lines` for the full reasoning: stamp the
+    // fact forward onto the record for every command whose own `emits`
+    // names an event some `corrects` mutation elsewhere on this
+    // aggregate targets.
+    let correctable = crate::bridging::correctable_event_names(aggregate);
+    let mut emitted_names: Vec<String> = Vec::new();
+    for name in command.get("emits").map(Json::each).unwrap_or(&[]).iter().map(Json::to_s) {
+        // `.uniq` — first-occurrence order preserved, not sorted; matches
+        // `rust/project/commands.rb`'s own `Array(command[:emits]).map(&
+        // :to_s).uniq` exactly.
+        if !emitted_names.contains(&name) {
+            emitted_names.push(name);
+        }
+    }
+    for name in &emitted_names {
+        if correctable.contains(name) {
+            mutation_lines.push(format!("        record.{} = true;", crate::bridging::corrects_flag_field(name)));
+        }
+    }
     if let Some(t) = &transition {
         if !t.to_state.is_empty() {
             mutation_lines.push(format!("        record.{} = {}.to_string();", naming::rust_ident_field(&t.field), naming::ruby_inspect_string(&t.to_state)));
@@ -427,6 +456,9 @@ pub fn emit_command(exemplar: &Exemplar, command: &Json, aggregate: &Json, domai
             let field = lifecycle.get("field").and_then(Json::as_str).unwrap_or("");
             let default = lifecycle.get("default").map(Json::to_s).unwrap_or_default();
             record_fields.push(format!("            {}: {}.to_string(),", naming::rust_ident_field(field), naming::ruby_inspect_string(&default)));
+        }
+        for ev in crate::bridging::correctable_event_names(aggregate) {
+            record_fields.push(format!("            {}: false,", crate::bridging::corrects_flag_field(&ev)));
         }
 
         hydrate = format!(
@@ -608,7 +640,7 @@ fn delegation_of(exemplar: &Exemplar, command: &Json, aggregate: &Json, value_ob
         .map(|g| {
             let description = g.get("description").and_then(Json::as_str).unwrap_or("");
             let canonical = g.get("canonical").and_then(Json::as_str).unwrap_or("");
-            format!("            crate::kernel::GivenSpec {{ description: {}, expr: {} }},", naming::ruby_inspect_string(description), crate::expr_emitter::emit_predicate(canonical))
+            format!("            crate::kernel::GivenSpec {{ description: {}, expr: {}, corrects_event: None }},", naming::ruby_inspect_string(description), crate::expr_emitter::emit_predicate(canonical))
         })
         .collect();
     let ensures_specs: Vec<String> = target
@@ -740,7 +772,7 @@ pub fn emit_entity_command(
         .map(|g| {
             let description = g.get("description").and_then(Json::as_str).unwrap_or("");
             let canonical = g.get("canonical").and_then(Json::as_str).unwrap_or("");
-            format!("            crate::kernel::GivenSpec {{ description: {}, expr: {} }},", naming::ruby_inspect_string(description), crate::expr_emitter::emit_predicate(canonical))
+            format!("            crate::kernel::GivenSpec {{ description: {}, expr: {}, corrects_event: None }},", naming::ruby_inspect_string(description), crate::expr_emitter::emit_predicate(canonical))
         })
         .collect();
 

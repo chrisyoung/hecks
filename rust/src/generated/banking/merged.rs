@@ -380,6 +380,19 @@ pub fn dispatch_by_name(
               let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
               crate::generated::banking::account::dispatch_apply_fee(&mut store.account, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
           }
+          "Banking::Account.CorrectFee" => {
+              let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
+              let route = invocation.route();
+              let facts_json = invocation.facts();
+              let id = match route { Some(route) => { route.require_depth(0)?; route.aggregate().to_string() }, None => crate::generated::banking::account::Account::extract_id(facts_json)?, };
+              let args = crate::generated::banking::account::CorrectFeeArgs::from_json(facts_json)?;
+                      args.amount.check_invariants()?;
+              crate::kernel::check_role(Some("Back office"), "CorrectFee", caller_role)?;
+              let owner_deref = crate::kernel::owner_deref(&*store, REFERENCE_TABLE, "Banking::Account", &id);
+              let command_deref = crate::kernel::command_deref(&*store, REFERENCE_TABLE, &[], &args);
+              let payload = crate::kernel::Json::overlay(facts_json, &args.to_json());
+              crate::generated::banking::account::dispatch_correct_fee(&mut store.account, &id, args, mutations, owner_deref, command_deref).map(|(_, events)| stamp_payload(events, &payload))
+          }
           "Banking::Account.AccrueInterest" => {
               let invocation = crate::kernel::CommandInvocation::from_json(args_json)?;
               let route = invocation.route();
@@ -1182,6 +1195,7 @@ pub fn command_creates(verb: &str) -> bool {
         "Banking::Account.Unfreeze" => false,
         "Banking::Account.CloseAccount" => false,
         "Banking::Account.ApplyFee" => false,
+        "Banking::Account.CorrectFee" => false,
         "Banking::Account.AccrueInterest" => false,
         "Banking::Account.CorrectInterest" => false,
         "Banking::Account.LedgerEntry.Amend" => false,
@@ -1265,6 +1279,7 @@ pub fn command_attributes_for_verb(verb: &str) -> &'static [&'static str] {
         "Banking::Account.Unfreeze" => &[],
         "Banking::Account.CloseAccount" => &[],
         "Banking::Account.ApplyFee" => &["amount", "narrative"],
+        "Banking::Account.CorrectFee" => &["amount"],
         "Banking::Account.AccrueInterest" => &["amount"],
         "Banking::Account.CorrectInterest" => &["amount"],
         "Banking::Account.LedgerEntry.Amend" => &["adjustment", "narrative"],
