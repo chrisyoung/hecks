@@ -5,6 +5,7 @@ module Hecks
   module Runtime
     class UnknownVerb < StandardError; end
     class EnsuresNotMet < StandardError; end
+
     # `detail` — the failing comparison's own resolved operands, "left: X,
     # right: Y" — set only when the given's TOP-LEVEL shape is a bare
     # comparison (`Evaluator.comparison_detail`'s own comment has the full
@@ -30,7 +31,8 @@ module Hecks
         detail ? "#{base} (#{detail})" : base
       end
     end
-    class NotFound    < StandardError; end
+
+    class NotFound < StandardError; end
     class LifecycleRefused < StandardError; end
     class TypeMismatch < StandardError; end
     # An argument the command does not declare. Sibling of TypeMismatch : that one
