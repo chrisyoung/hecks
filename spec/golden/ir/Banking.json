@@ -3603,16 +3603,6 @@
               "admits": null,
               "default": null,
               "list": false,
-              "name": "customer",
-              "optional": false,
-              "pattern": null,
-              "relationship": null,
-              "type": "CustomerNumber"
-            },
-            {
-              "admits": null,
-              "default": null,
-              "list": false,
               "name": "branch_code",
               "optional": false,
               "pattern": null,
@@ -3638,6 +3628,16 @@
               "pattern": null,
               "relationship": null,
               "type": "Size"
+            },
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "customer",
+              "optional": false,
+              "pattern": null,
+              "relationship": "belongs_to",
+              "type": "Reference<Customer>"
             }
           ],
           "emits": [
@@ -3648,6 +3648,10 @@
           ],
           "from": null,
           "givens": [
+            {
+              "canonical": "customer.status == \"active\"",
+              "description": "customer is active"
+            },
             {
               "canonical": "status == \"vacant\"",
               "description": "box is vacant"
