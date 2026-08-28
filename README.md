@@ -626,7 +626,7 @@ There is no published gem. You clone the repository, and the
 repository is the tool:
 
 ```sh
-git clone https://github.com/chrisyoung/hecks
+git clone https://github.com/heckslabs/hecks
 cd hecks
 bundle install
 bin/console examples/banking     # drops into IRB with the domain booted
@@ -716,6 +716,7 @@ The example domains this README draws from:
 - **banking** — Customers hold accounts, accounts move money, and every movement is a transfer that can fail halfway. The domain that has to get it right twice — once in the rules, once in the recovery.
 - **chess** — A chess game: pieces with no life outside the board that holds them, a status that only ever moves one legal way at a time, and turn order and check enforced by declaration rather than a hand-written engine.
 - **compliance** — Something elsewhere already acted to contain a risk; this domain tracks the human review that decides what happens next.
+- **directory** — A staff directory: members once addressed by the name they walked in with, now by the email that actually identifies them one person to one row.
 - **pizzas** — Put toppings on a pizza and sell it to a customer.
 - **roster** — A crew roster: seats added one at a time, members enlisted, each seated once — the smallest domain whose every rule is a question asked of a LIST.
 <!-- generated:end -->
