@@ -205,9 +205,7 @@ module Hecks
         # construction too, not only by the state guard.
         if drain_reversals
           reversals = instance[:completed_reversals] || []
-          until reversals.empty?
-            deliver_derived_reversal(pm, reversals.pop, correlation, domain)
-          end
+          deliver_derived_reversal(pm, reversals.pop, correlation, domain) until reversals.empty?
           checkpoint(pm, correlation, instance, domain)
         end
 
@@ -421,7 +419,7 @@ module Hecks
         # `drain_reversals: true` — only `unwind`'s own call site fires
         # derived compensation; `advance_saga`'s own call never does.
         settle_transition(pm, event, handler, instance, correlation, domain, record, pre_state,
-                           drain_reversals: true)
+                          drain_reversals: true)
       end
 
       # A DERIVED REVERSAL — `entry[:args]` is already resolved
@@ -441,11 +439,11 @@ module Hecks
         attempt = 0
         begin
           invocation = ReactionInvocation.build(
-            registry:    @registry,
-            verb:        qualified(entry[:command_name], domain),
-            projected:   entry[:args],
-            explicit:    true,
-            passthrough: [pm.correlation_head],
+            registry:        @registry,
+            verb:            qualified(entry[:command_name], domain),
+            projected:       entry[:args],
+            explicit:        true,
+            passthrough:     [pm.correlation_head],
             source_receiver: nil
           )
           @door.reenter(qualified(entry[:command_name], domain),
