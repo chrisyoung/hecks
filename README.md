@@ -720,6 +720,7 @@ The example domains this README draws from:
 - **compliance** — Something elsewhere already acted to contain a risk; this domain tracks the human review that decides what happens next.
 - **directory** — A staff directory: members once addressed by the name they walked in with, now by the email that actually identifies them one person to one row.
 - **pizzas** — Put toppings on a pizza and sell it to a customer.
+- **playaprep** — One burner's yearly Burning Man expedition: the get-ready list (RV, solar, water, truck, tires), the shopping and grocery lists, the drive out and its gas stops, the people met on and around the playa, the pins worth remembering, and the trivia that keeps the ten principles and the BLM's own rules front of mind.
 - **roster** — A crew roster: seats added one at a time, members enlisted, each seated once — the smallest domain whose every rule is a question asked of a LIST.
 <!-- generated:end -->
 
