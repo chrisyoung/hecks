@@ -92,7 +92,7 @@ RSpec.describe "Rust codegen parity (hecks-codegen)", :io do
 
   before(:context) { self.class.build_codegen! }
 
-  def self.json_shaped(ir) = JSON.parse(JSON.generate(ir), symbolize_names: true)
+  def self.json_shaped(payload) = JSON.parse(JSON.generate(payload), symbolize_names: true)
 
   # THE SAME sequence `bin/project_rust` itself loads a single-bluebook
   # domain through (persistence/extraction ports, memory + prism +
@@ -224,8 +224,8 @@ RSpec.describe "Rust codegen parity (hecks-codegen)", :io do
   # file for — mirrors that method's own `unsupported_attribute_types`
   # skip check exactly (rather than hand-listing basenames), so this can
   # never silently drift from which aggregates a real run actually emits.
-  def generated_aggregate_basenames(ir)
-    ir[:aggregates].filter_map do |aggregate|
+  def generated_aggregate_basenames(payload)
+    payload[:aggregates].filter_map do |aggregate|
       vo_by_name = aggregate[:value_objects].to_h { |vo| [vo[:name], vo] }
       next nil if RustProjection::Projector.unsupported_attribute_types(aggregate, vo_by_name).any?
 

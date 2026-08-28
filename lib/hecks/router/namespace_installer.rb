@@ -106,12 +106,12 @@ module Hecks
 
         target.define_singleton_method(:find) do |id|
           found = dispatcher.registry.repository(domain, ir).find(id)
-          found && Facade::Handle.new(dispatcher: dispatcher, domain: domain, ir: ir, instance: found)
+          found && Facade::Handle.new(dispatcher: dispatcher, domain: domain, aggregate: ir, instance: found)
         end
 
         target.define_singleton_method(:all) do
           dispatcher.registry.repository(domain, ir).all.map do |instance|
-            Facade::Handle.new(dispatcher: dispatcher, domain: domain, ir: ir, instance: instance)
+            Facade::Handle.new(dispatcher: dispatcher, domain: domain, aggregate: ir, instance: instance)
           end
         end
       end

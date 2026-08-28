@@ -18,10 +18,10 @@ module Hecks
     class Handle
       attr_reader :id
 
-      def initialize(dispatcher:, domain:, ir:, instance:)
+      def initialize(dispatcher:, domain:, aggregate:, instance:)
         @dispatcher = dispatcher
         @domain     = domain
-        @ir         = ir
+        @ir         = aggregate
         @id         = instance.id
         @state      = instance.state
         define_reference_accessors

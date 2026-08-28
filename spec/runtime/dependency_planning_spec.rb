@@ -5,8 +5,8 @@ RSpec.describe Hecks::Runtime::DependencyPlanning do
     Hecks::Bluebook::Attribute.new(name: name, type: type)
   end
 
-  def mutation(target, op, source)
-    Hecks::Bluebook::Mutation.new(target: target, op: op, source: source)
+  def mutation(target, oper, source)
+    Hecks::Bluebook::Mutation.new(target: target, op: oper, source: source)
   end
 
   let(:sku) { field(:sku, String) }

@@ -315,9 +315,9 @@ RSpec.describe Hecks::Adapters::PostgresEra, :io do
     # the rest of the comparator matrix was tested only against Memory
     # (spec/query_comparators_spec.rb). One real adapter should prove
     # the other five compile and answer correctly too.
-    def where(clause_field, op, clause_value, order: nil, limit: nil, offset: nil)
+    def where(clause_field, oper, clause_value, order: nil, limit: nil, offset: nil)
       declared = Struct.new(:wheres, :order_by, :limit, :offset, :null_semantics).new(
-        [Struct.new(:field, :op, :value).new(clause_field, op, clause_value)],
+        [Struct.new(:field, :op, :value).new(clause_field, oper, clause_value)],
         order && Struct.new(:field, :direction).new(*order), limit, offset, nil
       )
       adapter.query(declared, {}).map(&:id)

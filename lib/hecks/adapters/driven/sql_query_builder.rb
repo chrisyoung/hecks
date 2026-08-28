@@ -65,10 +65,10 @@ module Hecks
 
       private
 
-      def where_clause(op, expression, value, binds, field: nil)
-        case op
+      def where_clause(oper, expression, value, binds, field: nil)
+        case oper
         when "eq", "ne", "gt", "gte", "lt", "lte"
-          "#{comparable_expression(expression, value)} #{COMPARATORS.fetch(op)} #{placeholder(binds, value)}"
+          "#{comparable_expression(expression, value)} #{COMPARATORS.fetch(oper)} #{placeholder(binds, value)}"
         when "contains"
           member = field && list_member(field)
           if member
@@ -97,7 +97,7 @@ module Hecks
           # which Postgres overrides to cast numerics.
           "CAST(#{expression} AS TEXT) IN (#{members.map { |member| placeholder(binds, member) }.join(', ')})"
         else
-          raise ArgumentError, "#{dialect_name} query adapter does not support #{op.inspect}"
+          raise ArgumentError, "#{dialect_name} query adapter does not support #{oper.inspect}"
         end
       end
 
@@ -155,7 +155,18 @@ module Hecks
                  end
         member ||= if path.empty? && attribute && value_object?(attribute)
                      object = @aggregate.value_object(attribute.type)
-                     Forms::ValueObjectShape.numeric_member(object)&.name
+                     # A SOLE attribute is the fallback when no member is
+                     # numeric — a single-attribute value object IS its one
+                     # field whatever that field is named (`Behaviour::
+                     # ValueObject#sole_attribute`, the same strict rule
+                     # `Runtime::Value`'s own `.value` alias enforces), so
+                     # `EmailAddress{address}` compiles to `$.address`
+                     # rather than falling through to the dialects' own
+                     # `member || "value"` convention and silently matching
+                     # nothing. Multi-field non-numeric shapes still fall
+                     # through to that convention, unchanged — there is no
+                     # single field to honestly pick for them here either.
+                     (Forms::ValueObjectShape.numeric_member(object) || object.sole_attribute)&.name
                    end
         nested_expression(name, path, member)
       end

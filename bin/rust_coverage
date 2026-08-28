@@ -115,11 +115,11 @@ ir = JSON.parse(File.read(ir_path), symbolize_names: true)
 # that isn't just ungenerated, but that `bin/project_rust` never even
 # considered). Every finding this tool ever reports traces back to one of
 # these `[kind, id]` pairs.
-def expected_from_ir(ir)
-  domain_name = ir.fetch(:name)
+def expected_from_ir(payload)
+  domain_name = payload.fetch(:name)
   expected = []
 
-  ir.fetch(:aggregates).each do |aggregate|
+  payload.fetch(:aggregates).each do |aggregate|
     aggregate_id = "#{domain_name}::#{aggregate.fetch(:name)}"
     expected << [:aggregate, aggregate_id]
 
@@ -139,20 +139,20 @@ def expected_from_ir(ir)
     end
   end
 
-  ir.fetch(:read_models).each { |rm| expected << [:read_model, "#{domain_name}::#{rm.fetch(:name)}"] }
-  ir.fetch(:policies).each { |p| expected << [:policy, "#{domain_name}::#{p.fetch(:name)}"] }
-  ir.fetch(:process_managers).each { |pm| expected << [:process_manager, "#{domain_name}::#{pm.fetch(:name)}"] }
+  payload.fetch(:read_models).each { |rm| expected << [:read_model, "#{domain_name}::#{rm.fetch(:name)}"] }
+  payload.fetch(:policies).each { |p| expected << [:policy, "#{domain_name}::#{p.fetch(:name)}"] }
+  payload.fetch(:process_managers).each { |pm| expected << [:process_manager, "#{domain_name}::#{pm.fetch(:name)}"] }
 
-  # `ir[:lineage]` — a BINDING fact (Projector::Exporter.lineage's own
+  # `payload[:lineage]` — a BINDING fact (Projector::Exporter.lineage's own
   # header), not part of `[:aggregates]`'s own canonical shape, so it's
   # its own top-level key rather than a field on each aggregate above.
   # `.fetch(:lineage, {})` — not a bare `.fetch(:lineage)` — because a
   # domain regenerated before this key existed (a stale checked-in
-  # ir.json this checkout can't refresh, e.g. Embryonaut's) simply has
+  # payload.json this checkout can't refresh, e.g. Embryonaut's) simply has
   # none, and that must read as "nothing to expect here," never a
   # KeyError this tool's own manifest cross-check would otherwise raise
   # on.
-  ir.fetch(:lineage, {}).fetch(:capable_aggregates, []).each do |aggregate|
+  payload.fetch(:lineage, {}).fetch(:capable_aggregates, []).each do |aggregate|
     expected << [:lineage_aggregate, "#{domain_name}::#{aggregate.fetch(:name)}"]
   end
 
@@ -170,14 +170,14 @@ end
 # `p[:verb].inspect => {` pattern regardless of which of the three arm
 # builders (`aggregate_arms`/`entity_arms`/`port_arms`) wrote them, so one
 # regex covers all three.
-def derive_manifest_from_source(ir, mod_dir)
-  domain_name = ir.fetch(:name)
+def derive_manifest_from_source(payload, mod_dir)
+  domain_name = payload.fetch(:name)
   registry_src = File.exist?(File.join(mod_dir, "registry.rs")) ? File.read(File.join(mod_dir, "registry.rs")) : ""
   routed_verbs = registry_src.scan(/^\s*"([A-Za-z0-9_:.]+)"\s*=>\s*\{/).flatten.to_set
 
   manifest = []
 
-  ir.fetch(:aggregates).each do |aggregate|
+  payload.fetch(:aggregates).each do |aggregate|
     aggregate_id = "#{domain_name}::#{aggregate.fetch(:name)}"
     aggregate_file = File.join(mod_dir, "#{aggregate.fetch(:name).downcase}.rs")
     aggregate_generated = File.exist?(aggregate_file)
@@ -227,7 +227,7 @@ def derive_manifest_from_source(ir, mod_dir)
     end
   end
 
-  ir.fetch(:read_models).each do |read_model|
+  payload.fetch(:read_models).each do |read_model|
     manifest << {
       kind: "read_model", id: "#{domain_name}::#{read_model.fetch(:name)}", generated: false, gap_class: "whole_kind",
       reason: 'the "read_model" construct has no generated code path at all — a distinct construct from "query" (ReadModel, a cross-aggregate ask) that happens to share the same fate'
@@ -246,11 +246,11 @@ def derive_manifest_from_source(ir, mod_dir)
   # be matched — but is kept consistent with policies here rather than
   # having only one of the two silently gain precision fallback mode
   # can't actually promise across the board).
-  ir.fetch(:policies).each do |policy|
+  payload.fetch(:policies).each do |policy|
     manifest << { kind: "policy", id: "#{domain_name}::#{policy.fetch(:name)}", generated: nil,
                   reason: "fallback mode cannot verify policy routing from registry.rs alone (the generated policy table carries no policy name, only event/target-verb data) — this domain's real manifest.json would need bin/project_rust re-run against its own Bluebook source, which isn't in this checkout" }
   end
-  ir.fetch(:process_managers).each do |pm|
+  payload.fetch(:process_managers).each do |pm|
     manifest << { kind: "process_manager", id: "#{domain_name}::#{pm.fetch(:name)}", generated: nil,
                   reason: "fallback mode does not attempt process-manager verification either, for consistency with the policy caveat above" }
   end
@@ -262,8 +262,8 @@ def derive_manifest_from_source(ir, mod_dir)
   # about the way a command/query verb's routing is. rust/host's
   # journal::read_lineage_head_all/_by_id + append_lineage_mutation are
   # generic over storage_name and already compiled in unconditionally —
-  # true for any domain's ir.json that names one, fallback mode or not.
-  ir.fetch(:lineage, {}).fetch(:capable_aggregates, []).each do |aggregate|
+  # true for any domain's payload.json that names one, fallback mode or not.
+  payload.fetch(:lineage, {}).fetch(:capable_aggregates, []).each do |aggregate|
     manifest << { kind: "lineage_aggregate", id: "#{domain_name}::#{aggregate.fetch(:name)}", generated: true, routed: true,
                   reason: "read via rust/host's journal::read_lineage_head_all/_by_id, written via journal::append_lineage_mutation — both generic over storage_name, verified independent of this domain's own manifest.json" }
   end

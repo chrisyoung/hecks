@@ -200,8 +200,8 @@ module Hecks
         "#{header}\n\n#{lines.join("\n")}"
       end
 
-      def op_words(op)
-        { eq: "is", lt: "under", lte: "at most", gt: "over", gte: "at least" }[op.to_s.to_sym] || op.to_s
+      def op_words(comparator)
+        { eq: "is", lt: "under", lte: "at most", gt: "over", gte: "at least" }[comparator.to_s.to_sym] || comparator.to_s
       end
 
       # ── what happens on its own ───────────────────────────────────────
