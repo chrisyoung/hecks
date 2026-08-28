@@ -148,7 +148,7 @@ Four principles, and the decisions that follow from them.
 
   This is Evans's own line, not an extrapolation: apply consistency rules synchronously **within** an aggregate boundary, and handle updates across aggregates asynchronously — *"any rule that spans AGGREGATES will not be expected to be up to date at all times."* Forty-five preconditions in the corpus (`given("customer is active")`) are exactly such a rule, read transactionally.
 
-  Query hops are unaffected. `dereference`'s only two call sites are `enforce_givens` and `enforce_ensures`; queries traverse through `HopPath` and keep doing so.
+  Query hops are unaffected. ~~`dereference`'s only two call sites are `enforce_givens` and `enforce_ensures`~~ **Stale as of S10 (2026-08-27)** — aggregate `invariant` didn't exist when this line was written; now that it does (S10, this same ADR), `dereference` has two more call sites, `enforce_invariants` and `check_entity_invariants` (`command_rules/admissibility.rb`), both reachable the same way `enforce_givens`/`enforce_ensures` are. The boundary rule still applies to them identically — an invariant may not read through a `reference_to` either — this just widens where the deletion has to reach. Queries still traverse through `HopPath` and keep doing so.
 - **Cross-aggregate state is declared as a projection**, and the language knows it is a copy:
 
   ```ruby
