@@ -6480,7 +6480,7 @@
                   "{cents: 0}"
                 ]
               ],
-              "reverses": null
+              "compensates": null
             }
           ]
         },
@@ -6531,7 +6531,7 @@
                   ":reference"
                 ]
               ],
-              "reverses": {
+              "compensates": {
                 "command_name": "Account.Credit",
                 "with_spec": [
                   [
@@ -6547,7 +6547,7 @@
                     "{text: \"transfer reversed\"}"
                   ]
                 ],
-                "reverses": null
+                "compensates": null
               }
             }
           ]
@@ -6565,7 +6565,7 @@
                   ":reference"
                 ]
               ],
-              "reverses": null
+              "compensates": null
             },
             {
               "command_name": "Account.Credit",
@@ -6587,7 +6587,7 @@
                   ":reference"
                 ]
               ],
-              "reverses": null
+              "compensates": null
             }
           ]
         },
@@ -6604,7 +6604,7 @@
                   ":reference"
                 ]
               ],
-              "reverses": null
+              "compensates": null
             }
           ]
         },
@@ -6621,7 +6621,7 @@
                   ":reference"
                 ]
               ],
-              "reverses": null
+              "compensates": null
             }
           ]
         },
@@ -6638,7 +6638,7 @@
                   ":reference"
                 ]
               ],
-              "reverses": null
+              "compensates": null
             }
           ]
         }
@@ -6667,7 +6667,7 @@
                   ":end_to_end"
                 ]
               ],
-              "reverses": null
+              "compensates": null
             }
           ]
         },
@@ -6684,7 +6684,7 @@
                   ":end_to_end"
                 ]
               ],
-              "reverses": null
+              "compensates": null
             }
           ]
         }

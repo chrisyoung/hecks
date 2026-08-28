@@ -12721,7 +12721,7 @@
                   "admits": null,
                   "default": null,
                   "list": false,
-                  "name": "reverses_command_name",
+                  "name": "compensates_command_name",
                   "optional": true,
                   "pattern": null,
                   "relationship": null,
@@ -12731,7 +12731,7 @@
                   "admits": null,
                   "default": null,
                   "list": true,
-                  "name": "reverses_with_spec",
+                  "name": "compensates_with_spec",
                   "optional": false,
                   "pattern": null,
                   "relationship": null,
@@ -12795,7 +12795,7 @@
                       "admits": null,
                       "default": null,
                       "list": false,
-                      "name": "reverses_command_name",
+                      "name": "compensates_command_name",
                       "optional": false,
                       "pattern": null,
                       "relationship": null,
@@ -12803,7 +12803,7 @@
                     }
                   ],
                   "emits": [
-                    "ReversalDeclared"
+                    "CompensationDeclared"
                   ],
                   "ensures": [
 
@@ -12812,19 +12812,19 @@
                   "givens": [
 
                   ],
-                  "goal": "Name the command this dispatch reverses",
+                  "goal": "Name the command this dispatch compensates for",
                   "mutations": [
                     {
                       "op": "set",
                       "sign": "",
                       "source": {
                         "kind": "argument",
-                        "name": "reverses_command_name"
+                        "name": "compensates_command_name"
                       },
-                      "target": "reverses_command_name"
+                      "target": "compensates_command_name"
                     }
                   ],
-                  "name": "Reverses",
+                  "name": "Compensates",
                   "provenance": null,
                   "references": null,
                   "role": "Language"
@@ -12853,7 +12853,7 @@
                     }
                   ],
                   "emits": [
-                    "ReversalBindingAttached"
+                    "CompensationBindingAttached"
                   ],
                   "ensures": [
 
@@ -12862,7 +12862,7 @@
                   "givens": [
 
                   ],
-                  "goal": "Bind one argument of the reversal's own dispatched command",
+                  "goal": "Bind one argument of the compensation's own dispatched command",
                   "mutations": [
                     {
                       "fields": {
@@ -12871,10 +12871,10 @@
                       },
                       "op": "append",
                       "sign": "",
-                      "target": "reverses_with_spec"
+                      "target": "compensates_with_spec"
                     }
                   ],
-                  "name": "BindReversal",
+                  "name": "BindCompensation",
                   "provenance": null,
                   "references": null,
                   "role": "Language"
@@ -13466,7 +13466,7 @@
             [
               [
                 "word",
-                "reverses"
+                "compensates"
               ],
               [
                 "context",
@@ -13490,7 +13490,7 @@
               ],
               [
                 "calls",
-                "reverses_impl"
+                "compensates_impl"
               ]
             ]
           ],
@@ -13943,7 +13943,7 @@
             [
               [
                 "keyword",
-                "reverses"
+                "compensates"
               ],
               [
                 "context",
@@ -13973,7 +13973,7 @@
             [
               [
                 "keyword",
-                "reverses"
+                "compensates"
               ],
               [
                 "context",
@@ -14003,7 +14003,7 @@
             [
               [
                 "keyword",
-                "reverses"
+                "compensates"
               ],
               [
                 "context",

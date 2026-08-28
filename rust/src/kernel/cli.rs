@@ -19,7 +19,7 @@
 // alias `bin/project_rust` rewrites to point at whichever domain was last
 // generated.
 
-use super::{named_query, orchestrate, query_comparators, read_model, repository, AggregateScan, CompletedReversal, Event, Json, MutationRecord, PendingCrossDomainReaction, Refusal, SagaInstance, Tables};
+use super::{named_query, orchestrate, query_comparators, read_model, repository, AggregateScan, CompletedCompensation, Event, Json, MutationRecord, PendingCrossDomainReaction, Refusal, SagaInstance, Tables};
 use crate::generated::active::{command_attributes_for_verb, command_creates, dispatch_by_name, identity_head_for_aggregate, reference_key_for_aggregate, Store, CROSS_DOMAIN_POLICIES, POLICIES, PROCESS_MANAGERS, QUERIES, READ_MODELS};
 use std::collections::HashMap;
 
@@ -71,13 +71,13 @@ pub fn run(input: &str) -> String {
                 let correlation = entry.get("correlation")?.as_str()?.to_string();
                 let state = entry.get("state")?.as_str()?.to_string();
                 let memory = entry.get("memory").cloned().unwrap_or_else(|| Json::Object(vec![]));
-                // `"completed_reversals"` — optional and additive, the
+                // `"completed_compensations"` — optional and additive, the
                 // same contract every other seed field here already has:
                 // absent (an instance persisted before this feature
-                // existed, or one that never completed a reversible leg)
+                // existed, or one that never completed a compensable leg)
                 // rehydrates to an empty ledger, never a parse failure.
-                let completed_reversals = entry
-                    .get("completed_reversals")
+                let completed_compensations = entry
+                    .get("completed_compensations")
                     .and_then(Json::as_array)
                     .map(|entries| {
                         entries
@@ -85,12 +85,12 @@ pub fn run(input: &str) -> String {
                             .filter_map(|e| {
                                 let command_name = e.get("command_name")?.as_str()?.to_string();
                                 let args = e.get("args").cloned().unwrap_or(Json::Null);
-                                Some(CompletedReversal { command_name, args })
+                                Some(CompletedCompensation { command_name, args })
                             })
                             .collect()
                     })
                     .unwrap_or_default();
-                Some(((process_manager, correlation), SagaInstance { state, memory, completed_reversals }))
+                Some(((process_manager, correlation), SagaInstance { state, memory, completed_compensations }))
             })
             .collect(),
         None => HashMap::new(),
@@ -669,15 +669,15 @@ fn saga_snapshot_json(sagas: &HashMap<(String, String), SagaInstance>) -> Json {
                     ("state", Json::str(instance.state.clone())),
                     ("memory", instance.memory.clone()),
                     // Mirrors `SagaInterpreter#checkpoint`'s own
-                    // `completed_reversals:` field — a per-instance,
+                    // `completed_compensations:` field — a per-instance,
                     // DYNAMIC runtime ledger, round-tripped through this
                     // snapshot the same way `state`/`memory` already are
                     // (parsed back by `run`'s own `"sagas"` input above).
                     (
-                        "completed_reversals",
+                        "completed_compensations",
                         Json::Array(
                             instance
-                                .completed_reversals
+                                .completed_compensations
                                 .iter()
                                 .map(|entry| {
                                     Json::obj(vec![

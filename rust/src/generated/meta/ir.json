@@ -12861,7 +12861,7 @@
             [
               [
                 "word",
-                "reverses"
+                "compensates"
               ],
               [
                 "context",
@@ -12885,7 +12885,7 @@
               ],
               [
                 "calls",
-                "reverses_impl"
+                "compensates_impl"
               ]
             ]
           ]
@@ -13338,7 +13338,7 @@
             [
               [
                 "keyword",
-                "reverses"
+                "compensates"
               ],
               [
                 "context",
@@ -13368,7 +13368,7 @@
             [
               [
                 "keyword",
-                "reverses"
+                "compensates"
               ],
               [
                 "context",
@@ -13398,7 +13398,7 @@
             [
               [
                 "keyword",
-                "reverses"
+                "compensates"
               ],
               [
                 "context",
@@ -13824,7 +13824,7 @@
                   "relationship": null
                 },
                 {
-                  "name": "reverses_command_name",
+                  "name": "compensates_command_name",
                   "type": "DispatchText",
                   "list": false,
                   "default": null,
@@ -13834,7 +13834,7 @@
                   "relationship": null
                 },
                 {
-                  "name": "reverses_with_spec",
+                  "name": "compensates_with_spec",
                   "type": "Binding",
                   "list": true,
                   "default": null,
@@ -13896,13 +13896,13 @@
                   "provenance": null
                 },
                 {
-                  "name": "Reverses",
+                  "name": "Compensates",
                   "role": "Language",
-                  "goal": "Name the command this dispatch reverses",
+                  "goal": "Name the command this dispatch compensates for",
                   "references": null,
                   "attributes": [
                     {
-                      "name": "reverses_command_name",
+                      "name": "compensates_command_name",
                       "type": "DispatchText",
                       "list": false,
                       "default": null,
@@ -13920,25 +13920,25 @@
                   ],
                   "mutations": [
                     {
-                      "target": "reverses_command_name",
+                      "target": "compensates_command_name",
                       "op": "set",
                       "sign": "",
                       "source": {
                         "kind": "argument",
-                        "name": "reverses_command_name"
+                        "name": "compensates_command_name"
                       }
                     }
                   ],
                   "emits": [
-                    "ReversalDeclared"
+                    "CompensationDeclared"
                   ],
                   "from": null,
                   "provenance": null
                 },
                 {
-                  "name": "BindReversal",
+                  "name": "BindCompensation",
                   "role": "Language",
-                  "goal": "Bind one argument of the reversal's own dispatched command",
+                  "goal": "Bind one argument of the compensation's own dispatched command",
                   "references": null,
                   "attributes": [
                     {
@@ -13970,7 +13970,7 @@
                   ],
                   "mutations": [
                     {
-                      "target": "reverses_with_spec",
+                      "target": "compensates_with_spec",
                       "op": "append",
                       "sign": "",
                       "fields": {
@@ -13980,7 +13980,7 @@
                     }
                   ],
                   "emits": [
-                    "ReversalBindingAttached"
+                    "CompensationBindingAttached"
                   ],
                   "from": null,
                   "provenance": null

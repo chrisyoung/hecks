@@ -53,13 +53,13 @@ module Hecks
         # argument became indistinguishable from one carrying a literal string.
         def with_spec_rows(node) = pair_rows(node.to_h[:with_spec])
 
-        # THE SAME READ, ONE LEVEL IN — `reverses` folds `DispatchSpec`
-        # into the language's own `reverses_command_name`/
-        # `reverses_with_spec` (`Assembly::Contracts`' own comment on
+        # THE SAME READ, ONE LEVEL IN — `compensates` folds `DispatchSpec`
+        # into the language's own `compensates_command_name`/
+        # `compensates_with_spec` (`Assembly::Contracts`' own comment on
         # "Dispatch"), so its OWN with_spec pairs live nested one hash
         # down from where `with_spec_rows` looks. `&.dig(...)` — no
-        # reversal at all is not an error, it is `pair_rows(nil)`, empty.
-        def reverses_with_spec_rows(node) = pair_rows(node.to_h[:reverses]&.dig(:with_spec))
+        # compensation at all is not an error, it is `pair_rows(nil)`, empty.
+        def compensates_with_spec_rows(node) = pair_rows(node.to_h[:compensates]&.dig(:with_spec))
 
         # A read model carries the same options an ask does, plus its filters — see
         # option_rows.

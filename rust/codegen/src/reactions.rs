@@ -170,14 +170,14 @@ fn ruby_float_text(n: f64) -> String {
     }
 }
 
-// `reverses` — per-dispatch saga compensation (`ir::DispatchSpec::
-// reverses`/`Hecks::Bluebook::DispatchSpec#reverses`,
+// `compensates` — per-dispatch saga compensation (`ir::DispatchSpec::
+// compensates`/`Hecks::Bluebook::DispatchSpec#compensates`,
 // `lib/hecks/bluebook/process_manager.rb`): absent/`null` on the IR
 // (`Json::get` already reads both as `None`) emits `None`; a nested
 // object recurses through THIS SAME function one level in. Mirrors
 // rust/project/reactions.rb's own `emit_dispatch_spec` exactly — never
-// nested further than one level on the Ruby side (a reversal is not
-// itself reversible), so this recursion bottoms out in at most one
+// nested further than one level on the Ruby side (a compensation is not
+// itself compensable), so this recursion bottoms out in at most one
 // extra call.
 fn emit_dispatch_spec(exemplar: &Exemplar, spec: &Json, literal_fns: &mut Vec<String>) -> String {
     let with_spec = spec.get("with_spec").map(Json::each).unwrap_or(&[]);
@@ -190,15 +190,15 @@ fn emit_dispatch_spec(exemplar: &Exemplar, spec: &Json, literal_fns: &mut Vec<St
             format!("({}, {})", naming::ruby_inspect_string(&key), emit_with_value(exemplar, &raw, literal_fns))
         })
         .collect();
-    let reverses = match spec.get("reverses") {
+    let compensates = match spec.get("compensates") {
         Some(nested) => format!("Some(&{})", emit_dispatch_spec(exemplar, nested, literal_fns)),
         None => "None".to_string(),
     };
     format!(
-        "crate::kernel::DispatchSpec {{ command_name: {}, with: &[{}], reverses: {} }}",
+        "crate::kernel::DispatchSpec {{ command_name: {}, with: &[{}], compensates: {} }}",
         naming::ruby_inspect_string(&spec.get("command_name").map(Json::to_s).unwrap_or_default()),
         with_pairs.join(", "),
-        reverses
+        compensates
     )
 }
 

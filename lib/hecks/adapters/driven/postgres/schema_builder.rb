@@ -74,7 +74,7 @@ module Hecks
               correlation          text NOT NULL,
               state                text NOT NULL,
               memory               jsonb NOT NULL,
-              completed_reversals  jsonb NOT NULL DEFAULT '[]'::jsonb,
+              completed_compensations  jsonb NOT NULL DEFAULT '[]'::jsonb,
               updated_at           timestamptz NOT NULL DEFAULT now(),
               PRIMARY KEY (domain, process_manager, correlation)
             )
@@ -84,7 +84,7 @@ module Hecks
           # — the same idiom `rust/host/src/journal.rs`'s own
           # `sagas_backfilled` column addition already uses, for the
           # identical reason.
-          @db.exec("ALTER TABLE hecks_saga_instances ADD COLUMN IF NOT EXISTS completed_reversals jsonb NOT NULL DEFAULT '[]'::jsonb")
+          @db.exec("ALTER TABLE hecks_saga_instances ADD COLUMN IF NOT EXISTS completed_compensations jsonb NOT NULL DEFAULT '[]'::jsonb")
         end
 
         def sql_type(attr)

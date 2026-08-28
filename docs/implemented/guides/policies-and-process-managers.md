@@ -348,11 +348,11 @@ process_manager "Settlement" do
   # named by some transition's own `from:`/target — declaring them
   # again said nothing the transitions below didn't already say.
   transition "TransferRequested" => "requested", from: "requested" do
-    # `reverses` — PER-DISPATCH SAGA COMPENSATION, one leg at a time,
+    # `compensates` — PER-DISPATCH SAGA COMPENSATION, one leg at a time,
     # replacing a hand-written list at the bottom of this saga (see
     # "Compensation," below, for the real bug this closes).
     dispatch Account::Debit, with: { number: :source, amount: :amount, narrative: { text: "transfer out" }, reference: :reference } do
-      reverses Account::Credit, with: { number: :source, amount: :amount, narrative: { text: "transfer reversed" } }
+      compensates Account::Credit, with: { number: :source, amount: :amount, narrative: { text: "transfer reversed" } }
     end
   end
 
@@ -371,7 +371,7 @@ process_manager "Settlement" do
 
   # `Transfer::Reverse` stays hand-written — it marks the TRANSFER
   # reversed, unconditionally, not one dispatch's own effect, so it is
-  # not a `reverses` candidate; see "Compensation," below.
+  # not a `compensates` candidate; see "Compensation," below.
   transition :refused => "reversed", from: "awaiting_credit" do
     dispatch Transfer::Reverse, with: { transfer: :reference }
   end
@@ -454,31 +454,31 @@ Banking::Transfer.find("tr2").status        # => "reversed"
 
 1000, not 800 — the money is back where it started, because a refused
 leg unwinds on its own. Nobody dispatched `Reverse` by hand, and nobody
-had to notice the transfer had stalled: `Account.Debit`'s own `reverses
+had to notice the transfer had stalled: `Account.Debit`'s own `compensates
 Account::Credit` is what actually restores the balance here — the
 runtime tracks which of THIS instance's own dispatches completed
 (`Account.Debit` did; `Account.Credit` is the one that refused, so it
 has nothing of its own to undo) and, the moment the refusal hits
 `transition :refused => "reversed", from: "awaiting_credit"`, dispatches
-every completed leg's own `reverses` first, newest first, THEN this
+every completed leg's own `compensates` first, newest first, THEN this
 leg's own hand-written `Transfer.Reverse` — coexistence, not
 replacement: marking the transfer itself reversed is not any ONE
 dispatch's own undo, it is a fact this saga needs unconditionally
 whenever a refusal lands here. Read the saga log and the refusal, the
-derived reversal, and the hand-written mark are all right there, not
-swallowed:
+derived compensation, and the hand-written mark are all right there,
+not swallowed:
 
 ```ruby
 refused = runtime.sagas.select { |s| s[:instance] == "tr2" && s[:delivered] == false }
 refused.map { |s| s[:reason] }  # => ["Credit refused — status is \"frozen\", and Credit moves it only from \"open\""]
 
-derived = runtime.sagas.select { |s| s[:instance] == "tr2" && s[:reversal] }
+derived = runtime.sagas.select { |s| s[:instance] == "tr2" && s[:compensation] }
 derived.map { |s| [s[:dispatch], s[:delivered]] }  # => [["Account.Credit", true]]
 
 runtime.sagas.select { |s| s[:instance] == "tr2" && s[:dispatch] == "Transfer.Reverse" }.map { |s| s[:delivered] }  # => [true]
 ```
 
-Only ONE reversal is DERIVED — `Account.Debit`'s own `Account.Credit` —
+Only ONE compensation is DERIVED — `Account.Debit`'s own `Account.Credit` —
 never `Account.Credit`'s own effect, because that leg is the one that
 refused; it never completed, so it never joined the ledger of what to
 undo. This is exactly the shape a single hand-written list at the

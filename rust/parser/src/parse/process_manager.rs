@@ -45,16 +45,17 @@
 //! it; a `Vec<ProcessManagerHandler>` already carries everything `saga`
 //! would derive from.
 //!
-//! PER-DISPATCH SAGA COMPENSATION (`reverses`, mirroring Ruby's own
-//! `HandlerBuilder#dispatch_impl` + `DispatchBuilder#reverses_impl`,
+//! PER-DISPATCH SAGA COMPENSATION (`compensates`, mirroring Ruby's own
+//! `HandlerBuilder#dispatch_impl` + `DispatchBuilder#compensates_impl`,
 //! `lib/hecks/bluebook/dsl/process_manager_builder.rb`) — `dispatch`
 //! gained a SECOND `KeywordRow` (`body: "keywords"`, opening a new
 //! "Dispatch" context) alongside its original `body: "none"` row, the
 //! identical two-row shape `transition` already uses one level up for
 //! its own optional dispatch block. `parse_dispatches` picks between
 //! them via `gated.call.opener`, same as `parse_transition` does for
-//! `transition`'s own block. `reverses` (the ONE word "Dispatch" admits)
-//! never nests further — a reversal is not itself reversible.
+//! `transition`'s own block. `compensates` (the ONE word "Dispatch"
+//! admits) never nests further — a compensation is not itself
+//! compensable.
 
 use super::GatedLine;
 use crate::diag::{Diagnostic, ParseResult};
@@ -298,10 +299,10 @@ fn parse_dispatches(
                 // picks the right row from `gated.call.opener` alone, the
                 // same way `parse_transition` above already relies on for
                 // `transition`'s own optional dispatch block.
-                let reverses = match &gated.call.opener {
+                let compensates = match &gated.call.opener {
                     Opener::None => None,
                     Opener::DoBlock { .. } => {
-                        parse_reverses_block(file, lines, pos)?.map(Box::new)
+                        parse_compensates_block(file, lines, pos)?.map(Box::new)
                     }
                     Opener::BraceBlock { .. } => unreachable!(
                         "body_gate never admits a BraceBlock for 'dispatch'/Handler"
@@ -310,7 +311,7 @@ fn parse_dispatches(
                 dispatches.push(ir::DispatchSpec {
                     command_name,
                     with_spec,
-                    reverses,
+                    compensates,
                 });
             }
             _ => {
@@ -326,42 +327,43 @@ fn parse_dispatches(
     }
 }
 
-/// The `Dispatch` context's own body — at most one `reverses` line
-/// (`ProcessManagerBuilder::HandlerBuilder::DispatchBuilder#reverses_impl`),
+/// The `Dispatch` context's own body — at most one `compensates` line
+/// (`ProcessManagerBuilder::HandlerBuilder::DispatchBuilder#compensates_impl`),
 /// up to the matching `end`. Structurally identical to `dispatch`'s own
 /// two argument rows (positional command reference + optional `with:`
-/// pairs), because a reversal resolves through the exact same scope any
-/// saga dispatch already does — see `syntax.bluebook`'s own comment on
-/// why the two `ArgumentRow`s are shape-for-shape copies under
+/// pairs), because a compensation resolves through the exact same scope
+/// any saga dispatch already does — see `syntax.bluebook`'s own comment
+/// on why the two `ArgumentRow`s are shape-for-shape copies under
 /// `context: "Dispatch"` instead of `"Handler"`.
-fn parse_reverses_block(
+fn parse_compensates_block(
     file: &str,
     lines: &[SourceLine],
     pos: &mut usize,
 ) -> ParseResult<Option<ir::DispatchSpec>> {
-    let mut reverses = None;
+    let mut compensates = None;
 
     loop {
         let Some(gated) = super::next_line(file, lines, pos, "Dispatch")? else {
-            return Ok(reverses);
+            return Ok(compensates);
         };
         match gated.row.word {
-            "reverses" => {
+            "compensates" => {
                 let command_name = super::positional_command_ref(
                     file,
                     gated.line.number,
-                    "reverses",
+                    "compensates",
                     &gated.args,
                     1,
                 )?;
                 let with_spec = parse_with_pairs_opt(&gated.args);
-                // Never nested further — `reverses` has no block of its
-                // own (its only KeywordRow is `body: "none"`), so this
-                // inner `DispatchSpec`'s own `reverses` is always `None`.
-                reverses = Some(ir::DispatchSpec {
+                // Never nested further — `compensates` has no block of
+                // its own (its only KeywordRow is `body: "none"`), so
+                // this inner `DispatchSpec`'s own `compensates` is
+                // always `None`.
+                compensates = Some(ir::DispatchSpec {
                     command_name,
                     with_spec,
-                    reverses: None,
+                    compensates: None,
                 });
             }
             _ => {

@@ -3,16 +3,16 @@ require_relative "../ir"
 
 module Hecks
   module Bluebook
-    # `reverses` — a SECOND `DispatchSpec`, shape-identical to this one,
-    # naming the command that undoes THIS dispatch specifically (see
-    # `ProcessManagerBuilder::HandlerBuilder#dispatch_impl`'s own
+    # `compensates` — a SECOND `DispatchSpec`, shape-identical to this
+    # one, naming the command that undoes THIS dispatch specifically
+    # (see `ProcessManagerBuilder::HandlerBuilder#dispatch_impl`'s own
     # comment). `nil` for a dispatch with nothing to undo (a pure
     # bookkeeping mark, or one whose own effect is superseded by a later
-    # command rather than needing its own reversal). Never nested
-    # further — a reversal is not itself reversible; no known corpus
-    # need, and ADR 0025's own "a word earns its place by being used"
-    # bar would refuse a second level speculatively.
-    DispatchSpec = Struct.new(:command_name, :with_spec, :reverses, keyword_init: true) do
+    # command rather than needing its own compensation). Never nested
+    # further — a compensation is not itself compensable; no known
+    # corpus need, and ADR 0025's own "a word earns its place by being
+    # used" bar would refuse a second level speculatively.
+    DispatchSpec = Struct.new(:command_name, :with_spec, :compensates, keyword_init: true) do
       # A Struct already answers to_h; including the mixin puts the
       # DECLARED emission ahead of Struct's own in the ancestry, which
       # is what makes the shape data rather than a method body.
@@ -21,7 +21,7 @@ module Hecks
       emits_ir(
         command_name: -> { command_name.to_s },
         with_spec:    -> { with_spec.map { |key, value| [key.to_s, Bluebook.render_value(value)] } },
-        reverses:     one(:reverses)
+        compensates:  one(:compensates)
       )
     end
 
@@ -48,27 +48,28 @@ module Hecks
     # `undoes` is the ordered list of commands the compensation sends — a
     # STATIC PREVIEW, declaration order (`Behaviour::ProcessManager#saga`),
     # not one instance's own runtime history. Per-dispatch compensation
-    # (`reverses`, on the step it reverses) moved most of what a saga
-    # undoes off this leg's own hand-written body and onto whichever
-    # forward dispatch each one undoes — this reads every declared
-    # `reverses` across the WHOLE saga first, then whatever this leg's
-    # own hand-written body still lists, for compensation that isn't
-    # expressible as "undo command X." WHICH of a declared `reverses`
-    # actually fires for one instance, and in what order (newest-first,
-    # completed-legs-only), is `SagaInterpreter`'s own dynamic
-    # `completed_reversals` — a per-instance runtime fact this
-    # declaration-only object could never hold.
+    # (`compensates`, on the step it compensates for) moved most of what
+    # a saga undoes off this leg's own hand-written body and onto
+    # whichever forward dispatch each one undoes — this reads every
+    # declared `compensates` across the WHOLE saga first, then whatever
+    # this leg's own hand-written body still lists, for compensation
+    # that isn't expressible as "undo command X." WHICH of a declared
+    # `compensates` actually fires for one instance, and in what order
+    # (newest-first, completed-legs-only), is `SagaInterpreter`'s own
+    # dynamic `completed_compensations` — a per-instance runtime fact
+    # this declaration-only object could never hold.
     #
-    # NAMING COLLISION, KNOWN AND DELIBERATE — `command`'s own `corrects
-    # event, reverses: true` (docs/implemented/decisions/0036-corrects-
-    # is-an-appended-fact-not-a-rewrite.md) already claims `reverses` for
-    # a different meaning: auto-deriving a command's OWN corrective
-    # mutation from a past EVENT, not a saga's own compensating leg from
-    # a past DISPATCH. Whoever builds THIS feature should read that ADR
-    # first and make a deliberate choice — reuse `reverses`'s meaning
-    # here too, or pick another word — rather than colliding by accident.
-    Saga = Struct.new(:trigger, :from_state, :to_state, :reversals, keyword_init: true) do
-      def undoes = reversals.map(&:command_name)
+    # NAMING COLLISION, ONCE FLAGGED, NOW RESOLVED — `command`'s own
+    # `corrects event, reverses: true` (docs/implemented/decisions/0036-
+    # corrects-is-an-appended-fact-not-a-rewrite.md) already claimed
+    # `reverses` for a different meaning: auto-deriving a command's OWN
+    # corrective mutation from a past EVENT, not a saga's own
+    # compensating leg from a past DISPATCH. This feature keeps
+    # `reverses` reserved for `corrects` and uses `compensates` for
+    # per-dispatch saga compensation instead — a deliberate choice, not
+    # an accidental collision.
+    Saga = Struct.new(:trigger, :from_state, :to_state, :compensations, keyword_init: true) do
+      def undoes = compensations.map(&:command_name)
 
       def to_s = "#{trigger} → #{to_state} (#{undoes.join(', ')})"
     end

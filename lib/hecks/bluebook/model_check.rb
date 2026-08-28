@@ -201,20 +201,20 @@ module Hecks
                                              "checker's scope, same as CommandRules#resolve_references")
           end
 
-          # A `reverses` DECLARED WITH NOWHERE TO EVER FIRE — the exact
+          # A `compensates` DECLARED WITH NOWHERE TO EVER FIRE — the exact
           # shape of the real bug this whole feature closes ("the
           # reversal was written and never armed"), caught at build/
           # model-check time instead of discovered in production. No
           # handler anywhere answers REFUSED (`pm.saga?` false) means
           # `SagaInterpreter#unwind` never runs for this process
-          # manager at all, so a declared `reverses` is structurally
+          # manager at all, so a declared `compensates` is structurally
           # unreachable — not a warning about style, a dead declaration.
-          if !pm.saga? && handler.dispatches.any?(&:reverses)
-            handler.dispatches.select(&:reverses).each do |dispatch|
-              findings << Finding.new(kind: :unarmed_reversal, severity: :error, subject: pm.name,
-                                      message: "#{dispatch.command_name} reverses #{dispatch.reverses.command_name}, " \
+          if !pm.saga? && handler.dispatches.any?(&:compensates)
+            handler.dispatches.select(&:compensates).each do |dispatch|
+              findings << Finding.new(kind: :unarmed_compensation, severity: :error, subject: pm.name,
+                                      message: "#{dispatch.command_name} compensates #{dispatch.compensates.command_name}, " \
                                                "but no handler anywhere in this saga answers a refusal — the " \
-                                               "reversal is declared and can never fire")
+                                               "compensation is declared and can never fire")
             end
           end
         end

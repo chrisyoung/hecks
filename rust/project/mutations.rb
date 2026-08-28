@@ -667,8 +667,8 @@ module RustProjection
 
           # A FOURTH field no `append: { ... }` binding ever names: a
           # scalar OPTIONAL attribute the entity declares for some other
-          # command to `set` later (e.g. `Dispatch#reverses_command_name`,
-          # S18 — `reverses:` per-dispatch saga compensation, bound only
+          # command to `set` later (e.g. `Dispatch#compensates_command_name`,
+          # S18 — `compensates:` per-dispatch saga compensation, bound only
           # by the dispatch that OPENS a saga, never by the one it
           # compensates). Same gap as the list case just above and the
           # same fix: `attr[:optional]` always ports to `Option<T>`

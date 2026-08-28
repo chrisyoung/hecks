@@ -409,10 +409,11 @@ fn emit_mutation_line_body(
                 // A FOURTH field no `append: { ... }` binding ever names: a
                 // scalar OPTIONAL attribute the entity declares for some
                 // other command to `set` later (e.g. `Dispatch#
-                // reverses_command_name`, S18 — `reverses:` per-dispatch
-                // saga compensation, bound only by the dispatch that OPENS
-                // a saga, never by the one it compensates). Mirrors the
-                // identical fix in rust/project/mutations.rb's own
+                // compensates_command_name`, S18 — `compensates:`
+                // per-dispatch saga compensation, bound only by the
+                // dispatch that OPENS a saga, never by the one it
+                // compensates). Mirrors the identical fix in
+                // rust/project/mutations.rb's own
                 // `emit_mutation_line_body` exactly — same reason as the
                 // list case above.
                 for attr in element_attrs {

@@ -411,14 +411,14 @@ module Hecks
       # `SagaInterpreter`'s own mutex (§7) serializing IN-PROCESS writers,
       # and gets the SAME cross-process safety an aggregate's own writes
       # get from this adapter — no better, no worse.
-      def save_saga(process_manager:, correlation:, state:, memory:, completed_reversals: [])
+      def save_saga(process_manager:, correlation:, state:, memory:, completed_compensations: [])
         @db.exec_params(
-          "INSERT INTO hecks_saga_instances (domain, process_manager, correlation, state, memory, completed_reversals) " \
+          "INSERT INTO hecks_saga_instances (domain, process_manager, correlation, state, memory, completed_compensations) " \
           "VALUES ($1, $2, $3, $4, $5, $6) " \
           "ON CONFLICT (domain, process_manager, correlation) DO UPDATE " \
           "SET state = EXCLUDED.state, memory = EXCLUDED.memory, " \
-          "completed_reversals = EXCLUDED.completed_reversals, updated_at = now()",
-          [@domain, process_manager.to_s, correlation.to_s, state.to_s, JSON.generate(memory), JSON.generate(completed_reversals)]
+          "completed_compensations = EXCLUDED.completed_compensations, updated_at = now()",
+          [@domain, process_manager.to_s, correlation.to_s, state.to_s, JSON.generate(memory), JSON.generate(completed_compensations)]
         )
       end
 
@@ -433,12 +433,12 @@ module Hecks
         return enum_for(:each_saga) unless block_given?
 
         @db.exec_params(
-          "SELECT process_manager, correlation, state, memory, completed_reversals FROM hecks_saga_instances WHERE domain = $1",
+          "SELECT process_manager, correlation, state, memory, completed_compensations FROM hecks_saga_instances WHERE domain = $1",
           [@domain]
         ).each do |row|
           yield row["process_manager"], row["correlation"], row["state"],
                 JSON.parse(row["memory"], symbolize_names: true),
-                JSON.parse(row["completed_reversals"] || "[]", symbolize_names: true)
+                JSON.parse(row["completed_compensations"] || "[]", symbolize_names: true)
         end
       end
 
@@ -742,7 +742,7 @@ module Hecks
             correlation          text NOT NULL,
             state                text NOT NULL,
             memory               jsonb NOT NULL,
-            completed_reversals  jsonb NOT NULL DEFAULT '[]'::jsonb,
+            completed_compensations  jsonb NOT NULL DEFAULT '[]'::jsonb,
             updated_at           timestamptz NOT NULL DEFAULT now(),
             PRIMARY KEY (domain, process_manager, correlation)
           )
@@ -751,7 +751,7 @@ module Hecks
         # this same domain already created before this column existed —
         # the same idiom `rust/host/src/journal.rs`'s own
         # `sagas_backfilled` column addition already uses.
-        @db.exec("ALTER TABLE hecks_saga_instances ADD COLUMN IF NOT EXISTS completed_reversals jsonb NOT NULL DEFAULT '[]'::jsonb")
+        @db.exec("ALTER TABLE hecks_saga_instances ADD COLUMN IF NOT EXISTS completed_compensations jsonb NOT NULL DEFAULT '[]'::jsonb")
       end
     end
   end

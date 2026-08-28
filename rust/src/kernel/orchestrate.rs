@@ -169,8 +169,8 @@ pub enum WithValue {
 pub struct DispatchSpec {
     pub command_name: &'static str,
     pub with: &'static [(&'static str, WithValue)],
-    /// `reverses` — per-dispatch saga compensation (mirrors `ir::
-    /// DispatchSpec::reverses`/`Hecks::Bluebook::DispatchSpec#reverses`,
+    /// `compensates` — per-dispatch saga compensation (mirrors `ir::
+    /// DispatchSpec::compensates`/`Hecks::Bluebook::DispatchSpec#compensates`,
     /// `lib/hecks/bluebook/process_manager.rb`): the command that undoes
     /// THIS dispatch specifically, if any. `&'static` (a reference into
     /// the SAME generated static table this dispatch itself sits in),
@@ -178,9 +178,9 @@ pub struct DispatchSpec {
     /// generated data (`rust/project/reactions.rb`), and a reference to
     /// a sibling `static`/promoted-const `DispatchSpec` literal is the
     /// const-compatible shape a recursive struct needs here. Never
-    /// nested further — a reversal is not itself reversible (same
+    /// nested further — a compensation is not itself compensable (same
     /// comment on Ruby's own field).
-    pub reverses: Option<&'static DispatchSpec>,
+    pub compensates: Option<&'static DispatchSpec>,
 }
 
 pub struct Handler {
@@ -216,36 +216,37 @@ pub const REFUSED: &str = "refused";
 pub struct SagaInstance {
     pub state: String,
     pub memory: Json,
-    /// `SagaInterpreter`'s own `completed_reversals` — a PER-INSTANCE,
+    /// `SagaInterpreter`'s own `completed_compensations` — a PER-INSTANCE,
     /// DYNAMIC runtime ledger, kept deliberately distinct from the
     /// STATIC, declaration-only `Handler::dispatches` (what a saga
     /// COULD undo): which of THIS instance's own dispatches actually
-    /// completed and declared a `reverses`, oldest-completed-first (so
-    /// `Vec::pop` in `compensate` below drains newest-first, matching
-    /// Ruby's own `instance[:completed_reversals]`). Recorded
-    /// SPECULATIVELY, before the forward dispatch it undoes ever runs —
-    /// see `deliver_saga_dispatch`'s own header for why "after success"
-    /// is too late.
-    pub completed_reversals: Vec<CompletedReversal>,
+    /// completed and declared a `compensates`, oldest-completed-first
+    /// (so `Vec::pop` in `compensate` below drains newest-first,
+    /// matching Ruby's own `instance[:completed_compensations]`).
+    /// Recorded SPECULATIVELY, before the forward dispatch it undoes
+    /// ever runs — see `deliver_saga_dispatch`'s own header for why
+    /// "after success" is too late.
+    pub completed_compensations: Vec<CompletedCompensation>,
 }
 
-/// One entry in `SagaInstance::completed_reversals` — `command_name` and
-/// ALREADY-RESOLVED `args` for the reversal a completed forward dispatch
-/// declared (`DispatchSpec::reverses`), mirroring `SagaInterpreter#
-/// deliver_saga_dispatch`'s own `{command_name:, args:}` ledger entry
-/// shape exactly. `args` is resolved once, at the moment this entry is
-/// pushed (against the SAME event/memory context the forward dispatch
-/// itself resolves its own `with:` from) — `deliver_derived_reversal`
-/// fires it verbatim later, skipping `build_dispatch_args` entirely, the
-/// same way Ruby's own `entry[:args]` does. `command_name` is OWNED
-/// (`String`, not `&'static str`) — unlike `DispatchSpec`, this is
-/// per-instance runtime data, not a reference into a generated static
-/// table: it has to round-trip through the SAME durable saga-persistence
-/// seed/snapshot JSON `state`/`memory` already do (`kernel::cli::run`'s
-/// own `"sagas"` input / `"saga_snapshot"` output, `rust/host/src/
-/// journal.rs`'s own `hecks_lambda_sagas.completed_reversals` column).
+/// One entry in `SagaInstance::completed_compensations` — `command_name` and
+/// ALREADY-RESOLVED `args` for the compensation a completed forward
+/// dispatch declared (`DispatchSpec::compensates`), mirroring
+/// `SagaInterpreter#deliver_saga_dispatch`'s own `{command_name:, args:}`
+/// ledger entry shape exactly. `args` is resolved once, at the moment
+/// this entry is pushed (against the SAME event/memory context the
+/// forward dispatch itself resolves its own `with:` from) —
+/// `deliver_derived_compensation` fires it verbatim later, skipping
+/// `build_dispatch_args` entirely, the same way Ruby's own `entry[:args]`
+/// does. `command_name` is OWNED (`String`, not `&'static str`) — unlike
+/// `DispatchSpec`, this is per-instance runtime data, not a reference
+/// into a generated static table: it has to round-trip through the SAME
+/// durable saga-persistence seed/snapshot JSON `state`/`memory` already
+/// do (`kernel::cli::run`'s own `"sagas"` input / `"saga_snapshot"`
+/// output, `rust/host/src/journal.rs`'s own
+/// `hecks_lambda_sagas.completed_compensations` column).
 #[derive(Clone)]
-pub struct CompletedReversal {
+pub struct CompletedCompensation {
     pub command_name: String,
     pub args: Json,
 }
@@ -883,7 +884,7 @@ fn begin_saga(tables: Tables<'static>, sagas: &mut HashMap<(String, String), Sag
             continue;
         }
 
-        sagas.insert(key, SagaInstance { state: pm.initial_state.to_string(), memory: event.payload.clone(), completed_reversals: Vec::new() });
+        sagas.insert(key, SagaInstance { state: pm.initial_state.to_string(), memory: event.payload.clone(), completed_compensations: Vec::new() });
         saga_log.push(Json::obj(vec![
             ("process_manager", Json::str(pm.name.to_string())),
             ("on", Json::str(event.name.clone())),
@@ -966,10 +967,10 @@ fn advance_saga<S: AggregateScan>(
             // event/memory context — `deliver_saga_dispatch`'s own header
             // on why the ledger entry has to be pushed speculatively, not
             // after the dispatch succeeds.
-            let reversal_args = spec.reverses.map(|r| build_dispatch_args(pm, r, event, &correlation, &memory, domain_name, &tables));
+            let compensation_args = spec.compensates.map(|r| build_dispatch_args(pm, r, event, &correlation, &memory, domain_name, &tables));
             let stamp: HashMap<String, String> = [(correlation_head(pm.correlates_by).to_string(), correlation.clone())].into_iter().collect();
             let delivered = deliver_saga_dispatch(
-                store, dispatch_fn, tables, sagas, pm, spec, domain_name, &args, &correlation, depth, all_events, mutations, cross_domain, reaction_log, saga_log, &stamp, reversal_args,
+                store, dispatch_fn, tables, sagas, pm, spec, domain_name, &args, &correlation, depth, all_events, mutations, cross_domain, reaction_log, saga_log, &stamp, compensation_args,
             );
             if delivered == Some(false) {
                 refused = true;
@@ -990,9 +991,9 @@ fn advance_saga<S: AggregateScan>(
 /// stopped this leg before it ever tried (Ruby's own early return — no
 /// refusal to compensate for, because nothing was attempted).
 ///
-/// `reversal_args` — the CALLER's already-resolved args for `spec.
-/// reverses` (`None` when `spec` declares no reversal at all), pushed
-/// onto `sagas[(pm.name, correlation)].completed_reversals`
+/// `compensation_args` — the CALLER's already-resolved args for `spec.
+/// compensates` (`None` when `spec` declares no compensation at all),
+/// pushed onto `sagas[(pm.name, correlation)].completed_compensations`
 /// SPECULATIVELY, BEFORE the forward dispatch below ever runs — a real
 /// bug found live in Ruby's own development and ported here rather than
 /// the naive "record after success" version: the `orchestrate` call
@@ -1002,9 +1003,9 @@ fn advance_saga<S: AggregateScan>(
 /// one call, before it ever returns here). Recording "after orchestrate
 /// returns Ok" would be too late for a NESTED refusal
 /// (`compensate`, reached via that recursive call, reading THIS SAME
-/// instance's `completed_reversals`) to ever see this leg's own
-/// reversal — confirmed live on Ruby's side: `examples/banking`'s own
-/// Settlement saga refuses `Account.Credit` and unwinds from INSIDE
+/// instance's `completed_compensations`) to ever see this leg's own
+/// compensation — confirmed live on Ruby's side: `examples/banking`'s
+/// own Settlement saga refuses `Account.Credit` and unwinds from INSIDE
 /// `Account.Debit`'s own re-entrant call. Popped back off below if THIS
 /// leg's own attempt is the one that fails — never left recorded for a
 /// refusal that was never this leg's own to compensate for.
@@ -1026,7 +1027,7 @@ fn deliver_saga_dispatch<S: AggregateScan>(
     reaction_log: &mut Vec<Json>,
     saga_log: &mut Vec<Json>,
     stamp: &HashMap<String, String>,
-    reversal_args: Option<Json>,
+    compensation_args: Option<Json>,
 ) -> Option<bool> {
     // `record`'s own `dispatch` field stays BARE — `SagaInterpreter#
     // deliver_saga_dispatch`'s own `record = { ..., dispatch: spec.
@@ -1076,11 +1077,11 @@ fn deliver_saga_dispatch<S: AggregateScan>(
     // THIS SAME instance (via a downstream reaction to an event this
     // dispatch itself emits) already sees this leg counted as completed.
     let key = (pm.name.to_string(), correlation.to_string());
-    let mut reversal_recorded = false;
-    if let (Some(reverses_spec), Some(r_args)) = (spec.reverses, reversal_args) {
+    let mut compensation_recorded = false;
+    if let (Some(compensates_spec), Some(r_args)) = (spec.compensates, compensation_args) {
         if let Some(slot) = sagas.get_mut(&key) {
-            slot.completed_reversals.push(CompletedReversal { command_name: reverses_spec.command_name.to_string(), args: r_args });
-            reversal_recorded = true;
+            slot.completed_compensations.push(CompletedCompensation { command_name: compensates_spec.command_name.to_string(), args: r_args });
+            compensation_recorded = true;
         }
     }
 
@@ -1110,9 +1111,9 @@ fn deliver_saga_dispatch<S: AggregateScan>(
             // popped it itself via `compensate`'s own drain loop) — this
             // rollback only ever runs for THIS leg's own, still-present
             // entry.
-            if reversal_recorded {
+            if compensation_recorded {
                 if let Some(slot) = sagas.get_mut(&key) {
-                    slot.completed_reversals.pop();
+                    slot.completed_compensations.pop();
                 }
             }
             saga_log.push(record(vec![
@@ -1124,11 +1125,11 @@ fn deliver_saga_dispatch<S: AggregateScan>(
     }
 }
 
-/// `SagaInterpreter#deliver_derived_reversal` — fires ONE entry drained
-/// from `completed_reversals` (newest-first — `compensate`'s own drain
-/// loop below pops from the end, and entries are pushed in COMPLETION
-/// order, so the end is always the most-recently-completed leg).
-/// `entry.args` is ALREADY RESOLVED (pushed speculatively by
+/// `SagaInterpreter#deliver_derived_compensation` — fires ONE entry
+/// drained from `completed_compensations` (newest-first — `compensate`'s
+/// own drain loop below pops from the end, and entries are pushed in
+/// COMPLETION order, so the end is always the most-recently-completed
+/// leg). `entry.args` is ALREADY RESOLVED (pushed speculatively by
 /// `deliver_saga_dispatch` before the forward dispatch it undoes ever
 /// ran), so this skips `build_dispatch_args` entirely and dispatches
 /// straight through the SAME `orchestrate` re-entry every other saga leg
@@ -1136,16 +1137,16 @@ fn deliver_saga_dispatch<S: AggregateScan>(
 /// compensation that itself refuses is a real, pre-existing gap this
 /// feature makes visible rather than closes (matching Ruby's own
 /// class-level comment: no second-order compensation exists) — tagged
-/// `reversal: true`/`reversal_failed: true` in the log instead of being
-/// recorded identically to an ordinary failed forward dispatch.
+/// `compensation: true`/`compensation_failed: true` in the log instead
+/// of being recorded identically to an ordinary failed forward dispatch.
 #[allow(clippy::too_many_arguments)]
-fn deliver_derived_reversal<S: AggregateScan>(
+fn deliver_derived_compensation<S: AggregateScan>(
     store: &mut S,
     dispatch_fn: fn(&mut S, &str, &Json, Option<&str>, &mut Vec<MutationRecord>) -> Result<Vec<Event>, Refusal>,
     tables: Tables<'static>,
     sagas: &mut HashMap<(String, String), SagaInstance>,
     pm: &ProcessManagerDef,
-    entry: &CompletedReversal,
+    entry: &CompletedCompensation,
     domain_name: &str,
     correlation: &str,
     depth: usize,
@@ -1169,8 +1170,8 @@ fn deliver_derived_reversal<S: AggregateScan>(
         saga_log.push(record(vec![
             ("delivered", Json::Bool(false)),
             ("reason", Json::str(format!("reaction depth {MAX_REACTION_DEPTH} reached"))),
-            ("reversal", Json::Bool(true)),
-            ("reversal_failed", Json::Bool(true)),
+            ("compensation", Json::Bool(true)),
+            ("compensation_failed", Json::Bool(true)),
         ]));
         return;
     }
@@ -1188,12 +1189,12 @@ fn deliver_derived_reversal<S: AggregateScan>(
         all_events, mutations, cross_domain, reaction_log, saga_log,
     );
     match outcome {
-        Ok(()) => saga_log.push(record(vec![("delivered", Json::Bool(true)), ("reversal", Json::Bool(true))])),
+        Ok(()) => saga_log.push(record(vec![("delivered", Json::Bool(true)), ("compensation", Json::Bool(true))])),
         Err(refusal) => saga_log.push(record(vec![
             ("delivered", Json::Bool(false)),
             ("reason", Json::str(refusal.to_string())),
-            ("reversal", Json::Bool(true)),
-            ("reversal_failed", Json::Bool(true)),
+            ("compensation", Json::Bool(true)),
+            ("compensation_failed", Json::Bool(true)),
         ])),
     }
 }
@@ -1290,43 +1291,43 @@ fn compensate<S: AggregateScan>(
     let domain_name = event.aggregate.split("::").next().unwrap_or(&event.aggregate);
 
     // DERIVED COMPENSATION FIRST, NEWEST-FIRST — every leg THIS INSTANCE
-    // actually completed that declared its own `reverses`, popped and
+    // actually completed that declared its own `compensates`, popped and
     // dispatched in reverse completion order (`SagaInterpreter#unwind`'s
     // own comment). Re-fetched from `sagas` by KEY on every iteration,
     // not snapshotted into a local `Vec` up front — a nested reaction
-    // triggered by one derived reversal's own dispatch could in
-    // principle push a NEW completed reversal onto this SAME instance
-    // before this loop finishes, and re-fetching (mirroring Ruby's own
-    // live `instance[:completed_reversals]` array reference, which
-    // `until reversals.empty?` polls fresh each iteration too) means
-    // this drains that one as well, not just what was queued when the
-    // loop started. Drained (not just read) as it fires: the `current_
-    // state != compensation.from_state` guard above already prevents
-    // this from running twice for the same refusal, but draining rather
-    // than leaving the ledger populated is what makes that true by
-    // construction too, not only by the guard. (A narrower, undocumented
-    // gap this shares with Ruby only in spirit, not in mechanism: if a
-    // nested reaction ever fully REMOVES this instance — e.g. its own
-    // `ends_on` fires — mid-drain, `sagas.get_mut(key)` starts returning
-    // `None` and this loop stops early, where Ruby's local `instance`
-    // variable would keep working off the same live Ruby object
-    // regardless of registry removal. No known corpus scenario exercises
-    // this either way.)
+    // triggered by one derived compensation's own dispatch could in
+    // principle push a NEW completed compensation onto this SAME
+    // instance before this loop finishes, and re-fetching (mirroring
+    // Ruby's own live `instance[:completed_compensations]` array
+    // reference, which `until compensations.empty?` polls fresh each
+    // iteration too) means this drains that one as well, not just what
+    // was queued when the loop started. Drained (not just read) as it
+    // fires: the `current_state != compensation.from_state` guard above
+    // already prevents this from running twice for the same refusal,
+    // but draining rather than leaving the ledger populated is what
+    // makes that true by construction too, not only by the guard. (A
+    // narrower, undocumented gap this shares with Ruby only in spirit,
+    // not in mechanism: if a nested reaction ever fully REMOVES this
+    // instance — e.g. its own `ends_on` fires — mid-drain, `sagas.
+    // get_mut(key)` starts returning `None` and this loop stops early,
+    // where Ruby's local `instance` variable would keep working off the
+    // same live Ruby object regardless of registry removal. No known
+    // corpus scenario exercises this either way.)
     loop {
         let entry = match sagas.get_mut(key) {
-            Some(instance) => instance.completed_reversals.pop(),
+            Some(instance) => instance.completed_compensations.pop(),
             None => None,
         };
         let Some(entry) = entry else { break };
-        deliver_derived_reversal(store, dispatch_fn, tables, sagas, pm, &entry, domain_name, correlation, depth, all_events, mutations, cross_domain, reaction_log, saga_log);
+        deliver_derived_compensation(store, dispatch_fn, tables, sagas, pm, &entry, domain_name, correlation, depth, all_events, mutations, cross_domain, reaction_log, saga_log);
     }
 
     for spec in compensation.dispatches {
         let args = build_dispatch_args(pm, spec, event, correlation, memory, domain_name, &tables);
-        let reversal_args = spec.reverses.map(|r| build_dispatch_args(pm, r, event, correlation, memory, domain_name, &tables));
+        let compensation_args = spec.compensates.map(|r| build_dispatch_args(pm, r, event, correlation, memory, domain_name, &tables));
         let stamp: HashMap<String, String> = [(correlation_head(pm.correlates_by).to_string(), correlation.to_string())].into_iter().collect();
         deliver_saga_dispatch(
-            store, dispatch_fn, tables, sagas, pm, spec, domain_name, &args, correlation, depth, all_events, mutations, cross_domain, reaction_log, saga_log, &stamp, reversal_args,
+            store, dispatch_fn, tables, sagas, pm, spec, domain_name, &args, correlation, depth, all_events, mutations, cross_domain, reaction_log, saga_log, &stamp, compensation_args,
         );
     }
 }
@@ -1465,7 +1466,7 @@ mod tests {
     // dispatch`'s own header describes and this file's own `deliver_saga_
     // dispatch`/`compensate` mirror: THREE sequential legs (A, then B
     // triggered by A's own event, then C triggered by B's own event),
-    // where A and B each declare their own `reverses` and C — the one
+    // where A and B each declare their own `compensates` and C — the one
     // that actually refuses — declares none. The refusal happens TWO
     // calls deep, inside A's own `orchestrate` recursion (via B's),
     // before A's own `deliver_saga_dispatch` call has returned to
@@ -1473,7 +1474,7 @@ mod tests {
     // still-open outer frame's own ledger entry" shape that makes the
     // SPECULATIVE record (pushed before dispatching, not after) load-
     // bearing rather than cosmetic. A naive "record after the dispatch
-    // succeeds" implementation would find `completed_reversals` EMPTY
+    // succeeds" implementation would find `completed_compensations` EMPTY
     // when `compensate` drains it here (A's and B's own `orchestrate`
     // calls haven't returned yet), firing neither RA nor RB — this test
     // fails under that version and passes only under the speculative-
@@ -1525,7 +1526,7 @@ mod tests {
     }
 
     #[test]
-    fn multi_leg_reentrant_saga_fires_completed_reversals_newest_first_on_a_later_legs_refusal() {
+    fn multi_leg_reentrant_saga_fires_completed_compensations_newest_first_on_a_later_legs_refusal() {
         // `DISPATCH_RA`/`DISPATCH_RB` are named statics (referenced by
         // `&DISPATCH_RA`/`&DISPATCH_RB` below); the forward legs A/B/C
         // are written INLINE inside `HANDLERS`' own `dispatches` arrays
@@ -1536,27 +1537,27 @@ mod tests {
         // literal promotes into the array directly instead, the exact
         // same shape `rust/project/reactions.rb`'s own generated tables
         // already use.
-        static DISPATCH_RA: DispatchSpec = DispatchSpec { command_name: "RA", with: &[], reverses: None };
-        static DISPATCH_RB: DispatchSpec = DispatchSpec { command_name: "RB", with: &[], reverses: None };
+        static DISPATCH_RA: DispatchSpec = DispatchSpec { command_name: "RA", with: &[], compensates: None };
+        static DISPATCH_RB: DispatchSpec = DispatchSpec { command_name: "RB", with: &[], compensates: None };
 
         static HANDLERS: &[Handler] = &[
             Handler {
                 event_type: "Started",
                 from_state: "start",
                 to_state: "state1",
-                dispatches: &[DispatchSpec { command_name: "A", with: &[], reverses: Some(&DISPATCH_RA) }],
+                dispatches: &[DispatchSpec { command_name: "A", with: &[], compensates: Some(&DISPATCH_RA) }],
             },
             Handler {
                 event_type: "AEvent",
                 from_state: "state1",
                 to_state: "state2",
-                dispatches: &[DispatchSpec { command_name: "B", with: &[], reverses: Some(&DISPATCH_RB) }],
+                dispatches: &[DispatchSpec { command_name: "B", with: &[], compensates: Some(&DISPATCH_RB) }],
             },
             Handler {
                 event_type: "BEvent",
                 from_state: "state2",
                 to_state: "state3",
-                dispatches: &[DispatchSpec { command_name: "C", with: &[], reverses: None }],
+                dispatches: &[DispatchSpec { command_name: "C", with: &[], compensates: None }],
             },
             Handler { event_type: REFUSED, from_state: "state3", to_state: "compensated", dispatches: &[] },
         ];
@@ -1613,29 +1614,29 @@ mod tests {
         let key = ("TestMultiLeg".to_string(), "corr-1".to_string());
         let instance = sagas.get(&key).expect("the saga instance should still exist (it never reaches ends_on)");
         assert_eq!(instance.state, "compensated", "the saga should have unwound to the on-:refused leg's own to_state");
-        assert!(instance.completed_reversals.is_empty(), "the ledger should be fully drained after compensate runs");
+        assert!(instance.completed_compensations.is_empty(), "the ledger should be fully drained after compensate runs");
 
         // `saga_log` dispatch entries, in the order actually pushed —
-        // pulls just `(dispatch, delivered, reversal)` per entry that has
-        // a `dispatch` field (skips the `advanced`/`born` state-transition
-        // entries).
+        // pulls just `(dispatch, delivered, compensation)` per entry that
+        // has a `dispatch` field (skips the `advanced`/`born`
+        // state-transition entries).
         let dispatch_entries: Vec<(String, bool, bool)> = saga_log
             .iter()
             .filter_map(|entry| {
                 let dispatch = entry.get("dispatch")?.as_str()?.to_string();
                 let delivered = matches!(entry.get("delivered"), Some(Json::Bool(true)));
-                let reversal = matches!(entry.get("reversal"), Some(Json::Bool(true)));
-                Some((dispatch, delivered, reversal))
+                let compensation = matches!(entry.get("compensation"), Some(Json::Bool(true)));
+                Some((dispatch, delivered, compensation))
             })
             .collect();
 
-        // C refuses (not a reversal); RB and RA fire as DERIVED
-        // reversals, newest-first (B completed after A, so B's own
-        // reversal fires first); THEN A's and B's own "delivered: true"
+        // C refuses (not a compensation); RB and RA fire as DERIVED
+        // compensations, newest-first (B completed after A, so B's own
+        // compensation fires first); THEN A's and B's own "delivered: true"
         // entries appear — pushed only once their whole downstream
         // cascade (including the nested refusal and its compensation)
         // has already returned. This exact order is the load-bearing
-        // assertion: it can only be produced if `completed_reversals`
+        // assertion: it can only be produced if `completed_compensations`
         // already held BOTH entries at the moment `compensate` (nested
         // two calls deep inside A's own `orchestrate`) drained it — the
         // naive "record after success" version would have an EMPTY
@@ -1649,7 +1650,7 @@ mod tests {
                 ("B".to_string(), true, false),
                 ("A".to_string(), true, false),
             ],
-            "expected C to refuse, then RB and RA to fire as derived reversals newest-first, \
+            "expected C to refuse, then RB and RA to fire as derived compensations newest-first, \
              then B's and A's own forward dispatches to be logged delivered once their \
              downstream cascade returns — saga_log was: {saga_log:?}"
         );

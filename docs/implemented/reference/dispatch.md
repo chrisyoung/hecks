@@ -9,10 +9,10 @@ by `bin/reference` — do not edit inside the markers. The prose
 between them is hand-written and survives regeneration.*
 <!-- generated:end -->
 
-## reverses
+## compensates
 
-<!-- generated:begin word=reverses -->
-`reverses command_name, command_name, with:`
+<!-- generated:begin word=compensates -->
+`compensates command_name, command_name, with:`
 
 | argument | kind | required | fills |
 |---|---|---|---|
@@ -29,13 +29,13 @@ event's own memory, the correlation binding) any saga dispatch already
 does.
 
 Real, live bug this closes — `examples/banking`'s own `Settlement` saga
-declares `reverses` on its own `Account.Debit` leg:
+declares `compensates` on its own `Account.Debit` leg:
 
 ```ruby skip
 # examples/banking/bluebook/transfers_and_payments.bluebook
 transition "TransferRequested" => "requested", from: "requested" do
   dispatch Account::Debit, with: { number: :source, amount: :amount, narrative: { text: "transfer out" }, reference: :reference } do
-    reverses Account::Credit, with: { number: :source, amount: :amount, narrative: { text: "transfer reversed" } }
+    compensates Account::Credit, with: { number: :source, amount: :amount, narrative: { text: "transfer reversed" } }
   end
 end
 ```
@@ -47,7 +47,7 @@ reversal by hand — a destination that would not take the money left
 the debit standing, the settlement stuck, and the amount nowhere: the
 reversal was written and never armed. The runtime now tracks which of
 an instance's own dispatches actually completed and derives
-compensation from `reverses` directly:
+compensation from `compensates` directly:
 
 ```ruby boot
 Hecks::Adapters::Folder.new.load_bluebooks(File.join(InMemoryDomain::ROOT, "examples/banking/bluebook"))
@@ -84,21 +84,21 @@ runtime.dispatch("Banking::Transfer.Request", reference: { value: "t1" }, amount
 Banking::Account.find("src").balance.to_h  # => { cents: 1000, currency: "USD" }
 ```
 
-1000, not 800 — `Account.Debit`'s own declared `reverses` fired the
+1000, not 800 — `Account.Debit`'s own declared `compensates` fired the
 moment `Account.Credit` refused, giving the source its money back. The
-saga log names it distinctly (`reversal: true`), not folded into an
+saga log names it distinctly (`compensation: true`), not folded into an
 ordinary dispatch entry:
 
 ```ruby
-runtime.sagas.select { |s| s[:instance] == "t1" && s[:reversal] }.map { |s| [s[:dispatch], s[:delivered]] }  # => [["Account.Credit", true]]
+runtime.sagas.select { |s| s[:instance] == "t1" && s[:compensation] }.map { |s| [s[:dispatch], s[:delivered]] }  # => [["Account.Credit", true]]
 ```
 
 `Account.Credit`'s own leg — the one that refused — declares no
-`reverses` at all, and needs none: a leg that never completed has
+`compensates` at all, and needs none: a leg that never completed has
 nothing of its own to undo. See
 `docs/implemented/guides/policies-and-process-managers.md`'s own
 "Compensation" section for the full walkthrough, including the
 unconditional `Transfer.Reverse` mark that stays hand-written on the
-saga's own `on :refused` leg rather than becoming a second `reverses` —
+saga's own `on :refused` leg rather than becoming a second `compensates` —
 it does not undo any one dispatch's own effect.
 

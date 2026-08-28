@@ -79,7 +79,7 @@ module Hecks
               correlation          TEXT NOT NULL,
               state                TEXT NOT NULL,
               memory               TEXT NOT NULL,
-              completed_reversals  TEXT NOT NULL DEFAULT '[]',
+              completed_compensations  TEXT NOT NULL DEFAULT '[]',
               PRIMARY KEY (domain, process_manager, correlation)
             )
           SQL
@@ -91,7 +91,7 @@ module Hecks
           # version this adapter supports, so a duplicate-column error
           # is caught and treated as "already there" rather than relied
           # on to never happen.
-          @db.execute("ALTER TABLE hecks_saga_instances ADD COLUMN completed_reversals TEXT NOT NULL DEFAULT '[]'")
+          @db.execute("ALTER TABLE hecks_saga_instances ADD COLUMN completed_compensations TEXT NOT NULL DEFAULT '[]'")
         rescue StandardError => e
           raise unless e.message.include?("duplicate column name")
         end
