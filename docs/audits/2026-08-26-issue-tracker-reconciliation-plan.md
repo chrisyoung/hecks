@@ -82,6 +82,22 @@ sweep. Cross-referencing the user's specific concerns against that sweep:
 So: of the concerns raised, only **Rails integration** is a real, currently
 unaddressed gap — and it was scoped out deliberately, not missed.
 
+**2026-08-27 addendum:** this table's "Status" column is not the full
+audit-reconciliation picture, and shouldn't be read as one — it only
+answers the specific concerns one prior session raised. A fuller pass this
+session (see `docs/future-features.md`'s "Bug audits" section, which is now
+the more current tracking doc) found H1 — omitted from this table entirely
+— was, contrary to what the underlying audit's own narrative implied by
+that point, still genuinely broken: `EntityInterpreter` ran no argument
+gate at all, silently accepting unknown args and silently nil-ing absent
+declared ones on every entity command in every domain. Fixed this session
+(`a830b472`), independent of everything tracked here. Combined with the
+fuzzer-gap mislabel this table already documents above, the honest
+takeaway is: this project's status docs have drifted in *both* directions
+at once (things marked open that are fixed, and at least one thing marked
+fixed that wasn't) — treat any single line in either doc as a claim to
+verify, not a settled fact, until it's carried a live re-check.
+
 ## The one real caveat: nothing above is independently re-verified
 
 `docs/audits/2026-08-11-bug-triage.md` says explicitly: *"This is a
