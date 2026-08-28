@@ -15,15 +15,18 @@
 // template.yaml already mints via SecretsManager for the Ruby app)
 // signs both this and the OAuth `state` token below.
 //
-// EMBRYONAUT-SPECIFIC GLUE, MARKED — `member_by_email`/`grant_access`/
-// `link_identity`/`session_for_member` all hardcode "Embryonaut::Member"
-// as this domain's own membership aggregate the same way rust/Cargo.toml's
-// `default = ["embryonaut"]` feature already hardcodes which domain this
-// binary serves. A fully generic hecks_web would resolve "which
-// aggregate is the membership one" from bluebook config instead
-// (embryonaut_access_control.rb's own role in the Ruby version); this
-// is the pragmatic, working version for Embryonaut today, same
-// maturity level rust/host's own per-domain codegen already has.
+// EMBRYONAUT-SPECIFIC GLUE, MARKED — `member_row_by_email`/`member_rows`/
+// `append_member_state`/`session_for_member_by_identity` all hardcode
+// "member"/"Member" as this domain's own membership aggregate. NOT a
+// Cargo-feature-level hardcoding (rust/host links no kernel crate and has
+// no Cargo feature of its own at all — `HECKS_DOMAIN`, read once at
+// main.rs boot, is the ONLY runtime domain selector this binary has;
+// rust/Cargo.toml's `default` feature governs the SEPARATE `rust`/
+// `rust/web` kernel crates' compiled-in domain, unrelated to this one);
+// this is Rust source hardcoded independent of any compile-time domain
+// pin. A fully generic hecks_web would resolve "which aggregate is the
+// membership one" from deploy config instead of a literal (the pragmatic,
+// working version for Embryonaut today).
 
 use crate::dispatch;
 use crate::journal;
@@ -362,7 +365,7 @@ pub async fn provision(
     let assign_role = dispatch::handle(
         client, wasm_path, "Governance::RoleAssignment.Assign",
         json!({
-            "actor_id": {"value": identity_id}, "role_name": {"value": role}, "scope": {"value": "Embryonaut"},
+            "actor_id": {"value": identity_id}, "role_name": {"value": role}, "scope": {"value": config.domain.clone()},
             "starts_at": {"value": httpdate_now()},
         }), None, config, invoker,
     ).await?;

@@ -1150,9 +1150,32 @@ fn stripe_api_key() -> String {
 // "whsec_mock_lifeadelics_fixed")`) — domain/bin/confirm_payment_
 // manually signs against this exact string, so a mock deploy (empty
 // `stripe_api_key`) needs no Lambda environment configuration at all
-// to be fully exercisable end to end.
-fn stripe_webhook_secret() -> String {
-    std::env::var("STRIPE_WEBHOOK_SECRET").unwrap_or_else(|_| "whsec_mock_lifeadelics_fixed".to_string())
+// to be fully exercisable end to end. ONLY allowed as a fallback in
+// MOCK mode though (`processor == "mock_stripe"`) — same
+// panic-at-the-moment-it's-needed split `session_secret`/
+// `validate_session_secret` above already use: a real-Stripe deploy
+// (`STRIPE_API_KEY` set) that forgets `STRIPE_WEBHOOK_SECRET` would
+// otherwise silently verify incoming webhooks against a public,
+// well-known string while charging real cards.
+fn stripe_webhook_secret(processor: &str) -> String {
+    let secret = std::env::var("STRIPE_WEBHOOK_SECRET").unwrap_or_default();
+    if let Err(e) = validate_stripe_webhook_secret(processor, &secret) {
+        panic!("{e}");
+    }
+    if secret.is_empty() { "whsec_mock_lifeadelics_fixed".to_string() } else { secret }
+}
+
+// Pure and separately unit-tested from the panic above — same split
+// `validate_session_secret` already uses.
+fn validate_stripe_webhook_secret(processor: &str, secret: &str) -> Result<(), String> {
+    if processor == "stripe" && secret.is_empty() {
+        Err("STRIPE_WEBHOOK_SECRET is required when checkout_processor() reports \"stripe\" \
+             (a real STRIPE_API_KEY is set) -- refusing to fall back to the publicly-known mock \
+             webhook secret whsec_mock_lifeadelics_fixed for a real-money deploy"
+            .to_string())
+    } else {
+        Ok(())
+    }
 }
 
 fn site_url() -> String {
@@ -1191,7 +1214,8 @@ async fn checkout_route(
             Some(registrations_route(raw_body, &stripe_api_key(), checkout_processor(), &site_url(), client, wasm_path, config, invoker).await)
         }
         ("POST", "/webhooks/stripe") => {
-            Some(webhook_route(raw_body, stripe_signature, &stripe_webhook_secret(), checkout_processor(), client, wasm_path, config, invoker).await)
+            let processor = checkout_processor();
+            Some(webhook_route(raw_body, stripe_signature, &stripe_webhook_secret(processor), processor, client, wasm_path, config, invoker).await)
         }
         _ => None,
     }
@@ -1641,6 +1665,18 @@ mod tests {
     fn validate_session_secret_refuses_empty_or_unset() {
         assert!(validate_session_secret("").is_err());
         assert!(validate_session_secret("s3cret").is_ok());
+    }
+
+    // Same class of bug as H11 above, one function over: an unset or
+    // empty STRIPE_WEBHOOK_SECRET used to fall back unconditionally to
+    // the fixed, publicly-known mock string -- fine in mock mode
+    // (checkout_processor() == "mock_stripe"), a silent real-money hole
+    // in real-Stripe mode (checkout_processor() == "stripe").
+    #[test]
+    fn validate_stripe_webhook_secret_refuses_empty_only_in_real_stripe_mode() {
+        assert!(validate_stripe_webhook_secret("stripe", "").is_err());
+        assert!(validate_stripe_webhook_secret("stripe", "whsec_real").is_ok());
+        assert!(validate_stripe_webhook_secret("mock_stripe", "").is_ok());
     }
 
     #[test]
