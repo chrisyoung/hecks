@@ -59,9 +59,9 @@ These two block most of what follows and are independent of each other, so run t
 
 | slice | owns | corpus blast radius |
 |---|---|---|
-| **S1 — identity** | `identified_by` rows (Aggregate, Entity); `attribute_collector.rb`, `aggregate_builder.rb`, `entity_builder.rb`, meta-validator identity judge | 12 constant-form + 4 block-form declarations |
+| ~~**S1 — identity**~~ | ~~`identified_by` rows (Aggregate, Entity); `attribute_collector.rb`, `aggregate_builder.rb`, `entity_builder.rb`, meta-validator identity judge~~ | **DONE, verified 2026-08-27.** `identified_by_impl` (`identity_declaration.rb`) is one collapsed form; the old block form routes through `legacy_identified_by` only during `MetaValidator.shadow_parsing?`. Zero `as:`-form declarations left anywhere in the live corpus. |
 | ~~**S2 — references**~~ | ~~`reference_to` rows (Aggregate, Entity); `naming.rb`, `hop_path.rb`, `handle.rb`, `query_interpreter.rb`, `sql_query_builder.rb`, `bluebook_builder.rb`~~ | **DONE, verified 2026-08-27.** `_id`-minting removal (`attribute_collector.rb`'s `default_reference_name`), the `/` hop operator (`hop_path.rb`'s `hop_head?`/`next_hop`), the `Handle` accessor split (`handle.rb`), and acyclic-cycle detection widened from direct pairs to a full DFS (`bluebook_builder.rb`'s `validate_no_bidirectional_references!`) were all already shipped. Fixed one stale comment and added real N-node-ring test coverage (every prior cycle spec was a 2-node ring, which the OLD direct-pair check already caught — nothing proved the widening). `has_many`/`has_one`/`belongs_to` stay, per the amendment above — not part of this slice's scope. |
-| **S4 — reads** | Query + ReadModel rows; `query_builder.rb`, `read_model_builder.rb` | 5 `report` → `read_model`, 3 inert-word deletions |
+| ~~**S4 — reads**~~ | ~~Query + ReadModel rows; `query_builder.rb`, `read_model_builder.rb`~~ | **DONE, verified 2026-08-27.** No live `report` DSL method anywhere in `bluebook/dsl/`; `consistency`/`freshness`/`use_index` absent from `syntax.bluebook` entirely. |
 | ~~**S5 — commands**~~ | ~~Command rows; `command_builder.rb`, `mutation_applier.rb`~~ | **DONE, verified 2026-08-27.** Corpus is 119 `sets` / 1 `then_set` (the deliberately-kept deprecated row); `from:` absent from the corpus entirely; `sets :target, to: :target` self-mapping is refused (`command_builder.rb:277-281`); `MutationApplier#apply` has its `else raise Runtime::WiringError` guard (`mutation_applier.rb:94`). This table's own count was stale — check the live code before trusting either this row or the ADR text's count. |
 | ~~**S8 — role → Governance**~~ | ~~`role` row (Command); `command_rules/authorization.rb`, `hecksagon_builder.rb`~~ | **DONE, verified 2026-08-27.** `Authorization#refuse_role_mismatch` (`command_rules/authorization.rb:27-61`) checks an identified caller's real `Governance::RoleAssignment` via `Ports::Authorization.holds_role?`, never falling back to string equality once identified. `Verification#refuse_ungoverned_roles!` (`registry/verification.rb:132-147`) refuses any domain declaring `role` without `uses_framework "Governance"` at load time. Scoped/time-bounded revocation and the ungoverned-refusal live specs both pass (`spec/act_as_spec.rb`, `spec/environment_overlay_spec.rb`). |
 | **S11 — absence** | `era_guard/shape_diff.rb`, `command_rules/admissibility.rb` (`GuardState`) | none — pure runtime |
@@ -74,16 +74,16 @@ S8 is security-affecting — **add the new check before removing the old one**, 
 
 | slice | depends on | note |
 |---|---|---|
-| **S3 — attributes** (type position, closed sets) | S0a | Touches `attribute` rows under three contexts. **Run alone**, or accept conflicts with S1/S5. |
-| **S6 — events first-class** | S0a, S0b | Largest design change. `emits`, `on`, `trigger`, `with:`, saga `dispatch`, the IR, both runtimes. |
-| **S10 — rules** (aggregate `invariant`, lifecycle guards, named preconditions) | S0a, S9 | Removes 35 `"account is open"` givens and dedups 45 `"customer is active"`. |
-| **S9 — entity/aggregate shared vocabulary** | S0a | Also fixes `hop_path.rb:191`, which asserts entities have no `reference_to` while `EntityBuilder#reference_to` exists. |
+| ~~**S3 — attributes**~~ (type position, closed sets) | S0a | **DONE, verified 2026-08-27.** `attribute_impl` (`attribute_collector.rb:61`) takes `type = UNSET` (no default-to-String) and explicitly refuses a quoted-text type ("give the bare constant instead"). `one_of:` is a direct kwarg on `attribute_impl`, 14 corpus uses of the inline single-field form. |
+| **S6 — events first-class** | S0a, S0b | **Partially done.** Command references ARE first-class constants in the corpus today (`dispatch Account::Debit`, `trigger`-shaped calls use bare constants, not strings) — the scoped-constant bridge is in real use. NOT verified: whether events themselves (`emits`) carry a declared payload (value object with attributes) rather than just a checked name. Needs its own check before calling this done. |
+| **S10 — rules** (aggregate `invariant`, lifecycle guards, named preconditions) | S0a, S9 | **Partially done.** Aggregates already have a real `invariant_impl` (`aggregate_builder.rb:409`), same shape as `value_object`'s. NOT verified: lifecycle-state-as-command-guard (`command "X", from: "open"` replacing `given("account is open")`) or named/shared preconditions declared once. |
+| ~~**S9 — entity/aggregate shared vocabulary**~~ | S0a | **DONE, verified 2026-08-27.** `EntityBuilder` includes the same `AttributeCollector`/`IdentityDeclaration`/`RuleReference`/`WordGate` modules `AggregateBuilder` does — zero duplicate `identified_by` in `entity_builder.rb`. The `hop_path.rb:191` line this row originally cited no longer matches current line numbers (file has moved on); not independently re-checked whether that specific old assumption survives elsewhere. |
 
 ## Wave 3 — depends on Wave 2
 
 | slice | depends on |
 |---|---|
-| **S7 — reactions** (one state-machine vocabulary, first-class command refs) | S0a, S0b, S6 |
+| **S7 — reactions** (one state-machine vocabulary, first-class command refs) | S0a, S0b, S6 | **Confirmed still open, 2026-08-27.** `starts_on "TransferRequested"` / `ends_on "TransferSettled"` are still live in `examples/banking/bluebook/transfers_and_payments.bluebook`'s `Settlement` process manager — the ADR says these should be retired, with states being whatever the transitions name (same as an aggregate's lifecycle). Command references ARE already first-class (see S6's row) — that half is done. |
 | **S12 — `projects` and the boundary rule** | S0a, S6, S7, S10, S11 |
 | **S13 — coverage standard** (corpus uses / written exemptions for the 11) | everything |
 
