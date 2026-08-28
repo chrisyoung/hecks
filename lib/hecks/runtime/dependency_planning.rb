@@ -190,6 +190,22 @@ module Hecks
           end
         end
 
+        # KNOWN, HARMLESS GAP: `corrects ..., as: :name`'s bound name
+        # (admissibility.rb's `enforce_correction_target`/`enforce_givens`/
+        # `enforce_ensures`) isn't special-cased here the way `:old`/
+        # `:parent` are — a given/ensures referencing it falls through to
+        # `unresolved` below (its own field lookup finds no owner/payload
+        # match), same net effect as any other not-yet-optimized command:
+        # `complete_state?` comes back false, so dispatch takes the safe
+        # `hydrate_existing` path instead of the `ATOMIC_PUT` fast path.
+        # Not a correctness bug — `as:`'s runtime binding (a plain `attrs`
+        # merge, exactly like `old:`'s) resolves and evaluates correctly
+        # regardless of what this STATIC analysis concludes — just a real,
+        # deliberately-left optimization gap: closing it would mean
+        # threading "which names this command declares as correction
+        # bindings" into the Analyzer, which doesn't have that per-command
+        # context today. Worth doing alongside `:old`/`:parent`'s own
+        # handling someday, not attempted here.
         def classify_path(path, phase)
           head, nested = path.split(".", 2)
           name = head.to_sym

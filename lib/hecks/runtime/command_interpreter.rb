@@ -47,7 +47,7 @@ module Hecks
       # that sets them runs, same as they were unset locals before that point.
       Context = Struct.new(:domain, :aggregate, :command, :args, :repository, :instance, :transition, :old_state,
                            :result, :correlation, :route, :plan, :strategy, :persistence_outcome, :delegated_events,
-                           :dry_run)
+                           :dry_run, :correction_bindings)
 
       def initialize(registry, rules:)
         @registry = registry
@@ -134,10 +134,13 @@ module Hecks
           # NotFound/AlreadyExists already get at hydration: "does the
           # fact this command's corrects names even exist" is not a
           # domain rule an author wrote, it is a precondition for the
-          # domain rules to mean anything at all.
-          @rules.enforce_correction_target(ctx.instance, ctx.aggregate, ctx.command, domain: ctx.domain)
+          # domain rules to mean anything at all. Also locates the
+          # correction target itself, if `as:` named one — carried on
+          # `ctx` so `step_enforce_ensures` (the settled-record half)
+          # can bind the SAME name too, not just this pre-mutation half.
+          ctx.correction_bindings = @rules.enforce_correction_target(ctx.instance, ctx.aggregate, ctx.command, domain: ctx.domain)
           @rules.enforce_givens(ctx.instance, ctx.command, ctx.args, domain: ctx.domain,
-                                declaring: ctx.aggregate, parent: ctx.instance)
+                                declaring: ctx.aggregate, parent: ctx.instance, correction: ctx.correction_bindings)
         }
       end
 
@@ -238,7 +241,7 @@ module Hecks
       def step_enforce_ensures(ctx)
         step(:enforce_ensures) {
           @rules.enforce_ensures(ctx.instance, ctx.command, ctx.args, old: ctx.old_state,
-                                 domain: ctx.domain, parent: ctx.instance)
+                                 domain: ctx.domain, parent: ctx.instance, correction: ctx.correction_bindings || {})
         }
       end
 
