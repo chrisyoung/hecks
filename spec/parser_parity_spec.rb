@@ -35,7 +35,7 @@ require "open3"
 # RSpec still evaluates a group's top-level body while building the
 # example tree even when `io: true` excludes every example in it —
 # tagging the group alone doesn't stop plain body code from running.
-RSpec.describe "Rust parser parity (hecks-parse)", io: true do
+RSpec.describe "Rust parser parity (hecks-parse)", :io do
   PARITY_RUST_PARSER_DIR = File.expand_path("../rust/parser", __dir__)
   PARITY_BINARY_PATH     = File.join(PARITY_RUST_PARSER_DIR, "target", "debug", "hecks-parse")
 
@@ -63,9 +63,9 @@ RSpec.describe "Rust parser parity (hecks-parse)", io: true do
       Dir.glob(File.join(domain, "*.hecksagon")).sort.first
   end
 
-  PARITY_EXAMPLE_ROOTS = Dir.glob(File.join(InMemoryDomain::ROOT, "examples", "*")).select { |path|
+  PARITY_EXAMPLE_ROOTS = Dir.glob(File.join(InMemoryDomain::ROOT, "examples", "*")).select do |path|
     File.directory?(path)
-  }.sort.freeze
+  end.sort.freeze
   PARITY_GRAMMAR_CHAPTERS = Dir.glob(File.join(InMemoryDomain::ROOT, "lib/hecks/grammar", "*.bluebook")).sort.freeze
   PARITY_FRAMEWORK_MEMBERS = Dir.glob(File.join(InMemoryDomain::ROOT, "lib/hecks/framework/bluebook",
                                                 "*.bluebook")).sort.freeze
@@ -253,14 +253,14 @@ RSpec.describe "Rust parser parity (hecks-parse)", io: true do
   # Derived the SAME way PARITY_CORPUS_MEMBERS itself is (`bluebook_in`/
   # `hecksagon_in`/`chapter_name_of`), not hand-listed, so this stays
   # honest if pizzas.bluebook's own file ever moves.
-  REAL_PARITY_MEMBERS = %w[pizzas banking compliance roster chess directory].to_h { |stem|
+  REAL_PARITY_MEMBERS = %w[pizzas banking compliance roster chess directory].to_h do |stem|
     domain = PARITY_EXAMPLE_ROOTS.find { |path| File.basename(path) == stem } or raise "no examples/#{stem} directory"
     bluebooks = bluebooks_in(domain)
     raise "#{domain} has no .bluebook" if bluebooks.empty?
 
     chapter_name = chapter_name_of(bluebooks) or raise "#{bluebooks.first} has no 'Hecks.bluebook \"Name\"' header"
     [stem, [chapter_name, bluebooks + [hecksagon_in(domain)].compact]]
-  }.merge(
+  end.merge(
     # THE FRAMEWORK TRIO (Stage 3). A framework bluebook has no
     # `.hecksagon` of its own (confirmed by reading
     # lib/hecks/framework/bluebook/ directly): the comparison target
@@ -275,23 +275,23 @@ RSpec.describe "Rust parser parity (hecks-parse)", io: true do
     # "interview" (Stage 4's own bonus member, PARITY_FRAMEWORK_MEMBERS)
     # was removed along with the whole Interview domain — dropped, not
     # kept in this repo.
-    %w[identity governance console_settings].to_h { |stem|
+    %w[identity governance console_settings].to_h do |stem|
       bluebook = PARITY_FRAMEWORK_MEMBERS.find { |path| File.basename(path, ".bluebook") == stem } or
         raise "no lib/hecks/framework/bluebook/#{stem}.bluebook"
       chapter_name = chapter_name_of(bluebook) or raise "#{bluebook} has no 'Hecks.bluebook \"Name\"' header"
       [stem, [chapter_name, [bluebook]]]
-    }
+    end
   ).merge(
     # THE BONUS — "expression"/"translation", see PENDING_MEMBERS' own
     # comment on why these two `PARITY_GRAMMAR_CHAPTERS` members (Stage
     # 5's own named target) are here already. Same standalone shape as
     # the framework trio: a grammar chapter has no `.hecksagon` either.
-    %w[expression translation].to_h { |stem|
+    %w[expression translation].to_h do |stem|
       bluebook = PARITY_GRAMMAR_CHAPTERS.find { |path| File.basename(path, ".bluebook") == stem } or
         raise "no lib/hecks/grammar/#{stem}.bluebook"
       chapter_name = chapter_name_of(bluebook) or raise "#{bluebook} has no 'Hecks.bluebook \"Name\"' header"
       [stem, [chapter_name, [bluebook]]]
-    }
+    end
   ).merge(
     # STAGE 5 — EVERY `spec/fixtures/**/*.bluebook` member, not
     # hand-listed (see PARITY_FIXTURE_MEMBERS' own `Dir.glob`, above), so
@@ -299,11 +299,11 @@ RSpec.describe "Rust parser parity (hecks-parse)", io: true do
     # the framework trio/grammar chapters: none of these narrow unit-test
     # fixtures pairs with a `.hecksagon` (confirmed by `find spec/fixtures
     # -iname '*.hecksagon'` finding nothing at all).
-    PARITY_FIXTURE_MEMBERS.to_h { |bluebook|
+    PARITY_FIXTURE_MEMBERS.to_h do |bluebook|
       stem = fixture_stem(bluebook)
       chapter_name = chapter_name_of(bluebook) or raise "#{bluebook} has no 'Hecks.bluebook \"Name\"' header"
       [stem, [chapter_name, [bluebook]]]
-    }
+    end
   ).merge(
     # STAGE 6 — the self-hosted grammar itself, all nine
     # `PARITY_LANGUAGE_GRAMMAR_FILES` fed to ONE `hecks-parse chapter

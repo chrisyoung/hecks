@@ -240,13 +240,21 @@ module Hecks
 
             @db.exec("COMMIT")
           rescue PG::LockNotAvailable
-            @db.exec("ROLLBACK") rescue nil
+            begin
+              @db.exec("ROLLBACK")
+            rescue StandardError
+              nil
+            end
             raise Runtime::WiringError,
                   "cannot rename #{@formerly_known_as} to #{@domain}: another rename, mint, or write holds " \
                   "one of the domain locks — waited 10s; try again shortly"
-          rescue PG::Error => error
-            @db.exec("ROLLBACK") rescue nil
-            raise Runtime::WiringError, "cannot rename #{@formerly_known_as} to #{@domain}: #{error.message.strip}"
+          rescue PG::Error => e
+            begin
+              @db.exec("ROLLBACK")
+            rescue StandardError
+              nil
+            end
+            raise Runtime::WiringError, "cannot rename #{@formerly_known_as} to #{@domain}: #{e.message.strip}"
           end
 
           # Nothing provisioned yet — build it. Provisioned and owned —

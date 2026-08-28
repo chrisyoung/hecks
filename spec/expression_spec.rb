@@ -1,4 +1,5 @@
 require "hecks"
+require "tmpdir"
 
 RSpec.describe "the expression sublanguage" do
   def evaluate(expression, state = {}, args = {})
@@ -498,7 +499,7 @@ RSpec.describe "the expression sublanguage" do
 
       theirs = begin
         locals = bindings.map { |name, value| "#{name} = #{value.inspect}; " }.join
-        eval("#{locals}#{expression}")
+        eval("#{locals}#{expression}", binding, __FILE__, __LINE__)
       rescue StandardError
         :raised
       end
@@ -620,7 +621,10 @@ RSpec.describe "the expression sublanguage" do
   # header). `forget`/`forget_all` are the real invalidation API.
   describe "cache invalidation" do
     around do |example|
-      Dir.mktmpdir { |dir| @tmp_file = File.join(dir, "sample.rb"); example.run }
+      Dir.mktmpdir do |dir|
+        @tmp_file = File.join(dir, "sample.rb")
+        example.run
+      end
     end
 
     it "forget re-parses a specific file's tree on the next read, not before" do

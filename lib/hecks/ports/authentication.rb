@@ -19,7 +19,8 @@ module Hecks
     module Authentication
       NAME = "authentication"
 
-      ValidationError = Class.new(StandardError)
+      class ValidationError < StandardError
+      end
 
       module_function
 

@@ -28,7 +28,7 @@ RSpec.describe "the declared field hints" do
     "email"    => Hecks::Forms::FieldShape::EMAIL_HINT,
     "url"      => Hecks::Forms::FieldShape::URL_HINT,
     "tel"      => Hecks::Forms::FieldShape::TEL_HINT,
-    "textarea" => Hecks::Forms::FieldShape::TEXTAREA_HINT,
+    "textarea" => Hecks::Forms::FieldShape::TEXTAREA_HINT
   }.freeze
 
   it "declares at least one hint, so a language regression doesn't silently empty this" do

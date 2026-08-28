@@ -21,9 +21,7 @@ module Hecks
             ordinal = latest[:ordinal] + 1
 
             edges = registry.translations.select { |t| t.domain == bluebook.name && t.from == latest[:label] }
-            if edges.empty?
-              refuse_toward_the_scaffold!(registry, bluebook, lineage, latest, ordinal, directory)
-            end
+            refuse_toward_the_scaffold!(registry, bluebook, lineage, latest, ordinal, directory) if edges.empty?
             if edges.size > 1
               raise Runtime::WiringError,
                     "cannot boot #{bluebook.name}: #{edges.size} translation edges leave era #{latest[:ordinal]} " \
@@ -96,7 +94,7 @@ module Hecks
           # Diff the held era against the current shape and write the edge
           # file — confident rules inline, ambiguities as parse-refusing
           # `unresolved` lines. Returns the file path.
-          def scaffold!(registry, bluebook, lineage, latest, directory)
+          def scaffold!(_registry, bluebook, lineage, latest, directory)
             ensure_named!(lineage, latest)
             latest = lineage.eras.last
 

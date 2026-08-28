@@ -184,9 +184,7 @@ module Hecks
         # just `attrs` extended with the bound name for the span of that
         # one predicate evaluation, discarded immediately after.
         def evaluate_block_predicate(node, collection, state, attrs)
-          unless collection.is_a?(Array)
-            raise EvaluationError, "#{node.mode}? expects a list, got #{describe(collection)}"
-          end
+          raise EvaluationError, "#{node.mode}? expects a list, got #{describe(collection)}" unless collection.is_a?(Array)
 
           outcomes = collection.map { |element| interpret_with_element(node, element, state, attrs) }
 

@@ -90,8 +90,8 @@ RSpec.describe "none_in_state on an ordinary AGGREGATE-level Memory query" do
 
   def boot_aggregate_anti_join
     boot(AGGREGATE_ANTI_JOIN_SOURCE, "AggregateAntiJoinGrowth") do
-      ::AggregateAntiJoinGrowth::Claim.persisted_by("Memory")
-      ::AggregateAntiJoinGrowth::Board.persisted_by("Memory")
+      AggregateAntiJoinGrowth::Claim.persisted_by("Memory")
+      AggregateAntiJoinGrowth::Board.persisted_by("Memory")
     end
   end
 

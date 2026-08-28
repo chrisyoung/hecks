@@ -84,7 +84,7 @@ RSpec.describe "mutation op append, bare-symbol shorthand" do
 
   def boot_mutation_append_bare_symbol
     boot(MUTATION_APPEND_BARE_SYMBOL_SOURCE, "MutationAppendBareSymbolGrowth") do
-      ::MutationAppendBareSymbolGrowth::Widget.persisted_by("Memory")
+      MutationAppendBareSymbolGrowth::Widget.persisted_by("Memory")
     end
   end
 

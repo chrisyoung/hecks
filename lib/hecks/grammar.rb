@@ -43,9 +43,9 @@ module Hecks
         args = symbolize(step.fetch("args"))
         begin
           dispatcher.dispatch(step.fetch("verb"), **args)
-        rescue *Runtime::DOMAIN_REFUSALS => refusal
+        rescue *Runtime::DOMAIN_REFUSALS => e
           raise Runtime::WiringError,
-                "the admission ledger refused at #{step['verb']} #{step['args']} — #{refusal.message}"
+                "the admission ledger refused at #{step['verb']} #{step['args']} — #{e.message}"
         end
       end
 

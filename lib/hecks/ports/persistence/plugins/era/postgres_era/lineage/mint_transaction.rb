@@ -70,13 +70,21 @@ module Hecks
             @db.exec("COMMIT")
             true
           rescue PG::LockNotAvailable
-            @db.exec("ROLLBACK") rescue nil
+            begin
+              @db.exec("ROLLBACK")
+            rescue StandardError
+              nil
+            end
             raise Runtime::WiringError,
                   "cannot mint era #{ordinal} of #{@domain}: another mint holds the domain lock — " \
                   "waited 10s; try again shortly"
-          rescue PG::Error => error
-            @db.exec("ROLLBACK") rescue nil
-            raise Runtime::WiringError, "cannot mint era #{ordinal} of #{@domain}: #{error.message.strip}"
+          rescue PG::Error => e
+            begin
+              @db.exec("ROLLBACK")
+            rescue StandardError
+              nil
+            end
+            raise Runtime::WiringError, "cannot mint era #{ordinal} of #{@domain}: #{e.message.strip}"
           end
 
           # Base privileges for a deployment's app role — a NON-owner,

@@ -47,9 +47,9 @@ RSpec.describe Hecks::Fuzzing::InvalidValueGenerator do
     end
 
     it "names every kind it offers" do
-      offered = aggregate.commands.flat_map { |command|
+      offered = aggregate.commands.flat_map do |command|
         command.attributes.reject(&:list?).flat_map { |held| described_class.kinds_for(held, aggregate) }
-      }.uniq
+      end.uniq
 
       expect(offered - described_class::KINDS).to be_empty
     end

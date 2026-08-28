@@ -114,9 +114,9 @@ RSpec.describe "a for_each policy's row id" do
       end
 
       Hecks.hecksagon("FanKey") do
-        ::FanKey::Chit.persisted_by("Memory")
-        ::FanKey::Audit.persisted_by("Memory")
-        ::FanKey::Alarm.persisted_by("Memory")
+        FanKey::Chit.persisted_by("Memory")
+        FanKey::Audit.persisted_by("Memory")
+        FanKey::Alarm.persisted_by("Memory")
       end
     end
 

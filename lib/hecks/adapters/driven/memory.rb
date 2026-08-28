@@ -15,7 +15,7 @@ module Hecks
       def self.tenant_capable? = true
       def persistence_capabilities = [:atomic_put]
 
-      attr_reader :aggregate
+      attr_reader :aggregate, :events
 
       def initialize(aggregate:, settings: {}, root: nil)
         @aggregate = aggregate
@@ -74,8 +74,6 @@ module Hecks
       end
 
       def record_event(event) = @events << event
-
-      def events = @events
 
       def entries = @entries.dup
 

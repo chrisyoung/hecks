@@ -34,7 +34,7 @@ Kernel.load(File.expand_path("../bin/lint_deploy_recipes", __dir__))
 # into KNOWN_CLEAN_TARGETS below like every other target, and the CLI's
 # own "no arguments" test now expects a clean run. If this ever regresses
 # (the echo silently gets lost again), these assertions will fail.
-RSpec.describe "bin/lint_deploy_recipes", io: true do
+RSpec.describe "bin/lint_deploy_recipes", :io do
   def self.root = File.expand_path("..", __dir__)
 
   def self.lint(text, source: "fixture")

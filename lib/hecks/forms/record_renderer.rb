@@ -15,7 +15,7 @@ module Hecks
         instances = registry.repository(domain, aggregate).all
         <<~HTML
           <h1>#{Escape.html("#{domain}::#{aggregate.hecks_name}")}</h1>
-          #{aggregate.description ? %(<p class="goal">#{Escape.html(aggregate.description)}</p>) : ''}
+          #{%(<p class="goal">#{Escape.html(aggregate.description)}</p>) if aggregate.description}
           #{creating_links(domain, aggregate)}
           <h2>Records (#{instances.size})</h2>
           #{RecordTable.render(aggregate, instances, domain: domain)}
@@ -27,9 +27,9 @@ module Hecks
         creators = aggregate.commands.select(&:creates?)
         return "" if creators.empty?
 
-        links = creators.map { |cmd|
+        links = creators.map do |cmd|
           %(<a class="button" href="/#{domain}/#{aggregate.hecks_name}/#{cmd.hecks_name}.html">+ #{Escape.html(cmd.hecks_name)}</a>)
-        }
+        end
         %(<div class="actions">#{links.join}</div>)
       end
 
@@ -41,7 +41,7 @@ module Hecks
         current = aggregate.lifecycle && state[aggregate.lifecycle.field]
         <<~HTML
           <h1>#{Escape.html("#{domain}::#{aggregate.hecks_name}")} <span class="mono">#{Escape.html(id)}</span></h1>
-          #{current ? %(<span class="badge role">#{Escape.html(aggregate.lifecycle.field)}: #{Escape.html(current)}</span>) : ''}
+          #{%(<span class="badge role">#{Escape.html(aggregate.lifecycle.field)}: #{Escape.html(current)}</span>) if current}
           #{state_table(state)}
           <h2>Commands</h2>
           #{command_links(domain, aggregate, id, current)}
@@ -50,9 +50,9 @@ module Hecks
       end
 
       def self.state_table(state)
-        rows = state.map { |key, value|
+        rows = state.map do |key, value|
           "<tr><th>#{Escape.html(Humanize.label(key.to_s))}</th><td>#{Escape.html(render_value(value))}</td></tr>"
-        }
+        end
         %(<div class="table-scroll"><table><tbody>#{rows.join}</tbody></table></div>)
       end
 
@@ -106,12 +106,12 @@ module Hecks
         commands = aggregate.commands.reject(&:creates?)
         return "" if commands.empty? && aggregate.queries.empty?
 
-        cmd_items = commands.map { |c|
+        cmd_items = commands.map do |c|
           %(<li><a href="/#{domain}/#{aggregate.hecks_name}/#{c.hecks_name}.html"><span>#{Escape.html(c.hecks_name)}</span><span class="kind">command</span></a></li>)
-        }
-        query_items = aggregate.queries.map { |q|
+        end
+        query_items = aggregate.queries.map do |q|
           %(<li><a href="/#{domain}/#{aggregate.hecks_name}/#{q.hecks_name}.html"><span>#{Escape.html(q.hecks_name)}</span><span class="kind">query</span></a></li>)
-        }
+        end
         %(<h2>Every command &amp; query on #{Escape.html(aggregate.hecks_name)}</h2><ul class="verb-list">#{(cmd_items + query_items).join}</ul>)
       end
     end

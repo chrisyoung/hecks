@@ -80,7 +80,7 @@ require_relative "support/ruby_codegen_prelude"
 # excluded by the `io: true` filter, so tagging the group alone wasn't
 # enough; the build itself had to move into a `before(:context)` hook,
 # which — unlike plain body code — really is skipped when excluded.
-RSpec.describe "Rust codegen parity (hecks-codegen)", io: true do
+RSpec.describe "Rust codegen parity (hecks-codegen)", :io do
   CODEGEN_DIR = File.expand_path("../rust/codegen", __dir__)
   CODEGEN_BINARY = File.join(CODEGEN_DIR, "target", "debug", "hecks-codegen")
 
@@ -130,17 +130,17 @@ RSpec.describe "Rust codegen parity (hecks-codegen)", io: true do
   # CODEGEN_PENDING_MEMBERS below for what's genuinely still open and why).
   CODEGEN_CORPUS_MEMBERS = [
     ["pizzas", -> { domain_ir(File.join(InMemoryDomain::ROOT, "examples/pizzas/bluebook/pizzas.bluebook"), "Pizzas") }],
-    ["identity", -> {
+    ["identity", lambda {
       domain_ir(File.join(InMemoryDomain::ROOT, "lib/hecks/framework/bluebook/identity.bluebook"), "Identity")
     }],
-    ["governance", -> {
+    ["governance", lambda {
       domain_ir(File.join(InMemoryDomain::ROOT, "lib/hecks/framework/bluebook/governance.bluebook"), "Governance")
     }],
-    ["compliance", -> {
+    ["compliance", lambda {
       domain_ir(File.join(InMemoryDomain::ROOT, "examples/compliance/bluebook/compliance.bluebook"), "Compliance")
     }],
     ["banking", -> { domain_ir(InMemoryDomain::BANKING_BLUEBOOK_DIR, "Banking") }],
-    ["bluebook_language", -> { meta_ir }],
+    ["bluebook_language", -> { meta_ir }]
   ].freeze
 
   # A REAL, per-member reason — never a placeholder. See this file's own
@@ -151,7 +151,7 @@ RSpec.describe "Rust codegen parity (hecks-codegen)", io: true do
                     "checked out here — only rust/src/generated/embryonaut's own already-compiled output exists " \
                     "in THIS repo, with no `.bluebook` this spec's own Kernel.load-based domain_ir helper can " \
                     "load. A real follow-up item once that repo's source is reachable from a codegen-parity run, " \
-                    "not a shape/algorithm gap in rust/codegen itself.",
+                    "not a shape/algorithm gap in rust/codegen itself."
   }.freeze
 
   # Corpus members that reach FULL whole-file byte-exactness — every

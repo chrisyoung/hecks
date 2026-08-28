@@ -422,9 +422,13 @@ else
     f.puts
     f.puts RustProjection::Projector.emit_reference_key_table(
       chapter_mod_names.map { |mod_name, chapter_name|
-        [chapter_name, (mod_name == target_mod_name ? target_aggregates : framework_aggregates.select { |a|
-          a[:chapter_mod] == mod_name
-        }).map { |a| a[:name] }]
+        [chapter_name, (if mod_name == target_mod_name
+                          target_aggregates
+                        else
+                          framework_aggregates.select { |a|
+                            a[:chapter_mod] == mod_name
+                          }
+                        end).map { |a| a[:name] }]
       }
     )
     f.puts

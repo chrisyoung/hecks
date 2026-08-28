@@ -22,26 +22,20 @@ module Hecks
         aggregate, entities = if to.is_a?(Hash)
                                 hash = to.transform_keys(&:to_sym)
                                 unknown = hash.keys - %i[aggregate entity entities]
-                                unless unknown.empty?
-                                  raise TypeMismatch, "to: does not recognize #{unknown.sort.join(', ')}"
-                                end
+                                raise TypeMismatch, "to: does not recognize #{unknown.sort.join(', ')}" unless unknown.empty?
 
                                 [hash[:aggregate], entity_identities(hash)]
                               else
                                 [to, []]
                               end
 
-        if aggregate.nil? || aggregate.to_s.empty?
-          raise TypeMismatch, "to: must name the receiving aggregate identity"
-        end
+        raise TypeMismatch, "to: must name the receiving aggregate identity" if aggregate.nil? || aggregate.to_s.empty?
         if entities.size != entity_depth
           raise TypeMismatch,
                 "to: for an entity command needs #{entity_depth} entity " \
                 "#{entity_depth == 1 ? 'identity' : 'identities'} after the aggregate — got #{entities.size}"
         end
-        if entities.any? { |identity| identity.nil? || identity.to_s.empty? }
-          raise TypeMismatch, "to: contains a blank entity identity"
-        end
+        raise TypeMismatch, "to: contains a blank entity identity" if entities.any? { |identity| identity.nil? || identity.to_s.empty? }
 
         Envelope.new(aggregate: aggregate, entities: entities)
       end
@@ -51,14 +45,10 @@ module Hecks
       # choosing the explicit envelope cannot smuggle receiver identity back
       # into the payload.
       def payload(command, with:, legacy:)
-        if with && !legacy.empty?
-          raise TypeMismatch, "dispatch takes command facts in with:, not both with: and loose keyword arguments"
-        end
+        raise TypeMismatch, "dispatch takes command facts in with:, not both with: and loose keyword arguments" if with && !legacy.empty?
 
         return legacy unless with
-        unless with.is_a?(Hash)
-          raise TypeMismatch, "with: must be a hash of command facts"
-        end
+        raise TypeMismatch, "with: must be a hash of command facts" unless with.is_a?(Hash)
 
         offered = with.transform_keys(&:to_sym)
         declared = command.attributes.map { |attribute| attribute.name.to_sym }
@@ -84,9 +74,7 @@ module Hecks
       end
 
       def entity_identities(hash)
-        if hash.key?(:entities) && hash.key?(:entity)
-          raise TypeMismatch, "to: takes entity: or entities:, not both"
-        end
+        raise TypeMismatch, "to: takes entity: or entities:, not both" if hash.key?(:entities) && hash.key?(:entity)
 
         hash.key?(:entities) ? Array(hash[:entities]) : Array(hash[:entity])
       end

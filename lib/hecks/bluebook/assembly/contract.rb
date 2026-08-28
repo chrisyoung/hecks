@@ -78,7 +78,7 @@ module Hecks
         end
 
         def answers?(method)
-          make == :declare ? holder.respond_to?(method) : holder.instance_methods.include?(method)
+          make == :declare ? holder.respond_to?(method) : holder.method_defined?(method)
         end
 
         def accepts?(keyword)

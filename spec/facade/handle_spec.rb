@@ -16,13 +16,13 @@ RSpec.describe Hecks::Facade::Handle do
 
       Hecks.hecksagon("Banking") do
         uses_framework "Governance"
-        ::Banking::Customer.persisted_by("Memory")
-        ::Banking::Account.persisted_by("Memory")
-        ::Banking::SafeDepositBox.persisted_by("Memory")
+        Banking::Customer.persisted_by("Memory")
+        Banking::Account.persisted_by("Memory")
+        Banking::SafeDepositBox.persisted_by("Memory")
       end
       Hecks.hecksagon("Governance") do
-        ::Governance::RoleAssignment.persisted_by("Memory")
-        ::Governance::RoleTransition.persisted_by("Memory")
+        Governance::RoleAssignment.persisted_by("Memory")
+        Governance::RoleTransition.persisted_by("Memory")
       end
     end
 
@@ -74,13 +74,22 @@ RSpec.describe Hecks::Facade::Handle do
 
           # Every one of these snake-cases onto a real Object/Kernel
           # method, which is the entire point.
-          command("Freeze")  { reference_to Vault; emits "VaultFrozen" }
-          command("Send")    { reference_to Vault; emits "VaultSent" }
-          command("Thaw")    { reference_to Vault; emits "VaultThawed" }
+          command("Freeze") do
+            reference_to Vault
+            emits "VaultFrozen"
+          end
+          command("Send") do
+            reference_to Vault
+            emits "VaultSent"
+          end
+          command("Thaw") do
+            reference_to Vault
+            emits "VaultThawed"
+          end
         end
       end
 
-      Hecks.hecksagon("Collider") { ::Collider::Vault.persisted_by("Memory") }
+      Hecks.hecksagon("Collider") { Collider::Vault.persisted_by("Memory") }
     end
 
     registry.verify!
@@ -198,7 +207,7 @@ RSpec.describe Hecks::Facade::Handle do
       Kernel.eval(source, TOPLEVEL_BINDING, file.path, 1)
 
       Hecks.hecksagon("Thingy") do
-        ::Thingy::Thing.persisted_by("Memory")
+        Thingy::Thing.persisted_by("Memory")
       end
     end
 

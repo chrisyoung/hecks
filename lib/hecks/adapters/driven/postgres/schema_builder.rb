@@ -17,7 +17,7 @@ module Hecks
         def create_aggregate_table!
           columns = persisted_fields.map { |field| "#{quote_ident(field[:name])} #{field[:sql_type]}" }
           @db.exec(
-            "CREATE TABLE IF NOT EXISTS #{quoted_table} (id text PRIMARY KEY#{columns.empty? ? '' : ', '}#{columns.join(', ')})"
+            "CREATE TABLE IF NOT EXISTS #{quoted_table} (id text PRIMARY KEY#{', ' unless columns.empty?}#{columns.join(', ')})"
           )
           # SELF-HEALING, SAME IDIOM AS `ensure_indexes!` BELOW —
           # `CREATE TABLE IF NOT EXISTS` above does NOT retroactively add a

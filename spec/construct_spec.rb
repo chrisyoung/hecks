@@ -48,8 +48,8 @@ RSpec.describe "a construct's identity" do
     @banking = boot(CONSTRUCT_BANKING)
   end
 
-  def pizzas  = @pizzas
-  def banking = @banking
+  attr_reader :pizzas
+  attr_reader :banking
 
   def aggregate_ir(runtime, domain, name)
     runtime.registry.bluebook(domain).aggregate(name)
@@ -138,7 +138,7 @@ RSpec.describe "a construct's identity" do
     end
 
     it "still refuses a reference that points at nothing" do
-      expect {
+      expect do
         # `number:` was written TWICE — the first a copy of the customer id — and
         # Ruby warned on every run while silently keeping the second. What this
         # test is about is the CUSTOMER pointing at nothing, not the number.
@@ -146,7 +146,7 @@ RSpec.describe "a construct's identity" do
                                                   number:      { value: "ACC-1" },
                                                   kind:        { name: "current" },
                                                   daily_limit: { cents: 100 })
-      }.to raise_error(Hecks::Runtime::NotFound, /no Customer with/)
+      end.to raise_error(Hecks::Runtime::NotFound, /no Customer with/)
     end
 
     it "refuses to resolve at all when it cannot say who declares it" do
@@ -281,7 +281,7 @@ RSpec.describe "a construct's identity" do
         $stderr = was
       end
 
-      expect(captured.string).to match(/Set is already defined — leaving it alone/)
+      expect(captured.string).to include("Set is already defined — leaving it alone")
       expect(registry.bluebook("Set").hecks_fqn).to eq("Set")
       expect(Object.const_get(:Set)).not_to be(registry.bluebook("Set"))
     end

@@ -72,7 +72,7 @@ RSpec.describe "every list the language declares, filled more than once" do
     "attaches_to" =>
                      "Paging attaches to two real contexts, \"Query\" and \"ReadModel\" — " \
                      "no golden IR fixture reaches it because Paging is a grammar " \
-                     "chapter, not a frozen corpus member.",
+                     "chapter, not a frozen corpus member."
 
     # EMPTY, and every entry that was here is now a corpus member instead.
     #

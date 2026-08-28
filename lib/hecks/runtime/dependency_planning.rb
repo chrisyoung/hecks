@@ -101,12 +101,8 @@ module Hecks
           # projected field just as easily as one of its real attributes
           # (`Banking::Withdrawal.Dispute`'s own `parent.account_customer_
           # status`, ATMCard's projected field, is a real, live example).
-          if aggregate.respond_to?(:projected_fields)
-            aggregate.projected_fields.each { |field| @owner_fields << field.name }
-          end
-          if root_aggregate.respond_to?(:projected_fields)
-            root_aggregate.projected_fields.each { |field| @root_owner_fields << field.name }
-          end
+          aggregate.projected_fields.each { |field| @owner_fields << field.name } if aggregate.respond_to?(:projected_fields)
+          root_aggregate.projected_fields.each { |field| @root_owner_fields << field.name } if root_aggregate.respond_to?(:projected_fields)
           @payload_fields = command.attributes.to_set(&:name)
           @state_reads = Set.new
           @payload_reads = Set.new
@@ -210,9 +206,7 @@ module Hecks
           lifecycle = aggregate.lifecycle
           return unless lifecycle
 
-          if command.from
-            state_reads << lifecycle.field
-          end
+          state_reads << lifecycle.field if command.from
 
           return if lifecycle.transitions_for(command.hecks_name).empty?
 
@@ -223,8 +217,8 @@ module Hecks
         def analyze_rules(rules, phase:)
           rules.each do |rule|
             ExpressionReads.paths(rule.canonical).each { |path| classify_path(path, phase) }
-          rescue ArgumentError => error
-            unresolved << "expression #{rule.canonical.inspect} could not be analyzed: #{error.message}"
+          rescue ArgumentError => e
+            unresolved << "expression #{rule.canonical.inspect} could not be analyzed: #{e.message}"
           end
         end
 

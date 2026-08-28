@@ -8,7 +8,11 @@ module Hecks
         private
 
         def build_catalog(runtime)
-          creating, instance, entity_commands, queries, entity_queries = [], [], [], [], []
+          creating = []
+          instance = []
+          entity_commands = []
+          queries = []
+          entity_queries = []
           read_models = []
 
           runtime.registry.bluebooks.each do |domain_name, bluebook|

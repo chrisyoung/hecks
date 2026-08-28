@@ -198,9 +198,7 @@ module Hecks
           case (found = Resolver.interpret(haystack, state, attrs))
           when Array then found.any? { |item| equal?(item, wanted) }
           when String
-            unless wanted.is_a?(String)
-              raise EvaluationError, "no implicit conversion of #{class_of(wanted)} into String"
-            end
+            raise EvaluationError, "no implicit conversion of #{class_of(wanted)} into String" unless wanted.is_a?(String)
 
             found.include?(wanted)
           else false
@@ -286,9 +284,9 @@ module Hecks
             # its own (`[0, 0 + 0]`) used to read as a split point for
             # THIS expression's own boolean/comparison grammar, exactly
             # the way an un-tracked `{`/`}` once did for block predicates.
-            elsif char == "(" || char == "{" || char == "["
+            elsif ["(", "{", "["].include?(char)
               depth += 1
-            elsif char == ")" || char == "}" || char == "]"
+            elsif [")", "}", "]"].include?(char)
               depth -= 1
             elsif depth.zero? && expr[index, operator.length] == operator
               return index if !block_given? || yield(index)

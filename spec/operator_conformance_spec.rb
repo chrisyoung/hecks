@@ -65,12 +65,10 @@ RSpec.describe "the operator domain" do
   # surface as a confusing direction-B failure two examples later.
   DISPATCHER = boot_expression
   REFUSALS = LEDGER["steps"].filter_map do |step|
-    begin
-      DISPATCHER.dispatch(step["verb"], **symbolize(step["args"]))
-      nil
-    rescue *Hecks::Runtime::DOMAIN_REFUSALS => refusal
-      "#{step['verb']} #{step['args']} — #{refusal.message}"
-    end
+    DISPATCHER.dispatch(step["verb"], **symbolize(step["args"]))
+    nil
+  rescue *Hecks::Runtime::DOMAIN_REFUSALS => e
+    "#{step['verb']} #{step['args']} — #{e.message}"
   end.freeze
 
   def self.records(aggregate_name)
@@ -113,8 +111,10 @@ RSpec.describe "the operator domain" do
   # their own count at 1) and must be dense — a gap or a duplicate would
   # mean either a slot the parser skips or two operators claiming the same
   # turn, neither of which the ledger can represent honestly.
-  def by_grammar(grammar) = ADMITTED.select { |op| op[:grammar].value == grammar }
-                                    .sort_by { |op| op[:position].value }
+  def by_grammar(grammar)
+    ADMITTED.select { |op| op[:grammar].value == grammar }
+            .sort_by { |op| op[:position].value }
+  end
 
   it "gives every grammar a dense, gap-free position — no skipped or doubled turn" do
     %w[outer inner].each do |grammar|

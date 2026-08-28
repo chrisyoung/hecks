@@ -114,7 +114,7 @@ module Hecks
           by `bin/reference` — do not edit inside the markers. The prose
           between them is hand-written and survives regeneration.*
           #{GENERATED_END}
-          #{preamble.empty? ? '' : "\n#{preamble}\n"}
+          #{"\n#{preamble}\n" unless preamble.empty?}
           #{sections.join("\n")}
         PAGE
       end
@@ -145,7 +145,7 @@ module Hecks
           ## #{row[:word]}
 
           #{generated_begin(row[:word])}
-          #{spellings}#{facts.empty? ? '' : " — #{facts.join(', ')}"}
+          #{spellings}#{" — #{facts.join(', ')}" unless facts.empty?}
           #{table}#{GENERATED_END}
 
           #{prose_or_sentinel(prose)}
@@ -273,7 +273,7 @@ module Hecks
         lines.join("\n")
       end
 
-      def reference_index(root)
+      def reference_index(_root)
         count = contexts.size
         "[The DSL reference](docs/implemented/reference/index.md) — #{count} contexts, generated from " \
           "the aggregate-local tables under `lib/hecks/language/` and held to them by " \
@@ -364,7 +364,7 @@ module Hecks
       # example — a word whose only "example" is invisible or inert is a
       # word still shipping on its prose alone, which is the thing this
       # gate exists to refuse.
-      EXAMPLE_FENCE = /^```ruby(?: bluebook| boot)?[ \t]*$/.freeze
+      EXAMPLE_FENCE = /^```ruby(?: bluebook| boot)?[ \t]*$/
 
       def exemplified?(prose) = prose.to_s.match?(EXAMPLE_FENCE)
 
@@ -378,12 +378,12 @@ module Hecks
       # `harvest` already rejects empty prose and the TODO sentinel, so a
       # word with nothing written for it arrives here with a nil.
       def live_words(directory)
-        contexts.flat_map { |context|
+        contexts.flat_map do |context|
           path = File.join(directory, page_name(context))
           prose = File.exist?(path) ? harvest(File.read(path)) : {}
           keywords.select { |row| row[:context] == context && live?(row) }
                   .map { |row| [row[:word], context, prose[row[:word]]] }
-        }.uniq { |word, context, _| [word, context] }
+        end.uniq { |word, context, _| [word, context] }
       end
 
       def name_of(word, context) = "#{word} (#{context})"

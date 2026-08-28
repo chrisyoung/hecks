@@ -111,9 +111,7 @@ module Hecks
           op = sign.positive? ? "increment" : "decrement"
           current ||= 0
 
-          if current.is_a?(Value) && amount.is_a?(Value)
-            return arithmetic_value_object(current, amount, target, sign, op)
-          end
+          return arithmetic_value_object(current, amount, target, sign, op) if current.is_a?(Value) && amount.is_a?(Value)
 
           # `current` genuinely absent (no declared default, never set) and
           # `amount` arrives VO-wrapped — a real command argument typed the
@@ -195,9 +193,7 @@ module Hecks
         def multiply(current, amount, target)
           current ||= 0
 
-          if current.is_a?(Value) && amount.is_a?(Value)
-            return combine_value_object(current, amount, target, "multiply") { |c, a| c * a }
-          end
+          return combine_value_object(current, amount, target, "multiply") { |c, a| c * a } if current.is_a?(Value) && amount.is_a?(Value)
 
           # Same absent-`current`, VO-wrapped-`amount` gap as `#arithmetic`
           # — see that method's own comment.

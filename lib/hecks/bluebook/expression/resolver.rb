@@ -215,7 +215,7 @@ module Hecks
 
           return Size.new(receiver: parse(Regexp.last_match(1))) if expr =~ /\A(.+)\.size\z/
 
-          if expr =~ /\A(.+)\.match\?\(\/(.*)\/([a-z]*)\)\z/m
+          if expr =~ %r{\A(.+)\.match\?\(/(.*)/([a-z]*)\)\z}m
             return MatchesRegex.new(receiver: parse(Regexp.last_match(1)),
                                     pattern:  Regexp.last_match(2),
                                     flags:    Regexp.last_match(3))
@@ -224,20 +224,14 @@ module Hecks
           return Presence.new(receiver: parse(Regexp.last_match(1)), negated: false) if expr =~ /\A(.+)\.present\?\z/
           return Presence.new(receiver: parse(Regexp.last_match(1)), negated: true)  if expr =~ /\A(.+)\.blank\?\z/
 
-          if expr =~ /\A(.+)\.split\("([^"]*)"\)\z/
-            return Split.new(receiver: parse(Regexp.last_match(1)), separator: Regexp.last_match(2))
-          end
+          return Split.new(receiver: parse(Regexp.last_match(1)), separator: Regexp.last_match(2)) if expr =~ /\A(.+)\.split\("([^"]*)"\)\z/
 
           return First.new(receiver: parse(Regexp.last_match(1))) if expr =~ /\A(.+)\.first\z/
           return Last.new(receiver: parse(Regexp.last_match(1))) if expr =~ /\A(.+)\.last\z/
 
-          if expr =~ /\A(.+)\.start_with\?\("([^"]*)"\)\z/
-            return StartsWith.new(receiver: parse(Regexp.last_match(1)), substring: Regexp.last_match(2))
-          end
+          return StartsWith.new(receiver: parse(Regexp.last_match(1)), substring: Regexp.last_match(2)) if expr =~ /\A(.+)\.start_with\?\("([^"]*)"\)\z/
 
-          if expr =~ /\A(.+)\.end_with\?\("([^"]*)"\)\z/
-            return EndsWith.new(receiver: parse(Regexp.last_match(1)), substring: Regexp.last_match(2))
-          end
+          return EndsWith.new(receiver: parse(Regexp.last_match(1)), substring: Regexp.last_match(2)) if expr =~ /\A(.+)\.end_with\?\("([^"]*)"\)\z/
 
           block_opener = parse_block_opener(expr)
           return block_opener if block_opener

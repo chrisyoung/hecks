@@ -82,7 +82,7 @@ RSpec.describe "the language uses everything the core grammar declares" do
   # down, not just at the aggregate's own top level).
   SELF_USE_COUNTS = {
     "entity"                 => -> { SELF_USE_LANGUAGE.aggregates.sum { |a| count_entities(a) } },
-    "lifecycle / transition" => -> {
+    "lifecycle / transition" => lambda {
       SELF_USE_LANGUAGE.aggregates.sum do |a|
         count = a.lifecycle ? 1 : 0
         walk_entities(a) { |e| count += 1 if e.lifecycle }

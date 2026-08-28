@@ -139,9 +139,9 @@ module Hecks
         # problems) still surface.
         connection.exec("SET client_min_messages = warning")
         connection
-      rescue PG::Error => error
+      rescue PG::Error => e
         raise Runtime::WiringError,
-              "cannot bind PostgresEra at #{declared} for #{name}: #{error.message.strip}"
+              "cannot bind PostgresEra at #{declared} for #{name}: #{e.message.strip}"
       end
 
       def initialize(aggregate:, settings: {}, root: nil)
@@ -624,11 +624,11 @@ module Hecks
       end
 
       def cached_where_fields
-        declared_queries.flat_map { |q|
-          q.wheres.map { |clause|
+        declared_queries.flat_map do |q|
+          q.wheres.map do |clause|
             clause.field.to_s
-          }
-        }.uniq.select { |field| cacheable_field?(field) }
+          end
+        end.uniq.select { |field| cacheable_field?(field) }
       end
 
       def declared_queries
@@ -709,7 +709,7 @@ module Hecks
           clauses << where_clause(clause.op.to_s, expression, value, binds, field: clause.field)
         end
 
-        sql = +"SELECT #{select_list} FROM #{from_relation} WHERE #{clauses.join(' AND ')}"
+        sql = "SELECT #{select_list} FROM #{from_relation} WHERE #{clauses.join(' AND ')}"
         sql << if declared.order_by
                  " ORDER BY #{order_clause(declared.order_by, declared.null_semantics)}"
                else

@@ -47,7 +47,7 @@ RSpec.describe "a query's own rows keep a declared :id attribute from clobbering
     file.write(source)
     file.flush
 
-    runtime = nil
+    nil
     Hecks.with_registry(registry) do
       Kernel.load(InMemoryDomain::PERSISTENCE_PORT)
       Kernel.load(InMemoryDomain::EXTRACTION_PORT)
@@ -56,7 +56,7 @@ RSpec.describe "a query's own rows keep a declared :id attribute from clobbering
       Kernel.eval(source, TOPLEVEL_BINDING, file.path, 1)
 
       Hecks.hecksagon("Thingy") do
-        ::Thingy::Thing.persisted_by("Memory")
+        Thingy::Thing.persisted_by("Memory")
       end
     end
 

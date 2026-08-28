@@ -35,7 +35,7 @@ require "open3"
 #         them, so the pre-check failed before that deploy ever ran.
 #   M29 — RDS master passwords may contain `%`, invalid in libpq's URI
 #         parser; DATABASE_URL now carries a percent-encoded password.
-RSpec.describe "bin/project_deploy — H13/H14/M28/M29 regressions", io: true do
+RSpec.describe "bin/project_deploy — H13/H14/M28/M29 regressions", :io do
   def self.root = File.expand_path("..", __dir__)
 
   def self.write_fixture(dir, basename, world_body, env_local: nil)

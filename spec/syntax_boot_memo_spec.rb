@@ -70,10 +70,10 @@ RSpec.describe "SyntaxBoot's memo" do
   # the old guard did 42.
   it "boots at most once per distinct chapter set while the grammar registry builds itself from cold" do
     boots = 0
-    allow(SyntaxBootUnderTest).to(receive(:boot).and_wrap_original { |m, *args|
+    allow(SyntaxBootUnderTest).to(receive(:boot).and_wrap_original do |m, *args|
       boots += 1
       m.call(*args)
-    })
+    end)
 
     # SAVED AND RESTORED, not just reset — @grammar_registry is process-
     # global and memoized. Left nil'd-then-rebuilt with no restore, a

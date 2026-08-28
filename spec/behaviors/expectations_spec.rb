@@ -76,10 +76,10 @@ RSpec.describe Hecks::Behaviors::Expectations do
 
     it "boots fresh when a loaded file changes" do
       Dir.mktmpdir do |dir|
-        files = suite.loads.map { |path|
+        files = suite.loads.map do |path|
           FileUtils.cp(path, dir)
           File.join(dir, File.basename(path))
-        }
+        end
         copy = Hecks::Behaviors::BehaviorsSuite.new(loads: files)
         before = described_class.runtime_for(copy)
         FileUtils.touch(files.first, mtime: Time.now + 5)

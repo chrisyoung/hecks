@@ -65,8 +65,8 @@ RSpec.describe "a bluebook dispatched in and read back out" do
     case node
     when Hash then node.to_h { |key, value| [key, canonical(value)] }
     when Array
-      mapped = node.map { |element| canonical(element) }
-      mapped
+      node.map { |element| canonical(element) }
+
     else node
     end
   end

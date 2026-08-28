@@ -548,7 +548,7 @@ RSpec.describe "a read model's query options" do
       Hecks::Runtime::Loader.bind_runtime(Hecks::Runtime::Dispatcher.new(registry))
     end
 
-    def open_account(runtime, customer:, account:)
+    def open_account(_runtime, customer:, account:)
       Banking::Customer.register!(reference: { value: customer }, name: { given: "A", family: "B" },
                                   email: { address: "#{customer}@example.com" })
       Banking::Account.open!(customer: customer, number: { value: account },
@@ -685,7 +685,7 @@ RSpec.describe "a read model's query options" do
             end
           end
         end
-      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /declares count\/median together with group_by/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, %r{declares count/median together with group_by})
     end
 
     it "refuses count declared with more than one many-side head" do
@@ -722,7 +722,7 @@ RSpec.describe "a read model's query options" do
             end
           end
         end
-      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /declares count\/median but includes 2 many-side/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, %r{declares count/median but includes 2 many-side})
     end
   end
 end
@@ -762,7 +762,7 @@ RSpec.describe "a rootless read model's own group_by" do
     Hecks::Runtime::Loader.bind_runtime(Hecks::Runtime::Dispatcher.new(registry))
   end
 
-  def open_accounts(runtime)
+  def open_accounts(_runtime)
     Banking::Customer.register!(reference: { value: "c1" }, name: { given: "A", family: "B" },
                                 email: { address: "a@example.com" })
     Banking::Account.open!(customer: "c1", number: { value: "a1" }, kind: { name: "current" }, daily_limit: { cents: 0 })

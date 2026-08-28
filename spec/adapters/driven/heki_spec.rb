@@ -15,6 +15,7 @@ RSpec.describe Hecks::Adapters::Heki do
   # out; every real mutation below goes to the adapter's own per-example
   # tmpdir store (the `around` above), so a shared boot is safe.
   before(:context) { @aggregate = boot_in_memory.registry.bluebook("Pizzas").aggregate("Order") }
+
   let(:aggregate) { @aggregate }
 
   let(:adapter) do

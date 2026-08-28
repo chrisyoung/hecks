@@ -107,8 +107,10 @@ module Hecks
         # field values) has no root to speak of. Still needs to describe
         # SOMETHING — zero includes AND no reference is refused.
         def build
-          raise Malformed,
-                "#{@name} needs an aggregate-head reference or at least one include" if !@reference_target && Array(@includes).empty?
+          if !@reference_target && Array(@includes).empty?
+            raise Malformed,
+                  "#{@name} needs an aggregate-head reference or at least one include"
+          end
 
           Array(@includes).each do |target, as|
             add_aggregate_head(target, as, many: target != @reference_target)

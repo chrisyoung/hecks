@@ -70,9 +70,9 @@ RSpec.describe "relationship cardinality and traversal" do
       end
 
       Hecks.hecksagon("RelationshipSemantics") do
-        ::RelationshipSemantics::Owner.persisted_by("Memory")
-        ::RelationshipSemantics::Customer.persisted_by("Memory")
-        ::RelationshipSemantics::Team.persisted_by("Memory")
+        RelationshipSemantics::Owner.persisted_by("Memory")
+        RelationshipSemantics::Customer.persisted_by("Memory")
+        RelationshipSemantics::Team.persisted_by("Memory")
       end
     end
 

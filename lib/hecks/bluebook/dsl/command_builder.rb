@@ -67,10 +67,12 @@ module Hecks
         # declares a role), so also named in
         # `GenericDispatch::BOOTSTRAP_CALLS_FALLBACK`.
         def role_impl(value)
-          raise Malformed,
-                "#{@name} declares role twice — a command carries ONE " \
-                "responsibility; the second would silently win and the " \
-                "first would still look declared" if @role
+          if @role
+            raise Malformed,
+                  "#{@name} declares role twice — a command carries ONE " \
+                  "responsibility; the second would silently win and the " \
+                  "first would still look declared"
+          end
 
           @role = value
         end
@@ -308,8 +310,8 @@ module Hecks
         # dedicated, `status: "deprecated"` Keyword row (syntax.bluebook)
         # rather than living only as `sets`'s own `was:` — see that
         # row's own comment for why.
-        def then_set_impl(target, positional_to = UNSET, **kwargs)
-          return legacy_then_set(target, positional_to, **kwargs) if MetaValidator.shadow_parsing?
+        def then_set_impl(target, positional_to = UNSET, **)
+          return legacy_then_set(target, positional_to, **) if MetaValidator.shadow_parsing?
 
           raise Malformed, "#{@name}'s then_set is gone — sets is the word now"
         end

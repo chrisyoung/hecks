@@ -45,8 +45,10 @@ module Hecks
           refuse_second_identity!
 
           if definition
-            raise Malformed,
-                  "#{@name}.identified_by cannot combine a value-object type with a block" unless targets.empty?
+            unless targets.empty?
+              raise Malformed,
+                    "#{@name}.identified_by cannot combine a value-object type with a block"
+            end
 
             type_name = identity_value_object_name
             value_object =
@@ -56,7 +58,7 @@ module Hecks
                   owner_value_objects: identity_pool,
                   &definition
                 )
-              rescue NameError => error
+              rescue NameError => e
                 # A REMOVED SPELLING MUST REFUSE LOUDLY, not degrade into a raw
                 # Ruby error — the one contract `EraGuard.shadow_parse` leans
                 # on to know a normal parse genuinely could not read this text
@@ -73,11 +75,9 @@ module Hecks
                 # precisely this text.
                 raise Malformed,
                       "#{@name}.identified_by do ... end could not be read as a value-object " \
-                      "definition: #{error.message}"
+                      "definition: #{e.message}"
               end
-            if value_object.attributes.empty?
-              raise Malformed, "#{@name}.identified_by do declares no identity attributes"
-            end
+            raise Malformed, "#{@name}.identified_by do declares no identity attributes" if value_object.attributes.empty?
 
             install_identity_value_object!(value_object)
             @identity_type_pending = [value_object, as || :identity, attributes.size]
@@ -93,8 +93,10 @@ module Hecks
 
           if targets.one?
             field = targets.first
-            raise Malformed,
-                  "#{@name}.identified_by takes no as: — name the declared field itself" if as
+            if as
+              raise Malformed,
+                    "#{@name}.identified_by takes no as: — name the declared field itself"
+            end
             # Transitional compatibility: the self-hosted language and live
             # corpus still contain this form. Keep it readable until their
             # exemplar-led migration is complete; the final lifecycle cutover
@@ -170,8 +172,10 @@ module Hecks
             if identity_type?(target)
               @identity_type_pending = [target, as, attributes.size]
             else
-              raise Malformed,
-                    "#{@name}.identified_by :#{target} takes no as: — as: only applies to identified_by ValueObject" if as
+              if as
+                raise Malformed,
+                      "#{@name}.identified_by :#{target} takes no as: — as: only applies to identified_by ValueObject"
+              end
 
               @identity_field_pending = target
             end

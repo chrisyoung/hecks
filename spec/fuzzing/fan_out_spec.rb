@@ -89,12 +89,12 @@ RSpec.describe "Hecks::Fuzzing::Replay.fan_out_findings" do
 
       Hecks.hecksagon("Fanout") do
         uses_framework "Governance"
-        ::Fanout::Customer.persisted_by("Memory")
-        ::Fanout::Account.persisted_by("Memory")
+        Fanout::Customer.persisted_by("Memory")
+        Fanout::Account.persisted_by("Memory")
       end
       Hecks.hecksagon("Governance") do
-        ::Governance::RoleAssignment.persisted_by("Memory")
-        ::Governance::RoleTransition.persisted_by("Memory")
+        Governance::RoleAssignment.persisted_by("Memory")
+        Governance::RoleTransition.persisted_by("Memory")
       end
     end
 
@@ -117,9 +117,9 @@ RSpec.describe "Hecks::Fuzzing::Replay.fan_out_findings" do
   def flag(runtime, customer_id, risk)
     account = runtime.registry.bluebook("Fanout").aggregate("Account")
     snapshot = { ["Fanout", "Account"] =>
-                                          runtime.registry.repository("Fanout", account).all.to_h { |record|
+                                          runtime.registry.repository("Fanout", account).all.to_h do |record|
                                             [record.id, record.state.dup]
-                                          } }
+                                          end }
 
     mark = runtime.reactions.size
     result = runtime.dispatch("Fanout::Customer.Flag", customer_id: { value: customer_id }, risk: { value: risk })

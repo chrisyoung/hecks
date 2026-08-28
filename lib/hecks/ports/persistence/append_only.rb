@@ -23,12 +23,14 @@ module Hecks
           @adapter = adapter
           required = %i[append project entries]
           missing = required.reject { |method| adapter.respond_to?(method) }
-          raise Runtime::WiringError,
-                "#{adapter.class} does not implement append-only persistence: #{missing.join(', ')}" unless missing.empty?
+          unless missing.empty?
+            raise Runtime::WiringError,
+                  "#{adapter.class} does not implement append-only persistence: #{missing.join(', ')}"
+          end
         end
 
         def find(id) = @adapter.find(id)
-        def all(**opts) = @adapter.all(**opts)
+        def all(**) = @adapter.all(**)
         def count = @adapter.count
         def entries = @adapter.entries
 
@@ -93,9 +95,7 @@ module Hecks
         end
 
         def atomic_put(instance, insert_only: false)
-          unless capabilities.include?(:atomic_put) && @adapter.respond_to?(:atomic_put)
-            raise Runtime::WiringError, "#{@adapter.class} advertises no atomic_put persistence capability"
-          end
+          raise Runtime::WiringError, "#{@adapter.class} advertises no atomic_put persistence capability" unless capabilities.include?(:atomic_put) && @adapter.respond_to?(:atomic_put)
 
           entry = Entry.new(operation: "save", id: instance.id.to_s, state: instance.state.dup)
           status = @adapter.atomic_put(entry, insert_only: insert_only)

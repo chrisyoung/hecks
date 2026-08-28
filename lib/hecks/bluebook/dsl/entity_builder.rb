@@ -79,9 +79,7 @@ module Hecks
         # full metaprogrammed dispatch convention.
         # rubocop:disable Naming/PredicatePrefix
         def has_many_impl(type, as: nil, **options)
-          unless options.empty?
-            raise Malformed, "#{@name}.has_many takes no #{options.keys.first}: — an empty list already means none"
-          end
+          raise Malformed, "#{@name}.has_many takes no #{options.keys.first}: — an empty list already means none" unless options.empty?
 
           plural = Naming.demodulise(type)
           relationship_attribute(Naming.singularize(plural), :has_many,
@@ -139,8 +137,8 @@ module Hecks
           @pending_entities << [name, block]
         end
 
-        def lifecycle_impl(field, default:, &block)
-          @lifecycle = LifecycleBuilder.build(field, default: default, &block)
+        def lifecycle_impl(field, default:, &)
+          @lifecycle = LifecycleBuilder.build(field, default: default, &)
         end
 
         # A PRECONDITION SHARED ACROSS THIS PIECE'S OWN COMMANDS, DECLARED

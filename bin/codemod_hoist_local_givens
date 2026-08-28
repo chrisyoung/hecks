@@ -167,7 +167,8 @@ def apply_candidate(text, candidate)
     next seg if nested
 
     seg.gsub(pattern) do
-      indent, predicate_src = Regexp.last_match(1), Regexp.last_match(2)
+      indent = Regexp.last_match(1)
+      predicate_src = Regexp.last_match(2)
       matching_occurrence?(predicate_src, candidate) ? "#{indent}given(#{candidate.description.inspect})\n" : Regexp.last_match(0)
     end
   end.join

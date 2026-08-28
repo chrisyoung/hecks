@@ -48,7 +48,7 @@ require_relative "support/rust_conformance_helpers"
 # `io: true` — a real `cargo build` per fixture's own domain feature,
 # same as every other spec that does real, uncontrolled I/O; excluded
 # locally by default (spec_helper.rb), always run in CI.
-RSpec.describe "Rust conformance (native binary)", io: true do
+RSpec.describe "Rust conformance (native binary)", :io do
   include RustConformanceHelpers
 
   RUST_CONFORMANCE_FIXTURES = Dir.glob(File.join(InMemoryDomain::ROOT, "spec/corpus/rust_conformance/*.json")).sort

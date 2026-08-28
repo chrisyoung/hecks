@@ -19,8 +19,7 @@ require "open3"
 # a library (nothing to require), so the fixture below is generated once
 # and its Makefile's rename-schema recipe is inspected directly, the same
 # way an operator would encounter it.
-RSpec.describe "bin/project_deploy's rename-schema OLD/NEW allowlist, in its own generated Makefile",
-               io: true do
+RSpec.describe "bin/project_deploy's rename-schema OLD/NEW allowlist, in its own generated Makefile", :io do
   RENAME_SCHEMA_FIXTURE_BASENAME = "project_deploy_rename_schema_spec_fixture"
 
   before(:context) do

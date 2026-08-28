@@ -204,7 +204,7 @@ RSpec.describe "Hecks::Fuzzing::Properties" do
            "args" => { "name"  => { "value" => "X" },
                        "pizza" => { "price_cents" => { "cents" => 100 }, "size" => { "value" => "small" } } } }]
       )
-      comparable = ->(h) { h.reject { |k, _| k == :bluebook || k == :bluebooks } }
+      comparable = ->(h) { h.reject { |k, _| [:bluebook, :bluebooks].include?(k) } }
 
       expect(comparable.call(first)).not_to eq(comparable.call(second))
     end

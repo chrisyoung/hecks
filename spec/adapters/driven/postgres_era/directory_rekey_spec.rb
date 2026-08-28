@@ -18,8 +18,7 @@ require_relative "../../../support/postgres_probe"
 # the edge file's own comment). Runs only when a Postgres server is
 # reachable — the shared probe in support/postgres_probe.rb, like every
 # other Postgres spec here.
-RSpec.describe "the Directory example's real rekey edge (examples/directory)",
-               io: true do
+RSpec.describe "the Directory example's real rekey edge (examples/directory)", :io do
   DIRECTORY_DB = "hecks_directory_rekey_spec".freeze
   DOMAIN_ROOT = File.expand_path("../../../../examples/directory", __dir__).freeze
 

@@ -95,12 +95,12 @@ RSpec.describe "Adapters::SqliteProjection#query_read_model" do
         Kernel.load(InMemoryDomain::PRISM_ADAPTER)
         Kernel.eval(SOURCE, TOPLEVEL_BINDING, file.path, 1)
         Hecks.hecksagon("ChainProjectionGrowth") do
-          ::ChainProjectionGrowth::Root.persisted_by("SqlitePersistence")
-          ::ChainProjectionGrowth::Root.projected_by("SqliteProjection")
-          ::ChainProjectionGrowth::Mid.persisted_by("SqlitePersistence")
-          ::ChainProjectionGrowth::Mid.projected_by("SqliteProjection")
-          ::ChainProjectionGrowth::Leaf.persisted_by("SqlitePersistence")
-          ::ChainProjectionGrowth::Leaf.projected_by("SqliteProjection")
+          ChainProjectionGrowth::Root.persisted_by("SqlitePersistence")
+          ChainProjectionGrowth::Root.projected_by("SqliteProjection")
+          ChainProjectionGrowth::Mid.persisted_by("SqlitePersistence")
+          ChainProjectionGrowth::Mid.projected_by("SqliteProjection")
+          ChainProjectionGrowth::Leaf.persisted_by("SqlitePersistence")
+          ChainProjectionGrowth::Leaf.projected_by("SqliteProjection")
         end
         Hecks.world("ChainProjectionGrowth") do
           persisted_by("SqlitePersistence") { database(File.join(dir, "chain-authoritative.db")) }
@@ -134,9 +134,7 @@ RSpec.describe "Adapters::SqliteProjection#query_read_model" do
   def assert_native_path!(runtime)
     root = runtime.registry.bluebook("ChainProjectionGrowth").aggregate("Root")
     repository = runtime.registry.read_repository("ChainProjectionGrowth", root)
-    unless repository.adapter.is_a?(Hecks::Adapters::SqliteProjection)
-      raise "expected the native SqliteProjection path, got #{repository.adapter.class}"
-    end
+    raise "expected the native SqliteProjection path, got #{repository.adapter.class}" unless repository.adapter.is_a?(Hecks::Adapters::SqliteProjection)
   end
 
   it "joins a chained (non-root) include the same way the in-process path does" do

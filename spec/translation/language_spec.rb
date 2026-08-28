@@ -71,67 +71,67 @@ RSpec.describe "the translation language" do
     def refusal_for(&block)
       build_translation(&block)
       nil
-    rescue Malformed => refusal
-      refusal.message
+    rescue Malformed => e
+      e.message
     end
 
     it "refuses every required-field omission with the pinned wording" do
       {
         proc { aggregate("Account") { rename nil, to: :amount } }                      => "a rename needs a source name",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             rename :cost, to: ""
-          }
+          end
         }                                                                              => "a rename needs a destination name (to:)",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             move "price.cents", to: ""
-          }
+          end
         }                                                                              => "a move needs a destination path (to:)",
         proc { aggregate("Account") { move "", to: "price_cents" } }                   => "a move needs a source path",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             convert "code", to: "", values: { 1 => "a" }
-          }
+          end
         }                                                                              => "a convert needs a destination path (to:)",
         proc { aggregate("Account") { convert "", to: "code", values: { 1 => "a" } } } => "a convert needs a source path",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             convert "code", to: "code", values: {}
-          }
+          end
         }                                                                              => "a convert needs a values: table",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             convert "code", to: "code", values: nil
-          }
+          end
         }                                                                              => "a convert needs a values: table",
         proc { aggregate("Account") { drop "" } }                                      => "a drop needs a name",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             retype "", to: "Cash"
-          }
+          end
         }                                                                              => "a retype needs a source type name",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             retype "Money", to: ""
-          }
+          end
         }                                                                              => "a retype needs a destination type name (to:)",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             compute "price_cents", to: "", sql: "x"
-          }
+          end
         }                                                                              => "a compute needs a destination path (to:)",
         proc { aggregate("Account") { compute "", to: "price_dollars", sql: "x" } }    => "a compute needs a source path",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             compute "price_cents", to: "price_dollars", sql: ""
-          }
+          end
         }                                                                              => "a compute needs its sql: expression",
         proc { aggregate("Account") { backfill "", default: "x" } }                    => "a backfill needs a name",
         proc {
-          aggregate("Account") {
+          aggregate("Account") do
             backfill :tier, default: nil
-          }
+          end
         }                                                                              => "a backfill needs a default: value",
         proc {
           retired ""

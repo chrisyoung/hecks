@@ -79,7 +79,7 @@ DRAW_LIMIT = 5
 def fuzz_domain(domain, seeds, steps, adapter = :memory)
   domain = domain.chomp("/")
   name = File.basename(domain)
-  puts "── #{name}#{adapter == :memory ? '' : " (#{adapter})"}"
+  puts "── #{name}#{" (#{adapter})" unless adapter == :memory}"
 
   failures = []
   clean = 0
@@ -126,7 +126,8 @@ def fuzz_domain(domain, seeds, steps, adapter = :memory)
         clean += 1
         next
       end
-      verdict, message = :nondeterminism, determinism
+      verdict = :nondeterminism
+      message = determinism
     end
 
     failures << { seed: seed, steps: generated, verdict: verdict, message: message,
@@ -233,7 +234,7 @@ def report(domain, name, seeds, drawn, clean, failures, adapter = :memory)
 
     puts
     puts "   (#{number}) #{group.first[:signature]} — #{group.first[:message]}"
-    puts "       #{group.length} of #{seeds} seeds: #{seeds_hit.first(8).join(', ')}#{seeds_hit.length > 8 ? ', …' : ''}"
+    puts "       #{group.length} of #{seeds} seeds: #{seeds_hit.first(8).join(', ')}#{', …' if seeds_hit.length > 8}"
 
     shrunk = shrink(domain, smallest[:steps], smallest[:signature], adapter)
     save_path = File.join(save_dir, "#{name}-seed#{smallest[:seed]}.json")

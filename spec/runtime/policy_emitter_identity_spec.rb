@@ -108,8 +108,8 @@ RSpec.describe "a policy projecting its emitter's identity" do
       end
 
       Hecks.hecksagon("Boards") do
-        ::Boards::Board.persisted_by("Memory")
-        ::Boards::Graveyard.persisted_by("Memory")
+        Boards::Board.persisted_by("Memory")
+        Boards::Graveyard.persisted_by("Memory")
       end
     end
 

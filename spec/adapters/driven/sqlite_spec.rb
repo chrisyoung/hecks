@@ -13,6 +13,7 @@ RSpec.describe Hecks::Adapters::Sqlite do
   # out; every real mutation below goes to the adapter's own per-example
   # tmpdir database (the `around` above), so a shared boot is safe.
   before(:context) { @aggregate = boot_in_memory.registry.bluebook("Pizzas").aggregate("Order") }
+
   let(:aggregate) { @aggregate }
 
   let(:adapter) do

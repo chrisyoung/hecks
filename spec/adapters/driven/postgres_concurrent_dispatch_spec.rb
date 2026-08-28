@@ -38,8 +38,7 @@ require_relative "../../support/postgres_probe"
 # `given` is checked against a snapshot a concurrent writer is about to
 # make stale, and the dispatcher never re-checks or locks anything in
 # between.
-RSpec.describe "concurrent dispatch against one Postgres-backed aggregate",
-               io: true do
+RSpec.describe "concurrent dispatch against one Postgres-backed aggregate", :io do
   DATABASE = "hecks_concurrency_gap_spec".freeze
 
   before(:all) do

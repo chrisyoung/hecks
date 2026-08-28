@@ -8,9 +8,9 @@ RSpec.describe Hecks::Bluebook::MetaValidator::TranslationJudge do
   it "retains the translation parent as a relationship without behavioral self references" do
     aggregate = meta_language.aggregate("TranslationAggregate")
 
-    expect(aggregate.attribute(:translation_ref).then { |attribute|
+    expect(aggregate.attribute(:translation_ref).then do |attribute|
       [attribute.type.to_s, attribute.relationship]
-    }).to eq(["Reference<Translation>", "belongs_to"])
+    end).to eq(["Reference<Translation>", "belongs_to"])
     expect(aggregate.command("Declare").attribute(:translation_ref).type.to_s).to eq("TranslationIdentity")
     expect(aggregate.commands.map { |command| [command.name, command.references] }).to all(satisfy { |_, ref|
       ref.nil?

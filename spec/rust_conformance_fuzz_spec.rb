@@ -36,7 +36,7 @@ require_relative "support/rust_conformance_helpers"
 # half-built feature — un-pend an example locally after closing one of
 # ADR 0037's findings to confirm it, the same red-before/green-after
 # discipline every other fix in this plan used.
-RSpec.describe "Rust conformance, over generated sequences (native binary)", io: true do
+RSpec.describe "Rust conformance, over generated sequences (native binary)", :io do
   include RustConformanceHelpers
 
   FUZZ_RUST_DIR = File.join(InMemoryDomain::ROOT, "rust")
@@ -104,36 +104,24 @@ RSpec.describe "Rust conformance, over generated sequences (native binary)", io:
           strip_emitted_flags!(rust_output["queries"])
           strip_occurred_at!(rust_output["events"])
 
-          if rust_output["instances"] != ruby_instances
-            divergences << { seed: seed, field: "instances", ruby: ruby_instances, rust: rust_output["instances"] }
-          end
-          if rust_output["events"] != ruby_events
-            divergences << { seed: seed, field: "events", ruby: ruby_events, rust: rust_output["events"] }
-          end
+          divergences << { seed: seed, field: "instances", ruby: ruby_instances, rust: rust_output["instances"] } if rust_output["instances"] != ruby_instances
+          divergences << { seed: seed, field: "events", ruby: ruby_events, rust: rust_output["events"] } if rust_output["events"] != ruby_events
 
           rust_refusals = rust_output["refusals"].reject { |r| known_refusal_gap?(r) || structural_refusal_gap?(r) }
           kept_ruby_refusals = ruby_refusals.reject { |r| known_refusal_gap?(r) || structural_refusal_gap?(r) }
-          if rust_refusals != kept_ruby_refusals
-            divergences << { seed: seed, field: "refusals", ruby: kept_ruby_refusals, rust: rust_refusals }
-          end
+          divergences << { seed: seed, field: "refusals", ruby: kept_ruby_refusals, rust: rust_refusals } if rust_refusals != kept_ruby_refusals
 
           rust_queries = rust_output["queries"].reject { |q| known_refusal_gap?(q) || structural_refusal_gap?(q) }
           kept_ruby_queries = ruby_queries.reject { |q| known_refusal_gap?(q) || structural_refusal_gap?(q) }
-          if rust_queries != kept_ruby_queries
-            divergences << { seed: seed, field: "queries", ruby: kept_ruby_queries, rust: rust_queries }
-          end
+          divergences << { seed: seed, field: "queries", ruby: kept_ruby_queries, rust: rust_queries } if rust_queries != kept_ruby_queries
 
-          if rust_output["sagas"] != ruby_sagas
-            divergences << { seed: seed, field: "sagas", ruby: ruby_sagas, rust: rust_output["sagas"] }
-          end
+          divergences << { seed: seed, field: "sagas", ruby: ruby_sagas, rust: rust_output["sagas"] } if rust_output["sagas"] != ruby_sagas
 
           cross_domain = cross_domain_policy_names(rust_output)
           kept_ruby_reactions = JSON.parse(JSON.generate(ruby_result[:reactions]))
                                     .reject { |r| cross_domain.include?(r["policy"]) || known_reaction_gap?(r) }
           rust_reactions = rust_output.fetch("reactions").reject { |r| known_reaction_gap?(r) }
-          if rust_reactions != kept_ruby_reactions
-            divergences << { seed: seed, field: "reactions", ruby: kept_ruby_reactions, rust: rust_reactions }
-          end
+          divergences << { seed: seed, field: "reactions", ruby: kept_ruby_reactions, rust: rust_reactions } if rust_reactions != kept_ruby_reactions
         end
 
         # A REAL DIVERGENCE HERE IS A FINDING, NOT JUST A FAILING SPEC —
@@ -143,9 +131,9 @@ RSpec.describe "Rust conformance, over generated sequences (native binary)", io:
         # discipline this whole session held to. Printed here (not just
         # asserted false) so the seed and the exact field that split are
         # never buried in a diff too large to read.
-        message = divergences.map { |d|
+        message = divergences.map do |d|
           "seed #{d[:seed]} — #{d[:field]}" + (d[:detail] ? ": #{d[:detail]}" : "\n  ruby: #{d[:ruby].inspect}\n  rust: #{d[:rust].inspect}")
-        }.join("\n")
+        end.join("\n")
 
         expect(divergences).to be_empty, "#{divergences.size} divergence(s) found — reproduce with " \
                                          "`SEEDS=1 bundle exec rspec` after isolating the seed below, " \

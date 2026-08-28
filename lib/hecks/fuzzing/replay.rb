@@ -106,7 +106,7 @@ module Hecks
                 begin
                   rows = run_filter(runtime, question)
                   queries << { query: question, rows: rows, instances_at: snapshot_instances(runtime) }
-                rescue => e
+                rescue StandardError => e
                   refusals << { verb: filter_label(question), error: e.message }
                 end
                 next
@@ -256,9 +256,7 @@ module Hecks
               # so there is no "after" to compare (and #build_mutation_
               # trace already skipped anything with no mutations to
               # trace in the first place).
-              if mutation_trace
-                mutation_traces << mutation_trace.merge(after: read_mutation_after(runtime, mutation_trace))
-              end
+              mutation_traces << mutation_trace.merge(after: read_mutation_after(runtime, mutation_trace)) if mutation_trace
             rescue *Runtime::DOMAIN_REFUSALS, Bluebook::Expression::EvaluationError => e
               # `kind:` — the RAISED CLASS, not re-derived from the message.
               # `GivenNotMet`/`EnsuresNotMet` share their exact wording
@@ -286,17 +284,15 @@ module Hecks
               # can come from either), so anything that isn't one of the
               # two guard classes is left OUT of guard_checks entirely —
               # inconclusive, not a claimed pass.
-              if guard_check && GUARD_REFUSAL_CLASSES.include?(e.class)
-                guard_checks << guard_check.merge(actual_refused: true, actual_kind: e.class.name)
-              end
+              guard_checks << guard_check.merge(actual_refused: true, actual_kind: e.class.name) if guard_check && GUARD_REFUSAL_CLASSES.include?(e.class)
             end
           end
 
           instances = snapshot_instances(runtime)
 
-          events = runtime.events.map { |event|
+          events = runtime.events.map do |event|
             { name: event.name, aggregate: event.aggregate, id: event.id, payload: event.payload }
-          }
+          end
 
           # THE LIVE PROCESS-MANAGER STORE, materialised to inert data —
           # `{ pm_name => { correlation => { state:, memory: } } }`, the
@@ -662,7 +658,7 @@ module Hecks
       # own `filter_label` builds from the same three raw fields, tolerant
       # of any of them being missing (Ruby's own nil-to-"" interpolation)
       # the same way that Rust port is.
-      def filter_label(filter) = "filter #{filter["aggregate"]}.#{filter["field"]} #{filter["op"]}"
+      def filter_label(filter) = "filter #{filter['aggregate']}.#{filter['field']} #{filter['op']}"
     end
   end
 end

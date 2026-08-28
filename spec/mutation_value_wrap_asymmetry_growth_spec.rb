@@ -91,7 +91,7 @@ RSpec.describe "mutation Value-wrap asymmetry fix" do
 
   def boot_value_wrap
     boot(MUTATION_VALUE_WRAP_SOURCE, "MutationValueWrapGrowth") do
-      ::MutationValueWrapGrowth::Breaker.persisted_by("Memory")
+      MutationValueWrapGrowth::Breaker.persisted_by("Memory")
     end
   end
 

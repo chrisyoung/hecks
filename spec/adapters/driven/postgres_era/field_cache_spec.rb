@@ -18,8 +18,7 @@ require_relative "../../../support/postgres_probe"
 # A toy aggregate, purpose-built for this — not routed through Payments
 # (~/Projects/junkdrawer/payments), which stays on Heki by its own
 # explicit design; this proves a framework capability, not a real domain.
-RSpec.describe "PostgresEra field cache — Track C validation",
-               io: true do
+RSpec.describe "PostgresEra field cache — Track C validation", :io do
   FIELD_CACHE_DB = "hecks_field_cache_spec".freeze
   FIELD_CACHE_OWNER = "hecks_field_cache_owner".freeze
 

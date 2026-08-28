@@ -67,9 +67,9 @@ RSpec.describe "a command's corrects" do
 
     expect(after_deposit.instance.balance.cents).to eq(1000)
 
-    expect {
+    expect do
       dispatcher.dispatch("CorrectsSmoke::Box.ReverseDeposit", number: { value: "b-2" })
-    }.to raise_error(Hecks::Runtime::NothingToCorrect)
+    end.to raise_error(Hecks::Runtime::NothingToCorrect)
 
     after_reversal = dispatcher.dispatch("CorrectsSmoke::Box.ReverseDeposit", number: { value: "b-1" })
     expect(after_reversal.instance.balance.cents).to eq(500)
@@ -196,16 +196,16 @@ RSpec.describe "a command's corrects" do
     dispatcher.dispatch("CorrectsAsSmoke::Box.Open", number: { value: "b-1" })
     dispatcher.dispatch("CorrectsAsSmoke::Box.Deposit", number: { value: "b-1" }, amount: { cents: 1000 })
 
-    expect {
+    expect do
       dispatcher.dispatch("CorrectsAsSmoke::Box.ReverseDeposit", number: { value: "b-1" }, amount: { cents: 999 })
-    }.to raise_error(Hecks::Runtime::GivenNotMet)
+    end.to raise_error(Hecks::Runtime::GivenNotMet)
 
     reversed = dispatcher.dispatch("CorrectsAsSmoke::Box.ReverseDeposit", number: { value: "b-1" }, amount: { cents: 1000 })
     expect(reversed.instance.balance.cents).to eq(0)
   end
 
   it "refuses reverses: true at build time when the original used a lossy op" do
-    expect {
+    expect do
       Hecks.bluebook("CorrectsLossySmoke") do
         vision "reverses: true must refuse against a lossy original op."
         core
@@ -240,6 +240,6 @@ RSpec.describe "a command's corrects" do
           end
         end
       end
-    }.to raise_error(Hecks::Bluebook::DSL::Malformed, /not statically invertible/)
+    end.to raise_error(Hecks::Bluebook::DSL::Malformed, /not statically invertible/)
   end
 end

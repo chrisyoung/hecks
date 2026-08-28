@@ -5,7 +5,7 @@ module Hecks
       class SettingsCollector
         def initialize = @values = {}
 
-        def method_missing(key, *args, &_block)
+        def method_missing(key, *args, &)
           @values[key.to_sym] = args.size == 1 ? args.first : args
         end
 
@@ -107,7 +107,7 @@ module Hecks
 
         private
 
-        def required(value, label)
+        def required(value, _label)
           # moved to the language: Realm / Latest invariants, in world.bluebook
           value.to_s
         end

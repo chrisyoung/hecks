@@ -270,8 +270,10 @@ module Hecks
         source = File.read(path)
         block  = argument_blocks(source).find { |candidate| candidate.lines.any? { |line| argument_row?(line, keyword, context, at, named) } }
         rows   = block.lines.select { |line| argument_row?(line, keyword, context, at, named) }
-        raise Refusal, "#{context}.#{keyword}'s argument at #{at.inspect}/named #{named.inspect} is not " \
-                       "declared" if rows.empty?
+        if rows.empty?
+          raise Refusal, "#{context}.#{keyword}'s argument at #{at.inspect}/named #{named.inspect} is not " \
+                         "declared"
+        end
 
         updated = block.lines.map do |line|
           next line unless argument_row?(line, keyword, context, at, named)

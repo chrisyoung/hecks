@@ -124,7 +124,7 @@ module Hecks
                     SELECT DISTINCT ON (aggregate_id) aggregate_id AS id, ordinal, operation, state
                     FROM #{quoted_journal}
                     WHERE era = #{era.to_i} AND aggregate = #{text_literal(storage_name)}
-                    #{cursor ? "AND aggregate_id > #{text_literal(cursor)}" : ''}
+                    #{"AND aggregate_id > #{text_literal(cursor)}" if cursor}
                     ORDER BY aggregate_id, ordinal DESC
                   ) latest WHERE operation = 'save' ORDER BY id LIMIT #{ResumableBackfill::CHUNK_SIZE}
                 SQL
@@ -160,8 +160,8 @@ module Hecks
           # re-raised) on failure, and either way the surrounding
           # transaction is never touched — no early COMMIT, no early
           # release of whatever advisory lock it holds.
-          def nested_transaction(name)
-            return @db.transaction { yield } if @db.transaction_status == PG::PQTRANS_IDLE
+          def nested_transaction(name, &)
+            return @db.transaction(&) if @db.transaction_status == PG::PQTRANS_IDLE
 
             @db.exec("SAVEPOINT #{name}")
             begin
@@ -274,7 +274,7 @@ module Hecks
                   SELECT ordinal, aggregate_id, operation, state FROM #{quote(prior_view)}
                   UNION ALL
                   SELECT ordinal, aggregate_id, operation, state FROM #{quoted_journal}
-                  WHERE era = #{era - 1} AND aggregate = #{text_literal(names[:storage][era - 2])}#{cut ? " AND ordinal <= #{cut}" : ''}
+                  WHERE era = #{era - 1} AND aggregate = #{text_literal(names[:storage][era - 2])}#{" AND ordinal <= #{cut}" if cut}
                 ) layers ORDER BY aggregate_id, ordinal DESC
               )
               SELECT ordinal, #{id_column}, operation,
@@ -445,7 +445,7 @@ module Hecks
               cut = watermarks[ancestor + 1]
               "SELECT ordinal, era, aggregate, aggregate_id, operation, state FROM #{quoted_journal} " \
                 "WHERE era = #{ancestor} AND aggregate = #{text_literal(names[:storage][ancestor - 1])}" \
-                "#{cut ? " AND ordinal <= #{cut}" : ''}"
+                "#{" AND ordinal <= #{cut}" if cut}"
             end
             selects.join(" UNION ALL ")
           end

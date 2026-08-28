@@ -240,7 +240,7 @@ module Hecks
         first  = Replay.call(domain_path, steps, adapter: adapter)
         second = Replay.call(domain_path, steps, adapter: adapter)
 
-        comparable = ->(history) { history.reject { |key, _| key == :bluebook || key == :bluebooks } }
+        comparable = ->(history) { history.reject { |key, _| [:bluebook, :bluebooks].include?(key) } }
         return true if comparable.call(first) == comparable.call(second)
 
         "two replays of the same #{steps.length} steps produced different histories"

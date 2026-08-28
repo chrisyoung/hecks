@@ -38,7 +38,7 @@ require "hecks/fuzzing"
 # `io: true` — a real `cargo build` plus a subprocess run, same
 # convention `spec/rust_conformance_spec.rb` already uses for exactly
 # this reason (excluded locally by default, always run in CI).
-RSpec.describe "Rust numeric coercion — overflow/out-of-range refuses cleanly instead of corrupting", io: true do
+RSpec.describe "Rust numeric coercion — overflow/out-of-range refuses cleanly instead of corrupting", :io do
   # Distinct names from `spec/rust_conformance_spec.rb`'s own `RUST_DIR` —
   # both files' `describe` blocks assign at the same enclosing constant
   # scope, so reusing that name triggers a "already initialized constant"

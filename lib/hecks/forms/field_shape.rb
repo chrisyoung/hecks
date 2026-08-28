@@ -91,8 +91,11 @@ module Hecks
       def self.reference_field(attribute, common)
         target = attribute.type.resolve
         Field.new(**common, kind: :reference, html_type: "text", target_aggregate: target,
-                            help: target ? "References an existing #{target.hecks_name} by id." :
-                                  "References an aggregate in another domain — enter its id.")
+                            help: if target
+                                    "References an existing #{target.hecks_name} by id."
+                                  else
+                                    "References an aggregate in another domain — enter its id."
+                                  end)
       end
 
       # `admits:` names a closed set declared ELSEWHERE (`"Account::

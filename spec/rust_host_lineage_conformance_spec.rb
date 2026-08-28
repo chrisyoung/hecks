@@ -35,7 +35,7 @@ require_relative "support/postgres_probe"
 # `io: true` — real I/O (a `cargo build`, two Postgres roles, a mint) —
 # excluded locally by default (spec_helper.rb), always run in CI, same
 # discipline as every other Postgres/Rust spec.
-RSpec.describe "Rust/Ruby lineage parity (rust/host)", io: true do
+RSpec.describe "Rust/Ruby lineage parity (rust/host)", :io do
   RUST_HOST_DIR = File.join(InMemoryDomain::ROOT, "rust", "host")
   SEED_SCRIPT = File.join(RUST_HOST_DIR, "tests", "fixtures", "mint_and_seed_lineage.rb")
   COMPUTE_SEED_SCRIPT = File.join(RUST_HOST_DIR, "tests", "fixtures", "mint_and_seed_lineage_compute.rb")

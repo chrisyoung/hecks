@@ -116,7 +116,7 @@ module Hecks
         # `ctx.repository` is resolved once, in `#call`, before the
         # isolation decision (lock vs. CAS+retry) — not here any more.
         ctx.strategy = ctx.plan.strategy_for(capabilities: ctx.repository.capabilities)
-        ctx.instance = step(:hydrate) {
+        ctx.instance = step(:hydrate) do
           if ctx.plan.complete_state? && ctx.plan.state_independent?
             hydrate_complete_state(ctx.repository, ctx.aggregate, ctx.command, ctx.args, ctx.route, ctx.strategy)
           elsif ctx.plan.complete_state?
@@ -126,11 +126,11 @@ module Hecks
           else
             hydrate_existing(ctx.repository, ctx.aggregate, ctx.command, ctx.args, ctx.route)
           end
-        }
+        end
       end
 
       def step_enforce_givens(ctx)
-        step(:enforce_givens) {
+        step(:enforce_givens) do
           # STRUCTURAL, before the declared givens — the same ordering
           # NotFound/AlreadyExists already get at hydration: "does the
           # fact this command's corrects names even exist" is not a
@@ -142,7 +142,7 @@ module Hecks
           ctx.correction_bindings = @rules.enforce_correction_target(ctx.instance, ctx.aggregate, ctx.command, domain: ctx.domain)
           @rules.enforce_givens(ctx.instance, ctx.command, ctx.args, domain: ctx.domain,
                                 declaring: ctx.aggregate, parent: ctx.instance, correction: ctx.correction_bindings)
-        }
+        end
       end
 
       def step_admissible_transition(ctx)
@@ -161,11 +161,11 @@ module Hecks
         # arithmetic via Value#with, append builds a new array), never
         # edit a held value in place.
         ctx.old_state = ctx.instance.state.dup unless ctx.command.ensures.empty?
-        step(:apply_mutations) {
-          ctx.command.mutations.each { |mutation|
+        step(:apply_mutations) do
+          ctx.command.mutations.each do |mutation|
             apply(ctx.instance, ctx.aggregate, mutation, ctx.args)
-          }
-        }
+          end
+        end
       end
 
       def step_advance_lifecycle(ctx)
@@ -192,7 +192,7 @@ module Hecks
         delegation = ctx.command.mutations.find { |mutation| mutation.op == :delegate }
         return unless delegation
 
-        step(:delegate_to_entity) {
+        step(:delegate_to_entity) do
           entity_name, _dot, command_name = delegation.target.to_s.rpartition(".")
           entity = ctx.aggregate.entities.find { |e| e.hecks_name == entity_name } ||
                    raise(WiringError, "#{ctx.command.hecks_name} delegates_to #{entity_name}." \
@@ -227,23 +227,23 @@ module Hecks
           transition = @rules.admissible_transition(entity, target_command, view)
 
           old_element = target_command.ensures.empty? ? nil : element.dup
-          target_command.mutations.each { |mutation|
+          target_command.mutations.each do |mutation|
             EntityElement.apply_to_element(@rules, ctx.aggregate, entity, element, mutation, target_args)
-          }
+          end
           element[entity.lifecycle.field] = transition.target if transition
 
           settled = Instance.new(aggregate: entity, id: view.id, state: element)
           @rules.enforce_ensures(settled, target_command, target_args, old: old_element, domain: ctx.domain, parent: ctx.instance)
 
           ctx.delegated_events = @rules.emit(target_command, ctx.domain, ctx.aggregate, ctx.instance, target_args, ctx.repository)
-        }
+        end
       end
 
       def step_enforce_ensures(ctx)
-        step(:enforce_ensures) {
+        step(:enforce_ensures) do
           @rules.enforce_ensures(ctx.instance, ctx.command, ctx.args, old: ctx.old_state,
                                  domain: ctx.domain, parent: ctx.instance, correction: ctx.correction_bindings || {})
-        }
+        end
       end
 
       def step_enforce_invariants(ctx)
@@ -344,7 +344,7 @@ module Hecks
       def step_emit(ctx)
         return if ctx.dry_run
 
-        ctx.result = step(:emit) {
+        ctx.result = step(:emit) do
           # `ctx.delegated_events` is only ever set by `step_delegate_to_entity`,
           # and only when this command carries a `:delegate` mutation — an
           # empty Array (the target genuinely emitted nothing) is still
@@ -352,7 +352,7 @@ module Hecks
           next ctx.delegated_events if ctx.delegated_events
 
           @rules.emit(ctx.command, ctx.domain, ctx.aggregate, ctx.instance, ctx.args, ctx.repository, ctx.correlation)
-        }
+        end
       end
 
       def hydrate_existing(repository, aggregate, command, args, route = nil)

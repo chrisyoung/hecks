@@ -201,6 +201,20 @@ Metrics/BlockLength:
   Exclude:
     - "spec/**/*" # RSpec/*Length below owns spec files' block shape instead
 
+# THE SHARED-INTERFACE PATTERN, not a lint gap — every Persistence/Query
+# adapter (Memory, Postgres, D1, Lambda, the mock Stripe adapter, and
+# their spec doubles) implements the SAME keyword-argument constructor
+# or method signature so callers can treat them interchangeably; a given
+# adapter legitimately ignores a kwarg (`settings:`, `root:`, `context:`,
+# `event:`, ...) another adapter needs. Renaming an unused KEYWORD
+# argument (unlike a positional one) changes the method's calling
+# convention for every caller that passes it by name, so autocorrect
+# rightly declines to touch these — paying the offense down means
+# accepting the pattern, not silencing real dead-argument bugs, which
+# this only exempts for kwargs, not positional args.
+Lint/UnusedMethodArgument:
+  AllowUnusedKeywordArguments: true
+
 # SPEC-SPECIFIC. This corpus's own specs favor long, descriptive `it`
 # strings and deep-but-meaningful context nesting (domain lifecycle
 # states genuinely nest) — loosened, not disabled, so a real runaway

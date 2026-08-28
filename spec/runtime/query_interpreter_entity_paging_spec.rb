@@ -86,7 +86,7 @@ RSpec.describe "QueryInterpreter — entity offset and dotted where/order_by" do
         end
       end
 
-      Hecks.hecksagon("EntityPaging") { ::EntityPaging::Board.persisted_by("Memory") }
+      Hecks.hecksagon("EntityPaging") { EntityPaging::Board.persisted_by("Memory") }
     end
 
     registry.verify!

@@ -182,7 +182,7 @@ module Hecks
           next if names.empty?
 
           world_path = File.join(File.dirname(hecksagon_path), "hecks_fuzz_postgres.world")
-          File.write(world_path, names.map { |name|
+          File.write(world_path, names.map do |name|
             <<~WORLD
               Hecks.world "#{name}" do
                 persisted_by("Postgres") do
@@ -191,7 +191,7 @@ module Hecks
                 end
               end
             WORLD
-          }.join("\n"))
+          end.join("\n"))
         end
 
         # Any PRE-EXISTING `.world` this copy shipped with (a real

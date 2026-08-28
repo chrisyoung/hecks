@@ -1,5 +1,3 @@
-require "set"
-
 module Hecks
   module Bluebook
     # Lightweight formal methods over the IR — the same family as TLA+/
@@ -446,9 +444,9 @@ module Hecks
         bluebook.aggregates.flat_map do |aggregate|
           verbs = aggregate.commands.map { |command| "#{bluebook.name}::#{aggregate.hecks_name}.#{command.hecks_name}" }
           verbs + aggregate.entities.flat_map do |entity|
-            entity.commands.map { |command|
+            entity.commands.map do |command|
               "#{bluebook.name}::#{aggregate.hecks_name}.#{entity.hecks_name}.#{command.hecks_name}"
-            }
+            end
           end
         end
       end

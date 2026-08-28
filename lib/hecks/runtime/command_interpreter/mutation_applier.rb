@@ -134,9 +134,13 @@ module Hecks
               fields[attribute.name] = Value.scalar(held) if held.is_a?(Value) && held.to_h.size == 1
             end
           end
-          element = value_object ? Value.build(value_object, fields,
-                                               aggregate) : entity_element(aggregate, element_type, instance[mutation.target],
-                                                                           fields)
+          element = if value_object
+                      Value.build(value_object, fields,
+                                  aggregate)
+                    else
+                      entity_element(aggregate, element_type, instance[mutation.target],
+                                     fields)
+                    end
 
           # FROZEN, like every other value the domain hands back. An
           # appended list used to come back mutable, so a caller could

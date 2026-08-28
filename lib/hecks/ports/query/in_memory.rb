@@ -14,9 +14,9 @@ module Hecks
 
         def execute(records, declared, args = {}, registry: nil)
           matched = records.select do |record|
-            declared.wheres.all? { |clause|
+            declared.wheres.all? do |clause|
               holds?(clause, comparable(FieldPath.dig(record, clause.field)), args, registry: registry)
-            }
+            end
           end
           field   = declared.order_by&.field
           matched = Ordering.apply(matched, declared.order_by, declared.null_semantics,

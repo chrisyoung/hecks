@@ -72,7 +72,7 @@ module Hecks
       # A declared field not yet written arrives here too (nil, the way a
       # defined reader answered). Verbs are NOT handled here — see
       # `define_verb_methods` for why.
-      def method_missing(name, *args, **kwargs, &block)
+      def method_missing(name, *args, **kwargs, &)
         return @state[name] if @state.key?(name) || reader?(name)
 
         super

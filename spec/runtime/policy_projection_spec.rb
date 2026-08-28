@@ -104,8 +104,8 @@ RSpec.describe "a policy's trigger projection" do
       end
 
       Hecks.hecksagon("Projecting") do
-        ::Projecting::Permit.persisted_by("Memory")
-        ::Projecting::Breach.persisted_by("Memory")
+        Projecting::Permit.persisted_by("Memory")
+        Projecting::Breach.persisted_by("Memory")
       end
     end
 
@@ -168,6 +168,6 @@ RSpec.describe "a policy's trigger projection" do
     report
 
     reasons = runtime.reactions.filter_map { |row| row[:reason] }
-    expect(reasons).to all(match(/Revoke does not declare/))
+    expect(reasons).to all(include("Revoke does not declare"))
   end
 end

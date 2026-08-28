@@ -1,4 +1,3 @@
-require "set"
 require_relative "bluebook"
 require_relative "codemod"
 require_relative "projections/model"
@@ -49,9 +48,9 @@ module Hecks
     # makes, reusing its own Deviations data so this can never silently
     # drift from what that gate actually checks.
     def construct_diff(name)
-      klass = CONSTRUCTS.fetch(name) {
+      klass = CONSTRUCTS.fetch(name) do
         raise ArgumentError, "no such construct #{name.inspect} — known: #{CONSTRUCTS.keys.join(', ')}"
-      }
+      end
       declared = meta_declared(name)
       emitted  = klass.ir_spec.keys
 
@@ -120,9 +119,11 @@ module Hecks
                               location: "#{path}.#{command.hecks_name}")
           end
         end
-        construct.entities.each { |piece|
-          walk_construct.call(piece, "#{path}.#{piece.hecks_name}")
-        } if construct.respond_to?(:entities)
+        if construct.respond_to?(:entities)
+          construct.entities.each do |piece|
+            walk_construct.call(piece, "#{path}.#{piece.hecks_name}")
+          end
+        end
       end
 
       chapters.each do |chapter|
@@ -196,10 +197,10 @@ module Hecks
       all_rules.group_by { |r| [r.kind, r.description, r.canonical] }
                .map { |key, rules| [key, rules, declaration_count(rules)] }
                .select { |_, _, count| count > 1 }
-               .map { |(kind, description, canonical), rules, _|
+               .map do |(kind, description, canonical), rules, _|
         { kind: kind, description: description, canonical: canonical,
       locations: rules.map(&:location) }
-      }
+      end
     end
 
     # `given` ONLY (not `invariant`/`ensures`) also covers CROSS-ENTITY
@@ -385,7 +386,11 @@ module Hecks
     def format_impact_preview(preview)
       lines = ["== #{preview[:name]}##{preview[:field]} =="]
       preview[:touchpoints].each do |t|
-        mark = t[:present].nil? ? "n/a" : (t[:present] ? "yes" : "NOT YET")
+        mark = if t[:present].nil?
+                 "n/a"
+               else
+                 (t[:present] ? "yes" : "NOT YET")
+               end
         lines << "  [#{mark.rjust(7)}] #{t[:touchpoint]}"
       end
       done = preview[:touchpoints].count { |t| t[:present] == true }

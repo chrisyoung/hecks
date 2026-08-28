@@ -114,11 +114,11 @@ module Hecks
       # has no concept of a reference at all — it would just read the
       # raw id straight off the record and compare THAT).
       def reference_interpret(records, declared, args, domain:, shape:)
-        matched = records.select { |r|
-          declared.wheres.all? { |w|
+        matched = records.select do |r|
+          declared.wheres.all? do |w|
             reference_where_holds?(w, r, args, domain: domain, shape: shape)
-          }
-        }
+          end
+        end
         ordered = ordered(matched, declared.order_by, declared.null_semantics)
         # OFFSET FIRST, THEN LIMIT — same fix, same reasoning, as
         # #interpret's own rows above.
@@ -277,9 +277,9 @@ module Hecks
       def ordered(records, order_by, null_semantics = nil)
         field = order_by&.field
         Ports::Query::Ordering.apply(records, order_by, null_semantics,
-                                     identity: ->(record) { record.id.to_s }) { |record|
+                                     identity: ->(record) { record.id.to_s }) do |record|
           comparable(QuerySpecification::FieldPath.dig(record, field))
-        }
+        end
       end
     end
   end

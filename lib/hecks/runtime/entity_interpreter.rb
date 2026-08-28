@@ -149,10 +149,10 @@ module Hecks
       # `ArgumentGate#refuse_unknown_arguments`'s own header gives for `:id`/
       # the root's `identity_heads`.
       def step_refuse_unknown_arguments(ctx)
-        step(:refuse_unknown_arguments) {
+        step(:refuse_unknown_arguments) do
           refuse_unknown_arguments(ctx.domain, ctx.aggregate, ctx.command, ctx.args,
                                    extra_identity_heads: ctx.chain.flat_map(&:identity_heads))
-        }
+        end
       end
 
       # No `aggregate:` exemption to pass — that kwarg exists only for a
@@ -180,15 +180,15 @@ module Hecks
       def step_hydrate_parent(ctx)
         # `ctx.repository` is resolved once, in `#call`, before the
         # isolation decision — not here any more.
-        ctx.instance = step(:hydrate_parent) {
+        ctx.instance = step(:hydrate_parent) do
           parent(ctx.repository, ctx.aggregate, ctx.entity_name, ctx.command_name, ctx.args, ctx.route)
-        }
+        end
       end
 
       def step_locate_element(ctx)
-        ctx.element = step(:locate_element) {
+        ctx.element = step(:locate_element) do
           EntityElement.locate_chain(ctx.aggregate, ctx.chain, ctx.instance, ctx.args, ctx.command_name, ctx.route)
-        }
+        end
         # `view` was hydrated ONCE, here, into its OWN state hash
         # (Value.hydrate builds a fresh Hash — never aliased with `element`)
         # — exactly right for enforce_givens, which must read pre-mutation.
@@ -197,9 +197,9 @@ module Hecks
       end
 
       def step_enforce_givens(ctx)
-        step(:enforce_givens) {
+        step(:enforce_givens) do
           @rules.enforce_givens(ctx.view, ctx.command, ctx.args, domain: ctx.domain, declaring: ctx.entity, parent: ctx.instance)
-        }
+        end
       end
 
       def step_admissible_transition(ctx)
@@ -208,11 +208,11 @@ module Hecks
 
       def step_apply_mutations(ctx)
         ctx.old_element = ctx.element.dup unless ctx.command.ensures.empty?
-        step(:apply_mutations) {
-          ctx.command.mutations.each { |mutation|
+        step(:apply_mutations) do
+          ctx.command.mutations.each do |mutation|
             EntityElement.apply_to_element(@rules, ctx.aggregate, ctx.entity, ctx.element, mutation, ctx.args)
-          }
-        }
+          end
+        end
       end
 
       def step_advance_lifecycle(ctx)

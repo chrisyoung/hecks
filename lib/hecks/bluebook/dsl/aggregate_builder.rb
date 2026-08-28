@@ -156,13 +156,9 @@ module Hecks
         # so no BOOTSTRAP_CALLS_FALLBACK entry is needed, unlike
         # `attribute`/`role`.
         def has_many_impl(type, as: nil, **legacy_options)
-          if MetaValidator.shadow_parsing?
-            return legacy_has_many(type, as: as, optional: legacy_options.fetch(:optional, false))
-          end
+          return legacy_has_many(type, as: as, optional: legacy_options.fetch(:optional, false)) if MetaValidator.shadow_parsing?
 
-          unless legacy_options.empty?
-            raise Malformed, "#{@name}.has_many takes no #{legacy_options.keys.first}: — an empty list already means none"
-          end
+          raise Malformed, "#{@name}.has_many takes no #{legacy_options.keys.first}: — an empty list already means none" unless legacy_options.empty?
 
           plural = Naming.demodulise(type)
           target = Naming.singularize(plural)
@@ -189,8 +185,8 @@ module Hecks
                                  optional: optional)
         end
 
-        def lifecycle_impl(field, default:, &block)
-          @lifecycle = LifecycleBuilder.build(field, default: default, &block)
+        def lifecycle_impl(field, default:, &)
+          @lifecycle = LifecycleBuilder.build(field, default: default, &)
         end
 
         # A piece is declared IN this aggregate — its owner is stamped by
@@ -223,8 +219,8 @@ module Hecks
           @pending_queries << [name, block]
         end
 
-        def policy_impl(name, &block)
-          reaction = PolicyBuilder.build(name, &block)
+        def policy_impl(name, &)
+          reaction = PolicyBuilder.build(name, &)
           reaction.aggregate = @name
           @policies << reaction
         end

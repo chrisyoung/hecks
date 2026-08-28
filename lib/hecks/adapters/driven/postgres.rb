@@ -84,9 +84,9 @@ module Hecks
         # boot after the first, not news.
         connection.exec("SET client_min_messages = warning")
         connection
-      rescue PG::Error => error
+      rescue PG::Error => e
         raise Runtime::WiringError,
-              "cannot bind Postgres at #{declared} for #{name}: #{error.message.strip}"
+              "cannot bind Postgres at #{declared} for #{name}: #{e.message.strip}"
       end
 
       def initialize(aggregate:, settings: {}, root: nil)
@@ -221,7 +221,10 @@ module Hecks
       # transaction lives here, the one caller that runs both together.
       def save(instance)
         entry = Ports::Persistence::Entry.new(operation: "save", id: instance.id.to_s, state: instance.state.dup)
-        @db.transaction { append(entry); project(entry) }
+        @db.transaction do
+          append(entry)
+          project(entry)
+        end
       end
 
       # Classification, journal append and snapshot replacement are one
@@ -255,7 +258,10 @@ module Hecks
 
       def delete(id)
         entry = Ports::Persistence::Entry.new(operation: "delete", id: id.to_s, state: nil)
-        @db.transaction { append(entry); project(entry) }
+        @db.transaction do
+          append(entry)
+          project(entry)
+        end
         true
       end
 

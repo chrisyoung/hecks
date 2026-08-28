@@ -309,16 +309,16 @@ module Hecks
           @door.reenter(qualified(spec.command_name, domain),
                         saga_correlation: { pm.correlation_head.to_s => correlation }, **invocation)
           @registry.saga_log << record.merge(delivered: true)
-        rescue *DOMAIN_REFUSALS => error
+        rescue *DOMAIN_REFUSALS => e
           unrecord_compensation(instance, correlation, domain, pm) if compensation_recorded
           # Same rule as the policy interpreter : a refusal by the target is
           # a recorded outcome, and the leg that raised it UNWINDS — see
           # `unwind`'s own comment for why the procedure runs its
           # compensation here rather than leaving the money (or whatever
           # else a leg moved) sitting out.
-          @registry.saga_log << record.merge(delivered: false, reason: error.message)
+          @registry.saga_log << record.merge(delivered: false, reason: e.message)
           unwind(pm, event, instance, correlation, domain)
-        rescue StandardError => error
+        rescue StandardError => e
           unrecord_compensation(instance, correlation, domain, pm) if compensation_recorded
           compensation_recorded = false
           # A DEFECT, not a refusal — see PolicyInterpreter#deliver's own
@@ -342,16 +342,16 @@ module Hecks
           # tag is for.
           attempt += 1
           if attempt <= MAX_DEFECT_RETRIES
-            @registry.saga_log << record.merge(delivered: false, reason: error.message,
-                                               defect: true, error_class: error.class.name,
+            @registry.saga_log << record.merge(delivered: false, reason: e.message,
+                                               defect: true, error_class: e.class.name,
                                                attempt: attempt, retrying: true)
             retry
           end
 
           warn "[hecks] defect in saga #{pm.name} — instance #{correlation.inspect} " \
-               "dispatching #{spec.command_name} after #{attempt} attempts: #{error.class}: #{error.message}"
-          @registry.saga_log << record.merge(delivered: false, reason: error.message, defect: true,
-                                             error_class: error.class.name, defect_compensated: true)
+               "dispatching #{spec.command_name} after #{attempt} attempts: #{e.class}: #{e.message}"
+          @registry.saga_log << record.merge(delivered: false, reason: e.message, defect: true,
+                                             error_class: e.class.name, defect_compensated: true)
           unwind(pm, event, instance, correlation, domain)
         end
       end
@@ -450,21 +450,21 @@ module Hecks
           @door.reenter(qualified(entry[:command_name], domain),
                         saga_correlation: { pm.correlation_head.to_s => correlation }, **invocation)
           @registry.saga_log << record.merge(delivered: true, compensation: true)
-        rescue *DOMAIN_REFUSALS => error
-          @registry.saga_log << record.merge(delivered: false, reason: error.message, compensation: true, compensation_failed: true)
-        rescue StandardError => error
+        rescue *DOMAIN_REFUSALS => e
+          @registry.saga_log << record.merge(delivered: false, reason: e.message, compensation: true, compensation_failed: true)
+        rescue StandardError => e
           attempt += 1
           if attempt <= MAX_DEFECT_RETRIES
-            @registry.saga_log << record.merge(delivered: false, reason: error.message, compensation: true,
-                                               defect: true, error_class: error.class.name,
+            @registry.saga_log << record.merge(delivered: false, reason: e.message, compensation: true,
+                                               defect: true, error_class: e.class.name,
                                                attempt: attempt, retrying: true)
             retry
           end
 
           warn "[hecks] defect compensating saga #{pm.name} — instance #{correlation.inspect} " \
-               "dispatching #{entry[:command_name]} after #{attempt} attempts: #{error.class}: #{error.message}"
-          @registry.saga_log << record.merge(delivered: false, reason: error.message, compensation: true,
-                                             defect: true, error_class: error.class.name, compensation_failed: true)
+               "dispatching #{entry[:command_name]} after #{attempt} attempts: #{e.class}: #{e.message}"
+          @registry.saga_log << record.merge(delivered: false, reason: e.message, compensation: true,
+                                             defect: true, error_class: e.class.name, compensation_failed: true)
         end
       end
 

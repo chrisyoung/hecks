@@ -61,7 +61,7 @@ require "json"
 # Every OTHER generated file — every aggregate `.rs`, `registry.rs`,
 # `mod.rs`, `merged.rs`, for the target chapter, every attached
 # framework chapter, AND `meta` — must be genuinely byte-identical.
-RSpec.describe "bin/project_rust opt-in Rust pipeline parity", io: true do
+RSpec.describe "bin/project_rust opt-in Rust pipeline parity", :io do
   # `InMemoryDomain::ROOT` directly, not aliased to a local `ROOT` — a
   # bare `ROOT` collided with word_coverage_spec.rb's own (see
   # load_hygiene_spec.rb's own top-level-constant check).
@@ -76,7 +76,7 @@ RSpec.describe "bin/project_rust opt-in Rust pipeline parity", io: true do
   # none).
   PARITY_DOMAINS = {
     "examples/pizzas"  => %w[pizzas meta],
-    "examples/banking" => %w[banking governance identity meta],
+    "examples/banking" => %w[banking governance identity meta]
   }.freeze
 
   IGNORED_BASENAMES = %w[manifest.json].freeze
@@ -102,7 +102,7 @@ RSpec.describe "bin/project_rust opt-in Rust pipeline parity", io: true do
   end
 
   def run_project_rust!(domain, extra_env)
-    env = { "PATH" => ENV["PATH"] }.merge(extra_env)
+    env = { "PATH" => ENV.fetch("PATH", nil) }.merge(extra_env)
     _out, err, status = Open3.capture3(env, PROJECT_RUST, domain, chdir: InMemoryDomain::ROOT)
     raise "bin/project_rust #{extra_env.inspect} #{domain} failed:\n#{err}" unless status.success?
   end

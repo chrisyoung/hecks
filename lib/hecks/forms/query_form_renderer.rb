@@ -38,7 +38,7 @@ module Hecks
       def self.header(domain, aggregate, query)
         <<~HTML
           <h1>#{Escape.html("#{domain}::#{aggregate.hecks_name}.#{query.hecks_name}")}</h1>
-          #{query.description ? %(<p class="goal">#{Escape.html(query.description)}</p>) : ''}
+          #{%(<p class="goal">#{Escape.html(query.description)}</p>) if query.description}
           #{badges(query)}
         HTML
       end

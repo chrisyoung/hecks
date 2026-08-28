@@ -425,7 +425,7 @@ module Hecks
           category == "Entity" ? parent_id : id
         end
 
-        def sealers(plan, category, receiver)
+        def sealers(plan, _category, receiver)
           id = receiver[:entities].last || receiver[:aggregate]
           plan.sealers.each { |verb| send_to("Bluebook::#{verb_for(plan, verb)}", id, to: receiver) }
         end

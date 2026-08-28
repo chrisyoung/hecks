@@ -93,9 +93,11 @@ module Hecks
           # AN INBOUND OPERATION STILL HAS TO SAY SOMETHING. Only inbound: an
           # `asks` says it with `answers`/`refuses` instead, and
           # `refuse_wrong_words!` above has already insisted on both.
-          raise Malformed,
-                "#{@name} declares no emits — an operation with nothing to say " \
-                "afterward is a call into nothing" if !outbound && @emits.empty?
+          if !outbound && @emits.empty?
+            raise Malformed,
+                  "#{@name} declares no emits — an operation with nothing to say " \
+                  "afterward is a call into nothing"
+          end
 
           operation
         end
@@ -119,15 +121,23 @@ module Hecks
         # runtime cannot keep.
         def refuse_wrong_words!(outbound)
           if outbound
-            raise Malformed, "#{@name} is an asks and declares emits — name its two endings with " \
-                             "answers and refuses instead" unless @emits.empty?
-            raise Malformed, "#{@name} declares no answers — an ask with no word for what came " \
-                             "back cannot be reacted to" unless @answers
-            raise Malformed, "#{@name} declares no refuses — an ask that cannot fail is a call " \
-                             "into a system you do not control, pretending otherwise" unless @refuses
+            unless @emits.empty?
+              raise Malformed, "#{@name} is an asks and declares emits — name its two endings with " \
+                               "answers and refuses instead"
+            end
+            unless @answers
+              raise Malformed, "#{@name} declares no answers — an ask with no word for what came " \
+                               "back cannot be reacted to"
+            end
+            unless @refuses
+              raise Malformed, "#{@name} declares no refuses — an ask that cannot fail is a call " \
+                               "into a system you do not control, pretending otherwise"
+            end
           else
-            raise Malformed, "#{@name} is a tells and declares #{@answers ? 'answers' : 'refuses'} — " \
-                             "an inbound fact has no channel back to whoever sent it" if @answers || @refuses
+            if @answers || @refuses
+              raise Malformed, "#{@name} is a tells and declares #{@answers ? 'answers' : 'refuses'} — " \
+                               "an inbound fact has no channel back to whoever sent it"
+            end
           end
         end
 

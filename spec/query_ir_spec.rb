@@ -156,7 +156,7 @@ RSpec.describe Hecks::QueryIR do
 
       expect(text).to include("== Command#givens ==")
       expect(text).to match(/\[\s*yes\]/)
-      expect(text).to match(/\[\s*n\/a\]/)
+      expect(text).to match(%r{\[\s*n/a\]})
       expect(text).to match(%r{\d+/\d+ applicable touchpoint\(s\)})
     end
   end

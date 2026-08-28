@@ -244,7 +244,7 @@ module Hecks
       end
 
       def command_entry(command, holder, depth)
-        out = [h(depth, "#{command.hecks_name}#{command.creates? ? ' *(creates)*' : ''}"), ""]
+        out = [h(depth, "#{command.hecks_name}#{' *(creates)*' if command.creates?}"), ""]
         out += [command.goal, ""] if command.goal
         out << "Issued by: **#{command.role}**." if command.role
         out << ""
@@ -302,7 +302,7 @@ module Hecks
         queries.each do |query|
           shape   = query.to_h
           takes   = Array(shape[:attributes]).map { |a| "`#{a[:name]}`" }.join(", ")
-          out << "**#{query.hecks_name}**#{takes.empty? ? '' : " (#{takes})"}  "
+          out << "**#{query.hecks_name}**#{" (#{takes})" unless takes.empty?}  "
           out << (query.description ? "#{query.description}  " : "")
           filters = Array(shape[:wheres]).map { |w| "`#{w[:field]} #{w[:op]} #{w[:value].inspect}`" }
           out << "Filters: #{filters.join(', ')}." unless filters.empty?

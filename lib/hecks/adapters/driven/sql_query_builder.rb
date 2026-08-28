@@ -34,7 +34,7 @@ module Hecks
       }.freeze
 
       def query(declared, args = {}, context: {})
-        sql = +"SELECT #{select_list} FROM #{from_relation}"
+        sql = "SELECT #{select_list} FROM #{from_relation}"
         clauses = []
         binds = []
         declared.wheres.each do |clause|

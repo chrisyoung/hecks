@@ -43,9 +43,7 @@ module Hecks
         # Two different versions are a real contradiction, not load order.
         def adopt_version(version)
           return if version.nil?
-          if @version && @version.to_s != version.to_s
-            raise Malformed, "#{@name} declares both version #{@version.inspect} and #{version.inspect}"
-          end
+          raise Malformed, "#{@name} declares both version #{@version.inspect} and #{version.inspect}" if @version && @version.to_s != version.to_s
 
           @version = version
         end
@@ -91,11 +89,11 @@ module Hecks
         # dispatch (slice 4c). Bootstrap-reachable (every core/attached
         # chapter's own top-level shape is written with it), so also
         # named in GenericDispatch::BOOTSTRAP_CALLS_FALLBACK.
-        def aggregate_impl(name, &block)
+        def aggregate_impl(name, &)
           @aggregates << AggregateBuilder.build(name, chapter_named_givens:          @chapter_named_givens,
                                                       chapter_pending_givens:        @chapter_pending_givens,
                                                       chapter_entity_named_givens:   @chapter_entity_named_givens,
-                                                      chapter_entity_pending_givens: @chapter_entity_pending_givens, &block)
+                                                      chapter_entity_pending_givens: @chapter_entity_pending_givens, &)
         end
 
         # `read_model` is the word (ADR 0025 reverts `report` — the IR
@@ -106,25 +104,25 @@ module Hecks
         # bridge) for the same reason `has_many` does — frozen era text
         # that used it must keep booting; live source refuses it, naming
         # the replacement.
-        def read_model(name, &block)
+        def read_model(name, &)
           # A read model gathers heads from SEVERAL aggregates, so no single head
           # declares it — the chapter does. Its owner is stamped in `build`, where
           # the chapter namespace exists.
-          @read_models << ReadModelBuilder.build(name, &block)
+          @read_models << ReadModelBuilder.build(name, &)
         end
 
-        def report(name, &block)
-          return read_model(name, &block) if MetaValidator.shadow_parsing?
+        def report(name, &)
+          return read_model(name, &) if MetaValidator.shadow_parsing?
 
           raise Malformed, "report is gone — read_model is the word now"
         end
 
-        def policy(name, &block)
-          @policies << PolicyBuilder.build(name, &block)
+        def policy(name, &)
+          @policies << PolicyBuilder.build(name, &)
         end
 
-        def process_manager(name, &block)
-          @process_managers << ProcessManagerBuilder.build(name, &block)
+        def process_manager(name, &)
+          @process_managers << ProcessManagerBuilder.build(name, &)
         end
 
         def build
@@ -1013,8 +1011,10 @@ module Hecks
         end
 
         def self.list_or_scalar_violation(owner, attribute, segments)
-          return "#{attribute.name} is a list — a correlation key must name one instance's own field, " \
-                 "not a whole collection" if attribute.list?
+          if attribute.list?
+            return "#{attribute.name} is a list — a correlation key must name one instance's own field, " \
+                   "not a whole collection"
+          end
 
           walk_scalar(owner, attribute.type.to_s, segments)
         end
@@ -1042,8 +1042,10 @@ module Hecks
           segment, *rest = segments
           attribute = shape.attributes.find { |a| a.name == segment.to_sym }
           return "#{type_name} has no field #{segment.inspect}" unless attribute
-          return "#{type_name}.#{segment} is a list — a correlation key must name one instance's own field, " \
-                 "not a whole collection" if attribute.list?
+          if attribute.list?
+            return "#{type_name}.#{segment} is a list — a correlation key must name one instance's own field, " \
+                   "not a whole collection"
+          end
 
           walk_scalar(owner, attribute.type.to_s, rest)
         end

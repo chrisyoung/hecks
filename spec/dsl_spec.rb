@@ -285,8 +285,7 @@ RSpec.describe "the DSL surface" do
     # this genuinely needs a reachable Postgres carrying the hecks_pizzas
     # database — same as every other real-Postgres spec, `io: true` and
     # self-skipping otherwise.
-    it ".boot loads a domain directory and returns the door",
-       io: true do
+    it ".boot loads a domain directory and returns the door", :io do
       skip "no reachable Postgres — start one to run this spec" unless PostgresProbe.available?
 
       runtime = Hecks.boot(File.expand_path("../examples/pizzas", __dir__))
@@ -350,7 +349,11 @@ RSpec.describe "the DSL surface" do
       expect do
         build_aggregate("Nameless") do
           value_object("Label") { attribute :value, String }
-          attribute "", Object.const_get("Label") rescue attribute "", :Label
+          begin
+            attribute "", Object.const_get("Label")
+          rescue StandardError
+            attribute "", :Label
+          end
         end
       end.to raise_error(Malformed, /an attribute is named/)
     end
@@ -363,7 +366,7 @@ RSpec.describe "the DSL surface" do
     # ("Primitive:Thing" and "String"); now the message says so.
     it "refuses an aggregate attribute that is not a value object" do
       expect { build_aggregate("Primitive") { attribute :code, String } }
-        .to raise_error(Malformed, %r{no ValueObject with aggregate, name "Primitive:Thing:String"})
+        .to raise_error(Malformed, /no ValueObject with aggregate, name "Primitive:Thing:String"/)
     end
 
     # A PIECE IS REACHED THROUGH ITS AGGREGATE, so a command on one addresses
@@ -546,7 +549,7 @@ RSpec.describe "the DSL surface" do
         in_registry do
           Hecks.bluebook("Unreadable") do
             aggregate("Thing") do
-              command("Do") { given("unreadable", &eval("proc { 1 < 2 }")) }
+              command("Do") { given("unreadable", &eval("proc { 1 < 2 }")) } # rubocop:disable Style/EvalWithLocation -- deliberately WITHOUT file/line: this fixture exercises the "source could not be read" refusal, which needs an untraceable source_location
             end
           end
         end
@@ -558,7 +561,7 @@ RSpec.describe "the DSL surface" do
         in_registry do
           Hecks.bluebook("Unreadable2") do
             aggregate("Thing") do
-              value_object("V") { invariant("unreadable", &eval("proc { 1 < 2 }")) }
+              value_object("V") { invariant("unreadable", &eval("proc { 1 < 2 }")) } # rubocop:disable Style/EvalWithLocation -- deliberately WITHOUT file/line: this fixture exercises the "source could not be read" refusal, which needs an untraceable source_location
             end
           end
         end
@@ -687,7 +690,7 @@ RSpec.describe "the DSL surface" do
 
             value_object("Kind") do
               attribute :name, String
-              invariant("current or savings") { name == "current" || name == "savings" }
+              invariant("current or savings") { ["current", "savings"].include?(name) }
             end
 
             value_object("Amount") do
@@ -741,10 +744,10 @@ RSpec.describe "the DSL surface" do
         Hecks::Runtime::Dispatcher.new(registry.tap(&:verify!))
       )
 
-      expect {
+      expect do
         runtime.dispatch("Coerced::Holding.Open", id: "h2",
                          kind: { name: "offshore" }, amount: { cents: 100, currency: "GBP" })
-      }
+      end
         .to raise_error(Hecks::Runtime::InvariantViolation, /current or savings/)
     end
 
@@ -762,10 +765,10 @@ RSpec.describe "the DSL surface" do
         Hecks::Runtime::Dispatcher.new(registry.tap(&:verify!))
       )
 
-      expect {
+      expect do
         runtime.dispatch("Coerced::Holding.Open", id: "h3",
                          kind: { name: "current" }, amount: "a lot")
-      }
+      end
         .to raise_error(Hecks::Runtime::TypeMismatch, /pass its fields as an object/)
     end
   end
@@ -840,41 +843,41 @@ RSpec.describe "the DSL surface" do
       # An include with no reference at all is now a ROOTLESS read model —
       # a bulk view of its own included head(s), no root record required —
       # and succeeds rather than refusing.
-      expect {
+      expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") { include Customer }
         end
-      }.not_to raise_error
+      end.not_to raise_error
 
       # A read model naming NEITHER a reference NOR any include has nothing
       # to describe at all — the one case that still refuses.
-      expect {
+      expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") { description "nothing to gather" }
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed, /needs an aggregate-head reference or at least one include/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /needs an aggregate-head reference or at least one include/)
 
       # a reference, so `needs an aggregate-head reference` does not fire first
       # and mask the description rule this case is about
-      expect {
+      expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") do
             reference_to Customer
             description ""
           end
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed, /a description says something/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /a description says something/)
 
-      expect {
+      expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") do
             reference_to Customer
             reference_to Account
           end
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed, /already has a projection reference/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /already has a projection reference/)
 
-      expect {
+      expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") do
             reference_to Customer
@@ -882,7 +885,7 @@ RSpec.describe "the DSL surface" do
             include Customer, as: :customer
           end
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed, /already projects customer/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /already projects customer/)
     end
 
     it "lets read models combine common query options with aggregate-head joins" do
@@ -901,14 +904,14 @@ RSpec.describe "the DSL surface" do
         end
       end.read_models.first
 
-      expect(model.wheres.first.to_h).to eq(field: "status", op: "eq", value: %q("active"))
+      expect(model.wheres.first.to_h).to eq(field: "status", op: "eq", value: '"active"')
       expect(model.aggregate_heads).to eq([{ aggregate: "Account", as: :accounts, many: true }])
       expect(model.offset.to_h).to eq(value: "5")
       expect(model.authorization.to_h).to eq(policy: "portfolio_access", tenant: "customer_id")
     end
 
     it "read_model refuses cursor at build — no interpreter implements cursor pagination" do
-      expect {
+      expect do
         build_bluebook("CursoredPortfolio") do
           read_model "Portfolio" do
             reference_to Customer
@@ -917,11 +920,11 @@ RSpec.describe "the DSL surface" do
             cursor :after
           end
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed, /declares cursor, but no interpreter implements cursor pagination/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /declares cursor, but no interpreter implements cursor pagination/)
     end
 
     it "refuses two aggregates that reference each other" do
-      expect {
+      expect do
         build_bluebook("BackAndForth") do
           aggregate "Rider" do
             identified_by :tag
@@ -941,8 +944,8 @@ RSpec.describe "the DSL surface" do
             reference_to Rider
           end
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed,
-                       /reference cycle: (Rider -> Bicycle -> Rider|Bicycle -> Rider -> Bicycle)/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed,
+                         /reference cycle: (Rider -> Bicycle -> Rider|Bicycle -> Rider -> Bicycle)/)
     end
 
     # S9, ADR 0025 — an OWNED PIECE's own reference_to used to feed no
@@ -951,7 +954,7 @@ RSpec.describe "the DSL surface" do
     # contained entity built cleanly, invisibly, the same shape this
     # check already refuses when the ring is direct.
     it "refuses a reference cycle that closes through an owned entity" do
-      expect {
+      expect do
         build_bluebook("BackAndForthThroughAPiece") do
           aggregate "Board" do
             identified_by :tag
@@ -976,8 +979,8 @@ RSpec.describe "the DSL surface" do
             reference_to Board
           end
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed,
-                       /reference cycle: (Board -> Product -> Board|Product -> Board -> Product)/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed,
+                         /reference cycle: (Board -> Product -> Board|Product -> Board -> Product)/)
     end
 
     it "allows one aggregate to reference another in a single direction" do
@@ -1501,8 +1504,8 @@ RSpec.describe "the DSL surface" do
     # directly, at the DSL layer, rather than round-tripping through a
     # real file on disk the way `spec/shadow_parse_spec.rb` does end to end.
     describe "identified_by ValueObject while shadow-parsing" do
-      def legacy(&block)
-        Hecks::Bluebook::MetaValidator.while_shadow_parsing { yield }
+      def legacy(&)
+        Hecks::Bluebook::MetaValidator.while_shadow_parsing(&)
       end
 
       it "mints the attribute AND derives its path, no separate attribute call needed" do
@@ -1805,7 +1808,7 @@ RSpec.describe "the DSL surface" do
       end.queries.first
 
       expect(found.name).to eq("Available")
-      expect(found.wheres.map(&:to_h)).to eq([{ field: "status", op: "eq", value: %q("available") }])
+      expect(found.wheres.map(&:to_h)).to eq([{ field: "status", op: "eq", value: '"available"' }])
       expect(found.order_by.to_h).to eq({ field: "name", direction: "desc" })
       expect(found.limit.to_h).to eq({ value: "10" })
       expect(found.offset.to_h).to eq({ value: "5" })
@@ -1815,7 +1818,7 @@ RSpec.describe "the DSL surface" do
     end
 
     it "query refuses cursor at build — no interpreter implements cursor pagination" do
-      expect {
+      expect do
         build_aggregate("Cursored") do
           value_object("Name") { attribute :value, String }
           attribute :name, Name
@@ -1825,7 +1828,7 @@ RSpec.describe "the DSL surface" do
             cursor :after
           end
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed, /declares cursor, but no interpreter implements cursor pagination/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /declares cursor, but no interpreter implements cursor pagination/)
     end
 
     it "query reads a comparator from the hash form" do
@@ -1998,7 +2001,7 @@ RSpec.describe "the DSL surface" do
           value_object("Pizza") { attribute :price, Price }
           attribute :pizza, Pizza
           query("Cheap") do
-            where(:"pizza.price.cents" => { lt: 500 })
+            where("pizza.price.cents": { lt: 500 })
             order_by :"pizza.price.cents", :desc
           end
         end
@@ -2012,7 +2015,7 @@ RSpec.describe "the DSL surface" do
             value_object("Price") { attribute :cents, Integer }
             value_object("Pizza") { attribute :price, Price }
             attribute :pizza, Pizza
-            query("Cheap") { where(:"pizza.price" => { lt: 500 }) }
+            query("Cheap") { where("pizza.price": { lt: 500 }) }
           end
         end.to raise_error(Malformed, /asks about pizza\.price, which lands on a value object, not a scalar/)
       end
@@ -2023,7 +2026,7 @@ RSpec.describe "the DSL surface" do
             value_object("Label") { attribute :text, String }
             value_object("Pizza") { attribute :label, Label }
             attribute :pizza, Pizza
-            query("Sorted") { where(:"pizza.label.text" => { gt: "m" }) }
+            query("Sorted") { where("pizza.label.text": { gt: "m" }) }
           end
         end.to raise_error(Malformed, /compares pizza\.label\.text with gt.*holds no number/m)
       end
@@ -2053,7 +2056,7 @@ RSpec.describe "the DSL surface" do
 
         it "admits a hop that lands on a scalar the target declares" do
           bluebook = build_hop_bluebook do
-            query("AwaitingReply") { where(:"client/status" => "active") }
+            query("AwaitingReply") { where("client/status": "active") }
           end
 
           expect(bluebook.aggregate("Proposal").queries.first.wheres.first.field.to_s).to eq("client/status")
@@ -2062,11 +2065,12 @@ RSpec.describe "the DSL surface" do
         it "admits a WHERE hop with an ordered comparator — the target's own field decides, not the ask" do
           expect do
             build_hop_bluebook(client: proc {
-              value_object("Balance") {
+              value_object("Balance") do
                 attribute :cents, Integer
-              }; attribute :balance, Balance
+              end
+              attribute :balance, Balance
             }) do
-              query("HighValue") { where(:"client/balance.cents" => { gt: 500 }) }
+              query("HighValue") { where("client/balance.cents": { gt: 500 }) }
             end
           end.not_to raise_error
         end
@@ -2087,7 +2091,7 @@ RSpec.describe "the DSL surface" do
                 reference_to Client
                 attribute :number, ProposalNumber
                 value_object("ProposalNumber") { attribute :value, String }
-                query("Bad") { where(:"client/status" => "active") }
+                query("Bad") { where("client/status": "active") }
               end
             end
           end.to raise_error(Malformed, %r{asks about client/status, which hops to Client, which this chapter never declares})
@@ -2096,7 +2100,7 @@ RSpec.describe "the DSL surface" do
         it "refuses a hop whose tail names nothing the target declares" do
           expect do
             build_hop_bluebook do
-              query("Bad") { where(:"client/nonexistent" => "x") }
+              query("Bad") { where("client/nonexistent": "x") }
             end
           end.to raise_error(Malformed, /hops to Client and then asks about nonexistent, which Client never declares/)
         end
@@ -2123,7 +2127,7 @@ RSpec.describe "the DSL surface" do
                   attribute :sequence, Integer
                   reference_to Product
 
-                  query("ForProduct") { where(:"product/sku" => "widget") }
+                  query("ForProduct") { where("product/sku": "widget") }
                 end
               end
 
@@ -2160,7 +2164,7 @@ RSpec.describe "the DSL surface" do
                   attribute :sequence, Integer
                   reference_to Nonexistent
 
-                  query("ForNonexistent") { where(:"nonexistent/sku" => "widget") }
+                  query("ForNonexistent") { where("nonexistent/sku": "widget") }
                 end
               end
             end
@@ -2185,7 +2189,7 @@ RSpec.describe "the DSL surface" do
 
           expect do
             build_hop_bluebook(client: client) do
-              query("Bad") { where(:"client/box.price" => { gt: 500 }) }
+              query("Bad") { where("client/box.price": { gt: 500 }) }
             end
           end.to raise_error(Malformed,
                              /hops to Client and then asks about box\.price, which lands on a value object, not a scalar/)
@@ -2194,7 +2198,7 @@ RSpec.describe "the DSL surface" do
         it "refuses an ordered comparator on a hop's tail when it holds no number" do
           expect do
             build_hop_bluebook do
-              query("Bad") { where(:"client/status" => { gt: "active" }) }
+              query("Bad") { where("client/status": { gt: "active" }) }
             end
           end.to raise_error(Malformed,
                              %r{compares client/status with gt after hopping to Client.*is the lifecycle field, which holds text}m)
@@ -2203,7 +2207,7 @@ RSpec.describe "the DSL surface" do
         it "refuses an ordered comparator on a hop's tail that's a real attribute holding no number" do
           expect do
             build_hop_bluebook(client: proc { attribute :note, String }) do
-              query("Bad") { where(:"client/note" => { gt: "z" }) }
+              query("Bad") { where("client/note": { gt: "z" }) }
             end
           end.to raise_error(Malformed, %r{compares client/note with gt after hopping to Client.*holds no number}m)
         end
@@ -2231,7 +2235,7 @@ RSpec.describe "the DSL surface" do
               reference_to Engagement
               attribute :number, ProposalNumber
               value_object("ProposalNumber") { attribute :value, String }
-              query("AwaitingReply") { where(:"engagement/client/status" => "active") }
+              query("AwaitingReply") { where("engagement/client/status": "active") }
             end
           end
 
@@ -2247,7 +2251,7 @@ RSpec.describe "the DSL surface" do
                 reference_to Node, as: :parent
                 attribute :label, NodeLabel
                 value_object("NodeLabel") { attribute :value, String }
-                query("GrandparentLabel") { where(:"parent/parent/label" => "root") }
+                query("GrandparentLabel") { where("parent/parent/label": "root") }
               end
             end
           end.not_to raise_error
@@ -2261,7 +2265,7 @@ RSpec.describe "the DSL surface" do
                 reference_to Node
                 attribute :label, NodeLabel
                 value_object("NodeLabel") { attribute :value, String }
-                nine = (["node"] * 9 + ["label"]).join("/")
+                nine = ((["node"] * 9) + ["label"]).join("/")
                 query("TooFar") { where(nine.to_sym => "root") }
               end
             end
@@ -2288,7 +2292,7 @@ RSpec.describe "the DSL surface" do
                 reference_to Studio, as: :studio
                 attribute :tag, PieceTag
                 value_object("PieceTag") { attribute :value, String }
-                query("Bad") { where(:"studio.name" => "x") }
+                query("Bad") { where("studio.name": "x") }
               end
             end
           end.to raise_error(Malformed, /asks about studio\.name, which Piece never declares/)
@@ -2307,7 +2311,7 @@ RSpec.describe "the DSL surface" do
               reference_to Studio, as: :studio
               attribute :tag, PieceTag
               value_object("PieceTag") { attribute :value, String }
-              query("Good") { where(:"studio/name.value" => "x") }
+              query("Good") { where("studio/name.value": "x") }
             end
           end
 
@@ -2652,12 +2656,12 @@ RSpec.describe "the DSL surface" do
     end
 
     it "delegates_to refuses sharing a command with its own sets/emits — a pure passthrough only" do
-      expect {
+      expect do
         build_command("CmdDelegateNotPure") do
           delegates_to "Piece.Move", with: { id: :id }
           emits "SomethingElseToo"
         end
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed, /pure passthrough/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /pure passthrough/)
     end
 
     # `corrects` — CommandBuilder#corrects_impl's own comment gives the
@@ -2921,8 +2925,14 @@ RSpec.describe "the DSL surface" do
     # `answers :canonical`, the one real corpus use of the word) are
     # both real, live cases, not hypothetical ones.
     it "signal builds the same Port PortBuilder itself would, non-default value included" do
-      via_domain_port = Hecks::Bluebook::DSL::DomainPortBuilder.build("projection") { verb "projected_by"; signal :effect }
-      via_port_builder = Hecks::Bluebook::DSL::PortBuilder.build("projection") { verb "projected_by"; signal :effect }
+      via_domain_port = Hecks::Bluebook::DSL::DomainPortBuilder.build("projection") do
+        verb "projected_by"
+        signal :effect
+      end
+      via_port_builder = Hecks::Bluebook::DSL::PortBuilder.build("projection") do
+        verb "projected_by"
+        signal :effect
+      end
 
       expect(via_domain_port).to be_a(Hecks::Bluebook::Port)
       expect(via_domain_port.to_h).to eq(via_port_builder.to_h)
@@ -2930,8 +2940,16 @@ RSpec.describe "the DSL surface" do
     end
 
     it "answers builds the same Port PortBuilder itself would" do
-      via_domain_port = Hecks::Bluebook::DSL::DomainPortBuilder.build("extraction") { verb "extracted_by"; signal :reply; answers :canonical }
-      via_port_builder = Hecks::Bluebook::DSL::PortBuilder.build("extraction") { verb "extracted_by"; signal :reply; answers :canonical }
+      via_domain_port = Hecks::Bluebook::DSL::DomainPortBuilder.build("extraction") do
+        verb "extracted_by"
+        signal :reply
+        answers :canonical
+      end
+      via_port_builder = Hecks::Bluebook::DSL::PortBuilder.build("extraction") do
+        verb "extracted_by"
+        signal :reply
+        answers :canonical
+      end
 
       expect(via_domain_port).to be_a(Hecks::Bluebook::Port)
       expect(via_domain_port.to_h).to eq(via_port_builder.to_h)
@@ -3038,9 +3056,9 @@ RSpec.describe "the DSL surface" do
     end
 
     it "refuses an operation with no emits" do
-      expect {
+      expect do
         build_operation {}
-      }.to raise_error(Hecks::Bluebook::DSL::Malformed, /declares no emits/)
+      end.to raise_error(Hecks::Bluebook::DSL::Malformed, /declares no emits/)
     end
   end
 

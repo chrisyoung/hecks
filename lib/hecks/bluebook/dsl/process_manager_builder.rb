@@ -189,8 +189,10 @@ module Hecks
         end
 
         def validate!
-          raise InvalidProcessManager, "#{@name} declares no correlates_by — " \
-                                       "nothing would tie its events to one instance" unless @correlates_by
+          unless @correlates_by
+            raise InvalidProcessManager, "#{@name} declares no correlates_by — " \
+                                         "nothing would tie its events to one instance"
+          end
 
           # THE FIELD, NAMED — never the value object that carries it. A bare
           # `correlates_by :end_to_end` reads whatever the payload holds under
@@ -202,15 +204,21 @@ module Hecks
           # holds a head to. This is a syntactic check, not a type check: it
           # does not know or care whether the field IS a value object, only
           # that the declaration cannot leave that question open.
-          raise InvalidProcessManager, "#{@name} correlates_by #{@correlates_by.inspect}, which names a whole " \
-                                       "field rather than one of its scalars — say which one, e.g. " \
-                                       "#{@correlates_by}.value" unless @correlates_by.to_s.include?(".")
+          unless @correlates_by.to_s.include?(".")
+            raise InvalidProcessManager, "#{@name} correlates_by #{@correlates_by.inspect}, which names a whole " \
+                                         "field rather than one of its scalars — say which one, e.g. " \
+                                         "#{@correlates_by}.value"
+          end
 
-          raise InvalidProcessManager, "#{@name} declares no starts_on — " \
-                                       "nothing would ever begin it" if @starts_on.to_s.empty?
+          if @starts_on.to_s.empty?
+            raise InvalidProcessManager, "#{@name} declares no starts_on — " \
+                                         "nothing would ever begin it"
+          end
 
-          raise InvalidProcessManager, "#{@name} declares no transitions — " \
-                                       "it would start and then ignore every event" if @handlers.empty?
+          if @handlers.empty?
+            raise InvalidProcessManager, "#{@name} declares no transitions — " \
+                                         "it would start and then ignore every event"
+          end
         end
 
         class HandlerBuilder

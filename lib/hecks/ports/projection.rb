@@ -67,7 +67,10 @@ module Hecks
           unless consistent?(entries, present)
             raise Runtime::WiringError, "projection history does not match its authoritative history" if @policy == :strict
           end
-          entries.drop(present.length).each { |entry| @projection.append(entry); @projection.project(entry) }
+          entries.drop(present.length).each do |entry|
+            @projection.append(entry)
+            @projection.project(entry)
+          end
           @projection
         end
 
@@ -78,9 +81,9 @@ module Hecks
         def same_entry?(left, right) = left.operation == right.operation && left.id == right.id && left.state == right.state
 
         def consistent?(entries, present)
-          present.length <= entries.length && entries.first(present.length).zip(present).all? { |left, right|
+          present.length <= entries.length && entries.first(present.length).zip(present).all? do |left, right|
             same_entry?(left, right)
-          }
+          end
         end
       end
 

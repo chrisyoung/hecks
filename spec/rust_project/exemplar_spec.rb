@@ -125,9 +125,9 @@ RSpec.describe RustProjection::Exemplar do
         // TMPL:record_struct END
       RUST
 
-      expect {
+      expect do
         described_class.compose("record_struct", {}, field_id: "record_struct:FIELD", field_subs_list: [])
-      }.to raise_error(described_class::DriftError, /no nested slot/)
+      end.to raise_error(described_class::DriftError, /no nested slot/)
     end
   end
 
@@ -160,7 +160,7 @@ RSpec.describe RustProjection::Exemplar do
         { "TmplType" => "Kind" },
         slots: {
           "codec:TO_JSON_ARM"   => described_class.render_each("codec:TO_JSON_ARM", row_subs),
-          "codec:FROM_JSON_ARM" => described_class.render_each("codec:FROM_JSON_ARM", row_subs),
+          "codec:FROM_JSON_ARM" => described_class.render_each("codec:FROM_JSON_ARM", row_subs)
         }
       )
 
@@ -187,9 +187,9 @@ RSpec.describe RustProjection::Exemplar do
         // TMPL:codec END
       RUST
 
-      expect {
+      expect do
         described_class.assemble("codec", {}, slots: { "codec:MISSING" => "x" })
-      }.to raise_error(described_class::DriftError, /no nested slot/)
+      end.to raise_error(described_class::DriftError, /no nested slot/)
     end
   end
 
@@ -255,7 +255,7 @@ RSpec.describe RustProjection::Exemplar do
         "        }",
         '        Err(crate::kernel::Refusal::TypeMismatch(format!("StatementFrequency: no member matches {:?}", v)))',
         "    }",
-        "}",
+        "}"
       ].join("\n"))
     end
 
@@ -279,7 +279,7 @@ RSpec.describe RustProjection::Exemplar do
     it "renders the real closed_set_codec shape, both slots, matching the checked-in LedgerDirection codec" do
       row_subs = [
         { "TmplKind" => "LedgerDirection", "TmplMemberA" => "Credit", '"tmpl_member_a"' => '"credit"' },
-        { "TmplKind" => "LedgerDirection", "TmplMemberA" => "Debit", '"tmpl_member_a"' => '"debit"' },
+        { "TmplKind" => "LedgerDirection", "TmplMemberA" => "Debit", '"tmpl_member_a"' => '"debit"' }
       ]
 
       out = described_class.assemble(
@@ -289,11 +289,11 @@ RSpec.describe RustProjection::Exemplar do
           '"tmpl_field_name"'          => '"value"',
           "tmpl_field_name"            => "value",
           '"tmpl_closed_set_type"'     => '"LedgerDirection"',
-          '"tmpl_closed_set_admitted"' => '"\"credit\", \"debit\""',
+          '"tmpl_closed_set_admitted"' => '"\"credit\", \"debit\""'
         },
         slots: {
           "closed_set_codec:TO_JSON_ARM"   => described_class.render_each("closed_set_codec:TO_JSON_ARM", row_subs),
-          "closed_set_codec:FROM_JSON_ARM" => described_class.render_each("closed_set_codec:FROM_JSON_ARM", row_subs),
+          "closed_set_codec:FROM_JSON_ARM" => described_class.render_each("closed_set_codec:FROM_JSON_ARM", row_subs)
         }
       )
 

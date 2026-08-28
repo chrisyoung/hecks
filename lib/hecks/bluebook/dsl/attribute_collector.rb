@@ -261,15 +261,11 @@ module Hecks
         def resolve_identity_type!(type, as, insert_at, value_objects, context_name)
           target = Naming.demodulise(type.respond_to?(:hecks_name) ? type.hecks_name : type)
           matches = value_objects.select { |value_object| value_object.hecks_name.to_s == target }
-          if matches.size > 1
-            raise Malformed, "#{context_name}.identified_by names duplicate value object #{target}"
-          end
+          raise Malformed, "#{context_name}.identified_by names duplicate value object #{target}" if matches.size > 1
 
           vo = type.respond_to?(:attributes) ? type : matches.first
           raise Malformed, "#{context_name}.identified_by names #{target}, which is not a declared value object" unless vo
-          if vo.attributes.empty?
-            raise Malformed, "#{context_name}.identified_by names #{target}, which declares no attributes"
-          end
+          raise Malformed, "#{context_name}.identified_by names #{target}, which declares no attributes" if vo.attributes.empty?
 
           field = (as || Naming.snake(target)).to_sym
           if attributes.any? { |attribute| attribute.name == field }

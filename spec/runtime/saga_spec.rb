@@ -134,11 +134,11 @@ RSpec.describe "a process manager" do
     end
 
     result = nil
-    expect {
+    expect do
       result = runtime.dispatch("Wire::Wire.Ask",
                                 reference: { value: "wire-defect" }, amount: { cents: 500 },
                                 source: "left", destination: "right")
-    }.to output(/Carry.*wire-defect.*Drawer\.Take.*after 4 attempts.*boom/m).to_stderr
+    end.to output(/Carry.*wire-defect.*Drawer\.Take.*after 4 attempts.*boom/m).to_stderr
 
     expect(result.events.map(&:name)).to eq(["WireAsked"])
     expect(Wire::Wire.find("wire-defect").status).to eq("asked")
@@ -185,11 +185,11 @@ RSpec.describe "a process manager" do
       real_reenter.call(verb, **args)
     end
 
-    expect {
+    expect do
       runtime.dispatch("Wire::Wire.Ask",
                        reference: { value: "wire-crash" }, amount: { cents: 1_000 },
                        source: "left", destination: "right")
-    }.to output(/Carry.*wire-crash.*Drawer\.Put.*after 4 attempts.*boom/m).to_stderr
+    end.to output(/Carry.*wire-crash.*Drawer\.Put.*after 4 attempts.*boom/m).to_stderr
 
     expect(attempts).to eq(Hecks::Runtime::SagaInterpreter::MAX_DEFECT_RETRIES + 1)
 

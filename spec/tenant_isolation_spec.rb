@@ -217,7 +217,7 @@ RSpec.describe "multitenancy: one boot per tenant, one shared route table" do
     end
   end
 
-  it "keeps two tenants' data completely apart on real PostgresEra, in genuinely separate schemas", io: true do
+  it "keeps two tenants' data completely apart on real PostgresEra, in genuinely separate schemas", :io do
     skip "no local Postgres reachable" unless PostgresProbe.available?
 
     db = "hecks_tenant_isolation_spec"

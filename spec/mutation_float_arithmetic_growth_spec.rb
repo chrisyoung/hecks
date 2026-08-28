@@ -84,7 +84,7 @@ RSpec.describe "Float arithmetic on increment/decrement" do
 
   def boot_float_arithmetic
     boot(FLOAT_ARITHMETIC_SOURCE, "FloatArithmeticGrowth") do
-      ::FloatArithmeticGrowth::Organ.persisted_by("Memory")
+      FloatArithmeticGrowth::Organ.persisted_by("Memory")
     end
   end
 

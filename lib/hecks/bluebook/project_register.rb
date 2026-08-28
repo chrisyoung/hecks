@@ -37,26 +37,38 @@ module Hecks
 
           bluebook.aggregates.each do |aggregate|
             aggregate.commands.each do |command|
-              add(Fqn.command(realm: realm, domain: bluebook.name, version: bluebook.version,
-                              aggregate: aggregate.hecks_name, command: command.hecks_name), directory, dispatcher, command.hecks_name, bluebook.version) if bluebook.version
-              add(Fqn.command(realm: realm, domain: bluebook.name, aggregate: aggregate.hecks_name,
-                              command: command.hecks_name), directory, dispatcher, command.hecks_name, bluebook.version) if current?(
-                                bluebook, world
-                              )
+              if bluebook.version
+                add(Fqn.command(realm: realm, domain: bluebook.name, version: bluebook.version,
+                                aggregate: aggregate.hecks_name, command: command.hecks_name), directory, dispatcher, command.hecks_name, bluebook.version)
+              end
+              if current?(
+                bluebook, world
+              )
+                add(Fqn.command(realm: realm, domain: bluebook.name, aggregate: aggregate.hecks_name,
+                                command: command.hecks_name), directory, dispatcher, command.hecks_name, bluebook.version)
+              end
             end
             aggregate.queries.each do |query|
               name = Naming.snake(query.name)
-              add(Fqn.query(realm: realm, domain: bluebook.name, version: bluebook.version,
-                            aggregate: aggregate.hecks_name, query: name), directory, dispatcher, query.name, bluebook.version) if bluebook.version
-              add(Fqn.query(realm: realm, domain: bluebook.name, aggregate: aggregate.hecks_name,
-                            query: name), directory, dispatcher, query.name, bluebook.version) if current?(bluebook, world)
+              if bluebook.version
+                add(Fqn.query(realm: realm, domain: bluebook.name, version: bluebook.version,
+                              aggregate: aggregate.hecks_name, query: name), directory, dispatcher, query.name, bluebook.version)
+              end
+              if current?(bluebook, world)
+                add(Fqn.query(realm: realm, domain: bluebook.name, aggregate: aggregate.hecks_name,
+                              query: name), directory, dispatcher, query.name, bluebook.version)
+              end
             end
           end
           bluebook.read_models.each do |model|
-            add(Fqn.query(realm: realm, domain: bluebook.name, version: bluebook.version,
-                          query: model.query_name), directory, dispatcher, model.query_name, bluebook.version) if bluebook.version
-            add(Fqn.query(realm: realm, domain: bluebook.name, query: model.query_name),
-                directory, dispatcher, model.query_name, bluebook.version) if current?(bluebook, world)
+            if bluebook.version
+              add(Fqn.query(realm: realm, domain: bluebook.name, version: bluebook.version,
+                            query: model.query_name), directory, dispatcher, model.query_name, bluebook.version)
+            end
+            if current?(bluebook, world)
+              add(Fqn.query(realm: realm, domain: bluebook.name, query: model.query_name),
+                  directory, dispatcher, model.query_name, bluebook.version)
+            end
           end
         end
         self
@@ -93,9 +105,7 @@ module Hecks
 
       def add(fqn, directory, dispatcher, declared_verb, domain_version)
         existing = entries[fqn.to_s]
-        if existing
-          raise DuplicateFqn, "#{fqn} is declared in both #{existing.source_directory} and #{directory}"
-        end
+        raise DuplicateFqn, "#{fqn} is declared in both #{existing.source_directory} and #{directory}" if existing
 
         entries[fqn.to_s] = Entry.new(
           fqn: fqn, source_directory: directory, dispatcher: dispatcher,

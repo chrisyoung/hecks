@@ -132,7 +132,7 @@ RSpec.describe "multitenancy: interleaved random writes stay isolated" do
     end
   end
 
-  it "keeps two real PostgresEra tenants' interleaved writes exactly partitioned, across several seeds", io: true do
+  it "keeps two real PostgresEra tenants' interleaved writes exactly partitioned, across several seeds", :io do
     skip "no local Postgres reachable" unless PostgresProbe.available?
 
     db = "hecks_tenant_isolation_fuzz_spec"

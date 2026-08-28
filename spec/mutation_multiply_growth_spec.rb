@@ -69,7 +69,7 @@ RSpec.describe "mutation op multiply" do
 
   def boot_mutation_multiply
     boot(MUTATION_MULTIPLY_SOURCE, "MutationMultiplyGrowth") do
-      ::MutationMultiplyGrowth::Organ.persisted_by("Memory")
+      MutationMultiplyGrowth::Organ.persisted_by("Memory")
     end
   end
 

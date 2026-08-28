@@ -343,7 +343,7 @@ module Hecks
                  .map(&:name)
       end
 
-      def matching(records) = records.select { |record| yield(record) }.sort_by(&:id)
+      def matching(records, &) = records.select(&).sort_by(&:id)
       def row(record) = record.to_h
     end
   end

@@ -7,8 +7,7 @@ require_relative "../../../support/postgres_probe"
 # chain of edges — old entries translated at inclusion, never rewritten.
 # Runs only when a Postgres server is reachable — the shared probe in
 # support/postgres_probe.rb, like every other Postgres spec here.
-RSpec.describe "lineage in the PostgresEra adapter",
-               io: true do
+RSpec.describe "lineage in the PostgresEra adapter", :io do
   LINEAGE_DB = "hecks_lineage_spec".freeze
 
   # The genuine table owner for this whole file — an ordinary,
@@ -197,8 +196,8 @@ RSpec.describe "lineage in the PostgresEra adapter",
     db = PG.connect(dbname: LINEAGE_DB, user: LINEAGE_ROLE)
     db.exec(sql)
     :allowed
-  rescue PG::Error => error
-    error.message.strip
+  rescue PG::Error => e
+    e.message.strip
   ensure
     db&.close
   end
@@ -332,7 +331,7 @@ RSpec.describe "lineage in the PostgresEra adapter",
     from = label_of(V1_SOURCE)
     stale = edge_source(from: from, to: "000000")
     expect { check!(V2_SOURCE, translation_source: stale) }.to raise_error(
-      Hecks::Runtime::WiringError, /the edge is stale; re-run bin\/scaffold_translation/
+      Hecks::Runtime::WiringError, %r{the edge is stale; re-run bin/scaffold_translation}
     )
   end
 
@@ -711,8 +710,8 @@ RSpec.describe "lineage in the PostgresEra adapter",
           w.exec("INSERT INTO hecks_journal_ledger (era, aggregate, aggregate_id, operation, state) " \
                  "VALUES (1, 'unrelated_probe', 'live', 'save', '{}'::jsonb)")
           ok += 1
-        rescue PG::Error => error
-          if error.message =~ /lock timeout|canceling statement/i
+        rescue PG::Error => e
+          if e.message =~ /lock timeout|canceling statement/i
             lock_blocked += 1
           else
             fence_refused += 1
@@ -956,7 +955,7 @@ RSpec.describe "lineage in the PostgresEra adapter",
       )
     end.to raise_error(
       Hecks::Runtime::WiringError,
-      /the journal advanced past the approved review \(ordinal 1 reviewed, 2 now\) — the samples a human approved no longer cover the data; re-run bin\/translation_audit with --approve/
+      %r{the journal advanced past the approved review \(ordinal 1 reviewed, 2 now\) — the samples a human approved no longer cover the data; re-run bin/translation_audit with --approve}
     )
 
     # a fresh review over the journal as it now stands mints
@@ -1206,8 +1205,8 @@ RSpec.describe "lineage in the PostgresEra adapter",
     begin
       db.exec("COPY #{journal} (era, aggregate, aggregate_id, operation, state) FROM STDIN")
       raise "COPY should not even be attempted under RLS"
-    rescue PG::Error => error
-      expect(error.message).to match(/COPY FROM not supported with row-level security/i)
+    rescue PG::Error => e
+      expect(e.message).to match(/COPY FROM not supported with row-level security/i)
     ensure
       db&.close
     end
@@ -1218,7 +1217,7 @@ RSpec.describe "lineage in the PostgresEra adapter",
     l1 = label_of(V1_SOURCE)
     l2 = label_of(V2_SOURCE)
     check!(V2_SOURCE, translation_source: edge_source(from: l1, to: l2))
-    l3 = label_of(V3_SOURCE)
+    label_of(V3_SOURCE)
 
     # Hold a mint-shaped transaction open at exactly the point the tail
     # materialization would run: the next era's partition is attached,
@@ -1246,8 +1245,8 @@ RSpec.describe "lineage in the PostgresEra adapter",
         "VALUES (2, 'account', 'during-mint', 'save', '{}'::jsonb)"
       )
       :allowed
-    rescue PG::Error => error
-      error.message.strip
+    rescue PG::Error => e
+      e.message.strip
     end
 
     # the old checkout writes its own era straight through the mint
@@ -1346,8 +1345,8 @@ RSpec.describe "lineage in the PostgresEra adapter",
       db.exec("INSERT INTO hecks_journal_ledger (era, aggregate, aggregate_id, operation, state) " \
               "VALUES (#{era}, 'account', 'by-#{role}', 'save', '{}'::jsonb)")
       :allowed
-    rescue PG::Error => error
-      error.message.strip
+    rescue PG::Error => e
+      e.message.strip
     ensure
       db&.close
     end

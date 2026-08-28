@@ -6,8 +6,8 @@ module Hecks
       class Specification < Common::Options
         attr_reader :joins
 
-        def initialize(joins: [], **options)
-          super(**options)
+        def initialize(joins: [], **)
+          super(**)
           @joins = joins
         end
 

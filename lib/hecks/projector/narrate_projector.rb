@@ -166,9 +166,9 @@ module Hecks
 
         lifecycle = holder.lifecycle
         if lifecycle
-          froms = lifecycle.transitions.filter_map { |name, transition|
+          froms = lifecycle.transitions.filter_map do |name, transition|
             Array(transition.from) if name.to_s == command.hecks_name
-          }.flatten.uniq
+          end.flatten.uniq
           conditions << "its `#{lifecycle.field}` is currently #{to_sentence_list(froms.map { |f| "`#{f}`" }, conj: 'or')}" unless froms.empty?
         end
 

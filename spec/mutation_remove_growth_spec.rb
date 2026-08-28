@@ -78,7 +78,7 @@ RSpec.describe "mutation op remove" do
 
   def boot_mutation_remove
     boot(MUTATION_REMOVE_SOURCE, "MutationRemoveGrowth") do
-      ::MutationRemoveGrowth::Sprint.persisted_by("Memory")
+      MutationRemoveGrowth::Sprint.persisted_by("Memory")
     end
   end
 

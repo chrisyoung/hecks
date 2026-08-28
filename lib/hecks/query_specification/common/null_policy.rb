@@ -82,8 +82,6 @@ module Hecks
             ["#{expression} IS NULL", []]
           elsif value.nil? && operation.to_s == "ne"
             ["#{expression} IS NOT NULL", []]
-          else
-            nil
           end
         end
       end

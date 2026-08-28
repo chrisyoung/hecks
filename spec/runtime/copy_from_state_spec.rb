@@ -92,7 +92,7 @@ RSpec.describe "a mutation sourced from the record's own state" do
         end
       end
 
-      Hecks.hecksagon("Snapshots") { ::Snapshots::Board.persisted_by("Memory") }
+      Hecks.hecksagon("Snapshots") { Snapshots::Board.persisted_by("Memory") }
     end
 
     registry.verify!

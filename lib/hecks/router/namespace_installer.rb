@@ -12,7 +12,10 @@ module Hecks
           unknown = options.keys - [:version]
           raise ArgumentError, "unknown router options: #{unknown.join(', ')}" unless unknown.empty?
 
-          @router, @realm, @domain, @aggregate = router, realm, domain, aggregate
+          @router = router
+          @realm = realm
+          @domain = domain
+          @aggregate = aggregate
           @version = options[:version]&.to_s
         end
 
@@ -118,16 +121,17 @@ module Hecks
         current_entries.reject { |entry| entry.fqn.aggregate.nil? }
                        .group_by { |entry| [entry.fqn.aggregate, entry.fqn.verb] }
                        .each do |(aggregate, verb), candidates|
-          shortcut_target(aggregate).define_singleton_method(verb) { |**args|
+          shortcut_target(aggregate).define_singleton_method(verb) do |**args|
             installer.send(:dispatch_short, candidates, **args)
-          }
+          end
         end
       end
 
       def dispatch_short(candidates, **args)
         if candidates.length > 1
           shown = candidates.map { |entry| entry.fqn.to_s }.sort.join(", ")
-          aggregate, verb = candidates.first.fqn.aggregate, candidates.first.fqn.verb
+          aggregate = candidates.first.fqn.aggregate
+          verb = candidates.first.fqn.verb
           raise AmbiguousShortRoute, "#{aggregate}.#{verb} is ambiguous — choose one of: #{shown}"
         end
 
@@ -137,8 +141,10 @@ module Hecks
 
       def shortcut_target(aggregate)
         constant = Object.const_get(aggregate, false) if Object.const_defined?(aggregate, false)
-        raise NameError,
-              "cannot install Bluebook shortcut #{aggregate}: it is not a module" if constant && !constant.is_a?(Module)
+        if constant && !constant.is_a?(Module)
+          raise NameError,
+                "cannot install Bluebook shortcut #{aggregate}: it is not a module"
+        end
 
         constant || Object.const_set(aggregate, Module.new)
       end
@@ -146,8 +152,10 @@ module Hecks
       def namespace_for(realm, domain, aggregate)
         [realm, domain, aggregate].compact.reduce(Object) do |parent, name|
           constant = parent.const_get(name, false) if parent.const_defined?(name, false)
-          raise NameError,
-                "cannot install Bluebook route under #{parent}::#{name}: it is not a module" if constant && !constant.is_a?(Module)
+          if constant && !constant.is_a?(Module)
+            raise NameError,
+                  "cannot install Bluebook route under #{parent}::#{name}: it is not a module"
+          end
 
           constant || parent.const_set(name, Module.new)
         end

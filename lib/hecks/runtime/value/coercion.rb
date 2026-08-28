@@ -170,9 +170,7 @@ module Hecks
           # refuse below, unchanged -- only the genuinely unambiguous
           # single-field case auto-wraps, matching from_identifier's own
           # precedent exactly.
-          if value_object.attributes.size == 1
-            return { value_object.attributes.first.name => value }
-          end
+          return { value_object.attributes.first.name => value } if value_object.attributes.size == 1
 
           raise TypeMismatch,
                 RefusalWording.render("TypeMismatch", "value_object_shape",

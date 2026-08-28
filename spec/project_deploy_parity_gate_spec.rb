@@ -21,7 +21,7 @@ require "open3"
 # (`bin/rust_conformance`'s own exit code) genuinely fails on a real
 # mismatch and passes on a real match, not just that the right words
 # appear in generated text.
-RSpec.describe "the per-deploy Ruby/Rust parity gate (Phase 8)", io: true do
+RSpec.describe "the per-deploy Ruby/Rust parity gate (Phase 8)", :io do
   def self.repo_root = File.expand_path("..", __dir__)
 
   # --- Structural: the generated Makefile actually wires it in ---------

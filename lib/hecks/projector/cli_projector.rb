@@ -54,12 +54,12 @@ module Hecks
           aggregate.queries.each  { |q| claim(questions, name_for(aggregate, q), query_spec(bluebook, aggregate, nil, q)) }
 
           aggregate.entities.each do |entity|
-            entity.commands.each { |c|
+            entity.commands.each do |c|
               claim(verbs, name_for(aggregate, c, entity), command_spec(bluebook, aggregate, entity, c))
-            }
-            entity.queries.each { |q|
+            end
+            entity.queries.each do |q|
               claim(questions, name_for(aggregate, q, entity), query_spec(bluebook, aggregate, entity, q))
-            }
+            end
           end
 
           # A PORT IS A VERB TOO, and leaving it off the map was a real gap
@@ -289,8 +289,8 @@ module Hecks
       # malformed records into a real store, which is what it did on its first
       # run against the pizzas database.
       def options_for(attribute, holder, aggregate, prefix = nil, optional = nil)
-        path     = [prefix, attribute.name].compact.join(".")
-        optional = optional || attribute.optional?
+        path = [prefix, attribute.name].compact.join(".")
+        optional ||= attribute.optional?
         return [reference_option(attribute)] if attribute.reference?
 
         value_object = value_object_for(attribute, holder, aggregate)

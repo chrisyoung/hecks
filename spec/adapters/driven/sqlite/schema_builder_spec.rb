@@ -18,6 +18,7 @@ RSpec.describe "Hecks::Adapters::Sqlite automatic indexing" do
   end
 
   before(:context) { @aggregate = boot_in_memory.registry.bluebook("Pizzas").aggregate("Order") }
+
   let(:aggregate) { @aggregate }
 
   let(:adapter) do

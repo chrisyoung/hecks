@@ -78,7 +78,7 @@ RSpec.describe "mutation op clamp" do
 
   def boot_mutation_clamp
     boot(MUTATION_CLAMP_SOURCE, "MutationClampGrowth") do
-      ::MutationClampGrowth::Organ.persisted_by("Memory")
+      MutationClampGrowth::Organ.persisted_by("Memory")
     end
   end
 
