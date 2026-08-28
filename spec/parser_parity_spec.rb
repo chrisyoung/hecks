@@ -226,9 +226,21 @@ RSpec.describe "Rust parser parity (hecks-parse)", io: true do
   # PARITY_CORPUS_MEMBERS enumeration never reaches — `bluebooks_in`
   # only globs `bluebook/*.bluebook`, one level, the same way
   # `spec/corpus_spec.rb`'s own `bluebook_in` does.)
+  # "playaprep" — a new real corpus member (`examples/playaprep/`, the
+  # Burning Man expedition-prep domain: entities with door-delegated
+  # lifecycle transitions, `given`/`ensures` block predicates over
+  # `list_of` entity and value-object fields, closed-set `one_of`
+  # attributes, `query`/`where`/`order_by`). Built entirely out of
+  # constructs roster's/banking's own byte-matched users already
+  # exercise, so it round-trips the same way they do — confirmed
+  # byte-exact against Ruby's own `ir.json` (`hecks-parse chapter
+  # --chapter PlayaPrep playaprep.bluebook playaprep.hecksagon`, diffed
+  # against `JSON.pretty_generate(Exporter.call(...))`, identical) before
+  # being added here rather than left in PENDING_MEMBERS to claim a
+  # parser gap this domain does not actually have.
   PENDING_MEMBERS = (PARITY_CORPUS_MEMBERS.map(&:first) -
                      %w[pizzas identity governance console_settings expression translation banking compliance roster
-                        chess directory bluebook_language] -
+                        chess directory playaprep bluebook_language] -
                      PARITY_FIXTURE_MEMBERS.map { |member| fixture_stem(member) })
                     .to_h { |stem| [stem, "Stage 1: parser not implemented yet — see rust/parser/src/parse/mod.rs"] }.freeze
 
@@ -253,7 +265,7 @@ RSpec.describe "Rust parser parity (hecks-parse)", io: true do
   # Derived the SAME way PARITY_CORPUS_MEMBERS itself is (`bluebook_in`/
   # `hecksagon_in`/`chapter_name_of`), not hand-listed, so this stays
   # honest if pizzas.bluebook's own file ever moves.
-  REAL_PARITY_MEMBERS = %w[pizzas banking compliance roster chess directory].to_h { |stem|
+  REAL_PARITY_MEMBERS = %w[pizzas banking compliance roster chess directory playaprep].to_h { |stem|
     domain = PARITY_EXAMPLE_ROOTS.find { |path| File.basename(path) == stem } or raise "no examples/#{stem} directory"
     bluebooks = bluebooks_in(domain)
     raise "#{domain} has no .bluebook" if bluebooks.empty?
