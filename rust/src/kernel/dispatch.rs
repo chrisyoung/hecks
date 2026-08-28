@@ -22,7 +22,7 @@
 
 use super::expr::{interpret, EvalContext, Expr, Field, Fielded, Value, WithOld, WithParent};
 use super::refusal_wording::RefusalSite;
-use super::{Event, Json, MutationRecord, Refusal, Repository, ToJson};
+use super::{Event, Json, MutationRecord, Refusal, Repository, SetProjectedField, ToJson};
 
 pub struct GivenSpec {
     pub description: &'static str,
@@ -139,9 +139,19 @@ pub fn dispatch<'a, T, R>(
     emits: &[&'static str],
     payload: Json,
     mutations: &mut Vec<MutationRecord>,
+    // THE SYNCHRONOUS HALF OF `projects` (S12, ADR 0025) —
+    // `CommandInterpreter#step_save`'s own `seed_projected_fields(ctx)`
+    // call, read directly: computed by the ROUTER (`reference_lookup.rs`'s
+    // `seeded_projections`, off the SAME `WithReferences` already built
+    // for given/ensures evaluation) and applied here, right before
+    // `repo.save`, the identical position Ruby's own step occupies
+    // relative to `enforce_ensures`/persistence. Empty for every
+    // aggregate that declares no `projects` field — no-op, not a
+    // conditional branch, so this parameter costs nothing when unused.
+    seed_projections: Vec<(&'static str, Option<String>)>,
 ) -> Result<(T, Vec<Event>), Refusal>
 where
-    T: Fielded + Clone + ToJson,
+    T: Fielded + Clone + ToJson + SetProjectedField,
     R: Repository<T>,
 {
     let (id, mut record) = match hydrate {
@@ -259,6 +269,10 @@ where
                 return Err(Refusal::EnsuresNotMet(format!("{command_name} refused — {}", rule.description)));
             }
         }
+    }
+
+    for (field, value) in seed_projections {
+        record.set_projected_field(field, value);
     }
 
     repo.save(&id, record.clone());
@@ -436,9 +450,15 @@ pub fn dispatch_entity<'a, T, E, R>(
     emits: &[&'static str],
     payload: Json,
     mutations: &mut Vec<MutationRecord>,
+    // Same as `dispatch`'s own `seed_projections` — an entity command
+    // still ends in a PARENT AGGREGATE save (`repo.save(parent_id, ..)`,
+    // below), the identical `step_save` Ruby's own `step_delegate_to_
+    // entity` falls through to, so a parent with `projects` fields needs
+    // the same synchronous seed here too.
+    seed_projections: Vec<(&'static str, Option<String>)>,
 ) -> Result<(T, Vec<Event>), Refusal>
 where
-    T: Fielded + Clone + ToJson,
+    T: Fielded + Clone + ToJson + SetProjectedField,
     E: Fielded + Clone,
     R: Repository<T>,
 {
@@ -470,6 +490,10 @@ where
         ensures,
         false,
     )?;
+
+    for (field, value) in seed_projections {
+        record.set_projected_field(field, value);
+    }
 
     repo.save(parent_id, record.clone());
     mutations.push(MutationRecord {
