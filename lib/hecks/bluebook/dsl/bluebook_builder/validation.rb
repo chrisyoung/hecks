@@ -177,13 +177,13 @@ module Hecks
                   next if dispatch.with_spec.to_a.empty?
 
                   check_with_spec!(dispatch.command_name, handler.event_type, dispatch.with_spec, lookup,
-                                   "#{pm.name}'s dispatch #{dispatch.command_name}", aggregates, heads, pm: pm)
+                                   "#{pm.name}'s dispatch #{dispatch.command_name}", aggregates, heads, process_manager: pm)
                 end
               end
             end
           end
 
-          # `pm:` is present only for a process manager's own dispatch — a
+          # `process_manager:` is present only for a process manager's own dispatch — a
           # saga leg's source symbol resolves against the CURRENT triggering
           # event first, same as a policy, but falls all the way back to the
           # saga's own MEMORY when the current event does not carry it
@@ -195,11 +195,11 @@ module Hecks
           # no event carried" — `AccountDebited` never declares `:reference`,
           # only `TransferRequested` (`pm.starts_on`) does, and that is
           # where the value is genuinely still coming from.
-          def check_with_spec!(command_ref, event_name, with_spec, lookup, label, aggregates, correlation_heads, pm: nil)
+          def check_with_spec!(command_ref, event_name, with_spec, lookup, label, aggregates, correlation_heads, process_manager: nil)
             target        = lookup[command_ref]
             source_shape  = event_name && event_shape_for(event_name, aggregates)
-            memory_shape  = pm && event_shape_for(pm.starts_on, aggregates)
-            correlation   = pm&.correlates_by && pm.correlation_head
+            memory_shape  = process_manager && event_shape_for(process_manager.starts_on, aggregates)
+            correlation   = process_manager&.correlates_by && process_manager.correlation_head
             # A POLICY'S SOURCE ALSO CARRIES THE EMITTER'S OWN IDENTITY —
             # `PolicyInterpreter#emitter_identity`, the runtime half of this.
             # An entity command's event never declares its aggregate's
@@ -210,7 +210,7 @@ module Hecks
             # AdvancePly grew optional, unread attributes just to survive a
             # wholesale forward. Policies only: a saga leg's own source is
             # `SagaInterpreter#dispatch_args`, which merges no such thing.
-            identity_sources = pm.nil? && event_name ? event_identity_heads_for(event_name, aggregates) : []
+            identity_sources = process_manager.nil? && event_name ? event_identity_heads_for(event_name, aggregates) : []
 
             with_spec.each do |field, source|
               raise Malformed, "#{label}'s with: names #{field.inspect}, which #{command_ref} does not declare" if target && !command_declares?(target, field, aggregates, correlation_heads)
@@ -732,9 +732,9 @@ module Hecks
             end
           end
 
-          def correlation_key_violation(pm, aggregates)
-            head, *rest = pm.correlates_by.to_s.split(".")
-            events = reacted_events(pm)
+          def correlation_key_violation(process_manager, aggregates)
+            head, *rest = process_manager.correlates_by.to_s.split(".")
+            events = reacted_events(process_manager)
 
             emitting_commands(events, aggregates).each do |owner, command|
               attribute = command.attributes.find { |a| a.name == head.to_sym }
@@ -747,8 +747,8 @@ module Hecks
             nil
           end
 
-          def reacted_events(pm)
-            ([pm.starts_on, pm.ends_on] + pm.handlers.map(&:event_type))
+          def reacted_events(process_manager)
+            ([process_manager.starts_on, process_manager.ends_on] + process_manager.handlers.map(&:event_type))
               .compact
               .reject { |event| event == ProcessManager::REFUSED }
               .map { |event| event.to_s.split("::").last }

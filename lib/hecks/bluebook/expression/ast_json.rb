@@ -77,8 +77,8 @@ module Hecks
           end
         end
 
-        def emit_comparison(op)
-          { "less_than" => op.compares_less_than, "equal" => op.compares_equal, "negated" => op.negated }
+        def emit_comparison(comparator)
+          { "less_than" => comparator.compares_less_than, "equal" => comparator.compares_equal, "negated" => comparator.negated }
         end
 
         # The JSON-target sibling of `expr_emitter.rb`'s own

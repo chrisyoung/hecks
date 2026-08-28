@@ -757,8 +757,8 @@ module Hecks
         # downstream read it — at dispatch (`MutationApplier#appended`),
         # at IR emission (`Mutation#appended_fields`), and in the
         # meta-validator's own Judge (`Readings#mutation_rows`). #138.
-        def normalize_append_source(op, source)
-          return source unless op == :append
+        def normalize_append_source(oper, source)
+          return source unless oper == :append
           return source if source.is_a?(::Hash)
 
           { value: source }

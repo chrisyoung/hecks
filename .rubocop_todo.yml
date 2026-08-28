@@ -76,12 +76,6 @@ Metrics/ParameterLists:
 Metrics/PerceivedComplexity:
   Enabled: false
 
-# Offense count: 34
-# Configuration parameters: MinNameLength, AllowNamesEndingInNumbers, AllowedNames, ForbiddenNames.
-# AllowedNames: as, at, by, cc, db, id, if, in, io, ip, of, on, os, pp, to
-Naming/MethodParameterName:
-  Enabled: false
-
 # `set_row` (MetaValidator::Readings) isn't a Ruby setter — it renders a
 # `:set` MUTATION's row (the domain's own name for that op), a false
 # positive from `set_` reading as the accessor convention prefix.

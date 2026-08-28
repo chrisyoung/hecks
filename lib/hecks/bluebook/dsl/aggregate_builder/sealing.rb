@@ -30,8 +30,8 @@ module Hecks
           # so the guarantee would go quiet instead of going red. That is the exact
           # shape of the bug that let an Account belong to an unregistered customer
           # fourteen times over.
-          def stamp_references(ir)
-            reference_bearing_attributes.each { |attribute| attribute.type.declared_in = ir }
+          def stamp_references(aggregate)
+            reference_bearing_attributes.each { |attribute| attribute.type.declared_in = aggregate }
           end
 
           # AN OWNED PIECE'S OWN `reference_to` IS AN EDGE THIS AGGREGATE

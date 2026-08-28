@@ -117,21 +117,21 @@ module Hecks
           end
         end
 
-        def compare(op, left, right, state, attrs)
+        def compare(comparator, left, right, state, attrs)
           lhs = Resolver.interpret(left, state, attrs)
           rhs = Resolver.interpret(right, state, attrs)
 
-          apply(op, lhs, rhs)
+          apply(comparator, lhs, rhs)
         end
 
         # The algebra itself, on values already resolved — split out so a sign
         # test (SignTest#compares_via names an Operator symbol) can apply the
         # SAME primitives compare() uses against the literal 0, rather than
         # re-deriving positive?/negative?/zero? by hand a second time.
-        def apply(op, lhs, rhs)
-          result = (op.compares_less_than && less_than(lhs, rhs)) ||
-                   (op.compares_equal && equal?(lhs, rhs))
-          op.negated ? !result : result
+        def apply(comparator, lhs, rhs)
+          result = (comparator.compares_less_than && less_than(lhs, rhs)) ||
+                   (comparator.compares_equal && equal?(lhs, rhs))
+          comparator.negated ? !result : result
         end
 
         def less_than(lhs, rhs)

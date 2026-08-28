@@ -87,7 +87,7 @@ module Hecks
           findings.concat(lifecycle_findings(aggregate, aggregate))
           aggregate.entities.each { |entity| findings.concat(lifecycle_findings(aggregate, entity)) }
         end
-        bluebook.process_managers.each { |pm| findings.concat(saga_findings(bluebook, pm)) }
+        bluebook.process_managers.each { |process_manager| findings.concat(saga_findings(bluebook, process_manager)) }
         bluebook.policies.each { |policy| findings.concat(policy_findings(bluebook, policy, hecksagon, known_domains)) }
         findings
       end
@@ -205,33 +205,33 @@ module Hecks
 
       # ── process managers / sagas ──────────────────────────────────────
 
-      def saga_findings(bluebook, pm)
+      def saga_findings(bluebook, process_manager)
         findings = []
         emitted  = emitted_events(bluebook)
         verbs    = verbs_of(bluebook)
 
-        [pm.starts_on, pm.ends_on].compact.each do |event|
+        [process_manager.starts_on, process_manager.ends_on].compact.each do |event|
           next if emitted.include?(bare(event))
 
-          findings << Finding.new(kind: :deaf_trigger, severity: :error, subject: pm.name,
+          findings << Finding.new(kind: :deaf_trigger, severity: :error, subject: process_manager.name,
                                   message: "starts_on/ends_on names #{event.inspect}, which no command in this " \
                                            "domain emits")
         end
 
-        reached = pm_reachable_states(pm, emitted)
-        (Array(pm.states) - reached.to_a).each do |state|
-          findings << Finding.new(kind: :unreachable_pm_state, severity: :error, subject: pm.name,
+        reached = pm_reachable_states(process_manager, emitted)
+        (Array(process_manager.states) - reached.to_a).each do |state|
+          findings << Finding.new(kind: :unreachable_pm_state, severity: :error, subject: process_manager.name,
                                   message: "#{state.inspect} is declared but no handler chain from " \
-                                           "#{pm.states.first.inspect} ever reaches it")
+                                           "#{process_manager.states.first.inspect} ever reaches it")
         end
 
-        pm.handlers.each do |handler|
+        process_manager.handlers.each do |handler|
           # The compensating leg answers REFUSED, a synthetic trigger no
           # command ever emits by name (ProcessManager::REFUSED) — not
           # a deaf handler, the one handler this domain's own events can
           # never satisfy on purpose.
           if handler.event_type != ProcessManager::REFUSED && !emitted.include?(bare(handler.event_type))
-            findings << Finding.new(kind: :deaf_handler, severity: :error, subject: pm.name,
+            findings << Finding.new(kind: :deaf_handler, severity: :error, subject: process_manager.name,
                                     message: "a handler answers #{handler.event_type.inspect}, which no command " \
                                              "in this domain emits")
           end
@@ -245,7 +245,7 @@ module Hecks
             qualified = dispatch.command_name.include?("::") ? dispatch.command_name : "#{bluebook.name}::#{dispatch.command_name}"
             next if verbs.include?(qualified)
 
-            findings << Finding.new(kind: :unknown_dispatch, severity: :error, subject: pm.name,
+            findings << Finding.new(kind: :unknown_dispatch, severity: :error, subject: process_manager.name,
                                     message: "dispatches #{dispatch.command_name.inspect}, which this domain " \
                                              "declares no command at — cross-domain dispatch is out of this " \
                                              "checker's scope, same as CommandRules#resolve_references")
@@ -255,13 +255,13 @@ module Hecks
           # shape of the real bug this whole feature closes ("the
           # reversal was written and never armed"), caught at build/
           # model-check time instead of discovered in production. No
-          # handler anywhere answers REFUSED (`pm.saga?` false) means
+          # handler anywhere answers REFUSED (`process_manager.saga?` false) means
           # `SagaInterpreter#unwind` never runs for this process
           # manager at all, so a declared `compensates` is structurally
           # unreachable — not a warning about style, a dead declaration.
-          if !pm.saga? && handler.dispatches.any?(&:compensates)
+          if !process_manager.saga? && handler.dispatches.any?(&:compensates)
             handler.dispatches.select(&:compensates).each do |dispatch|
-              findings << Finding.new(kind: :unarmed_compensation, severity: :error, subject: pm.name,
+              findings << Finding.new(kind: :unarmed_compensation, severity: :error, subject: process_manager.name,
                                       message: "#{dispatch.command_name} compensates #{dispatch.compensates.command_name}, " \
                                                "but no handler anywhere in this saga answers a refusal — the " \
                                                "compensation is declared and can never fire")
@@ -269,9 +269,9 @@ module Hecks
           end
         end
 
-        if pm.saga? && !reached.include?(pm.saga.from_state)
-          findings << Finding.new(kind: :dead_compensation, severity: :error, subject: pm.name,
-                                  message: "the compensation leaves #{pm.saga.from_state.inspect}, which no " \
+        if process_manager.saga? && !reached.include?(process_manager.saga.from_state)
+          findings << Finding.new(kind: :dead_compensation, severity: :error, subject: process_manager.name,
+                                  message: "the compensation leaves #{process_manager.saga.from_state.inspect}, which no " \
                                            "handler chain ever reaches — a refusal here can never fire it")
         end
 
@@ -286,13 +286,13 @@ module Hecks
       # it, which would hide exactly the states this walk exists to
       # catch (a state only "reachable" through a handler that itself
       # never fires).
-      def pm_reachable_states(pm, emitted)
-        return Set.new if Array(pm.states).empty?
+      def pm_reachable_states(process_manager, emitted)
+        return Set.new if Array(process_manager.states).empty?
 
-        reached = Set.new([pm.states.first])
+        reached = Set.new([process_manager.states.first])
         loop do
           grown = false
-          pm.handlers.each do |handler|
+          process_manager.handlers.each do |handler|
             next unless handler.event_type == ProcessManager::REFUSED || emitted.include?(bare(handler.event_type))
             next unless reached.include?(handler.from_state)
             next if reached.include?(handler.to_state)
