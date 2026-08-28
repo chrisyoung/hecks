@@ -262,7 +262,7 @@ def cross_domain_lambda_policies_yaml(targets, base)
   ].map { |line| "#{base}# #{line}" }.join("\n")
 
   resources = targets.map { |target|
-    "#{base}          - !Sub \"arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:hecks-#{target.downcase}\""
+    "#{base}        - !Sub \"arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:hecks-#{target.downcase}\""
   }.join("\n")
 
   # Ends with exactly one trailing newline (`+ "\n"`, not a heredoc's
@@ -270,13 +270,19 @@ def cross_domain_lambda_policies_yaml(targets, base)
   # including its own single trailing "\n", so this needs to supply the
   # identical one back for "VpcConfig:" to still start its own fresh
   # line right after.
+  #
+  # ONE MORE LIST ITEM under the ALREADY-PRESENT `Policies:` key (the
+  # DB_SECRET_ARN grant, right above this marker in the template) --
+  # not a second `Policies:` key of its own. `base` is this marker's
+  # OWN rendered indentation, which now sits one list-item level
+  # (`- Statement:` itself) rather than at the `Policies:` key's own
+  # column -- everything below is relative to that.
   [
     comment,
-    "#{base}Policies:",
-    "#{base}  - Statement:",
-    "#{base}      - Effect: Allow",
-    "#{base}        Action: lambda:InvokeFunction",
-    "#{base}        Resource:",
+    "#{base}- Statement:",
+    "#{base}    - Effect: Allow",
+    "#{base}      Action: lambda:InvokeFunction",
+    "#{base}      Resource:",
     resources,
   ].join("\n") + "\n"
 end
@@ -359,6 +365,15 @@ db_ref_id = aurora ? "#{db_id}Cluster" : db_id
 # isn't inside a `!Sub` string at all.
 secret_sub       = aurora ? "#{db_id}Secret" : "#{db_ref_id}.MasterUserSecret.SecretArn"
 secret_intrinsic = aurora ? "!Ref #{db_id}Secret" : "!GetAtt #{db_ref_id}.MasterUserSecret.SecretArn"
+# THE SAME `${...}`-INSIDE-`!Sub` IDENTIFIER `secret_sub` ABOVE ALREADY
+# IS -- used here for #{logical_id}'s own runtime IAM grant instead of a
+# deploy-time `{{resolve:secretsmanager:...}}` dynamic reference (see
+# that Environment.Variables comment below for why DATABASE_URL moved
+# off that mechanism entirely). Shared mode has no `secret_sub` of its
+# own to reach for -- `OwningDatabaseSecretArn` (this template's own
+# Parameter, filled from the owning stack's Output) already IS the bare
+# ARN string, not a Ref/GetAtt target inside THIS stack.
+db_secret_ref = shared ? "OwningDatabaseSecretArn" : secret_sub
 
 # OPT-IN, BY FILE PRESENCE — a domain that wants its own web app on
 # Lambda too (not every domain has one; Banking doesn't) drops a
@@ -858,6 +873,14 @@ template_yaml = <<~YAML
         # failed" caught live. A self-managed secret (generated once,
         # here, never auto-rotated) has nothing to go stale: the same
         # resolved value stays correct for as long as this stack exists.
+        # THE OTHER HALF OF THAT TRADE: this password also never
+        # rotates for the life of the deployment -- there is no
+        # mechanism here that ever changes it, by design, not oversight.
+        # Acceptable today (rotation was never a requirement this
+        # generator was asked to meet), but worth carrying forward
+        # explicitly rather than only as the staleness fix's own upside
+        # -- a future rotation requirement means revisiting this
+        # decision, not just this comment.
         # Scoped to the Aurora path alone -- the plain-RDS path below is
         # Embryonaut's own already-live, proven arrangement, untouched.
         #{db_id}Secret:
@@ -1004,11 +1027,31 @@ template_yaml = <<~YAML
         Timeout: #{timeout}
         Environment:
           Variables:
-            # {{resolve:secretsmanager:...}} is a CloudFormation dynamic
-            # reference — resolved by the platform at deploy time, never
-            # rendered into the template, this tool's output, or any
-            # CloudTrail/console view of the function's own config as
-            # plaintext outside AWS's own encrypted handling.
+            # NOT a `{{resolve:secretsmanager:...}}`-composed DATABASE_URL
+            # anymore (the WebFunction handler below still uses that
+            # mechanism, unchanged) -- that dynamic reference genuinely
+            # IS resolved fresh at deploy time and never rendered into
+            # this template, this tool's output, or the CloudFormation
+            # console. But once it resolves INTO a Lambda's own
+            # Environment.Variables entry, the resolved PLAINTEXT is
+            # stored in the function's OWN configuration:
+            # `lambda:GetFunctionConfiguration` returns it decrypted,
+            # and the Lambda console's Configuration tab displays it, to
+            # ANY principal holding read-only account access (AWS's own
+            # managed ReadOnlyAccess policy included) -- caught
+            # reviewing this template, not live; AWS's own guidance is
+            # to fetch a secret from Secrets Manager at RUNTIME instead,
+            # precisely to avoid this. DB_HOST/DB_NAME/DB_SECRET_ARN
+            # below are not secrets themselves -- an endpoint address, a
+            # database name, and a Secrets Manager ARN authenticate
+            # nothing on their own -- so sitting here as plain
+            # Environment.Variables values costs nothing; main.rs itself
+            # fetches the actual password from Secrets Manager at cold
+            # start, over the AWS SDK, and never hands it back to
+            # CloudFormation or Lambda's own configuration at all.
+            # #{logical_id}'s own least-privilege Policies grant (below,
+            # sibling of VpcConfig) is the one runtime IAM permission
+            # that fetch needs, scoped to this one secret ARN.
             #{if shared
                 # THE STOREHOUSE — #{owner_domain_name}'s own live
                 # Endpoint/Secret, looked up at deploy time into
@@ -1017,15 +1060,13 @@ template_yaml = <<~YAML
                 # THIS stack. Same dbname as #{owner_domain_name}'s own
                 # DBName -- ONE database, isolated by SCHEMA
                 # (HECKS_SCHEMA below), not a second database.
-                "DATABASE_URL: !Sub\n" \
-                "            - \"postgres://postgres:${DbPass}@${DbHost}:5432/#{owner_db_name}\"\n" \
-                "            - DbPass: !Sub \"{{resolve:secretsmanager:${OwningDatabaseSecretArn}:SecretString:password}}\"\n" \
-                "              DbHost: !Ref OwningDatabaseEndpoint"
+                "DB_HOST: !Ref OwningDatabaseEndpoint\n" \
+                "          DB_NAME: #{owner_db_name}\n" \
+                "          DB_SECRET_ARN: !Sub \"${OwningDatabaseSecretArn}\""
               else
-                "DATABASE_URL: !Sub\n" \
-                "            - \"postgres://postgres:${DbPass}@${DbHost}:5432/#{infra_name}\"\n" \
-                "            - DbPass: !Sub \"{{resolve:secretsmanager:${#{secret_sub}}:SecretString:password}}\"\n" \
-                "              DbHost: !GetAtt #{db_ref_id}.Endpoint.Address"
+                "DB_HOST: !GetAtt #{db_ref_id}.Endpoint.Address\n" \
+                "          DB_NAME: #{infra_name}\n" \
+                "          DB_SECRET_ARN: !Sub \"${#{secret_sub}}\""
               end}
             # `domain_name`, NOT `infra_name` — this names the actual
             # .wasm FILE bin/project_wasm writes (rust/dist/#{domain_name}.wasm,
@@ -1049,18 +1090,53 @@ template_yaml = <<~YAML
             # (era 2+) is a separate, later re-generation, not this one.
             HECKS_DOMAIN: #{declared_domain_name}
             HECKS_ERA: "1"#{hecks_schema ? %(\n          HECKS_SCHEMA: #{hecks_schema}) : ""}#{rust_web ? %(\n          HECKS_IR_PATH: !Sub "/var/task/#{domain_name}.ir.json") : ""}#{rust_web && google_oauth_present ? <<~RUSTOAUTH.each_line.with_index.map { |l, i| i.zero? ? "\n          " + l : "          " + l }.join.rstrip : ""}
-            # By NAME, not `!Ref` -- same dynamic-reference pattern
-            # DATABASE_URL/SESSION_SECRET already use: `make
+            # NOT `{{resolve:secretsmanager:...}}` composing
+            # GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/SESSION_SECRET
+            # directly anymore -- the identical GetFunctionConfiguration
+            # exposure DATABASE_URL's own comment above documents
+            # applied here too. main.rs's own cold start fetches both
+            # secrets itself and `set_var`s the real GOOGLE_CLIENT_ID/
+            # GOOGLE_CLIENT_SECRET/SESSION_SECRET keys before anything
+            # else runs -- auth.rs/web.rs still read those exact keys,
+            # unchanged. GOOGLE_OAUTH_SECRET_ID is a bare NAME (`make
             # sync-google-oauth` owns #{stack_name}-web-google-oauth's
             # whole lifecycle outside CloudFormation, straight from
-            # #{domain}'s own gitignored .env.local (never baked into
-            # this generated, git-tracked template as plaintext).
-            GOOGLE_CLIENT_ID: !Sub "{{resolve:secretsmanager:#{stack_name}-web-google-oauth:SecretString:client_id}}"
-            GOOGLE_CLIENT_SECRET: !Sub "{{resolve:secretsmanager:#{stack_name}-web-google-oauth:SecretString:client_secret}}"
+            # #{domain}'s own gitignored .env.local, never baked into
+            # this generated, git-tracked template as plaintext) --
+            # GetSecretValue accepts a name directly, no ARN needed.
+            GOOGLE_OAUTH_SECRET_ID: #{stack_name}-web-google-oauth
             GOOGLE_REDIRECT_URI: !Sub "${WebRedirectBaseUrl}/auth/google/callback"
-            SESSION_SECRET: !Sub "{{resolve:secretsmanager:${#{logical_id}SessionSecret}:SecretString:session_secret}}"
+            SESSION_SECRET_ARN: !Sub "${#{logical_id}SessionSecret}"
             RUSTOAUTH
-        # TMPL:cross_domain_lambda_policies
+        # LEAST-PRIVILEGE -- #{logical_id}'s own execution role is
+        # otherwise SAM's bare default (logging only); this is the one
+        # runtime AWS permission the DB_SECRET_ARN handling above needs,
+        # scoped to the single secret ARN this stack itself depends on,
+        # never `Resource: "*"`.
+        Policies:
+          - Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub "${#{db_secret_ref}}"
+          #{rust_web && google_oauth_present ? <<~OAUTHPOLICY.each_line.with_index.map { |l, i| i.zero? ? l : "        " + l }.join.rstrip : ""}
+            - Statement:
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  # NAME-BASED, not `!Ref`/`!GetAtt` -- this secret is
+                  # never a stack resource (RUSTOAUTH's own Environment
+                  # comment, above, has the full story), so there is no
+                  # exact ARN to point at. The trailing `-*` is AWS's
+                  # own documented pattern for granting a secret known
+                  # only by name: every real ARN Secrets Manager mints
+                  # is this name plus a random 6-character suffix,
+                  # which can't be predicted at template-render time.
+                  Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:#{stack_name}-web-google-oauth-*"
+            - Statement:
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource: !Sub "${#{logical_id}SessionSecret}"
+            OAUTHPOLICY
+          # TMPL:cross_domain_lambda_policies
         VpcConfig:
           #{if shared
               "SubnetIds: [!Ref OwningSubnetAId, !Ref OwningSubnetBId]\n        SecurityGroupIds: [!Ref OwningSecurityGroupId]"
@@ -1216,26 +1292,42 @@ template_yaml = <<~YAML
           # journal into, different database engine role (Ruby's own
           # era/lineage schema, not rust/host's), never the real
           # Fly-hosted Postgres this whole effort is retiring away from.
-          DATABASE_URL: !Sub
-            - "postgres://postgres:${DbPass}@${DbHost}:5432/#{infra_name}"
-            - DbPass: !Sub "{{resolve:secretsmanager:${#{secret_sub}}:SecretString:password}}"
-              DbHost: !GetAtt #{db_ref_id}.Endpoint.Address
-          SESSION_SECRET: !Sub "{{resolve:secretsmanager:${#{web_logical_id}SessionSecret}:SecretString:session_secret}}"
+          #
+          # GENERATOR-ONLY FIX, NOT YET SAFE TO DEPLOY — DB_HOST/DB_NAME/
+          # DB_SECRET_ARN/SESSION_SECRET_ARN/GOOGLE_OAUTH_SECRET_ID below
+          # replace the SAME `{{resolve:secretsmanager:...}}`-into-
+          # Environment.Variables shape rust/host's own main.rs (this
+          # template's own #{logical_id}) used to have -- readable in
+          # plaintext by any read-only account principal via
+          # lambda:GetFunctionConfiguration, the exact exposure
+          # #{logical_id}'s own comment above the Policies section
+          # documents. But THIS function's consumer (`lambda_handler.rb`)
+          # is not a file this generator writes or this repo carries --
+          # it lives in the deploying app's own domain directory (real,
+          # live example: Embryonaut's own Sinatra app), outside this
+          # codebase entirely. Redeploying a domain with an existing
+          # `lambda_handler.rb` BEFORE that handler is updated to fetch
+          # these itself (`aws-sdk-secretsmanager`, not yet in this
+          # project's own Gemfile) breaks it: it still expects
+          # `ENV["DATABASE_URL"]`/`ENV["SESSION_SECRET"]`/
+          # `ENV["GOOGLE_CLIENT_ID"]`/`ENV["GOOGLE_CLIENT_SECRET"]`
+          # already resolved, and none of those keys exist below anymore.
+          DB_HOST: !GetAtt #{db_ref_id}.Endpoint.Address
+          DB_NAME: #{infra_name}
+          DB_SECRET_ARN: !Sub "${#{secret_sub}}"
+          SESSION_SECRET_ARN: !Sub "${#{web_logical_id}SessionSecret}"
           #{google_oauth_present ? <<~GOOGLE.each_line.with_index.map { |l, i| i.zero? ? l : "        " + l }.join.rstrip : <<~NOOAUTH.each_line.with_index.map { |l, i| i.zero? ? l : "        " + l }.join.rstrip}
-          # By NAME, not `!Ref` to a stack resource -- #{web_logical_id}GoogleOauth
+          # BY NAME, not `!Ref`/`!GetAtt` -- #{web_logical_id}GoogleOauth
           # is deliberately NOT declared as a CloudFormation resource
           # here (would need either GenerateSecretString, which can't
           # invent a real Google client_id/secret, or a value baked
           # into this git-TRACKED template as plaintext). `make
           # sync-google-oauth` owns this secret's whole lifecycle
           # instead, straight from #{domain}'s own gitignored
-          # .env.local, outside CloudFormation entirely -- the SAME
-          # "resolved by the deployer's own credentials at deploy
-          # time, never touches the function's execution role" dynamic
-          # -reference mechanism DATABASE_URL/SESSION_SECRET above
-          # already rely on, just pointed at a name instead of a Ref.
-          GOOGLE_CLIENT_ID: !Sub "{{resolve:secretsmanager:#{stack_name}-web-google-oauth:SecretString:client_id}}"
-          GOOGLE_CLIENT_SECRET: !Sub "{{resolve:secretsmanager:#{stack_name}-web-google-oauth:SecretString:client_secret}}"
+          # .env.local, outside CloudFormation entirely. GetSecretValue
+          # accepts a bare name directly, no ARN needed -- same
+          # generator-only caveat as DB_SECRET_ARN's own comment above.
+          GOOGLE_OAUTH_SECRET_ID: #{stack_name}-web-google-oauth
           GOOGLE_REDIRECT_URI: !Sub "${WebRedirectBaseUrl}/auth/google/callback"
           GOOGLE
           # GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/GOOGLE_REDIRECT_URI
@@ -1258,9 +1350,29 @@ template_yaml = <<~YAML
       # (WebFunctionRole is not authorized... on resource
       # hecks-task — this stack has never had ANY policy granting
       # that action, so the fix isn't complete without adding one).
+      # THE SAME secretsmanager:GetSecretValue GRANTS #{logical_id}'s
+      # own Policies section (above) needed, once this function's own
+      # `lambda_handler.rb` fetches DB_SECRET_ARN/SESSION_SECRET_ARN/
+      # GOOGLE_OAUTH_SECRET_ID itself instead of relying on a resolved
+      # Environment.Variables value -- see this Environment block's own
+      # comment for why that consumer-side change isn't in this repo.
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref #{logical_id}
+        - Statement:
+            - Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: !Sub "${#{secret_sub}}"
+        - Statement:
+            - Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: !Sub "${#{web_logical_id}SessionSecret}"
+        #{google_oauth_present ? <<~WEBOAUTHPOLICY.each_line.with_index.map { |l, i| i.zero? ? l : "      " + l }.join.rstrip : ""}
+          - Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:#{stack_name}-web-google-oauth-*"
+          WEBOAUTHPOLICY
       # NONE, not AWS_IAM — real users need to reach sign-in over
       # plain HTTPS, unlike #{logical_id}'s own AWS_IAM-protected URL
       # (this function is the ONLY thing meant to call that one).
@@ -2129,6 +2241,18 @@ File.write(File.join(out_dir, "Makefile"), <<~MAKE)
   # continues rather than either silently skipping (this project's own
   # standing rule against a silent gap reading as full coverage) or
   # blocking every deploy of a domain nobody has written one for yet.
+  #
+  # SECOND HALF, BELOW — `bin/rust_conformance_fuzz`, ADR 0037's own fuzz
+  # bridge pointed at this exact $(WASM). A pinned script only proves
+  # "matches Ruby on the cases we thought to write down" (ADR 0039's own
+  # honest framing); the fuzz bridge is what actually FOUND Findings 1-6.
+  # Deliberately WARN-ONLY (`-@`, not `@`) for now: ADR 0037 already
+  # catalogues real, confirmed, not-yet-fixed divergences (Findings 3 and
+  # 5) that fire on ordinary generated sequences for more than one real
+  # domain today, so making this a hard blocker before those are closed
+  # would turn every affected domain's `make deploy` red for a reason
+  # this target can't yet point at a fix for. Flip `-@` to `@` once ADR
+  # 0037's open findings are closed and this stops firing in practice.
   .PHONY: verify-parity-#{logical_id}
   verify-parity-#{logical_id}:
   \t@if [ -f #{root}/spec/corpus/#{domain_name}.json ]; then \\
@@ -2136,6 +2260,8 @@ File.write(File.join(out_dir, "Makefile"), <<~MAKE)
   \telse \\
   \t\techo "verify-parity-#{logical_id}: no spec/corpus/#{domain_name}.json -- SKIPPING the pre-deploy Ruby/Rust parity check, nothing to compare $(WASM) against. Write one (bin/fuzz/bin/run's own script shape) before this domain's next deploy."; \\
   \tfi
+  \t@echo "verify-parity-#{logical_id}: fuzzing $(WASM) against generated sequences (ADR 0037's bridge, WARN-ONLY -- see this target's own comment)..."
+  \t-@cd #{root} && bin/rust_conformance_fuzz #{domain} $(WASM)
 
   # `make mint-era` — takes #{stack_name}'s RDS instance from freshly
   # created to "era 1 minted, ready for HECKS_DOMAIN/HECKS_ERA to

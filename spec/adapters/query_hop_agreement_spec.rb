@@ -29,7 +29,12 @@ require "pg"
 # duplicated here.
 RSpec.describe "cross-aggregate hop queries answer correctly on real SQL adapters, not just Memory",
                io: true do
-  HOP_CHAIN = File.join(InMemoryDomain::ROOT, "spec/fixtures/hop_chain.bluebook")
+  # Named distinctly from spec/runtime/query_hop_spec.rb's own top-level
+  # HOP_CHAIN (same fixture, different file) — load_hygiene_spec.rb
+  # flags any top-level constant name shared across spec files, and two
+  # `HOP_CHAIN`s pointing at the identical path is still a collision the
+  # guard is right to catch.
+  HOP_CHAIN_AGREEMENT = File.join(InMemoryDomain::ROOT, "spec/fixtures/hop_chain.bluebook")
   HOP_AGREEMENT_DB = "hecks_query_hop_agreement_spec".freeze
 
   def postgres_available? = PostgresProbe.available?
@@ -75,7 +80,7 @@ RSpec.describe "cross-aggregate hop queries answer correctly on real SQL adapter
       Kernel.load(InMemoryDomain::POSTGRES_ADAPTER) if adapter == "Postgres"
       Kernel.load(File.join(InMemoryDomain::ROOT, "lib/hecks/adapters/driven/sqlite.adapter")) if adapter == "Sqlite"
       Kernel.load(InMemoryDomain::PRISM_ADAPTER)
-      Kernel.load(HOP_CHAIN)
+      Kernel.load(HOP_CHAIN_AGREEMENT)
       # `SqlitePersistence` — the real registered port-binding name, not
       # the bare `Sqlite` class (see isolated_boot.rb's own note on the
       # same distinction).

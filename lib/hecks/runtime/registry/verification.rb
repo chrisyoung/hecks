@@ -12,6 +12,7 @@ module Hecks
       module Verification
         def verify!
           verify_default_adapter!
+          verify_singleton_port_answers!
 
           @hecksagons.each_value do |hexagon|
             refuse_ungoverned_roles!(hexagon)
@@ -42,6 +43,8 @@ module Hecks
 
               repository(hexagon.domain, aggregate)
             end
+
+            warn_undurable_sagas!(hexagon)
           end
           self
         end
@@ -66,11 +69,61 @@ module Hecks
 
         def check_verb(bind)
           port = port_for(bind)
+          check_answers(port, bind.adapter)
           return if port.verb.to_s == bind.verb.to_s
 
           raise WiringError,
                 "#{bind.adapter} implements the #{port.name} port (verb #{port.verb}) " \
                 "and cannot satisfy #{bind.verb}"
+        end
+
+        # THE METHOD CONTRACT A `.port` FILE'S `verb`/`signal` NEVER
+        # CARRIED — an adapter can name the right port, satisfy the right
+        # verb, and admit every `.world` setting `check_settings` checks,
+        # and still be missing the one method a live dispatch will
+        # actually call. `answers` is optional per port (an empty list is
+        # today's pre-existing behavior, unchecked), so this only ever
+        # tightens a port that opted in.
+        def check_answers(port, adapter_name)
+          answers = Array(port.answers)
+          return if answers.empty?
+
+          klass   = adapter_class(adapter_name)
+          missing = answers.reject { |method_name| klass.respond_to?(method_name) }
+          return if missing.empty?
+
+          raise WiringError,
+                "#{adapter_name} declares the #{port.name} port but does not respond to " \
+                "#{missing.map(&:inspect).join(', ')} — #{port.name}.port declares answers " \
+                "#{answers.map(&:inspect).join(', ')}"
+        end
+
+        # THE NINE SINGLETON PORTS' OWN GAP — `persistence`, `projection`
+        # and `loading` are per-aggregate bindings, checked above through
+        # every real `bind` a hexagon declares; a singleton port
+        # (`clock`, `authorization`, …) is never bound to an aggregate at
+        # all, so nothing above ever resolves one and nothing above ever
+        # ran `check_answers` against it. Each one's own `Ports::*.adapter`
+        # already refuses zero or multiple implementations, live, at
+        # first dispatch — that stays exactly as-is here (0 or 2+ is
+        # ambiguity, not a method-contract question, and asserting every
+        # declared port MUST have exactly one adapter would wrongly
+        # refuse a boot that simply never wires a port it doesn't use).
+        # This only ever tightens the ONE case those checks don't cover:
+        # exactly one adapter, wired, missing a method `answers` names.
+        PER_AGGREGATE_PORTS = %w[persistence projection loading].freeze
+
+        def verify_singleton_port_answers!
+          @ports.each_value do |port|
+            next if PER_AGGREGATE_PORTS.include?(port.name)
+            next if Array(port.answers).empty?
+
+            implementations = @adapters.values.select { |a| a.port == port.name }
+            next unless implementations.size == 1
+
+            check_answers(port, implementations.first.name)
+          end
+          self
         end
 
         def check_settings(bind, settings)
@@ -151,6 +204,41 @@ module Hecks
         # itself needs at dispatch time, just walked ahead of time here.
         def commands_in(bluebook_ir)
           bluebook_ir.aggregates.flat_map { |aggregate| aggregate.commands + aggregate.entities.flat_map(&:commands) }
+        end
+
+        # A domain that declares a `process_manager` but whose
+        # `saga_persistence` resolves to `NULL_SAGA_STORE` (no anchor
+        # aggregate, a RemoteRuntime-shaped adapter, an adapter that
+        # doesn't `respond_to?(:save_saga)`, or a rescued WiringError —
+        # see `SagaPersistence#resolve_saga_persistence`) gets sagas that
+        # advance correctly in-process and vanish on restart: no
+        # checkpoint written, nothing for `rehydrate_sagas!` to find, no
+        # compensation ever replayed. That is silent right up until the
+        # process actually dies mid-saga — the same "consistency/
+        # freshness defect applied to access control, failing open" ADR
+        # 0025 named for an unchecked `role`, here applied to saga
+        # durability instead.
+        #
+        # A WARNING, NOT A REFUSAL — unlike `refuse_ungoverned_roles!`,
+        # running sagas on a store with no `save_saga` is legitimate on
+        # purpose in a fast in-memory test/dev boot (this project's own
+        # `saga_durability_spec.rb` boots a process manager on `Memory`
+        # specifically to exercise the saga_mutex without real I/O), so
+        # refusing the boot outright would break a choice an author made
+        # deliberately. What a deploy needs is for the gap to be loud and
+        # undeniable, not for local dev/test to become impossible.
+        def warn_undurable_sagas!(hexagon)
+          bluebook_ir = bluebook(hexagon.domain)
+          return unless bluebook_ir
+          return if bluebook_ir.process_managers.empty?
+          return unless saga_persistence(hexagon.domain).equal?(Ports::Persistence::NULL_SAGA_STORE)
+
+          names = bluebook_ir.process_managers.map(&:name).join(", ")
+          warn "[hecks] #{hexagon.domain} declares process_manager(s) #{names} but its resolved " \
+               "persistence adapter has no save_saga — saga state advances correctly in-process " \
+               "and is LOST on restart (no checkpoint, no rehydration, no compensation replay). " \
+               "Bind this domain to an adapter that implements save_saga if this process_manager " \
+               "must survive a crash."
         end
       end
     end
