@@ -76,6 +76,18 @@ jobs:
       - name: Create the pizzas example's database
         run: createdb -h localhost -U postgres hecks_pizzas
 
+      # `bin/project_wasm` (spec/project_deploy_parity_gate_spec.rb, Phase
+      # 8) needs the wasm32-wasip1 target installed, and ubuntu-latest's
+      # preinstalled toolchain doesn't carry it — every other Rust step
+      # below builds for the host target and never needed this until #407
+      # added the WASM parity gate; that PR's own CI run never reached
+      # this spec (it never got past compiling, the same bug fixed above
+      # this step), so the gap went uncaught until the next push that DID
+      # compile. `rustup target add` is idempotent and ~instant when the
+      # target's already present, so this costs nothing on a cache hit.
+      - name: Install the wasm32-wasip1 target
+        run: rustup target add wasm32-wasip1
+
       # bin/rust_conformance's `native` mode (0012/0013) — regenerated
       # from the CURRENT generator, not just the checked-in rust/src/
       # generated/ snapshot (which could silently drift from it), then
