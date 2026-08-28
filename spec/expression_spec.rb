@@ -488,6 +488,33 @@ RSpec.describe "the expression sublanguage" do
     end
   end
 
+  describe "comparison_detail" do
+    def detail(expression, state = {}, args = {})
+      Hecks::Bluebook::Expression::Evaluator.comparison_detail(expression, state, args)
+    end
+
+    it "reports the resolved operands of a bare comparison" do
+      expect(detail("status == \"open\"", status: "closed")).to eq('left: "closed", right: "open"')
+      expect(detail("balance.cents >= 0", balance: { cents: -5 })).to eq("left: -5, right: 0")
+    end
+
+    it "renders a nil operand the same way every other refusal does" do
+      expect(detail("superseded_by == nil", superseded_by: nil)).to eq("left: nil, right: nil")
+    end
+
+    it "is nil for shapes with no single honest left/right — Or/And/Not/Include/Resolve" do
+      expect(detail("a == 1 || b == 2", a: 0, b: 0)).to be_nil
+      expect(detail("a == 1 && b == 2", a: 0, b: 0)).to be_nil
+      expect(detail("!(a == 1)", a: 1)).to be_nil
+      expect(detail("names.include?(\"x\")", names: [])).to be_nil
+      expect(detail("flag", flag: false)).to be_nil
+    end
+
+    it "is nil, not raised, when an operand itself fails to resolve" do
+      expect(detail("totally_unknown == 1")).to be_nil
+    end
+  end
+
   describe "agreeing with Ruby itself" do
     def agrees?(expression, bindings)
       mine = begin
