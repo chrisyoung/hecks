@@ -77,7 +77,7 @@ RSpec.describe "load hygiene", :io do
     # Same name, same value is harmless and allowed; same name,
     # different definition site with different content is the bug class.
     definitions = Hash.new { |h, k| h[k] = [] }
-    Dir[File.join(ROOT_DIR, "spec", "**", "*_spec.rb")].sort.each do |file|
+    Dir[File.join(ROOT_DIR, "spec", "**", "*_spec.rb")].each do |file|
       File.read(file).scan(/^\s+([A-Z][A-Z_0-9]*) *=[^=]/) do |(name)|
         definitions[name] << File.basename(file)
       end

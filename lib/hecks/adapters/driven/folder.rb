@@ -117,7 +117,7 @@ module Hecks
         return unless File.directory?(directory)
 
         patterns.each do |pattern|
-          Dir[File.join(directory, pattern)].sort.each { |file| Kernel.load(file) }
+          Dir[File.join(directory, pattern)].each { |file| Kernel.load(file) }
         end
       end
 

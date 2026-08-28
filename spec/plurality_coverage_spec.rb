@@ -108,7 +108,7 @@ RSpec.describe "every list the language declares, filled more than once" do
       when Array then node.each { |held| walk.call(held) }
       end
     end
-    Dir[File.join(InMemoryDomain::ROOT, "spec/golden/ir/*.json")].sort.each do |file|
+    Dir[File.join(InMemoryDomain::ROOT, "spec/golden/ir/*.json")].each do |file|
       walk.call(JSON.parse(File.read(file)))
     end
     max

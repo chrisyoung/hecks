@@ -124,7 +124,7 @@ end
 
 domain_arg = ARGV.shift
 example_domains = Dir.glob("#{ROOT}/examples/*/").map { |d| d.chomp("/") }
-grammar_chapters = Dir.glob("#{ROOT}/lib/hecks/grammar/*.bluebook").sort
+grammar_chapters = Dir.glob("#{ROOT}/lib/hecks/grammar/*.bluebook")
 # THE FRAMEWORK MEMBERS, which spec/model_check_spec.rb has always walked
 # (its own MODEL_CHECK_FRAMEWORK_MEMBERS) and this script never did — so the
 # suite checked Governance and Identity while `bin/model_check` reported
@@ -132,7 +132,7 @@ grammar_chapters = Dir.glob("#{ROOT}/lib/hecks/grammar/*.bluebook").sort
 # EXAMPLE_ROOTS-shaped, for the reason corpus_spec.rb's own comment gives:
 # these are framework chapters, not teaching examples with a bluebook/
 # subfolder each.
-framework_members = Dir.glob("#{ROOT}/lib/hecks/framework/bluebook/*.bluebook").sort
+framework_members = Dir.glob("#{ROOT}/lib/hecks/framework/bluebook/*.bluebook")
 
 if domain_arg
   registry = boot(bluebook_in(domain_arg.chomp("/")) || domain_arg)

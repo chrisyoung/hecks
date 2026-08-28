@@ -263,7 +263,7 @@ module Hecks
       end
 
       def guide_index(root)
-        paths = Dir.glob(File.join(root, "docs/implemented/guides/*.md")).sort
+        paths = Dir.glob(File.join(root, "docs/implemented/guides/*.md"))
                    .reject { |p| %w[AUTHORING.md].include?(File.basename(p)) }
         lines = paths.map do |path|
           heading = File.foreach(path).find { |line| line.start_with?("# ") }
@@ -333,11 +333,11 @@ module Hecks
       end
 
       def corpus_roster(root)
-        dirs = Dir.glob(File.join(root, "examples/*/")).sort
+        dirs = Dir.glob(File.join(root, "examples/*/"))
         lines = dirs.filter_map do |dir|
           name = File.basename(dir.chomp("/"))
-          bluebooks = Dir.glob(File.join(dir, "bluebook/*.bluebook")).sort
-          bluebooks = Dir.glob(File.join(dir, "*.bluebook")).sort if bluebooks.empty?
+          bluebooks = Dir.glob(File.join(dir, "bluebook/*.bluebook"))
+          bluebooks = Dir.glob(File.join(dir, "*.bluebook")) if bluebooks.empty?
           next if bluebooks.empty?
 
           vision = bluebooks.filter_map { |bluebook| File.read(bluebook)[/vision\s+"([^"]*)"/, 1] }.first

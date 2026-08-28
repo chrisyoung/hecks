@@ -51,7 +51,7 @@ require_relative "support/rust_conformance_helpers"
 RSpec.describe "Rust conformance (native binary)", :io do
   include RustConformanceHelpers
 
-  RUST_CONFORMANCE_FIXTURES = Dir.glob(File.join(InMemoryDomain::ROOT, "spec/corpus/rust_conformance/*.json")).sort
+  RUST_CONFORMANCE_FIXTURES = Dir.glob(File.join(InMemoryDomain::ROOT, "spec/corpus/rust_conformance/*.json"))
   RUST_DIR = File.join(InMemoryDomain::ROOT, "rust")
 
   # `RustConformanceHelpers#build_rust_for` now takes `rust_dir` explicitly

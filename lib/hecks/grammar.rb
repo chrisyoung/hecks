@@ -119,7 +119,7 @@ module Hecks
     # Every grammar/*.bluebook chapter, booted the same way the corpus
     # boots them — each alone, in a scratch registry.
     def grammar_chapters
-      Dir[File.join(DIR, "*.bluebook")].sort.map do |chapter|
+      Dir[File.join(DIR, "*.bluebook")].map do |chapter|
         registry = Runtime::Registry.new
         root = File.expand_path("../..", __dir__)
         Hecks.with_registry(registry) do

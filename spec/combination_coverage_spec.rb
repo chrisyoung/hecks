@@ -62,7 +62,7 @@ RSpec.describe "every pair of declared forms, met on one aggregate" do
   ALLOWED_APART = {}.freeze
 
   def aggregates
-    Dir[File.join(InMemoryDomain::ROOT, "spec/golden/ir/*.json")].sort.flat_map do |file|
+    Dir[File.join(InMemoryDomain::ROOT, "spec/golden/ir/*.json")].flat_map do |file|
       chapter = File.basename(file, ".json")
       (JSON.parse(File.read(file))["aggregates"] || []).map do |aggregate|
         ["#{chapter}::#{aggregate['name']}", properties(aggregate)]

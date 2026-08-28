@@ -51,8 +51,8 @@ RSpec.describe "Rust parser parity (hecks-parse)", :io do
   # already uses — reused rather than re-derived, so this can never
   # silently drift from what "the corpus" means elsewhere in this suite.
   def self.bluebooks_in(domain)
-    nested = Dir.glob(File.join(domain, "bluebook", "*.bluebook")).sort
-    nested.empty? ? Dir.glob(File.join(domain, "*.bluebook")).sort : nested
+    nested = Dir.glob(File.join(domain, "bluebook", "*.bluebook"))
+    nested.empty? ? Dir.glob(File.join(domain, "*.bluebook")) : nested
   end
 
   # The SAME domain's own `.hecksagon`, if it has one — `bin/project_rust`
@@ -66,9 +66,9 @@ RSpec.describe "Rust parser parity (hecks-parse)", :io do
   PARITY_EXAMPLE_ROOTS = Dir.glob(File.join(InMemoryDomain::ROOT, "examples", "*")).select do |path|
     File.directory?(path)
   end.sort.freeze
-  PARITY_GRAMMAR_CHAPTERS = Dir.glob(File.join(InMemoryDomain::ROOT, "lib/hecks/grammar", "*.bluebook")).sort.freeze
+  PARITY_GRAMMAR_CHAPTERS = Dir.glob(File.join(InMemoryDomain::ROOT, "lib/hecks/grammar", "*.bluebook")).freeze
   PARITY_FRAMEWORK_MEMBERS = Dir.glob(File.join(InMemoryDomain::ROOT, "lib/hecks/framework/bluebook",
-                                                "*.bluebook")).sort.freeze
+                                                "*.bluebook")).freeze
   # STAGE 5's OWN TARGET — narrow, load-bearing unit-test fixtures for
   # OTHER Ruby specs (era/lineage bumps, model-checker findings, dispatch
   # ordering, reflex/hop-chain tests), never previously pointed at by
@@ -76,7 +76,7 @@ RSpec.describe "Rust parser parity (hecks-parse)", :io do
   # and `model_check/` subdirectories, which a flat `*.bluebook` glob
   # would silently miss.
   PARITY_FIXTURES_ROOT = File.join(InMemoryDomain::ROOT, "spec/fixtures")
-  PARITY_FIXTURE_MEMBERS = Dir.glob(File.join(PARITY_FIXTURES_ROOT, "**", "*.bluebook")).sort.freeze
+  PARITY_FIXTURE_MEMBERS = Dir.glob(File.join(PARITY_FIXTURES_ROOT, "**", "*.bluebook")).freeze
 
   # STAGE 6's OWN TARGET — the self-hosted grammar itself: every concept file
   # `Hecks::Bluebook::MetaValidator::GRAMMAR_FILES` discovers, which

@@ -19,25 +19,6 @@ Layout/LineLength:
 Lint/ConstantDefinitionInBlock:
   Enabled: false
 
-# Offense count: 31
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Lint/RedundantDirGlobSort:
-  Exclude:
-    - 'bin/model_check'
-    - 'lib/hecks/adapters/driven/folder.rb'
-    - 'lib/hecks/bluebook/meta_validator.rb'
-    - 'lib/hecks/doc/reference.rb'
-    - 'lib/hecks/grammar.rb'
-    - 'spec/combination_coverage_spec.rb'
-    - 'spec/corpus_spec.rb'
-    - 'spec/load_hygiene_spec.rb'
-    - 'spec/model_check_spec.rb'
-    - 'spec/optionality_coverage_spec.rb'
-    - 'spec/parser_parity_spec.rb'
-    - 'spec/plurality_coverage_spec.rb'
-    - 'spec/rust_conformance_spec.rb'
-    - 'spec/support/doctest_names.rb'
-
 # An empty block IS the test subject in every one of these 11 offenses —
 # `Hecks.bluebook("Registered", version: "v2") {}` exercises a bluebook/
 # command/etc. declared with a deliberately empty body, not accidental
