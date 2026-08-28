@@ -83,10 +83,21 @@ jobs:
       # added the WASM parity gate; that PR's own CI run never reached
       # this spec (it never got past compiling, the same bug fixed above
       # this step), so the gap went uncaught until the next push that DID
-      # compile. `rustup target add` is idempotent and ~instant when the
-      # target's already present, so this costs nothing on a cache hit.
+      # compile.
+      #
+      # `--toolchain stable` MATTERS — `rustup target add` with no
+      # `--toolchain` installs onto whatever rustup's DEFAULT toolchain
+      # currently is, but `bin/project_wasm` explicitly builds via
+      # `rustup run stable` (its own comment explains why: a bare `cargo`
+      # can resolve to a toolchain that never saw the target at all). On
+      # this runner the default isn't necessarily named "stable" — a
+      # first attempt at this fix added the target to the default
+      # toolchain and still hit `error[E0463]: can't find crate for
+      # 'std'` under `rustup run stable`, confirmed live in CI, not
+      # merely suspected. Naming the toolchain explicitly here matches
+      # the exact one the build actually runs under.
       - name: Install the wasm32-wasip1 target
-        run: rustup target add wasm32-wasip1
+        run: rustup target add wasm32-wasip1 --toolchain stable
 
       # bin/rust_conformance's `native` mode (0012/0013) — regenerated
       # from the CURRENT generator, not just the checked-in rust/src/
