@@ -1,0 +1,3 @@
+{"operation":"save","id":"q1","state":{"id":{"value":"q1"},"prompt":{"value":"How many principles are there?"},"category":{"value":"principles"},"correct_index":{"value":0},"choices":[]},"mirrors":null}
+{"operation":"save","id":"q1","state":{"id":{"value":"q1"},"prompt":{"value":"How many principles are there?"},"category":{"value":"principles"},"correct_index":{"value":0},"choices":[{"label":{"value":"Ten"}}]},"mirrors":null}
+{"operation":"save","id":"q1","state":{"id":{"value":"q1"},"prompt":{"value":"How many principles are there?"},"category":{"value":"principles"},"correct_index":{"value":0},"choices":[{"label":{"value":"Ten"}},{"label":{"value":"Seven"}}]},"mirrors":null}

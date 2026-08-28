@@ -1,0 +1,2 @@
+{"operation":"save","id":"s1","state":{"id":{"value":"s1"},"answered":[]},"mirrors":null}
+{"operation":"save","id":"s1","state":{"id":{"value":"s1"},"answered":[{"question_id":{"value":"q1"},"chosen_index":{"value":0}}]},"mirrors":null}

@@ -1,0 +1,436 @@
+Hecks.bluebook "PlayaPrep" do
+  vision "One burner's yearly Burning Man expedition: the get-ready list (RV, solar, water, truck, tires), the shopping and grocery lists, the drive out and its gas stops, the people met on and around the playa, the pins worth remembering, and the trivia that keeps the ten principles and the BLM's own rules front of mind."
+  core
+
+  aggregate "Expedition" do
+    description "One year's trip: its prep tasks, its shopping and grocery lists, and the gas stops on the way out."
+
+    identified_by :year
+
+    attribute :year,           ExpeditionYear
+    attribute :prep_tasks,     list_of(PrepTask)
+    attribute :shopping_items, list_of(ShoppingItem)
+    attribute :gas_stops,      list_of(GasStop)
+
+    lifecycle :status, default: "planning" do
+      transition "MarkReady"  => "ready",     from: "planning"
+      transition "Depart"     => "on_playa",  from: "ready"
+      transition "ReturnHome" => "returned",  from: "on_playa"
+    end
+
+    value_object("ExpeditionYear") { attribute :value, Integer }
+
+    # THE TEN PRINCIPLES, closed — every prep task below names the one
+    # it serves. Declared once, here, so "which of the ten" can never be
+    # spelled a second, drifting way anywhere else in this domain.
+    value_object "Principle" do
+      attribute :value, String, one_of: [
+        "radical_inclusion", "gifting", "decommodification",
+        "radical_self_reliance", "radical_self_expression", "communal_effort",
+        "civic_responsibility", "leave_no_trace", "participation", "immediacy"
+      ]
+    end
+
+    value_object "PrepCategory" do
+      attribute :value, String, one_of: [
+        "rv", "solar", "water", "truck", "tires", "registration",
+        "safety", "camp_setup", "personal_gear", "other"
+      ]
+    end
+
+    value_object("TaskId")          { attribute :value, String }
+    value_object("TaskDescription") { attribute :value, String }
+
+    value_object("ItemId")   { attribute :value, String }
+    value_object("ItemName") { attribute :value, String }
+    value_object("Quantity") { attribute :value, Integer }
+
+    value_object "ListType" do
+      attribute :value, String, one_of: ["shopping", "grocery"]
+    end
+
+    value_object("StopId")    { attribute :value, String }
+    value_object("StopOrder") { attribute :value, Integer }
+    value_object("TownName")  { attribute :value, String }
+    value_object("StateCode") { attribute :value, String }
+
+    entity "PrepTask" do
+      description "One line on the get-ready list — RV, solar, water, truck, tires, registration, safety, or camp — each one naming the principle it actually serves. Closed by Complete."
+
+      attribute :id,          TaskId
+      attribute :category,    PrepCategory
+      attribute :description, TaskDescription
+      attribute :principle,   Principle
+
+      identified_by :id
+
+      lifecycle :status, default: "pending" do
+        transition "Complete" => "done", from: "pending"
+      end
+
+      command "Complete" do
+        goal "Check this prep task off before departure"
+        attribute :id, TaskId, optional: true
+        emits "PrepTaskCompleted"
+      end
+    end
+
+    entity "ShoppingItem" do
+      description "One line on the shopping or grocery list. Closed by Buy."
+
+      attribute :id,        ItemId
+      attribute :list_type, ListType
+      attribute :name,      ItemName
+      attribute :quantity,  Quantity
+
+      identified_by :id
+
+      lifecycle :status, default: "pending" do
+        transition "Buy" => "bought", from: "pending"
+      end
+
+      command "Buy" do
+        goal "Mark this item bought"
+        attribute :id, ItemId, optional: true
+        emits "ShoppingItemBought"
+      end
+    end
+
+    entity "GasStop" do
+      description "One planned fuel stop on the drive out. Closed by Refuel."
+
+      attribute :id,    StopId
+      attribute :order, StopOrder
+      attribute :town,  TownName
+      attribute :state, StateCode
+
+      identified_by :id
+
+      lifecycle :status, default: "planned" do
+        transition "Refuel" => "fueled", from: "planned"
+      end
+
+      command "Refuel" do
+        goal "Record a fill-up at this stop"
+        attribute :id, StopId, optional: true
+        emits "GasStopFueled"
+      end
+    end
+
+    command "Open" do
+      goal "Start planning one year's expedition"
+      attribute :year, ExpeditionYear
+
+      sets :year
+      emits "ExpeditionOpened"
+    end
+
+    command "AddPrepTask" do
+      goal "Add a task to the get-ready list, naming the principle it serves"
+      reference_to Expedition
+      attribute :id,          TaskId
+      attribute :category,    PrepCategory
+      attribute :description, TaskDescription
+      attribute :principle,   Principle
+
+      given("task ids are unique") { prep_tasks.none? { |t| t.id.value == id.value } }
+
+      sets :prep_tasks, append: { id: :id, category: :category, description: :description, principle: :principle }
+      emits "PrepTaskAdded"
+    end
+
+    command "CompleteTask" do
+      goal "Check off one prep task, on the caller's behalf"
+      reference_to Expedition
+      attribute :id, TaskId
+
+      delegates_to "PrepTask.Complete", with: { id: :id }
+    end
+
+    command "AddShoppingItem" do
+      goal "Add a line to the shopping or grocery list"
+      reference_to Expedition
+      attribute :id,        ItemId
+      attribute :list_type, ListType
+      attribute :name,      ItemName
+      attribute :quantity,  Quantity
+
+      given("item ids are unique") { shopping_items.none? { |i| i.id.value == id.value } }
+
+      sets :shopping_items, append: { id: :id, list_type: :list_type, name: :name, quantity: :quantity }
+      emits "ShoppingItemAdded"
+    end
+
+    command "BuyItem" do
+      goal "Mark one shopping or grocery item bought, on the caller's behalf"
+      reference_to Expedition
+      attribute :id, ItemId
+
+      delegates_to "ShoppingItem.Buy", with: { id: :id }
+    end
+
+    command "AddGasStop" do
+      goal "Add a fuel stop to the route"
+      reference_to Expedition
+      attribute :id,    StopId
+      attribute :order, StopOrder
+      attribute :town,  TownName
+      attribute :state, StateCode
+
+      given("stop ids are unique")  { gas_stops.none? { |g| g.id.value == id.value } }
+      given("stop order is unique") { gas_stops.none? { |g| g.order.value == order.value } }
+
+      sets :gas_stops, append: { id: :id, order: :order, town: :town, state: :state }
+      emits "GasStopAdded"
+    end
+
+    command "RefuelAt" do
+      goal "Record a fill-up, on the caller's behalf"
+      reference_to Expedition
+      attribute :id, StopId
+
+      delegates_to "GasStop.Refuel", with: { id: :id }
+    end
+
+    command "MarkReady" do
+      goal "Declare the expedition ready — refuses until every prep task is done"
+      reference_to Expedition
+
+      given("every prep task is done") { prep_tasks.all? { |t| t.status == "done" } }
+
+      emits "ExpeditionReady"
+    end
+
+    command "Depart" do
+      goal "Hit the road"
+      reference_to Expedition
+
+      emits "ExpeditionDeparted"
+    end
+
+    command "ReturnHome" do
+      goal "Home, safe, playa dust and all"
+      reference_to Expedition
+
+      emits "ExpeditionReturned"
+    end
+
+    query "Active" do
+      description "Expeditions still in progress — not yet returned."
+      where(status: { ne: "returned" })
+      order_by :year, :desc
+    end
+  end
+
+  # SHARED ACROSS EVERY EXPEDITION, not scoped to one year — a fuel stop
+  # or a burner-friendly place found in 2026 is still there in 2027.
+  aggregate "Waypoint" do
+    description "A pinned place worth remembering — fuel, water, supplies, or a burner-friendly stop — shared across every expedition, not just one year's."
+
+    identified_by :name
+
+    attribute :name,     WaypointName
+    attribute :category, WaypointCategory
+    attribute :location, Coordinates
+    attribute :notes,    WaypointNote, optional: true
+    attribute :added_by, AddedBy,      optional: true
+
+    value_object("WaypointName") { attribute :value, String }
+
+    value_object "WaypointCategory" do
+      attribute :value, String, one_of: [
+        "gas", "water_fill", "camp_supply", "rest_stop",
+        "dispensary", "medical", "burner_friendly", "other"
+      ]
+    end
+
+    value_object "Coordinates" do
+      attribute :lat, Float
+      attribute :lng, Float
+    end
+
+    value_object("WaypointNote") { attribute :value, String }
+    value_object("AddedBy")      { attribute :value, String }
+
+    command "Pin" do
+      goal "Drop a pin for a place worth remembering"
+      attribute :name,     WaypointName
+      attribute :category, WaypointCategory
+      attribute :location, Coordinates
+      attribute :notes,    WaypointNote, optional: true
+      attribute :added_by, AddedBy,      optional: true
+
+      sets :name
+      sets :category
+      sets :location
+      sets :notes
+      sets :added_by
+      emits "WaypointPinned"
+    end
+
+    query "ByCategory" do
+      description "Every pin of one kind — e.g. every known fuel stop."
+      attribute :kind, WaypointCategory
+      where(category: :kind)
+      order_by :name
+    end
+  end
+
+  aggregate "Burner" do
+    description "Someone met on or around the playa: their camp, what they do, and whether we've actually connected — not just heard about."
+
+    identified_by :handle
+
+    attribute :handle,   BurnerHandle
+    attribute :camp,     CampName,   optional: true
+    attribute :does,     WhatTheyDo, optional: true
+    attribute :met_year, MetYear,    optional: true
+    attribute :notes,    BurnerNote, optional: true
+    attribute :skills,   list_of(Skill)
+
+    value_object("BurnerHandle") { attribute :value, String }
+    value_object("CampName")     { attribute :value, String }
+    value_object("WhatTheyDo")   { attribute :value, String }
+    value_object("MetYear")      { attribute :value, Integer }
+    value_object("BurnerNote")   { attribute :value, String }
+    value_object("SkillLabel")   { attribute :value, String }
+
+    value_object("Skill") { attribute :label, SkillLabel }
+
+    lifecycle :status, default: "met" do
+      transition "Connect" => "connected", from: "met"
+    end
+
+    command "Meet" do
+      goal "Log someone you just met"
+      attribute :handle,   BurnerHandle
+      attribute :camp,     CampName,   optional: true
+      attribute :does,     WhatTheyDo, optional: true
+      attribute :met_year, MetYear,    optional: true
+      attribute :notes,    BurnerNote, optional: true
+
+      sets :handle
+      sets :camp
+      sets :does
+      sets :met_year
+      sets :notes
+      emits "BurnerMet"
+    end
+
+    # THE QR HANDSHAKE — scanning someone's code dispatches this against
+    # their own Burner record. "Met" is heard-about; "Connect" is real.
+    command "Connect" do
+      goal "Scan their code and connect for real"
+      reference_to Burner
+
+      emits "BurnerConnected"
+    end
+
+    command "TagSkill" do
+      goal "Note one more thing they do"
+      reference_to Burner
+      attribute :label, SkillLabel
+
+      given("not already noted") { skills.none? { |s| s.label.value == label.value } }
+
+      sets :skills, append: { label: :label }
+      emits "SkillTagged"
+    end
+
+    query "Connected" do
+      description "Everyone actually connected with, not just met in passing."
+      where(status: "connected")
+      order_by :handle
+    end
+  end
+
+  aggregate "TriviaQuestion" do
+    description "One trivia question — Burning Man history, the ten principles, BLM and Leave No Trace rules, or playa safety."
+
+    identified_by :id
+
+    attribute :id,            QuestionId
+    attribute :prompt,        Prompt
+    attribute :category,      TriviaCategory
+    attribute :correct_index, ChoiceIndex
+    attribute :choices,       list_of(Choice)
+
+    value_object("QuestionId") { attribute :value, String }
+    value_object("Prompt")     { attribute :value, String }
+
+    value_object "TriviaCategory" do
+      attribute :value, String, one_of: ["history", "principles", "blm_and_playa", "safety"]
+    end
+
+    value_object("ChoiceIndex") { attribute :value, Integer }
+    value_object("ChoiceLabel") { attribute :value, String }
+    value_object("Choice")      { attribute :label, ChoiceLabel }
+
+    command "Add" do
+      goal "Write a new trivia question, answer choices added after"
+      attribute :id,            QuestionId
+      attribute :prompt,        Prompt
+      attribute :category,      TriviaCategory
+      attribute :correct_index, ChoiceIndex
+
+      sets :id
+      sets :prompt
+      sets :category
+      sets :correct_index
+      emits "TriviaQuestionAdded"
+    end
+
+    command "AddChoice" do
+      goal "Add one answer choice, in order"
+      reference_to TriviaQuestion
+      attribute :label, ChoiceLabel
+
+      sets :choices, append: { label: :label }
+      emits "ChoiceAdded"
+    end
+
+    query "ByCategory" do
+      description "Every question in one category — e.g. every principles question."
+      attribute :kind, TriviaCategory
+      where(category: :kind)
+      order_by :id
+    end
+  end
+
+  aggregate "TriviaSession" do
+    description "One sitting of trivia — every question answered, in order, never twice."
+
+    identified_by :id
+
+    attribute :id,       SessionId
+    attribute :answered, list_of(Answer)
+
+    value_object("SessionId")     { attribute :value, String }
+    value_object("AnsweredId")    { attribute :value, String }
+    value_object("ChosenIndex")   { attribute :value, Integer }
+    value_object("Answer") do
+      attribute :question_id,  AnsweredId
+      attribute :chosen_index, ChosenIndex
+    end
+
+    command "Start" do
+      goal "Begin a round of trivia"
+      attribute :id, SessionId
+
+      sets :id
+      emits "SessionStarted"
+    end
+
+    command "AnswerQuestion" do
+      goal "Answer one question — never the same one twice in a session"
+      reference_to TriviaSession
+      attribute :question_id,  AnsweredId
+      attribute :chosen_index, ChosenIndex
+
+      given("not already answered this session") { answered.none? { |a| a.question_id.value == question_id.value } }
+
+      sets :answered, append: { question_id: :question_id, chosen_index: :chosen_index }
+      emits "QuestionAnswered"
+    end
+  end
+end

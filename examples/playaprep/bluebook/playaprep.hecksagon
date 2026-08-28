@@ -1,0 +1,10 @@
+Hecks.hecksagon "PlayaPrep" do
+  # HEKI — an append-only local journal, no server, wired domain-wide so
+  # every aggregate here inherits it. This is the whole offline story:
+  # the playa has no signal, and Heki needs none — it's a file on disk.
+  # Syncing that file to a shared Postgres once a phone finds a signal
+  # again is real future work (an outbox/replication story), not
+  # something Heki or this hecksagon does today — see the .world file's
+  # own comment for what would have to be true first.
+  persisted_by "Heki"
+end

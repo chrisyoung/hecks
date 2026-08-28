@@ -1,0 +1,22 @@
+Hecks.world "PlayaPrep" do
+  realm "Examples"
+
+  # Local, on-device, no network required — exactly what "works on the
+  # playa" means: a directory on the phone/tablet/laptop's own disk.
+  #
+  # ON SYNCING WHEN BACK ONLINE — genuinely open, not glossed over: this
+  # domain's own `1.0-readiness.md`/future-features list a durable
+  # outbox and inbound scheduling as "planned or research only," and
+  # Heki itself is a single local journal with no replication story.
+  # The honest path today is a second world binding this same bluebook
+  # to `PostgresEra` (see examples/banking/bluebook/banking.world for
+  # the shape) behind a real network connection, plus a merge step that
+  # replays each device's Heki journal into it — hand-rolled, not
+  # something hecks projects for you yet. Wire that world only once
+  # that merge step exists; until then, every device's journal is its
+  # own source of truth, which is exactly the constraint "on the playa,
+  # no bars" needs met anyway.
+  persisted_by("Heki") do
+    dir "data"
+  end
+end

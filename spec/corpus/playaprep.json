@@ -1,0 +1,127 @@
+{
+  "name": "playaprep-parity",
+  "note": "One expedition through prep, shopping, gas stops, and every lifecycle transition; a shared waypoint pin; a burner met, connected, and skill-tagged; a trivia question authored and answered once. Every declared command exercised, plus three real refusal paths: a duplicate prep-task id, MarkReady before every task is done, and answering the same trivia question twice.",
+  "domain": "examples/playaprep",
+  "expectations": {
+    "events": 21,
+    "refusals": [
+      {
+        "verb": "PlayaPrep::Expedition.AddPrepTask",
+        "includes": "task ids are unique"
+      },
+      {
+        "verb": "PlayaPrep::Expedition.MarkReady",
+        "includes": "every prep task is done"
+      },
+      {
+        "verb": "PlayaPrep::TriviaSession.AnswerQuestion",
+        "includes": "not already answered this session"
+      }
+    ]
+  },
+  "steps": [
+    { "verb": "PlayaPrep::Expedition.Open", "args": { "year": { "value": 2026 } } },
+    {
+      "verb": "PlayaPrep::Expedition.AddPrepTask",
+      "args": {
+        "year": { "value": 2026 },
+        "id": { "value": "solar-1" },
+        "category": { "value": "solar" },
+        "description": { "value": "Panel-test the array and top off the battery bank" },
+        "principle": { "value": "radical_self_reliance" }
+      }
+    },
+    {
+      "verb": "PlayaPrep::Expedition.AddPrepTask",
+      "args": {
+        "year": { "value": 2026 },
+        "id": { "value": "solar-1" },
+        "category": { "value": "solar" },
+        "description": { "value": "Duplicate id — refused" },
+        "principle": { "value": "radical_self_reliance" }
+      }
+    },
+    {
+      "verb": "PlayaPrep::Expedition.AddPrepTask",
+      "args": {
+        "year": { "value": 2026 },
+        "id": { "value": "water-1" },
+        "category": { "value": "water" },
+        "description": { "value": "Fill fresh tank, sanitize lines" },
+        "principle": { "value": "radical_self_reliance" }
+      }
+    },
+    { "verb": "PlayaPrep::Expedition.MarkReady", "args": { "year": { "value": 2026 } } },
+    { "verb": "PlayaPrep::Expedition.CompleteTask", "args": { "year": { "value": 2026 }, "id": { "value": "solar-1" } } },
+    { "verb": "PlayaPrep::Expedition.CompleteTask", "args": { "year": { "value": 2026 }, "id": { "value": "water-1" } } },
+    {
+      "verb": "PlayaPrep::Expedition.AddShoppingItem",
+      "args": {
+        "year": { "value": 2026 },
+        "id": { "value": "propane" },
+        "list_type": { "value": "shopping" },
+        "name": { "value": "Propane tank refill" },
+        "quantity": { "value": 2 }
+      }
+    },
+    { "verb": "PlayaPrep::Expedition.BuyItem", "args": { "year": { "value": 2026 }, "id": { "value": "propane" } } },
+    {
+      "verb": "PlayaPrep::Expedition.AddGasStop",
+      "args": {
+        "year": { "value": 2026 },
+        "id": { "value": "stop-1" },
+        "order": { "value": 1 },
+        "town": { "value": "Fernley" },
+        "state": { "value": "NV" }
+      }
+    },
+    { "verb": "PlayaPrep::Expedition.RefuelAt", "args": { "year": { "value": 2026 }, "id": { "value": "stop-1" } } },
+    { "verb": "PlayaPrep::Expedition.MarkReady", "args": { "year": { "value": 2026 } } },
+    { "verb": "PlayaPrep::Expedition.Depart", "args": { "year": { "value": 2026 } } },
+    { "verb": "PlayaPrep::Expedition.ReturnHome", "args": { "year": { "value": 2026 } } },
+    { "query": "PlayaPrep::Expedition.Active", "args": {} },
+    {
+      "verb": "PlayaPrep::Waypoint.Pin",
+      "args": {
+        "name": { "value": "Black Rock Station Water" },
+        "category": { "value": "water_fill" },
+        "location": { "lat": 40.75, "lng": -119.2 },
+        "notes": { "value": "Free potable water on the way to Gerlach" }
+      }
+    },
+    { "query": "PlayaPrep::Waypoint.ByCategory", "args": { "kind": { "value": "water_fill" } } },
+    {
+      "verb": "PlayaPrep::Burner.Meet",
+      "args": {
+        "handle": { "value": "DustDevil" },
+        "camp": { "value": "Camp Solaris" },
+        "does": { "value": "Solar array repair, teaches a mirror-making workshop" },
+        "met_year": { "value": 2025 }
+      }
+    },
+    { "verb": "PlayaPrep::Burner.Connect", "args": { "handle": { "value": "DustDevil" } } },
+    { "verb": "PlayaPrep::Burner.TagSkill", "args": { "handle": { "value": "DustDevil" }, "label": { "value": "welding" } } },
+    { "query": "PlayaPrep::Burner.Connected", "args": {} },
+    {
+      "verb": "PlayaPrep::TriviaQuestion.Add",
+      "args": {
+        "id": { "value": "q1" },
+        "prompt": { "value": "How many principles are there?" },
+        "category": { "value": "principles" },
+        "correct_index": { "value": 0 }
+      }
+    },
+    { "verb": "PlayaPrep::TriviaQuestion.AddChoice", "args": { "id": { "value": "q1" }, "label": { "value": "Ten" } } },
+    { "verb": "PlayaPrep::TriviaQuestion.AddChoice", "args": { "id": { "value": "q1" }, "label": { "value": "Seven" } } },
+    { "query": "PlayaPrep::TriviaQuestion.ByCategory", "args": { "kind": { "value": "principles" } } },
+    { "verb": "PlayaPrep::TriviaSession.Start", "args": { "id": { "value": "s1" } } },
+    {
+      "verb": "PlayaPrep::TriviaSession.AnswerQuestion",
+      "args": { "id": { "value": "s1" }, "question_id": { "value": "q1" }, "chosen_index": { "value": 0 } }
+    },
+    {
+      "verb": "PlayaPrep::TriviaSession.AnswerQuestion",
+      "args": { "id": { "value": "s1" }, "question_id": { "value": "q1" }, "chosen_index": { "value": 1 } }
+    }
+  ]
+}
