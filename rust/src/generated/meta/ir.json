@@ -177,7 +177,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Description",
@@ -200,7 +202,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "IdentityField",
@@ -216,9 +220,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "IdentityPath",
@@ -234,9 +242,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Field",
@@ -322,9 +334,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ValueName",
@@ -340,9 +356,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Transition",
@@ -378,9 +398,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Rule",
@@ -406,9 +430,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ProjectedField",
@@ -444,9 +472,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Position",
@@ -462,9 +494,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "FieldName",
@@ -487,7 +523,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "TypeName",
@@ -510,7 +548,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "LiteralText",
@@ -526,9 +566,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ListFlag",
@@ -551,7 +595,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -657,7 +703,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -1396,7 +1444,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -2654,8 +2704,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "bluebook",
@@ -2732,7 +2786,9 @@
               "canonical": "!path.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "identified_by",
@@ -2836,8 +2892,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -2948,8 +3008,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -3060,8 +3124,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -3112,8 +3180,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "state_field",
@@ -3177,8 +3249,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "transitions",
@@ -3202,15 +3278,21 @@
           "role": "Language",
           "goal": "Close an aggregate — the checks that need every declaration present",
           "references": null,
-          "attributes": [],
+          "attributes": [
+
+          ],
           "givens": [
             {
               "description": "an aggregate says what it is known by",
               "canonical": "!identified_by.empty?"
             }
           ],
-          "ensures": [],
-          "mutations": [],
+          "ensures": [
+
+          ],
+          "mutations": [
+
+          ],
           "emits": [
             "RootSealed"
           ],
@@ -3234,8 +3316,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "value_objects",
@@ -3289,7 +3375,9 @@
               "canonical": "!canonical.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "invariants",
@@ -3344,7 +3432,9 @@
               "canonical": "!canonical.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "preconditions",
@@ -3413,7 +3503,9 @@
               "canonical": "!remote_field.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "projected_fields",
@@ -3433,11 +3525,19 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
-      "entities": [],
+      "entities": [
+
+      ],
       "queries": [
         {
           "name": "DeclaredIn",
@@ -3468,7 +3568,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -3564,9 +3666,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "NormalisationRule",
@@ -3622,9 +3728,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "BluebookName",
@@ -3647,7 +3757,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Vision",
@@ -3670,7 +3782,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Classification",
@@ -3693,7 +3807,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Version",
@@ -3716,7 +3832,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "FormerlyKnownAs",
@@ -3739,7 +3857,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "AttachesToContext",
@@ -3762,7 +3882,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -3868,7 +3990,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -4325,7 +4449,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -4667,8 +4793,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "name",
@@ -4739,7 +4869,9 @@
               "relationship": null
             }
           ],
-          "givens": [],
+          "givens": [
+
+          ],
           "ensures": [
             {
               "description": "the list grew by exactly one",
@@ -4819,8 +4951,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "normalisations",
@@ -4842,11 +4978,19 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
-      "entities": [],
+      "entities": [
+
+      ],
       "queries": [
         {
           "name": "Called",
@@ -4874,7 +5018,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -5048,7 +5194,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Actor",
@@ -5064,9 +5212,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Goal",
@@ -5082,9 +5234,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "EventName",
@@ -5100,9 +5256,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Announcement",
@@ -5118,9 +5278,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Argument",
@@ -5206,9 +5370,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Rule",
@@ -5234,9 +5402,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Change",
@@ -5292,9 +5464,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "CommandText",
@@ -5310,9 +5486,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Position",
@@ -5328,9 +5508,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ArgName",
@@ -5353,7 +5537,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ArgType",
@@ -5369,9 +5555,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "RuleText",
@@ -5387,9 +5577,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "FieldRef",
@@ -5405,9 +5599,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "OpName",
@@ -5423,9 +5621,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -5531,7 +5733,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -6072,7 +6276,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -7464,8 +7670,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "aggregate",
@@ -7633,8 +7843,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -7745,8 +7959,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -7807,7 +8025,9 @@
               "canonical": "!canonical.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "givens",
@@ -7862,7 +8082,9 @@
               "canonical": "!canonical.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "ensures",
@@ -7947,7 +8169,9 @@
               "canonical": "!op.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "mutations",
@@ -7995,7 +8219,9 @@
               "canonical": "references.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "references",
@@ -8036,7 +8262,9 @@
               "canonical": "!announces.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "emits",
@@ -8054,11 +8282,19 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
-      "entities": [],
+      "entities": [
+
+      ],
       "queries": [
         {
           "name": "DeclaredIn",
@@ -8089,7 +8325,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -8243,7 +8481,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "EntityText",
@@ -8259,9 +8499,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Rule",
@@ -8287,9 +8531,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "IdentityPath",
@@ -8305,9 +8553,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "PieceField",
@@ -8393,9 +8645,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "PieceTransition",
@@ -8431,9 +8687,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Position",
@@ -8449,9 +8709,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -8557,7 +8821,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -8670,6 +8936,14 @@
               [
                 "fills",
                 "preconditions"
+              ],
+              [
+                "resolves_via",
+                "owner_keyed"
+              ],
+              [
+                "disambiguator",
+                "declared_by"
               ],
               [
                 "calls",
@@ -9142,7 +9416,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -9207,6 +9483,36 @@
               [
                 "fills",
                 "description"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "given"
+              ],
+              [
+                "context",
+                "Entity"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "declared_by"
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                false
+              ],
+              [
+                "fills",
+                "declared_by"
               ]
             ],
             [
@@ -10118,8 +10424,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "aggregate",
@@ -10196,7 +10506,9 @@
               "canonical": "!path.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "identified_by",
@@ -10218,15 +10530,21 @@
           "role": "Language",
           "goal": "Close an entity — the checks that need every declaration present",
           "references": null,
-          "attributes": [],
+          "attributes": [
+
+          ],
           "givens": [
             {
               "description": "an entity says what it is known by",
               "canonical": "!identified_by.empty?"
             }
           ],
-          "ensures": [],
-          "mutations": [],
+          "ensures": [
+
+          ],
+          "mutations": [
+
+          ],
           "emits": [
             "PieceSealed"
           ],
@@ -10320,8 +10638,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -10432,8 +10754,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -10544,8 +10870,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -10606,7 +10936,9 @@
               "canonical": "!canonical.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "preconditions",
@@ -10661,7 +10993,9 @@
               "canonical": "!canonical.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "invariants",
@@ -10706,8 +11040,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "state_field",
@@ -10771,8 +11109,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "transitions",
@@ -10792,11 +11134,19 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
-      "entities": [],
+      "entities": [
+
+      ],
       "queries": [
         {
           "name": "DeclaredIn",
@@ -10827,7 +11177,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -10961,7 +11313,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "PolicyText",
@@ -10977,9 +11331,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Binding",
@@ -11005,9 +11363,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Position",
@@ -11023,9 +11385,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -11131,7 +11497,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -11428,7 +11796,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -11746,8 +12116,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "bluebook",
@@ -11864,8 +12238,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "with_spec",
@@ -11884,11 +12262,19 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
-      "entities": [],
+      "entities": [
+
+      ],
       "queries": [
         {
           "name": "DeclaredIn",
@@ -11919,7 +12305,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -12033,7 +12421,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ProcessManagerText",
@@ -12049,9 +12439,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "SagaState",
@@ -12067,9 +12461,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "HandlerText",
@@ -12085,9 +12483,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "DispatchText",
@@ -12103,9 +12505,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Binding",
@@ -12131,9 +12537,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "DispatchPosition",
@@ -12149,9 +12559,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Position",
@@ -12167,9 +12581,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -12275,7 +12693,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -12435,6 +12855,36 @@
               ],
               [
                 "body",
+                "keywords"
+              ],
+              [
+                "inner",
+                "Dispatch"
+              ],
+              [
+                "opens",
+                "Dispatch"
+              ],
+              [
+                "fills",
+                ""
+              ],
+              [
+                "calls",
+                "dispatch_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "dispatch"
+              ],
+              [
+                "context",
+                "Handler"
+              ],
+              [
+                "body",
                 "none"
               ],
               [
@@ -12452,6 +12902,36 @@
               [
                 "calls",
                 "dispatch_impl"
+              ]
+            ],
+            [
+              [
+                "word",
+                "compensates"
+              ],
+              [
+                "context",
+                "Dispatch"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                ""
+              ],
+              [
+                "calls",
+                "compensates_impl"
               ]
             ]
           ]
@@ -12610,7 +13090,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -12958,6 +13440,100 @@
                 "pairs_shape",
                 "verbatim"
               ]
+            ],
+            [
+              [
+                "keyword",
+                "compensates"
+              ],
+              [
+                "context",
+                "Dispatch"
+              ],
+              [
+                "at",
+                1
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "constant"
+              ],
+              [
+                "required",
+                true
+              ],
+              [
+                "fills",
+                "command_name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "compensates"
+              ],
+              [
+                "context",
+                "Dispatch"
+              ],
+              [
+                "at",
+                1
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "text"
+              ],
+              [
+                "required",
+                true
+              ],
+              [
+                "fills",
+                "command_name"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "compensates"
+              ],
+              [
+                "context",
+                "Dispatch"
+              ],
+              [
+                "at",
+                ""
+              ],
+              [
+                "named",
+                "with"
+              ],
+              [
+                "kind",
+                "pairs"
+              ],
+              [
+                "required",
+                false
+              ],
+              [
+                "fills",
+                "with_spec"
+              ],
+              [
+                "pairs_shape",
+                "verbatim"
+              ]
             ]
           ]
         }
@@ -13030,8 +13606,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "bluebook",
@@ -13111,8 +13691,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "states",
@@ -13166,8 +13750,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "handlers",
@@ -13187,9 +13775,15 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
       "entities": [
         {
@@ -13269,8 +13863,12 @@
                   "relationship": null
                 }
               ],
-              "givens": [],
-              "ensures": [],
+              "givens": [
+
+              ],
+              "ensures": [
+
+              ],
               "mutations": [
                 {
                   "target": "dispatches",
@@ -13289,7 +13887,9 @@
               "provenance": null
             }
           ],
-          "queries": [],
+          "queries": [
+
+          ],
           "entities": [
             {
               "name": "Dispatch",
@@ -13328,6 +13928,26 @@
                   "pattern": null,
                   "admits": null,
                   "relationship": null
+                },
+                {
+                  "name": "compensates_command_name",
+                  "type": "DispatchText",
+                  "list": false,
+                  "default": null,
+                  "optional": true,
+                  "pattern": null,
+                  "admits": null,
+                  "relationship": null
+                },
+                {
+                  "name": "compensates_with_spec",
+                  "type": "Binding",
+                  "list": true,
+                  "default": null,
+                  "optional": false,
+                  "pattern": null,
+                  "admits": null,
+                  "relationship": null
                 }
               ],
               "commands": [
@@ -13358,8 +13978,12 @@
                       "relationship": null
                     }
                   ],
-                  "givens": [],
-                  "ensures": [],
+                  "givens": [
+
+                  ],
+                  "ensures": [
+
+                  ],
                   "mutations": [
                     {
                       "target": "with_spec",
@@ -13376,17 +14000,119 @@
                   ],
                   "from": null,
                   "provenance": null
+                },
+                {
+                  "name": "Compensates",
+                  "role": "Language",
+                  "goal": "Name the command this dispatch compensates for",
+                  "references": null,
+                  "attributes": [
+                    {
+                      "name": "compensates_command_name",
+                      "type": "DispatchText",
+                      "list": false,
+                      "default": null,
+                      "optional": false,
+                      "pattern": null,
+                      "admits": null,
+                      "relationship": null
+                    }
+                  ],
+                  "givens": [
+
+                  ],
+                  "ensures": [
+
+                  ],
+                  "mutations": [
+                    {
+                      "target": "compensates_command_name",
+                      "op": "set",
+                      "sign": "",
+                      "source": {
+                        "kind": "argument",
+                        "name": "compensates_command_name"
+                      }
+                    }
+                  ],
+                  "emits": [
+                    "CompensationDeclared"
+                  ],
+                  "from": null,
+                  "provenance": null
+                },
+                {
+                  "name": "BindCompensation",
+                  "role": "Language",
+                  "goal": "Bind one argument of the compensation's own dispatched command",
+                  "references": null,
+                  "attributes": [
+                    {
+                      "name": "key",
+                      "type": "DispatchText",
+                      "list": false,
+                      "default": null,
+                      "optional": false,
+                      "pattern": null,
+                      "admits": null,
+                      "relationship": null
+                    },
+                    {
+                      "name": "value",
+                      "type": "DispatchText",
+                      "list": false,
+                      "default": null,
+                      "optional": false,
+                      "pattern": null,
+                      "admits": null,
+                      "relationship": null
+                    }
+                  ],
+                  "givens": [
+
+                  ],
+                  "ensures": [
+
+                  ],
+                  "mutations": [
+                    {
+                      "target": "compensates_with_spec",
+                      "op": "append",
+                      "sign": "",
+                      "fields": {
+                        "key": ":key",
+                        "value": ":value"
+                      }
+                    }
+                  ],
+                  "emits": [
+                    "CompensationBindingAttached"
+                  ],
+                  "from": null,
+                  "provenance": null
                 }
               ],
-              "queries": [],
-              "entities": [],
-              "preconditions": [],
-              "invariants": [],
+              "queries": [
+
+              ],
+              "entities": [
+
+              ],
+              "preconditions": [
+
+              ],
+              "invariants": [
+
+              ],
               "lifecycle": null
             }
           ],
-          "preconditions": [],
-          "invariants": [],
+          "preconditions": [
+
+          ],
+          "invariants": [
+
+          ],
           "lifecycle": null
         }
       ],
@@ -13420,7 +14146,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -13574,7 +14302,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ReadModelText",
@@ -13590,9 +14320,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ProjectionPurpose",
@@ -13615,7 +14349,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Head",
@@ -13651,9 +14387,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ProjectionOption",
@@ -13699,9 +14439,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "GroupByField",
@@ -13724,7 +14468,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Position",
@@ -13740,9 +14486,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -13848,7 +14598,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -14291,7 +15043,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -14773,8 +15527,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "bluebook",
@@ -14883,8 +15641,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "aggregate_heads",
@@ -14926,7 +15688,9 @@
               "canonical": "!field.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "group_by",
@@ -14960,8 +15724,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "count",
@@ -15002,7 +15770,9 @@
               "canonical": "!median_field.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "median_field",
@@ -15073,7 +15843,9 @@
               "canonical": "!option.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "options",
@@ -15094,11 +15866,19 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
-      "entities": [],
+      "entities": [
+
+      ],
       "queries": [
         {
           "name": "DeclaredIn",
@@ -15129,7 +15909,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -15273,7 +16055,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "QueryText",
@@ -15289,9 +16073,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Filter",
@@ -15327,9 +16115,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "AskArgument",
@@ -15415,9 +16207,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "AskOption",
@@ -15463,9 +16259,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Position",
@@ -15481,9 +16281,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -15589,7 +16393,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -15950,7 +16756,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -16570,8 +17378,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "aggregate",
@@ -16689,8 +17501,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "wheres",
@@ -16762,7 +17578,9 @@
               "canonical": "!option.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "options",
@@ -16869,8 +17687,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -16895,11 +17717,19 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
-      "entities": [],
+      "entities": [
+
+      ],
       "queries": [
         {
           "name": "DeclaredIn",
@@ -16930,7 +17760,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -17027,9 +17859,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ValueObjectName",
@@ -17052,7 +17888,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ShapeField",
@@ -17153,7 +17991,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Assertion",
@@ -17190,7 +18030,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "MemberPosition",
@@ -17206,9 +18048,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "MemberText",
@@ -17224,9 +18070,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Pair",
@@ -17259,7 +18109,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Position",
@@ -17275,9 +18127,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ValueObjectText",
@@ -17293,9 +18149,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeed",
@@ -17401,7 +18261,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -17774,7 +18636,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -18186,8 +19050,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "aggregate",
@@ -18310,8 +19178,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "attributes",
@@ -18358,7 +19230,9 @@
               "canonical": "rows.value > 0"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "rows",
@@ -18413,7 +19287,9 @@
               "canonical": "!canonical.value.to_s.empty?"
             }
           ],
-          "ensures": [],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "invariants",
@@ -18448,8 +19324,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "members",
@@ -18467,9 +19347,15 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
       "entities": [
         {
@@ -18534,7 +19420,9 @@
                   "canonical": "!key.value.to_s.empty?"
                 }
               ],
-              "ensures": [],
+              "ensures": [
+
+              ],
               "mutations": [
                 {
                   "target": "pairs",
@@ -18553,10 +19441,18 @@
               "provenance": null
             }
           ],
-          "queries": [],
-          "entities": [],
-          "preconditions": [],
-          "invariants": [],
+          "queries": [
+
+          ],
+          "entities": [
+
+          ],
+          "preconditions": [
+
+          ],
+          "invariants": [
+
+          ],
           "lifecycle": null
         }
       ],
@@ -18590,7 +19486,9 @@
           "limit": null
         }
       ],
-      "ports": [],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -18663,7 +19561,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Context",
@@ -18679,7 +19579,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -18752,6 +19654,12 @@
               [
                 "name",
                 "Handler"
+              ]
+            ],
+            [
+              [
+                "name",
+                "Dispatch"
               ]
             ],
             [
@@ -18830,7 +19738,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -18873,7 +19783,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -18916,7 +19828,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -18953,7 +19867,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -18978,7 +19894,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -19045,7 +19963,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -19088,9 +20008,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ArgumentPosition",
@@ -19106,9 +20030,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "KeywordSeedText",
@@ -19124,9 +20052,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "ArgumentSeedText",
@@ -19142,9 +20074,13 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         }
       ],
       "commands": [
@@ -19175,8 +20111,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "bluebook",
@@ -19320,8 +20260,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "keywords",
@@ -19515,8 +20459,12 @@
               "relationship": null
             }
           ],
-          "givens": [],
-          "ensures": [],
+          "givens": [
+
+          ],
+          "ensures": [
+
+          ],
           "mutations": [
             {
               "target": "arguments",
@@ -19549,9 +20497,15 @@
           "provenance": null
         }
       ],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
       "entities": [
         {
@@ -19678,10 +20632,18 @@
               "role": "Language",
               "goal": "Mark a word as on its way out, still read",
               "references": null,
-              "attributes": [],
-              "givens": [],
-              "ensures": [],
-              "mutations": [],
+              "attributes": [
+
+              ],
+              "givens": [
+
+              ],
+              "ensures": [
+
+              ],
+              "mutations": [
+
+              ],
               "emits": [
                 "KeywordDeprecated"
               ],
@@ -19693,10 +20655,18 @@
               "role": "Language",
               "goal": "Remove a word from every generated parser table",
               "references": null,
-              "attributes": [],
-              "givens": [],
-              "ensures": [],
-              "mutations": [],
+              "attributes": [
+
+              ],
+              "givens": [
+
+              ],
+              "ensures": [
+
+              ],
+              "mutations": [
+
+              ],
               "emits": [
                 "KeywordRetired"
               ],
@@ -19704,10 +20674,18 @@
               "provenance": null
             }
           ],
-          "queries": [],
-          "entities": [],
-          "preconditions": [],
-          "invariants": [],
+          "queries": [
+
+          ],
+          "entities": [
+
+          ],
+          "preconditions": [
+
+          ],
+          "invariants": [
+
+          ],
           "lifecycle": {
             "field": "status",
             "default": "admitted",
@@ -19904,10 +20882,18 @@
               "role": "Language",
               "goal": "Mark an argument as on its way out, still read",
               "references": null,
-              "attributes": [],
-              "givens": [],
-              "ensures": [],
-              "mutations": [],
+              "attributes": [
+
+              ],
+              "givens": [
+
+              ],
+              "ensures": [
+
+              ],
+              "mutations": [
+
+              ],
               "emits": [
                 "ArgumentDeprecated"
               ],
@@ -19919,10 +20905,18 @@
               "role": "Language",
               "goal": "Remove an argument from every generated parser table",
               "references": null,
-              "attributes": [],
-              "givens": [],
-              "ensures": [],
-              "mutations": [],
+              "attributes": [
+
+              ],
+              "givens": [
+
+              ],
+              "ensures": [
+
+              ],
+              "mutations": [
+
+              ],
               "emits": [
                 "ArgumentRetired"
               ],
@@ -19930,10 +20924,18 @@
               "provenance": null
             }
           ],
-          "queries": [],
-          "entities": [],
-          "preconditions": [],
-          "invariants": [],
+          "queries": [
+
+          ],
+          "entities": [
+
+          ],
+          "preconditions": [
+
+          ],
+          "invariants": [
+
+          ],
           "lifecycle": {
             "field": "status",
             "default": "admitted",
@@ -19957,8 +20959,12 @@
           }
         }
       ],
-      "queries": [],
-      "ports": [],
+      "queries": [
+
+      ],
+      "ports": [
+
+      ],
       "provenance": null
     },
     {
@@ -20001,7 +21007,9 @@
             }
           ],
           "closed_set": false,
-          "members": []
+          "members": [
+
+          ]
         },
         {
           "name": "Comparison",
@@ -20047,7 +21055,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20184,7 +21194,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20243,7 +21255,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20282,7 +21296,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20337,7 +21353,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20374,7 +21392,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20423,7 +21443,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20464,7 +21486,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20573,7 +21597,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20646,7 +21672,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20701,7 +21729,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20816,7 +21846,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -20925,7 +21957,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -21054,7 +22088,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -21675,7 +22711,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -21720,7 +22758,9 @@
               "relationship": null
             }
           ],
-          "invariants": [],
+          "invariants": [
+
+          ],
           "closed_set": true,
           "members": [
             [
@@ -21782,14 +22822,28 @@
           ]
         }
       ],
-      "commands": [],
-      "invariants": [],
-      "preconditions": [],
-      "projected_fields": [],
+      "commands": [
+
+      ],
+      "invariants": [
+
+      ],
+      "preconditions": [
+
+      ],
+      "projected_fields": [
+
+      ],
       "lifecycle": null,
-      "entities": [],
-      "queries": [],
-      "ports": [],
+      "entities": [
+
+      ],
+      "queries": [
+
+      ],
+      "ports": [
+
+      ],
       "provenance": null
     }
   ],
@@ -21800,7 +22854,9 @@
       "reference_name": "bluebook",
       "reference_target": "Bluebook",
       "query_name": "whole_bluebook",
-      "wheres": [],
+      "wheres": [
+
+      ],
       "order_by": null,
       "limit": null,
       "aggregate_heads": [
@@ -21865,12 +22921,20 @@
           "many": true
         }
       ],
-      "group_by": []
+      "group_by": [
+
+      ]
     }
   ],
-  "policies": [],
-  "process_managers": [],
-  "attaches_to": [],
+  "policies": [
+
+  ],
+  "process_managers": [
+
+  ],
+  "attaches_to": [
+
+  ],
   "canonical_form": [
     {
       "strategy": "collapse_whitespace",

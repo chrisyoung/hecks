@@ -521,7 +521,9 @@ pub const KEYWORD_SEED: &[KeywordSeed] = &[
     KeywordSeed { word: "ends_on", context: "ProcessManager", body: "none", inner: "", opens: "", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
     KeywordSeed { word: "transition", context: "ProcessManager", body: "keywords", inner: "Handler", opens: "Handler", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
     KeywordSeed { word: "transition", context: "ProcessManager", body: "none", inner: "", opens: "", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "dispatch", context: "Handler", body: "keywords", inner: "Dispatch", opens: "Dispatch", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
     KeywordSeed { word: "dispatch", context: "Handler", body: "none", inner: "", opens: "Dispatch", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
+    KeywordSeed { word: "compensates", context: "Dispatch", body: "none", inner: "", opens: "", fills: "", status: "admitted", was: "", resolves_via: "", disambiguator: "" },
 ];
 
 impl KeywordSeed {
@@ -581,6 +583,9 @@ pub const ARGUMENT_SEED: &[ArgumentSeed] = &[
     ArgumentSeed { keyword: "dispatch", context: "Handler", at: "1", named: "", kind: "constant", required: "true", fills: "command_name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
     ArgumentSeed { keyword: "dispatch", context: "Handler", at: "1", named: "", kind: "text", required: "true", fills: "command_name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
     ArgumentSeed { keyword: "dispatch", context: "Handler", at: "", named: "with", kind: "pairs", required: "false", fills: "with_spec", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "verbatim", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "compensates", context: "Dispatch", at: "1", named: "", kind: "constant", required: "true", fills: "command_name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "compensates", context: "Dispatch", at: "1", named: "", kind: "text", required: "true", fills: "command_name", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "", status: "admitted", variadic: "", coerce: "", blank_message: "" },
+    ArgumentSeed { keyword: "compensates", context: "Dispatch", at: "", named: "with", kind: "pairs", required: "false", fills: "with_spec", selects: "", pair_key_fills: "", pair_value_fills: "", pairs_shape: "verbatim", status: "admitted", variadic: "", coerce: "", blank_message: "" },
 ];
 
 impl ArgumentSeed {
@@ -676,6 +681,8 @@ pub struct Dispatch {
     pub command_name: DispatchText,
     pub position: DispatchPosition,
     pub with_spec: Vec<Binding>,
+    pub compensates_command_name: Option<DispatchText>,
+    pub compensates_with_spec: Vec<Binding>,
 }
 
 impl crate::kernel::Fielded for Dispatch {
@@ -686,6 +693,8 @@ impl crate::kernel::Fielded for Dispatch {
             "command_name" => Some(Field::Nested(&self.command_name)),
             "position" => Some(Field::Nested(&self.position)),
             "with_spec" => Some(Field::Value(Value::List(self.with_spec.len()))),
+            "compensates_command_name" => self.compensates_command_name.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
+            "compensates_with_spec" => Some(Field::Value(Value::List(self.compensates_with_spec.len()))),
             _ => None,
         }
     }
@@ -695,6 +704,7 @@ impl crate::kernel::Fielded for Dispatch {
         use crate::kernel::{Field, Value};
         match name {
             "with_spec" => Some(self.with_spec.iter().map(|v| Field::Nested(v)).collect()),
+            "compensates_with_spec" => Some(self.compensates_with_spec.iter().map(|v| Field::Nested(v)).collect()),
             _ => None,
         }
     }
@@ -710,6 +720,8 @@ impl Dispatch {
         ("command_name".to_string(), self.command_name.to_json()),
         ("position".to_string(), self.position.to_json()),
         ("with_spec".to_string(), crate::kernel::Json::Array(self.with_spec.iter().map(|x| x.to_json()).collect())),
+        ("compensates_command_name".to_string(), self.compensates_command_name.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
+        ("compensates_with_spec".to_string(), crate::kernel::Json::Array(self.compensates_with_spec.iter().map(|x| x.to_json()).collect())),
         ])
     }
 }
@@ -720,6 +732,8 @@ impl Dispatch {
         command_name: DispatchText::from_json(&v.require("command_name", "Dispatch")?.coerce_single_field("value"))?,
         position: DispatchPosition::from_json(&v.require("position", "Dispatch")?.coerce_single_field("value"))?,
         with_spec: match v.get("with_spec").and_then(crate::kernel::Json::as_array) { Some(items) => items.iter().map(Binding::from_json).collect::<Result<Vec<_>, crate::kernel::Refusal>>()?, None => Vec::new(), },
+        compensates_command_name: match v.get("compensates_command_name") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(DispatchText::from_json(&x.coerce_single_field("value"))?), },
+        compensates_with_spec: match v.get("compensates_with_spec").and_then(crate::kernel::Json::as_array) { Some(items) => items.iter().map(Binding::from_json).collect::<Result<Vec<_>, crate::kernel::Refusal>>()?, None => Vec::new(), },
         })
     }
 }
@@ -819,6 +833,7 @@ pub fn dispatch_entity_handler_dispatch(
         args.command_name.check_invariants()?;
         args.position.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, PROCESS_MANAGER_PROJECTED_FIELDS);
 
     crate::kernel::dispatch_entity(
         repo,
@@ -839,7 +854,7 @@ pub fn dispatch_entity_handler_dispatch(
         ],
         None,
         |record| {
-        record.dispatches.push(Dispatch { command_name: args.command_name.clone(), position: args.position.clone(), with_spec: Vec::new() });
+        record.dispatches.push(Dispatch { command_name: args.command_name.clone(), position: args.position.clone(), with_spec: Vec::new(), compensates_with_spec: Vec::new(), compensates_command_name: None });
             Ok(())
         },
         &[
@@ -848,6 +863,7 @@ pub fn dispatch_entity_handler_dispatch(
         &["SendDeclared"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 
@@ -930,6 +946,19 @@ impl crate::kernel::ToJson for ProcessManager {
     }
 }
 
+impl crate::kernel::SetProjectedField for ProcessManager {
+    fn set_projected_field(&mut self, name: &'static str, value: Option<String>) {
+        match name {
+
+            _ => {}
+        }
+    }
+}
+
+pub static PROCESS_MANAGER_PROJECTED_FIELDS: &[crate::kernel::ProjectedFieldSpec] = &[
+
+];
+
 impl ProcessManager {
     pub fn extract_id(v: &crate::kernel::Json) -> Result<String, crate::kernel::Refusal> {
         let by_identity = (|| -> Option<String> {
@@ -981,6 +1010,7 @@ pub fn dispatch_state(
 ) -> crate::kernel::DispatchResult<ProcessManager> {
         args.name.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, PROCESS_MANAGER_PROJECTED_FIELDS);
 
     crate::kernel::dispatch(
         repo,
@@ -1004,6 +1034,7 @@ pub fn dispatch_state(
         &["SagaStateAttached"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 
@@ -1074,6 +1105,7 @@ pub fn dispatch_handler(
         args.from_state.check_invariants()?;
         args.to_state.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, PROCESS_MANAGER_PROJECTED_FIELDS);
 
     crate::kernel::dispatch(
         repo,
@@ -1097,6 +1129,7 @@ pub fn dispatch_handler(
         &["LegDeclared"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 

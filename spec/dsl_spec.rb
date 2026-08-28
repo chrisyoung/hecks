@@ -1061,7 +1061,7 @@ RSpec.describe "the DSL surface" do
       handler = checkout.handler_for("PaymentAuthorized")
       expect([handler.from_state, handler.to_state]).to eq(["awaiting_payment", "paid"])
       expect(handler.dispatches.first.to_h)
-        .to eq({ command_name: "Order.Confirm", with_spec: [["order", ":order_id"]] })
+        .to eq({ command_name: "Order.Confirm", with_spec: [["order", ":order_id"]], compensates: nil })
       # M11 — `correlates_by` must cross the wire as the SAME bare word
       # `Assembly::Build`'s `:identity` reader turns back into a Symbol
       # (`value&.to_sym`); a colon-wrapped `Literal.render` spelling or a
@@ -1246,6 +1246,45 @@ RSpec.describe "the DSL surface" do
 
       referencer = registry.bluebook("SplitGiven").aggregates.find { |a| a.hecks_name == "Referencer" }
       expect(referencer.preconditions.map(&:canonical)).to eq(["true"])
+    end
+
+    it "resolve_pending_chapter_entity_givens! resolves a bare entity-level given left pending by an " \
+       "earlier file, DECLARED ON A DIFFERENT AGGREGATE'S OWN PIECE" do
+      # THE ENTITY-SCOPED ANALOGUE, one level down — see the spec just
+      # above's own comment; identical shape, except the reference and
+      # the declaration each live on a PIECE, under two DIFFERENT
+      # aggregates, exactly the real corpus shape
+      # (Account::LedgerEntry / SafeDepositBox::Visit) this scope closes.
+      registry = Hecks::Runtime::Registry.new
+      Hecks.with_registry(registry) do
+        Kernel.load(InMemoryDomain::EXTRACTION_PORT)
+        Kernel.load(InMemoryDomain::PRISM_ADAPTER)
+        Hecks::Bluebook::MetaValidator.defer do
+          Hecks.bluebook("SplitEntityGiven") do
+            aggregate("Referencer") do
+              identified_by :id
+              entity("Piece") do
+                identified_by :id
+                given("shared fact")
+              end
+            end
+          end
+          Hecks.bluebook("SplitEntityGiven") do
+            aggregate("Declarer") do
+              identified_by :id
+              entity("Piece") do
+                identified_by :id
+                given("shared fact") { true }
+              end
+            end
+          end
+        end
+        Hecks::Bluebook::MetaValidator.judge_deferred!(registry)
+      end
+
+      referencer_piece = registry.bluebook("SplitEntityGiven").aggregates
+                                 .find { |a| a.hecks_name == "Referencer" }.entities.first
+      expect(referencer_piece.preconditions.map(&:canonical)).to eq(["true"])
     end
 
     it "verbs lists every command as a fully-qualified verb" do

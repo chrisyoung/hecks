@@ -92,6 +92,7 @@ pub enum Context {
     Policy,
     Processmanager,
     Handler,
+    Dispatch,
     Readmodel,
     Type,
     Hecksagon,
@@ -108,7 +109,7 @@ impl crate::kernel::Fielded for Context {
     fn field(&self, name: &str) -> Option<crate::kernel::Field<'_>> {
         use crate::kernel::{Field, Value};
         match name {
-            "value" => Some(Field::Value(Value::Str(match self { Context::File => "File".to_string(), Context::Bluebook => "Bluebook".to_string(), Context::Aggregate => "Aggregate".to_string(), Context::Entity => "Entity".to_string(), Context::Command => "Command".to_string(), Context::Query => "Query".to_string(), Context::Valueobject => "ValueObject".to_string(), Context::Oneof => "OneOf".to_string(), Context::Lifecycle => "Lifecycle".to_string(), Context::Policy => "Policy".to_string(), Context::Processmanager => "ProcessManager".to_string(), Context::Handler => "Handler".to_string(), Context::Readmodel => "ReadModel".to_string(), Context::Type => "Type".to_string(), Context::Hecksagon => "Hecksagon".to_string(), Context::World => "World".to_string(), Context::Domainport => "DomainPort".to_string(), Context::Portoperation => "PortOperation".to_string(), Context::Port => "Port".to_string(), Context::Adapter => "Adapter".to_string(), Context::Translation => "Translation".to_string(), Context::Translationaggregate => "TranslationAggregate".to_string(), }))),
+            "value" => Some(Field::Value(Value::Str(match self { Context::File => "File".to_string(), Context::Bluebook => "Bluebook".to_string(), Context::Aggregate => "Aggregate".to_string(), Context::Entity => "Entity".to_string(), Context::Command => "Command".to_string(), Context::Query => "Query".to_string(), Context::Valueobject => "ValueObject".to_string(), Context::Oneof => "OneOf".to_string(), Context::Lifecycle => "Lifecycle".to_string(), Context::Policy => "Policy".to_string(), Context::Processmanager => "ProcessManager".to_string(), Context::Handler => "Handler".to_string(), Context::Dispatch => "Dispatch".to_string(), Context::Readmodel => "ReadModel".to_string(), Context::Type => "Type".to_string(), Context::Hecksagon => "Hecksagon".to_string(), Context::World => "World".to_string(), Context::Domainport => "DomainPort".to_string(), Context::Portoperation => "PortOperation".to_string(), Context::Port => "Port".to_string(), Context::Adapter => "Adapter".to_string(), Context::Translation => "Translation".to_string(), Context::Translationaggregate => "TranslationAggregate".to_string(), }))),
             _ => None,
         }
     }
@@ -132,6 +133,7 @@ impl Context {
             Context::Policy => "Policy",
             Context::Processmanager => "ProcessManager",
             Context::Handler => "Handler",
+            Context::Dispatch => "Dispatch",
             Context::Readmodel => "ReadModel",
             Context::Type => "Type",
             Context::Hecksagon => "Hecksagon",
@@ -162,6 +164,7 @@ impl Context {
             "Policy" => Ok(Context::Policy),
             "ProcessManager" => Ok(Context::Processmanager),
             "Handler" => Ok(Context::Handler),
+            "Dispatch" => Ok(Context::Dispatch),
             "ReadModel" => Ok(Context::Readmodel),
             "Type" => Ok(Context::Type),
             "Hecksagon" => Ok(Context::Hecksagon),
@@ -174,7 +177,7 @@ impl Context {
             "TranslationAggregate" => Ok(Context::Translationaggregate),
             other => Err(crate::kernel::Refusal::InvariantViolation(crate::kernel::RefusalSite::InvariantViolationClosedSetMember.render(&[
                 ("type", "Context"),
-                ("admitted", "\"File\", \"Bluebook\", \"Aggregate\", \"Entity\", \"Command\", \"Query\", \"ValueObject\", \"OneOf\", \"Lifecycle\", \"Policy\", \"ProcessManager\", \"Handler\", \"ReadModel\", \"Type\", \"Hecksagon\", \"World\", \"DomainPort\", \"PortOperation\", \"Port\", \"Adapter\", \"Translation\", \"TranslationAggregate\""),
+                ("admitted", "\"File\", \"Bluebook\", \"Aggregate\", \"Entity\", \"Command\", \"Query\", \"ValueObject\", \"OneOf\", \"Lifecycle\", \"Policy\", \"ProcessManager\", \"Handler\", \"Dispatch\", \"ReadModel\", \"Type\", \"Hecksagon\", \"World\", \"DomainPort\", \"PortOperation\", \"Port\", \"Adapter\", \"Translation\", \"TranslationAggregate\""),
                 ("offered", &format!("{:?}", other)),
             ]))),
         }
@@ -891,6 +894,7 @@ pub fn dispatch_entity_keyword_deprecate(
 ) -> crate::kernel::DispatchResult<Syntax> {
 
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, SYNTAX_PROJECTED_FIELDS);
 
     crate::kernel::dispatch_entity(
         repo,
@@ -920,6 +924,7 @@ pub fn dispatch_entity_keyword_deprecate(
         &["KeywordDeprecated"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 
@@ -979,6 +984,7 @@ pub fn dispatch_entity_keyword_retire(
 ) -> crate::kernel::DispatchResult<Syntax> {
 
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, SYNTAX_PROJECTED_FIELDS);
 
     crate::kernel::dispatch_entity(
         repo,
@@ -1008,6 +1014,7 @@ pub fn dispatch_entity_keyword_retire(
         &["KeywordRetired"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 
@@ -1207,6 +1214,7 @@ pub fn dispatch_entity_argument_deprecate(
 ) -> crate::kernel::DispatchResult<Syntax> {
 
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, SYNTAX_PROJECTED_FIELDS);
 
     crate::kernel::dispatch_entity(
         repo,
@@ -1236,6 +1244,7 @@ pub fn dispatch_entity_argument_deprecate(
         &["ArgumentDeprecated"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 
@@ -1295,6 +1304,7 @@ pub fn dispatch_entity_argument_retire(
 ) -> crate::kernel::DispatchResult<Syntax> {
 
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, SYNTAX_PROJECTED_FIELDS);
 
     crate::kernel::dispatch_entity(
         repo,
@@ -1324,6 +1334,7 @@ pub fn dispatch_entity_argument_retire(
         &["ArgumentRetired"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 
@@ -1390,6 +1401,19 @@ impl crate::kernel::ToJson for Syntax {
     }
 }
 
+impl crate::kernel::SetProjectedField for Syntax {
+    fn set_projected_field(&mut self, name: &'static str, value: Option<String>) {
+        match name {
+
+            _ => {}
+        }
+    }
+}
+
+pub static SYNTAX_PROJECTED_FIELDS: &[crate::kernel::ProjectedFieldSpec] = &[
+
+];
+
 impl Syntax {
     pub fn extract_id(v: &crate::kernel::Json) -> Result<String, crate::kernel::Refusal> {
         let by_identity = (|| -> Option<String> {
@@ -1443,6 +1467,7 @@ pub fn dispatch_declare(
         args.bluebook.check_invariants()?;
         args.name.check_invariants()?;
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, SYNTAX_PROJECTED_FIELDS);
 
     crate::kernel::dispatch(
         repo,
@@ -1475,6 +1500,7 @@ pub fn dispatch_declare(
         &["SyntaxDeclared"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 
@@ -1561,7 +1587,7 @@ pub fn dispatch_keyword(
 ) -> crate::kernel::DispatchResult<Syntax> {
         args.position.check_invariants()?;
         args.word.check_invariants()?;
-        if !["File", "Bluebook", "Aggregate", "Entity", "Command", "Query", "ValueObject", "OneOf", "Lifecycle", "Policy", "ProcessManager", "Handler", "ReadModel", "Type", "Hecksagon", "World", "DomainPort", "PortOperation", "Port", "Adapter", "Translation", "TranslationAggregate"].contains(&args.context.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "context admits Syntax::Context — \"File\", \"Bluebook\", \"Aggregate\", \"Entity\", \"Command\", \"Query\", \"ValueObject\", \"OneOf\", \"Lifecycle\", \"Policy\", \"ProcessManager\", \"Handler\", \"ReadModel\", \"Type\", \"Hecksagon\", \"World\", \"DomainPort\", \"PortOperation\", \"Port\", \"Adapter\", \"Translation\", \"TranslationAggregate\" — got ", args.context.value))); }
+        if !["File", "Bluebook", "Aggregate", "Entity", "Command", "Query", "ValueObject", "OneOf", "Lifecycle", "Policy", "ProcessManager", "Handler", "Dispatch", "ReadModel", "Type", "Hecksagon", "World", "DomainPort", "PortOperation", "Port", "Adapter", "Translation", "TranslationAggregate"].contains(&args.context.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "context admits Syntax::Context — \"File\", \"Bluebook\", \"Aggregate\", \"Entity\", \"Command\", \"Query\", \"ValueObject\", \"OneOf\", \"Lifecycle\", \"Policy\", \"ProcessManager\", \"Handler\", \"Dispatch\", \"ReadModel\", \"Type\", \"Hecksagon\", \"World\", \"DomainPort\", \"PortOperation\", \"Port\", \"Adapter\", \"Translation\", \"TranslationAggregate\" — got ", args.context.value))); }
         args.context.check_invariants()?;
         if !["none", "keywords", "source", "rows"].contains(&args.body.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "body admits Syntax::Body — \"none\", \"keywords\", \"source\", \"rows\" — got ", args.body.value))); }
         args.body.check_invariants()?;
@@ -1575,6 +1601,7 @@ pub fn dispatch_keyword(
         if let Some(v) = &args.disambiguator { v.check_invariants()?; }
         if let Some(v) = &args.calls { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, SYNTAX_PROJECTED_FIELDS);
 
     crate::kernel::dispatch(
         repo,
@@ -1598,6 +1625,7 @@ pub fn dispatch_keyword(
         &["KeywordAdmitted"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 
@@ -1712,7 +1740,7 @@ pub fn dispatch_argument(
 ) -> crate::kernel::DispatchResult<Syntax> {
         args.position.check_invariants()?;
         args.keyword.check_invariants()?;
-        if !["File", "Bluebook", "Aggregate", "Entity", "Command", "Query", "ValueObject", "OneOf", "Lifecycle", "Policy", "ProcessManager", "Handler", "ReadModel", "Type", "Hecksagon", "World", "DomainPort", "PortOperation", "Port", "Adapter", "Translation", "TranslationAggregate"].contains(&args.context.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "context admits Syntax::Context — \"File\", \"Bluebook\", \"Aggregate\", \"Entity\", \"Command\", \"Query\", \"ValueObject\", \"OneOf\", \"Lifecycle\", \"Policy\", \"ProcessManager\", \"Handler\", \"ReadModel\", \"Type\", \"Hecksagon\", \"World\", \"DomainPort\", \"PortOperation\", \"Port\", \"Adapter\", \"Translation\", \"TranslationAggregate\" — got ", args.context.value))); }
+        if !["File", "Bluebook", "Aggregate", "Entity", "Command", "Query", "ValueObject", "OneOf", "Lifecycle", "Policy", "ProcessManager", "Handler", "Dispatch", "ReadModel", "Type", "Hecksagon", "World", "DomainPort", "PortOperation", "Port", "Adapter", "Translation", "TranslationAggregate"].contains(&args.context.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "context admits Syntax::Context — \"File\", \"Bluebook\", \"Aggregate\", \"Entity\", \"Command\", \"Query\", \"ValueObject\", \"OneOf\", \"Lifecycle\", \"Policy\", \"ProcessManager\", \"Handler\", \"Dispatch\", \"ReadModel\", \"Type\", \"Hecksagon\", \"World\", \"DomainPort\", \"PortOperation\", \"Port\", \"Adapter\", \"Translation\", \"TranslationAggregate\" — got ", args.context.value))); }
         args.context.check_invariants()?;
         if let Some(v) = &args.at { v.check_invariants()?; }
         if let Some(v) = &args.named { v.check_invariants()?; }
@@ -1729,6 +1757,7 @@ pub fn dispatch_argument(
         if let Some(v) = &args.coerce { v.check_invariants()?; }
         if let Some(v) = &args.blank_message { v.check_invariants()?; }
     let with_references = crate::kernel::WithReferences { command_deref: &command_deref, args: &args, owner_deref: &owner_deref };
+    let seed_projections = crate::kernel::seeded_projections(&with_references, SYNTAX_PROJECTED_FIELDS);
 
     crate::kernel::dispatch(
         repo,
@@ -1752,6 +1781,7 @@ pub fn dispatch_argument(
         &["ArgumentAdmitted"],
         args.to_json(),
         mutations,
+        seed_projections,
     )
 }
 

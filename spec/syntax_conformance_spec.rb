@@ -91,6 +91,7 @@ RSpec.describe "the declared syntax" do
     "Policy"               => D::PolicyBuilder,
     "ProcessManager"       => D::ProcessManagerBuilder,
     "Handler"              => D::ProcessManagerBuilder::HandlerBuilder,
+    "Dispatch"             => D::ProcessManagerBuilder::HandlerBuilder::DispatchBuilder,
     "ReadModel"            => D::ReadModelBuilder,
     "Type"                 => D::AttributeCollector,
     "Hecksagon"            => D::HecksagonBuilder,
@@ -126,10 +127,13 @@ RSpec.describe "the declared syntax" do
   #     named per-context below rather than by blanket File-level exclusion.
   NOT_A_WORD = {
     "Bluebook"  => {
-      classification:                  "an attr_reader BluebookBuilder.build reads when merging one chapter across files",
-      resolve_pending_chapter_givens!: "called by MetaValidator.judge_deferred! once a chapter split " \
-                                       "across files has fully loaded, to resolve any bare chapter-given " \
-                                       "reference an earlier file left pending"
+      classification:                         "an attr_reader BluebookBuilder.build reads when merging one chapter across files",
+      resolve_pending_chapter_givens!:        "called by MetaValidator.judge_deferred! once a chapter split " \
+                                              "across files has fully loaded, to resolve any bare chapter-given " \
+                                              "reference an earlier file left pending",
+      resolve_pending_chapter_entity_givens!: "the entity-scoped analogue, one level down — called by " \
+                                              "MetaValidator.judge_deferred! the same way, to resolve any " \
+                                              "bare entity-level given reference an earlier file left pending"
     },
     "File"      => {
       boot:             "the runtime facade, not a declaration",
@@ -206,6 +210,7 @@ RSpec.describe "the declared syntax" do
       # the same day, same reasoning as trigger_impl above.
       on_impl:            "PolicyBuilder's own real implementation, called by GenericDispatch's calls:",
       dispatch_impl:      "HandlerBuilder's own real implementation, called by GenericDispatch's calls:",
+      compensates_impl:   "DispatchBuilder's own real implementation, called by GenericDispatch's calls:",
       # Same reasoning, slice 4b: `given`/`invariant`/`reference_to` are
       # SEPARATE per-builder implementations (not one shared mixin like
       # attribute_impl), each renamed the same way in its own file.
