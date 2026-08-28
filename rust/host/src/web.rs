@@ -161,7 +161,7 @@ async fn route(
     let secret = session_secret();
     let session = cookies.get("session").and_then(|c| auth::parse_session_cookie(&secret, c));
 
-    if let Some(response) = auth_route(path, method, query, raw_body, session.as_ref(), &secret, client, wasm_path, config, invoker).await {
+    if let Some(response) = auth_route(domain_ir, path, method, query, raw_body, session.as_ref(), &secret, client, wasm_path, config, invoker).await {
         return response;
     }
 
@@ -214,6 +214,7 @@ async fn route(
 // falls through to its ordinary IR-driven dispatch untouched.
 #[allow(clippy::too_many_arguments)]
 async fn auth_route(
+    domain_ir: &Value,
     path: &str,
     method: &str,
     query: &HashMap<String, String>,
@@ -235,14 +236,14 @@ async fn auth_route(
             Err(e) => Some(respond(500, "text/plain", &format!("Google sign-in isn't configured: {e}"))),
         },
 
-        ("GET", "/auth/google/callback") => Some(google_callback(query, client, wasm_path, config, secret, invoker).await),
+        ("GET", "/auth/google/callback") => Some(google_callback(domain_ir, query, client, wasm_path, config, secret, invoker).await),
 
         ("GET", "/admin/members") => {
             let Some(session) = session else { return Some(redirect("/login")) };
             if !is_admin(client, wasm_path, &session.identity_id).await {
                 return Some(html(403, "<p>Admins only.</p>"));
             }
-            Some(html(200, &admin_members_page(client).await))
+            Some(html(200, &admin_members_page(client, domain_ir).await))
         }
 
         ("POST", "/admin/members") => {
@@ -253,7 +254,7 @@ async fn auth_route(
             let form = parse_form(raw_body);
             let email = form.get("email").cloned().unwrap_or_default();
             let role = form.get("role").cloned().unwrap_or_default();
-            match auth::grant_access(client, wasm_path, config, &email, &role).await {
+            match auth::grant_access(client, wasm_path, config, domain_ir, &email, &role).await {
                 Ok(true) => Some(redirect("/admin/members")),
                 Ok(false) => Some(html(404, "<p>No member with that email.</p>")),
                 Err(e) => Some(html(500, &format!("<p>{}</p>", esc(&e.to_string())))),
@@ -273,6 +274,7 @@ async fn is_admin(client: &Mutex<Client>, wasm_path: &Path, identity_id: &str) -
 
 #[allow(clippy::too_many_arguments)]
 async fn google_callback(
+    domain_ir: &Value,
     query: &HashMap<String, String>,
     client: &Mutex<Client>,
     wasm_path: &Path,
@@ -298,14 +300,14 @@ async fn google_callback(
     let instances = read.get("instances").cloned().unwrap_or(json!({}));
 
     let session = match auth::resolve_identity(&instances, &claims.issuer, &claims.subject) {
-        Some(identity_id) => auth::session_for_member_by_identity(client, &identity_id).await.unwrap_or(None),
+        Some(identity_id) => auth::session_for_member_by_identity(client, domain_ir, &identity_id).await.unwrap_or(None),
         None => None,
     };
     let session = match session {
         Some(s) => Some(s),
         None if claims.email_verified => {
             let email = claims.email.clone().unwrap_or_default();
-            match auth::provision(client, wasm_path, config, &email, &claims.issuer, &claims.subject, invoker).await {
+            match auth::provision(client, wasm_path, config, domain_ir, &email, &claims.issuer, &claims.subject, invoker).await {
                 Ok(s) => s,
                 Err(_) => None,
             }
@@ -338,8 +340,8 @@ fn login_page(error: Option<&str>) -> String {
     )
 }
 
-async fn admin_members_page(client: &Mutex<Client>) -> String {
-    let people = auth::all_people(client).await.unwrap_or_default();
+async fn admin_members_page(client: &Mutex<Client>, domain_ir: &Value) -> String {
+    let people = auth::all_people(client, domain_ir).await.unwrap_or_default();
     let rows: String = people
         .iter()
         .map(|p| {
