@@ -347,6 +347,7 @@ pub fn dispatch_draft(
         &["FoundingAgreementDrafted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -422,6 +423,7 @@ pub fn dispatch_circulate(
         &["FoundingAgreementCirculated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -493,6 +495,7 @@ pub fn dispatch_execute(
         &["FoundingAgreementExecuted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

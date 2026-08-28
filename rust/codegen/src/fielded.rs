@@ -119,6 +119,17 @@ pub fn emit_fielded_record(exemplar: &Exemplar, aggregate: &Json, value_objects_
         let ident = naming::rust_ident_field(field);
         arms.push(exemplar.render("fielded_lifecycle_arm", &[("\"tmpl_field\"", naming::ruby_inspect_string(&key)), ("tmpl_ident", ident)]));
     }
+    // `projects` (S12, ADR 0025) — same `fielded_arm_optional_scalar`
+    // shape an ordinary `optional: true` String attribute already renders
+    // through, above.
+    for field in crate::shared::projected_fields(aggregate) {
+        let key = naming::rust_field(&field.name);
+        let ident = naming::rust_ident_field(&field.name);
+        arms.push(exemplar.render(
+            "fielded_arm_optional_scalar",
+            &[("\"tmpl_field\"", naming::ruby_inspect_string(&key)), ("tmpl_ident", ident), ("tmpl_value_expr_placeholder(v)", naming::scalar_to_value("String", "v").unwrap())],
+        ));
+    }
     for ev in crate::bridging::correctable_event_names(aggregate) {
         let ident = crate::bridging::corrects_flag_field(&ev);
         arms.push(exemplar.render("fielded_corrects_flag_arm", &[("\"tmpl_field\"", naming::ruby_inspect_string(&ident)), ("tmpl_ident", ident)]));

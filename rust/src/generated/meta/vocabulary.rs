@@ -962,6 +962,8 @@ impl Vocabulary {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Vocabulary {
     fn to_json(&self) -> crate::kernel::Json {
         Vocabulary::to_json(self)

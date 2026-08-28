@@ -296,6 +296,7 @@ pub fn dispatch_draft(
         &["InvoiceDrafted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -373,6 +374,7 @@ pub fn dispatch_send(
         &["InvoiceSent"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -442,6 +444,7 @@ pub fn dispatch_mark_paid(
         &["InvoicePaid"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -511,6 +514,7 @@ pub fn dispatch_mark_overdue(
         &["InvoiceOverdue"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -580,6 +584,7 @@ pub fn dispatch_void(
         &["InvoiceVoided"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

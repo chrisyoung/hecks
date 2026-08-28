@@ -368,6 +368,8 @@ impl Customer {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Customer {
     fn to_json(&self) -> crate::kernel::Json {
         Customer::to_json(self)
@@ -464,6 +466,7 @@ pub fn dispatch_register(
         &["CustomerRegistered"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -556,6 +559,7 @@ pub fn dispatch_suspend(
         &["CustomerSuspended"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -643,6 +647,7 @@ pub fn dispatch_reinstate(
         &["CustomerReinstated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -729,6 +734,7 @@ pub fn dispatch_close(
         &["CustomerClosed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

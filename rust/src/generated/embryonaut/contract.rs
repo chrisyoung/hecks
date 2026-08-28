@@ -400,6 +400,7 @@ pub fn dispatch_draft(
         &["ContractDrafted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -479,6 +480,7 @@ pub fn dispatch_send(
         &["ContractSent"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -548,6 +550,7 @@ pub fn dispatch_sign(
         &["ContractSigned"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -617,6 +620,7 @@ pub fn dispatch_activate(
         &["ContractActivated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -686,6 +690,7 @@ pub fn dispatch_complete(
         &["ContractCompleted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -755,6 +760,7 @@ pub fn dispatch_terminate(
         &["ContractTerminated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -827,6 +833,7 @@ pub fn dispatch_revise(
         &["ContractRevised"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -768,6 +768,8 @@ impl Bluebook {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Bluebook {
     fn to_json(&self) -> crate::kernel::Json {
         Bluebook::to_json(self)
@@ -847,6 +849,7 @@ pub fn dispatch_attach(
         &["ChapterAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -946,6 +949,7 @@ pub fn dispatch_normalise(
         &["NormalisationAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -311,6 +311,7 @@ pub fn dispatch_schedule(
         &["EngagementScheduled"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -384,6 +385,7 @@ pub fn dispatch_complete_workshop(
         &["WorkshopCompleted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -455,6 +457,7 @@ pub fn dispatch_draft_domain(
         &["DomainDrafted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -526,6 +529,7 @@ pub fn dispatch_show_demo(
         &["DemoShown"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -607,6 +607,8 @@ impl Order {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Order {
     fn to_json(&self) -> crate::kernel::Json {
         Order::to_json(self)
@@ -698,6 +700,7 @@ pub fn dispatch_create_pizza(
         &["PizzaCreated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -790,6 +793,7 @@ pub fn dispatch_add_topping(
         &["ToppingAdded"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -886,6 +890,7 @@ pub fn dispatch_purchase(
         &["PizzaPurchased"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

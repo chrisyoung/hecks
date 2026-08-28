@@ -333,6 +333,7 @@ pub fn dispatch_record(
         &["PaymentRecorded"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -410,6 +411,7 @@ pub fn dispatch_refund(
         &["PaymentRefunded"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -9,6 +9,34 @@
 use crate::json::Json;
 use std::collections::HashMap;
 
+/// One `aggregate["projected_fields"]` entry (S12, ADR 0025's `projects`
+/// construct) — `AggregateBuilder#projects_impl`'s own three fields,
+/// already carried on `ir.json` by the SAME export the Ruby interpreter
+/// reads at runtime (`hexagon.rb`); this crate just parses it. Shared
+/// between `types.rs`'s own struct-field emission, `fielded.rs`'s own
+/// `field()` arm, `json_codec.rs`'s own to_json/from_json, and `domain_
+/// generator.rs`'s own dispatch-time seed fn, the same reason `attr.rs`'s
+/// helpers are shared rather than each caller re-parsing the JSON node.
+pub struct ProjectedField {
+    pub name: String,
+    pub reference: String,
+    pub remote_field: String,
+}
+
+pub fn projected_fields(aggregate: &Json) -> Vec<ProjectedField> {
+    aggregate
+        .get("projected_fields")
+        .map(Json::each)
+        .unwrap_or(&[])
+        .iter()
+        .map(|f| ProjectedField {
+            name: f.get("name").map(Json::to_s).unwrap_or_default(),
+            reference: f.get("reference").map(Json::to_s).unwrap_or_default(),
+            remote_field: f.get("remote_field").map(Json::to_s).unwrap_or_default(),
+        })
+        .collect()
+}
+
 /// Argument names already claimed by an append (this command's own) — an
 /// append's element-field argument is never ALSO eligible to bare-name-
 /// match an unrelated owner field that happens to share its name. Shared

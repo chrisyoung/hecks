@@ -858,6 +858,8 @@ impl Roster {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Roster {
     fn to_json(&self) -> crate::kernel::Json {
         Roster::to_json(self)
@@ -951,6 +953,7 @@ pub fn dispatch_open(
         &["RosterOpened"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1038,6 +1041,7 @@ pub fn dispatch_mark(
         &["SeatMarked"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1125,6 +1129,7 @@ pub fn dispatch_notice(
         &["MarkNoticed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1212,6 +1217,7 @@ pub fn dispatch_honor(
         &["RosterHonored"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1301,6 +1307,7 @@ pub fn dispatch_add_seat(
         &["SeatAdded"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1394,6 +1401,7 @@ pub fn dispatch_enlist(
         &["MemberEnlisted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1491,6 +1499,7 @@ pub fn dispatch_assign(
         &["SeatAssigned"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1608,6 +1617,7 @@ pub fn dispatch_retire(
         &["MemberRetired"],
         delegate_facts.clone(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -936,6 +936,8 @@ impl ProcessManager {
     }
 }
 
+
+
 impl crate::kernel::ToJson for ProcessManager {
     fn to_json(&self) -> crate::kernel::Json {
         ProcessManager::to_json(self)
@@ -1016,6 +1018,7 @@ pub fn dispatch_state(
         &["SagaStateAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1109,6 +1112,7 @@ pub fn dispatch_handler(
         &["LegDeclared"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

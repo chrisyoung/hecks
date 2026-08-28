@@ -449,6 +449,8 @@ impl Policy {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Policy {
     fn to_json(&self) -> crate::kernel::Json {
         Policy::to_json(self)
@@ -532,6 +534,7 @@ pub fn dispatch_bind(
         &["TriggerBindingAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

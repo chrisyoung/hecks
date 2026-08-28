@@ -159,6 +159,7 @@ pub struct OnboardingCase {
     pub reference: Option<OnboardingReference>,
     pub account_number: Option<AccountNumber>,
     pub status: String,
+    pub customer_status: Option<String>,
 }
 
 impl crate::kernel::Fielded for OnboardingCase {
@@ -169,6 +170,7 @@ impl crate::kernel::Fielded for OnboardingCase {
             "reference" => self.reference.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "account_number" => self.account_number.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
+            "customer_status" => self.customer_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -194,6 +196,7 @@ impl OnboardingCase {
         ("reference".to_string(), self.reference.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("account_number".to_string(), self.account_number.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("status".to_string(), crate::kernel::Json::Str(self.status.clone())),
+        ("customer_status".to_string(), self.customer_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
@@ -205,8 +208,17 @@ impl OnboardingCase {
         reference: match v.get("reference") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(OnboardingReference::from_json(&x.coerce_single_field("value"))?), },
         account_number: match v.get("account_number") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(AccountNumber::from_json(&x.coerce_single_field("value"))?), },
         status: v.require("status", "OnboardingCase")?.as_str().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("OnboardingCase.status: expected a string".to_string()))?.to_string(),
+        customer_status: match v.get("customer_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("OnboardingCase.customer_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("OnboardingCase.customer_status: expected String".to_string()) })?), },
         })
     }
+}
+
+fn seed_projected_fields_onboardingcase(record: &mut OnboardingCase, refs: &dyn crate::kernel::Fielded) {
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("customer") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("status") {
+        record.customer_status = Some(v.clone());
+    }
+}
 }
 
 impl crate::kernel::ToJson for OnboardingCase {
@@ -280,6 +292,7 @@ pub fn dispatch_open(
             reference: Some(args.reference.clone()),
             account_number: Some(args.account_number.clone()),
             status: "screening".to_string(),
+            customer_status: None,
         }),
     },
         "Open",
@@ -303,6 +316,7 @@ pub fn dispatch_open(
         &["OnboardingOpened"],
         args.to_json(),
         mutations,
+        seed_projected_fields_onboardingcase,
     )
 }
 
@@ -393,6 +407,7 @@ pub fn dispatch_clear(
         &["OnboardingCleared"],
         args.to_json(),
         mutations,
+        seed_projected_fields_onboardingcase,
     )
 }
 
@@ -479,6 +494,7 @@ pub fn dispatch_decline(
         &["OnboardingDeclined"],
         args.to_json(),
         mutations,
+        seed_projected_fields_onboardingcase,
     )
 }
 

@@ -308,6 +308,8 @@ impl Statement {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Statement {
     fn to_json(&self) -> crate::kernel::Json {
         Statement::to_json(self)
@@ -411,6 +413,7 @@ pub fn dispatch_generate(
         &["StatementGenerated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

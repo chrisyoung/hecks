@@ -148,6 +148,23 @@ module RustProjection
         ident = rust_ident_field(aggregate[:lifecycle][:field])
         arms << Exemplar.render("fielded_lifecycle_arm", '"tmpl_field"' => key.inspect, "tmpl_ident" => ident)
       end
+      # `projects` (S12, ADR 0025) — the SAME `fielded_arm_optional_scalar`
+      # shape an ordinary `optional: true` String attribute already
+      # renders through, above; a projected field's own `field()` arm has
+      # to exist for `Expr::Lookup` (a `given`/`ensures` reading it) AND
+      # for a further reference-hop chained through it (`domain_
+      # generator.rb`'s own `emit_projected_field_seed_fn` header has the
+      # full "chains without knowing it" reasoning).
+      Array(aggregate[:projected_fields]).each do |field|
+        key   = rust_field(field[:name])
+        ident = rust_ident_field(field[:name])
+        arms << Exemplar.render(
+          "fielded_arm_optional_scalar",
+          '"tmpl_field"' => key.inspect,
+          "tmpl_ident" => ident,
+          "tmpl_value_expr_placeholder(v)" => scalar_to_value("String", "v")
+        )
+      end
       correctable_event_names(aggregate).each do |ev|
         ident = corrects_flag_field(ev)
         arms << Exemplar.render("fielded_corrects_flag_arm", '"tmpl_field"' => ident.inspect, "tmpl_ident" => ident)

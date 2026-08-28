@@ -1219,6 +1219,8 @@ impl Aggregate {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Aggregate {
     fn to_json(&self) -> crate::kernel::Json {
         Aggregate::to_json(self)
@@ -1299,6 +1301,7 @@ pub fn dispatch_identify(
         &["RootIdentified"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1406,6 +1409,7 @@ pub fn dispatch_attribute(
         &["AttributeAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1527,6 +1531,7 @@ pub fn dispatch_reference(
         &["ReferenceAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1648,6 +1653,7 @@ pub fn dispatch_holds(
         &["PieceHeld"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1753,6 +1759,7 @@ pub fn dispatch_lifecycle(
         &["LifecycleNamed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1848,6 +1855,7 @@ pub fn dispatch_transition(
         &["TransitionAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1938,6 +1946,7 @@ pub fn dispatch_seal(
         &["RootSealed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -2025,6 +2034,7 @@ pub fn dispatch_value(
         &["ValueDeclared"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -2116,6 +2126,7 @@ pub fn dispatch_invariant(
         &["InvariantAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -2209,6 +2220,7 @@ pub fn dispatch_precondition(
         &["PreconditionAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -2306,6 +2318,7 @@ pub fn dispatch_projects(
         &["ProjectedFieldAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -1387,6 +1387,8 @@ impl Syntax {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Syntax {
     fn to_json(&self) -> crate::kernel::Json {
         Syntax::to_json(self)
@@ -1478,6 +1480,7 @@ pub fn dispatch_declare(
         &["SyntaxDeclared"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1601,6 +1604,7 @@ pub fn dispatch_keyword(
         &["KeywordAdmitted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1755,6 +1759,7 @@ pub fn dispatch_argument(
         &["ArgumentAdmitted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

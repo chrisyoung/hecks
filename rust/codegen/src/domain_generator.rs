@@ -55,6 +55,54 @@ fn lifecycle_extra_field(node: &Json) -> Vec<(String, String)> {
     }
 }
 
+/// The fn `kernel::dispatch`'s own `seed_projected` parameter calls (see
+/// that fn's own comment, dispatch.rs) — one per aggregate that declares
+/// `projects` fields, `crate::kernel::no_seed_projected` (a plain,
+/// shared generic no-op) for one that doesn't. Mirrors `rust/project/
+/// domain_generator.rb`'s own `projected_field_seed_fn_name` exactly.
+pub fn projected_field_seed_fn_name(aggregate: &Json) -> String {
+    let fields = crate::shared::projected_fields(aggregate);
+    if fields.is_empty() {
+        "crate::kernel::no_seed_projected".to_string()
+    } else {
+        format!("seed_projected_fields_{}", crate::attr::name(aggregate).to_lowercase())
+    }
+}
+
+/// `refs` — the SAME `command_deref`/`owner_deref`-backed `&dyn Fielded`
+/// a `given`/`ensures` already reads. `node.field(remote_field)` reaches
+/// a plain attribute OR another projected field identically, so a
+/// chained projection (`destination.customer_status`, itself projected
+/// from `destination.status`) resolves without this generator needing
+/// to know it's chained. `Option<String>` throughout — see `types.rs`'s
+/// own matching comment for why that's the whole real shape here, not a
+/// simplification. Mirrors `rust/project/domain_generator.rb`'s own
+/// `emit_projected_field_seed_fn` exactly.
+fn emit_projected_field_seed_fn(aggregate: &Json) -> String {
+    let fields = crate::shared::projected_fields(aggregate);
+    if fields.is_empty() {
+        return String::new();
+    }
+
+    let name = crate::naming::rust_ident(crate::attr::name(aggregate));
+    let mut body = String::new();
+    for field in &fields {
+        let reference = crate::naming::rust_field(&field.reference);
+        let remote = crate::naming::rust_field(&field.remote_field);
+        let ident = crate::naming::rust_ident_field(&field.name);
+        body.push_str(&format!(
+            "if let Some(crate::kernel::Field::Nested(node)) = refs.field({}) {{\n    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field({}) {{\n        record.{ident} = Some(v.clone());\n    }}\n}}\n",
+            crate::naming::ruby_inspect_string(&reference),
+            crate::naming::ruby_inspect_string(&remote),
+        ));
+    }
+
+    format!(
+        "fn {}(record: &mut {name}, refs: &dyn crate::kernel::Fielded) {{\n{body}}}\n",
+        projected_field_seed_fn_name(aggregate)
+    )
+}
+
 pub struct GeneratedFile {
     pub name: String,
     pub content: String,
@@ -514,6 +562,8 @@ pub fn generate(
                 Some(aggregate),
             ),
         );
+        puts_blank(&mut out);
+        puts_str(&mut out, &emit_projected_field_seed_fn(aggregate));
         puts_blank(&mut out);
         puts_str(&mut out, &format!("impl crate::kernel::ToJson for {record_name} {{\n    fn to_json(&self) -> crate::kernel::Json {{\n        {record_name}::to_json(self)\n    }}\n}}\n"));
         puts_blank(&mut out);

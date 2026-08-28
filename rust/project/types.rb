@@ -242,6 +242,12 @@ module RustProjection
         { "TmplFieldType" => type, "tmpl_field" => rust_ident_field(attr[:name]) }
       end
       field_subs_list << { "TmplFieldType" => "String", "tmpl_field" => rust_ident_field(aggregate[:lifecycle][:field]) } if aggregate[:lifecycle]
+      # `projects` (S12, ADR 0025) — always `Option<String>`; see
+      # `domain_generator.rb`'s own `projected_extra_fields` header for
+      # why that's the whole real shape, not a simplification.
+      Array(aggregate[:projected_fields]).each do |field|
+        field_subs_list << { "TmplFieldType" => "Option<String>", "tmpl_field" => rust_ident_field(field[:name]) }
+      end
       # `corrects`'s own per-record flag fields — one plain, non-optional
       # `bool` per event name some command on this aggregate `corrects`
       # against (see `commands.rb`'s own `corrects_flag_field`/

@@ -541,6 +541,7 @@ pub fn dispatch_draft(
         &["ProposalDrafted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -626,6 +627,7 @@ pub fn dispatch_send(
         &["ProposalSent"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -695,6 +697,7 @@ pub fn dispatch_accept(
         &["ProposalAccepted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -764,6 +767,7 @@ pub fn dispatch_decline(
         &["ProposalDeclined"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -833,6 +837,7 @@ pub fn dispatch_expire(
         &["ProposalExpired"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -258,6 +258,7 @@ pub fn dispatch_conceive(
         &["ProductConceived"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -331,6 +332,7 @@ pub fn dispatch_set_vision(
         &["VisionSet"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -400,6 +402,7 @@ pub fn dispatch_begin_development(
         &["DevelopmentStarted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -469,6 +472,7 @@ pub fn dispatch_launch(
         &["ProductLaunched"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -538,6 +542,7 @@ pub fn dispatch_sunset(
         &["ProductSunset"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

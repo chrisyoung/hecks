@@ -10,12 +10,15 @@
 // checks on the raw args (still called before `dispatch` even starts,
 // mirroring `normalize_args` running before `hydrate`).
 //
-// NOT YET GENERIC HERE, flagged rather than silently assumed away:
-// `enforce_role_mismatch` (no role checking generated yet).
-// `resolve_references` IS generated now, but not in THIS function — see
-// `check_reference` (repository.rs) and its call sites in the generated
-// `registry.rs` (`reactions.rb`'s `emit_reference_check`), the one place
-// with access to every OTHER aggregate's repo, not just this command's own.
+// NOT GENERIC HERE, BUT NOT MISSING EITHER: role checking (`check_role`,
+// repository.rs, ADR 0019) and reference resolution (`check_reference`,
+// repository.rs) both live in the GENERATED `registry.rs`/`merged.rs` call
+// sites, not in this hand-written generic dispatch function — the one
+// place with access to every OTHER aggregate's repo, not just this
+// command's own, for reference checks, and the natural place to read a
+// command's own declared `role:` for role checks. This function stays
+// generic by construction: nothing here needs to change per command shape
+// for either check to already be enforced.
 
 use super::expr::{interpret, EvalContext, Expr, Field, Fielded, Value, WithOld, WithParent};
 use super::refusal_wording::RefusalSite;
@@ -96,6 +99,13 @@ pub enum Hydrate<'a, T> {
     Act { id: String },
 }
 
+/// The `seed_projected` argument for every aggregate `dispatch` codegen
+/// reaches that declares no `projects` fields of its own — a plain,
+/// generic no-op rather than a per-aggregate empty fn, the same way an
+/// aggregate with no mutations at all still passes a real (trivial)
+/// `apply_mutations` closure rather than skipping the parameter.
+pub fn no_seed_projected<T>(_record: &mut T, _refs: &dyn Fielded) {}
+
 #[allow(clippy::too_many_arguments)]
 pub fn dispatch<'a, T, R>(
     repo: &mut R,
@@ -136,6 +146,23 @@ pub fn dispatch<'a, T, R>(
     emits: &[&'static str],
     payload: Json,
     mutations: &mut Vec<MutationRecord>,
+    // THE ONE-TIME, SYNCHRONOUS HALF OF `projects` (S12, ADR 0025) —
+    // `CommandInterpreter#seed_projected_fields`, read directly (its own
+    // comment there has the full reasoning: an aggregate with `projects`
+    // fields needs SOME synchronous population, or a freshly created
+    // record refuses its own first acting command for no real reason).
+    // A codegen-generated fn per aggregate (or `no_seed_projected` for
+    // one with none), not a closure captured over `args` here — `args`
+    // (this same `&dyn Fielded`, already `command_deref`/`owner_deref`-
+    // backed — the SAME live reference state a `given`/`ensures` already
+    // reads) is exactly what Ruby's own `RebuildSweep.remote_value` reads
+    // too, just fetched once already, at the top of the generated
+    // `registry.rs` call site, instead of a second live lookup here.
+    // Called AFTER `ensures` (mirroring `step_save` running after
+    // `step_enforce_ensures` in `DISPATCH_ORDER`) and before `repo.save`
+    // — so a reseeded value is never itself what an ensures checks
+    // against, only what the NEXT command's own given/ensures reads.
+    seed_projected: impl FnOnce(&mut T, &dyn Fielded),
 ) -> Result<(T, Vec<Event>), Refusal>
 where
     T: Fielded + Clone + ToJson,
@@ -257,6 +284,8 @@ where
             }
         }
     }
+
+    seed_projected(&mut record, args);
 
     repo.save(&id, record.clone());
     mutations.push(MutationRecord {

@@ -631,6 +631,8 @@ impl Query {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Query {
     fn to_json(&self) -> crate::kernel::Json {
         Query::to_json(self)
@@ -718,6 +720,7 @@ pub fn dispatch_filter(
         &["FilterAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -818,6 +821,7 @@ pub fn dispatch_option(
         &["OptionAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -932,6 +936,7 @@ pub fn dispatch_argument(
         &["AskArgumentAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

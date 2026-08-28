@@ -280,6 +280,8 @@ pub struct ExternalTransfer {
     pub beneficiary: Option<BeneficiaryName>,
     pub direction: Option<MovementDirection>,
     pub status: String,
+    pub account_status: Option<String>,
+    pub account_customer_status: Option<String>,
 }
 
 impl crate::kernel::Fielded for ExternalTransfer {
@@ -292,6 +294,8 @@ impl crate::kernel::Fielded for ExternalTransfer {
             "beneficiary" => self.beneficiary.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "direction" => self.direction.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
+            "account_status" => self.account_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
+            "account_customer_status" => self.account_customer_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -319,6 +323,8 @@ impl ExternalTransfer {
         ("beneficiary".to_string(), self.beneficiary.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("direction".to_string(), self.direction.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("status".to_string(), crate::kernel::Json::Str(self.status.clone())),
+        ("account_status".to_string(), self.account_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
+        ("account_customer_status".to_string(), self.account_customer_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
@@ -332,8 +338,23 @@ impl ExternalTransfer {
         beneficiary: match v.get("beneficiary") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(BeneficiaryName::from_json(&x.coerce_single_field("value"))?), },
         direction: match v.get("direction") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(MovementDirection::from_json(&x.coerce_single_field("value"))?), },
         status: v.require("status", "ExternalTransfer")?.as_str().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("ExternalTransfer.status: expected a string".to_string()))?.to_string(),
+        account_status: match v.get("account_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("ExternalTransfer.account_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("ExternalTransfer.account_status: expected String".to_string()) })?), },
+        account_customer_status: match v.get("account_customer_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("ExternalTransfer.account_customer_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("ExternalTransfer.account_customer_status: expected String".to_string()) })?), },
         })
     }
+}
+
+fn seed_projected_fields_externaltransfer(record: &mut ExternalTransfer, refs: &dyn crate::kernel::Fielded) {
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("account") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("status") {
+        record.account_status = Some(v.clone());
+    }
+}
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("account") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("customer_status") {
+        record.account_customer_status = Some(v.clone());
+    }
+}
 }
 
 impl crate::kernel::ToJson for ExternalTransfer {
@@ -416,6 +437,8 @@ pub fn dispatch_request(
             beneficiary: Some(args.beneficiary.clone()),
             direction: Some(args.direction.clone()),
             status: "requested".to_string(),
+            account_status: None,
+            account_customer_status: None,
         }),
     },
         "Request",
@@ -442,6 +465,7 @@ pub fn dispatch_request(
         &["ExternalTransferRequested"],
         args.to_json(),
         mutations,
+        seed_projected_fields_externaltransfer,
     )
 }
 
@@ -537,6 +561,7 @@ pub fn dispatch_send_transfer(
         &["ExternalTransferSent"],
         args.to_json(),
         mutations,
+        seed_projected_fields_externaltransfer,
     )
 }
 
@@ -624,6 +649,7 @@ pub fn dispatch_recall(
         &["ExternalTransferRecalled"],
         args.to_json(),
         mutations,
+        seed_projected_fields_externaltransfer,
     )
 }
 
@@ -711,6 +737,7 @@ pub fn dispatch_return(
         &["ExternalTransferReturned"],
         args.to_json(),
         mutations,
+        seed_projected_fields_externaltransfer,
     )
 }
 

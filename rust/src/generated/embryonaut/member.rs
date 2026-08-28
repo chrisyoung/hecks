@@ -530,6 +530,7 @@ pub fn dispatch_admit(
         &["MemberAdmitted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -609,6 +610,7 @@ pub fn dispatch_depart(
         &["MemberDeparted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -679,6 +681,7 @@ pub fn dispatch_grant_access(
         &["MemberAccessGranted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -749,6 +752,7 @@ pub fn dispatch_link_identity(
         &["MemberIdentityLinked"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

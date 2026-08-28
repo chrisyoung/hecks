@@ -623,6 +623,8 @@ pub struct ATMCard {
     pub daily_fee: Option<DailyFee>,
     pub withdrawals: Vec<Withdrawal>,
     pub status: String,
+    pub account_status: Option<String>,
+    pub account_customer_status: Option<String>,
 }
 
 impl crate::kernel::Fielded for ATMCard {
@@ -635,6 +637,8 @@ impl crate::kernel::Fielded for ATMCard {
             "daily_fee" => self.daily_fee.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "withdrawals" => Some(Field::Value(Value::List(self.withdrawals.len()))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
+            "account_status" => self.account_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
+            "account_customer_status" => self.account_customer_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -662,6 +666,8 @@ impl ATMCard {
         ("daily_fee".to_string(), self.daily_fee.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("withdrawals".to_string(), crate::kernel::Json::Array(self.withdrawals.iter().map(|x| x.to_json()).collect())),
         ("status".to_string(), crate::kernel::Json::Str(self.status.clone())),
+        ("account_status".to_string(), self.account_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
+        ("account_customer_status".to_string(), self.account_customer_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
@@ -675,8 +681,23 @@ impl ATMCard {
         daily_fee: match v.get("daily_fee") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(DailyFee::from_json(&x.coerce_single_field("amount"))?), },
         withdrawals: match v.get("withdrawals").and_then(crate::kernel::Json::as_array) { Some(items) => items.iter().map(Withdrawal::from_json).collect::<Result<Vec<_>, crate::kernel::Refusal>>()?, None => Vec::new(), },
         status: v.require("status", "ATMCard")?.as_str().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("ATMCard.status: expected a string".to_string()))?.to_string(),
+        account_status: match v.get("account_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("ATMCard.account_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("ATMCard.account_status: expected String".to_string()) })?), },
+        account_customer_status: match v.get("account_customer_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("ATMCard.account_customer_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("ATMCard.account_customer_status: expected String".to_string()) })?), },
         })
     }
+}
+
+fn seed_projected_fields_atmcard(record: &mut ATMCard, refs: &dyn crate::kernel::Fielded) {
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("account") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("status") {
+        record.account_status = Some(v.clone());
+    }
+}
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("account") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("customer_status") {
+        record.account_customer_status = Some(v.clone());
+    }
+}
 }
 
 impl crate::kernel::ToJson for ATMCard {
@@ -752,6 +773,8 @@ pub fn dispatch_issue(
             daily_fee: Some(args.daily_fee.clone()),
             withdrawals: vec![],
             status: "issued".to_string(),
+            account_status: None,
+            account_customer_status: None,
         }),
     },
         "Issue",
@@ -776,6 +799,7 @@ pub fn dispatch_issue(
         &["ATMCardIssued"],
         args.to_json(),
         mutations,
+        seed_projected_fields_atmcard,
     )
 }
 
@@ -867,6 +891,7 @@ pub fn dispatch_rename(
         &["ATMCardRenamed"],
         args.to_json(),
         mutations,
+        seed_projected_fields_atmcard,
     )
 }
 
@@ -958,6 +983,7 @@ pub fn dispatch_withdraw(
         &["CashWithdrawn"],
         args.to_json(),
         mutations,
+        seed_projected_fields_atmcard,
     )
 }
 
@@ -1046,6 +1072,7 @@ pub fn dispatch_activate(
         &["ATMCardActivated"],
         args.to_json(),
         mutations,
+        seed_projected_fields_atmcard,
     )
 }
 
@@ -1132,6 +1159,7 @@ pub fn dispatch_retire(
         &["ATMCardRetired"],
         args.to_json(),
         mutations,
+        seed_projected_fields_atmcard,
     )
 }
 

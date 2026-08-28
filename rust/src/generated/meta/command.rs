@@ -1229,6 +1229,8 @@ impl Command {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Command {
     fn to_json(&self) -> crate::kernel::Json {
         Command::to_json(self)
@@ -1330,6 +1332,7 @@ pub fn dispatch_argument(
         &["ArgumentAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1451,6 +1454,7 @@ pub fn dispatch_reference(
         &["ArgumentReferenceAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1556,6 +1560,7 @@ pub fn dispatch_rule(
         &["RuleAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1649,6 +1654,7 @@ pub fn dispatch_ensure(
         &["EnsureAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1752,6 +1758,7 @@ pub fn dispatch_change(
         &["ChangeAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1848,6 +1855,7 @@ pub fn dispatch_acts_on(
         &["ReferenceNamed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1935,6 +1943,7 @@ pub fn dispatch_announce(
         &["AnnouncementNamed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

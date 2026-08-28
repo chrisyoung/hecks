@@ -431,6 +431,13 @@ module RustProjection
         end
         record_fields << "            #{rust_ident_field(aggregate[:lifecycle][:field])}: #{aggregate[:lifecycle][:default].inspect}.to_string()," if aggregate[:lifecycle]
         correctable_event_names(aggregate).each { |name| record_fields << "            #{corrects_flag_field(name)}: false," }
+        # `projects` (S12, ADR 0025) — `None` at creation, the same as
+        # every other struct field this generator can't fill from the
+        # command's own arguments: `seed_projected_fields_*`
+        # (domain_generator.rb) is what actually populates it, called
+        # from `kernel::dispatch` right before THIS record's own first
+        # save — after this closure already ran.
+        Array(aggregate[:projected_fields]).each { |field| record_fields << "            #{rust_ident_field(field[:name])}: None," }
 
         hydrate = <<~RUST.rstrip
           crate::kernel::Hydrate::Create {
@@ -467,7 +474,8 @@ module RustProjection
         "tmpl_mutation_lines_placeholder(record);" => mutation_lines.join("\n"),
         "tmpl_ensures_spec_placeholder()," => ensures_specs.join("\n"),
         "tmpl_emit_placeholder()" => emits_out.map(&:inspect).join(", "),
-        "args.to_json()," => payload
+        "args.to_json()," => payload,
+        "tmpl_seed_projected_placeholder," => "#{DomainGenerator.projected_field_seed_fn_name(aggregate)},"
       )
 
       "#{emit_fielded_flat("#{cmd}Args", command[:attributes], value_objects_by_name)}\n\n#[derive(Debug, Clone)]\n#{args_struct.join("\n")}\n\n#{dispatch_fn}"

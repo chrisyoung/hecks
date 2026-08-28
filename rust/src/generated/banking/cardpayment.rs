@@ -296,6 +296,8 @@ pub struct CardPayment {
     pub merchant: Option<MerchantName>,
     pub tags: Option<Vec<Tag>>,
     pub status: String,
+    pub account_status: Option<String>,
+    pub account_customer_status: Option<String>,
 }
 
 impl crate::kernel::Fielded for CardPayment {
@@ -309,6 +311,8 @@ impl crate::kernel::Fielded for CardPayment {
             "merchant" => self.merchant.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "tags" => self.tags.as_ref().map(|v| Field::Value(Value::List(v.len()))).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
+            "account_status" => self.account_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
+            "account_customer_status" => self.account_customer_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -337,6 +341,8 @@ impl CardPayment {
         ("merchant".to_string(), self.merchant.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("tags".to_string(), self.tags.as_ref().map(|v| crate::kernel::Json::Array(v.iter().map(|x| x.to_json()).collect())).unwrap_or(crate::kernel::Json::Null)),
         ("status".to_string(), crate::kernel::Json::Str(self.status.clone())),
+        ("account_status".to_string(), self.account_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
+        ("account_customer_status".to_string(), self.account_customer_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
@@ -351,8 +357,23 @@ impl CardPayment {
         merchant: match v.get("merchant") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(MerchantName::from_json(&x.coerce_single_field("value"))?), },
         tags: match v.get("tags") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_array().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("CardPayment.tags: expected an array".to_string()))?.iter().map(Tag::from_json).collect::<Result<Vec<_>, crate::kernel::Refusal>>()?), },
         status: v.require("status", "CardPayment")?.as_str().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("CardPayment.status: expected a string".to_string()))?.to_string(),
+        account_status: match v.get("account_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("CardPayment.account_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("CardPayment.account_status: expected String".to_string()) })?), },
+        account_customer_status: match v.get("account_customer_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("CardPayment.account_customer_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("CardPayment.account_customer_status: expected String".to_string()) })?), },
         })
     }
+}
+
+fn seed_projected_fields_cardpayment(record: &mut CardPayment, refs: &dyn crate::kernel::Fielded) {
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("account") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("status") {
+        record.account_status = Some(v.clone());
+    }
+}
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("account") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("customer_status") {
+        record.account_customer_status = Some(v.clone());
+    }
+}
 }
 
 impl crate::kernel::ToJson for CardPayment {
@@ -435,6 +456,8 @@ pub fn dispatch_authorize(
             merchant: Some(args.merchant.clone()),
             tags: args.tags.clone(),
             status: "authorized".to_string(),
+            account_status: None,
+            account_customer_status: None,
         }),
     },
         "Authorize",
@@ -461,6 +484,7 @@ pub fn dispatch_authorize(
         &["CardAuthorized"],
         args.to_json(),
         mutations,
+        seed_projected_fields_cardpayment,
     )
 }
 
@@ -556,6 +580,7 @@ pub fn dispatch_capture(
         &["CardCaptured"],
         args.to_json(),
         mutations,
+        seed_projected_fields_cardpayment,
     )
 }
 
@@ -643,6 +668,7 @@ pub fn dispatch_void(
         &["CardVoided"],
         args.to_json(),
         mutations,
+        seed_projected_fields_cardpayment,
     )
 }
 
@@ -730,6 +756,7 @@ pub fn dispatch_refund(
         &["CardRefunded"],
         args.to_json(),
         mutations,
+        seed_projected_fields_cardpayment,
     )
 }
 
@@ -817,6 +844,7 @@ pub fn dispatch_reverse(
         &["CardReversed"],
         args.to_json(),
         mutations,
+        seed_projected_fields_cardpayment,
     )
 }
 
@@ -906,6 +934,7 @@ pub fn dispatch_dispute(
         &["CardDisputed"],
         args.to_json(),
         mutations,
+        seed_projected_fields_cardpayment,
     )
 }
 
@@ -993,6 +1022,7 @@ pub fn dispatch_chargeback(
         &["CardChargedBack"],
         args.to_json(),
         mutations,
+        seed_projected_fields_cardpayment,
     )
 }
 
@@ -1080,6 +1110,7 @@ pub fn dispatch_reject_dispute(
         &["CardDisputeRejected"],
         args.to_json(),
         mutations,
+        seed_projected_fields_cardpayment,
     )
 }
 

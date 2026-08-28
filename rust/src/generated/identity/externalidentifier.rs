@@ -281,6 +281,8 @@ impl ExternalIdentifier {
     }
 }
 
+
+
 impl crate::kernel::ToJson for ExternalIdentifier {
     fn to_json(&self) -> crate::kernel::Json {
         ExternalIdentifier::to_json(self)
@@ -376,6 +378,7 @@ pub fn dispatch_link(
         &["ExternalIdentifierLinked"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -203,6 +203,8 @@ impl BoxSurrenderReview {
     }
 }
 
+
+
 impl crate::kernel::ToJson for BoxSurrenderReview {
     fn to_json(&self) -> crate::kernel::Json {
         BoxSurrenderReview::to_json(self)
@@ -294,6 +296,7 @@ pub fn dispatch_open(
         &["BoxSurrenderReviewOpened"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -382,6 +385,7 @@ pub fn dispatch_clear(
         &["BoxSurrenderReviewCleared"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -468,6 +472,7 @@ pub fn dispatch_escalate(
         &["BoxSurrenderReviewEscalated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

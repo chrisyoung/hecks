@@ -694,6 +694,8 @@ impl ReadModel {
     }
 }
 
+
+
 impl crate::kernel::ToJson for ReadModel {
     fn to_json(&self) -> crate::kernel::Json {
         ReadModel::to_json(self)
@@ -780,6 +782,7 @@ pub fn dispatch_gather(
         &["HeadGathered"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -871,6 +874,7 @@ pub fn dispatch_group_by(
         &["GroupByFieldAdded"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -958,6 +962,7 @@ pub fn dispatch_count(
         &["CountDeclared"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1045,6 +1050,7 @@ pub fn dispatch_median(
         &["MedianFieldSet"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1141,6 +1147,7 @@ pub fn dispatch_option(
         &["OptionAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

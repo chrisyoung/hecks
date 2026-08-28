@@ -855,6 +855,7 @@ pub struct Account {
     pub fees_cents: Option<Money>,
     pub interest_cents: Option<Money>,
     pub status: String,
+    pub customer_status: Option<String>,
     pub emitted_fee_applied: bool,
 }
 
@@ -871,6 +872,7 @@ impl crate::kernel::Fielded for Account {
             "fees_cents" => self.fees_cents.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "interest_cents" => self.interest_cents.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
+            "customer_status" => self.customer_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             "emitted_fee_applied" => Some(Field::Value(Value::Bool(self.emitted_fee_applied))),
             _ => None,
         }
@@ -903,6 +905,7 @@ impl Account {
         ("interest_cents".to_string(), self.interest_cents.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("status".to_string(), crate::kernel::Json::Str(self.status.clone())),
         ("emitted_fee_applied".to_string(), crate::kernel::Json::Bool(self.emitted_fee_applied)),
+        ("customer_status".to_string(), self.customer_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
@@ -920,8 +923,17 @@ impl Account {
         interest_cents: match v.get("interest_cents") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(Money::from_json(x)?), },
         status: v.require("status", "Account")?.as_str().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Account.status: expected a string".to_string()))?.to_string(),
         emitted_fee_applied: match v.require("emitted_fee_applied", "Account")? { crate::kernel::Json::Bool(b) => *b, _ => return Err(crate::kernel::Refusal::TypeMismatch("Account.emitted_fee_applied: expected a boolean".to_string())) },
+        customer_status: match v.get("customer_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Account.customer_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Account.customer_status: expected String".to_string()) })?), },
         })
     }
+}
+
+fn seed_projected_fields_account(record: &mut Account, refs: &dyn crate::kernel::Fielded) {
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("customer") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("status") {
+        record.customer_status = Some(v.clone());
+    }
+}
 }
 
 impl crate::kernel::ToJson for Account {
@@ -1003,6 +1015,7 @@ pub fn dispatch_open(
             interest_cents: Some(Money { cents: 0, currency: "USD".to_string() }),
             status: "open".to_string(),
             emitted_fee_applied: false,
+            customer_status: None,
         }),
     },
         "Open",
@@ -1027,6 +1040,7 @@ pub fn dispatch_open(
         &["AccountOpened"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1124,6 +1138,7 @@ pub fn dispatch_credit(
         &["AccountCredited"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1220,6 +1235,7 @@ pub fn dispatch_debit(
         &["AccountDebited"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1308,6 +1324,7 @@ pub fn dispatch_freeze_account(
         &["AccountFrozen"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1394,6 +1411,7 @@ pub fn dispatch_unfreeze(
         &["AccountUnfrozen"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1481,6 +1499,7 @@ pub fn dispatch_close_account(
         &["AccountClosed"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1574,6 +1593,7 @@ pub fn dispatch_apply_fee(
         &["FeeApplied"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1666,6 +1686,7 @@ pub fn dispatch_correct_fee(
         &["FeeCorrected"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1754,6 +1775,7 @@ pub fn dispatch_accrue_interest(
         &["InterestAccrued"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 
@@ -1844,6 +1866,7 @@ pub fn dispatch_correct_interest(
         &["InterestCorrected"],
         args.to_json(),
         mutations,
+        seed_projected_fields_account,
     )
 }
 

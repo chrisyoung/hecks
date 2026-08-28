@@ -283,6 +283,11 @@ pub fn emit_record(exemplar: &Exemplar, aggregate: &Json, value_objects_by_name:
         let field = lifecycle.get("field").and_then(Json::as_str).unwrap_or("");
         field_subs_list.push(vec![("TmplFieldType", "String".to_string()), ("tmpl_field", naming::rust_ident_field(field))]);
     }
+    // `projects` (S12, ADR 0025) — always `Option<String>`; see `domain_
+    // generator.rs`'s own `emit_projected_field_seed_fn` header for why.
+    for field in crate::shared::projected_fields(aggregate) {
+        field_subs_list.push(vec![("TmplFieldType", "Option<String>".to_string()), ("tmpl_field", naming::rust_ident_field(&field.name))]);
+    }
     for ev in crate::bridging::correctable_event_names(aggregate) {
         field_subs_list.push(vec![("TmplFieldType", "bool".to_string()), ("tmpl_field", crate::bridging::corrects_flag_field(&ev))]);
     }

@@ -121,6 +121,8 @@ impl Identity {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Identity {
     fn to_json(&self) -> crate::kernel::Json {
         Identity::to_json(self)
@@ -205,6 +207,7 @@ pub fn dispatch_register(
         &["IdentityRegistered"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

@@ -1046,6 +1046,8 @@ impl ValueObject {
     }
 }
 
+
+
 impl crate::kernel::ToJson for ValueObject {
     fn to_json(&self) -> crate::kernel::Json {
         ValueObject::to_json(self)
@@ -1147,6 +1149,7 @@ pub fn dispatch_field(
         &["ShapeFieldAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1248,6 +1251,7 @@ pub fn dispatch_close(
         &["ShapeClosed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1339,6 +1343,7 @@ pub fn dispatch_assert(
         &["AssertionAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1428,6 +1433,7 @@ pub fn dispatch_member(
         &["MemberDeclared"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

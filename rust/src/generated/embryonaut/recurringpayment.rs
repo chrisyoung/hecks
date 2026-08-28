@@ -321,6 +321,7 @@ pub fn dispatch_start(
         &["RecurringPaymentStarted"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -401,6 +402,7 @@ pub fn dispatch_advance_cycle(
         &["CycleAdvanced"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -470,6 +472,7 @@ pub fn dispatch_pause(
         &["RecurringPaymentPaused"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -539,6 +542,7 @@ pub fn dispatch_resume(
         &["RecurringPaymentResumed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -608,6 +612,7 @@ pub fn dispatch_cancel(
         &["RecurringPaymentCancelled"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

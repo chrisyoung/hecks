@@ -235,6 +235,10 @@ pub struct Transfer {
     pub amount: Option<TransferMoney>,
     pub narrative: Option<Narrative>,
     pub status: String,
+    pub source_account_status: Option<String>,
+    pub source_customer_status: Option<String>,
+    pub destination_account_status: Option<String>,
+    pub destination_customer_status: Option<String>,
 }
 
 impl crate::kernel::Fielded for Transfer {
@@ -247,6 +251,10 @@ impl crate::kernel::Fielded for Transfer {
             "amount" => self.amount.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "narrative" => self.narrative.as_ref().map(|v| Field::Nested(v)).or(Some(Field::Value(Value::Nil))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
+            "source_account_status" => self.source_account_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
+            "source_customer_status" => self.source_customer_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
+            "destination_account_status" => self.destination_account_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
+            "destination_customer_status" => self.destination_customer_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -274,6 +282,10 @@ impl Transfer {
         ("amount".to_string(), self.amount.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("narrative".to_string(), self.narrative.as_ref().map(|v| v.to_json()).unwrap_or(crate::kernel::Json::Null)),
         ("status".to_string(), crate::kernel::Json::Str(self.status.clone())),
+        ("source_account_status".to_string(), self.source_account_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
+        ("source_customer_status".to_string(), self.source_customer_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
+        ("destination_account_status".to_string(), self.destination_account_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
+        ("destination_customer_status".to_string(), self.destination_customer_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
@@ -287,8 +299,35 @@ impl Transfer {
         amount: match v.get("amount") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(TransferMoney::from_json(&x.coerce_single_field("cents"))?), },
         narrative: match v.get("narrative") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(Narrative::from_json(&x.coerce_single_field("text"))?), },
         status: v.require("status", "Transfer")?.as_str().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("Transfer.status: expected a string".to_string()))?.to_string(),
+        source_account_status: match v.get("source_account_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Transfer.source_account_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Transfer.source_account_status: expected String".to_string()) })?), },
+        source_customer_status: match v.get("source_customer_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Transfer.source_customer_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Transfer.source_customer_status: expected String".to_string()) })?), },
+        destination_account_status: match v.get("destination_account_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Transfer.destination_account_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Transfer.destination_account_status: expected String".to_string()) })?), },
+        destination_customer_status: match v.get("destination_customer_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("Transfer.destination_customer_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("Transfer.destination_customer_status: expected String".to_string()) })?), },
         })
     }
+}
+
+fn seed_projected_fields_transfer(record: &mut Transfer, refs: &dyn crate::kernel::Fielded) {
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("source") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("status") {
+        record.source_account_status = Some(v.clone());
+    }
+}
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("source") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("customer_status") {
+        record.source_customer_status = Some(v.clone());
+    }
+}
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("destination") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("status") {
+        record.destination_account_status = Some(v.clone());
+    }
+}
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("destination") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("customer_status") {
+        record.destination_customer_status = Some(v.clone());
+    }
+}
 }
 
 impl crate::kernel::ToJson for Transfer {
@@ -369,6 +408,10 @@ pub fn dispatch_request(
             amount: Some(args.amount.clone()),
             narrative: Some(args.narrative.clone()),
             status: "requested".to_string(),
+            source_account_status: None,
+            source_customer_status: None,
+            destination_account_status: None,
+            destination_customer_status: None,
         }),
     },
         "Request",
@@ -398,6 +441,7 @@ pub fn dispatch_request(
         &["TransferRequested"],
         args.to_json(),
         mutations,
+        seed_projected_fields_transfer,
     )
 }
 
@@ -493,6 +537,7 @@ pub fn dispatch_debited(
         &["TransferDebited"],
         args.to_json(),
         mutations,
+        seed_projected_fields_transfer,
     )
 }
 
@@ -580,6 +625,7 @@ pub fn dispatch_settle(
         &["TransferSettled"],
         args.to_json(),
         mutations,
+        seed_projected_fields_transfer,
     )
 }
 
@@ -667,6 +713,7 @@ pub fn dispatch_credited(
         &["TransferCredited"],
         args.to_json(),
         mutations,
+        seed_projected_fields_transfer,
     )
 }
 
@@ -754,6 +801,7 @@ pub fn dispatch_reverse(
         &["TransferReversed"],
         args.to_json(),
         mutations,
+        seed_projected_fields_transfer,
     )
 }
 
@@ -841,6 +889,7 @@ pub fn dispatch_reject(
         &["TransferRejected"],
         args.to_json(),
         mutations,
+        seed_projected_fields_transfer,
     )
 }
 

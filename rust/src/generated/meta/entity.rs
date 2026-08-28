@@ -711,6 +711,8 @@ impl Entity {
     }
 }
 
+
+
 impl crate::kernel::ToJson for Entity {
     fn to_json(&self) -> crate::kernel::Json {
         Entity::to_json(self)
@@ -791,6 +793,7 @@ pub fn dispatch_identify(
         &["PieceIdentified"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -877,6 +880,7 @@ pub fn dispatch_seal(
         &["PieceSealed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -984,6 +988,7 @@ pub fn dispatch_attribute(
         &["PieceAttributeAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1105,6 +1110,7 @@ pub fn dispatch_reference(
         &["PieceReferenceAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1226,6 +1232,7 @@ pub fn dispatch_holds(
         &["PieceHeld"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1331,6 +1338,7 @@ pub fn dispatch_precondition(
         &["PiecePreconditionAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1424,6 +1432,7 @@ pub fn dispatch_invariant(
         &["PieceInvariantAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1517,6 +1526,7 @@ pub fn dispatch_lifecycle(
         &["PieceLifecycleNamed"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -1612,6 +1622,7 @@ pub fn dispatch_transition(
         &["PieceTransitionAttached"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

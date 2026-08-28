@@ -277,6 +277,23 @@ pub fn emit_to_json_flat(exemplar: &Exemplar, struct_name: &str, attributes: &[J
             let field = crate::bridging::corrects_flag_field(ev);
             exemplar.render("to_json_field", &[("\"tmpl_field_name\"", naming::ruby_inspect_string(&field)), ("tmpl_json_value_placeholder()", format!("crate::kernel::Json::Bool(self.{field})"))])
         }));
+        // `projects` (S12, ADR 0025) — same reasoning as `corrects`'s own
+        // block just above: always `Option<String>` (`domain_generator
+        // .rs`'s own `projected_field_seed_fn` has the full "why String"
+        // argument), so it needs `extra_fields`'s own always-String-
+        // required deserialize shape as little as `corrects`'s bool flag
+        // does — read straight off `aggregate` instead.
+        for field in crate::shared::projected_fields(aggregate) {
+            let ident = naming::rust_ident_field(&field.name);
+            let key = naming::rust_field(&field.name);
+            field_exprs.push(exemplar.render(
+                "to_json_field",
+                &[
+                    ("\"tmpl_field_name\"", naming::ruby_inspect_string(&key)),
+                    ("tmpl_json_value_placeholder()", format!("self.{ident}.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)")),
+                ],
+            ));
+        }
     }
     let field_block = field_exprs.iter().map(|f| format!("        {f}")).collect::<Vec<_>>().join("\n");
 
@@ -371,6 +388,19 @@ pub fn emit_from_json_state(
                 naming::ruby_inspect_string(&field),
                 naming::ruby_inspect_string(struct_name),
                 json_type_error(struct_name, &field, "a boolean")
+            );
+            field_exprs.push(exemplar.render("field_assignment", &[("tmpl_ident", ident), ("tmpl_rhs_placeholder()", rhs)]));
+        }
+        // `projects` (S12, ADR 0025) — see `emit_to_json_flat`'s own
+        // matching block for why this reads `aggregate` directly, same
+        // as `corrects` just above, rather than through `extra_fields`.
+        for field in crate::shared::projected_fields(aggregate) {
+            let ident = naming::rust_ident_field(&field.name);
+            let key = naming::rust_field(&field.name);
+            let rhs = format!(
+                "match v.get({}) {{ Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some({}), }}",
+                naming::ruby_inspect_string(&key),
+                scalar_from_json_value_expr(struct_name, &key, "String", "x")
             );
             field_exprs.push(exemplar.render("field_assignment", &[("tmpl_ident", ident), ("tmpl_rhs_placeholder()", rhs)]));
         }

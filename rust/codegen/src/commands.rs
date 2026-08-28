@@ -447,6 +447,13 @@ pub fn emit_command(exemplar: &Exemplar, command: &Json, aggregate: &Json, domai
         for ev in crate::bridging::correctable_event_names(aggregate) {
             record_fields.push(format!("            {}: false,", crate::bridging::corrects_flag_field(&ev)));
         }
+        // `projects` (S12, ADR 0025) — `None` at creation; `seed_
+        // projected_fields_*` (domain_generator.rs) is what actually
+        // populates it, called from `kernel::dispatch` right before
+        // THIS record's own first save, after this closure already ran.
+        for field in crate::shared::projected_fields(aggregate) {
+            record_fields.push(format!("            {}: None,", naming::rust_ident_field(&field.name)));
+        }
 
         hydrate = format!(
             "crate::kernel::Hydrate::Create {{\n        id: {},\n        build: Box::new(|| {record} {{\n{}\n        }}),\n    }}",
@@ -497,6 +504,7 @@ pub fn emit_command(exemplar: &Exemplar, command: &Json, aggregate: &Json, domai
             ("tmpl_ensures_spec_placeholder(),", ensures_specs.join("\n")),
             ("tmpl_emit_placeholder()", emits_expr),
             ("args.to_json(),", payload),
+            ("tmpl_seed_projected_placeholder,", format!("{},", crate::domain_generator::projected_field_seed_fn_name(aggregate))),
         ],
     );
 

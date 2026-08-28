@@ -842,6 +842,7 @@ pub struct SafeDepositBox {
     pub visits: Vec<Visit>,
     pub keys: Vec<KeyIssuance>,
     pub status: String,
+    pub customer_status: Option<String>,
 }
 
 impl crate::kernel::Fielded for SafeDepositBox {
@@ -855,6 +856,7 @@ impl crate::kernel::Fielded for SafeDepositBox {
             "visits" => Some(Field::Value(Value::List(self.visits.len()))),
             "keys" => Some(Field::Value(Value::List(self.keys.len()))),
             "status" => Some(Field::Value(Value::Str(self.status.clone()))),
+            "customer_status" => self.customer_status.as_ref().map(|v| Field::Value(Value::Str(v.clone()))).or(Some(Field::Value(Value::Nil))),
             _ => None,
         }
     }
@@ -884,6 +886,7 @@ impl SafeDepositBox {
         ("visits".to_string(), crate::kernel::Json::Array(self.visits.iter().map(|x| x.to_json()).collect())),
         ("keys".to_string(), crate::kernel::Json::Array(self.keys.iter().map(|x| x.to_json()).collect())),
         ("status".to_string(), crate::kernel::Json::Str(self.status.clone())),
+        ("customer_status".to_string(), self.customer_status.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)),
         ])
     }
 }
@@ -898,8 +901,17 @@ impl SafeDepositBox {
         visits: match v.get("visits").and_then(crate::kernel::Json::as_array) { Some(items) => items.iter().map(Visit::from_json).collect::<Result<Vec<_>, crate::kernel::Refusal>>()?, None => Vec::new(), },
         keys: match v.get("keys").and_then(crate::kernel::Json::as_array) { Some(items) => items.iter().map(KeyIssuance::from_json).collect::<Result<Vec<_>, crate::kernel::Refusal>>()?, None => Vec::new(), },
         status: v.require("status", "SafeDepositBox")?.as_str().ok_or_else(|| crate::kernel::Refusal::TypeMismatch("SafeDepositBox.status: expected a string".to_string()))?.to_string(),
+        customer_status: match v.get("customer_status") { Some(&crate::kernel::Json::Null) | None => None, Some(x) => Some(x.as_str().map(|s| s.to_string()).ok_or_else(|| if matches!(x, crate::kernel::Json::Array(_) | crate::kernel::Json::Object(_)) { crate::kernel::Refusal::TypeMismatch(format!("SafeDepositBox.customer_status expects String, got {}", x.inspect())) } else { crate::kernel::Refusal::TypeMismatch("SafeDepositBox.customer_status: expected String".to_string()) })?), },
         })
     }
+}
+
+fn seed_projected_fields_safedepositbox(record: &mut SafeDepositBox, refs: &dyn crate::kernel::Fielded) {
+if let Some(crate::kernel::Field::Nested(node)) = refs.field("customer") {
+    if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field("status") {
+        record.customer_status = Some(v.clone());
+    }
+}
 }
 
 impl crate::kernel::ToJson for SafeDepositBox {
@@ -979,6 +991,7 @@ pub fn dispatch_rent(
             visits: vec![],
             keys: vec![],
             status: "vacant".to_string(),
+            customer_status: None,
         }),
     },
         "Rent",
@@ -1004,6 +1017,7 @@ pub fn dispatch_rent(
         &["BoxRented"],
         args.to_json(),
         mutations,
+        seed_projected_fields_safedepositbox,
     )
 }
 
@@ -1096,6 +1110,7 @@ pub fn dispatch_surrender(
         &["BoxSurrendered", "KeyReturnDue"],
         args.to_json(),
         mutations,
+        seed_projected_fields_safedepositbox,
     )
 }
 
@@ -1189,6 +1204,7 @@ pub fn dispatch_log_visit(
         &["BoxOpened"],
         args.to_json(),
         mutations,
+        seed_projected_fields_safedepositbox,
     )
 }
 
@@ -1280,6 +1296,7 @@ pub fn dispatch_issue_key(
         &["KeyIssued"],
         args.to_json(),
         mutations,
+        seed_projected_fields_safedepositbox,
     )
 }
 

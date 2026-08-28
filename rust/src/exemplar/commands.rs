@@ -107,6 +107,16 @@ fn tmpl_hydrate_placeholder() -> crate::kernel::Hydrate<'static, TmplRecord> {
 
 fn tmpl_mutation_lines_placeholder(record: &mut TmplRecord) {}
 
+// `tmpl_seed_projected_placeholder` — see `domain_generator.rb`'s own
+// `projected_field_seed_fn_name`: either `crate::kernel::no_seed_projected`
+// (an aggregate with no `projects` fields) or a real, generated per-
+// aggregate fn matching this exact signature (one with them). Named
+// here as a plain fn, not a closure — a bare fn item is what the
+// substitution text actually is in both cases, and `dispatch`'s own
+// `impl FnOnce(&mut T, &dyn Fielded)` parameter coerces either shape
+// identically.
+fn tmpl_seed_projected_placeholder(record: &mut TmplRecord, refs: &dyn crate::kernel::Fielded) {}
+
 // TMPL:dispatch_fn BEGIN
 pub fn dispatch_tmpl(
     repo: &mut impl crate::kernel::Repository<TmplRecord>, id: &str, args: TmplArgs, mutations: &mut Vec<crate::kernel::MutationRecord>,
@@ -136,6 +146,7 @@ tmpl_ensures_spec_placeholder(),
         &[tmpl_emit_placeholder()],
         args.to_json(),
         mutations,
+        tmpl_seed_projected_placeholder,
     )
 }
 // TMPL:dispatch_fn END

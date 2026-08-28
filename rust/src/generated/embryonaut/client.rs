@@ -257,6 +257,7 @@ pub fn dispatch_add_prospect(
         &["ProspectAdded"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -330,6 +331,7 @@ pub fn dispatch_engage(
         &["ClientEngaged"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -399,6 +401,7 @@ pub fn dispatch_pause(
         &["ClientPaused"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -468,6 +471,7 @@ pub fn dispatch_reactivate(
         &["ClientReactivated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -537,6 +541,7 @@ pub fn dispatch_churn(
         &["ClientChurned"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 

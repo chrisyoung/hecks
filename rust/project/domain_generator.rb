@@ -71,6 +71,90 @@ module RustProjection
       [[Projector.rust_field(node[:lifecycle][:field]), "crate::kernel::Json::Str(self.#{field}.clone())"]]
     end
 
+    # `projects` (S12, ADR 0025) — the reference-hop projected field
+    # `AggregateBuilder#projects_impl` declares (`projects :customer_
+    # status, from: :"customer.status"`), already carried on `aggregate
+    # [:projected_fields]` by the SAME IR export the Ruby-side interpreter
+    # reads (`hexagon.rb`) — this generator just never consumed it before.
+    # ALWAYS `Option<String>`: every real declaration in this corpus
+    # projects a lifecycle `status` field, or another aggregate's own
+    # already-projected `*_status` field (itself a `String` by the same
+    # rule, recursively) — never a richer value object. A remote field of
+    # any other declared type would need its own `scalar_from_json_value_
+    # expr`/`scalar_to_json_expr` case threaded through here; nothing in
+    # `examples/` or `lib/hecks/framework/` exercises one, so this stays
+    # scoped to the shape that's real (same restraint `emit_record`'s own
+    # `list_attr_creation_optional?` special-casing takes elsewhere in
+    # this file, rather than a generic-but-untested `Field`-to-any-Rust-
+    # type coercion).
+    #
+    # `extra_fields` shape here mirrors `lifecycle_extra_field` above for
+    # the STRUCT-FIELD/`to_json` halves (types.rb/json_codec.rb's own
+    # `extra_fields:` callers); the FOURTH consumer — `emit_fielded_
+    # record`'s own `field()` arm — reads `aggregate[:projected_fields]`
+    # directly (fielded.rb), same as it already does for ordinary
+    # attributes, rather than through this helper.
+    def projected_extra_fields(aggregate)
+      Array(aggregate[:projected_fields]).map do |field|
+        key   = Projector.rust_field(field[:name])
+        ident = Projector.rust_ident_field(field[:name])
+        serialize   = "self.#{ident}.as_ref().map(|v| crate::kernel::Json::Str(v.clone())).unwrap_or(crate::kernel::Json::Null)"
+        deserialize = "match v.get(#{key.inspect}) { " \
+          "Some(&crate::kernel::Json::Null) | None => None, " \
+          "Some(x) => Some(#{Projector.scalar_from_json_value_expr(aggregate[:name].to_s, key, 'String', 'x')}), }"
+        [key, serialize, deserialize]
+      end
+    end
+
+    # The fn `kernel::dispatch`'s own `seed_projected` parameter calls
+    # (see that fn's own comment) — one per aggregate that declares
+    # `projects` fields, `crate::kernel::no_seed_projected` (a plain,
+    # shared generic no-op) for one that doesn't, so every `dispatch_*`
+    # call site has a real value to pass regardless.
+    def projected_field_seed_fn_name(aggregate)
+      return "crate::kernel::no_seed_projected" if Array(aggregate[:projected_fields]).empty?
+
+      "seed_projected_fields_#{aggregate[:name].to_s.downcase}"
+    end
+
+    # `refs` — the SAME `command_deref`/`owner_deref`-backed `&dyn
+    # Fielded` a `given`/`ensures` already reads (`WithReferences`,
+    # reference_lookup.rs) — a projected field's own `reference` is
+    # always either a fresh creating-command argument (`command_deref`)
+    # or the acting record's own already-stored reference (`owner_deref`),
+    # the identical two cases `admissibility.rb`'s own boundary-rule
+    # comment (S12, ADR 0025) draws for what stays in bounds — never a
+    # second live registry lookup this generator has to arrange itself.
+    # `node.field(remote_field)` reaches a plain attribute OR another
+    # projected field identically (both render through `emit_fielded_
+    # record`'s own `fielded_arm_optional_scalar` shape, fielded.rb) —
+    # exactly how `destination.customer_status` (itself projected from
+    # `destination.status`) resolves without this generator needing to
+    # know it's chained.
+    def emit_projected_field_seed_fn(aggregate)
+      fields = Array(aggregate[:projected_fields])
+      return "" if fields.empty?
+
+      name = Projector.rust_ident(aggregate[:name])
+      arms = fields.map do |field|
+        reference = Projector.rust_field(field[:reference])
+        remote    = Projector.rust_field(field[:remote_field])
+        ident     = Projector.rust_ident_field(field[:name])
+        <<~RUST
+          if let Some(crate::kernel::Field::Nested(node)) = refs.field(#{reference.inspect}) {
+              if let Some(crate::kernel::Field::Value(crate::kernel::Value::Str(v))) = node.field(#{remote.inspect}) {
+                  record.#{ident} = Some(v.clone());
+              }
+          }
+        RUST
+      end.join
+
+      <<~RUST
+        fn #{projected_field_seed_fn_name(aggregate)}(record: &mut #{name}, refs: &dyn crate::kernel::Fielded) {
+        #{arms}}
+      RUST
+    end
+
     # `reference_checks(command, aggregates_by_name, unsupported_names)` —
     # `CommandRules::References#resolve_references`'s own per-attribute walk
     # (`command.attributes.select(&:reference?)`), read at codegen time
@@ -404,9 +488,11 @@ module RustProjection
 
           f.puts Projector.emit_record(aggregate, value_objects_by_name)
           f.puts
-          f.puts Projector.emit_to_json_flat(record_name, aggregate[:attributes], value_objects_by_name, optional: true, extra_fields: lifecycle_extra_field(aggregate) + Projector.corrects_extra_fields(aggregate), aggregate: aggregate)
+          f.puts Projector.emit_to_json_flat(record_name, aggregate[:attributes], value_objects_by_name, optional: true, extra_fields: lifecycle_extra_field(aggregate) + Projector.corrects_extra_fields(aggregate) + projected_extra_fields(aggregate), aggregate: aggregate)
           f.puts
-          f.puts Projector.emit_from_json_state(record_name, aggregate[:attributes], value_objects_by_name, optional: true, extra_fields: lifecycle_extra_field(aggregate) + Projector.corrects_extra_fields(aggregate), aggregate: aggregate)
+          f.puts Projector.emit_from_json_state(record_name, aggregate[:attributes], value_objects_by_name, optional: true, extra_fields: lifecycle_extra_field(aggregate) + Projector.corrects_extra_fields(aggregate) + projected_extra_fields(aggregate), aggregate: aggregate)
+          f.puts
+          f.puts emit_projected_field_seed_fn(aggregate)
           f.puts
           # `dispatch`/`dispatch_entity` (kernel/dispatch.rs) are generic
           # over the record type and need `record.to_json()` to build a

@@ -125,6 +125,8 @@ impl AccountFreezeReview {
     }
 }
 
+
+
 impl crate::kernel::ToJson for AccountFreezeReview {
     fn to_json(&self) -> crate::kernel::Json {
         AccountFreezeReview::to_json(self)
@@ -210,6 +212,7 @@ pub fn dispatch_open(
         &["AccountFreezeReviewOpened"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -296,6 +299,7 @@ pub fn dispatch_clear(
         &["AccountFreezeReviewCleared"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
@@ -382,6 +386,7 @@ pub fn dispatch_escalate(
         &["AccountFreezeReviewEscalated"],
         args.to_json(),
         mutations,
+        crate::kernel::no_seed_projected,
     )
 }
 
