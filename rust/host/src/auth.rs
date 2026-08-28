@@ -510,7 +510,11 @@ fn now_secs() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs()
 }
 
-fn httpdate_now() -> String {
+// `pub(crate)` — `dispatch.rs`'s own `occurred_at` stamping reuses this
+// exact ISO-8601 rendering rather than re-deriving it a second time; see
+// this function's own body comment for the format guarantee both call
+// sites depend on.
+pub(crate) fn httpdate_now() -> String {
     // ISO 8601 UTC, matching Ruby's Time.now.utc.iso8601 -- Governance::
     // RoleAssignment.starts_at only needs to parse as a real instant,
     // never re-derived from or compared against wall-clock time here.

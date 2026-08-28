@@ -176,6 +176,17 @@ pub async fn handle(
     if let Some(role) = role {
         step["role"] = serde_json::Value::String(role.to_string());
     }
+    // OCCURRED_AT GOES ON THIS STEP ONLY — same reasoning as `role`,
+    // just above: this is the outermost, live dispatch, the one real
+    // moment `crate::auth::httpdate_now()` (this crate's own wall
+    // clock) means anything for; every other entry in `steps` is
+    // replayed history whose own events were already stamped with
+    // whatever time it originally was, and re-stamping today's time
+    // onto a replay would be actively wrong, not merely redundant.
+    // `kernel::Event::occurred_at`'s own field doc (rust/src/kernel/
+    // mod.rs) has the kernel-side half of this: it has no clock of its
+    // own and only ever applies whatever string arrives here.
+    step["occurred_at"] = serde_json::Value::String(crate::auth::httpdate_now());
     steps.push(step);
     // MUST MATCH `steps`' OWN CHOICE ABOVE — a full replay (whether
     // because there's no snapshot yet, or because this is the one-time
@@ -671,6 +682,44 @@ mod tests {
         assert_eq!(snapshot_rows.len(), 1, "the head-snapshot table should carry exactly the one live record");
         let id: String = snapshot_rows[0].get(0);
         assert_eq!(id, "CUST-0001");
+    }
+
+    // `occurred_at` — this crate's own real wall clock, stamped onto the
+    // outermost dispatch step (`handle`'s own `step["occurred_at"] =
+    // ...` line, right beside `role`'s identical stamp) and carried all
+    // the way through `kernel::orchestrate`/`cli.rs::event_to_json` into
+    // the returned "events" array. Proven end to end, through the real
+    // wasm module, not just the in-kernel unit tests — those only prove
+    // the STAMPING step itself; this proves the string this crate
+    // actually sends is the one that comes back out.
+    #[tokio::test]
+    async fn occurred_at_is_stamped_onto_every_returned_event_with_this_crate_s_own_real_clock() {
+        let client = scratch_db("rust_host_dispatch_test_occurred_at").await;
+        provision_lineage(&*client.lock().await, "Banking", 1, &["Customer"]).await;
+
+        let before = crate::auth::httpdate_now();
+        let outcome = handle(
+            &client,
+            &wasm_path(),
+            "Banking::Customer.Register",
+            register("CUST-OCCURRED-AT"),
+            None,
+            &test_config("Banking", 1),
+            &lambda_client::NeverInvoker,
+        )
+        .await
+        .unwrap();
+        let after = crate::auth::httpdate_now();
+
+        assert!(outcome.accepted, "{:?}", outcome.result["refusals"]);
+        let events = outcome.result["events"].as_array().unwrap();
+        assert_eq!(events.len(), 1);
+        let occurred_at = events[0]["occurred_at"].as_str().expect("occurred_at should be a real string, not null or absent");
+        // Lexical comparison is valid here — this format's own digit-
+        // then-letter layout (`{y:04}-{mo:02}-{d:02}T{h:02}:{m:02}:{s:02}Z`)
+        // sorts identically to chronological order for any two stamps
+        // taken less than 10,000 years apart.
+        assert!(occurred_at >= before.as_str() && occurred_at <= after.as_str(), "{occurred_at} should fall between {before} and {after}");
     }
 
     #[tokio::test]

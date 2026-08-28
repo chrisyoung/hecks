@@ -277,9 +277,10 @@ where
             id: id.clone(),
             payload: payload.clone(),
             // Stamped later, if at all — `orchestrate`'s own job (mod.rs's
-            // `correlation` field doc), never this command-shaped
-            // constructor's, which has no notion of "was this dispatch a
-            // saga leg."
+            // `occurred_at`/`correlation` field docs), never this
+            // command-shaped constructor's, which has no clock and no
+            // notion of "was this dispatch a saga leg."
+            occurred_at: None,
             correlation: None,
         })
         .collect();
@@ -484,6 +485,7 @@ where
             aggregate: aggregate_qualified_name.to_string(),
             id: parent_id.to_string(),
             payload: payload.clone(),
+            occurred_at: None,
             correlation: None,
         })
         .collect();

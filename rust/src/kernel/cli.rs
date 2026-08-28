@@ -364,6 +364,18 @@ pub fn run(input: &str) -> String {
         // site mirrors `Dispatcher#reenter`'s `Caller.without`).
         let caller_role = step.get("role").and_then(Json::as_str);
 
+        // `occurred_at:` — the SAME door pattern `role:` just above already
+        // is: this kernel has no clock (`Event::occurred_at`'s own field
+        // doc, mod.rs), so `rust/host` — which has a real wall clock —
+        // stamps ONE moment per step here, before this artifact ever runs,
+        // and `orchestrate` applies it to every event this step's own
+        // dispatch produces, including every cascading reaction. Absent
+        // for a caller with nothing to stamp (`hecks-parse`'s own
+        // differential-parity harness, `bin/rust_conformance`'s fixtures
+        // that predate this key) — `None` all the way down, matching how
+        // `caller_role` already answers `None` for the identical case.
+        let occurred_at = step.get("occurred_at").and_then(Json::as_str);
+
         // Direct callers use top-level `to`/`with`; the durable host wraps
         // that same object under its historical `args` journal column so no
         // storage migration is required. Generated `dispatch_by_name`
@@ -403,6 +415,7 @@ pub fn run(input: &str) -> String {
             command_input,
             caller_role,
             None,
+            occurred_at,
             0,
             &mut events,
             &mut step_mutations,
@@ -528,6 +541,8 @@ pub fn serve(input: impl std::io::BufRead, mut output: impl std::io::Write) {
                 let empty_args = Json::Object(vec![]);
                 let args = step.get("args").unwrap_or(&empty_args);
                 let caller_role = step.get("role").and_then(Json::as_str);
+                // See `run`'s own identical comment, above.
+                let occurred_at = step.get("occurred_at").and_then(Json::as_str);
                 if step.get("snapshot").is_some() {
                     snapshot = Some((store.clone(), sagas.clone()));
                     ok()
@@ -555,6 +570,7 @@ pub fn serve(input: impl std::io::BufRead, mut output: impl std::io::Write) {
                         command_input(&step, args),
                         caller_role,
                         None,
+                        occurred_at,
                         0,
                         &mut events,
                         &mut Vec::new(),
@@ -680,6 +696,13 @@ fn event_to_json(event: &Event) -> Json {
         ("aggregate", Json::str(event.aggregate.clone())),
         ("id", Json::str(event.id.clone())),
         ("payload", event.payload.clone()),
+        // 5th key, matching Ruby's own `Event#to_h` key order exactly
+        // (lib/hecks/runtime/event.rb). `Null` for `None` — a caller
+        // this step never carried a wall-clock stamp for at all
+        // (`hecks-parse`'s own differential-parity harness, an older
+        // fixture that predates this key), the same absent-is-null
+        // reading every other optional field on this wire already gets.
+        ("occurred_at", event.occurred_at.clone().map(Json::Str).unwrap_or(Json::Null)),
     ])
 }
 
