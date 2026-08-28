@@ -26,6 +26,7 @@ mod lambda_client;
 mod mint;
 mod reference_transform;
 mod reference_validate;
+mod secrets;
 mod storage_shape;
 mod wasm_runner;
 mod web;
@@ -37,7 +38,81 @@ use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let database_url = std::env::var("DATABASE_URL").map_err(|_| "DATABASE_URL is required")?;
+    // DB_SECRET_ARN — bin/project_deploy's own default now (template.yaml's
+    // Environment.Variables comment has the full story): the password
+    // itself is fetched from Secrets Manager HERE, at cold start, over
+    // the AWS SDK, rather than trusted from a CloudFormation dynamic
+    // reference already resolved into this function's own
+    // Environment.Variables — which is readable in plaintext by any
+    // principal with read-only access to the account
+    // (lambda:GetFunctionConfiguration), not the secret-at-rest
+    // protection its own name suggests. DB_HOST/DB_NAME travel as plain
+    // (non-secret) Environment.Variables alongside it.
+    //
+    // FALLS BACK TO DATABASE_URL directly when DB_SECRET_ARN is absent —
+    // the one legitimate case being a human hand-debugging over an SSM
+    // tunnel with DATABASE_URL set manually (project_deploy's own
+    // ExcludeCharacters comment already anticipates exactly this).
+    //
+    // ONE FETCHER, built eagerly and reused below for GOOGLE_OAUTH_SECRET_ID/
+    // SESSION_SECRET_ARN too -- a real deploy always sets DB_SECRET_ARN
+    // (bin/project_deploy's own default), so this is the common path in
+    // practice; building it even in the DATABASE_URL-fallback debugging
+    // case costs one unused HTTP client, not worth branching around.
+    let secret_fetcher = secrets::AwsSecretFetcher::from_env().await;
+    let database_url = match std::env::var("DB_SECRET_ARN") {
+        Ok(secret_arn) => {
+            let db_host = std::env::var("DB_HOST").map_err(|_| "DB_HOST is required when DB_SECRET_ARN is set")?;
+            let db_name = std::env::var("DB_NAME").map_err(|_| "DB_NAME is required when DB_SECRET_ARN is set")?;
+            let secret_json = secret_fetcher
+                .fetch_secret_string(&secret_arn)
+                .await
+                .map_err(|e| format!("fetching DB_SECRET_ARN from Secrets Manager: {e:#}"))?;
+            let password = secrets::extract_field(&secret_json, "password")?;
+            // Composed exactly the way template.yaml's own retired
+            // `{{resolve:secretsmanager:...}}` DATABASE_URL Sub used to —
+            // literal, unescaped, no percent-encoding. parse_database_url
+            // below never percent-decodes the password segment either way.
+            format!("postgres://postgres:{password}@{db_host}:5432/{db_name}")
+        }
+        Err(_) => std::env::var("DATABASE_URL")
+            .map_err(|_| "either DB_SECRET_ARN (+ DB_HOST/DB_NAME) or DATABASE_URL is required")?,
+    };
+
+    // GOOGLE_OAUTH_SECRET_ID/SESSION_SECRET_ARN — the SAME
+    // {{resolve:secretsmanager:...}}-into-Environment.Variables exposure
+    // DB_SECRET_ARN above replaced, applied to auth.rs's own
+    // GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET and web.rs's own
+    // SESSION_SECRET. Fetched here, once, then `unsafe { set_var }`'d
+    // into the SAME env keys auth.rs/web.rs already read via
+    // `std::env::var(...)` — neither file changes at all; from their
+    // own point of view this is indistinguishable from a human having
+    // exported the real value directly. SAFETY: this runs before
+    // `tokio::spawn` below or any request is ever dispatched — nothing
+    // else in this process reads or writes the environment concurrently
+    // with these two calls.
+    if let Ok(oauth_secret_id) = std::env::var("GOOGLE_OAUTH_SECRET_ID") {
+        let secret_json = secret_fetcher
+            .fetch_secret_string(&oauth_secret_id)
+            .await
+            .map_err(|e| format!("fetching GOOGLE_OAUTH_SECRET_ID from Secrets Manager: {e:#}"))?;
+        let client_id = secrets::extract_field(&secret_json, "client_id")?;
+        let client_secret = secrets::extract_field(&secret_json, "client_secret")?;
+        unsafe {
+            std::env::set_var("GOOGLE_CLIENT_ID", client_id);
+            std::env::set_var("GOOGLE_CLIENT_SECRET", client_secret);
+        }
+    }
+    if let Ok(session_secret_arn) = std::env::var("SESSION_SECRET_ARN") {
+        let secret_json = secret_fetcher
+            .fetch_secret_string(&session_secret_arn)
+            .await
+            .map_err(|e| format!("fetching SESSION_SECRET_ARN from Secrets Manager: {e:#}"))?;
+        let session_secret = secrets::extract_field(&secret_json, "session_secret")?;
+        unsafe {
+            std::env::set_var("SESSION_SECRET", session_secret);
+        }
+    }
     let wasm_path = PathBuf::from(
         std::env::var("HECKS_WASM_PATH").unwrap_or_else(|_| "banking.wasm".to_string()),
     );

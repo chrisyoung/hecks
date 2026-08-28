@@ -223,7 +223,7 @@ Same canonical text either way — a referencing command's own `given`
 carries the entity's declared predicate, not a copy:
 
 ```ruby
-ledger_entry.commands.find { |c| c.hecks_name == "Reverse" }.givens.map(&:canonical)  # => ["parent.customer.status == \"active\"", "parent.status == \"open\"", "state == \"posted\""]
+ledger_entry.commands.find { |c| c.hecks_name == "Reverse" }.givens.map(&:canonical)  # => ["parent.customer_status == \"active\"", "parent.status == \"open\"", "state == \"posted\""]
 ```
 
 `given` also SHARES CHAPTER-WIDE, ACROSS AGGREGATES — a bare
@@ -233,15 +233,15 @@ chapter already declared that description, the identical move
 `aggregate.md`'s own "given" makes one level up
 (`docs/implemented/resolution-rules/chapter-entity-given.md`).
 `SafeDepositBox::Visit` names `Account::LedgerEntry`'s own "customer is
-active" back rather than retyping `parent.customer.status == "active"`
+active" back rather than retyping `parent.customer_status == "active"`
 a second time — a genuinely different aggregate, the identical
-canonical, since both pieces reach "the customer" the same way (a
-direct `reference_to Customer` on their own aggregate):
+canonical, since both pieces' own owning aggregate carries the
+identical-named projected field (`projects :customer_status`):
 
 ```ruby
 visit = runtime.registry.bluebook("Banking").aggregate("SafeDepositBox")
                .entities.find { |e| e.hecks_name == "Visit" }
-visit.preconditions.map { |g| [g.description, g.canonical] }  # => [["customer is active", "parent.customer.status == \"active\""], ["box is rented", "parent.status == \"rented\""]]
+visit.preconditions.map { |g| [g.description, g.canonical] }  # => [["customer is active", "parent.customer_status == \"active\""], ["box is rented", "parent.status == \"rented\""]]
 ```
 
 `declared_by:` disambiguates the same way it does one level up — only
@@ -336,7 +336,7 @@ the account's own lifecycle state before touching one entry:
 reverse = runtime.registry.bluebook("Banking").aggregate("Account")
                   .entities.find { |e| e.hecks_name == "LedgerEntry" }
                   .commands.find { |c| c.hecks_name == "Reverse" }
-reverse.givens.map(&:canonical)  # => ["parent.customer.status == \"active\"", "parent.status == \"open\"", "state == \"posted\""]
+reverse.givens.map(&:canonical)  # => ["parent.customer_status == \"active\"", "parent.status == \"open\"", "state == \"posted\""]
 ```
 
 Enforced, not decorative — a fresh account whose customer is
