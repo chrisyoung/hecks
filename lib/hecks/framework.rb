@@ -1,3 +1,4 @@
+require "digest"
 require_relative "runtime/registry"
 
 module Hecks
@@ -85,6 +86,65 @@ module Hecks
       return if Hecks.current_registry.bluebook(name.to_s)
 
       Kernel.load(path)
+    end
+
+    LOCK_PATH = File.expand_path("framework/bluebook/framework.lock", __dir__).freeze
+
+    # THE CONTENT EACH MEMBER IS TRUSTED AT — `uses_framework` attaches
+    # whatever currently sits at a member's own path (`load!`, above),
+    # live off disk, every boot; nothing about that call pins a version.
+    # A framework member's own era/lineage story (the Postgres-only
+    # machinery under `ports/persistence/plugins/era/`) can't fill that
+    # gap either — every framework member is `persisted_by "Memory"`
+    # (framework.hecksagon), so that machinery never runs for them at
+    # all. This is the lighter, adapter-agnostic substitute: one SHA256
+    # per member, checked into git the same way this repo's own
+    # `Gemfile.lock` already is — same idea (a shared dependency's exact
+    # content, committed, reviewed on change), applied to a framework
+    # member instead of a gem. A change to `governance.bluebook` no
+    # longer silently reaches every
+    # `uses_framework "Governance"` consumer on its next boot — see
+    # `Registry::Verification#verify_framework_lock!`, which refuses
+    # until `bin/relock-framework` accepts the change deliberately.
+    def self.digest(name)
+      Digest::SHA256.hexdigest(File.read(members.fetch(name.to_s)))
+    end
+
+    # `Name  sha256hex` per line, two spaces, `#`-comments and blank
+    # lines ignored — plain enough to diff meaningfully in a PR, which
+    # is the whole point: a relock is a reviewable change, not a
+    # silent one.
+    def self.locked_digests
+      return {} unless File.exist?(LOCK_PATH)
+
+      File.readlines(LOCK_PATH, chomp: true).filter_map do |line|
+        line = line.sub(/#.*/, "").strip
+        next if line.empty?
+
+        name, digest = line.split(/\s+/, 2)
+        [name, digest]
+      end.to_h
+    end
+
+    # CHANGED / UNLOCKED / STALE — the three ways a member and the lock
+    # can disagree. Returned as data, not raised, so both
+    # `Registry::Verification#verify_framework_lock!` (turns it into one
+    # boot-time refusal) and `bin/relock-framework` (turns it into a
+    # rewritten lock file) share one source of truth for what's wrong,
+    # rather than each re-deriving it.
+    def self.drift
+      current = members.keys
+      locked  = locked_digests
+
+      changed = current.filter_map do |name|
+        expected = locked[name]
+        next unless expected
+
+        actual = digest(name)
+        [name, { expected: expected, actual: actual }] unless actual == expected
+      end.to_h
+
+      { changed: changed, unlocked: current - locked.keys, stale: locked.keys - current }
     end
   end
 end

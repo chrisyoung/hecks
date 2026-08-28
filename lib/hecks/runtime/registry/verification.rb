@@ -12,6 +12,7 @@ module Hecks
       module Verification
         def verify!
           verify_default_adapter!
+          verify_framework_lock!
 
           @hecksagons.each_value do |hexagon|
             refuse_ungoverned_roles!(hexagon)
@@ -62,6 +63,41 @@ module Hecks
           raise WiringError,
                 "the default persistence adapter (#{name}) is not usable, so an " \
                 "aggregate with no bind could not be given one: #{error.message}"
+        end
+
+        # `uses_framework` attaches whatever a member's own file says
+        # RIGHT NOW (Framework.load!'s own comment) — no version pin of
+        # its own, and the Postgres-only era/lineage machinery can't
+        # supply one either, since every framework member is
+        # `persisted_by "Memory"`. This is the check that closes that
+        # gap: only for members THIS registry actually attached
+        # (`@bluebooks.keys & Framework.members.keys` — a boot that never
+        # `uses_framework`s Compliance has no standing to refuse over
+        # Compliance's own in-progress edits, the same restraint
+        # `EraCheck#lineage_capable_registry?` already applies for the
+        # same reason). Global once, not per-hexagon: unlike
+        # `refuse_ungoverned_roles!` this isn't a fact about any one
+        # domain's own attachment, it's "did the shared file change
+        # under everyone who already attached it."
+        def verify_framework_lock!
+          attached = @bluebooks.keys & Hecks::Framework.members.keys
+          return if attached.empty?
+
+          drift   = Hecks::Framework.drift
+          changed = drift[:changed].slice(*attached)
+          missing = drift[:unlocked] & attached
+          return if changed.empty? && missing.empty?
+
+          messages = changed.map do |name, digests|
+            "#{name} has changed since framework.lock was last generated " \
+              "(expected #{digests[:expected][0, 12]}, got #{digests[:actual][0, 12]}) — " \
+              "every uses_framework #{name.inspect} consumer would silently pick this up on its next boot"
+          end
+          messages += missing.map { |name| "#{name} is attached but framework.lock has no entry for it" }
+
+          raise WiringError,
+                "#{messages.join('; ')}. Review the change, then run bin/relock-framework " \
+                "to accept it deliberately."
         end
 
         def check_verb(bind)

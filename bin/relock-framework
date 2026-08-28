@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+# THE DELIBERATE HALF OF Registry::Verification#verify_framework_lock! —
+# that refuses a boot the moment a framework member's own content moves
+# out from under `framework.lock` (lib/hecks/framework.rb's own comment
+# has the full reasoning: `uses_framework` has no version pin of its
+# own, so this lock is what stands in for one). This is how a real
+# change to Governance/Identity/Compliance/ConsoleSettings gets
+# accepted: run this, review the diff it produces in
+# `lib/hecks/framework/bluebook/framework.lock` the same way you'd
+# review a `Gemfile.lock` diff, and commit both together.
+#
+# Rewrites every member's digest unconditionally — this script has no
+# opinion about WHICH change is fine, only about making the accepted
+# state explicit and reviewable. `--check` instead reports drift and
+# exits nonzero without writing, for CI / a pre-push hook that wants to
+# catch an un-relocked change before it ships, the same shape
+# `bin/model_check`'s own name already implies for this repo.
+
+$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+require "hecks"
+
+check = ARGV.include?("--check")
+
+drift = Hecks::Framework.drift
+
+if check
+  problems = drift[:changed].keys + drift[:unlocked] + drift[:stale]
+  if problems.empty?
+    puts "framework.lock matches every framework member."
+    exit 0
+  end
+
+  drift[:changed].each_key { |name| puts "changed: #{name}" }
+  drift[:unlocked].each { |name| puts "unlocked (no lock entry): #{name}" }
+  drift[:stale].each { |name| puts "stale (lock entry, no such member): #{name}" }
+  puts "\nRun bin/relock-framework (no --check) to accept these, then review the diff."
+  exit 1
+end
+
+lines = Hecks::Framework.members.keys.sort.map do |name|
+  format("%<name>-20s %<digest>s", name: name, digest: Hecks::Framework.digest(name))
+end
+File.write(Hecks::Framework::LOCK_PATH, lines.join("\n") << "\n")
+
+puts "wrote #{Hecks::Framework::LOCK_PATH}"
+drift[:changed].each_key { |name| puts "  relocked (content changed): #{name}" }
+(drift[:unlocked] - drift[:changed].keys).each { |name| puts "  locked for the first time: #{name}" }
+drift[:stale].each { |name| puts "  dropped (member no longer exists): #{name}" }
