@@ -7075,7 +7075,8 @@
                   "daily_limit",
                   "{cents: 0}"
                 ]
-              ]
+              ],
+              "compensates": null
             }
           ]
         },
@@ -7125,7 +7126,25 @@
                   "reference",
                   ":reference"
                 ]
-              ]
+              ],
+              "compensates": {
+                "command_name": "Account.Credit",
+                "with_spec": [
+                  [
+                    "number",
+                    ":source"
+                  ],
+                  [
+                    "amount",
+                    ":amount"
+                  ],
+                  [
+                    "narrative",
+                    "{text: \"transfer reversed\"}"
+                  ]
+                ],
+                "compensates": null
+              }
             }
           ]
         },
@@ -7141,7 +7160,8 @@
                   "transfer",
                   ":reference"
                 ]
-              ]
+              ],
+              "compensates": null
             },
             {
               "command_name": "Account.Credit",
@@ -7162,7 +7182,8 @@
                   "reference",
                   ":reference"
                 ]
-              ]
+              ],
+              "compensates": null
             }
           ]
         },
@@ -7178,7 +7199,8 @@
                   "transfer",
                   ":reference"
                 ]
-              ]
+              ],
+              "compensates": null
             }
           ]
         },
@@ -7194,7 +7216,8 @@
                   "transfer",
                   ":reference"
                 ]
-              ]
+              ],
+              "compensates": null
             }
           ]
         },
@@ -7204,30 +7227,14 @@
           "to_state": "reversed",
           "dispatches": [
             {
-              "command_name": "Account.Credit",
-              "with_spec": [
-                [
-                  "number",
-                  ":source"
-                ],
-                [
-                  "amount",
-                  ":amount"
-                ],
-                [
-                  "narrative",
-                  "{text: \"transfer reversed\"}"
-                ]
-              ]
-            },
-            {
               "command_name": "Transfer.Reverse",
               "with_spec": [
                 [
                   "transfer",
                   ":reference"
                 ]
-              ]
+              ],
+              "compensates": null
             }
           ]
         }
@@ -7255,7 +7262,8 @@
                   "end_to_end",
                   ":end_to_end"
                 ]
-              ]
+              ],
+              "compensates": null
             }
           ]
         },
@@ -7271,7 +7279,8 @@
                   "end_to_end",
                   ":end_to_end"
                 ]
-              ]
+              ],
+              "compensates": null
             }
           ]
         }
