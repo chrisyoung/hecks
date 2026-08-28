@@ -561,7 +561,10 @@ module Hecks
           # before `sets :b` (bare, importing :b from the owner) is real
           # and legal; checking inline, mutation by mutation, would refuse
           # it for an ordering accident this language has never required
-          # authors to avoid.
+          # authors to avoid. rubocop's Style/CombinableLoops can't see
+          # that dependency — it only sees two `@mutations.each` calls
+          # back to back — so it's disabled here, not satisfied.
+          # rubocop:disable-next Style/CombinableLoops
           @mutations.each { |mutation| refuse_unknown_argument_sources!(mutation) }
         end
 
@@ -582,6 +585,7 @@ module Hecks
         # identical shape for a query's own where-clause argument —
         # same mistake, one construct over.
         CHECKED_SYMBOL_SOURCE_OPS = %i[set increment decrement multiply remove].freeze
+        private_constant :CHECKED_SYMBOL_SOURCE_OPS
 
         def refuse_unknown_argument_sources!(mutation)
           return unless CHECKED_SYMBOL_SOURCE_OPS.include?(mutation.op)
