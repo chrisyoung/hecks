@@ -408,11 +408,15 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     RUBY
     expect { check!(V2_SOURCE, translation_source: partial) }.to raise_error(
       Hecks::Runtime::WiringError,
-      /cannot boot Ledger::Account: its shape changed and :legacy_note is not explained by any rename, move, convert, retype, or drop/
+      /
+        cannot\ boot\ Ledger::Account:\ its\ shape\ changed\ and\ :legacy_note\ is\ not\ explained\ by\ any
+        \ rename,\ move,\ convert,\ retype,\ or\ drop
+      /x
     )
   end
 
-  it "mints era 2 in one transaction and derives the head through the edge — old entries translated at inclusion, never rewritten" do
+  it "mints era 2 in one transaction and derives the head through the edge — old entries translated at " \
+     "inclusion, never rewritten" do
     write_v1_record
     from = label_of(V1_SOURCE)
     to = label_of(V2_SOURCE)
@@ -676,7 +680,8 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     state = JSON.generate(cost: { "cents" => 5, "currency" => "USD" }, kind: { "label" => "biz" },
                           legacy_note: { "text" => "late" })
     ordinal = db.exec_params(
-      "INSERT INTO hecks_journal_ledger (era, aggregate, aggregate_id, operation, state) VALUES (1, 'acct', $1, 'save', $2) RETURNING ordinal",
+      "INSERT INTO hecks_journal_ledger (era, aggregate, aggregate_id, operation, state) " \
+      "VALUES (1, 'acct', $1, 'save', $2) RETURNING ordinal",
       ["a9", state]
     )[0]["ordinal"]
     # ...and the era-1 snapshot table PostgresEra#append would ALSO have
@@ -709,7 +714,8 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     db.close
   end
 
-  it "an ordinary writer is never blocked by a mint — advance_era!'s AccessExclusiveLock is held for the commit, not the matview build" do
+  it "an ordinary writer is never blocked by a mint — advance_era!'s AccessExclusiveLock is held for the " \
+     "commit, not the matview build" do
     write_v1_record
     from = label_of(V1_SOURCE)
     to = label_of(V2_SOURCE)
@@ -793,7 +799,8 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     )
     new_world.save(Hecks::Runtime::Instance.new(
                      aggregate: new_registry.bluebooks.values.first.aggregate("Account"), id: "a1",
-                     state: { amount: { "cents" => 999 }, kind: { "label" => "business" }, denomination: { "code" => "USD" }, status: "open" }
+                     state: { amount: { "cents" => 999 }, kind: { "label" => "business" },
+                              denomination: { "code" => "USD" }, status: "open" }
                    ))
 
     # the old world keeps running: touches a1 too (the conflict), and
@@ -805,11 +812,13 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     )
     old_world.save(Hecks::Runtime::Instance.new(
                      aggregate: acct, id: "a1",
-                     state: { cost: { "cents" => 111, "currency" => "USD" }, kind: { "label" => "biz" }, legacy_note: { "text" => "old edit" } }
+                     state: { cost: { "cents" => 111, "currency" => "USD" }, kind: { "label" => "biz" },
+                              legacy_note: { "text" => "old edit" } }
                    ))
     old_world.save(Hecks::Runtime::Instance.new(
                      aggregate: acct, id: "a9",
-                     state: { cost: { "cents" => 5, "currency" => "EUR" }, kind: { "label" => "pers" }, legacy_note: { "text" => "late" } }
+                     state: { cost: { "cents" => 5, "currency" => "EUR" }, kind: { "label" => "pers" },
+                              legacy_note: { "text" => "late" } }
                    ))
     [new_registry, edge]
   end
@@ -1003,7 +1012,10 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
       )
     end.to raise_error(
       Hecks::Runtime::WiringError,
-      %r{the journal advanced past the approved review \(ordinal 1 reviewed, 2 now\) — the samples a human approved no longer cover the data; re-run bin/translation_audit with --approve}
+      %r{
+        the\ journal\ advanced\ past\ the\ approved\ review\ \(ordinal\ 1\ reviewed,\ 2\ now\)\ —\ the\ samples
+        \ a\ human\ approved\ no\ longer\ cover\ the\ data;\ re-run\ bin/translation_audit\ with\ --approve
+      }x
     )
 
     # a fresh review over the journal as it now stands mints
@@ -1161,7 +1173,8 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     expect(head.find("Chris Young")).to be_nil
   end
 
-  it "fences a deployment's app role at the era its checkout speaks — and the fence is written through, not read off the catalog" do
+  it "fences a deployment's app role at the era its checkout speaks — and the fence is written through, " \
+     "not read off the catalog" do
     reset_app_role!
     write_v1_record
     from = label_of(V1_SOURCE)
@@ -1342,7 +1355,8 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     holder.close
   end
 
-  it "a role rebooting into its OWN now-superseded era cannot write it — nothing about that boot may reopen the schema a mint already closed" do
+  it "a role rebooting into its OWN now-superseded era cannot write it — nothing about that boot may " \
+     "reopen the schema a mint already closed" do
     reset_app_role!
     check!(V1_SOURCE, role: LINEAGE_ROLE)
     write_v1_record
@@ -1444,7 +1458,10 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     check!(V3_SOURCE, translation_source: edges)
 
     db = PG.connect(dbname: LINEAGE_DB)
-    layered = db.exec("SELECT aggregate_id, operation, state FROM #{PG::Connection.quote_ident("account_lineage_3_#{l3}")} ORDER BY aggregate_id").values
+    layered = db.exec(
+      "SELECT aggregate_id, operation, state FROM " \
+      "#{PG::Connection.quote_ident("account_lineage_3_#{l3}")} ORDER BY aggregate_id"
+    ).values
 
     # the definition actually used era 2's matview rather than the journal
     definition = db.exec_params("SELECT definition FROM pg_matviews WHERE matviewname = $1",
@@ -1457,8 +1474,10 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
       load_registry(V3_SOURCE, translation_source: edges), load_registry(V3_SOURCE).bluebooks.values.first,
       lineage.eras[0..-2], l3
     )
-    full = db.exec("SELECT aggregate_id, operation, state FROM (#{lineage.chain_sql(account, 3,
-                                                                                    chain)}) full_build ORDER BY aggregate_id").values
+    full = db.exec(
+      "SELECT aggregate_id, operation, state FROM " \
+      "(#{lineage.chain_sql(account, 3, chain)}) full_build ORDER BY aggregate_id"
+    ).values
     db.close
 
     expect(layered).to eq(full)
@@ -1527,7 +1546,10 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     )
 
     db = PG.connect(dbname: LINEAGE_DB)
-    layered = db.exec("SELECT aggregate_id, operation, state FROM #{PG::Connection.quote_ident("account_lineage_3_#{l3}")} ORDER BY aggregate_id").values
+    layered = db.exec(
+      "SELECT aggregate_id, operation, state FROM " \
+      "#{PG::Connection.quote_ident("account_lineage_3_#{l3}")} ORDER BY aggregate_id"
+    ).values
 
     # the definition actually used era 2's matview rather than the journal
     definition = db.exec_params("SELECT definition FROM pg_matviews WHERE matviewname = $1",
@@ -1541,8 +1563,10 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
       load_registry(V3_REKEYED_SOURCE, translation_source: edges), load_registry(V3_REKEYED_SOURCE).bluebooks.values.first,
       lineage.eras[0..-2], l3
     )
-    full = db.exec("SELECT aggregate_id, operation, state FROM (#{lineage.chain_sql(account, 3,
-                                                                                    chain)}) full_build ORDER BY aggregate_id").values
+    full = db.exec(
+      "SELECT aggregate_id, operation, state FROM " \
+      "(#{lineage.chain_sql(account, 3, chain)}) full_build ORDER BY aggregate_id"
+    ).values
     db.close
 
     expect(layered).to eq(full)
