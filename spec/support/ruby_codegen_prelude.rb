@@ -130,6 +130,10 @@ extra_fields: lifecycle_extra_field(aggregate), aggregate: aggregate))
   # `aggregate_prelude`'s own call signature stays a direct match for
   # `rust/codegen`'s own `prelude::aggregate_prelude(exemplar, ir,
   # aggregate, source_label)`.
+  # NOT frozen — a real accumulator, keyed by source_label and mutated
+  # by #write_all below ([]=) and its own #ensure (.delete). False
+  # positive for Style/MutableConstant.
+  # rubocop:disable-next Style/MutableConstant
   AGGREGATES_BY_NAME = {}
 
   def write_all(ir, source_label, out_dir)

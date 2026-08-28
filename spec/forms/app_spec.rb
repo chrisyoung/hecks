@@ -353,7 +353,7 @@ RSpec.describe Hecks::Forms::App do
   # link (a stray `&` smuggles a second query parameter, `#` truncates the
   # path at a fragment, etc). CustomerNumber's pattern permits all four.
   describe "a record id containing URL-syntax characters" do
-    MALICIOUS_ID = "a&b+c?d#e"
+    MALICIOUS_ID = "a&b+c?d#e".freeze
 
     def register_malicious
       post "/Banking/Customer/Register.html", "reference.value" => MALICIOUS_ID, "name.given" => "Ada",

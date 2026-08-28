@@ -38,7 +38,7 @@ RSpec.describe "none_in_state on an ordinary AGGREGATE-level Memory query" do
     file&.close!
   end
 
-  AGGREGATE_ANTI_JOIN_SOURCE = <<~BLUEBOOK
+  AGGREGATE_ANTI_JOIN_SOURCE = <<~BLUEBOOK.freeze
     Hecks.bluebook "AggregateAntiJoinGrowth" do
       aggregate "Claim" do
         identified_by :id

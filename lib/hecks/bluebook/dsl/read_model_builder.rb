@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class ReadModelBuilder
-        GRAMMAR_CONTEXT = "ReadModel"
+        GRAMMAR_CONTEXT = "ReadModel".freeze
 
         include QuerySpecification::Common::DSL
         include WordGate

@@ -4,8 +4,8 @@ module Hecks
   module Adapters
     class Folder
       DOMAIN_ORDER = Hecks::Vocabulary.fetch("LoadOrder")
-      PORTS        = "ports"
-      ADAPTERS     = "adapters"
+      PORTS        = "ports".freeze
+      ADAPTERS     = "adapters".freeze
 
       def initialize(settings: {}, root: nil)
         @settings = settings

@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class CommandBuilder
-        GRAMMAR_CONTEXT = "Command"
+        GRAMMAR_CONTEXT = "Command".freeze
 
         include AttributeCollector
         include RuleReference

@@ -40,7 +40,7 @@ RSpec.describe "none_in_state, a cross-aggregate anti-join" do
     file&.close!
   end
 
-  NONE_IN_STATE_SOURCE = <<~BLUEBOOK
+  NONE_IN_STATE_SOURCE = <<~BLUEBOOK.freeze
     Hecks.bluebook "AntiJoinGrowth" do
       aggregate "Claim" do
         identified_by :id

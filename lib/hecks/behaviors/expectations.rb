@@ -75,6 +75,10 @@ module Hecks
       # loop or a long rspec session actually relies on. `runtime:` lets
       # a caller that already holds a booted runtime (a spec, a REPL)
       # hand it in; it is reset the same way.
+      # NOT frozen — a real cache, mutated below (`RUNTIMES[key] ||=
+      # boot_and_guard(files)`) and by #reset!. False positive for
+      # Style/MutableConstant.
+      # rubocop:disable-next Style/MutableConstant
       RUNTIMES      = {}
       RUNTIMES_LOCK = Mutex.new
       private_constant :RUNTIMES, :RUNTIMES_LOCK

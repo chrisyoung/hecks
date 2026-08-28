@@ -36,7 +36,7 @@ RSpec.describe "identity coercion on a numeric identified_by field" do
     file&.close!
   end
 
-  NUMERIC_IDENTITY_SOURCE = <<~BLUEBOOK
+  NUMERIC_IDENTITY_SOURCE = <<~BLUEBOOK.freeze
     Hecks.bluebook "NumericIdentityGrowth" do
       aggregate "SleepCycle" do
         identified_by :cycle_number

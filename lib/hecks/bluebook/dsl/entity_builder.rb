@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class EntityBuilder
-        GRAMMAR_CONTEXT = "Entity"
+        GRAMMAR_CONTEXT = "Entity".freeze
 
         include AttributeCollector
         include IdentityDeclaration

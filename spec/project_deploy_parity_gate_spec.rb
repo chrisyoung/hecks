@@ -27,7 +27,7 @@ RSpec.describe "the per-deploy Ruby/Rust parity gate (Phase 8)", :io do
   # --- Structural: the generated Makefile actually wires it in ---------
 
   describe "the generated Makefile" do
-    PARITY_GATE_FIXTURE_BASENAME = "parity_gate_spec_fixture"
+    PARITY_GATE_FIXTURE_BASENAME = "parity_gate_spec_fixture".freeze
 
     before(:context) do
       Dir.mktmpdir do |dir|
@@ -158,7 +158,7 @@ RSpec.describe "the per-deploy Ruby/Rust parity gate (Phase 8)", :io do
     # documented, not-yet-fixed catalogue leaves open — using it here
     # would make this spec re-litigate an already-catalogued gap instead
     # of proving what THIS phase's own mechanism does.
-    ROSTER_FIXTURE = "spec/corpus/rust_conformance/roster.json"
+    ROSTER_FIXTURE = "spec/corpus/rust_conformance/roster.json".freeze
 
     it "passes (exit 0) when the artifact and the domain genuinely agree" do
       _stdout, _stderr, status = rust_conformance("examples/roster", ROSTER_FIXTURE, @roster_wasm)

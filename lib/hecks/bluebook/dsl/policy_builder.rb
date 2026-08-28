@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class PolicyBuilder
-        GRAMMAR_CONTEXT = "Policy"
+        GRAMMAR_CONTEXT = "Policy".freeze
 
         include WordGate
 

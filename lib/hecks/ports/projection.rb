@@ -7,8 +7,8 @@ module Hecks
     # Projection is a read-side port. Its stores are rebuildable consumers of
     # authoritative entries and never participate in command decisions.
     module Projection
-      NAME = "projection"
-      VERB = "projected_by"
+      NAME = "projection".freeze
+      VERB = "projected_by".freeze
 
       module_function
 

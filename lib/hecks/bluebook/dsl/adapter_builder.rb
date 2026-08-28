@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class AdapterBuilder
-        GRAMMAR_CONTEXT = "Adapter"
+        GRAMMAR_CONTEXT = "Adapter".freeze
 
         include WordGate
 

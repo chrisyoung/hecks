@@ -31,7 +31,7 @@ module Hecks
       # per execute, not a persistent connection — D1 has no connection to
       # hold open.
       class Connection
-        ENDPOINT = "https://api.cloudflare.com/client/v4"
+        ENDPOINT = "https://api.cloudflare.com/client/v4".freeze
 
         def initialize(account_id:, database_id:, api_token:)
           @uri = URI("#{ENDPOINT}/accounts/#{account_id}/d1/database/#{database_id}/query")

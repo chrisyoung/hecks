@@ -36,7 +36,7 @@ module Hecks
 
       SYSTEM_PREFIX = "You are assisting a domain-modeling interview for the hecks " \
                       "event-sourced framework. Reply with EXACTLY ONE JSON object, no prose " \
-                      "before or after it, no markdown code fence. "
+                      "before or after it, no markdown code fence. ".freeze
 
       module_function
 

@@ -139,7 +139,7 @@ RSpec.describe "every live DSL word, used somewhere real" do
     "`move ... to:`, `compute ... to:, sql:`, and `rekey sql:`. `corpus_uses?`'s " \
     "naive whole-token scan reports a false positive for this word regardless " \
     "(see the comment on the first entry in this group), so this exemption " \
-    "also stands in for that scanner gap."
+    "also stands in for that scanner gap.".freeze
 
   # UNREACHED ON PURPOSE, each naming why — the same shape
   # plurality_coverage_spec.rb's ALLOWED_SINGLETON is. Every entry here

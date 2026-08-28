@@ -160,8 +160,8 @@ module Hecks
       # process-unique schema name (`SecureRandom.hex` is already
       # `require`d here for exactly that day) — flagged, not solved,
       # since nothing today calls this from more than one thread.
-      FUZZ_POSTGRES_DATABASE = "hecks_fuzz"
-      FUZZ_POSTGRES_SCHEMA   = "hecks_fuzz"
+      FUZZ_POSTGRES_DATABASE = "hecks_fuzz".freeze
+      FUZZ_POSTGRES_SCHEMA   = "hecks_fuzz".freeze
 
       def rebind_to_postgres!(copy)
         require "pg"

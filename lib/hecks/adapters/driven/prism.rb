@@ -6,6 +6,10 @@ module Hecks
     class NotExtractable < StandardError; end
 
     module Prism
+      # NOT frozen — a real cache, keyed by file path and mutated by
+      # #tree_for below (`TREES[file] ||= ...`) and #forget/#forget_all.
+      # False positive for Style/MutableConstant.
+      # rubocop:disable-next Style/MutableConstant
       TREES = {}
 
       module_function

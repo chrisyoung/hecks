@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class TranslationAggregateBuilder
-        GRAMMAR_CONTEXT = "TranslationAggregate"
+        GRAMMAR_CONTEXT = "TranslationAggregate".freeze
 
         include WordGate
 
@@ -184,7 +184,7 @@ module Hecks
       end
 
       class TranslationBuilder
-        GRAMMAR_CONTEXT = "Translation"
+        GRAMMAR_CONTEXT = "Translation".freeze
 
         include WordGate
 

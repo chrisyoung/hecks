@@ -30,7 +30,7 @@ RSpec.describe "mutation op clamp" do
     file&.close!
   end
 
-  MUTATION_CLAMP_SOURCE = <<~BLUEBOOK
+  MUTATION_CLAMP_SOURCE = <<~BLUEBOOK.freeze
     Hecks.bluebook "MutationClampGrowth" do
       aggregate "Organ" do
         identified_by :id

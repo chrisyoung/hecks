@@ -44,7 +44,7 @@ RSpec.describe "Rust numeric coercion — overflow/out-of-range refuses cleanly 
   # scope, so reusing that name triggers a "already initialized constant"
   # warning across the two files when both load in one process.
   NUMERIC_COERCION_RUST_DIR = File.join(InMemoryDomain::ROOT, "rust")
-  NUMERIC_COERCION_BANKING_DOMAIN = "examples/banking"
+  NUMERIC_COERCION_BANKING_DOMAIN = "examples/banking".freeze
 
   # Same helper `spec/rust_conformance_spec.rb` defines for itself — built
   # fresh for banking every time, never trusting an ambient binary left

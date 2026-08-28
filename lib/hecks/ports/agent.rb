@@ -39,7 +39,7 @@ module Hecks
     # differently would mean the SAME malformed answer passing through
     # one and refusing through the other.
     module Agent
-      NAME = "agent"
+      NAME = "agent".freeze
 
       # The answer came back and could not be used — no JSON in it, a
       # category the language does not declare, a severity outside the

@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class ProcessManagerBuilder
-        GRAMMAR_CONTEXT = "ProcessManager"
+        GRAMMAR_CONTEXT = "ProcessManager".freeze
 
         class InvalidProcessManager < StandardError; end
 
@@ -222,7 +222,7 @@ module Hecks
         end
 
         class HandlerBuilder
-          GRAMMAR_CONTEXT = "Handler"
+          GRAMMAR_CONTEXT = "Handler".freeze
 
           attr_reader :dispatches
 
@@ -290,7 +290,7 @@ module Hecks
           # any saga dispatch already does
           # (`SagaInterpreter#dispatch_args`).
           class DispatchBuilder
-            GRAMMAR_CONTEXT = "Dispatch"
+            GRAMMAR_CONTEXT = "Dispatch".freeze
 
             include WordGate
 

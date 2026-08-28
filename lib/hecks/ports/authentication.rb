@@ -17,7 +17,7 @@ module Hecks
     # purely to resolve which adapter answers it, same as every port
     # here already does).
     module Authentication
-      NAME = "authentication"
+      NAME = "authentication".freeze
 
       class ValidationError < StandardError
       end

@@ -35,7 +35,7 @@ RSpec.describe "lifecycle transition on a VO-typed field" do
     file&.close!
   end
 
-  LIFECYCLE_VALUE_SCALAR_SOURCE = <<~BLUEBOOK
+  LIFECYCLE_VALUE_SCALAR_SOURCE = <<~BLUEBOOK.freeze
     Hecks.bluebook "LifecycleValueScalarGrowth" do
       aggregate "Task" do
         identified_by :id

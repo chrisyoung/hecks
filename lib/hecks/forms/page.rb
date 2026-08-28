@@ -45,7 +45,7 @@ module Hecks
         %(<nav class="breadcrumbs" aria-label="Breadcrumb">#{items.join(' <span class="sep">/</span> ')}</nav>)
       end
 
-      STYLE = <<~CSS
+      STYLE = <<~CSS.freeze
         :root {
           --bg: #fbfaf8; --surface: #ffffff; --border: #e2ddd3; --text: #24211c;
           --muted: #6b6355; --accent: #8a5a2b; --accent-contrast: #fff8ef;
@@ -131,7 +131,7 @@ module Hecks
       # Decorative only — every form here already works with JS disabled
       # (plain `<form method=post>`/`method=get`), matching this repo's own
       # "no ERB, nothing scripted" bar for the domain layer itself.
-      SCRIPT = <<~JS
+      SCRIPT = <<~JS.freeze
         document.addEventListener("click", (event) => {
           const button = event.target.closest("[data-copy]");
           if (!button) return;

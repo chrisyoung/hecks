@@ -60,7 +60,7 @@ require "json"
 
 $stdout.sync = true
 
-PROTOCOL_VERSION = "2024-11-05"
+PROTOCOL_VERSION = "2024-11-05".freeze
 
 SUMMARY_PROPERTY = {
   type:        "string",

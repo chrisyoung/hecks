@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class HecksagonBuilder
-        GRAMMAR_CONTEXT = "Hecksagon"
+        GRAMMAR_CONTEXT = "Hecksagon".freeze
 
         include WordGate
 

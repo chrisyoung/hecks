@@ -483,7 +483,7 @@ ALLOWLIST = [
                   "ProcessManager, Handler, Dispatch, ReadModel) is a real top-level aggregate this generator already " \
                   "handles."
   }
-]
+].freeze
 # REMOVED, NOT WIDENED — the cross-domain-policy `kind: "policy"` entry
 # that used to live here (matching `reason_match: /cross-domain policy/`,
 # 0013's own Consequences: "omitted from the generated table entirely").

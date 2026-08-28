@@ -3,7 +3,7 @@ require_relative "../runtime/registry"
 module Hecks
   module Ports
     module Extraction
-      NAME = "extraction"
+      NAME = "extraction".freeze
 
       module_function
 

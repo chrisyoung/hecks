@@ -355,7 +355,7 @@ module Hecks
         # `private` above has no effect on a constant; kept here anyway,
         # beside the method that reads it, for the narrative.
         # rubocop:disable-next Lint/UselessConstantScoping
-        POSITION = "position"
+        POSITION = "position".freeze
 
         def declare(plan, category, node, id, parent_id, index, extra = {})
           return unless plan.declare
@@ -592,7 +592,7 @@ module Hecks
         # `private` above has no effect on a constant; kept here anyway,
         # beside the method that reads it, for the narrative.
         # rubocop:disable-next Lint/UselessConstantScoping
-        OWNER = "owner_id"
+        OWNER = "owner_id".freeze
 
         def identity_part(plan, path, parent_id, node, index, category)
           head = path.to_s.split(".").first

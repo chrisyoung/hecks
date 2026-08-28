@@ -20,7 +20,7 @@ require "tempfile"
 #   path always matched only against the root, so a chained head's own
 #   rows came back empty no matter what actually existed.
 RSpec.describe "Adapters::SqliteProjection#query_read_model" do
-  SOURCE = <<~BLUEBOOK
+  SOURCE = <<~BLUEBOOK.freeze
     Hecks.bluebook "ChainProjectionGrowth" do
       aggregate "Root" do
         identified_by :ref

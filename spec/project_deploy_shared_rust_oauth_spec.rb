@@ -21,7 +21,7 @@ require "yaml"
 # spec/project_deploy_contract_spec.rb's own fixture-generation
 # pattern.
 RSpec.describe "bin/project_deploy — Shared mode + rust_web + real Google OAuth", :io do
-  SHARED_RUST_OAUTH_FIXTURE_BASENAME = "project_deploy_shared_rust_oauth_spec_fixture"
+  SHARED_RUST_OAUTH_FIXTURE_BASENAME = "project_deploy_shared_rust_oauth_spec_fixture".freeze
 
   before(:context) do
     root = File.expand_path("..", __dir__)

@@ -254,13 +254,6 @@ Style/OneClassPerFile:
   Exclude:
     - 'lib/hecks/ports/persistence.rb'
 
-# Offense count: 44
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: EnforcedStyle, Recursive.
-# SupportedStyles: literals, strict
-Style/MutableConstant:
-  Enabled: false
-
 # A FIFTH real autocorrect-corruption bug, found paying down this same
 # offense elsewhere in the file (see .rubocop.yml's "THE PATTERN ACROSS
 # ALL FOUR", now five): `%(...)` percent-literals allow a literal,

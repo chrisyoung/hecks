@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class LifecycleBuilder
-        GRAMMAR_CONTEXT = "Lifecycle"
+        GRAMMAR_CONTEXT = "Lifecycle".freeze
 
         include WordGate
 

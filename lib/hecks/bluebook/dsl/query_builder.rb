@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class QueryBuilder
-        GRAMMAR_CONTEXT = "Query"
+        GRAMMAR_CONTEXT = "Query".freeze
 
         include AttributeCollector
         include QuerySpecification::Common::DSL

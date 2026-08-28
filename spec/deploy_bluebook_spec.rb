@@ -104,7 +104,7 @@ RSpec.describe "the self-hosted Deploy bluebook" do
     # basename here is deliberately unique and the generated directory
     # is removed after every run, or each example would leave a real,
     # permanent `deploy/scratch/` behind in the actual repo.
-    FIXTURE_BASENAME = "deploy_bluebook_spec_fixture"
+    FIXTURE_BASENAME = "deploy_bluebook_spec_fixture".freeze
 
     def run_project_deploy(world_body)
       root = File.expand_path("..", __dir__)

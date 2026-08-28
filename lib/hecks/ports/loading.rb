@@ -3,7 +3,7 @@ require_relative "../adapters/driven/folder"
 module Hecks
   module Ports
     module Loading
-      NAME = "loading"
+      NAME = "loading".freeze
 
       module_function
 

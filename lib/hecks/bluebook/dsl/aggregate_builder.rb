@@ -4,7 +4,7 @@ module Hecks
   module Bluebook
     module DSL
       class AggregateBuilder
-        GRAMMAR_CONTEXT = "Aggregate"
+        GRAMMAR_CONTEXT = "Aggregate".freeze
 
         include AttributeCollector
         include IdentityDeclaration

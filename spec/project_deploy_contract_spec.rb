@@ -15,7 +15,7 @@ require "yaml"
 # the same table that could just as easily be wrong in the same way in
 # all three places at once.
 RSpec.describe "bin/project_deploy's stack<->bastion structural contract, in its own generated output", :io do
-  CONTRACT_FIXTURE_BASENAME = "project_deploy_contract_spec_fixture"
+  CONTRACT_FIXTURE_BASENAME = "project_deploy_contract_spec_fixture".freeze
 
   # Mirrors spec/deploy_bluebook_spec.rb's own fixture helper —
   # bin/project_deploy always writes to <repo_root>/deploy/<basename>

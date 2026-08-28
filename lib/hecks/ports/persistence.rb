@@ -1,9 +1,9 @@
 module Hecks
   module Ports
     module Persistence
-      NAME = "persistence"
-      VERB = "persisted_by"
-      DEFAULT_ADAPTER = "Memory"
+      NAME = "persistence".freeze
+      VERB = "persisted_by".freeze
+      DEFAULT_ADAPTER = "Memory".freeze
     end
   end
 end

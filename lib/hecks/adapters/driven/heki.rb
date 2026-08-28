@@ -18,7 +18,7 @@ module Hecks
       include Snapshot
       include Journal
 
-      MAGIC = "HEKI"
+      MAGIC = "HEKI".freeze
       HEADER_BYTES = 8
 
       class Malformed < StandardError; end

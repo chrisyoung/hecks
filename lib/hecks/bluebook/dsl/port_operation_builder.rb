@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class PortOperationBuilder
-        GRAMMAR_CONTEXT = "PortOperation"
+        GRAMMAR_CONTEXT = "PortOperation".freeze
 
         include AttributeCollector
         include WordGate

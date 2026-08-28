@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class PortBuilder
-        GRAMMAR_CONTEXT = "Port"
+        GRAMMAR_CONTEXT = "Port".freeze
 
         include WordGate
 

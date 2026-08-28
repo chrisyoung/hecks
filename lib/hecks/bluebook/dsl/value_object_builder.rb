@@ -3,7 +3,7 @@ module Hecks
   module Bluebook
     module DSL
       class ValueObjectBuilder
-        GRAMMAR_CONTEXT = "ValueObject"
+        GRAMMAR_CONTEXT = "ValueObject".freeze
 
         include AttributeCollector
         include RuleReference

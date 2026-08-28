@@ -101,7 +101,7 @@ module Hecks
       # actually bound to.
       ARRAY_ELEMENT_TYPE = { "arr_num" => :numeric, "arr_str" => :string }.freeze
 
-      BLOCK_PARAM = "el"
+      BLOCK_PARAM = "el".freeze
 
       MAX_DEPTH = 3
 

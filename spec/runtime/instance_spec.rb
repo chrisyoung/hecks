@@ -42,7 +42,7 @@ RSpec.describe Hecks::Runtime::Instance do
     file&.close!
   end
 
-  COMPOSITE_IDENTITY_SOURCE = <<~BLUEBOOK
+  COMPOSITE_IDENTITY_SOURCE = <<~BLUEBOOK.freeze
     Hecks.bluebook "CompositeIdentityGrowth" do
       aggregate "Plot" do
         identified_by :row, :column

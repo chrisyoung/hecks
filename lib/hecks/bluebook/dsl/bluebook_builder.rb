@@ -4,7 +4,7 @@ module Hecks
   module Bluebook
     module DSL
       class BluebookBuilder
-        GRAMMAR_CONTEXT = "Bluebook"
+        GRAMMAR_CONTEXT = "Bluebook".freeze
 
         include WordGate
         extend Validation

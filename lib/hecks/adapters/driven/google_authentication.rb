@@ -30,7 +30,7 @@ module Hecks
     # no defaults, on purpose: a login mechanism silently
     # half-configured is worse than one that refuses to boot at all.
     module GoogleAuthentication
-      ISSUER = "https://accounts.google.com"
+      ISSUER = "https://accounts.google.com".freeze
 
       module_function
 

@@ -44,7 +44,7 @@ RSpec.describe "mutation op append, bare-symbol shorthand" do
     file&.close!
   end
 
-  MUTATION_APPEND_BARE_SYMBOL_SOURCE = <<~BLUEBOOK
+  MUTATION_APPEND_BARE_SYMBOL_SOURCE = <<~BLUEBOOK.freeze
     Hecks.bluebook "MutationAppendBareSymbolGrowth" do
       aggregate "Widget" do
         identified_by :id

@@ -39,7 +39,7 @@ module Hecks
       end
 
       class WorldBuilder
-        GRAMMAR_CONTEXT = "World"
+        GRAMMAR_CONTEXT = "World".freeze
 
         include WordGate
 
