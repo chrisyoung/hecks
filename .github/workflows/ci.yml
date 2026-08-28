@@ -88,12 +88,25 @@ jobs:
       # TARGET is a different story — spec/project_deploy_parity_gate_spec.rb
       # (Phase 8, the equivalence-gap plan) shells out to bin/project_wasm,
       # which cross-compiles for it, and ubuntu-latest's default rustup
-      # install has no target but the host's own. Installing it once here
-      # is cheap (~15s) and lets that spec's own "wasm32-wasip1 isn't
-      # installed" abort message — otherwise the whole reason to add this
-      # step in the first place — never fire in CI.
+      # install has no target but the host's own.
+      #
+      # TWO toolchains, not one — bin/project_wasm's own "is it
+      # installed" check (`rustup target list --installed`, bare) runs
+      # from the repo root and so resolves through rust-toolchain.toml
+      # (channel 1.98.0); its actual build line is `rustup run stable
+      # cargo build ...` (its own comment: a deliberate Homebrew-PATH
+      # workaround, predating rust-toolchain.toml) — a DIFFERENT
+      # toolchain. Installing the target on only one leaves the other
+      # either failing the check (1.98.0 missing it) or failing the
+      # real build with E0463 "can't find crate for `std`" (stable
+      # missing it) despite the check having passed. Found live
+      # shipping this very fix — a `--toolchain stable`-only version of
+      # this step still failed the same way #416 originally did, one
+      # layer deeper.
       - name: Install the wasm32-wasip1 target
-        run: rustup target add wasm32-wasip1
+        run: |
+          rustup target add wasm32-wasip1 --toolchain stable
+          rustup target add wasm32-wasip1
 
       # `bundle exec` matters here even though bin/project_rust never
       # touches Bundler itself: run bare, `require "json"` resolves
