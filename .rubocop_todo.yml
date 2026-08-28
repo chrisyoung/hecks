@@ -50,12 +50,6 @@ Metrics/BlockNesting:
   Exclude:
     - 'spec/support/doctest.rb'
 
-# Offense count: 1
-# Configuration parameters: CountComments, Max, CountAsOne.
-Metrics/ClassLength:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/bluebook_builder.rb'
-
 # Offense count: 37
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
 Metrics/CyclomaticComplexity:
@@ -71,6 +65,7 @@ Metrics/MethodLength:
 Metrics/ModuleLength:
   Exclude:
     - 'lib/hecks/fuzzing/properties.rb'
+    - 'lib/hecks/bluebook/dsl/bluebook_builder/validation.rb'
 
 # Offense count: 49
 # Configuration parameters: CountKeywordArgs, MaxOptionalParameters.
