@@ -320,9 +320,24 @@ module RustProjection
       "crate::kernel::WithValue::Literal(#{fn_name})"
     end
 
+    # `reverses` — per-dispatch saga compensation (`ir::DispatchSpec::
+    # reverses`/`Hecks::Bluebook::DispatchSpec#reverses`,
+    # `lib/hecks/bluebook/process_manager.rb`): `nil` on the IR emits
+    # `None`; a nested hash recurses through THIS SAME method one level
+    # in — the identical move `kernel::orchestrate::DispatchSpec::
+    # reverses`'s own header describes for why it's `Option<&'static
+    # DispatchSpec>`, not `Option<Box<DispatchSpec>>` — `Some(&...)`
+    # here relies on Rust's rvalue static promotion (a struct literal
+    # built entirely of other promotable/`'static` values promotes to
+    # a `'static` place a reference can point at) inside the `static`
+    # table this whole expression is spliced into. Never nested further
+    # than one level on the Ruby side (a reversal is not itself
+    # reversible), so this recursion bottoms out in at most one extra
+    # call.
     def emit_dispatch_spec(spec, literal_fns)
       with_pairs = spec[:with_spec].map { |key, raw| "(#{key.to_s.inspect}, #{emit_with_value(raw, literal_fns)})" }
-      "crate::kernel::DispatchSpec { command_name: #{spec[:command_name].inspect}, with: &[#{with_pairs.join(', ')}] }"
+      reverses = spec[:reverses] ? "Some(&#{emit_dispatch_spec(spec[:reverses], literal_fns)})" : "None"
+      "crate::kernel::DispatchSpec { command_name: #{spec[:command_name].inspect}, with: &[#{with_pairs.join(', ')}], reverses: #{reverses} }"
     end
 
     def emit_handler(handler, literal_fns)
