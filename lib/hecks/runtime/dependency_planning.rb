@@ -62,13 +62,29 @@ module Hecks
       class Analyzer
         STATEFUL_MUTATIONS = %i[append increment decrement multiply clamp remove].freeze
 
-        def self.call(aggregate:, command:) = new(aggregate, command).call
+        # `root_aggregate:` — Wave 8's own audit surfaced a real bug here,
+        # not merely a missing feature: for an ENTITY-owned command,
+        # `EntityInterpreter` calls this with `aggregate:` set to the
+        # ENTITY itself (`element_interpreter.rb`'s own `Analyzer.call
+        # (aggregate: entity, command:)`), so `owner_fields` was always
+        # the entity's own attribute set. A `given`/`ensures` reading
+        # `parent.X` legitimately means the ROOT aggregate's own field —
+        # a genuinely different owner — but `classify_path`'s `:parent`
+        # branch checked that read against `owner_fields` (the entity's),
+        # which can never contain a root-level field, so every entity
+        # command with a real, legitimate `parent.*` read was refused as
+        # unresolved regardless of correctness. Defaults to `aggregate`
+        # (a no-op) for the plain-aggregate case — `CommandInterpreter`'s
+        # own call site never needed to change.
+        def self.call(aggregate:, command:, root_aggregate: aggregate) = new(aggregate, command, root_aggregate).call
 
-        def initialize(aggregate, command)
+        def initialize(aggregate, command, root_aggregate = aggregate)
           @aggregate = aggregate
           @command = command
           @owner_fields = aggregate.attributes.to_set(&:name)
           @owner_fields << aggregate.lifecycle.field.to_sym if aggregate.lifecycle
+          @root_owner_fields = root_aggregate.attributes.to_set(&:name)
+          @root_owner_fields << root_aggregate.lifecycle.field.to_sym if root_aggregate.lifecycle
           @payload_fields = command.attributes.to_set(&:name)
           @state_reads = Set.new
           @payload_reads = Set.new
@@ -101,7 +117,7 @@ module Hecks
 
         private
 
-        attr_reader :aggregate, :command, :owner_fields, :payload_fields,
+        attr_reader :aggregate, :command, :owner_fields, :root_owner_fields, :payload_fields,
                     :state_reads, :payload_reads, :writes, :known_writes, :unresolved
 
         # A fresh Instance supplies these values without reading a stored
@@ -212,7 +228,14 @@ module Hecks
 
           if name == :parent
             parent_field = nested.to_s.split(".", 2).first
-            if parent_field.empty? || !owner_fields.include?(parent_field.to_sym)
+            # `root_owner_fields` — NOT `owner_fields`. For an entity-owned
+            # command `owner_fields` is the ENTITY's own attribute set;
+            # `parent.X` always means the ROOT aggregate's own field, a
+            # genuinely different owner (`root_aggregate:`'s own header,
+            # above, has the full bug this fixes). Identical for a plain
+            # aggregate command, where root_aggregate defaults to aggregate
+            # itself and the two sets are the same set.
+            if parent_field.empty? || !root_owner_fields.include?(parent_field.to_sym)
               unresolved << "#{path} does not name parent aggregate state"
             else
               state_reads << parent_field.to_sym

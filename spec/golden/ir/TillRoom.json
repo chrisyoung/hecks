@@ -71,7 +71,15 @@
           ],
           "goal": "Start the day with an empty drawer",
           "mutations": [
-
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "number"
+              },
+              "target": "number"
+            }
           ],
           "name": "OpenTill",
           "provenance": null,

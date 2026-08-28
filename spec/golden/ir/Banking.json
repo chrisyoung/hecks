@@ -2508,7 +2508,7 @@
                   "description": "account is open"
                 },
                 {
-                  "canonical": "status != \"retired\"",
+                  "canonical": "parent.status != \"retired\"",
                   "description": "card is not retired"
                 }
               ],
@@ -4412,6 +4412,51 @@
                 "name": "account"
               },
               "target": "account"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "period"
+              },
+              "target": "period"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "opening_balance"
+              },
+              "target": "opening_balance"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "closing_balance"
+              },
+              "target": "closing_balance"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "generated_on"
+              },
+              "target": "generated_on"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "frequency"
+              },
+              "target": "frequency"
             }
           ],
           "name": "Generate",

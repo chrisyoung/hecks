@@ -37,7 +37,7 @@
           "default": null,
           "list": false,
           "name": "customer_name",
-          "optional": false,
+          "optional": true,
           "pattern": null,
           "relationship": null,
           "type": "CustomerName"
@@ -79,7 +79,24 @@
           ],
           "goal": "Put a new pizza on the menu",
           "mutations": [
-
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "name"
+              },
+              "target": "name"
+            },
+            {
+              "op": "set",
+              "sign": "",
+              "source": {
+                "kind": "argument",
+                "name": "pizza"
+              },
+              "target": "pizza"
+            }
           ],
           "name": "CreatePizza",
           "provenance": null,
@@ -156,7 +173,7 @@
               "default": null,
               "list": false,
               "name": "customer_name",
-              "optional": false,
+              "optional": true,
               "pattern": null,
               "relationship": null,
               "type": "CustomerName"

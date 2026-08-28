@@ -69,7 +69,14 @@ Hecks.bluebook "Banking" do
 
         given("customer is active") { parent.account.customer.status == "active" }
         given("account is open") { parent.account.status == "open" }
-        given("card is not retired") { status != "retired" }
+        # WAS a bare `status` — a Withdrawal entity has no `:status` field
+        # of its own (its own lifecycle field is `:state`; `parent.status`
+        # is the ATMCard's own, "issued"/"active"/"retired") — so this
+        # given evaluated against nothing, never matched a real key, and
+        # never refused (Wave 8's dependency-planning audit surfaced this
+        # as a real, live bug, not a hypothetical one: a retired card's
+        # own withdrawals could still be disputed).
+        given("card is not retired") { parent.status != "retired" }
         sets :narrative
 
         emits "WithdrawalDisputed"
