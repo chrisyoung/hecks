@@ -634,6 +634,13 @@ fn mutation_to_json(mutation: &MutationRecord) -> Json {
 fn cross_domain_reaction_to_json(reaction: &PendingCrossDomainReaction) -> Json {
     Json::obj(vec![
         ("policy", Json::str(reaction.policy_name.clone())),
+        // The triggering event's own name — carried purely so rust/host
+        // can build a reaction_log-shaped record once it learns the real
+        // delivery outcome (see PendingCrossDomainReaction's own doc
+        // comment); `lambda_client::deliver`'s own request shape never
+        // reads this key, it only reads policy/target_domain/target_verb/
+        // payload, so its presence here is additive and harmless.
+        ("on", Json::str(reaction.event_name.clone())),
         ("target_domain", Json::str(reaction.target_domain.clone())),
         ("target_verb", Json::str(reaction.target_verb.clone())),
         ("payload", reaction.payload.clone()),

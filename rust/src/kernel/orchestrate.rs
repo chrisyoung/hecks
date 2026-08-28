@@ -145,10 +145,17 @@ pub struct CrossDomainPolicyRule {
 /// SAME whole-payload-verbatim forwarding `react_policies`'s local branch
 /// already does for a same-domain policy (this file's own comment on
 /// "not reshaped, not filtered" — identical rule, just deferred to a
-/// caller instead of applied here).
+/// caller instead of applied here). `event_name` — the triggering event's
+/// own name — exists ONLY so rust/host can build a `reaction_log`-shaped
+/// record (`{policy, on, trigger, delivered, reason}`, matching the
+/// same-domain shape below) once it learns the real delivery outcome;
+/// this module itself never reads it back (see this file's own header:
+/// no `reaction_log` entry is pushed here for a cross-domain match, only
+/// this pending record).
 #[derive(Clone)]
 pub struct PendingCrossDomainReaction {
     pub policy_name: String,
+    pub event_name: String,
     pub target_domain: String,
     pub target_verb: String,
     pub payload: Json,
@@ -806,6 +813,7 @@ fn react_policies<S: AggregateScan>(
         }
         cross_domain.push(PendingCrossDomainReaction {
             policy_name: policy.policy_name.to_string(),
+            event_name: event.name.clone(),
             target_domain: policy.target_domain.to_string(),
             target_verb: policy.target_verb.to_string(),
             payload: event.payload.clone(),

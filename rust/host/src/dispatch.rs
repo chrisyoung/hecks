@@ -377,10 +377,36 @@ pub async fn handle(
     // borrowed from) is free again the moment `txn.commit()` consumed
     // it, so this reuses it directly rather than opening a second
     // connection for one INSERT.
+    // ALSO builds a `reaction_log`-shaped record per SUCCESSFUL delivery
+    // (`{policy, on, trigger, delivered, reason}`, matching
+    // orchestrate.rs's own same-domain shape exactly) and merges it into
+    // `result["reactions"]` — the kernel itself can't do this (its own
+    // header: a cross-domain match's delivery outcome doesn't exist until
+    // THIS host layer finishes the call), so this is the one place that
+    // ever will. `cross_domain_deliveries` (below) stays a SEPARATE,
+    // differently-shaped array on purpose — existing callers/specs
+    // already read it (`Outcome.result["cross_domain_deliveries"]`) and
+    // this doesn't touch that contract, it only adds a second, unified
+    // view alongside the same-domain entries `"reactions"` already
+    // carries. NOT done on the `Err` branch below — a hard delivery fault
+    // makes this whole call return `Err`, discarding `result` entirely
+    // (see this function's own "delivered after commit" comment), so
+    // there is no response for a `"reactions"` entry to ever reach;
+    // `journal::record_dead_letter` is that path's own durable record.
     let mut cross_domain_deliveries = Vec::new();
     for reaction in &pending_cross_domain {
         match lambda_client::deliver_with_retry(invoker, reaction).await {
-            Ok(record) => cross_domain_deliveries.push(record.to_json()),
+            Ok(record) => {
+                if let Some(response) = result.as_object_mut() {
+                    if let Some(reactions) = response.get_mut("reactions").and_then(|r| r.as_array_mut()) {
+                        reactions.push(serde_json::json!({
+                            "policy": record.policy, "on": reaction.get("on").and_then(|v| v.as_str()).unwrap_or_default(),
+                            "trigger": record.target_verb, "delivered": record.delivered, "reason": record.reason,
+                        }));
+                    }
+                }
+                cross_domain_deliveries.push(record.to_json());
+            }
             Err(failure) => {
                 let error_text = format!("{:#}", failure.error);
                 journal::record_dead_letter(
@@ -879,6 +905,17 @@ mod tests {
         assert_eq!(deliveries[0]["policy"], "ReviewOnFreeze");
         assert_eq!(deliveries[0]["target_domain"], "Compliance");
         assert_eq!(deliveries[0]["delivered"], true);
+
+        // The SAME delivery, ALSO merged into "reactions" in
+        // reaction_log's own shape ({policy, on, trigger, delivered,
+        // reason}) -- the fix this test extends: previously a
+        // cross-domain match produced NO "reactions" entry at all, only
+        // the differently-shaped "cross_domain_deliveries" one above.
+        let reactions = outcome.result["reactions"].as_array().unwrap();
+        let merged = reactions.iter().find(|r| r["policy"] == "ReviewOnFreeze").expect("ReviewOnFreeze should appear in \"reactions\" too");
+        assert_eq!(merged["on"], "AccountFrozen");
+        assert_eq!(merged["trigger"], "Compliance::AccountFreezeReview.Open");
+        assert_eq!(merged["delivered"], true);
 
         {
             let calls = invoker.calls.lock().unwrap();
