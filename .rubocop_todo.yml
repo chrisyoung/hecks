@@ -64,7 +64,6 @@ Metrics/MethodLength:
 # Configuration parameters: CountComments, Max, CountAsOne.
 Metrics/ModuleLength:
   Exclude:
-    - 'lib/hecks/fuzzing/properties.rb'
     - 'lib/hecks/bluebook/dsl/bluebook_builder/validation.rb'
 
 # Offense count: 49
