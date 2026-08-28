@@ -38,8 +38,6 @@ module Hecks
   class LoadOutsideBoot < StandardError; end
 
   class << self
-    attr_reader :current_registry
-
     # The loading words below collect into the registry the RUNTIME is
     # holding open ; booting and that ambient state belong to the runtime
     # layer, so this module is their facade and Hecks::Runtime is where

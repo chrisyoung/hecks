@@ -624,11 +624,12 @@ module Hecks
       end
 
       def cached_where_fields
-        declared_queries.flat_map do |q|
+        fields = declared_queries.flat_map do |q|
           q.wheres.map do |clause|
             clause.field.to_s
           end
-        end.uniq.select { |field| cacheable_field?(field) }
+        end
+        fields.uniq.select { |field| cacheable_field?(field) }
       end
 
       def declared_queries

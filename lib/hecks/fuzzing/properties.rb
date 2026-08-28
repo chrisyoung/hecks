@@ -422,7 +422,8 @@ module Hecks
           next unless asked[:query].is_a?(String) && asked[:query].include?("::")
 
           declared = query_for_verb(bluebooks, asked[:query])
-          tenant = declared&.authorization&.tenant&.to_sym
+          authorization = declared&.authorization
+          tenant = authorization&.tenant&.to_sym
           next unless tenant
 
           args = asked[:args] || {}

@@ -19,52 +19,6 @@ Layout/LineLength:
 Lint/ConstantDefinitionInBlock:
   Enabled: false
 
-# Offense count: 7
-# Configuration parameters: IgnoreLiteralBranches, IgnoreConstantBranches, IgnoreDuplicateElseBranch.
-Lint/DuplicateBranch:
-  Exclude:
-    - 'lib/hecks/adapters/driven/sqlite/projection.rb'
-    - 'lib/hecks/bluebook/expression/resolver.rb'
-    - 'lib/hecks/literal.rb'
-    - 'lib/hecks/query_specification/common/comparison.rb'
-    - 'lib/hecks/runtime/command_interpreter/mutation_applier.rb'
-    - 'lib/hecks/runtime/value/coercion.rb'
-    - 'spec/orchestration_spec.rb'
-
-# Offense count: 1
-# Configuration parameters: DelegatingMethods.
-# DelegatingMethods: delegate
-Lint/DuplicateMethods:
-  Exclude:
-    - 'lib/hecks.rb'
-
-# Offense count: 9
-# Configuration parameters: AllowComments, AllowEmptyLambdas.
-Lint/EmptyBlock:
-  Exclude:
-    - 'spec/dsl_spec.rb'
-    - 'spec/oidc_projection_spec.rb'
-    - 'spec/runtime/registry/saga_persistence_spec.rb'
-
-# Offense count: 1
-# This cop supports safe autocorrection (--autocorrect).
-Lint/ImplicitStringConcatenation:
-  Exclude:
-    - 'spec/syntax_conformance_spec.rb'
-
-# Offense count: 4
-Lint/IneffectiveAccessModifier:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/bluebook_builder.rb'
-    - 'lib/hecks/bluebook/dsl/hecksagon_builder.rb'
-    - 'lib/hecks/bluebook/dsl/port_operation_builder.rb'
-    - 'lib/hecks/fqn.rb'
-
-# Offense count: 1
-Lint/NoReturnInBeginEndBlocks:
-  Exclude:
-    - 'lib/hecks/grammar.rb'
-
 # Offense count: 31
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Lint/RedundantDirGlobSort:
@@ -84,31 +38,15 @@ Lint/RedundantDirGlobSort:
     - 'spec/rust_conformance_spec.rb'
     - 'spec/support/doctest_names.rb'
 
-# Offense count: 1
-# Configuration parameters: AllowRBSInlineAnnotation.
-Lint/SelfAssignment:
+# An empty block IS the test subject in every one of these 11 offenses —
+# `Hecks.bluebook("Registered", version: "v2") {}` exercises a bluebook/
+# command/etc. declared with a deliberately empty body, not accidental
+# dead code left behind.
+Lint/EmptyBlock:
   Exclude:
-    - 'spec/adapters/banking_matrix_spec.rb'
-
-# Offense count: 4
-Lint/StructNewOverride:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/attribute_collector.rb'
-    - 'lib/hecks/bluebook/meta_validator/plan.rb'
-    - 'lib/hecks/bluebook/translation.rb'
-    - 'lib/hecks/runtime/entity_interpreter.rb'
-
-# Offense count: 1
-# Configuration parameters: AllowComments, AllowNil.
-Lint/SuppressedException:
-  Exclude:
-    - 'spec/pizzas_spec.rb'
-
-# Offense count: 3
-Lint/UselessConstantScoping:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
-    - 'lib/hecks/bluebook/meta_validator/judge.rb'
+    - 'spec/dsl_spec.rb'
+    - 'spec/oidc_projection_spec.rb'
+    - 'spec/runtime/registry/saga_persistence_spec.rb'
 
 # Offense count: 42
 # Configuration parameters: AllowedMethods, AllowedPatterns, CountRepeatedAttributes, Max.
@@ -164,16 +102,18 @@ Metrics/ParameterLists:
 Metrics/PerceivedComplexity:
   Enabled: false
 
-# Offense count: 1
-Naming/AccessorMethodName:
-  Exclude:
-    - 'lib/hecks/bluebook/meta_validator/readings.rb'
-
 # Offense count: 34
 # Configuration parameters: MinNameLength, AllowNamesEndingInNumbers, AllowedNames, ForbiddenNames.
 # AllowedNames: as, at, by, cc, db, id, if, in, io, ip, of, on, os, pp, to
 Naming/MethodParameterName:
   Enabled: false
+
+# `set_row` (MetaValidator::Readings) isn't a Ruby setter — it renders a
+# `:set` MUTATION's row (the domain's own name for that op), a false
+# positive from `set_` reading as the accessor convention prefix.
+Naming/AccessorMethodName:
+  Exclude:
+    - 'lib/hecks/bluebook/meta_validator/readings.rb'
 
 # Offense count: 12
 # Configuration parameters: Mode, AllowedMethods, AllowedPatterns, AllowBangMethods, WaywardPredicates.
@@ -194,12 +134,16 @@ Naming/PredicateMethod:
     - 'lib/hecks/forms/params.rb'
     - 'lib/hecks/ports/persistence/append_only.rb'
 
-# Offense count: 2
-# Configuration parameters: NamePrefix, ForbiddenPrefixes, AllowedMethods, MethodDefinitionMacros, UseSorbetSigs.
-# NamePrefix: is_, has_, have_, does_
-# ForbiddenPrefixes: is_, has_, have_, does_
-# AllowedMethods: is_a?
-# MethodDefinitionMacros: define_method, define_singleton_method
+# `has_many_impl`/`has_one_impl` (AggregateBuilder, EntityBuilder) are the
+# real Ruby implementations a `.bluebook` grammar declaration's `calls:`
+# field names BY THIS EXACT STRING (see entity.bluebook / aggregate.bluebook
+# `member word: "has_many", ..., calls: "has_many_impl"`), looked up by
+# GenericDispatch at boot — not called as ordinary Ruby predicates from
+# other Ruby code. Renaming to `many_impl?`/`one_impl?` per the cop would
+# mean also updating both `.bluebook` grammar files and the golden IR
+# fixtures those generate (spec/golden/ir/Bluebook.json), a much bigger
+# change than a lint fix, and would break the deliberate naming symmetry
+# with the DSL keywords `has_many`/`has_one` themselves.
 Naming/PredicatePrefix:
   Exclude:
     - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
@@ -208,29 +152,10 @@ Naming/PredicatePrefix:
 RSpec/BeforeAfterAll:
   Enabled: false
 
-# Offense count: 1
-# Configuration parameters: Prefixes, AllowedPatterns.
-# Prefixes: when, with, without
-RSpec/ContextWording:
-  Exclude:
-    - 'spec/runtime/read_model_interpreter_spec.rb'
-
 # Offense count: 44
 # Configuration parameters: Max, CountAsOne.
 RSpec/ExampleLength:
   Enabled: false
-
-# Offense count: 2
-RSpec/ExpectOutput:
-  Exclude:
-    - 'spec/construct_spec.rb'
-
-# Offense count: 3
-RSpec/IdenticalEqualityAssertion:
-  Exclude:
-    - 'spec/fuzzing/value_generator_spec.rb'
-    - 'spec/projections/oidc_projection_spec.rb'
-    - 'spec/runtime/capability_graph_spec.rb'
 
 # Offense count: 199
 # Configuration parameters: AssignmentOnly.
@@ -241,7 +166,14 @@ RSpec/InstanceVariable:
 RSpec/LeakyConstantDeclaration:
   Enabled: false
 
-# Offense count: 6
+# All 6 are the same dynamically-generated-examples pattern: a value
+# computed fresh on EACH iteration of an enclosing `.each`/`.group_by`
+# (never mutated, never read by a different iteration's example) — used
+# both to build that iteration's `it` description/metadata (which must be
+# known at collection-build time, before any example runs — see
+# guides_spec.rb's own comment on `guide`) and inside that same
+# iteration's `it` block. Not the shared-across-examples footgun this cop
+# targets.
 RSpec/LeakyLocalVariable:
   Exclude:
     - 'spec/guides_spec.rb'
@@ -255,17 +187,51 @@ RSpec/LeakyLocalVariable:
 RSpec/MessageSpies:
   EnforcedStyle: receive
 
-# Offense count: 2
+# spec/router_spec.rb's own `ensure Object.send(:remove_const, :Realm) ...`
+# blocks (9 of them) don't fit `stub_const`'s actual mechanism: stub_const
+# pre-declares a replacement for a constant that already exists BEFORE the
+# example runs and auto-restores after; every one of these constants (Realm,
+# SugarRealm, OptionsRealm, ...) is a top-level module/class the example
+# itself creates fresh via `described_class.boot` — there's nothing to stub
+# a replacement for, and no "original value" to restore. Plain teardown of a
+# test-created constant, not a fit for the cop's target pattern.
+RSpec/RemoveConst:
+  Exclude:
+    - 'spec/router_spec.rb'
+
+# Two genuinely separate top-level subjects filed in the same spec file
+# (read_model_interpreter_spec.rb: query options, then a rootless read
+# model's own group_by; saga_spec.rb: a process manager, then a lifecycle) —
+# same rationale as RSpec/DescribeClass being disabled in .rubocop.yml
+# (many spec files describe a scenario, not one Ruby class). Nesting both
+# under one artificial parent description wouldn't describe anything real.
 RSpec/MultipleDescribes:
   Exclude:
     - 'spec/runtime/read_model_interpreter_spec.rb'
     - 'spec/runtime/saga_spec.rb'
 
-# Offense count: 1
-# Configuration parameters: Max.
+# One real end-to-end integration example ("mints era 2 in one transaction
+# and derives the head through the edge") walking one coherent multi-step
+# Postgres scenario, each expectation checking a different checkpoint of
+# the SAME mint. Splitting into separate examples would mean re-minting
+# the era (real Postgres writes) once per split-off expectation instead of
+# once for the whole story — much more expensive, not more readable.
+# .rubocop.yml already loosens Max to 10 from the cop's default 1; this
+# is the one example past even that.
 RSpec/MultipleExpectations:
   Exclude:
     - 'spec/adapters/driven/postgres_era/lineage_spec.rb'
+
+# All three are determinism/memoization checks — TWO SEPARATE invocations
+# (`sequence.call(7)` called twice, `described_class.call(...)` called
+# twice, `held.capability_graph` read twice) asserted equal/identical, not
+# one value compared to itself. Textually identical, semantically the
+# opposite of the copy-paste bug this cop targets.
+RSpec/IdenticalEqualityAssertion:
+  Exclude:
+    - 'spec/fuzzing/value_generator_spec.rb'
+    - 'spec/projections/oidc_projection_spec.rb'
+    - 'spec/runtime/capability_graph_spec.rb'
 
 # Offense count: 25
 # Configuration parameters: AllowedPatterns.
@@ -274,11 +240,6 @@ RSpec/NoExpectationExample:
   Exclude:
     - 'spec/adapters/query_agreement_spec.rb'
     - 'spec/ir_golden_spec.rb'
-
-# Offense count: 9
-RSpec/RemoveConst:
-  Exclude:
-    - 'spec/router_spec.rb'
 
 # Offense count: 49
 # Configuration parameters: CustomTransform, IgnoreMethods, IgnoreMetadata, InflectorPath, EnforcedInflector.
@@ -290,39 +251,34 @@ RSpec/SpecFilePathFormat:
 Security/Eval:
   Enabled: false
 
-# Offense count: 1
-Security/Open:
-  Exclude:
-    - 'lib/hecks/forms/html.rb'
-
-# Offense count: 5
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: EnforcedStyle, AllowModifiersOnSymbols, AllowModifiersOnAttrs, AllowModifiersOnAliasMethod.
-# SupportedStyles: inline, group
-Style/AccessModifierDeclarations:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/attribute_collector.rb'
-    - 'lib/hecks/bluebook/dsl/translation_builder.rb'
-    - 'lib/hecks/runtime/value/admission.rb'
-    - 'lib/hecks/runtime/value/coercion.rb'
-
-# Offense count: 1
-Style/DocumentDynamicEvalDefinition:
-  Exclude:
-    - 'spec/expression_spec.rb'
-
 # Offense count: 76
 # Configuration parameters: AllowedConstants.
 Style/Documentation:
   Enabled: false
 
-# Offense count: 4
-Style/MultilineBlockChain:
+# Its own unsafe autocorrect (`rubocop -A --only Style/AccessModifierDeclarations`,
+# tried live while paying down this file) doesn't just move `private` onto
+# its own line — it regroups every scattered inline-private method in the
+# class together, which means relocating method bodies AND their preceding
+# doc comments. On these three files that came out badly broken: comments
+# landed at column 0 outside their method, `def`/`end` lost their
+# indentation, and in coercion.rb two constants (COMPOSITE_SHAPES,
+# NON_NUMERIC_SCALARS) were moved away from the method that documents using
+# them. Reverted; left for a deliberate by-hand pass instead of another
+# blind attempt.
+Style/AccessModifierDeclarations:
   Exclude:
-    - 'lib/hecks/ports/persistence/plugins/era/postgres_era.rb'
-    - 'lib/hecks/doc/reference.rb'
-    - 'lib/hecks/query_specification/common/options.rb'
+    - 'lib/hecks/bluebook/dsl/attribute_collector.rb'
+    - 'lib/hecks/runtime/value/admission.rb'
     - 'lib/hecks/runtime/value/coercion.rb'
+
+# The SAME module reopened twice on purpose, not two unrelated top-level
+# definitions: NAME/VERB/DEFAULT_ADAPTER are declared first (so they're
+# available with no load-order dependency), then the file requires its
+# submodules, then reopens Persistence to add the behavior that needs them.
+Style/OneClassPerFile:
+  Exclude:
+    - 'lib/hecks/ports/persistence.rb'
 
 # Offense count: 44
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -330,25 +286,6 @@ Style/MultilineBlockChain:
 # SupportedStyles: literals, strict
 Style/MutableConstant:
   Enabled: false
-
-# Offense count: 1
-# Configuration parameters: AllowedClasses.
-Style/OneClassPerFile:
-  Exclude:
-    - 'lib/hecks/ports/persistence.rb'
-
-# Offense count: 1
-# Configuration parameters: AllowedMethods.
-# AllowedMethods: respond_to_missing?
-Style/OptionalBooleanParameter:
-  Exclude:
-    - 'lib/hecks/bluebook/dsl/command_builder.rb'
-
-# Offense count: 1
-# Configuration parameters: Max.
-Style/SafeNavigationChainLength:
-  Exclude:
-    - 'lib/hecks/fuzzing/properties.rb'
 
 # Offense count: 14
 # This cop supports unsafe autocorrection (--autocorrect-all).

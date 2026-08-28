@@ -66,12 +66,10 @@ module Hecks
           # raw payload would be checking the envelope.
           coerced = value_object_for(aggregate, attribute.type)
                     .then do |value_object|
-                      if value.is_a?(self) && value.type_name == value_object&.hecks_name
+                      if value_object.nil? || (value.is_a?(self) && value.type_name == value_object.hecks_name)
                         value
-                      elsif value_object
-                        build(value_object, fields_for(value_object, attribute.name, value), aggregate)
                       else
-                        value
+                        build(value_object, fields_for(value_object, attribute.name, value), aggregate)
                       end
                     end
 
@@ -305,16 +303,16 @@ module Hecks
           entity = find_entity(aggregate, attribute.type.to_s)
           return value unless entity
 
-          Array(value).map do |element|
+          hydrated = Array(value).map do |element|
             next element unless element.is_a?(Hash)
 
-            element.each_with_object({}) do |(name, field_value), hydrated|
+            element.each_with_object({}) do |(name, field_value), acc|
               key = name.to_sym
               field = entity.attribute(key)
-              hydrated[key] = field ? for_attribute(aggregate, field, field_value) : field_value
+              acc[key] = field ? for_attribute(aggregate, field, field_value) : field_value
             end
           end
-                      .then { |hydrated| Freezer.deep(hydrated) }
+          Freezer.deep(hydrated)
         end
 
         # `Value.identifier` used to live here: hand it a one-field value object

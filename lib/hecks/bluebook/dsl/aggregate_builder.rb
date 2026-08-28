@@ -815,6 +815,10 @@ module Hecks
         # compares lexicographically. And a :symbol value must name one of
         # the query's own declared arguments, or it resolves to nil at
         # dispatch and matches nothing.
+        # `private` above has no effect on a constant (Ruby constants are
+        # always resolvable through their lexical scope); kept here anyway,
+        # beside the method that actually reads it, for the narrative.
+        # rubocop:disable-next Lint/UselessConstantScoping
         ORDERED_COMPARATORS = %i[lt lte gt gte].freeze
 
         def seal_query_targets

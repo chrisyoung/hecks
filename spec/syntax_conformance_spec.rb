@@ -454,7 +454,7 @@ RSpec.describe "the declared syntax" do
       expect(answered.include?(row[:word].to_sym) || generically_dispatched?(row[:word], row[:context])).to be(true),
                                                                                                             "#{row[:context]}.#{row[:word]} — the new spelling has no builder"
       expect(answered).to include(row[:was].to_sym),
-                          "#{row[:context]}.#{row[:word]} was #{row[:was]}, and the old " "spelling stopped parsing — a rename never strands the old era"
+                          "#{row[:context]}.#{row[:word]} was #{row[:was]}, and the old " + "spelling stopped parsing — a rename never strands the old era"
       expect(row[:was]).not_to eq(row[:word]), "#{row[:context]}.#{row[:word]} renames itself"
     end
   end

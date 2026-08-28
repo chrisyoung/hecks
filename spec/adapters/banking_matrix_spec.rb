@@ -60,7 +60,6 @@ RSpec.describe "Banking across persistence adapters" do
       end
       if adapter != "Memory"
         adapter_name = adapter
-        root         = root
         Hecks.world("Banking") do
           if adapter_name != "Memory"
             persisted_by(adapter_name) do

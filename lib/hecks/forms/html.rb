@@ -78,7 +78,10 @@ module Hecks
         rendered.empty? ? "<#{name}>" : "<#{name} #{rendered}>"
       end
 
-      def self.void(name, **pairs) = open(name, **pairs) # self-closing tags read the same; HTML5 needs no slash
+      # `self.open(...)`, not bare `open(...)` — this Html.open (an HTML tag
+      # renderer, right above) shadows Kernel#open safely either way, but the
+      # explicit receiver also settles Security/Open's static ambiguity.
+      def self.void(name, **pairs) = self.open(name, **pairs) # self-closing tags read the same; HTML5 needs no slash
     end
   end
 end

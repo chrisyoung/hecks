@@ -378,12 +378,13 @@ module Hecks
       # `harvest` already rejects empty prose and the TODO sentinel, so a
       # word with nothing written for it arrives here with a nil.
       def live_words(directory)
-        contexts.flat_map do |context|
+        rows = contexts.flat_map do |context|
           path = File.join(directory, page_name(context))
           prose = File.exist?(path) ? harvest(File.read(path)) : {}
           keywords.select { |row| row[:context] == context && live?(row) }
                   .map { |row| [row[:word], context, prose[row[:word]]] }
-        end.uniq { |word, context, _| [word, context] }
+        end
+        rows.uniq { |word, context, _| [word, context] }
       end
 
       def name_of(word, context) = "#{word} (#{context})"

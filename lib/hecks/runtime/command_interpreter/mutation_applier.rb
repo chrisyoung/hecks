@@ -19,6 +19,9 @@ module Hecks
         end
 
         def apply(instance, aggregate, mutation, args)
+          # rubocop:disable Lint/DuplicateBranch -- :delegate and :corrects
+          # both no-op here, for two unrelated documented reasons (see each
+          # branch's own comment below); merging would blur that distinction.
           case mutation.op
           when :set
             value = mutation.source.is_a?(StateRef) ? instance[mutation.source.name] : @rules.resolve_source(mutation.source, args)
@@ -93,6 +96,7 @@ module Hecks
             # check.
             raise Runtime::WiringError, "no mutation applier handles :#{mutation.op} — add one before declaring it"
           end
+          # rubocop:enable Lint/DuplicateBranch
         end
 
         # A CALLER-SUPPLIED ARG, FIRST -- an append's own field can also

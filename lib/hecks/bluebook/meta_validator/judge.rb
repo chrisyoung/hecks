@@ -352,6 +352,9 @@ module Hecks
         # meta store happened to iterate in insertion order — an accident that an
         # ask ordered any other way would have taken away, and Reconstruction is
         # the one reader that must have the SOURCE'S order rather than a stable one.
+        # `private` above has no effect on a constant; kept here anyway,
+        # beside the method that reads it, for the narrative.
+        # rubocop:disable-next Lint/UselessConstantScoping
         POSITION = "position"
 
         def declare(plan, category, node, id, parent_id, index, extra = {})
@@ -586,6 +589,9 @@ module Hecks
         # `field_value` ; it is read the same way `plan.parent_key` already is,
         # because it IS that fact, spelled for the walk's immediate parent
         # rather than for one specific kind of one.
+        # `private` above has no effect on a constant; kept here anyway,
+        # beside the method that reads it, for the narrative.
+        # rubocop:disable-next Lint/UselessConstantScoping
         OWNER = "owner_id"
 
         def identity_part(plan, path, parent_id, node, index, category)

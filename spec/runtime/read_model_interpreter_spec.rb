@@ -497,7 +497,7 @@ RSpec.describe "a read model's query options" do
   # — `BluebookBuilder.build` keeps one builder open per chapter name
   # across calls) rather than in the file itself, because a bluebook
   # that fails to build is not a real corpus member to freeze.
-  context "count and median" do
+  context "with count and median" do
     def build_with_bad_median(adapter: "Memory")
       registry = Hecks::Runtime::Registry.new
       Hecks.with_registry(registry) do

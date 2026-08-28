@@ -141,6 +141,11 @@ module Hecks
           end
         end
 
+        # `private` above (scoping the instance methods between it and here)
+        # doesn't reach a singleton method — correctly so: `.build` is this
+        # builder's real public entry point (DomainPortBuilder calls it),
+        # never meant to be private.
+        # rubocop:disable-next Lint/IneffectiveAccessModifier
         def self.build(name, to: nil, owner: nil, direction: :inbound, &block)
           builder = new(name, to: to, owner: owner, direction: direction)
           builder.instance_eval(&block) if block

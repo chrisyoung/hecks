@@ -156,6 +156,10 @@ module Hecks
         end
         fields.each_with_object({}) do |(name, attribute), state|
           raw = row[name.to_s]
+          # rubocop:disable Lint/DuplicateBranch -- the nil-attribute and
+          # reference-id branches both just answer `raw`, coincidentally, for
+          # two unrelated reasons (see each branch's own comment); merging
+          # them would blur that distinction.
           state[name] =
             if attribute.nil?
               raw
@@ -165,6 +169,7 @@ module Hecks
               # A reference is a scalar id — see Codec#decode.
               raw
             end
+          # rubocop:enable Lint/DuplicateBranch
         end
       end
     end

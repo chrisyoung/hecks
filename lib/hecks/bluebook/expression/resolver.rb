@@ -333,8 +333,7 @@ module Hecks
         # found live while building this, not assumed).
         def matches_regex?(receiver_value, pattern, flags)
           text = case receiver_value
-                 when String, Symbol then receiver_value.to_s
-                 when Integer, Float then receiver_value.to_s
+                 when String, Symbol, Integer, Float then receiver_value.to_s
                  when NilClass then ""
                  else
                    raise EvaluationError, "match? expects a scalar, got #{receiver_value.class}"
@@ -527,10 +526,9 @@ module Hecks
 
         def string_of(value)
           case value
-          when String                then value
-          when Integer, Float        then value.to_s
-          when TrueClass, FalseClass then value.to_s
-          when NilClass              then ""
+          when String then value
+          when Integer, Float, TrueClass, FalseClass then value.to_s
+          when NilClass then ""
           else
             raise EvaluationError, "to_s expects a scalar, got #{describe(value)}"
           end

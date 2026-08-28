@@ -61,6 +61,11 @@ module Hecks
       # targets, so every step written before this ADR (enforce_givens,
       # apply_mutations, advance_lifecycle, element_identity, ...) reads
       # exactly as it always has. Only `locate_element` walks the chain.
+      # `:chain` shadows Enumerable#chain on purpose — every read is
+      # `ctx.chain` fetching the field (an Array of entities), never
+      # `ctx.chain(other)` combining enumerables. Verified before disabling
+      # this cop for it.
+      # rubocop:disable-next Lint/StructNewOverride
       Context = Struct.new(:domain, :aggregate, :entity, :entity_name, :command, :command_name,
                            :args, :repository, :instance, :chain, :element, :view, :transition,
                            :old_element, :result, :route, :plan, :persistence_outcome, :dry_run)

@@ -3,6 +3,12 @@ module Hecks
     module DSL
       module AttributeCollector
         ListOf = Struct.new(:type)
+        # `:values` shadows Struct#values on purpose — with one member, the
+        # generated accessor returns the flat array of permitted values
+        # directly (what every caller actually wants), not Struct#values'
+        # own `[self.values]`. No caller anywhere reads the built-in
+        # behavior; verified before disabling this cop for it.
+        # rubocop:disable-next Lint/StructNewOverride
         OneOf  = Struct.new(:values)
 
         UNSET = Object.new.freeze

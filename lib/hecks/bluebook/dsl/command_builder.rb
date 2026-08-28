@@ -106,7 +106,7 @@ module Hecks
           # one thing it exists to say. Transfer has said
           # `reference_to Account, as: :source` for as long as banking has existed;
           # this is the same sentence when the target happens to be the owner.
-          return cross_reference(demodulised, as, optional) if as || demodulised.to_s != @owner.to_s
+          return cross_reference(demodulised, as, optional: optional) if as || demodulised.to_s != @owner.to_s
 
           if @references
             raise Malformed,
@@ -120,7 +120,7 @@ module Hecks
 
         private
 
-        def cross_reference(target, as, optional = false)
+        def cross_reference(target, as, optional: false)
           attribute_impl(as || default_reference_name(target), Reference.new(target), optional: optional)
         end
 

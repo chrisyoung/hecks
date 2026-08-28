@@ -254,12 +254,9 @@ RSpec.describe "a construct's identity" do
     # the index the runtime trusts ; a domain is entered by name exactly once,
     # and everything below it is traversal through the IR.
     it "cannot be indexed by Ruby's constants, because top-level names are not ours" do
-      captured = StringIO.new
       registry = Hecks::Runtime::Registry.new
 
-      begin
-        was = $stderr
-        $stderr = captured
+      expect do
         Hecks.with_registry(registry) do
           Kernel.load(InMemoryDomain::EXTRACTION_PORT)
           Kernel.load(InMemoryDomain::PRISM_ADAPTER)
@@ -277,11 +274,8 @@ RSpec.describe "a construct's identity" do
         # Installation happens at BIND, not at load — the door is a per-boot
         # projection, and this is the moment it meets Ruby's own `Set`.
         Hecks::Runtime::Loader.bind_runtime(Hecks::Runtime::Dispatcher.new(registry))
-      ensure
-        $stderr = was
-      end
+      end.to output(/Set is already defined — leaving it alone/).to_stderr
 
-      expect(captured.string).to include("Set is already defined — leaving it alone")
       expect(registry.bluebook("Set").hecks_fqn).to eq("Set")
       expect(Object.const_get(:Set)).not_to be(registry.bluebook("Set"))
     end

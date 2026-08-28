@@ -138,8 +138,8 @@ module Hecks
     # walked for the resolver's arithmetic.
     def operators_in(canonical)
       evaluator = Bluebook::Expression::Evaluator
-      node = begin
-        evaluator.parse(canonical)
+      begin
+        node = evaluator.parse(canonical)
       rescue StandardError
         return []
       end

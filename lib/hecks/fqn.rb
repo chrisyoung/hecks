@@ -83,6 +83,7 @@ module Hecks
 
       [domain, version]
     end
+    private_class_method :split_domain
 
     def segment(value, label)
       text = value.to_s
