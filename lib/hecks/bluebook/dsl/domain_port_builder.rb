@@ -7,10 +7,27 @@ module Hecks
 
         include WordGate
 
-        def initialize(name, owner: nil)
-          @name       = name
-          @owner      = owner
-          @operations = []
+        # `legacy_bare_port:` — ONLY `Hecks.port`'s own top-level method
+        # (lib/hecks.rb) passes `true`. `PortBuilder#build` never refused
+        # an empty build (no verb, no signal, nothing) — `Port.new(verb:
+        # nil, signal: :reply)` is a real, allowed shape dsl_spec.rb's own
+        # "a port" tests rely on (`signal`-only, no `verb` at all). The
+        # AGGREGATE-scoped (`BindingProxy#port`) and hecksagon-ROOT
+        # (`HecksagonBuilder#port_impl`) callers both reach this SAME
+        # class with `owner: nil` too when they're building the bare-verb
+        # shape (`port_impl`'s own root-level port can be EITHER shape,
+        # decided only after `build` returns) — so `owner.nil?` cannot be
+        # the discriminator between "old Hecks.port semantics" and "real
+        # DomainPort semantics"; those two callers correctly want the
+        # stricter "declares no verb and no operations" refusal `build`
+        # already raises below, unchanged. Only the literal top-level
+        # `.port` file caller wants the older, looser rule.
+        def initialize(name, owner: nil, legacy_bare_port: false)
+          @name             = name
+          @owner            = owner
+          @operations       = []
+          @signal           = :reply
+          @legacy_bare_port = legacy_bare_port
         end
 
         # WHAT THE OUTSIDE TELLS US — an external fact arriving, translated
@@ -58,18 +75,31 @@ module Hecks
         # coerce-and-assign with nothing else, now executed by
         # `GenericDispatch`.
 
+        # `Hecks.port "x" do verb "y"; signal :effect end`'s own two words,
+        # reachable here too — a bare-verb `DomainPortBuilder.build` falls
+        # back to the SAME `Port` object `PortBuilder` produces (`build`,
+        # below), so any `.port` file can migrate to being parsed by this
+        # builder with zero change to its own text, or to any caller that
+        # reads `.verb`/`.signal` off the `Port` it gets back. Ordinary
+        # `def`s, exactly like `PortBuilder`'s own — `WordGate`'s own
+        # header is explicit that a word answered this way never reaches
+        # its `method_missing`, so no new self-hosted grammar row is
+        # needed for either word under this context.
+        def verb(value)   = @verb = value.to_s
+        def signal(value) = @signal = value.to_sym
+
         def build
           raise Malformed, "#{@name} declares both a verb and operations — a port is one or the other, not both" if @verb && !@operations.empty?
 
-          return Port.new(name: @name, verb: @verb, signal: :reply) if @verb
+          return MetaValidator.call_port(Port.new(name: @name, verb: @verb, signal: @signal)) if @verb || (@legacy_bare_port && @operations.empty?)
 
           raise Malformed, "#{@name} declares no verb and no operations" if @operations.empty?
 
           DomainPort.new(name: @name, operations: @operations)
         end
 
-        def self.build(name, owner: nil, &block)
-          builder = new(name, owner: owner)
+        def self.build(name, owner: nil, legacy_bare_port: false, &block)
+          builder = new(name, owner: owner, legacy_bare_port: legacy_bare_port)
           builder.instance_eval(&block) if block
           builder.build
         end

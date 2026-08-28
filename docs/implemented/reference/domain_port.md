@@ -246,3 +246,21 @@ verb "..." end` line — so nothing in `examples/` or
 documents. `writing-an-adapter.md`'s own worked example is the closest
 this repo has to a real one, and it is a guide, not a corpus member.
 
+## signal
+
+<!-- generated:begin word=signal -->
+`signal signal` — fills `signal`
+
+| argument | kind | required | fills |
+|---|---|---|---|
+| positional 1 | symbol | true | signal |
+<!-- generated:end -->
+
+Whether calling this resource port answers with a value (`:reply`) or fires an effect with nothing to hand back (`:effect`) — the SAME closed set (and the same default when never declared) `port.md`'s own standalone `.port` file `signal` already carries; a bare-`verb` `DomainPort` is registered as the exact same `IR::Port`, so it means the identical thing here. Only meaningful alongside `verb` — an `operation`-shaped port has no single signal of its own, since each operation answers (or doesn't) independently.
+
+`"Ledger"` never called `signal` at all, so it defaults:
+
+```ruby
+runtime.registry.ports["Ledger"].signal  # => :reply
+```
+

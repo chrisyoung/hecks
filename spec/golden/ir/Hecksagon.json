@@ -276,6 +276,16 @@
           "pattern": null,
           "relationship": null,
           "type": "PortVerb"
+        },
+        {
+          "admits": null,
+          "default": null,
+          "list": false,
+          "name": "signal",
+          "optional": true,
+          "pattern": null,
+          "relationship": null,
+          "type": "PortSignal"
         }
       ],
       "commands": [
@@ -356,6 +366,39 @@
 
           ],
           "name": "PortVerb"
+        },
+        {
+          "attributes": [
+            {
+              "admits": null,
+              "default": null,
+              "list": false,
+              "name": "value",
+              "optional": false,
+              "pattern": null,
+              "relationship": null,
+              "type": "String"
+            }
+          ],
+          "closed_set": true,
+          "invariants": [
+
+          ],
+          "members": [
+            [
+              [
+                "value",
+                "reply"
+              ]
+            ],
+            [
+              [
+                "value",
+                "effect"
+              ]
+            ]
+          ],
+          "name": "PortSignal"
         },
         {
           "attributes": [
@@ -579,6 +622,32 @@
               [
                 "fills",
                 "verb"
+              ]
+            ],
+            [
+              [
+                "word",
+                "signal"
+              ],
+              [
+                "context",
+                "DomainPort"
+              ],
+              [
+                "body",
+                "none"
+              ],
+              [
+                "inner",
+                ""
+              ],
+              [
+                "opens",
+                ""
+              ],
+              [
+                "fills",
+                "signal"
               ]
             ]
           ],
@@ -860,6 +929,36 @@
               [
                 "fills",
                 "verb"
+              ]
+            ],
+            [
+              [
+                "keyword",
+                "signal"
+              ],
+              [
+                "context",
+                "DomainPort"
+              ],
+              [
+                "at",
+                1
+              ],
+              [
+                "named",
+                ""
+              ],
+              [
+                "kind",
+                "symbol"
+              ],
+              [
+                "required",
+                true
+              ],
+              [
+                "fills",
+                "signal"
               ]
             ],
             [

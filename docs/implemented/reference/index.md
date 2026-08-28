@@ -20,7 +20,7 @@ survives regeneration.
 - [OneOf](one_of.md) — 1 word
 - [Type](type.md) — 2 words
 - [World](world.md) — 2 words
-- [DomainPort](domain_port.md) — 4 words
+- [DomainPort](domain_port.md) — 5 words
 - [Hecksagon](hecksagon.md) — 4 words
 - [PortOperation](port_operation.md) — 5 words
 - [Port](port.md) — 2 words

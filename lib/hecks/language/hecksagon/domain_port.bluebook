@@ -4,7 +4,8 @@ Hecks.bluebook "Hecksagon" do
 
     identified_by PortName, as: :name
 
-    attribute :verb, PortVerb, optional: true
+    attribute :verb,   PortVerb, optional: true
+    attribute :signal, PortSignal, optional: true
 
     value_object "PortName" do
       attribute :value, String
@@ -14,6 +15,13 @@ Hecks.bluebook "Hecksagon" do
     value_object "PortVerb" do
       attribute :value, String
       invariant("a verb is named") { !value.to_s.empty? }
+    end
+
+    # SAME CLOSED SET port.bluebook's own "Port" aggregate declares —
+    # kept as its own local value object rather than shared cross-
+    # chapter, the same way PortVerb already is here.
+    value_object "PortSignal" do
+      attribute :value, String, one_of: ["reply", "effect"]
     end
 
     # HOW DOMAINPORT IS SPELLED. These rows live with the concept
@@ -35,6 +43,7 @@ Hecks.bluebook "Hecksagon" do
       member word: "tells",           context: "DomainPort",    body: "keywords", inner: "PortOperation", opens: "PortOperation", fills: "", calls: "tells_impl"
       member word: "asks",            context: "DomainPort",    body: "keywords", inner: "PortOperation", opens: "PortOperation", fills: "", calls: "asks_impl"
       member word: "verb",            context: "DomainPort",    body: "none",     inner: "",              opens: "",              fills: "verb"
+      member word: "signal",          context: "DomainPort",    body: "none",     inner: "",              opens: "",              fills: "signal"
 
     end
 
@@ -59,6 +68,7 @@ Hecks.bluebook "Hecksagon" do
       member keyword: "tells",           context: "DomainPort", at: "1", named: "", kind: "text", required: "true", fills: "name"
       member keyword: "asks",            context: "DomainPort", at: "1", named: "", kind: "text", required: "true", fills: "name"
       member keyword: "verb",            context: "DomainPort", at: "1", named: "", kind: "text", required: "true", fills: "verb"
+      member keyword: "signal",          context: "DomainPort", at: "1", named: "", kind: "symbol", required: "true", fills: "signal"
 
       # THE RECEIVING AGGREGATE — PortOperationBuilder's own `reference_to`
       # (inside the block) is refused (#335); this is the sanctioned
