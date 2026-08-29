@@ -221,7 +221,9 @@ module Hecks
         findings = []
         findings.concat(deaf_trigger_findings(process_manager, emitted))
         findings.concat(unreachable_pm_state_findings(process_manager, reached))
-        process_manager.handlers.each { |handler| findings.concat(handler_findings(bluebook, process_manager, emitted, verbs, handler)) }
+        process_manager.handlers.each do |handler|
+          findings.concat(handler_findings(bluebook, process_manager, emitted, verbs, handler))
+        end
         findings.concat(dead_compensation_findings(process_manager, reached))
         findings
       end

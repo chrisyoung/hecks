@@ -157,7 +157,9 @@ module Hecks
 
         translation_aggregate(aggregate).merge(
           compiled_state_expression: Translation::RuleCompiler.compile_rules(aggregate),
-          compiled_id_expression:    (Translation::RuleCompiler.compile_id_expression(aggregate) if Translation::RuleCompiler.rekeyed?(aggregate))
+          compiled_id_expression:    (if Translation::RuleCompiler.rekeyed?(aggregate)
+                                        Translation::RuleCompiler.compile_id_expression(aggregate)
+                                      end)
         )
       end
     end

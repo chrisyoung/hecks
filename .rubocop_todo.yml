@@ -6,13 +6,6 @@
 # Note that changes in the inspected code, or installation of new
 # versions of RuboCop, may require this file to be generated again.
 
-# Offense count: 179
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: Max, AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, AllowRBSInlineAnnotation, AllowCopDirectives, AllowedPatterns, SplitStrings.
-# URISchemes: http, https
-Layout/LineLength:
-  Enabled: false
-
 # An empty block IS the test subject in every one of these 11 offenses —
 # `Hecks.bluebook("Registered", version: "v2") {}` exercises a bluebook/
 # command/etc. declared with a deliberately empty body, not accidental
@@ -90,8 +83,6 @@ Naming/PredicatePrefix:
   Exclude:
     - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
 
-
-
 # All 6 are the same dynamically-generated-examples pattern: a value
 # computed fresh on EACH iteration of an enclosing `.each`/`.group_by`
 # (never mutated, never read by a different iteration's example) — used
@@ -166,13 +157,6 @@ RSpec/NoExpectationExample:
   Exclude:
     - 'spec/adapters/query_agreement_spec.rb'
     - 'spec/ir_golden_spec.rb'
-
-
-
-# Offense count: 76
-# Configuration parameters: AllowedConstants.
-Style/Documentation:
-  Enabled: false
 
 # Its own unsafe autocorrect (`rubocop -A --only Style/AccessModifierDeclarations`,
 # tried live while paying down this file) doesn't just move `private` onto

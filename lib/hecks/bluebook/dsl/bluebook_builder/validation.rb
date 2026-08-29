@@ -824,7 +824,9 @@ module Hecks
                      "e.g. #{type_name.downcase}.value"
             end
 
-            return "#{type_name} is already a scalar — #{segments.join('.')} has nothing left to reach" if Attribute::PRIMITIVES.include?(type_name)
+            if Attribute::PRIMITIVES.include?(type_name)
+              return "#{type_name} is already a scalar — #{segments.join('.')} has nothing left to reach"
+            end
 
             shape = owner.value_object(type_name)
             return "#{type_name} is not a value object this domain declares" unless shape
