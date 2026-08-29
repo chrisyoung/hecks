@@ -33,6 +33,11 @@ RSpec.describe "Memory execution-plan capabilities" do
     Hecks::Runtime::Loader.bind_runtime(Hecks::Runtime::Dispatcher.new(registry))
   end
 
+  # One instrumented `finds` counter tracked across three dispatches
+  # (first insert, duplicate-identity refusal, wrong-receiver refusal)
+  # proves the single end-to-end claim that atomic put never falls back
+  # to a read — splitting would lose the shared counter's continuity.
+  # rubocop:disable-next RSpec/ExampleLength
   it "uses atomic put only after a complete-state proof and reports its outcome" do
     runtime = boot_inventory
     item = runtime.registry.bluebook("Inventory").aggregate("Item")

@@ -18,10 +18,18 @@ module Hecks
           end
         end
 
+        # A CASE STATEMENT OVER A CLOSED, DECLARED SET — every mutation op
+        # the grammar can emit gets its own branch, including the `else`
+        # backstop for the day a new op reaches this method undeclared (see
+        # its own comment). Splitting each branch into its own method would
+        # not reduce what a reader has to hold at once (each op's own
+        # comment already explains why IT is shaped the way it is) and
+        # would obscure that the set is closed and exhaustive.
+        # rubocop:disable Lint/DuplicateBranch -- :delegate and :corrects
+        # both no-op here, for two unrelated documented reasons (see each
+        # branch's own comment below); merging would blur that distinction.
+        # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
         def apply(instance, aggregate, mutation, args)
-          # rubocop:disable Lint/DuplicateBranch -- :delegate and :corrects
-          # both no-op here, for two unrelated documented reasons (see each
-          # branch's own comment below); merging would blur that distinction.
           case mutation.op
           when :set
             value = if mutation.source.is_a?(StateRef)
@@ -101,8 +109,9 @@ module Hecks
             # check.
             raise Runtime::WiringError, "no mutation applier handles :#{mutation.op} — add one before declaring it"
           end
-          # rubocop:enable Lint/DuplicateBranch
         end
+        # rubocop:enable Lint/DuplicateBranch
+        # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
 
         # A CALLER-SUPPLIED ARG, FIRST -- an append's own field can also
         # name something the SUBJECT ALREADY KNOWS about itself, falling

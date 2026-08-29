@@ -270,6 +270,17 @@ module Hecks
           # its real bounds instead of falling back to `chain_sql` the way
           # every other mismatch here already does. Guarded structurally,
           # not by trusting every future caller to know this invariant.
+          #
+          # The guard clauses above ARE the method: each rules out one way
+          # the layered shortcut cannot honestly apply (era too young, too
+          # few edges, a mismatched chain length, no prior era, no label,
+          # no materialized prior view) before the SQL-building tail runs.
+          # Splitting them out would separate each guard from the algebra
+          # comment it protects, and thread `held`/`prior`/`prior_view`
+          # back out as return values with no simpler shape than they
+          # already have.
+          # rubocop:disable-next Metrics/CyclomaticComplexity
+          # rubocop:disable-next Metrics/PerceivedComplexity
           def layered_chain_sql(aggregate, era, edges)
             return nil if era < 3 || edges.size < 2 || edges.size != era - 1
 

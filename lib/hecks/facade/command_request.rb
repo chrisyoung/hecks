@@ -64,6 +64,10 @@ module Hecks
       end
       private_class_method :take_legacy_route
 
+      # A case dispatch over the three closed receiver kinds (nil,
+      # :aggregate, :entity) plus the impossible-kind backstop — each
+      # branch is its own self-contained validation for that one kind.
+      # rubocop:disable-next Metrics/CyclomaticComplexity
       def validate_route!(route, receiver)
         case receiver
         when nil

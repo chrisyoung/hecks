@@ -230,6 +230,17 @@ module Hecks
           #    here. Refuses rather than silently deriving something wrong
           #    — see docs/decisions/ for the ADR that draws this exact
           #    line.
+          # One closed cluster of `corrects`/`reverses: true` rules, run
+          # in sequence against ONE command at a time (emission exists,
+          # reverses/own-sets conflict, invertibility, then the actual
+          # derivation) — each `raise` gates the next check for THAT
+          # command, and `inverse_op`/`emitted_by` are shared read-only
+          # lookups built once up front. Splitting the per-command body
+          # out would still need all of `command`/`event`/`sources`/
+          # `inverse_op` passed in, for no clearer a result.
+          # rubocop:disable-next Metrics/AbcSize
+          # rubocop:disable-next Metrics/CyclomaticComplexity
+          # rubocop:disable-next Metrics/PerceivedComplexity
           def seal_correction_targets
             inverse_op = { increment: :decrement, decrement: :increment }
             emitted_by = Hash.new { |hash, key| hash[key] = [] }
@@ -322,6 +333,14 @@ module Hecks
           # so a hop is routed to its own method before any `.`-splitting
           # runs at all; `seal_query_hop` below never sees a field this
           # one would also have tried to resolve as a local dotted walk.
+          # A closed decision tree over where ONE field can resolve —
+          # hop, local scalar, lifecycle field, value object (refused),
+          # or nothing (refused) — see the doc comment above (and the
+          # method-level comments on the hop/ordering split) for why each
+          # branch exists. Every branch already reads as its own named
+          # rule; extracting pieces would just relocate them.
+          # rubocop:disable-next Metrics/CyclomaticComplexity
+          # rubocop:disable-next Metrics/PerceivedComplexity
           def seal_query_field(owner, query, fields, lifecycle, field, ordering: false)
             return seal_query_hop(owner, query, fields, field, ordering: ordering) if field.to_s.include?("/")
 

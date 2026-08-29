@@ -392,6 +392,15 @@ module Hecks
       # typed at its own top level (`Evaluator.truthy?`), so this is also
       # the set `all_predicates` (below) draws its top-level cases from
       # directly.
+      # One declarative table of boolean productions, not several
+      # unrelated things bolted together — each `+`-joined term is a
+      # distinct grammar rule, and several carry their own comment
+      # explaining a specific inclusion/exclusion choice (the
+      # `resolver_numeric_leaves`-not-`num` note above, `arr_num`'s non-
+      # empty twin, etc). Extracting terms into separate methods would
+      # need `sub`/`num`/`str` threaded into each as parameters and
+      # would separate every rule from the comment justifying it.
+      # rubocop:disable-next Metrics/AbcSize
       def boolean_productions(depth)
         sub = bounded(:boolean, depth - 1)
         num = bounded(:numeric, depth - 1)

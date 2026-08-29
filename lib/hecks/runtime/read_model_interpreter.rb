@@ -24,6 +24,19 @@ module Hecks
 
       private
 
+      # ROOT-FIRST, THEN THE SQLITE ESCAPE HATCH, THEN THE JOIN LOOP —
+      # each step's own comment names a real, previously-shipped bug the
+      # current ORDER fixes (the reference/TenantScope refusal ordering
+      # above, the root-first head processing below). Splitting this
+      # into smaller methods would scatter that ordering across method
+      # boundaries where a future editor could silently break it, and
+      # would force threading `rootless`/`reference_id`/`eligible`/
+      # `projected`/`rows_by_as` between the pieces as parameters and
+      # return values.
+      # rubocop:disable-next Metrics/AbcSize
+      # rubocop:disable-next Metrics/CyclomaticComplexity
+      # rubocop:disable-next Metrics/MethodLength
+      # rubocop:disable-next Metrics/PerceivedComplexity
       def project(domain, model, args)
         bluebook = @registry.bluebook(domain)
         rootless = model.reference_target.nil?

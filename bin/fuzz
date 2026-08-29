@@ -211,6 +211,16 @@ def shrink_arguments(domain, steps, signature, adapter = :memory)
   steps
 end
 
+# The sweep's final report: one sequential print-then-shrink-then-save
+# pass over each distinct failure group. The per-group block (shrink,
+# derive the save path, write the repro script, print where it landed)
+# is print-order-dependent on the summary lines above it and has no
+# meaningful life split from the "print the report" it's part of — pulling
+# it into its own method would just thread domain/name/save_dir/seeds/
+# adapter through unchanged. No spec exercises this CLI-output function
+# directly (spec/bin_fuzz_spec.rb covers `args_of`/`shrink_arguments`
+# only), so there's nothing to verify a split against.
+# rubocop:disable-next Metrics/AbcSize
 def report(domain, name, seeds, drawn, clean, failures, adapter = :memory)
   executed = clean + failures.length
   puts "   #{executed} seeds executed (#{drawn} drawn) — #{clean} clean, #{failures.length} found something"

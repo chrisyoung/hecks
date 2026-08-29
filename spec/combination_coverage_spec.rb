@@ -36,6 +36,16 @@ RSpec.describe "every pair of declared forms, met on one aggregate" do
   # and a runtime has to handle — chosen because it has produced a defect, or
   # sits one step from one. Adding a property here is how a new form joins the
   # gate; it will name its own uncovered pairs on the first run.
+  #
+  # ONE FLAT TABLE, ON PURPOSE — each entry is an independent boolean check
+  # against the same `aggregate`, laid out so every declared form can be read
+  # (and added to) at a glance. Splitting this into one method per property
+  # would scatter the table this comment describes across a dozen tiny
+  # methods for no gain — there is no shared state or ordering between
+  # entries to protect by keeping them apart.
+  # rubocop:disable-next Metrics/AbcSize
+  # rubocop:disable-next Metrics/CyclomaticComplexity
+  # rubocop:disable-next Metrics/PerceivedComplexity
   def properties(aggregate)
     pieces     = aggregate["entities"] || []
     commands   = aggregate["commands"] || []

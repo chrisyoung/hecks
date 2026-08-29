@@ -75,6 +75,14 @@ module Hecks
         # (#4's own fix) is independently reproduced, in plain Ruby.
         #
         # Real target: ATMCard.ByFee (`limit 3; offset 1`).
+        #
+        # One independent recomputation, order-dependent by construction
+        # (declared query -> eligible rows -> ordered -> offset-sliced ->
+        # limit-sliced -> compared against the real answer, per the doc
+        # comment above): splitting it would scatter `rows`/`ordered`/
+        # `skipped`/`expected` across method boundaries as params/returns
+        # for a sequence that's only ever computed once, in this order.
+        # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         def paging_offset_partitions_correctly(history)
           bluebooks = history.fetch(:bluebooks)
 

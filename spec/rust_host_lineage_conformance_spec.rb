@@ -198,6 +198,12 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", :io do
   # era-1 hold_first! path, just with a real corpus bluebook instead of
   # a synthetic one and role: passed on the FIRST check! call instead
   # of a second mint.
+  # A real Postgres database/role/lineage setup (fresh scratch DB, owner
+  # and RLS-fenced app roles, a genuine LineageManager.check! hold), one
+  # Ruby-side write, then one real Rust binary read compared two ways —
+  # every step exists only to set up the one thing under test, and the
+  # whole scratch DB is torn down together in the ensure below.
+  # rubocop:disable-next RSpec/ExampleLength
   it "reads a real corpus aggregate (Pizzas::Order) back exactly as Ruby wrote it, through the RLS-fenced app role" do
     binary = self.class.lineage_harness_binary
     skip "cargo build --bin lineage_harness failed" unless binary

@@ -195,6 +195,16 @@ module Hecks
           # no event carried" — `AccountDebited` never declares `:reference`,
           # only `TransferRequested` (`pm.starts_on`) does, and that is
           # where the value is genuinely still coming from.
+          # One closed sequence of per-field checks against a fixed set of
+          # legal `with:` sources (target's own attributes, correlation,
+          # emitter identity, event/memory shape) — see the comment above
+          # for why each source is legal. Extracting the loop body would
+          # mean threading ten-plus already-resolved locals (target,
+          # source_shape, memory_shape, correlation, identity_sources, ...)
+          # into a new method for no gain: each `next`/`raise` already
+          # reads as its own rule at its own site.
+          # rubocop:disable-next Metrics/CyclomaticComplexity
+          # rubocop:disable-next Metrics/PerceivedComplexity
           def check_with_spec!(command_ref, event_name, with_spec, lookup, label, aggregates, correlation_heads,
                                process_manager: nil)
             target        = lookup[command_ref]
@@ -521,22 +531,33 @@ module Hecks
                   plan = QuerySpecification::HopPath.plan(clause.field, aggregate.attributes)
                   next if plan.refusal || plan.hops.empty?
 
-                  target = plan.hops.last.target
-                  head, *nested = plan.tail.to_s.split(".")
-                  leaf = if nested.empty? && target.lifecycle&.field.to_s == head
-                           Attribute.new(name: name, type: String)
-                         else
-                           root = target.attributes.find { |candidate| candidate.name.to_s == head }
-                           found = root && QuerySpecification::FieldPath.leaf_attribute(root, nested) do |type|
-                             target.value_object(type)
-                           end
-                           found && Attribute.new(name: name, type: found.type, list: found.list?)
-                         end
+                  leaf = inferred_hop_leaf(name, plan)
                   next unless leaf
 
                   query.attributes << leaf
                 end
               end
+            end
+          end
+
+          # THE LEAF `infer_hop_query_arguments!` INFERS for one resolved
+          # hop plan — a pure function of `plan` and the symbolic `name`
+          # it is naming, pulled out because it is a self-contained
+          # computation with no dependency on the enclosing loop's own
+          # iteration state (it neither reads nor mutates anything about
+          # `bluebook`/`aggregate`/`query` beyond what `plan` already
+          # carries).
+          def inferred_hop_leaf(name, plan)
+            target = plan.hops.last.target
+            head, *nested = plan.tail.to_s.split(".")
+            if nested.empty? && target.lifecycle&.field.to_s == head
+              Attribute.new(name: name, type: String)
+            else
+              root = target.attributes.find { |candidate| candidate.name.to_s == head }
+              found = root && QuerySpecification::FieldPath.leaf_attribute(root, nested) do |type|
+                target.value_object(type)
+              end
+              found && Attribute.new(name: name, type: found.type, list: found.list?)
             end
           end
 
@@ -650,6 +671,15 @@ module Hecks
             end
           end
 
+          # A linear decision tree of validation rules over ONE resolved
+          # hop plan, each already explained by its own comment above
+          # (the lifecycle fallback, the chained-projection fallback, the
+          # final scalar check) — a fixed, closed sequence "resolve, then
+          # check each way this could legitimately or illegitimately
+          # land," not several unrelated concerns. Splitting it would
+          # scatter `plan`/`target`/`remote_attribute` across new methods
+          # that would each need most of them anyway.
+          # rubocop:disable-next Metrics/AbcSize
           def validate_projected_field!(aggregate, field)
             plan = QuerySpecification::HopPath.plan("#{field.reference}/#{field.remote_field}", aggregate.attributes)
 

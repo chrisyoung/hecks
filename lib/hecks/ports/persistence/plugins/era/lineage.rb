@@ -117,6 +117,15 @@ module Hecks
         # outright (nothing to be a prefix of on the held side), unlike
         # every rule above it, which explains a path that existed and
         # moved, converted, or vanished.
+        #
+        # One `||` chain over a closed, fixed set of rule kinds (renames,
+        # moves, converts, drops, computes, backfills) — the same six this
+        # file's other methods enumerate. Splitting each disjunct into its
+        # own predicate would scatter one question ("does ANY rule explain
+        # this path") across six same-shaped methods with nothing else to
+        # do.
+        # rubocop:disable-next Metrics/CyclomaticComplexity
+        # rubocop:disable-next Metrics/PerceivedComplexity
         def explains?(path)
           path = path.to_s
           top = path.split(".").first

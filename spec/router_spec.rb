@@ -10,21 +10,7 @@ RSpec.describe Hecks::Router do
   end
 
   it "routes commands and queries for every discovered Bluebook through one door" do
-    write_domain("catalog", "Catalog", <<~RUBY)
-      aggregate "Book" do
-        description "A book"
-        attribute :code, Code
-        value_object "Code" do
-          attribute :value, String
-        end
-        identified_by :code
-        command "Add" do
-          attribute :code, Code
-        end
-        query "Available" do
-        end
-      end
-    RUBY
+    write_domain("catalog", "Catalog", catalog_book_with_query_bluebook)
     write_domain("billing", "Billing", <<~RUBY)
       aggregate "Invoice" do
         description "An invoice"
@@ -47,6 +33,10 @@ RSpec.describe Hecks::Router do
     expect(router.dispatch("Acme::Billing::Invoice.Issue", number: { value: "invoice-1" }).id).to eq("invoice-1")
   end
 
+  # Needs two real aggregates plus the read_model that includes both, then a
+  # live dispatch through each command, to prove the read model actually
+  # aggregates dispatched state — a smaller fixture couldn't show that.
+  # rubocop:disable-next RSpec/ExampleLength
   it "routes a domain read model without pretending it is an aggregate" do
     write_domain("banking", "Banking", <<~RUBY, realm: "Realm")
       read_model "CustomerPortfolio" do
@@ -177,21 +167,7 @@ number: { value: "ACC-1" }, balance: { cents: 0 } }] }
   end
 
   it "installs latest command and query aliases as Ruby namespace calls" do
-    write_domain("catalog", "Catalog", <<~RUBY, realm: "SugarRealm")
-      aggregate "Book" do
-        description "A book"
-        attribute :code, Code
-        value_object "Code" do
-          attribute :value, String
-        end
-        identified_by :code
-        command "Add" do
-          attribute :code, Code
-        end
-        query "Available" do
-        end
-      end
-    RUBY
+    write_domain("catalog", "Catalog", catalog_book_with_query_bluebook, realm: "SugarRealm")
 
     described_class.boot(@root)
 
@@ -202,6 +178,11 @@ number: { value: "ACC-1" }, balance: { cents: 0 } }] }
     Object.send(:remove_const, :SugarRealm) if Object.const_defined?(:SugarRealm, false)
   end
 
+  # Proves both halves of the same claim — default resolves to latest, and
+  # options(version:) pins the old one — against the SAME two-version
+  # domain; each needs its own write_domain + boot, so splitting would
+  # re-pay that setup twice for no gain.
+  # rubocop:disable-next RSpec/ExampleLength
   it "keeps version selection in an aggregate options pipe, separate from payload fields" do
     write_domain("banking_v1", "Banking", <<~RUBY, version: "v1", realm: "OptionsRealm")
       aggregate "Account" do
@@ -303,6 +284,27 @@ number: { value: "ACC-1" }, balance: { cents: 0 } }] }
   end
 
   private
+
+  # Shared verbatim by the two examples that need a Book aggregate with a
+  # query as well as a command (dispatch-and-route, and namespace-alias
+  # installation) — DRY, not a behavior difference between them.
+  def catalog_book_with_query_bluebook
+    <<~RUBY
+      aggregate "Book" do
+        description "A book"
+        attribute :code, Code
+        value_object "Code" do
+          attribute :value, String
+        end
+        identified_by :code
+        command "Add" do
+          attribute :code, Code
+        end
+        query "Available" do
+        end
+      end
+    RUBY
+  end
 
   def write_domain(directory_name, domain, body, version: nil, latest: nil, realm: "Acme")
     directory = File.join(@root, directory_name, "bluebook")

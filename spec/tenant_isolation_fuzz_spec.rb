@@ -133,6 +133,11 @@ RSpec.describe "multitenancy: interleaved random writes stay isolated" do
     end
   end
 
+  # A real scratch Postgres database, created once and torn down once
+  # (ensure) around a loop of several interleaved-write seeds — each
+  # seed reuses the same live database, so splitting per seed would
+  # mean paying a fresh CREATE/DROP DATABASE per seed for no real gain.
+  # rubocop:disable-next RSpec/ExampleLength
   it "keeps two real PostgresEra tenants' interleaved writes exactly partitioned, across several seeds", :io do
     skip "no local Postgres reachable" unless PostgresProbe.available?
 

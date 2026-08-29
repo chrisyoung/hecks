@@ -146,6 +146,16 @@ module Hecks
       walk_operators(node, evaluator).uniq
     end
 
+    # A recursive descent over a CLOSED, declared set of AST node types
+    # (Evaluator's boolean/compare/include nodes, Resolver's arithmetic
+    # nodes, and the generic Struct fallback) — each branch does the
+    # same one thing (name the node's own operator, recurse into its
+    # children) and the branches don't interact, but the ABC score adds
+    # every branch's cost together. Splitting the case out per node type
+    # would trade one place that shows the whole operator vocabulary for
+    # several that each show a fragment, with no reduction in real
+    # complexity.
+    # rubocop:disable-next Metrics/AbcSize
     def walk_operators(node, evaluator)
       resolver = Bluebook::Expression::Resolver
       case node

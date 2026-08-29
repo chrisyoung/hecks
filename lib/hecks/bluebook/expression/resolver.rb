@@ -212,6 +212,18 @@ module Hecks
           interpret(parse(expr), state, attrs)
         end
 
+        # A grammar's own dispatch table — one `return Node.new(...) if
+        # expr =~ /pattern/` per leaf production, in a FIXED precedence
+        # order (`.length` before the generic suffixes, sign tests before
+        # the rest, etc. — see this file's own history comments on why
+        # several of these were added in exactly this position). Each
+        # branch is already one line; splitting the table into smaller
+        # methods would not shrink any single check, only hide the
+        # precedence order this method's own line-by-line sequence IS.
+        # rubocop:disable-next Metrics/AbcSize
+        # rubocop:disable-next Metrics/CyclomaticComplexity
+        # rubocop:disable-next Metrics/MethodLength
+        # rubocop:disable-next Metrics/PerceivedComplexity
         def parse(expr)
           expr = expr.to_s.strip
 
@@ -284,6 +296,16 @@ module Hecks
           SignTest.new(operator: operator, test: test, receiver: parse(receiver))
         end
 
+        # `parse`'s own dispatch table, mirrored: one `when` per leaf node
+        # type it can produce, each already delegating to a small named
+        # helper (add, apply_sign_test, emptiness_of, ...) — the case
+        # itself IS the closed, declared set this method exists to
+        # exhaust; the `else` backstop's own comment explains why a
+        # missing arm is a bug this method is built to make loud, not
+        # quiet.
+        # rubocop:disable-next Metrics/AbcSize
+        # rubocop:disable-next Metrics/CyclomaticComplexity
+        # rubocop:disable-next Metrics/MethodLength
         def interpret(node, state, attrs)
           case node
           when IntegerLiteral, FloatLiteral, StringLiteral, BoolLiteral then node.value

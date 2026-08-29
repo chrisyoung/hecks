@@ -188,6 +188,16 @@ module Hecks
       # `step_locate_element`/`step_apply_mutations` mutate their OWN
       # freshly-loaded copy — the only difference is WHICH already-in-
       # memory record gets handed in.
+      #
+      # Reimplements the entity command pipeline's own order (givens,
+      # transition, mutations, ensures, emit) inline, deliberately — see
+      # the comment above on why this must run strictly between this
+      # command's own mutations and its ensures/invariants/save. Splitting
+      # it would scatter that exact ordering across method boundaries and
+      # force threading element/view/transition/old_element/settled
+      # through as parameters — the `with:` bug documented just below is
+      # exactly the kind of ordering/plumbing mistake that shape invites.
+      # rubocop:disable-next Metrics/AbcSize
       def step_delegate_to_entity(ctx)
         delegation = ctx.command.mutations.find { |mutation| mutation.op == :delegate }
         return unless delegation
@@ -261,41 +271,49 @@ module Hecks
         step(:save) do
           @rules.resolve_state_references(ctx.domain, ctx.aggregate, ctx.instance.state)
           seed_projected_fields(ctx)
-          ctx.persistence_outcome = if ctx.strategy == DependencyPlanning::ATOMIC_PUT
-                                      # A SECOND CREATION IS NOT A FRESH ONE — see
-                                      # hydrate_complete_state's own comment; the
-                                      # same refusal, on the same terms, for the
-                                      # complete-state path. `insert_only:` asks the
-                                      # ADAPTER to decide and refuse ATOMICALLY
-                                      # (never writing a `creates?` command over an
-                                      # identity that already names a record) rather
-                                      # than this interpreter reading the record
-                                      # first to check — a `repository.find` before
-                                      # every atomic_put would be exactly the read
-                                      # this strategy exists to skip.
-                                      ctx.repository.atomic_put(ctx.instance, insert_only: ctx.command.creates?)
-                                    else
-                                      # `expected_version:` is `ctx.instance.version` — nil for a
-                                      # brand-new record (never read from storage) or when the
-                                      # repository isn't CAS-capable, either of which falls straight
-                                      # through to a plain, unconditional save inside `AppendOnly#save`.
-                                      ctx.repository.save(ctx.instance, expected_version: ctx.instance.version)
-                                    end
-          if ctx.persistence_outcome.status == :conflicted
-            raise(AlreadyExists, RefusalWording.render("AlreadyExists", "creating_duplicate",
-                                                       command: ctx.command.hecks_name, aggregate: ctx.aggregate.hecks_name,
-                                                       identity: identity_reading(ctx.aggregate),
-                                                       offered: Rendering.describe(ctx.instance.id)))
-          elsif ctx.persistence_outcome.status == :stale
-            # NOT a `RefusalWording.render` call — this is not a declared
-            # vocabulary refusal, just a plain, informative message. See
-            # `Runtime::StaleWrite`'s own comment: caught by `#call`'s
-            # retry loop, re-raised only once retries are exhausted.
-            raise(StaleWrite,
-                  "#{ctx.command.hecks_name} on #{ctx.aggregate.hecks_name} " \
-                  "(#{identity_reading(ctx.aggregate)}: #{Rendering.describe(ctx.instance.id)}) lost a race — " \
-                  "another write committed against this record after it was read")
-          end
+          ctx.persistence_outcome = persist_instance(ctx)
+          raise_for_persistence_outcome!(ctx)
+        end
+      end
+
+      def persist_instance(ctx)
+        if ctx.strategy == DependencyPlanning::ATOMIC_PUT
+          # A SECOND CREATION IS NOT A FRESH ONE — see
+          # hydrate_complete_state's own comment; the
+          # same refusal, on the same terms, for the
+          # complete-state path. `insert_only:` asks the
+          # ADAPTER to decide and refuse ATOMICALLY
+          # (never writing a `creates?` command over an
+          # identity that already names a record) rather
+          # than this interpreter reading the record
+          # first to check — a `repository.find` before
+          # every atomic_put would be exactly the read
+          # this strategy exists to skip.
+          ctx.repository.atomic_put(ctx.instance, insert_only: ctx.command.creates?)
+        else
+          # `expected_version:` is `ctx.instance.version` — nil for a
+          # brand-new record (never read from storage) or when the
+          # repository isn't CAS-capable, either of which falls straight
+          # through to a plain, unconditional save inside `AppendOnly#save`.
+          ctx.repository.save(ctx.instance, expected_version: ctx.instance.version)
+        end
+      end
+
+      def raise_for_persistence_outcome!(ctx)
+        if ctx.persistence_outcome.status == :conflicted
+          raise(AlreadyExists, RefusalWording.render("AlreadyExists", "creating_duplicate",
+                                                     command: ctx.command.hecks_name, aggregate: ctx.aggregate.hecks_name,
+                                                     identity: identity_reading(ctx.aggregate),
+                                                     offered: Rendering.describe(ctx.instance.id)))
+        elsif ctx.persistence_outcome.status == :stale
+          # NOT a `RefusalWording.render` call — this is not a declared
+          # vocabulary refusal, just a plain, informative message. See
+          # `Runtime::StaleWrite`'s own comment: caught by `#call`'s
+          # retry loop, re-raised only once retries are exhausted.
+          raise(StaleWrite,
+                "#{ctx.command.hecks_name} on #{ctx.aggregate.hecks_name} " \
+                "(#{identity_reading(ctx.aggregate)}: #{Rendering.describe(ctx.instance.id)}) lost a race — " \
+                "another write committed against this record after it was read")
         end
       end
 

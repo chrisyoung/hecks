@@ -19,6 +19,16 @@ RSpec.describe "Banking across persistence adapters" do
     FileUtils.remove_entry(@dir) if @dir
   end
 
+  # ONE FIXTURE BOOT, DECLARED WHOLE — every aggregate's persisted_by/
+  # projected_by pairing has to be read alongside the same `projected`
+  # flag deciding whether that pairing applies at all; splitting this
+  # into smaller methods would mean threading `adapter`/`projected`/
+  # `root` through each one for no gain over reading the whole boot in
+  # one place.
+  # rubocop:disable-next Metrics/AbcSize
+  # rubocop:disable-next Metrics/CyclomaticComplexity
+  # rubocop:disable-next Metrics/MethodLength
+  # rubocop:disable-next Metrics/PerceivedComplexity
   def boot(adapter, projected: false, root: @dir)
     registry = Hecks::Runtime::Registry.new(root: root)
 

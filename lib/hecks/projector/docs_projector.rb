@@ -250,13 +250,7 @@ module Hecks
         out << ""
 
         arguments = command.attributes
-        unless arguments.empty?
-          rows = arguments.map do |attribute|
-            shape = attribute.reference? ? "id of a `#{attribute.type.target_name}`" : shape_of(attribute, holder)
-            ["`#{attribute.name}`", shape, attribute.optional? ? "" : "required"]
-          end
-          out << table(%w[argument shape needed], rows)
-        end
+        out << table(%w[argument shape needed], command_argument_rows(arguments, holder)) unless arguments.empty?
 
         refusals = refusals_of(command, holder)
         unless refusals.empty?
@@ -270,6 +264,17 @@ module Hecks
         out << "Emits `#{command.emits.join('`, `')}`." unless command.emits.empty?
         out << ""
         out.join("\n")
+      end
+
+      # The argument table's own rows — a pure per-attribute mapping with
+      # nothing to share with `command_entry`'s other sections, extracted
+      # only to keep that method to the one shape every section there
+      # follows: build a chunk, append it if non-empty.
+      def command_argument_rows(arguments, holder)
+        arguments.map do |attribute|
+          shape = attribute.reference? ? "id of a `#{attribute.type.target_name}`" : shape_of(attribute, holder)
+          ["`#{attribute.name}`", shape, attribute.optional? ? "" : "required"]
+        end
       end
 
       # EVERY WAY THIS VERB CAN SAY NO, gathered from the three places a

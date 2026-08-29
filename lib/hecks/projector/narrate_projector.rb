@@ -128,43 +128,84 @@ module Hecks
         "#{header}\n\n#{body}"
       end
 
+      # ONE PARAGRAPH, BUILT FROM INDEPENDENT SENTENCES — each sentence
+      # below states one unrelated fact about `command` (its goal, who
+      # issues it, whether it creates the holder, what it takes, what it
+      # references, what gates it, what it guarantees, what it emits), in
+      # the fixed order a reader expects them; nothing after the first
+      # sentence depends on anything before it. Same nil-or-string +
+      # `compact.join` shape `aggregate_narrative`/`entity_narrative`
+      # already use above for the identical reason.
       def command_paragraph(command, holder)
-        # THE GOAL, VERBATIM — same rule `DocsProjector` holds to: quoted
-        # exactly as declared, not recased to fit mid-sentence, because the
-        # promise this whole projector makes is that a sentence here is a
-        # sentence the chapter actually wrote.
-        sentences = ["**#{command.hecks_name}**#{command.goal ? " — #{command.goal}." : '.'}"]
-        sentences << "Issued by #{a_or_an(command.role)} #{command.role}." if command.role
-        # `acts_on.nil?`, NOT `creates?` — `creates?` answers true for every
-        # verb an ENTITY declares (it never references itself; see
-        # `Command#acts_on`'s own comment), so reading it directly here would
-        # tell an SME that `LedgerEntry.Amend` brings a new ledger entry into
-        # being, which is exactly backwards.
-        sentences << "This is how a new #{holder.hecks_name} comes into being." if command.acts_on.nil?
+        [
+          command_headline_sentence(command),
+          command_role_sentence(command),
+          command_creation_sentence(command, holder),
+          command_arguments_sentence(command),
+          command_references_sentence(command),
+          command_conditions_sentence(command, holder),
+          command_guarantees_sentence(command),
+          command_emits_sentence(command)
+        ].compact.join(" ")
+      end
 
+      # THE GOAL, VERBATIM — same rule `DocsProjector` holds to: quoted
+      # exactly as declared, not recased to fit mid-sentence, because the
+      # promise this whole projector makes is that a sentence here is a
+      # sentence the chapter actually wrote.
+      def command_headline_sentence(command)
+        "**#{command.hecks_name}**#{command.goal ? " — #{command.goal}." : '.'}"
+      end
+
+      def command_role_sentence(command)
+        return nil unless command.role
+
+        "Issued by #{a_or_an(command.role)} #{command.role}."
+      end
+
+      # `acts_on.nil?`, NOT `creates?` — `creates?` answers true for every
+      # verb an ENTITY declares (it never references itself; see
+      # `Command#acts_on`'s own comment), so reading it directly here would
+      # tell an SME that `LedgerEntry.Amend` brings a new ledger entry into
+      # being, which is exactly backwards.
+      def command_creation_sentence(command, holder)
+        return nil unless command.acts_on.nil?
+
+        "This is how a new #{holder.hecks_name} comes into being."
+      end
+
+      def command_arguments_sentence(command)
         arguments = command.attributes.reject(&:reference?)
-        unless arguments.empty?
-          sentences << "It takes #{to_sentence_list(arguments.map do |a|
-            Forms::Humanize.label(a.name.to_s).downcase
-          end)}."
-        end
+        return nil if arguments.empty?
 
+        "It takes #{to_sentence_list(arguments.map { |a| Forms::Humanize.label(a.name.to_s).downcase })}."
+      end
+
+      def command_references_sentence(command)
         refs = command.attributes.select(&:reference?)
-        unless refs.empty?
-          sentences << "It's aimed at one existing #{to_sentence_list(refs.map do |r|
-            r.type.target_name
-          end)}, by id."
-        end
+        return nil if refs.empty?
 
+        "It's aimed at one existing #{to_sentence_list(refs.map { |r| r.type.target_name })}, by id."
+      end
+
+      def command_conditions_sentence(command, holder)
         conditions = conditions_of(command, holder)
-        sentences << "It only goes through if #{conditions.join('; ')}." unless conditions.empty?
+        return nil if conditions.empty?
 
+        "It only goes through if #{conditions.join('; ')}."
+      end
+
+      def command_guarantees_sentence(command)
         guarantees = command.ensures.map(&:description)
-        sentences << "When it succeeds: #{guarantees.join('; ')}." unless guarantees.empty?
+        return nil if guarantees.empty?
 
-        sentences << "It records `#{command.emits.join('`, `')}` as a fact." unless command.emits.empty?
+        "When it succeeds: #{guarantees.join('; ')}."
+      end
 
-        sentences.join(" ")
+      def command_emits_sentence(command)
+        return nil if command.emits.empty?
+
+        "It records `#{command.emits.join('`, `')}` as a fact."
       end
 
       # EVERY REQUIRED CONDITION, STATED AS SOMETHING THAT MUST BE TRUE —

@@ -91,6 +91,13 @@ module Doctest
 
   module_function
 
+  # A single-pass state machine over the guide's lines — `fence` is the
+  # in-progress marker (or nil), `buffer`/`start` accumulate the current
+  # block. Dispatches on the closed set of fence markers this file's own
+  # header documents. Splitting the line-loop from the `case` would mean
+  # threading `fence`/`buffer`/`start` between methods as parameters and
+  # return values instead of as plain locals closed over by one loop.
+  # rubocop:disable-next Metrics/CyclomaticComplexity
   def parse(path)
     blocks = []
     fence = nil

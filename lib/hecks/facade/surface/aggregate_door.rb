@@ -13,6 +13,17 @@ module Hecks
       # `persisted_by`-style binding collector a `.hecksagon` lands on, and
       # the aggregate-scoped `port` a `.hecksagon` lands on beside it.
       module AggregateDoor
+        # One method building one `door` module's ~20 singleton methods
+        # looks like it splits along each `define_singleton_method` call,
+        # but three of those blocks (`:port`, `:method_missing`,
+        # `:const_missing`) are a single cross-referencing essay on the
+        # stale-facade-across-boots hazard — each one's comment explicitly
+        # points at "below"/"above" as part of the SAME method. Splitting
+        # into helper methods wouldn't break anything at runtime (no
+        # shared mutable state beyond the closed-over args, which just
+        # become parameters), but it would sever that narrative across
+        # method boundaries for no functional gain.
+        # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         def aggregate_module(dispatcher, domain, aggregate)
           fqn  = "#{domain}::#{aggregate.hecks_name}"
           door = Module.new

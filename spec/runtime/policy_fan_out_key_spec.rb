@@ -20,6 +20,13 @@ require "spec_helper"
 #   trigger acts on the fanned aggregate -> bare `chit:`
 #   trigger stores it as a reference     -> `chit_id:`
 RSpec.describe "a for_each policy's row id" do
+  # One DSL-declared fixture domain (three aggregates plus the one policy
+  # under test), not branchy logic — its length and ABC score come from
+  # declaring the domain shape both examples below share, per the class
+  # comment above explaining why `Chit`'s identity is deliberately NOT
+  # named `chit`. Splitting the bluebook block across helper methods would
+  # fragment one coherent domain declaration for no readability gain.
+  # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
   def boot_keys
     registry = Hecks::Runtime::Registry.new
 

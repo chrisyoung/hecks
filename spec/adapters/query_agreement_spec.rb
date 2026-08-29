@@ -159,6 +159,13 @@ RSpec.describe "adapter agreement — declared queries answer identically across
     Hecks::Bluebook::DSL::ConstShim.with(->(const) { const }) { build_thing_aggregate }
   end
 
+  # ONE FIXTURE AGGREGATE, DECLARED WHOLE — every field and query the 11
+  # cases below ask about lives on this one builder call so a reader can see
+  # what's being asked of it in one place; splitting it apart would scatter
+  # each query's own fixture context (see the comments beside NoteValuesIn,
+  # InNoStatuses, etc.) away from the query it explains.
+  # rubocop:disable-next Metrics/AbcSize
+  # rubocop:disable-next Metrics/MethodLength
   def build_thing_aggregate
     Hecks::Bluebook::DSL::AggregateBuilder.new("Thing").tap do |builder|
       builder.lifecycle(:status, default: "open") do

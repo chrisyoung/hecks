@@ -60,6 +60,15 @@ module Hecks
     # Read one back. Tolerant of a bare word on purpose: the language stores a
     # closed set's members and a few hand-written fields as plain text that was
     # never rendered, and those must stay the strings they are.
+    #
+    # The exact inverse of `render`'s `case`, above — one ordered guard per
+    # spelling `render` can produce (plus the bare-word tolerance this
+    # comment already explains). Each guard is a single self-contained
+    # `return`; splitting them into named predicates would just rename
+    # each line without changing what it does, and would separate this
+    # method from the `render` it is the deliberate mirror of.
+    # rubocop:disable-next Metrics/CyclomaticComplexity
+    # rubocop:disable-next Metrics/PerceivedComplexity
     def read(text)
       raw = text.to_s.strip
       return nil if raw.empty? || raw == "nil"

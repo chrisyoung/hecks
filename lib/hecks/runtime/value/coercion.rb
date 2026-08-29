@@ -110,27 +110,41 @@ module Hecks
           paths = target.identity_paths
           return value if paths.empty?
 
-          direct_head = if value.is_a?(self) && target.identity_heads.one?
-                          head = target.identity_heads.first
-                          target.attribute(head)&.type.to_s == value.type_name ? head.to_s : nil
-                        end
-
-          parts = paths.map do |path|
-            segments = path.to_s.split(".")
-            segments.shift if direct_head && segments.first == direct_head
-            segments.reduce(materialized) do |held, segment|
-              next nil unless held.is_a?(Hash)
-
-              # `key?` decides which spelling answers, never `||` — a
-              # genuinely-held `false` must not fall through to the
-              # other spelling (usually absent) and read as `nil`.
-              sym = segment.to_sym
-              held.key?(sym) ? held[sym] : held[segment]
-            end
-          end
+          direct_head = direct_identity_head(value, target)
+          parts = paths.map { |path| identity_part(materialized, path, direct_head) }
           return value if parts.any? { |part| part.nil? || (part.respond_to?(:empty?) && part.empty?) }
 
           Naming.identity(parts)
+        end
+
+        # Whether `value` is itself the target's own (single) identity
+        # value object — pure, self-contained: reads only `value` and
+        # `target`, decides nothing about any particular path.
+        def direct_identity_head(value, target)
+          return nil unless value.is_a?(self) && target.identity_heads.one?
+
+          head = target.identity_heads.first
+          target.attribute(head)&.type.to_s == value.type_name ? head.to_s : nil
+        end
+
+        # One identity path's own value out of the materialized hash —
+        # stripping a leading segment already covered by
+        # `direct_identity_head`, then walking the rest. Pure given its
+        # three inputs; extracted from `reference_identity` alongside
+        # `direct_identity_head` above purely to keep that method to its
+        # own guard-clause shape.
+        def identity_part(materialized, path, direct_head)
+          segments = path.to_s.split(".")
+          segments.shift if direct_head && segments.first == direct_head
+          segments.reduce(materialized) do |held, segment|
+            next nil unless held.is_a?(Hash)
+
+            # `key?` decides which spelling answers, never `||` — a
+            # genuinely-held `false` must not fall through to the
+            # other spelling (usually absent) and read as `nil`.
+            sym = segment.to_sym
+            held.key?(sym) ? held[sym] : held[segment]
+          end
         end
 
         def reference_list(attribute, value)

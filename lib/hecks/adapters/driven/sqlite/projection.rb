@@ -140,6 +140,13 @@ module Hecks
       end
 
       def decode_for(aggregate, row)
+        decode_fields(fields_for(aggregate), aggregate, row)
+      end
+
+      # The field list a row decodes against: every declared attribute,
+      # plus the lifecycle field and any `projects` fields not already
+      # among them (both read back raw — see `decode_fields`).
+      def fields_for(aggregate)
         fields = aggregate.attributes.map { |attribute| [attribute.name, attribute] }
         if (lifecycle = aggregate.lifecycle) && fields.none? { |name, _| name == lifecycle.field }
           fields << [lifecycle.field, nil]
@@ -154,6 +161,10 @@ module Hecks
         aggregate.projected_fields.each do |field|
           fields << [field.name, nil] unless fields.any? { |name, _| name == field.name }
         end
+        fields
+      end
+
+      def decode_fields(fields, aggregate, row)
         fields.each_with_object({}) do |(name, attribute), state|
           raw = row[name.to_s]
           # rubocop:disable Lint/DuplicateBranch -- the nil-attribute and

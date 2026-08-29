@@ -76,6 +76,13 @@ RSpec.describe "concurrent dispatch against one Postgres-backed aggregate", :io 
   # instances is the same shape two separate application processes take in
   # production; the only thing they share is the Postgres row for account
   # "a".
+  #
+  # ONE INLINE BLUEBOOK, DECLARED WHOLE — a domain-definition DSL block
+  # read top to bottom as the fixture, not a sequence of independent
+  # steps; splitting it would scatter one readable declaration across
+  # several methods that only make sense read back-to-back.
+  # rubocop:disable-next Metrics/AbcSize
+  # rubocop:disable-next Metrics/MethodLength
   def boot
     registry = Hecks::Runtime::Registry.new
 

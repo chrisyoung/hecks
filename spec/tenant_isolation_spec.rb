@@ -217,6 +217,12 @@ RSpec.describe "multitenancy: one boot per tenant, one shared route table" do
     end
   end
 
+  # A real scratch Postgres database (created/torn down once, ensure
+  # below) proving isolation two ways together — through the runtime's
+  # own dispatch/query AND a direct SQL bypass of it — against the SAME
+  # two real schemas; splitting would mean paying the CREATE/DROP
+  # DATABASE and tenant boot twice for two halves of one claim.
+  # rubocop:disable-next RSpec/ExampleLength
   it "keeps two tenants' data completely apart on real PostgresEra, in genuinely separate schemas", :io do
     skip "no local Postgres reachable" unless PostgresProbe.available?
 

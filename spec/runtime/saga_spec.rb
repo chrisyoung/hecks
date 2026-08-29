@@ -120,6 +120,11 @@ RSpec.describe "a process manager" do
   # This leg is the FIRST one — nothing was ever taken — so once retries are
   # exhausted there is genuinely nothing for the compensating leg to put
   # back. The next test crashes the SECOND leg instead, where there is.
+  # One instrumented dispatch, several facts about its SAME outcome
+  # (the stderr message, bounded retry count, saga log entries, final
+  # states of both the wire and the money) — all following from one
+  # crashing leg, which splitting would force re-triggering repeatedly.
+  # rubocop:disable-next RSpec/ExampleLength
   it "retries a crashing leg MAX_DEFECT_RETRIES times, then gives up cleanly with nothing to undo" do
     runtime = funded
     real_reenter = runtime.method(:reenter)

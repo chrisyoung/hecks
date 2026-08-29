@@ -23,11 +23,6 @@ Lint/EmptyBlock:
     - 'spec/oidc_projection_spec.rb'
     - 'spec/runtime/registry/saga_persistence_spec.rb'
 
-# Offense count: 42
-# Configuration parameters: AllowedMethods, AllowedPatterns, CountRepeatedAttributes, Max.
-Metrics/AbcSize:
-  Enabled: false
-
 # Offense count: 4
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns, inherit_mode.
 # AllowedMethods: refine
@@ -44,16 +39,6 @@ Metrics/BlockNesting:
   Exclude:
     - 'spec/support/doctest.rb'
 
-# Offense count: 37
-# Configuration parameters: AllowedMethods, AllowedPatterns, Max.
-Metrics/CyclomaticComplexity:
-  Enabled: false
-
-# Offense count: 19
-# Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
-Metrics/MethodLength:
-  Enabled: false
-
 # Offense count: 1
 # Configuration parameters: CountComments, Max, CountAsOne.
 Metrics/ModuleLength:
@@ -64,11 +49,6 @@ Metrics/ModuleLength:
 # Configuration parameters: CountKeywordArgs, MaxOptionalParameters.
 Metrics/ParameterLists:
   Max: 16
-
-# Offense count: 35
-# Configuration parameters: AllowedMethods, AllowedPatterns, Max.
-Metrics/PerceivedComplexity:
-  Enabled: false
 
 # `set_row` (MetaValidator::Readings) isn't a Ruby setter — it renders a
 # `:set` MUTATION's row (the domain's own name for that op), a false
@@ -111,10 +91,6 @@ Naming/PredicatePrefix:
     - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
 
 
-# Offense count: 44
-# Configuration parameters: Max, CountAsOne.
-RSpec/ExampleLength:
-  Enabled: false
 
 # All 6 are the same dynamically-generated-examples pattern: a value
 # computed fresh on EACH iteration of an enclosing `.each`/`.group_by`

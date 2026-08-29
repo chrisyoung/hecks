@@ -57,6 +57,20 @@ module Hecks
       # DISPATCH_ORDER.
       GUARD_REFUSAL_CLASSES = [Runtime::GivenNotMet, Runtime::LifecycleRefused].freeze
 
+      # One tightly ordered loop over steps, with several "oracle" snapshots
+      # (reaction_mark, fan_out_snapshot, guard_check, mutation_trace) that
+      # must be taken at very specific points RELATIVE TO dispatch — see
+      # fan_out_snapshot's own comment above for the real, previously-
+      # shipped bug this exact before/after ordering fixes. Splitting this
+      # into smaller methods would mean threading five-plus oracle-state
+      # locals across method boundaries as parameters/return values, and
+      # would let a future editor silently reorder a snapshot relative to
+      # `dispatch` without any single method looking wrong — the ordering
+      # invariant is only visible with the whole sequence in one place.
+      # rubocop:disable-next Metrics/AbcSize
+      # rubocop:disable-next Metrics/CyclomaticComplexity
+      # rubocop:disable-next Metrics/MethodLength
+      # rubocop:disable-next Metrics/PerceivedComplexity
       def call(domain_path, steps, adapter: :memory)
         # See isolated_boot.rb's own header: resets data/ AND rebinds
         # persistence to the chosen adapter (Memory by default), since a
@@ -396,6 +410,16 @@ module Hecks
         instances
       end
 
+      # One early-return chain resolving "which record, if any" (see the
+      # long comment above), feeding a two-stage guard replay
+      # (enforce_givens then admissible_transition) that must run in that
+      # order to mirror the real DISPATCH_ORDER. Splitting the resolution
+      # out would still require passing domain_name/aggregate_name/
+      # aggregate/command/record back in, for no gain — every early
+      # return already reads as "nothing to check" at its own site.
+      # rubocop:disable-next Metrics/AbcSize
+      # rubocop:disable-next Metrics/CyclomaticComplexity
+      # rubocop:disable-next Metrics/PerceivedComplexity
       def build_guard_check(runtime, verb, args)
         domain_name, aggregate_name, command_name = Naming.split_verb(verb)
         return nil unless command_name && !command_name.include?(".")
@@ -476,6 +500,14 @@ module Hecks
       # `nil` for anything out of scope: an aggregate-level command, an
       # entity command with no mutations at all, or one whose identity
       # args (parent OR element) don't resolve.
+      # Same shape as build_guard_check just above: one early-return chain
+      # resolving the entity/element this step's args address (see the
+      # comment above), each step depending on the previous one's
+      # resolved value. Threading those locals out to smaller methods
+      # would cost more than the cop gains.
+      # rubocop:disable-next Metrics/AbcSize
+      # rubocop:disable-next Metrics/CyclomaticComplexity
+      # rubocop:disable-next Metrics/PerceivedComplexity
       def build_mutation_trace(runtime, verb, args)
         domain_name, aggregate_name, command_name = Naming.split_verb(verb)
         return nil unless command_name&.include?(".")

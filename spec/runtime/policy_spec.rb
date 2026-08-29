@@ -136,6 +136,12 @@ RSpec.describe "a policy" do
   # `spec/dsl_spec.rb`'s own `build_bluebook` helper builds inline rather
   # than from a file.
   describe "where and for_each" do
+    # A DECLARATIVE INLINE bluebook fixture, not procedural logic — the
+    # comment above this `describe` explains why it must stay inline
+    # (parser-parity scan, PENDING_PAIRS) rather than move to a fixture
+    # file. Splitting it into helper methods would only fragment one
+    # self-contained domain declaration across artificial boundaries.
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def boot_fanout
       registry = Hecks::Runtime::Registry.new
 

@@ -248,6 +248,20 @@ module Hecks
         end
       end
 
+      # ONE ORDERED SEQUENCE — speculative compensation-recording BEFORE
+      # `@door.reenter` (so a NESTED refusal from inside that reentrant
+      # call can still see this leg's own pending compensation; see the
+      # comment on that line for the real, previously-shipped bug this
+      # ordering fixes), then the reentrant dispatch itself, then one of
+      # three rescue paths that each roll back or retry state the `begin`
+      # above set up. Splitting this would mean threading `attempt`/
+      # `compensation_recorded` across method boundaries as mutable
+      # state shared between a call and its own rescue clauses — exactly
+      # the kind of split that lets a future editor silently break the
+      # "recorded before reenter" ordering without any single method
+      # looking wrong.
+      # rubocop:disable-next Metrics/AbcSize
+      # rubocop:disable-next Metrics/MethodLength
       def deliver_saga_dispatch(process_manager, spec, event, instance, correlation, domain)
         args   = dispatch_args(process_manager, spec, event, instance, correlation)
         record = { process_manager: process_manager.name, instance: correlation, dispatch: spec.command_name }

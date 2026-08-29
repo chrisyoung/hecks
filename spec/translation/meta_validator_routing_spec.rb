@@ -18,6 +18,12 @@ RSpec.describe Hecks::Bluebook::MetaValidator::TranslationJudge do
     expect(meta_language.aggregate("Translation").command("Retire").references).to be_nil
   end
 
+  # One TranslationJudge construction records ALL dispatched calls into
+  # one shared `calls` array, then checks both the exact set of routed
+  # mutations AND that no call leaks an :id/:aggregate key across any of
+  # them — splitting would mean re-running the judge per mutation kind
+  # for no real gain, and would lose the "none of them leak" claim.
+  # rubocop:disable-next RSpec/ExampleLength
   it "routes mutations separately from their declared facts, including AddBackfill" do
     calls = []
     runtime = Object.new

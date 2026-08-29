@@ -210,6 +210,11 @@ module Hecks
       # region existed has no generated marker ahead of its first `## `,
       # so nothing is collecting when that heading arrives and no empty
       # preamble is invented — the older shape reads back unchanged.
+      # A single-pass line-scanning state machine (current/collecting/
+      # buffer/in_fence) — each branch mutates shared local state that
+      # carries into the NEXT iteration, so splitting per branch would
+      # mean passing all four back and forth by reference every line.
+      # rubocop:disable-next Metrics/PerceivedComplexity
       def harvest(text)
         prose = {}
         current = PREAMBLE

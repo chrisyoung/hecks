@@ -39,6 +39,14 @@ module Hecks
         # and Entity Keyword rows name it in `calls:`. Bootstrap-
         # reachable (every self-hosted aggregate/entity declares an
         # identity), so in BOOTSTRAP_CALLS_FALLBACK for both contexts.
+        # Dispatches across the three live forms documented above (value-
+        # object + block, single type target, single/compound field
+        # target), each an early return that sets exactly one pending
+        # ivar. Splitting per form would need each branch's own `return`-
+        # with-nil semantics and the shared `@name`/`identity_pool`
+        # threaded back out as parameters, for no gain beyond what the
+        # three-forms comment above already documents.
+        # rubocop:disable-next Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         def identified_by_impl(*targets, as: nil, &definition)
           return legacy_identified_by(*targets, as: as, &definition) if MetaValidator.shadow_parsing?
 

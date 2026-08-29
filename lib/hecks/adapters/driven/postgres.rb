@@ -176,19 +176,7 @@ module Hecks
         return @db.exec_params("DELETE FROM #{quoted_table} WHERE id = $1", [entry.id]) if entry.delete?
 
         instance = Runtime::Instance.new(aggregate: @aggregate, id: entry.id, state: entry.state)
-        columns  = (["id"] + persisted_fields.map { |field| field[:name].to_s } + ["hecks_version"])
-        values   = [instance.id.to_s] + persisted_fields.map { |field| encode_field(field, instance[field[:name]]) } + [1]
-        updates  = persisted_fields.map { |field| "#{quote_ident(field[:name])} = EXCLUDED.#{quote_ident(field[:name])}" } +
-                   ["hecks_version = #{quoted_table}.hecks_version + 1"]
-
-        sql = "INSERT INTO #{quoted_table} (#{columns.map { |c| quote_ident(c) }.join(', ')}) " \
-              "VALUES (#{(1..columns.size).map { |n| "$#{n}" }.join(', ')}) " \
-              "ON CONFLICT (id) DO UPDATE SET #{updates.join(', ')}"
-        if expected_version
-          values += [expected_version]
-          sql += " WHERE #{quoted_table}.hecks_version = $#{values.size}"
-        end
-        sql += " RETURNING hecks_version"
+        sql, values = upsert_sql(instance, expected_version)
 
         result = @db.exec_params(sql, values)
         return nil if result.ntuples.zero?
@@ -401,6 +389,28 @@ module Hecks
       def quoted_table = quote_ident(table)
       def entry_table = "#{table}_entries"
       def quoted_entry_table = quote_ident(entry_table)
+
+      # The INSERT ... ON CONFLICT ... UPDATE statement `project` executes,
+      # plus its bind values — pulled out as one pure builder (no I/O, no
+      # shared state beyond what's passed in) so `project` itself reads as
+      # "build the query, run it, interpret the result".
+      def upsert_sql(instance, expected_version)
+        columns = (["id"] + persisted_fields.map { |field| field[:name].to_s } + ["hecks_version"])
+        values  = [instance.id.to_s] + persisted_fields.map { |field| encode_field(field, instance[field[:name]]) } + [1]
+        updates = persisted_fields.map { |field| "#{quote_ident(field[:name])} = EXCLUDED.#{quote_ident(field[:name])}" } +
+                  ["hecks_version = #{quoted_table}.hecks_version + 1"]
+
+        sql = "INSERT INTO #{quoted_table} (#{columns.map { |c| quote_ident(c) }.join(', ')}) " \
+              "VALUES (#{(1..columns.size).map { |n| "$#{n}" }.join(', ')}) " \
+              "ON CONFLICT (id) DO UPDATE SET #{updates.join(', ')}"
+        if expected_version
+          values += [expected_version]
+          sql += " WHERE #{quoted_table}.hecks_version = $#{values.size}"
+        end
+        sql += " RETURNING hecks_version"
+
+        [sql, values]
+      end
 
       def jsonb_extraction?(expression) = expression.include?("#>>")
 

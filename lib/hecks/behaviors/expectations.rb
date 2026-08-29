@@ -322,6 +322,14 @@ module Hecks
       def qualify(command, on_aggregate, bluebooks, kind:)
         return command.to_s if command.to_s.include?(".")
 
+        candidates = qualify_candidates(command, on_aggregate, bluebooks, kind)
+        disambiguate_qualified_name(candidates, command, kind, bluebooks)
+      end
+
+      # THE SEARCH — every (bluebook, aggregate) pair that declares a
+      # command/query named `command`, narrowed to `on_aggregate` by name
+      # when given.
+      def qualify_candidates(command, on_aggregate, bluebooks, kind)
         members = kind == :query ? :queries : :commands
         pairs =
           if on_aggregate
@@ -329,8 +337,13 @@ module Hecks
           else
             bluebooks.flat_map { |bb| bb.aggregates.map { |agg| [bb, agg] } }
           end
-        candidates = pairs.select { |_, agg| agg.public_send(members).any? { |m| m.hecks_name == command.to_s } }
+        pairs.select { |_, agg| agg.public_send(members).any? { |m| m.hecks_name == command.to_s } }
+      end
 
+      # THE REPORT — zero candidates and more-than-one candidates both
+      # refuse (with a different message); exactly one resolves to its
+      # dotted FQN.
+      def disambiguate_qualified_name(candidates, command, kind, bluebooks)
         case candidates.size
         when 0
           raise ArgumentError, "no aggregate among #{bluebooks.map(&:name).inspect} declares a #{kind} " \

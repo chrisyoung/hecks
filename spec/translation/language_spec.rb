@@ -75,6 +75,12 @@ RSpec.describe "the translation language" do
       e.message
     end
 
+    # A single pinned-wording contract table (one proc => message pair per
+    # rule kind's required-field refusal), deliberately kept as one hash
+    # literal (see the HashAlignment disable below) rather than one `it`
+    # per row — splitting into ~19 examples is a much larger structural
+    # change than this pass is scoped for.
+    # rubocop:disable-next RSpec/ExampleLength
     it "refuses every required-field omission with the pinned wording" do
       # `Layout/HashAlignment`'s repo-wide `table` style (.rubocop.yml) would
       # force every `=>` below onto the SAME column — matching the widest

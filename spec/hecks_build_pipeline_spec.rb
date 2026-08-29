@@ -101,6 +101,13 @@ RSpec.describe "hecks-build (rust/build) pipeline parity", :io do
   end
 
   HB_PARITY_DOMAINS.each do |domain, dirs|
+    # One end-to-end claim per domain — run both pipelines for real (each a
+    # genuine process spawn, one of them a cargo-built binary), then compare
+    # every directory's file list and every file's bytes. Splitting the
+    # comparison into several examples would re-run both real pipelines per
+    # split with no gain, or worse prove only PART of "these two pipelines
+    # agree" instead of the whole claim this test exists for.
+    # rubocop:disable-next RSpec/ExampleLength
     it "#{domain}: hecks-build's own generated output matches the opt-in Ruby-orchestrated Rust pipeline's, byte for byte" do
       run_project_rust_opt_in!(domain)
 

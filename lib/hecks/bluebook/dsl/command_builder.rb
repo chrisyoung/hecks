@@ -681,6 +681,13 @@ module Hecks
         # the naive append; every OTHER field in the same hash did not,
         # caught by this codemod's own reboot-and-diff safety net rather
         # than silently landing wrong.
+        # `anchor` is a snapshot of `present`'s position, taken BEFORE
+        # `attributes.reject!` mutates the array below it — see this
+        # method's own header comment for why: a naive append-at-end
+        # silently scrambled real corpus field order (Keyword#was/
+        # Argument#variadic). Splitting the snapshot from the mutation it
+        # guards is exactly the ordering invariant that must not move.
+        # rubocop:disable-next Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         def resolve_append_fields!(mutation)
           return unless mutation.source.is_a?(Hash)
 

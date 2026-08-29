@@ -18,6 +18,11 @@ RSpec.describe Doctest do
   before { @guides = [] }
   after  { @guides.each(&:close!) }
 
+  # One guide exercising every fence kind together — bluebook, boot,
+  # shared locals across blocks, a passing claim, a refusal claim, and
+  # a skipped fence — is the actual claim under test: that the harness
+  # runs a WHOLE guide coherently. Splitting the guide loses that.
+  # rubocop:disable-next RSpec/ExampleLength
   it "runs a whole guide — declarations, wiring, shared locals, claims, refusals" do
     path = guide(<<~MD)
       # A tiny guide
@@ -118,6 +123,11 @@ RSpec.describe Doctest do
     expect(described_class.run(path)).to be(true)
   end
 
+  # Proves a second bluebook/boot pair, later in the SAME guide, gets
+  # its own wave and its own boot while still seeing the first wave's
+  # locals — a claim about cross-wave interaction that only a guide
+  # with both waves present, run as one, can establish.
+  # rubocop:disable-next RSpec/ExampleLength
   it "runs a later declaration block as a second wave, its own boot" do
     path = guide(<<~MD)
       ```ruby

@@ -33,6 +33,14 @@ module Hecks
           # winner; resolution itself is append-only (the winner's state
           # re-enters as the newest row and wins structurally — originals
           # stay immutable).
+          # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+          # One Postgres transaction (BEGIN…COMMIT) with a manual ROLLBACK
+          # at every early refusal, and a snapshot-before-mutation
+          # invariant (`new_states` captured before the head rebuild lets
+          # the tail interleave). Splitting the steps into separate
+          # methods would force each to independently know how to roll
+          # back the same shared transaction, and would separate the
+          # snapshot from the mutation it must precede.
           def merge_tail!(aggregates:, edges:, winners: {}, audit: nil)
             @db.exec("BEGIN")
             @db.exec("SET LOCAL lock_timeout = '10s'")
@@ -149,6 +157,7 @@ module Hecks
             end
             raise Runtime::WiringError, "cannot merge the tail of #{@domain}: #{e.message.strip}"
           end
+          # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
           # Ids touched by BOTH worlds since the cut — the old world's
           # post-cut tail INTERSECTed with the new world's own writes.

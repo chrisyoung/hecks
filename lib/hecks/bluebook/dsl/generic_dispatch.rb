@@ -278,6 +278,13 @@ module Hecks
         # which of the four safe shapes (context, word) is, or `nil` if
         # it falls outside this slice's own verified scope. No argument
         # values are read here; this only ever looks at the table.
+        #
+        # An early-return classification chain: each `return` depends on
+        # locals (`calls`, `fills`, `arguments`, `arg`) computed by the
+        # checks before it. Splitting per shape would mean re-deriving or
+        # threading those locals across method boundaries for a
+        # classification that is only ever read top-to-bottom once, here.
+        # rubocop:disable-next Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         def shape_for(context, word, rows)
           keyword = rows[:keywords].find { |k| k[:context] == context && k[:word] == word && k[:status] != "retired" }
           return nil unless keyword

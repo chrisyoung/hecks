@@ -38,6 +38,12 @@ module RubyCodegenPrelude
   # `nil` when `domain_generator.rb` would skip this aggregate entirely
   # (unsupported attribute type(s) — no `.rs` file at all), matching that
   # absence rather than emitting a partial prelude.
+  # This method's own job (see the file header) IS the exact call
+  # sequence below — it exists to be byte-comparable against Rust's own
+  # prelude assembly. Extracting pieces would risk silently reordering
+  # or dropping one of the `puts_str`/`puts_blank` calls the parity test
+  # depends on, with no single resulting method looking wrong.
+  # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
   def aggregate_prelude(aggregate, source_label)
     value_objects_by_name = aggregate[:value_objects].to_h { |vo| [vo[:name], vo] }
     return nil if RustProjection::Projector.unsupported_attribute_types(aggregate, value_objects_by_name).any?

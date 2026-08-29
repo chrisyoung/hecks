@@ -16,6 +16,13 @@ module Hecks
       new(realm: realm, domain: domain, version: version, aggregate: aggregate, verb: query, kind: :query)
     end
 
+    # ONE ORDER-DEPENDENT PARSE PIPELINE: split -> shape-validate -> dispatch
+    # on segment count -> split domain/version -> classify kind -> cross-
+    # field validate -> construct. Each step consumes locals (segments, verb,
+    # kind) the step before it derived; splitting would mean threading all of
+    # them back out as parameters/returns between new methods, for no
+    # readability gain over reading the pipeline top to bottom once.
+    # rubocop:disable-next Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def self.parse(text)
       head, separator, verb = text.to_s.rpartition(".")
       raise Invalid, "FQN must be Realm::Domain::Aggregate.verb — got #{text.inspect}" if separator.empty?

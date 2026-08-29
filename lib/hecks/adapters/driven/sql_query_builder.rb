@@ -35,23 +35,10 @@ module Hecks
 
       def query(declared, args = {}, context: {})
         sql = "SELECT #{select_list} FROM #{from_relation}"
-        clauses = []
         binds = []
-        declared.wheres.each do |clause|
-          value = query_value(clause.value, args)
-          expression = query_expression(clause.field, value: value)
-          if (null_predicate = QuerySpecification::Common::NullPolicy.sql_predicate(expression, clause.op, value))
-            clauses << null_predicate.first
-            next
-          end
-          clauses << where_clause(clause.op.to_s, expression, value, binds, field: clause.field)
-        end
+        clauses = where_clauses(declared, args, binds)
         sql << " WHERE #{clauses.join(' AND ')}" unless clauses.empty?
-        sql << if declared.order_by
-                 " ORDER BY #{order_clause(declared.order_by, declared.null_semantics)}"
-               else
-                 " ORDER BY id"
-               end
+        sql << order_by_sql(declared)
         sql << " LIMIT #{placeholder(binds, query_value(declared.limit.value, args).to_i)}" if declared.limit
         # An offset with no declared limit — SQLite refuses a bare OFFSET
         # outright (LIMIT -1 is its unbounded idiom) while Postgres accepts
@@ -64,6 +51,30 @@ module Hecks
       end
 
       private
+
+      # Every declared `where` clause, compiled in declaration order — a
+      # null-policy predicate short-circuits the ordinary comparator path
+      # per clause, same as it did inline. `binds` is populated in place
+      # (the same array `query` goes on to push LIMIT/OFFSET placeholders
+      # into afterward), so pulling this loop out changes nothing about
+      # bind-parameter order.
+      def where_clauses(declared, args, binds)
+        declared.wheres.each_with_object([]) do |clause, clauses|
+          value = query_value(clause.value, args)
+          expression = query_expression(clause.field, value: value)
+          if (null_predicate = QuerySpecification::Common::NullPolicy.sql_predicate(expression, clause.op, value))
+            clauses << null_predicate.first
+            next
+          end
+          clauses << where_clause(clause.op.to_s, expression, value, binds, field: clause.field)
+        end
+      end
+
+      def order_by_sql(declared)
+        return " ORDER BY #{order_clause(declared.order_by, declared.null_semantics)}" if declared.order_by
+
+        " ORDER BY id"
+      end
 
       def where_clause(oper, expression, value, binds, field: nil)
         case oper
@@ -137,6 +148,16 @@ module Hecks
       # path that can never match. Measured, not assumed: a `where` on a
       # has_one/belongs_to/reference_to field returned zero rows against
       # real data until that exclusion was removed.
+      # `member` resolves through two ORDERED fallback tiers — the bound
+      # value's own numeric field first, then the declared value object's
+      # numeric-or-sole attribute — each documented above as fixing a
+      # real, measured bug (a reference field matching nothing, a
+      # single-attribute VO silently falling to the wrong convention).
+      # Splitting the tiers apart would separate two writes to the same
+      # `member` local across method boundaries, hiding the fallback
+      # order that makes them correct together.
+      # rubocop:disable-next Metrics/CyclomaticComplexity
+      # rubocop:disable-next Metrics/PerceivedComplexity
       def query_expression(field, value: nil)
         name, *path = field.to_s.split(".")
         attribute = @aggregate.attribute(name)

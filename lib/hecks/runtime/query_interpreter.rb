@@ -165,16 +165,8 @@ module Hecks
 
       def entity_rows(domain, aggregate, dotted, args)
         entity_name, query_name = Naming.split_dotted(dotted)
-        entity = aggregate.entities.find { |piece| piece.hecks_name == entity_name } ||
-                 raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_unknown",
-                                                          aggregate: aggregate.hecks_name, entity: entity_name.inspect))
-        declared = entity.query(query_name) ||
-                   raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_query_missing",
-                                                            entity: entity_name, query: query_name.inspect))
+        entity, declared, list_attr = resolve_entity_query(aggregate, entity_name, query_name)
         declared = TenantScope.apply(declared, args)
-        list_attr = aggregate.attributes.find { |a| a.list? && a.type.to_s == entity_name } ||
-                    raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_holds_no_list",
-                                                             aggregate: aggregate.hecks_name, entity: entity_name))
 
         parent_key = Naming.reference_key(aggregate.hecks_name)
         rows = @registry.repository(domain, aggregate).all.flat_map do |record|
@@ -192,6 +184,25 @@ module Hecks
         # several.
         skipped = declared.offset ? ordered.drop(resolve_query_value(declared.offset.value, args).to_i) : ordered
         declared.limit ? skipped.first(resolve_query_value(declared.limit.value, args).to_i) : skipped
+      end
+
+      # THE THREE DECLARATIONS `entity_rows` NEEDS BEFORE IT CAN READ A
+      # SINGLE RECORD — the entity itself, its declared query, and the
+      # list attribute that holds it on the aggregate. Extracted from
+      # `entity_rows` (pure extraction, same lookups, same order, same
+      # UnknownVerb refusals) purely to separate "which declarations does
+      # this dotted name resolve to" from the row-computation that follows.
+      def resolve_entity_query(aggregate, entity_name, query_name)
+        entity = aggregate.entities.find { |piece| piece.hecks_name == entity_name } ||
+                 raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_unknown",
+                                                          aggregate: aggregate.hecks_name, entity: entity_name.inspect))
+        declared = entity.query(query_name) ||
+                   raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_query_missing",
+                                                            entity: entity_name, query: query_name.inspect))
+        list_attr = aggregate.attributes.find { |a| a.list? && a.type.to_s == entity_name } ||
+                    raise(UnknownVerb, RefusalWording.render("UnknownVerb", "entity_holds_no_list",
+                                                             aggregate: aggregate.hecks_name, entity: entity_name))
+        [entity, declared, list_attr]
       end
 
       # FieldPath.dig, not a raw `element[clause.field.to_sym]` — an

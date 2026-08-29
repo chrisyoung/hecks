@@ -44,6 +44,16 @@ module Hecks
         # tenant: refuses with the declared wording, never succeeds. A
         # refusal for an unrelated reason with the tenant arg present is
         # not this property's claim either way — skipped, not graded.
+        # The three mutually exclusive outcomes ("refused, was it for the
+        # declared reason?" / "succeeded without a tenant that was
+        # required?" / "succeeded with a tenant, does every row actually
+        # agree with it?") map exactly onto TenantScope.apply's own two
+        # branches, per the comment above — splitting them into separate
+        # methods would mean threading `asked`, `tenant`, `args`, and
+        # `declared` out to each one for no gain, since none of the three
+        # branches shares logic with the others beyond that shared setup.
+        # rubocop:disable-next Metrics/CyclomaticComplexity
+        # rubocop:disable-next Metrics/PerceivedComplexity
         def authorize_scopes_or_refuses(history)
           bluebooks = history.fetch(:bluebooks)
 

@@ -238,7 +238,7 @@ RSpec.describe "the DSL surface" do
       end.to raise_error(Hecks::Bluebook::DSL::Malformed, /needs a default: value/)
     end
 
-    it ".data_translation refuses an unresolved placeholder and an unknown rule" do
+    it ".data_translation refuses an unresolved placeholder" do
       expect do
         in_registry do
           Hecks.data_translation("Translated", from: "1", to: "2") do
@@ -246,12 +246,14 @@ RSpec.describe "the DSL surface" do
           end
         end
       end.to raise_error(Hecks::Bluebook::DSL::Malformed, /leaves :cost unresolved/)
+    end
 
-      # WordGate (item #13's remaining builders) replaced the builder's
-      # own hand-written method_missing — a genuine typo, admitted
-      # NOWHERE in the whole grammar, now steps aside entirely
-      # (word_gate.rb's own comment) and falls through to Ruby's own
-      # plain NoMethodError rather than a DSL-level Malformed.
+    # WordGate (item #13's remaining builders) replaced the builder's
+    # own hand-written method_missing — a genuine typo, admitted
+    # NOWHERE in the whole grammar, now steps aside entirely
+    # (word_gate.rb's own comment) and falls through to Ruby's own
+    # plain NoMethodError rather than a DSL-level Malformed.
+    it ".data_translation falls through to NoMethodError for a typo admitted nowhere in the grammar" do
       expect do
         in_registry do
           Hecks.data_translation("Translated", from: "1", to: "2") do
@@ -259,11 +261,13 @@ RSpec.describe "the DSL surface" do
           end
         end
       end.to raise_error(NoMethodError, /renmae/)
+    end
 
-      # A word admitted SOMEWHERE ELSE in the grammar (Aggregate context)
-      # but not inside a TranslationAggregate body still gets WordGate's
-      # own richer, table-driven refusal, naming this context's real
-      # legal words.
+    # A word admitted SOMEWHERE ELSE in the grammar (Aggregate context)
+    # but not inside a TranslationAggregate body still gets WordGate's
+    # own richer, table-driven refusal, naming this context's real
+    # legal words.
+    it ".data_translation refuses a word admitted elsewhere in the grammar but not here" do
       expect do
         in_registry do
           Hecks.data_translation("Translated", from: "1", to: "2") do
@@ -271,7 +275,9 @@ RSpec.describe "the DSL surface" do
           end
         end
       end.to raise_error(Hecks::Bluebook::DSL::Malformed, /not a word TranslationAggregate admits/)
+    end
 
+    it ".data_translation falls through to NoMethodError for an unknown top-level word" do
       expect do
         in_registry do
           Hecks.data_translation("Translated", from: "1", to: "2") { banana "Thing" }
@@ -774,6 +780,41 @@ RSpec.describe "the DSL surface" do
   end
 
   describe "a bluebook" do
+    # Shared fixture for the two correlates_by-dot-resolution refusal specs
+    # below: an aggregate whose command carries a value-object field (`Ref`)
+    # that itself nests another value object (`Amount`), so `correlates_by`
+    # has somewhere to run out of scalar. Each caller only supplies the
+    # process_manager body, since that's the only part that differs between
+    # them.
+    def build_ref_amount_bluebook(domain_name, &process_manager_block)
+      build_bluebook(domain_name) do
+        aggregate "Thing" do
+          identified_by :id
+          attribute :id, ThingId
+
+          value_object "ThingId" do
+            attribute :value, String
+          end
+
+          value_object "Ref" do
+            attribute :amount, Amount
+          end
+
+          value_object "Amount" do
+            attribute :cents, Integer
+          end
+
+          command "Start" do
+            attribute :id,  ThingId
+            attribute :ref, Ref
+            emits "Started"
+          end
+        end
+
+        process_manager("Broken", &process_manager_block)
+      end
+    end
+
     it "read_model declares a domain-level projection" do
       model = build_bluebook("Portfolio") do
         aggregate "Customer" do
@@ -839,24 +880,28 @@ RSpec.describe "the DSL surface" do
       expect(before.aggregate_heads).to eq(after.aggregate_heads)
     end
 
-    it "validates read-model reference ordering, uniqueness, and descriptions" do
-      # An include with no reference at all is now a ROOTLESS read model —
-      # a bulk view of its own included head(s), no root record required —
-      # and succeeds rather than refusing.
+    # An include with no reference at all is now a ROOTLESS read model —
+    # a bulk view of its own included head(s), no root record required —
+    # and succeeds rather than refusing.
+    it "lets a read model include with no reference at all, as a rootless read model" do
       expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") { include Customer }
         end
       end.not_to raise_error
+    end
 
-      # A read model naming NEITHER a reference NOR any include has nothing
-      # to describe at all — the one case that still refuses.
+    # A read model naming NEITHER a reference NOR any include has nothing
+    # to describe at all — the one case that still refuses.
+    it "refuses a read model naming neither a reference nor any include" do
       expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") { description "nothing to gather" }
         end
       end.to raise_error(Hecks::Bluebook::DSL::Malformed, /needs an aggregate-head reference or at least one include/)
+    end
 
+    it "refuses an empty read-model description" do
       # a reference, so `needs an aggregate-head reference` does not fire first
       # and mask the description rule this case is about
       expect do
@@ -867,7 +912,9 @@ RSpec.describe "the DSL surface" do
           end
         end
       end.to raise_error(Hecks::Bluebook::DSL::Malformed, /a description says something/)
+    end
 
+    it "refuses a second reference_to on the same read model" do
       expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") do
@@ -876,7 +923,9 @@ RSpec.describe "the DSL surface" do
           end
         end
       end.to raise_error(Hecks::Bluebook::DSL::Malformed, /already has a projection reference/)
+    end
 
+    it "refuses a duplicate include alias on the same read model" do
       expect do
         build_bluebook("BadModel") do
           read_model("Portfolio") do
@@ -1125,36 +1174,11 @@ RSpec.describe "the DSL surface" do
       # field, the same class of mistake `identified_by` already refuses on
       # the aggregate side.
       expect do
-        build_bluebook("NonScalarKey") do
-          aggregate "Thing" do
-            identified_by :id
-            attribute :id, ThingId
-
-            value_object "ThingId" do
-              attribute :value, String
-            end
-
-            value_object "Ref" do
-              attribute :amount, Amount
-            end
-
-            value_object "Amount" do
-              attribute :cents, Integer
-            end
-
-            command "Start" do
-              attribute :id,  ThingId
-              attribute :ref, Ref
-              emits "Started"
-            end
-          end
-
-          process_manager "Broken" do
-            correlates_by :"ref.amount"
-            starts_on "Started"
-            transition "Started" => "b", from: "a" do
-              dispatch Thing::Start
-            end
+        build_ref_amount_bluebook("NonScalarKey") do
+          correlates_by :"ref.amount"
+          starts_on "Started"
+          transition "Started" => "b", from: "a" do
+            dispatch Thing::Start
           end
         end
       end.to raise_error(/Amount is a value object, not a scalar/)
@@ -1162,36 +1186,11 @@ RSpec.describe "the DSL surface" do
 
     it "process_manager refuses correlates_by naming a field no emitting command declares that shape for" do
       expect do
-        build_bluebook("StrandedKey") do
-          aggregate "Thing" do
-            identified_by :id
-            attribute :id, ThingId
-
-            value_object "ThingId" do
-              attribute :value, String
-            end
-
-            value_object "Ref" do
-              attribute :amount, Amount
-            end
-
-            value_object "Amount" do
-              attribute :cents, Integer
-            end
-
-            command "Start" do
-              attribute :id,  ThingId
-              attribute :ref, Ref
-              emits "Started"
-            end
-          end
-
-          process_manager "Broken" do
-            correlates_by :"ref.currency"
-            starts_on "Started"
-            transition "Started" => "b", from: "a" do
-              dispatch Thing::Start
-            end
+        build_ref_amount_bluebook("StrandedKey") do
+          correlates_by :"ref.currency"
+          starts_on "Started"
+          transition "Started" => "b", from: "a" do
+            dispatch Thing::Start
           end
         end
       end.to raise_error(/Ref has no field "currency"/)
@@ -1251,6 +1250,11 @@ RSpec.describe "the DSL surface" do
       expect(referencer.preconditions.map(&:canonical)).to eq(["true"])
     end
 
+    # One coherent two-file-load scenario through
+    # MetaValidator.defer/judge_deferred!, proving a single end-to-end
+    # resolution claim; splitting it would separate the deferred
+    # declarations from the assertion that only the deferred pass produces.
+    # rubocop:disable-next RSpec/ExampleLength
     it "resolve_pending_chapter_entity_givens! resolves a bare entity-level given left pending by an " \
        "earlier file, DECLARED ON A DIFFERENT AGGREGATE'S OWN PIECE" do
       # THE ENTITY-SCOPED ANALOGUE, one level down — see the spec just

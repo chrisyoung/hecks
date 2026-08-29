@@ -22,6 +22,10 @@ require "spec_helper"
 # identity tier alone decided (here: dispatch/creation order), not the
 # declared order.
 RSpec.describe "QueryInterpreter — entity offset and dotted where/order_by" do
+  # A declarative inline bluebook fixture reproducing the three bugs
+  # described above — splitting it would only fragment one self-
+  # contained domain declaration across artificial boundaries.
+  # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
   def boot
     registry = Hecks::Runtime::Registry.new
 

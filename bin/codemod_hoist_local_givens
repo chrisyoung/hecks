@@ -195,6 +195,12 @@ def command_rule_map(registry)
                 .transform_values { |rules| rules.map { |r| [r.kind, r.description, r.canonical] }.sort }
 end
 
+# The revert safety net (`before_rules`/`after_rules`) needs `originals`
+# captured BEFORE any candidate is applied, and `before_rules` computed
+# from that same pre-edit state — a snapshot-before-mutation ordering
+# that a split across methods would have to thread `originals`/`texts`/
+# `before_rules`/`applied` through as parameters just to preserve.
+# rubocop:disable-next Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 def run_files(files, dry_run:)
   files = files.sort
   originals = files.to_h { |file| [file, File.read(file)] }

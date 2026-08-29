@@ -270,6 +270,14 @@ TOOLS = [
 
 def boot(domain) = Hecks.boot(Hecks::Storehouse.confine!(domain, "domain"), install_facade: false)
 
+# A closed-set dispatch table, one `when` per MCP tool name — each branch
+# is a single delegation to `Hecks::Storehouse`, and the size here is the
+# tool count, not accidental branching. Splitting each `when` into its own
+# method would trade one place that shows the whole tool surface for many
+# trivial single-line methods, and would scatter the shared `rescue` below
+# (every branch's escape hatch to the same structured-error response)
+# across each of them instead of catching it once, here.
+# rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity
 def call_tool(name, args)
   case name
   when "dispatch"

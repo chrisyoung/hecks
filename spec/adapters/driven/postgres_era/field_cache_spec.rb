@@ -292,6 +292,13 @@ RSpec.describe "PostgresEra field cache — Track C validation", :io do
 
   # ── 3. backfill resumability under a simulated crash/restart ─────────
 
+  # One scenario: simulate a mid-scan crash, check the partial state it
+  # leaves behind, then resume and check it completes correctly from
+  # the persisted cursor rather than rescanning. The resume assertions
+  # only mean something read against that specific partial state, so
+  # splitting would either re-pay the crash simulation or silently
+  # drop the "picks up where it left off" claim.
+  # rubocop:disable-next RSpec/ExampleLength
   it "resumes a backfill from its persisted cursor after a simulated crash mid-scan" do
     registry = check!(FIELD_CACHE_V1_SOURCE)
     aggregate = registry.bluebooks.values.first.aggregate("Widget")
@@ -342,6 +349,12 @@ RSpec.describe "PostgresEra field cache — Track C validation", :io do
 
   # ── 4. genuine non-blocking-ness ──────────────────────────────────────
 
+  # A single concurrency proof: a slow-chunk backfill on one thread, a
+  # live write on a separate connection timed to land mid-scan, and a
+  # wall-clock assertion the write wasn't blocked. Splitting the setup
+  # from the timing assertion would leave neither half provable on its
+  # own.
+  # rubocop:disable-next RSpec/ExampleLength
   it "lets a concurrent plain write through while a backfill is mid-scan" do
     registry = check!(FIELD_CACHE_V1_SOURCE)
     aggregate = registry.bluebooks.values.first.aggregate("Widget")

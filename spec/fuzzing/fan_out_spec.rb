@@ -13,6 +13,12 @@ require "hecks/fuzzing"
 # really dispatched — the same two-engines-compared shape
 # `query_answers_match_reference` already trusts, aimed at fan-out.
 RSpec.describe "Hecks::Fuzzing::Replay.fan_out_findings" do
+  # ONE INLINE BLUEBOOK, DECLARED WHOLE — a domain-definition DSL block
+  # read top to bottom as the fixture, not a sequence of independent
+  # steps; splitting it would scatter one readable declaration across
+  # several methods that only make sense read back-to-back.
+  # rubocop:disable-next Metrics/AbcSize
+  # rubocop:disable-next Metrics/MethodLength
   def boot_fanout
     registry = Hecks::Runtime::Registry.new
 

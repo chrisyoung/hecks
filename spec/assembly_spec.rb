@@ -180,6 +180,11 @@ RSpec.describe "a graph assembled from declarations" do
                              "#{unjustified.size} derived claim(s) do not hold:\n  #{unjustified.join("\n  ")}"
     end
 
+    # A `case kind` over the closed set of derived-claim kinds the
+    # language declares (:parent, :children, :elsewhere, :walk, an Array
+    # pair) — one place naming what each kind must justify, matching
+    # `fault_in_pair`'s own `case shape` just below for the Array kind.
+    # rubocop:disable-next Metrics/CyclomaticComplexity
     def fault_in(category, contract, field, kind, keys)
       case kind
       when :parent

@@ -106,6 +106,12 @@ module Hecks
           equalities.reduce { |left, right| { "op" => "or", "left" => left, "right" => right } }
         end
 
+        # One case arm per Resolver node type — the class header above is
+        # explicit that this dispatch must stay COMPLETE and in one place
+        # ("every node this grammar admits gets a real arm"); splitting it
+        # into several methods would hide whether the set is still
+        # exhaustive instead of making that visible at a glance.
+        # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength
         def emit_resolver(node)
           case node
           when Resolver::IntegerLiteral then { "op" => "int", "value" => node.value }

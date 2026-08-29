@@ -8,6 +8,11 @@ require "spec_helper"
 # dispatch — the `NothingToCorrect` refusal, and `reverses: true`'s
 # structural auto-derivation of the corrective `sets`.
 RSpec.describe "a command's corrects" do
+  # One inline domain, dispatched through the whole correct/reverse
+  # cycle plus the NothingToCorrect refusal — splitting would mean
+  # re-declaring the domain per example or threading `registry`/
+  # `dispatcher` state across them for no real gain.
+  # rubocop:disable-next RSpec/ExampleLength
   it "dispatches a full correct/reverse cycle, refusing correction against a record that was never corrected" do
     registry = Hecks::Runtime::Registry.new
 
@@ -76,6 +81,10 @@ RSpec.describe "a command's corrects" do
     expect(registry.event_log.map(&:name)).to eq(["Opened", "Opened", "Deposited", "DepositCorrected"])
   end
 
+  # Inline domain declaring reverses: true, dispatched, then reversed —
+  # one coherent proof of the structural auto-derivation this example
+  # names.
+  # rubocop:disable-next RSpec/ExampleLength
   it "auto-derives the inverse mutation for reverses: true" do
     registry = Hecks::Runtime::Registry.new
 
@@ -131,6 +140,10 @@ RSpec.describe "a command's corrects" do
     expect(reversed.instance.balance.cents).to eq(0)
   end
 
+  # Inline domain binding the as: name and reading it back from both
+  # given and ensures — one dispatch proving the whole binding, not
+  # separable without re-declaring the domain.
+  # rubocop:disable-next RSpec/ExampleLength
   it "binds corrects' own as: name to the located event's payload, readable from given and ensures" do
     registry = Hecks::Runtime::Registry.new
 
@@ -204,6 +217,9 @@ RSpec.describe "a command's corrects" do
     expect(reversed.instance.balance.cents).to eq(0)
   end
 
+  # A build-time refusal proof — the whole point is the raise, and the
+  # inline domain is what makes the lossy op concrete.
+  # rubocop:disable-next RSpec/ExampleLength
   it "refuses reverses: true at build time when the original used a lossy op" do
     expect do
       Hecks.bluebook("CorrectsLossySmoke") do

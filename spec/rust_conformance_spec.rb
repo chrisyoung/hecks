@@ -139,6 +139,12 @@ RSpec.describe "Rust conformance (native binary)", :io do
   # fixed verb list doesn't scale to a randomly generated sequence.
 
   RUST_CONFORMANCE_FIXTURES.each do |fixture_path|
+    # A real cargo-built binary compared field-by-field (instances,
+    # events, refusals, queries, sagas, dry_runs, reactions) against one
+    # fixture's own replay — one coherent byte-for-byte conformance
+    # proof per fixture; splitting per field would re-pay the cargo
+    # build and the subprocess spawn for no real gain.
+    # rubocop:disable-next RSpec/ExampleLength
     it "#{File.basename(fixture_path)}: instances, events, refusals, reactions, and sagas match Ruby exactly" do
       fixture = JSON.parse(File.read(fixture_path))
       domain  = fixture.fetch("domain")

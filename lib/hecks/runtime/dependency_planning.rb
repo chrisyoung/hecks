@@ -258,7 +258,6 @@ module Hecks
           name = head.to_sym
 
           if name == :parent
-            parent_field = nested.to_s.split(".", 2).first
             # `root_owner_fields` — NOT `owner_fields`. For an entity-owned
             # command `owner_fields` is the ENTITY's own attribute set;
             # `parent.X` always means the ROOT aggregate's own field, a
@@ -266,24 +265,28 @@ module Hecks
             # above, has the full bug this fixes). Identical for a plain
             # aggregate command, where root_aggregate defaults to aggregate
             # itself and the two sets are the same set.
-            if parent_field.empty? || !root_owner_fields.include?(parent_field.to_sym)
-              unresolved << "#{path} does not name parent aggregate state"
-            else
-              state_reads << parent_field.to_sym
-            end
+            resolve_nested_state_read!(path, nested, root_owner_fields, "does not name parent aggregate state")
           elsif name == :old
-            old_field = nested.to_s.split(".", 2).first
-            if old_field.empty? || !owner_fields.include?(old_field.to_sym)
-              unresolved << "#{path} does not name prior aggregate state"
-            else
-              state_reads << old_field.to_sym
-            end
+            resolve_nested_state_read!(path, nested, owner_fields, "does not name prior aggregate state")
           elsif payload_fields.include?(name)
             payload_reads << name
           elsif owner_fields.include?(name)
             state_reads << name if phase == :before || !known_writes.include?(name)
           else
             unresolved << "expression path #{path} has no payload or aggregate field"
+          end
+        end
+
+        # Shared shape behind the `:parent`/`:old` branches above: read the
+        # nested field name, check it against the given owner field set
+        # (deliberately different sets for `parent`/`old` — see the caller),
+        # and either record it as a state read or refuse with `message`.
+        def resolve_nested_state_read!(path, nested, field_set, message)
+          field = nested.to_s.split(".", 2).first
+          if field.empty? || !field_set.include?(field.to_sym)
+            unresolved << "#{path} #{message}"
+          else
+            state_reads << field.to_sym
           end
         end
 

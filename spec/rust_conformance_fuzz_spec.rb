@@ -75,6 +75,13 @@ RSpec.describe "Rust conformance, over generated sequences (native binary)", :io
       # this stays VISIBLE (not `skip`, which hides it from output
       # entirely) until ADR 0037's findings are closed one at a time —
       # un-pend locally to reproduce every one of them directly.
+      # A real cargo-built binary compared field-by-field (instances,
+      # events, refusals, queries, sagas, reactions) across every
+      # generated seed, accumulating one combined divergence report —
+      # splitting per field or per seed would re-pay the cargo build and
+      # subprocess spawns, and would scatter one seed's related
+      # divergences across separate failures instead of one readable report.
+      # rubocop:disable-next RSpec/ExampleLength
       it "agrees with Ruby across #{SEEDS_PER_DOMAIN} generated sequences (instances, events, refusals, " \
          "reactions, sagas, queries)",
          pending: "ADR 0037 — real, confirmed, not-yet-fixed divergences (missing-argument wording, " \

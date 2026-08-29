@@ -202,6 +202,15 @@ module Hecks
         # form, `domain == bluebook.name`) is checked — the same "only
         # what we have the grammar for" scope `lifecycle_values_are_declared`
         # already takes for a multi-domain replay.
+        # See the comment above: a closed chain of eligibility guards
+        # ("only a report answered by this bluebook, only a count/median
+        # report, only one with a reduced many-side head") each gating the
+        # next, ending in one independent recomputation compared against
+        # the live answer. The guards are what make this oracle SCOPED
+        # correctly, not incidental complexity — narrower than "every
+        # branch reads as its own precondition."
+        # rubocop:disable-next Metrics/CyclomaticComplexity
+        # rubocop:disable-next Metrics/PerceivedComplexity
         def aggregation_matches_recompute(history)
           bluebook = history.fetch(:bluebook)
 
@@ -243,6 +252,11 @@ module Hecks
         #
         # Real target: AccountsByKind (`group_by :kind, :number`,
         # rootless — always generator-eligible with `{}` args).
+        # Same closed eligibility-guard chain as aggregation_matches_
+        # recompute just above (see its own comment) — group_by in place
+        # of count/median, nest_rows in place of recompute_median.
+        # rubocop:disable-next Metrics/CyclomaticComplexity
+        # rubocop:disable-next Metrics/PerceivedComplexity
         def group_by_matches_recompute(history)
           bluebook = history.fetch(:bluebook)
 

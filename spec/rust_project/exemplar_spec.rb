@@ -133,6 +133,10 @@ RSpec.describe RustProjection::Exemplar do
   end
 
   describe ".assemble" do
+    # A single input->exact-output assertion; the length is the fixture
+    # source and the expected rendered text (both slots, in one outer
+    # shape, are the point), not several things happening in sequence.
+    # rubocop:disable-next RSpec/ExampleLength
     it "fills TWO independent slots in one outer shape, each reindented by its own marker's position" do
       write_fixture(<<~RUST)
         // TMPL:codec BEGIN
@@ -229,6 +233,10 @@ RSpec.describe RustProjection::Exemplar do
       expect(out).to eq('cadence: "monthly"')
     end
 
+    # A single input->exact-output assertion against the real checked-in
+    # codec; the length is the pinned expected Rust source, not multiple
+    # separate claims.
+    # rubocop:disable-next RSpec/ExampleLength
     it "renders the real closed_set_table_codec shape, matching the checked-in StatementFrequency codec" do
       to_json_line = '        ("cadence".to_string(), crate::kernel::Json::Str(self.cadence.to_string())),'
 
@@ -277,6 +285,10 @@ RSpec.describe RustProjection::Exemplar do
       RUST
     end
 
+    # A single input->exact-output assertion against the real checked-in
+    # codec, both slots (to_json/from_json); the length is the pinned
+    # expected Rust source, not multiple separate claims.
+    # rubocop:disable-next RSpec/ExampleLength
     it "renders the real closed_set_codec shape, both slots, matching the checked-in LedgerDirection codec" do
       row_subs = [
         { "TmplKind" => "LedgerDirection", "TmplMemberA" => "Credit", '"tmpl_member_a"' => '"credit"' },

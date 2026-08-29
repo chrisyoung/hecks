@@ -15,6 +15,13 @@ require "spec_helper"
 # other way, "the record and nothing else" would be inexpressible — which
 # is the case a fan-out almost always wants.
 RSpec.describe "a policy's trigger projection" do
+  # A declarative bluebook fixture, not procedural code — two aggregates
+  # and the one policy this file exists to exercise, declared start to
+  # finish in one place, same as every other `.bluebook`-shaped fixture
+  # in this suite. Nothing here branches; splitting it would only spread
+  # one DSL block across call sites.
+  # rubocop:disable-next Metrics/AbcSize
+  # rubocop:disable-next Metrics/MethodLength
   def boot_projection
     registry = Hecks::Runtime::Registry.new
 

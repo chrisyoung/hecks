@@ -415,6 +415,12 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     )
   end
 
+  # One mint, checked from every angle it has to hold at once — the
+  # eras table, the untouched era-1 journal row, the head answering in
+  # the new shape, and a fresh write landing in the new partition —
+  # and each assertion reads state the mint above it produced.
+  # Splitting would re-pay the mint or check only one facet at a time.
+  # rubocop:disable-next RSpec/ExampleLength
   it "mints era 2 in one transaction and derives the head through the edge — old entries translated at " \
      "inclusion, never rewritten" do
     write_v1_record
@@ -591,6 +597,12 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
   # an empty object rather than lose the mint over it; now it refuses
   # by name, matching the Ruby reference transform's own refusal pinned
   # in spec/translation_language_spec.rb.
+  # The whole scenario — an inline two-aggregate domain, a real save,
+  # and the colliding edge — exists to reproduce one specific
+  # historical bug (the shadow-parse regression the comment above
+  # documents), so trimming or splitting it risks losing the exact
+  # shape that once broke.
+  # rubocop:disable-next RSpec/ExampleLength
   it "a move whose destination collides with an existing scalar refuses the mint by name, not silently" do
     # Bare `reference_to Team` — no `as:` — deliberately: this exact
     # shape used to break `ensure_named!`'s own from/to edge lookup
@@ -652,6 +664,11 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     )
   end
 
+  # One scenario proving what the reconciliation machinery does with a
+  # genuinely post-cut row — the frozen tail, the old-world read, the
+  # new head's blindness to it, and diverged_count all have to be
+  # checked against the SAME inserted row to mean anything.
+  # rubocop:disable-next RSpec/ExampleLength
   it "however a post-cut row lands in a superseded era, the reconciliation machinery does not lose it or leak it" do
     # This tests what happens GIVEN such a row exists — not whether an
     # ordinary role can create one (the fence tests already prove it
@@ -714,6 +731,11 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     db.close
   end
 
+  # A single concurrency proof requiring the seeded ancestor tail, the
+  # background writer thread, and the live mint racing it together —
+  # splitting the setup from the outcome assertions would leave
+  # neither half able to prove the non-blocking claim.
+  # rubocop:disable-next RSpec/ExampleLength
   it "an ordinary writer is never blocked by a mint — advance_era!'s AccessExclusiveLock is held for the " \
      "commit, not the matview build" do
     write_v1_record
@@ -823,6 +845,12 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     [new_registry, edge]
   end
 
+  # One sequential scenario — the merge refuses without a declared
+  # winner, then the SAME forked state is merged again with a winner
+  # named, proving the retry path picks up cleanly. Splitting would
+  # mean re-forking the worlds or losing the "same conflict, now
+  # resolved" throughline.
+  # rubocop:disable-next RSpec/ExampleLength
   it "tail-merge: refuses both-worlds conflicts by name, then interleaves the declared winner append-only" do
     new_registry, = fork_worlds
 
@@ -958,6 +986,12 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     end
   BLUEBOOK
 
+  # One long-lived edge's whole lifecycle: refuse without approval,
+  # approve, invalidate the approval by advancing the journal,
+  # re-approve, mint, then check the compiled SQL and the untouched
+  # in-process reference — each step depends on the database state the
+  # step before it left.
+  # rubocop:disable-next RSpec/ExampleLength
   it "evaluates a compute rule exclusively inside the compiled matview — its SQL is its only implementation" do
     registry = load_registry(PRICING_V1)
     Hecks::Adapters::PostgresEra::LineageManager.check!(
@@ -1097,6 +1131,11 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     end
   BLUEBOOK
 
+  # Same rekey-approval lifecycle as the compute-rule example above,
+  # proving the record resolves under its new id, the raw journal
+  # stays keyed to the old one, and the head serves the untouched
+  # attributes — all against the one approved mint.
+  # rubocop:disable-next RSpec/ExampleLength
   it "mints an era that rekeys an aggregate's identity, with an approved rekey rule" do
     registry = load_registry(ROSTER_V1)
     Hecks::Adapters::PostgresEra::LineageManager.check!(
@@ -1173,6 +1212,13 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     expect(head.find("Chris Young")).to be_nil
   end
 
+  # The kind of file .rubocop.yml's own RSpec/MultipleExpectations
+  # comment already documents: one fenced role checked from every
+  # angle (boots, writes its own era, refused on the superseded one,
+  # refused on the leaf partition, still append-only, owner
+  # unaffected) against the SAME mint — each angle only means
+  # something read against that one fence.
+  # rubocop:disable-next RSpec/ExampleLength
   it "fences a deployment's app role at the era its checkout speaks — and the fence is written through, " \
      "not read off the catalog" do
     reset_app_role!
@@ -1239,6 +1285,12 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
   # a built-in protection this design gets for free, not one it
   # implements. Recorded here so nobody "fixes" that by relaxing FORCE
   # ROW LEVEL SECURITY without knowing why COPY behaves this way.
+  # Three distinct adversarial routing techniques against the SAME
+  # fenced role and mint, kept together because they are the corpus's
+  # own regression coverage for one class of bug (naive RLS-bypass
+  # attempts) — splitting would re-pay the role/mint setup three times
+  # for no new fixture.
+  # rubocop:disable-next RSpec/ExampleLength
   it "a fenced role cannot route an era-1 write around the fence through a CTE, a function body, or COPY" do
     reset_app_role!
     write_v1_record
@@ -1273,6 +1325,12 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     end
   end
 
+  # One timing-sensitive scenario — a mint-shaped transaction held open
+  # at the exact partition-attach point, a lock probed by name to
+  # confirm which lock is actually held, then a concurrent write proven
+  # to go through — each assertion is only meaningful given the
+  # transaction state opened above it.
+  # rubocop:disable-next RSpec/ExampleLength
   it "an old checkout keeps writing its own era THROUGH a mint — the fork survives the window, it does not merely bracket it" do
     write_v1_record
     l1 = label_of(V1_SOURCE)
@@ -1376,6 +1434,13 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     ).to match(/row-level security/i)
   end
 
+  # One shared pair of roles and one mint, checked from four angles
+  # (old role writes era 1 pre-mint, new role writes what it minted,
+  # old role ALSO writes the new era unprompted, and both are refused
+  # the superseded era) — the whole point is that all four hold
+  # against the SAME mint, so splitting would lose the "not about
+  # which role is asking" claim.
+  # rubocop:disable-next RSpec/ExampleLength
   it "the fence is a fact about the ERA, not the role — a mint by one role cuts EVERY role off the schema it just replaced" do
     old_role = "#{LINEAGE_ROLE}_old"
     new_role = "#{LINEAGE_ROLE}_new"
@@ -1436,6 +1501,12 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
     expect(writes.call(new_role, 1)).to match(/row-level security/i)
   end
 
+  # Proves one equivalence — the layered build (reading era 2's own
+  # matview) and a from-scratch full build agree row for row — which
+  # requires minting through era 3 and running both builds against
+  # that one mint; splitting would mean minting twice or checking only
+  # one side of the equivalence.
+  # rubocop:disable-next RSpec/ExampleLength
   it "builds era 3 from era 2's matview, not from raw history — and the layered answer equals the full one" do
     write_v1_record
     l1 = label_of(V1_SOURCE)
@@ -1494,6 +1565,11 @@ RSpec.describe "lineage in the PostgresEra adapter", :io do
   # NEVER read this branch at all — a rekey reaching era 3 could show one
   # answer at audit time and a DIFFERENT one once actually minted, with
   # nothing here to catch it either way.
+  # The rekey sibling of the layered/full equivalence test above,
+  # needed because a rekey exercises the id_column CASE the ordinary
+  # rename edge never touches — same one-mint, two-build structure,
+  # kept together for the same reason.
+  # rubocop:disable-next RSpec/ExampleLength
   it "produces the identical id under a REKEY too — the layered build's id_column CASE agrees with the full one" do
     write_v1_record
     l1 = label_of(V1_SOURCE)
