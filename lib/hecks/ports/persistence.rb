@@ -18,6 +18,10 @@ require_relative "persistence/null_saga_store"
 
 module Hecks
   module Ports
+    # Reopened once `BindingPolicy`/`RepositoryFactory` (required above) are
+    # loaded, to add the persistence port's actual call surface: resolving
+    # which adapter authoritatively binds an aggregate and building the
+    # repository that reads/writes it.
     module Persistence
       module_function
 

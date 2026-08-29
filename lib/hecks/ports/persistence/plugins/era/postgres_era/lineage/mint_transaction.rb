@@ -5,6 +5,11 @@ module Hecks
   module Adapters
     class PostgresEra
       class Lineage
+        # `mint_era!` itself: one transaction that writes the new era row,
+        # attaches its partition, recompiles every aggregate's head, grants
+        # an app role, and — last, right before commit — advances the
+        # current-era RLS fence (`advance_era!`) that drops write access to
+        # the old schema the instant it commits.
         module MintTransaction
           # ── the mint transaction ───────────────────────────────────────
           #

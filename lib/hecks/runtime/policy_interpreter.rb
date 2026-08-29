@@ -8,6 +8,14 @@ require_relative "../bluebook/expression/evaluator"
 
 module Hecks
   module Runtime
+    # Fires the declared `policy` reactions triggered by one just-emitted
+    # event: scans every loaded bluebook (a policy commonly lives in a
+    # different domain than the event it reacts to), checks each
+    # candidate's `where` guard, and re-enters the dispatcher
+    # (`@door.reenter`) for its trigger command — once per matched
+    # for_each row when the policy fans out. Every attempt is recorded in
+    # reaction_log, with refusals and genuine defects (bugs) kept
+    # distinguishable from each other.
     class PolicyInterpreter
       attr_reader :registry
 

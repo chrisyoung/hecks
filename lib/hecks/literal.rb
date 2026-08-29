@@ -37,6 +37,9 @@ module Hecks
     def to_s = "state(:#{name})"
   end
 
+  # The `render`/`read` pair the header above describes: `render` turns a
+  # Ruby value into its self-describing wire spelling, `read` is its exact
+  # inverse.
   module Literal
     module_function
 

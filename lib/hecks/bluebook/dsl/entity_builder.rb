@@ -2,6 +2,14 @@ require_relative "word_gate"
 module Hecks
   module Bluebook
     module DSL
+      # Parses an `entity "Name" do ... end` block nested inside an aggregate
+      # (or another entity, ADR 0026 — "a piece nested inside a piece") into
+      # an `Entity` — attributes, relationships (`has_many`/`has_one`/
+      # `belongs_to`), its own nested commands/queries/lifecycle, and
+      # preconditions shared across them. Threads the owning aggregate's
+      # value-object and cross-entity `given` pools through unchanged, so a
+      # nested piece resolves identity and shared rules against the same
+      # aggregate-wide state a top-level piece does.
       class EntityBuilder
         GRAMMAR_CONTEXT = "Entity".freeze
 

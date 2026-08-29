@@ -14,6 +14,13 @@ require_relative "command_interpreter/argument_gate"
 
 module Hecks
   module Runtime
+    # Interprets a command dispatched against a nested entity (a dotted
+    # verb like "Handler.Dispatch.Bind") rather than an aggregate root
+    # directly: walks the entity chain off the parent aggregate, applies
+    # the command's own DISPATCH_ORDER of steps against the located
+    # element, then saves and emits through the same parent record a
+    # plain aggregate command would. CommandInterpreter's sibling for
+    # entity-owned commands.
     class EntityInterpreter
       include Interpreting
       # THE SAME PAYLOAD GATE aggregate commands and port operations already

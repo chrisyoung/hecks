@@ -3,6 +3,12 @@ require_relative "null_semantics"
 module Hecks
   module QuerySpecification
     module Common
+      # The attribute set every query-shaped construct shares — wheres,
+      # ordering, paging, cursor, authorization, null semantics,
+      # inspection mode — plus `options_to_h`/`extra_options_to_h` for
+      # serializing it. Both Bluebook::Query and
+      # QuerySpecification::ReadModel::Specification subclass this
+      # rather than each declaring the same fields twice.
       class Options
         attr_reader :wheres, :order_by, :limit, :offset, :cursor,
                     :authorization, :null_semantics, :inspection

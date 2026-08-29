@@ -5,6 +5,10 @@ module Hecks
       # scratch reference recomputation, paging partitions its rows the same
       # way, and the shared query/paging helpers both lean on.
 
+      # Holds query_answers_match_reference and paging_offset_partitions_correctly,
+      # plus the shared verb-resolution and eligible-rows/hop-chain helpers
+      # (#query_for_verb, #query_eligible_rows, #resolve_hop_clause) other
+      # property modules in this directory also call.
       module Querying
         # THE QUERY ORACLE — differential testing within the one runtime,
         # the shape the retired cross-runtime harness should always have

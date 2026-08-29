@@ -7,6 +7,10 @@ module Hecks
       # a lifecycle guard's own violation is refused rather than silently
       # admitted.
 
+      # Holds authorize_scopes_or_refuses, guard_refusals_are_declared, and
+      # lifecycle_guard_and_given_violations_are_refused, plus the shared
+      # verb-to-declaration lookups (#command_for_verb,
+      # #effective_guard_descriptions) each resolves a refusal against.
       module Guards
         # `Query#options`' OTHER HALF — TenantScope.apply's own contract
         # (tenant_scope.rb), independently restated as a property rather

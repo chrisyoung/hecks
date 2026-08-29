@@ -2,6 +2,12 @@ require_relative "word_gate"
 module Hecks
   module Bluebook
     module DSL
+      # Parses one `operation`/`tells`/`asks` block inside a `domain_port`
+      # into a `PortOperation` — its own attributes (the external fact's
+      # payload) plus either the events it `emits` (inbound) or the
+      # `answers`/`refuses` pair naming its two possible outcomes (outbound).
+      # `to:` records which aggregate the operation routes to as dispatch
+      # metadata, never as an attribute — see `to:`'s own comment below.
       class PortOperationBuilder
         GRAMMAR_CONTEXT = "PortOperation".freeze
 

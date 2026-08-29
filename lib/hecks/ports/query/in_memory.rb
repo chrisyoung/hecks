@@ -6,6 +6,12 @@ require_relative "../../query_specification/common/comparison"
 module Hecks
   module Ports
     module Query
+      # In-memory implementation of a declared query specification:
+      # applies wheres/order_by/offset/limit directly to an Array of
+      # records instead of compiling SQL. Deliberately kept in exact
+      # LIMIT/OFFSET-order agreement with SqlQueryBuilder (see #execute's
+      # own comment) so a query answers the same page regardless of
+      # which adapter backs it.
       module InMemory
         FieldPath = QuerySpecification::FieldPath
         Comparison = QuerySpecification::Common::Comparison

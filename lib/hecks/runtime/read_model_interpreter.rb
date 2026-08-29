@@ -8,6 +8,13 @@ require_relative "../query_specification/field_path"
 
 module Hecks
   module Runtime
+    # Interprets one declared `read_model`: resolves each of its
+    # `include`d heads (root first, then the rest in dependency order),
+    # matches non-root heads to already-projected rows by reference
+    # field, and applies group_by/count/median reduction where declared.
+    # Prefers a native SQLite escape hatch (#query_read_model) when the
+    # model is simple enough for one; otherwise runs the whole join
+    # in-process against loaded records.
     class ReadModelInterpreter
       def initialize(registry) = @registry = registry
 

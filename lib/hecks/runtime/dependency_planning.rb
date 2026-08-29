@@ -31,6 +31,10 @@ module Hecks
         end
       end
 
+      # Walks a canonical expression's parsed nodes (the same AST
+      # Bluebook::Expression::Evaluator evaluates) and collects the
+      # dotted paths it reads — used by Analyzer to classify a
+      # given/ensures/invariant rule's dependencies without evaluating it.
       module ExpressionReads
         module_function
 
@@ -59,6 +63,13 @@ module Hecks
         end
       end
 
+      # Static, correctness-first dependency analysis for one command:
+      # walks its mutations, lifecycle transitions, and given/ensures/
+      # invariant rules to derive a Plan (read_set/write_set/
+      # complete_state?/state_independent?) describing what the command
+      # touches without executing it. `Analyzer.call` is what
+      # CommandInterpreter and EntityInterpreter both consult before
+      # choosing a dispatch strategy.
       class Analyzer
         STATEFUL_MUTATIONS = %i[append increment decrement multiply clamp remove].freeze
 

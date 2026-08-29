@@ -5,6 +5,12 @@ module Hecks
   module Adapters
     class PostgresEra
       class Lineage
+        # The read side of lineage: builds and maintains, per aggregate per
+        # era, the head-snapshot table (`ensure_head_snapshot!`/
+        # `backfill_head_snapshot!`) and the compiled materialized
+        # view/plain view (`compile_head!`) that translate and reduce the
+        # append-only journal into the single current-era head a query
+        # actually reads.
         module HeadCompiler
           # ── head compilation ───────────────────────────────────────────
 

@@ -4,6 +4,13 @@ require_relative "../../vocabulary"
 module Hecks
   module Bluebook
     module Expression
+      # The boolean/comparison layer of a predicate's expression grammar —
+      # parses a canonical predicate string into an Or/And/Not/Compare/
+      # Include/Resolve AST (cached per distinct string, `ast_cache`) and
+      # interprets it against a call's own state/attrs. Leaf `Resolve`
+      # nodes delegate to `Resolver` for the dotted/arithmetic
+      # sub-grammar; `OPERATORS` is the comparison table projected from
+      # the grammar chapter (`PROJECTION`).
       module Evaluator
         Operator = Struct.new(:symbol, :compares_less_than, :compares_equal, :negated, keyword_init: true)
 

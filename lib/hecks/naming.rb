@@ -1,4 +1,9 @@
 module Hecks
+  # Every derived-name and identity-joining rule the language relies on —
+  # pluralisation/singularisation, snake/Pascal casing, dotted-path and verb
+  # splitting, and the command/event reference rewrites — collected here so
+  # two readers never invent two different spellings for the same
+  # derivation.
   module Naming
     # WHAT SEPARATES THE PARTS OF A DERIVED IDENTITY.
     #

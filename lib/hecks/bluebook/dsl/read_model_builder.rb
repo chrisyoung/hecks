@@ -2,6 +2,12 @@ require_relative "word_gate"
 module Hecks
   module Bluebook
     module DSL
+      # Parses a `read_model "Name" do ... end` block into a `ReadModel` — a
+      # cross-aggregate projection built from an optional `reference_to`
+      # root (omitted, it's a rootless "bulk" read model) plus one or more
+      # `include`d aggregate heads, with `where`/`order_by`/`limit`/etc, and
+      # at most one of `group_by`, `count`, or `median` as its single
+      # reduction over the one eligible many-side collection.
       class ReadModelBuilder
         GRAMMAR_CONTEXT = "ReadModel".freeze
 

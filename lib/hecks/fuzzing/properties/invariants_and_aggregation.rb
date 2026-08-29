@@ -8,6 +8,11 @@ module Hecks
       # read model's count/median/group_by answers match an independent
       # recomputation.
 
+      # Holds stored_records_satisfy_declared_invariants, sagas_rehydrate_cleanly,
+      # fanout_dispatches_once_per_matching_row, aggregation_matches_recompute,
+      # and group_by_matches_recompute, plus the recomputation helpers
+      # (#check_piece_invariants, #eligible_rows, #nest_rows,
+      # #recompute_median) each leans on.
       module InvariantsAndAggregation
         # EVERY STORED RECORD STILL SATISFIES ITS OWN AGGREGATE'S DECLARED
         # INVARIANTS — Admissibility#enforce_invariants (command_rules/

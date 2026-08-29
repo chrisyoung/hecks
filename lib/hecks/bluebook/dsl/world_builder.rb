@@ -2,6 +2,11 @@ require_relative "word_gate"
 module Hecks
   module Bluebook
     module DSL
+      # A generic keyword-call sink for one bind's own settings block (e.g.
+      # `persisted_by "Heki" do dir :default end`) — every method call made
+      # on it inside the block is recorded verbatim by name, with no fixed
+      # vocabulary of its own; `WorldBuilder#record_binding` reads `#to_h`
+      # back out.
       class SettingsCollector
         def initialize = @values = {}
 
@@ -38,6 +43,11 @@ module Hecks
         def respond_to_missing?(_name, _include_private = false) = true
       end
 
+      # Parses a `.world` file's top-level DSL block into a `World` — a
+      # domain's own `realm`/`latest` version markers plus its adapter bind
+      # SETTINGS, one entry per `verb("Adapter") do ... end` call (whether
+      # written bare or aggregate-qualified through `WorldConstProxy`'s
+      # visual mirror of a sibling `.hecksagon` file's own bind).
       class WorldBuilder
         GRAMMAR_CONTEXT = "World".freeze
 

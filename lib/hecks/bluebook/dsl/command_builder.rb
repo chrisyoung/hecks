@@ -2,6 +2,11 @@ require_relative "word_gate"
 module Hecks
   module Bluebook
     module DSL
+      # The `command "Name" do ... end` receiver — collects a command's
+      # `role`/`goal`/`given`/`ensures`/`sets`/`emits`/`delegates_to`/
+      # `corrects` declarations, resolves implicit attributes a bare `sets
+      # :field` or `append:` self-reference imports from the owner
+      # (`#resolve_implicit_attributes!`), and builds the final `Command`.
       class CommandBuilder
         GRAMMAR_CONTEXT = "Command".freeze
 

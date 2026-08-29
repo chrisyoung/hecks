@@ -2,6 +2,13 @@ require_relative "word_gate"
 module Hecks
   module Bluebook
     module DSL
+      # Parses a `domain_port "Name" do ... end` block into a `DomainPort` —
+      # the inbound (`operation`/`tells`) and outbound (`asks`) operations a
+      # domain exchanges with the outside world. Falls back to building a
+      # plain `Port` (the same object `PortBuilder` builds) when the block is
+      # bare-verb shaped instead, so an existing top-level `.port` file can
+      # migrate to being parsed by this builder — see `legacy_bare_port:`'s
+      # own comment on `#initialize`.
       class DomainPortBuilder
         GRAMMAR_CONTEXT = "DomainPort".freeze
 

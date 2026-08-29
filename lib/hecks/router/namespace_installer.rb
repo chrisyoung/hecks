@@ -7,6 +7,10 @@ module Hecks
     # resolution stays in Router; this object only adapts it to constants and
     # method calls.
     class NamespaceInstaller
+      # Returned by the `.options(version:)` method installed on each
+      # namespace module — forwards any command/query verb called on it
+      # to the router, pinned to this specific FQN version rather than
+      # the router's default resolution.
       class OptionsProxy
         def initialize(router:, realm:, domain:, aggregate:, options:)
           unknown = options.keys - [:version]

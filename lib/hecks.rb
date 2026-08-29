@@ -34,6 +34,12 @@ require_relative "hecks/storehouse"
 require_relative "hecks/framework"
 require_relative "hecks/embryonaut_bluebook"
 
+# The root namespace and public facade of the whole DSL/runtime: `Hecks.boot`/
+# `.boot_files` assemble a running domain from `.bluebook`/`.hecksagon`/
+# `.world` files, and `.bluebook`/`.hecksagon`/`.port`/`.adapter`/`.world`/
+# `.data_translation` are the top-level declaration words every such file
+# opens with, each collecting its built construct into the currently booting
+# Registry (`#collect`, private below).
 module Hecks
   class LoadOutsideBoot < StandardError; end
 

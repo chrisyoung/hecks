@@ -24,6 +24,8 @@ module Hecks
       def required? = !optional
     end
 
+    # Turns a wire-spelled field or path segment into the plain-English text
+    # `FieldShape` embeds as a `Field`'s label or a group's legend.
     module Humanize
       # "given" -> "Given", "daily_limit" -> "Daily limit", "end_to_end" ->
       # "End to end" — the label a plain reader wants, not the wire spelling.

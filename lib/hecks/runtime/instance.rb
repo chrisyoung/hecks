@@ -3,6 +3,12 @@ require_relative "identity"
 
 module Hecks
   module Runtime
+    # One aggregate (or entity) record's runtime state: the declared
+    # attributes hydrated with defaults, plus the identity (`id`) and,
+    # for a CAS-capable adapter, the optimistic-concurrency `version`
+    # stamped on it. `[]`/`[]=`/method_missing give state-field access;
+    # `to_h` is the wire/storage shape with `id` merged in last so a
+    # same-named declared attribute can never clobber it.
     class Instance
       attr_reader :aggregate, :id
       attr_accessor :state

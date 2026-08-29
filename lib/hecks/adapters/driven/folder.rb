@@ -2,6 +2,13 @@ require_relative "../../vocabulary"
 
 module Hecks
   module Adapters
+    # The filesystem-backed loader — glob-and-`Kernel.load` a domain's own
+    # `.port`/`.adapter`/`.bluebook`/`.hecksagon`/`.world`/environment-overlay
+    # files off disk, in the order `Vocabulary.fetch("LoadOrder")` requires,
+    # and locate a domain's own root directory by walking up from any file
+    # inside it looking for a `.hecksagon`. What `Hecks.boot(path)` uses when
+    # a caller names a directory rather than an explicit file list (see
+    # `Loader.boot_files` for that other path).
     class Folder
       DOMAIN_ORDER = Hecks::Vocabulary.fetch("LoadOrder")
       PORTS        = "ports".freeze

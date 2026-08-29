@@ -4,6 +4,10 @@ module Hecks
   module Adapters
     class PostgresEra
       class Lineage
+        # The one deliberate, human-driven command that closes a fork:
+        # `merge_tail!` re-enters an old era's post-cut writes into the
+        # current era under named winners, and `diverged_count` observes how
+        # far the two worlds have drifted at any time before that.
         module TailMerge
           # ── fork observability ─────────────────────────────────────────
 

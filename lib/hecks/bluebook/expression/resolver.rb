@@ -8,6 +8,14 @@ module Hecks
     module Expression
       class EvaluationError < StandardError; end
 
+      # The dotted/arithmetic leaf grammar a predicate's `Resolve` node
+      # bottoms out in — attribute lookups, literals, arithmetic, and the
+      # growing set of vendored method-call suffixes (`.match?`,
+      # `.present?`/`.blank?`, `.set?`/`.unset?`, `.split`, `.first`/
+      # `.last`, `.all?`/`.any?`/`.none?`/`.find`, ...) this file and its
+      # `resolver/block_predicates.rb` sibling parse and interpret. Each
+      # leaf's `parse` is a pure function of its own string, cached at the
+      # `Evaluator` layer; `interpret` reads state/attrs fresh each call.
       module Resolver
         SIGN_TESTS = Hecks::Vocabulary.fetch("SignTest")
 

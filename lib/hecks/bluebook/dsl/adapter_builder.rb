@@ -2,6 +2,9 @@ require_relative "word_gate"
 module Hecks
   module Bluebook
     module DSL
+      # The `Hecks.adapter "Name" do port ...; field ...; secret ... end`
+      # receiver — collects the port it implements plus its own settings
+      # fields and secrets, then builds and judges an `Adapter` construct.
       class AdapterBuilder
         GRAMMAR_CONTEXT = "Adapter".freeze
 

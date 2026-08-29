@@ -3,6 +3,15 @@ require_relative "aggregate_builder/sealing"
 module Hecks
   module Bluebook
     module DSL
+      # The `aggregate "Name" do ... end` receiver — the largest DSL builder
+      # in the language, collecting everything an aggregate declares
+      # (attributes, value objects, entities, commands, queries, policies,
+      # invariants, preconditions, projected fields, its lifecycle and
+      # identity) and assembling the final `Aggregate` IR in `#build`.
+      # `entity`/`command`/`query` only QUEUE a descriptor during
+      # `instance_eval` (`#drain_pending!` builds them, in order, once the
+      # whole block has run) so a later-declared piece can still be
+      # referenced by an earlier line — see `#drain_pending!`'s own header.
       class AggregateBuilder
         GRAMMAR_CONTEXT = "Aggregate".freeze
 

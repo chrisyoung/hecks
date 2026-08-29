@@ -6,6 +6,10 @@ module Hecks
       # declared states, a saga's advances follow its declared handlers, and
       # replaying the same steps twice produces the same history.
 
+      # Holds lifecycle_values_are_declared, saga_advances_follow_declared_handlers,
+      # and replay_is_deterministic — the foundational property, since every
+      # other property here trusts that a single replay's own history is
+      # trustworthy in the first place.
       module LifecycleAndReplay
         # Every lifecycle field a replay leaves an instance holding is one
         # of the aggregate's OWN declared states — the full set, not just

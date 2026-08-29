@@ -2,6 +2,10 @@ require_relative "../runtime/registry"
 
 module Hecks
   module Ports
+    # The `extraction` port: resolves whichever adapter can recover a
+    # predicate's own source (`canonical`). Reads `Hecks.current_registry`
+    # directly rather than taking a registry argument, since extraction only
+    # ever happens while a bluebook is loading, never after boot.
     module Extraction
       NAME = "extraction".freeze
 

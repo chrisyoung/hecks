@@ -2,6 +2,13 @@ require_relative "word_gate"
 module Hecks
   module Bluebook
     module DSL
+      # Parses a `process_manager "Name" do ... end` block into a
+      # `ProcessManager` — its own `starts_on`/`ends_on` events, what
+      # correlates its instances (`correlates_by`), and the `transition`-
+      # declared state machine whose `dispatch`es (each optionally paired
+      # with its own per-dispatch `compensates`) become its handlers. States
+      # are DERIVED from the transitions rather than declared separately
+      # (S7, ADR 0025).
       class ProcessManagerBuilder
         GRAMMAR_CONTEXT = "ProcessManager".freeze
 
@@ -221,6 +228,10 @@ module Hecks
           end
         end
 
+        # THE BODY OF ONE `transition ... do ... end` block — collects the
+        # `dispatch` calls (each optionally opening its own `compensates`
+        # via the nested `DispatchBuilder`) that fire when this transition
+        # is taken.
         class HandlerBuilder
           GRAMMAR_CONTEXT = "Handler".freeze
 

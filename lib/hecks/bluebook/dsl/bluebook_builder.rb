@@ -3,6 +3,14 @@ require_relative "bluebook_builder/validation"
 module Hecks
   module Bluebook
     module DSL
+      # The `Hecks.bluebook "Name" do ... end` receiver — the chapter-level
+      # builder collecting every `aggregate`/`read_model`/`policy`/
+      # `process_manager` a chapter declares, plus the chapter-wide named-
+      # given pools those thread down into (see `#aggregate_impl`'s own
+      # comment). `.build` reuses the SAME open builder instance across
+      # several files sharing one chapter name (`self.build`'s own comment),
+      # so a chapter split across files accumulates rather than each file
+      # silently replacing the last.
       class BluebookBuilder
         GRAMMAR_CONTEXT = "Bluebook".freeze
 

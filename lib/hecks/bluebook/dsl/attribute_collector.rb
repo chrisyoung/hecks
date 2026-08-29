@@ -1,6 +1,12 @@
 module Hecks
   module Bluebook
     module DSL
+      # Shared mixin for every DSL builder that declares attributes
+      # (Aggregate/Entity/Command/Query/PortOperation/ValueObject) — the
+      # `attribute`/`list_of`/`one_of` words themselves, closed-set
+      # synthesis, duplicate-name and pattern refusals, and the
+      # `identified_by` field/type resolution both a construct's own
+      # identity and a compound key are built from.
       module AttributeCollector
         ListOf = Struct.new(:type)
         # `:values` shadows Struct#values on purpose — with one member, the

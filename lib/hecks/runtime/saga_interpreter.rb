@@ -8,6 +8,16 @@ require_relative "saga_pending_dispatch"
 
 module Hecks
   module Runtime
+    # Runs one domain's `process_manager` (saga) declarations against a
+    # just-emitted event: begins a new correlated instance on its
+    # starts_on event, advances a matching handler's state and dispatches
+    # its declared commands, and ends/deletes the instance on ends_on.
+    # Each state transition is checkpointed (durably, via
+    # saga_persistence) before its dispatches run, and a leg that is
+    # refused, hits the reaction-depth ceiling, or crashes past
+    # MAX_DEFECT_RETRIES unwinds through the saga's own `on :refused`
+    # handler and completed-compensation ledger rather than leaving the
+    # instance stuck mid-cascade.
     class SagaInterpreter
       include Correlation
 

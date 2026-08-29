@@ -5,6 +5,13 @@ require_relative "../../runtime/instance"
 
 module Hecks
   module Adapters
+    # The default, no-external-dependency persistence/query adapter — a
+    # plain in-process Hash of `Runtime::Instance` records per aggregate,
+    # with an append-only `@entries`/`@events` log alongside it. Every
+    # behaviors suite must resolve to this one (see
+    # Behaviors::Expectations#guard_memory_only!) precisely because a fresh
+    # instance really is a fresh store, with nothing shared across tests or
+    # tenants.
     class Memory
       # TENANT-CAPABLE TRIVIALLY — see Runtime::TenantCheck's own header
       # for the full reasoning. `@records` is a plain instance variable;

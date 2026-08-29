@@ -11,6 +11,14 @@ require_relative "value"
 
 module Hecks
   module Runtime
+    # Answers one declared aggregate or entity query against a
+    # repository: prefers a native adapter hook (Ports::Query.execute)
+    # when the store can answer directly, falling back to interpreting
+    # wheres/order_by/limit/offset over every loaded record itself.
+    # #reference_call/#reference_interpret are a SEPARATE, deliberately
+    # naive re-implementation of the same evaluation, used only as the
+    # fuzzer's oracle to catch divergence between adapters and this
+    # interpreter's own native path.
     class QueryInterpreter
       attr_reader :registry
 

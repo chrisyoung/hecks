@@ -12,6 +12,9 @@
 module Hecks
   module Bluebook
     module Expression
+      # Reopens the SAME `Resolver` module resolver.rb defines — see this
+      # file's own header comment above for why the block-predicate/find
+      # family lives here rather than in resolver.rb itself.
       module Resolver
         # `receiver.all? { |x| PREDICATE }` / `.any? { ... }` / `.none? {
         # ... }` -- vendored addition, not (yet) upstream hecks

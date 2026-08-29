@@ -38,6 +38,8 @@ require_relative "../ports/persistence/binding_policy"
 #    always on and `emits:` is expected to see them.
 module Hecks
   module Behaviors
+    # See this file's own header above for what this module does and the
+    # two deliberate deviations from the prior port it's built from.
     module Expectations
       module_function
 

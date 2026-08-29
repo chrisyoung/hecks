@@ -26,6 +26,11 @@ module Hecks
         Worker.new(authoritative, target, policy: policy)
       end
 
+      # Catches one projection's store up to its authoritative journal:
+      # replays whatever entries the store hasn't yet appended/projected.
+      # Constructed via Projection.worker; #catch_up! runs from a
+      # separate process or scheduler, never from the command-side write
+      # path.
       class Worker
         attr_reader :projection
 

@@ -6,6 +6,10 @@ module Hecks
       # command's append/remove/multiply/clamp mutations land on the same
       # after-state an independent recomputation of the SAME rule produces.
 
+      # Holds dispatch_binding_fidelity and mutations_match_recompute, plus
+      # the independently-written re-derivations (#resolve_dispatch_binding,
+      # #resolve_trigger_binding, #recompute_append/#remove/#multiply/#clamp)
+      # each checks the real dispatch/mutation against.
       module DispatchAndMutations
         # Closes Handler#dispatches and — the same shape, one construct
         # over — Policy#with_spec (Dispatch#command_name/Dispatch#with_spec

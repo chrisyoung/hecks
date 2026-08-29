@@ -2,6 +2,12 @@ module Hecks
   module Adapters
     class PostgresEra
       class Lineage
+        # Installs the shared, domain-independent `hecks_tr_*` Postgres
+        # functions (extract/insert/rename/move/convert/drop over jsonb)
+        # that a compiled translation rule set's SQL calls into — the SQL
+        # compilation target kept equal to the Ruby reference transform by
+        # the cross-execution equivalence spec, never a second source of
+        # truth.
         module TransformInstaller
           # The jsonb rule transforms — installed once, idempotently. Kept
           # equal to the port's reference entry-JSON transform by the

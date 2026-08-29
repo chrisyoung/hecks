@@ -2,6 +2,12 @@ module Hecks
   module Adapters
     class PostgresEra
       class Lineage
+        # Owner-only schema bootstrap: creates the lineage tables
+        # (`hecks_eras`, `hecks_era_texts`, `hecks_approvals`, the
+        # partitioned journal), sets up its RLS fence, bridges a renamed
+        # domain's history (`rename_domain!`), and attaches each era's
+        # journal partition (`ensure_partition!`) — the build-then-ATTACH
+        # dance that keeps a mint from stopping every writer.
         module Provisioning
           # Provisioning is the OWNER's job, and a deployment's app role is
           # deliberately not the owner — it may append and read, and it
