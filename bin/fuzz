@@ -115,7 +115,8 @@ def fuzz_domain(domain, seeds, steps, adapter = :memory)
       :skip
     end
     if generated == :skip
-      puts "   skipped — declares compute/rekey, which only an era/Postgres-bound boot can interpret (not fuzzable under :#{adapter})"
+      puts "   skipped — declares compute/rekey, which only an era/Postgres-bound boot can interpret " \
+           "(not fuzzable under :#{adapter})"
       return true
     end
     verdict, message = outcome(domain, generated, adapter)

@@ -138,30 +138,34 @@ module Hecks
       # confirmed live before the fix (SafeDepositBox's Visit/KeyIssuance —
       # see spec/runtime/safe_deposit_box_spec.rb).
       GUARANTEED_BY_CONSTRUCTION = {
-        "Aggregate#attributes"    => "every field's pattern/closed-set/type passes through Value.build's one coercion door " \
-                                     "(value/coercion.rb#check_patterns, value/admission.rb) before it can exist — a stored value that violated " \
-                                     "its own declared shape was never producible to begin with",
+        "Aggregate#attributes"    => "every field's pattern/closed-set/type passes through Value.build's one coercion " \
+                                     "door (value/coercion.rb#check_patterns, value/admission.rb) before it can exist " \
+                                     "— a stored value that violated its own declared shape was never producible to " \
+                                     "begin with",
         "Aggregate#value_objects" => "the shape being coerced above — same door, same guarantee",
         # S17, ADR 0026 — the list `saga_advances_follow_declared_handlers`
         # (below) already walks to find each handler's own event_type/
         # from_state/to_state (the three it claims) — a property cannot
         # check a handler's own fields without iterating the list that
         # holds them, so the list itself is exercised by the same door.
-        "ProcessManager#handlers" => "saga_advances_follow_declared_handlers already walks this list to find event_type/from_state/to_state — same door, same guarantee",
+        "ProcessManager#handlers" => "saga_advances_follow_declared_handlers already walks this list to find " \
+                                     "event_type/from_state/to_state — same door, same guarantee",
         "Aggregate#identified_by" => "CommandInterpreter's data-driven dispatch order refuses AlreadyExists " \
-                                     "(command_interpreter.rb, command.creates?) for every creating command uniformly, before a duplicate id " \
-                                     "can ever be stored — collision is refused at the door, not produced and later caught",
+                                     "(command_interpreter.rb, command.creates?) for every creating command uniformly, " \
+                                     "before a duplicate id can ever be stored — collision is refused at the door, not " \
+                                     "produced and later caught",
         "Entity#identified_by"    => "MutationApplier#check_entity_collision (command_interpreter/mutation_applier.rb) " \
-                                     "checks Array(current) against every part of the entity's own identity before an append can land, on " \
-                                     "both branches identity arrives by (caller-supplied, or composite) — the same AlreadyExists refusal " \
-                                     "Aggregate#identified_by gets above, one level down. Auto-minted entities never reach the check " \
-                                     "(current.size + 1 can't repeat unless something remove:s from the list between mints, which no real " \
-                                     "domain does today — see the comment on #entity_element itself)",
+                                     "checks Array(current) against every part of the entity's own identity before an " \
+                                     "append can land, on both branches identity arrives by (caller-supplied, or " \
+                                     "composite) — the same AlreadyExists refusal Aggregate#identified_by gets above, " \
+                                     "one level down. Auto-minted entities never reach the check (current.size + 1 " \
+                                     "can't repeat unless something remove:s from the list between mints, which no " \
+                                     "real domain does today — see the comment on #entity_element itself)",
         "Command#attributes"      => "command arguments are coerced through the SAME Value.build door as any other " \
                                      "attribute — an accepted dispatch's own args already passed pattern/admits/invariant checks",
-        "Command#emits"           => "CommandRules::Emission#emit iterates command.emits ITSELF to construct every announced " \
-                                     "Event (command_rules/emission.rb) — there is no other path to emit, so a command can never announce a " \
-                                     "name its own declaration doesn't list",
+        "Command#emits"           => "CommandRules::Emission#emit iterates command.emits ITSELF to construct every " \
+                                     "announced Event (command_rules/emission.rb) — there is no other path to emit, so " \
+                                     "a command can never announce a name its own declaration doesn't list",
         "Query#attributes"        => "query arguments are coerced through the same Value.build door — same guarantee as " \
                                      "Command#attributes",
         "Entity#attributes"       => "same coercion door, one level in — an entity's own attributes are Value-typed exactly " \
@@ -169,7 +173,8 @@ module Hecks
         "ValueObject#attributes"  => "the shape Value.build enforces IS this declaration — the guarantee and the " \
                                      "feature are the same fact seen from two sides",
         "ValueObject#invariants"  => "run inside the SAME coercion call (coercion.rb, before construction returns) " \
-                                     "that pattern-checks a VO's fields — a VO whose invariant did not hold could not finish being built",
+                                     "that pattern-checks a VO's fields — a VO whose invariant did not hold could not " \
+                                     "finish being built",
         "ValueObject#rows"        => "closed-set membership is checked in value/admission.rb, the second half of the same " \
                                      "one construction door",
         # S17, ADR 0026 — Member is a genuine entity now (nested under

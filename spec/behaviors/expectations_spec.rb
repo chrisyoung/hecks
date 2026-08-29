@@ -51,7 +51,8 @@ RSpec.describe Hecks::Behaviors::Expectations do
     def create(name)
       Hecks::Behaviors::TestCase.new(description: name, tests_command: "CreatePizza", on_aggregate: "Order",
                                      kind: :command, setups: [], expect: { ok: true },
-                                     input: { name: { value: name }, pizza: { price_cents: { cents: 900 }, size: { value: "small" } } })
+                                     input: { name:  { value: name },
+                                              pizza: { price_cents: { cents: 900 }, size: { value: "small" } } })
     end
 
     it "reuses the suite's runtime across tests" do

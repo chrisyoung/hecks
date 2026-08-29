@@ -21,8 +21,8 @@ module Hecks
       raise Invalid, "FQN must be Realm::Domain::Aggregate.verb — got #{text.inspect}" if separator.empty?
 
       segments = head.split("::", -1)
-      raise Invalid, "FQN must be Realm::Domain::Aggregate.verb — got #{text.inspect}" unless [1, 2,
-                                                                                               3].include?(segments.length) && segments.none?(&:empty?) && !verb.empty?
+      valid_fqn = [1, 2, 3].include?(segments.length) && segments.none?(&:empty?) && !verb.empty?
+      raise Invalid, "FQN must be Realm::Domain::Aggregate.verb — got #{text.inspect}" unless valid_fqn
 
       realm, domain_spec, aggregate = case segments.length
                                       when 3 then segments

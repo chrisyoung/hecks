@@ -126,7 +126,8 @@ RSpec.describe "multitenancy: interleaved random writes stay isolated" do
 
         expected.each do |slug, refs|
           expect(actual_refs(dispatchers.fetch(slug)).sort).to eq(refs.sort),
-                                                               "seed #{seed}: tenant #{slug} expected exactly #{refs.sort.inspect}"
+                                                               "seed #{seed}: tenant #{slug} expected exactly " \
+                                                               "#{refs.sort.inspect}"
         end
       end
     end
@@ -161,7 +162,8 @@ RSpec.describe "multitenancy: interleaved random writes stay isolated" do
 
           expected.each do |slug, refs|
             expect(actual_refs(dispatchers.fetch(slug)).sort).to eq(refs.sort),
-                                                                 "seed #{seed}: tenant #{slug} expected exactly #{refs.sort.inspect}"
+                                                                 "seed #{seed}: tenant #{slug} expected exactly " \
+                                                                 "#{refs.sort.inspect}"
           end
         end
       end

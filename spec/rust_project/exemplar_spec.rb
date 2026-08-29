@@ -92,7 +92,8 @@ RSpec.describe RustProjection::Exemplar do
   end
 
   describe ".compose" do
-    it "renders the inner shape once per field, splices it into the outer skeleton's slot, then substitutes the outer's own markers" do
+    it "renders the inner shape once per field, splices it into the outer skeleton's slot, then substitutes " \
+       "the outer's own markers" do
       write_fixture(<<~RUST)
         // TMPL:record_struct BEGIN
         pub struct TmplType {
@@ -333,7 +334,9 @@ RSpec.describe RustProjection::Exemplar do
       )
 
       expect(out).to eq(
-        'if !["credit", "debit"].contains(&args.direction.value.as_str()) { return Err(crate::kernel::Refusal::InvariantViolation(format!("{}{:?}", "direction admits Account::LedgerDirection — \"credit\", \"debit\" — got ", args.direction.value))); }'
+        'if !["credit", "debit"].contains(&args.direction.value.as_str()) { return Err(crate::kernel::Refusal::' \
+        'InvariantViolation(format!("{}{:?}", "direction admits Account::LedgerDirection — \"credit\", ' \
+        '\"debit\" — got ", args.direction.value))); }'
       )
     end
   end

@@ -116,9 +116,6 @@ Naming/PredicatePrefix:
   Exclude:
     - 'lib/hecks/bluebook/dsl/aggregate_builder.rb'
 
-# Offense count: 33
-RSpec/BeforeAfterAll:
-  Enabled: false
 
 # Offense count: 44
 # Configuration parameters: Max, CountAsOne.
@@ -215,9 +212,6 @@ RSpec/NoExpectationExample:
 RSpec/SpecFilePathFormat:
   Enabled: false
 
-# Offense count: 37
-Security/Eval:
-  Enabled: false
 
 # Offense count: 76
 # Configuration parameters: AllowedConstants.

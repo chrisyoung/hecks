@@ -228,7 +228,8 @@ module Hecks
         parts = [DocsProjector.h(depth, "Reactions")]
         bluebook.policies.each do |policy|
           elsewhere = policy.target_domain ? " in #{policy.target_domain}" : ""
-          parts << "Whenever `#{policy.on_event}` happens, `#{policy.trigger_command}` fires on its own#{elsewhere} — nobody has to ask for it."
+          parts << "Whenever `#{policy.on_event}` happens, `#{policy.trigger_command}` fires on its own#{elsewhere} — " \
+                   "nobody has to ask for it."
         end
 
         bluebook.process_managers.each do |saga|

@@ -514,7 +514,8 @@ else
         # `"quoted"` form would nest unescaped double quotes and produce
         # invalid Rust (the exact class of landmine this pass is fixing
         # elsewhere for domain names/descriptions — not repeating it here).
-        f.puts "compile_error!(\"domain features are mutually exclusive — enable only one of: #{domains.join(', ')} (both #{a} and #{b} are enabled)\");"
+        f.puts "compile_error!(\"domain features are mutually exclusive — enable only one of: #{domains.join(', ')} " \
+               "(both #{a} and #{b} are enabled)\");"
       end
     end
   end

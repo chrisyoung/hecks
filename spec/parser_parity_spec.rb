@@ -440,7 +440,10 @@ RSpec.describe "Rust parser parity (hecks-parse)", :io do
 
     it "#{stem}: still Stage 1 pending, and fails the honest way (not yet implemented, not a crash)" do
       pending_reason = PENDING_MEMBERS[stem]
-      skip "#{stem} is not marked pending, but no real byte-match assertion exists for it yet — add one or restore the pending entry" unless pending_reason
+      unless pending_reason
+        skip "#{stem} is not marked pending, but no real byte-match assertion exists for it yet — " \
+             "add one or restore the pending entry"
+      end
 
       chapter_name = self.class.chapter_name_of(bluebook)
       unless chapter_name

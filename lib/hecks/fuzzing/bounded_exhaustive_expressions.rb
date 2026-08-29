@@ -217,7 +217,9 @@ module Hecks
         when :string   then string_productions(depth)
         when :boolean  then boolean_productions(depth)
         when :array    then array_productions(depth)
-        when :nil_type then [] # no recursive producer of nil in this grammar — Find's "not found" is a runtime OUTCOME, not a distinct construct to render as source text
+        # no recursive producer of nil in this grammar — Find's "not found" is a
+        # runtime OUTCOME, not a distinct construct to render as source text
+        when :nil_type then []
         else raise ArgumentError, "no production rule for type #{type.inspect}"
         end
       end

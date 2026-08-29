@@ -145,7 +145,8 @@ RSpec.describe "bin/project_deploy — Shared mode + rust_web + real Google OAut
       expect(recipe).to include("#{param}=$$OWNER_"), "deploy: never passes #{param} to sam deploy"
     end
     expect(recipe.scan('WebRedirectBaseUrl="$$WEB_URL"').size).to eq(1),
-                                                                  "deploy: should pass WebRedirectBaseUrl in its one real sam deploy call (the WEB_URL-present branch)"
+                                                                  "deploy: should pass WebRedirectBaseUrl in its one " \
+                                                                  "real sam deploy call (the WEB_URL-present branch)"
   end
 
   # `deploy:`'s recipe is not ONE giant chain end to end — it's several

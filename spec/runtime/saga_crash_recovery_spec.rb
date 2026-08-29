@@ -112,7 +112,10 @@ RSpec.describe "saga durability across a process death mid-leg" do
 
     reopened = nil
     expect { reopened = boot_wire }.to output(
-      /Wire rehydrated Carry instance "wire-1" in state "asked" with a dispatch left pending.*Take.*reconcile this instance by hand/
+      /
+        Wire\ rehydrated\ Carry\ instance\ "wire-1"\ in\ state\ "asked"\ with\ a\ dispatch\ left\ pending.*
+        Take.*reconcile\ this\ instance\ by\ hand
+      /x
     ).to_stderr
 
     # Surfaced (state restored, and the stall is on record)...

@@ -75,8 +75,10 @@ RSpec.describe "Rust conformance, over generated sequences (native binary)", :io
       # this stays VISIBLE (not `skip`, which hides it from output
       # entirely) until ADR 0037's findings are closed one at a time —
       # un-pend locally to reproduce every one of them directly.
-      it "agrees with Ruby across #{SEEDS_PER_DOMAIN} generated sequences (instances, events, refusals, reactions, sagas, queries)",
-         pending: "ADR 0037 — real, confirmed, not-yet-fixed divergences (missing-argument wording, query-argument invariants, one narrow dangling-reference gap)" do
+      it "agrees with Ruby across #{SEEDS_PER_DOMAIN} generated sequences (instances, events, refusals, " \
+         "reactions, sagas, queries)",
+         pending: "ADR 0037 — real, confirmed, not-yet-fixed divergences (missing-argument wording, " \
+                  "query-argument invariants, one narrow dangling-reference gap)" do
         feature = File.basename(domain).downcase
         binary = build_rust_for(feature)
         skip "rust/Cargo.toml has no #{feature} feature — run bin/project_rust for it first" unless binary
@@ -150,7 +152,8 @@ RSpec.describe "Rust conformance, over generated sequences (native binary)", :io
         # asserted false) so the seed and the exact field that split are
         # never buried in a diff too large to read.
         message = divergences.map do |d|
-          "seed #{d[:seed]} — #{d[:field]}" + (d[:detail] ? ": #{d[:detail]}" : "\n  ruby: #{d[:ruby].inspect}\n  rust: #{d[:rust].inspect}")
+          "seed #{d[:seed]} — #{d[:field]}" +
+            (d[:detail] ? ": #{d[:detail]}" : "\n  ruby: #{d[:ruby].inspect}\n  rust: #{d[:rust].inspect}")
         end.join("\n")
 
         expect(divergences).to be_empty, "#{divergences.size} divergence(s) found — reproduce with " \

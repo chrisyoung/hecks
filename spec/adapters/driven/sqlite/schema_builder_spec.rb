@@ -76,7 +76,8 @@ RSpec.describe "Hecks::Adapters::Sqlite automatic indexing" do
     expect(sql).to eq(%(CREATE INDEX "idx_order_pizza_price_cents_cents" ON "order"(#{expected})))
   end
 
-  it "boots without attempting to index the aggregate's own list-typed attribute (toppings is never queried, but never indexed either)" do
+  it "boots without attempting to index the aggregate's own list-typed attribute " \
+     "(toppings is never queried, but never indexed either)" do
     adapter
     names = db.execute("SELECT name FROM sqlite_master WHERE type = 'index'").map { |row| row["name"] }
 

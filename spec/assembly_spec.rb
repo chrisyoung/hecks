@@ -292,7 +292,8 @@ RSpec.describe "a graph assembled from declarations" do
 
         plan.category(category).appends.keys.filter_map do |list|
           shaper = contract.shaper(list)
-          next "#{category}##{list} names shaper #{shaper} and Readings has no such method" if shaper && !readings.include?(shaper)
+          unknown_shaper = shaper && !readings.include?(shaper)
+          next "#{category}##{list} names shaper #{shaper} and Readings has no such method" if unknown_shaper
           next nil if shaper
           next nil if contract.holder.nil? || contract.answers?(list.to_sym)
 

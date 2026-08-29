@@ -235,7 +235,11 @@ module Hecks
           # `CommandInterpreter`/`EntityInterpreter` call it, never the port
           # dispatch path), so `role_gated: false` always, unlike
           # `command_spec` where the same key name means a real one.
-          role: operation.outbound? ? "#{aggregate.hecks_name} asking #{port.name}" : "#{port.name} telling #{aggregate.hecks_name}",
+          role: if operation.outbound?
+                  "#{aggregate.hecks_name} asking #{port.name}"
+                else
+                  "#{port.name} telling #{aggregate.hecks_name}"
+                end,
           role_gated: false,
           summary: port_summary(port, operation), arguments: arguments }
       end

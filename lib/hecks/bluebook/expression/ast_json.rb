@@ -73,7 +73,8 @@ module Hecks
           when Evaluator::Resolve
             emit_resolver(node.expr)
           else
-            raise "unhandled evaluator node #{node.class} — no JSON rendering exists for it (lib/hecks/bluebook/expression/ast_json.rb#emit_bool)"
+            raise "unhandled evaluator node #{node.class} — no JSON rendering exists for it " \
+                  "(lib/hecks/bluebook/expression/ast_json.rb#emit_bool)"
           end
         end
 
@@ -144,7 +145,8 @@ module Hecks
           when Resolver::First then { "op" => "first", "receiver" => emit_resolver(node.receiver) }
           when Resolver::Last  then { "op" => "last", "receiver" => emit_resolver(node.receiver) }
           else
-            raise "unhandled resolver node #{node.class} — no JSON rendering exists for it (lib/hecks/bluebook/expression/ast_json.rb#emit_resolver)"
+            raise "unhandled resolver node #{node.class} — no JSON rendering exists for it " \
+                  "(lib/hecks/bluebook/expression/ast_json.rb#emit_resolver)"
           end
         end
       end

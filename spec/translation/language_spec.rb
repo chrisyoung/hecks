@@ -76,69 +76,76 @@ RSpec.describe "the translation language" do
     end
 
     it "refuses every required-field omission with the pinned wording" do
+      # `Layout/HashAlignment`'s repo-wide `table` style (.rubocop.yml) would
+      # force every `=>` below onto the SAME column — matching the widest
+      # single-line proc key — leaving the closing `}` of a multi-line proc
+      # entry almost no room before Layout/LineLength's own 130-column
+      # limit. Disabled for exactly this one hash literal (a single
+      # statement, so disable-next rather than a disable/enable pair).
+      # rubocop:disable-next Layout/HashAlignment
       {
-        proc { aggregate("Account") { rename nil, to: :amount } }                      => "a rename needs a source name",
+        proc { aggregate("Account") { rename nil, to: :amount } } => "a rename needs a source name",
         proc {
           aggregate("Account") do
             rename :cost, to: ""
           end
-        }                                                                              => "a rename needs a destination name (to:)",
+        } => "a rename needs a destination name (to:)",
         proc {
           aggregate("Account") do
             move "price.cents", to: ""
           end
-        }                                                                              => "a move needs a destination path (to:)",
-        proc { aggregate("Account") { move "", to: "price_cents" } }                   => "a move needs a source path",
+        } => "a move needs a destination path (to:)",
+        proc { aggregate("Account") { move "", to: "price_cents" } } => "a move needs a source path",
         proc {
           aggregate("Account") do
             convert "code", to: "", values: { 1 => "a" }
           end
-        }                                                                              => "a convert needs a destination path (to:)",
+        } => "a convert needs a destination path (to:)",
         proc { aggregate("Account") { convert "", to: "code", values: { 1 => "a" } } } => "a convert needs a source path",
         proc {
           aggregate("Account") do
             convert "code", to: "code", values: {}
           end
-        }                                                                              => "a convert needs a values: table",
+        } => "a convert needs a values: table",
         proc {
           aggregate("Account") do
             convert "code", to: "code", values: nil
           end
-        }                                                                              => "a convert needs a values: table",
-        proc { aggregate("Account") { drop "" } }                                      => "a drop needs a name",
+        } => "a convert needs a values: table",
+        proc { aggregate("Account") { drop "" } } => "a drop needs a name",
         proc {
           aggregate("Account") do
             retype "", to: "Cash"
           end
-        }                                                                              => "a retype needs a source type name",
+        } => "a retype needs a source type name",
         proc {
           aggregate("Account") do
             retype "Money", to: ""
           end
-        }                                                                              => "a retype needs a destination type name (to:)",
+        } => "a retype needs a destination type name (to:)",
         proc {
           aggregate("Account") do
             compute "price_cents", to: "", sql: "x"
           end
-        }                                                                              => "a compute needs a destination path (to:)",
-        proc { aggregate("Account") { compute "", to: "price_dollars", sql: "x" } }    => "a compute needs a source path",
+        } => "a compute needs a destination path (to:)",
+        proc { aggregate("Account") { compute "", to: "price_dollars", sql: "x" } } => "a compute needs a source path",
         proc {
           aggregate("Account") do
             compute "price_cents", to: "price_dollars", sql: ""
           end
-        }                                                                              => "a compute needs its sql: expression",
-        proc { aggregate("Account") { backfill "", default: "x" } }                    => "a backfill needs a name",
+        } => "a compute needs its sql: expression",
+        proc { aggregate("Account") { backfill "", default: "x" } } => "a backfill needs a name",
         proc {
           aggregate("Account") do
             backfill :tier, default: nil
           end
-        }                                                                              => "a backfill needs a default: value",
+        } => "a backfill needs a default: value",
         proc {
           retired ""
-        }                                                                              => "a retired needs an aggregate name",
+        } => "a retired needs an aggregate name",
         proc {
           aggregate("")
-        }                                                                              => "an aggregate translation needs a name"
+        } => "an aggregate translation needs a name"
       }.each do |declaration, wanted|
         expect(refusal_for(&declaration)).to eq(wanted)
       end

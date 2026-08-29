@@ -84,7 +84,8 @@ module Hecks
           # — the same idiom `rust/host/src/journal.rs`'s own
           # `sagas_backfilled` column addition already uses, for the
           # identical reason.
-          @db.exec("ALTER TABLE hecks_saga_instances ADD COLUMN IF NOT EXISTS completed_compensations jsonb NOT NULL DEFAULT '[]'::jsonb")
+          @db.exec("ALTER TABLE hecks_saga_instances ADD COLUMN IF NOT EXISTS completed_compensations jsonb " \
+                   "NOT NULL DEFAULT '[]'::jsonb")
         end
 
         def sql_type(attr)

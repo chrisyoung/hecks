@@ -112,7 +112,8 @@ RSpec.describe "bin/project_rust opt-in Rust pipeline parity", :io do
   end
 
   PARITY_DOMAINS.each do |domain, dirs|
-    it "#{domain}: the opt-in Rust path's generated output matches the default Ruby path's, file for file (modulo the named manifest.json/ir.json/metadata.rs gaps)" do
+    it "#{domain}: the opt-in Rust path's generated output matches the default Ruby path's, file for file " \
+       "(modulo the named manifest.json/ir.json/metadata.rs gaps)" do
       run_project_rust!(domain, {})
 
       ruby_snapshot = Dir.mktmpdir("project-rust-pipeline-spec-ruby")
@@ -127,7 +128,8 @@ RSpec.describe "bin/project_rust opt-in Rust pipeline parity", :io do
         ruby_files = files_in(ruby_dir)
         rust_files = files_in(rust_dir)
         expect(rust_files).to eq(ruby_files - IGNORED_BASENAMES),
-                              "#{dir}: the opt-in path's own file list differs from the default path's (beyond the named manifest.json gap) — " \
+                              "#{dir}: the opt-in path's own file list differs from the default path's " \
+                              "(beyond the named manifest.json gap) — " \
                               "ruby: #{ruby_files.inspect}, rust: #{rust_files.inspect}"
 
         (ruby_files - IGNORED_BASENAMES - CONTENT_EXEMPT_BASENAMES).each do |basename|

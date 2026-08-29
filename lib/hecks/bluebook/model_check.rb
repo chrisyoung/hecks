@@ -242,7 +242,11 @@ module Hecks
             # constant now produces, S6) means THIS one, and is compared
             # against `verbs_of`'s own fully-qualified spelling qualified
             # the identical way, not left bare to miss it on a technicality.
-            qualified = dispatch.command_name.include?("::") ? dispatch.command_name : "#{bluebook.name}::#{dispatch.command_name}"
+            qualified = if dispatch.command_name.include?("::")
+                          dispatch.command_name
+                        else
+                          "#{bluebook.name}::#{dispatch.command_name}"
+                        end
             next if verbs.include?(qualified)
 
             findings << Finding.new(kind: :unknown_dispatch, severity: :error, subject: process_manager.name,

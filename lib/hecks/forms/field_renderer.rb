@@ -114,7 +114,8 @@ module Hecks
       def self.select(field, value)
         selected = value || field.default
         options = field.options.map do |option_value, option_label|
-          %(<option value="#{Escape.attr(option_value)}"#{' selected' if option_value.to_s == selected.to_s}>#{Escape.html(option_label)}</option>)
+          %(<option value="#{Escape.attr(option_value)}"#{' selected' if option_value.to_s == selected.to_s}>) \
+            "#{Escape.html(option_label)}</option>"
         end
         blank = field.optional? ? %(<option value="">—</option>) : ""
         %(<select id="#{dom_id(field.path)}" name="#{Escape.attr(field.path)}" #{aria(field)}>#{blank}#{options.join}</select>)
@@ -126,7 +127,11 @@ module Hecks
         rendered = options.map do |id, label|
           %(<option value="#{Escape.attr(id)}"#{' selected' if id.to_s == value.to_s}>#{Escape.html(label)}</option>)
         end
-        blank = field.optional? ? %(<option value="">—</option>) : %(<option value="" disabled#{' selected' unless value}>choose one…</option>)
+        blank = if field.optional?
+                  %(<option value="">—</option>)
+                else
+                  %(<option value="" disabled#{' selected' unless value}>choose one…</option>)
+                end
         %(<select id="#{dom_id(field.path)}" name="#{Escape.attr(field.path)}" #{aria(field)}>#{blank}#{rendered.join}</select>)
       end
 

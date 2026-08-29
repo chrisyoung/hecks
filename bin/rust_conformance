@@ -58,8 +58,10 @@ def native_binary
     .find { |path| File.executable?(path) }
 end
 
-domain = ARGV.shift or abort "usage: bin/rust_conformance <domain> <script.json> [rust_output.json | native | path/to/module.wasm]"
-script = ARGV.shift or abort "usage: bin/rust_conformance <domain> <script.json> [rust_output.json | native | path/to/module.wasm]"
+domain = ARGV.shift or abort "usage: bin/rust_conformance <domain> <script.json> " \
+                             "[rust_output.json | native | path/to/module.wasm]"
+script = ARGV.shift or abort "usage: bin/rust_conformance <domain> <script.json> " \
+                             "[rust_output.json | native | path/to/module.wasm]"
 other  = ARGV.shift
 
 steps  = JSON.parse(File.read(script)).fetch("steps")
@@ -81,7 +83,8 @@ end
 their_json =
   case other
   when "native"
-    bin = native_binary or abort "no native rust binary found under rust/target/{release,debug}/rust — run `cd rust && cargo build` first"
+    bin = native_binary or abort "no native rust binary found under rust/target/{release,debug}/rust — run " \
+                                 "`cd rust && cargo build` first"
     run_subprocess([bin], File.read(script))
   when /\.wasm\z/
     abort "#{other}: no such file — run bin/project_wasm #{domain} first" unless File.exist?(other)

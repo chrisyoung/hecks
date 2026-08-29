@@ -121,7 +121,8 @@ bluebook.aggregates.each do |aggregate|
            end
   verdict = Hecks::Translation::Audit.check(aggregate: aggregate, declared: declared, before: before, after: after)
 
-  puts "── #{bluebook.name}::#{aggregate.name} (edge #{edge.from} → #{edge.to}, #{after.size} record#{'s' unless after.size == 1})"
+  puts "── #{bluebook.name}::#{aggregate.name} (edge #{edge.from} → #{edge.to}, " \
+       "#{after.size} record#{'s' unless after.size == 1})"
   verdict.violations.each { |violation| puts "   REFUSED: #{violation}" }
   puts "   dropped (declared data loss): #{verdict.dropped.join(', ')}" unless verdict.dropped.empty?
   puts "   unfed (no rule, no default — add default: if required): #{verdict.unfed.join(', ')}" unless verdict.unfed.empty?

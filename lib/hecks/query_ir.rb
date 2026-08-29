@@ -283,8 +283,14 @@ module Hecks
         if diff[:missing_from_ruby].empty? && diff[:unaccounted_in_ruby].empty?
           lines << "  clean — every declared field is emitted (or a named deviation), nothing emitted is undeclared"
         else
-          lines << "  MISSING FROM RUBY (declared, not emitted, not a named deviation): #{diff[:missing_from_ruby].join(', ')}" unless diff[:missing_from_ruby].empty?
-          lines << "  UNACCOUNTED IN RUBY (emitted, not declared, not a named deviation): #{diff[:unaccounted_in_ruby].join(', ')}" unless diff[:unaccounted_in_ruby].empty?
+          unless diff[:missing_from_ruby].empty?
+            lines << "  MISSING FROM RUBY (declared, not emitted, not a named deviation): " \
+                     "#{diff[:missing_from_ruby].join(', ')}"
+          end
+          unless diff[:unaccounted_in_ruby].empty?
+            lines << "  UNACCOUNTED IN RUBY (emitted, not declared, not a named deviation): " \
+                     "#{diff[:unaccounted_in_ruby].join(', ')}"
+          end
         end
         lines.join("\n")
       end.join("\n\n")

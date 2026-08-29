@@ -30,7 +30,8 @@ module Hecks
 
             watermark = last_ordinal
             @db.exec_params(
-              "INSERT INTO hecks_eras (domain, ordinal, hash, label, held_text, watermark, held_digest, held_projection, canon_form) " \
+              "INSERT INTO hecks_eras (domain, ordinal, hash, label, held_text, watermark, held_digest, " \
+              "held_projection, canon_form) " \
               "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
               [@domain, ordinal, hash, label, held_text, watermark, Digest::SHA256.hexdigest(held_text),
                projection && JSON.generate(projection), Runtime::StorageShape::FORM_VERSION]
@@ -124,7 +125,10 @@ module Hecks
             aggregates.each do |aggregate|
               storage_name = aggregate.storage_name
               @db.exec("GRANT SELECT, INSERT, UPDATE, DELETE ON #{quote(head_snapshot(storage_name, era))} TO #{quoted_role}")
-              @db.exec("GRANT SELECT ON #{quote(head_view(storage_name))} TO #{quoted_role}") if view_exists?(head_view(storage_name))
+              if view_exists?(head_view(storage_name))
+                @db.exec("GRANT SELECT ON #{quote(head_view(storage_name))} " \
+                         "TO #{quoted_role}")
+              end
             end
           end
 

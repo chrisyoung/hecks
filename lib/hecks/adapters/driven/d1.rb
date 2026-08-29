@@ -346,8 +346,8 @@ module Hecks
       # already uses through `Connection#execute`.
       def save_saga(process_manager:, correlation:, state:, memory:, completed_compensations: [])
         @db.execute(
-          "INSERT OR REPLACE INTO hecks_saga_instances (domain, process_manager, correlation, state, memory, completed_compensations) " \
-          "VALUES (?, ?, ?, ?, ?, ?)",
+          "INSERT OR REPLACE INTO hecks_saga_instances (domain, process_manager, correlation, state, memory, " \
+          "completed_compensations) VALUES (?, ?, ?, ?, ?, ?)",
           [@domain, process_manager.to_s, correlation.to_s, state.to_s, JSON.generate(memory),
            JSON.generate(completed_compensations)]
         )
@@ -364,7 +364,8 @@ module Hecks
         return enum_for(:each_saga) unless block_given?
 
         @db.execute(
-          "SELECT process_manager, correlation, state, memory, completed_compensations FROM hecks_saga_instances WHERE domain = ?",
+          "SELECT process_manager, correlation, state, memory, completed_compensations " \
+          "FROM hecks_saga_instances WHERE domain = ?",
           [@domain]
         ).each do |row|
           yield row["process_manager"], row["correlation"], row["state"],

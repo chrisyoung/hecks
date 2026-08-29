@@ -104,7 +104,9 @@ module Hecks
 
           Array(aggregate.converts).each do |convert|
             send_to("Translation::TranslationAggregate.AddConvert", name, to:   name,
-                                                                          with: { from: v(convert.from), to: v(convert.to), values: v(convert.values.inspect) })
+                                                                          with: { from:   v(convert.from),
+                                                                                  to:     v(convert.to),
+                                                                                  values: v(convert.values.inspect) })
           end
 
           Array(aggregate.drops).each do |dropped|
@@ -119,7 +121,9 @@ module Hecks
 
           Array(aggregate.computes).each do |compute|
             send_to("Translation::TranslationAggregate.AddCompute", name, to:   name,
-                                                                          with: { from: v(compute.from), to: v(compute.to), sql: v(compute.sql) })
+                                                                          with: { from: v(compute.from),
+                                                                                  to:   v(compute.to),
+                                                                                  sql:  v(compute.sql) })
           end
 
           Array(aggregate.rekeys).each do |rekey|
@@ -129,7 +133,8 @@ module Hecks
 
           Array(aggregate.backfills).each do |backfill|
             send_to("Translation::TranslationAggregate.AddBackfill", name, to:   name,
-                                                                           with: { name: v(backfill.name), default: v(backfill.default.inspect) })
+                                                                           with: { name:    v(backfill.name),
+                                                                                   default: v(backfill.default.inspect) })
           end
         end
       end

@@ -118,7 +118,8 @@ module Hecks
         return respond(405, "text/plain", "GET only") unless request.get?
 
         if format == "html"
-          html("#{chapter.name}::#{aggregate.hecks_name}", RecordRenderer.index(registry: @registry, domain: chapter.name, aggregate: aggregate),
+          html("#{chapter.name}::#{aggregate.hecks_name}",
+               RecordRenderer.index(registry: @registry, domain: chapter.name, aggregate: aggregate),
                breadcrumbs: [[chapter.name, "/"], [aggregate.hecks_name, nil]])
         else
           instances = @registry.repository(chapter.name, aggregate).all
@@ -275,7 +276,8 @@ module Hecks
         # sites in this file (see aggregate_route's own comment).
         return json(200, instance.state.merge(id: instance.id)) if format != "html"
 
-        html("#{domain}::#{aggregate.hecks_name} #{id}", RecordRenderer.show(registry: @registry, domain: domain, aggregate: aggregate, id: id),
+        html("#{domain}::#{aggregate.hecks_name} #{id}",
+             RecordRenderer.show(registry: @registry, domain: domain, aggregate: aggregate, id: id),
              breadcrumbs: [[domain, "/"], [aggregate.hecks_name, "/#{domain}/#{aggregate.hecks_name}.html"], [id, nil]])
       end
 
@@ -283,7 +285,9 @@ module Hecks
         return json(404, { error: "NotFound", message: "no #{aggregate.hecks_name} #{id}" }) if format != "html"
 
         respond(404, "text/html; charset=utf-8",
-                Page.render(title: "not found", body: "<h1>Not found</h1><p>No #{Escape.html(aggregate.hecks_name)} #{Escape.html(id)}.</p>"))
+                Page.render(title: "not found",
+                            body:  "<h1>Not found</h1><p>No #{Escape.html(aggregate.hecks_name)} " \
+                                   "#{Escape.html(id)}.</p>"))
       end
 
       def find_aggregate(chapter, name)

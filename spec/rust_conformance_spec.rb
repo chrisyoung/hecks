@@ -208,18 +208,23 @@ RSpec.describe "Rust conformance (native binary)", :io do
   # ExternalTransfer.Sent, Governance's/Identity's, and now every order_by/
   # limit-bearing declared query in named_queries_order_limit.json) now
   # genuinely executes right alongside it in the very same binary.
-  it "a named/declared query step whose shape this generator doesn't cover still refuses cleanly (not a byte-for-byte comparison — Ruby answers this one for real)" do
+  it "a named/declared query step whose shape this generator doesn't cover still refuses cleanly (not a " \
+     "byte-for-byte comparison — Ruby answers this one for real)" do
     binary = build_rust_for("banking")
     skip "rust/Cargo.toml has no banking feature — run bin/project_rust for it first" unless binary
 
-    stdout, status = Open3.capture2(binary,
-                                    stdin_data: JSON.generate({ "steps" => [{ "query" => "Banking::Account.OpenForSuspendedCustomers" }] }))
+    stdout, status = Open3.capture2(
+      binary,
+      stdin_data: JSON.generate({ "steps" => [{ "query" => "Banking::Account.OpenForSuspendedCustomers" }] })
+    )
     expect(status).to be_success, "#{binary} exited #{status.exitstatus}:\n#{stdout}"
 
     rust_output = JSON.parse(stdout)
     expect(rust_output["refusals"].size).to eq(1)
     expect(rust_output["refusals"][0]["verb"]).to eq("Banking::Account.OpenForSuspendedCustomers")
-    expect(rust_output["refusals"][0]["error"]).to include("Banking::Account.OpenForSuspendedCustomers").and include("is not generated for this domain")
+    expect(rust_output["refusals"][0]["error"])
+      .to include("Banking::Account.OpenForSuspendedCustomers")
+      .and include("is not generated for this domain")
     expect(rust_output["queries"]).to eq([])
   end
 end

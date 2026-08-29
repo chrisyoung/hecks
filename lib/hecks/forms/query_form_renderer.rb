@@ -89,7 +89,8 @@ module Hecks
       def self.error_banner(error)
         return "" unless error
 
-        %(<div class="error-banner" role="alert"><p><strong>#{Escape.html(error.class.name.split('::').last)}</strong> — #{Escape.html(error.message)}</p></div>)
+        %(<div class="error-banner" role="alert"><p><strong>#{Escape.html(error.class.name.split('::').last)}</strong> — ) \
+          "#{Escape.html(error.message)}</p></div>"
       end
 
       def self.results_section(aggregate, results, domain)

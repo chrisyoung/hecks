@@ -61,7 +61,8 @@ module QueryAgreementD1Probe
   end
 end
 
-RSpec.describe "adapter agreement — declared queries answer identically across Memory, Sqlite, PostgresEra, plain Postgres, and D1",
+RSpec.describe "adapter agreement — declared queries answer identically across Memory, Sqlite, " \
+               "PostgresEra, plain Postgres, and D1",
                :io do
   AGREEMENT_DB = "hecks_query_agreement_spec".freeze
   # A SEPARATE scratch database from PostgresEra's own AGREEMENT_DB above

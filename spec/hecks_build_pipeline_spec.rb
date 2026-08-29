@@ -133,7 +133,8 @@ RSpec.describe "hecks-build (rust/build) pipeline parity", :io do
       # too (both ran, back to back, targeting the same domain).
       hecks_build_cargo_toml = File.read(HB_CARGO_TOML)
       expect(hecks_build_cargo_toml).to eq(ruby_cargo_toml),
-                                        "rust/Cargo.toml: hecks-build's own [features] sync does not byte-match the opt-in Ruby pipeline's"
+                                        "rust/Cargo.toml: hecks-build's own [features] sync does not byte-match " \
+                                        "the opt-in Ruby pipeline's"
     ensure
       FileUtils.remove_entry(ruby_snapshot) if ruby_snapshot
     end

@@ -180,7 +180,8 @@ RSpec.describe "Rust codegen parity (hecks-codegen)", :io do
   # load time. False positive — the receiver isn't a Hash.
   # rubocop:disable-next Style/HashSlice
   CODEGEN_CORPUS_MEMBERS.select { |name, _| WHOLE_FILE_MEMBERS.include?(name) }.each do |name, ir_loader|
-    it "#{name}: Rust hecks-codegen's FULL domain .rs output (every aggregate file + registry.rs + mod.rs) is byte-identical to Ruby's" do
+    it "#{name}: Rust hecks-codegen's FULL domain .rs output (every aggregate file + registry.rs + " \
+       "mod.rs) is byte-identical to Ruby's" do
       ir = ir_loader.call
 
       Dir.mktmpdir do |tmp|
@@ -209,7 +210,8 @@ RSpec.describe "Rust codegen parity (hecks-codegen)", :io do
           ruby_path = File.join(ruby_dir, basename)
           rust_path = File.join(rust_dir, basename)
           expect(File.exist?(ruby_path)).to be(true),
-                                            "#{name}/#{basename}: Ruby's own DomainGenerator.call didn't write this file — compared_names is stale"
+                                            "#{name}/#{basename}: Ruby's own DomainGenerator.call didn't write this file — " \
+                                            "compared_names is stale"
           expect(File.exist?(rust_path)).to be(true), "#{name}/#{basename}: hecks-codegen domain didn't write this file"
 
           ruby_text = File.read(ruby_path)

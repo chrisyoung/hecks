@@ -264,7 +264,8 @@ RSpec.describe "bin/lint_deploy_recipes", :io do
     KNOWN_CLEAN_TARGETS = %w[mint-era scaffold-translation translation-audit migrate-console-settings rename-schema
                              sync-google-oauth deploy].freeze
 
-    it "finds zero violations in mint-era/scaffold-translation/translation-audit/migrate-console-settings/rename-schema for an own-RDS domain" do
+    it "finds zero violations in mint-era/scaffold-translation/translation-audit/migrate-console-settings/rename-schema " \
+       "for an own-RDS domain" do
       makefile = File.read(File.join(@own_dir, "Makefile"))
       violations = self.class.lint(makefile, source: "own").select { |v| KNOWN_CLEAN_TARGETS.include?(v.target) }
       expect(violations).to be_empty, violations.join("\n")

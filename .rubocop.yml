@@ -327,3 +327,47 @@ RSpec/ScatteredSetup:
 # for the same reason as the three above.
 Style/CombinableLoops:
   Enabled: false
+
+# `Security/Eval` exists to catch a web app evaling untrusted external
+# input (a request body, a query param) — arbitrary code execution from
+# outside the process. That threat model doesn't describe this codebase:
+# a `.bluebook` file IS a Ruby DSL script, and turning its text into a
+# loaded Ruby object graph — `Kernel.eval(source, TOPLEVEL_BINDING,
+# path, 1)`, the exact form every real call site here uses — is the one
+# thing this whole gem exists to do, load-bearing rather than
+# incidental. Every site (grep `Kernel\.eval\b` / `\beval(` across
+# lib/bin/spec) evaluates one of two things, never anything else: a
+# `.bluebook` file already sitting on disk in this repository (read via
+# `File.read`/`file.path`, exactly the way `Kernel.load` would load one
+# — `EraGuard#parse_bluebook`, `EraTamper`, `Translation::Reattest`,
+# `PostgresEra::LineageManager` all read a REPO-committed era archive
+# file, never a runtime request), or a hand-authored literal string
+# inside a spec fixture (every `*_growth_spec.rb`'s own `boot` helper,
+# `spec/dsl_spec.rb`'s two deliberately-untraceable-source refusal
+# fixtures — already carry their own `# rubocop:disable Style/
+# EvalWithLocation` comments for the SAME reasoning, one cop over).
+# Neither shape is "untrusted input" in the sense this cop defends
+# against — both are source this codebase itself authored and shipped.
+# Disabled repo-wide rather than scattered across 40+ call sites with
+# the identical rationale copy-pasted at each one.
+Security/Eval:
+  Enabled: false
+
+# `RSpec/BeforeAfterAll` warns that state set up in `before(:all)` isn't
+# automatically rolled back the way rspec-rails' transactional fixtures
+# roll back a `before(:each)` — real advice for an app spec suite backed
+# by a database transaction per example. This gem's suite has no such
+# rollback to lose in the first place (no rspec-rails, no transactional
+# fixtures at all), so the cop's own stated hazard doesn't describe this
+# codebase. Every real `before(:context)`/`after(:context)` site here
+# (grep confirms none use the bare `:all`/`:context` spelling without
+# one) exists for the SAME reason: booting a real Postgres connection, a
+# `cargo build`, or an AWS/deploy dry-run once per file rather than once
+# per example — several sites document this explicitly in their own
+# comments (e.g. spec/construct_spec.rb: "nothing an earlier example
+# does can leak into a later one," because every example is read-only).
+# Converting these to `before(:each)` wouldn't fix a real risk; it would
+# just multiply an expensive real-resource setup by however many
+# examples share the context.
+RSpec/BeforeAfterAll:
+  Enabled: false

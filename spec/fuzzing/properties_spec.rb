@@ -321,7 +321,8 @@ RSpec.describe "Hecks::Fuzzing::Properties" do
       expect(result).to include("Banking::SafeDepositBox.Rented").and include("a made up refusal")
     end
 
-    it "authorize_scopes_or_refuses passes a successful answer whose tenant field matches the given arg, and a correctly-worded refusal with no tenant" do
+    it "authorize_scopes_or_refuses passes a successful answer whose tenant field matches the given arg, " \
+       "and a correctly-worded refusal with no tenant" do
       history = { bluebooks: bluebooks_for(PROPERTIES_BANKING),
                   queries:   [
                     { query: "Banking::SafeDepositBox.Rented", args: { branch_code: "DOWNTOWN" },
@@ -511,7 +512,8 @@ RSpec.describe "Hecks::Fuzzing::Properties" do
       # undeclared guard; identified by `kind:`, it is skipped outright.
       history = { bluebooks: bluebooks_for(PROPERTIES_BANKING),
                   refusals:  [{ verb:  "Banking::Account.CloseAccount",
-                                error: "CloseAccount refused — status is closed, and CloseAccount moves it only from open, frozen",
+                                error: "CloseAccount refused — status is closed, and CloseAccount moves it only " \
+                                       "from open, frozen",
                                 kind:  "Hecks::Runtime::LifecycleRefused" }] }
 
       expect(Hecks::Fuzzing::Properties.guard_refusals_are_declared(history)).to be(true)

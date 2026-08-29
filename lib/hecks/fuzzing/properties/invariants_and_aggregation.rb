@@ -82,7 +82,10 @@ module Hecks
               violated = entity.invariants.find do |invariant|
                 !Bluebook::Expression::Evaluator.call(invariant.canonical, element)
               end
-              return "#{key}'s own #{entity.hecks_name} violates its declared invariant #{violated.description.inspect}" if violated
+              if violated
+                return "#{key}'s own #{entity.hecks_name} violates its declared invariant " \
+                       "#{violated.description.inspect}"
+              end
 
               nested = check_piece_invariants(entity, element, key)
               return nested if nested
@@ -124,7 +127,8 @@ module Hecks
             conversations.filter_map do |correlation, instance|
               problems = []
 
-              problems << "holds state #{instance[:state].inspect}, which #{pm_name} never declares" if pm && !pm.declares_state?(instance[:state])
+              problems << "holds state #{instance[:state].inspect}, which #{pm_name} never declares" \
+                if pm && !pm.declares_state?(instance[:state])
 
               rehydrated = JSON.parse(JSON.generate(instance[:memory]), symbolize_names: true)
               if rehydrated != instance[:memory]

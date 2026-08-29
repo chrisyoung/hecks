@@ -40,7 +40,11 @@ module Hecks
         return "" if crumbs.empty?
 
         items = crumbs.map do |label, href|
-          href ? %(<a href="#{Escape.attr(href)}">#{Escape.html(label)}</a>) : %(<span aria-current="page">#{Escape.html(label)}</span>)
+          if href
+            %(<a href="#{Escape.attr(href)}">#{Escape.html(label)}</a>)
+          else
+            %(<span aria-current="page">#{Escape.html(label)}</span>)
+          end
         end
         %(<nav class="breadcrumbs" aria-label="Breadcrumb">#{items.join(' <span class="sep">/</span> ')}</nav>)
       end

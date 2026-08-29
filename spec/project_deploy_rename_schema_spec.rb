@@ -113,7 +113,8 @@ RSpec.describe "bin/project_deploy's rename-schema OLD/NEW allowlist, in its own
     guard_lines.each do |line|
       value_under_test = line[/echo "(.*?)" \| grep -Eq/, 1]
       expect(value_under_test).to match(/\A\$\$(OLD|NEW)\z/),
-                                  "expected the guard to test $$OLD/$$NEW (a real shell env var), got #{value_under_test.inspect} in: #{line}"
+                                  "expected the guard to test $$OLD/$$NEW (a real shell env var), " \
+                                  "got #{value_under_test.inspect} in: #{line}"
     end
   end
 

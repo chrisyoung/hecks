@@ -332,7 +332,8 @@ module Hecks
           def unwrap_shape(owner, type_name, seen = [])
             return type_name if owner.nil? # owner couldn't be resolved -- compare by name, same as before this unwrap existed
             return type_name if Attribute::PRIMITIVES.include?(type_name)
-            return type_name if seen.include?(type_name) # a self-referential VO bottoms out on its own name, not an infinite unwrap
+            # a self-referential VO bottoms out on its own name, not an infinite unwrap
+            return type_name if seen.include?(type_name)
 
             shape = owner.value_object(type_name)
             return type_name unless shape # not this owner's own VO (a reference type, say) -- nothing further to unwrap

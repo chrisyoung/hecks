@@ -28,7 +28,8 @@ module Hecks
         return "" if creators.empty?
 
         links = creators.map do |cmd|
-          %(<a class="button" href="/#{domain}/#{aggregate.hecks_name}/#{cmd.hecks_name}.html">+ #{Escape.html(cmd.hecks_name)}</a>)
+          %(<a class="button" href="/#{domain}/#{aggregate.hecks_name}/#{cmd.hecks_name}.html">) \
+            "+ #{Escape.html(cmd.hecks_name)}</a>"
         end
         %(<div class="actions">#{links.join}</div>)
       end
@@ -81,7 +82,8 @@ module Hecks
           # parameter), then the assembled href is attribute-escaped as
           # usual.
           href = "/#{domain}/#{aggregate.hecks_name}/#{cmd.hecks_name}.html?to=#{Escape.url(id)}"
-          %(<li><a href="#{Escape.attr(href)}"><span>#{Escape.html(cmd.hecks_name)}</span><span class="kind">#{Escape.html(cmd.goal.to_s)}</span></a></li>)
+          %(<li><a href="#{Escape.attr(href)}"><span>#{Escape.html(cmd.hecks_name)}</span>) \
+            "<span class=\"kind\">#{Escape.html(cmd.goal.to_s)}</span></a></li>"
         end
         %(<ul class="verb-list">#{items.join}</ul>)
       end
@@ -97,7 +99,8 @@ module Hecks
         return "" if aggregate.queries.empty?
 
         items = aggregate.queries.map do |query|
-          %(<li><a href="/#{domain}/#{aggregate.hecks_name}/#{query.hecks_name}.html"><span>#{Escape.html(query.hecks_name)}</span><span class="kind">query</span></a></li>)
+          %(<li><a href="/#{domain}/#{aggregate.hecks_name}/#{query.hecks_name}.html">) \
+            "<span>#{Escape.html(query.hecks_name)}</span><span class=\"kind\">query</span></a></li>"
         end
         %(<h2>Queries</h2><ul class="verb-list">#{items.join}</ul>)
       end
@@ -107,12 +110,15 @@ module Hecks
         return "" if commands.empty? && aggregate.queries.empty?
 
         cmd_items = commands.map do |c|
-          %(<li><a href="/#{domain}/#{aggregate.hecks_name}/#{c.hecks_name}.html"><span>#{Escape.html(c.hecks_name)}</span><span class="kind">command</span></a></li>)
+          %(<li><a href="/#{domain}/#{aggregate.hecks_name}/#{c.hecks_name}.html">) \
+            "<span>#{Escape.html(c.hecks_name)}</span><span class=\"kind\">command</span></a></li>"
         end
         query_items = aggregate.queries.map do |q|
-          %(<li><a href="/#{domain}/#{aggregate.hecks_name}/#{q.hecks_name}.html"><span>#{Escape.html(q.hecks_name)}</span><span class="kind">query</span></a></li>)
+          %(<li><a href="/#{domain}/#{aggregate.hecks_name}/#{q.hecks_name}.html">) \
+            "<span>#{Escape.html(q.hecks_name)}</span><span class=\"kind\">query</span></a></li>"
         end
-        %(<h2>Every command &amp; query on #{Escape.html(aggregate.hecks_name)}</h2><ul class="verb-list">#{(cmd_items + query_items).join}</ul>)
+        %(<h2>Every command &amp; query on #{Escape.html(aggregate.hecks_name)}</h2>) \
+          "<ul class=\"verb-list\">#{(cmd_items + query_items).join}</ul>"
       end
     end
   end

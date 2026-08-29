@@ -255,7 +255,8 @@ RSpec.describe "the declared syntax" do
       # ProcessManagerBuilder's own header comment for why).
       starts_on_impl:     "ProcessManagerBuilder's own real implementation, called by GenericDispatch's calls:",
       ends_on_impl:       "ProcessManagerBuilder's own real implementation, called by GenericDispatch's calls:",
-      tells_impl:         "DomainPortBuilder's own real implementation, called by GenericDispatch's calls: — also the target for the \"operation\" spelling, a Ruby alias no more",
+      tells_impl:         "DomainPortBuilder's own real implementation, called by GenericDispatch's calls: " \
+                          "— also the target for the \"operation\" spelling, a Ruby alias no more",
       asks_impl:          "DomainPortBuilder's own real implementation, called by GenericDispatch's calls:",
       rename_impl:        "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
       move_impl:          "TranslationAggregateBuilder's own real implementation, called by GenericDispatch's calls:",
@@ -451,10 +452,16 @@ RSpec.describe "the declared syntax" do
       # `sets_impl` in slice 4c. The OLD spelling (`then_set`, here)
       # always stays a real, unmigrated method — `WordGate` matches `was:`
       # by exact row lookup, never through `calls:`.
-      expect(answered.include?(row[:word].to_sym) || generically_dispatched?(row[:word], row[:context])).to be(true),
-                                                                                                            "#{row[:context]}.#{row[:word]} — the new spelling has no builder"
-      expect(answered).to include(row[:was].to_sym),
-                          "#{row[:context]}.#{row[:word]} was #{row[:was]}, and the old spelling stopped parsing — a rename never strands the old era"
+      expect(
+        answered.include?(row[:word].to_sym) || generically_dispatched?(row[:word], row[:context])
+      ).to(
+        be(true), "#{row[:context]}.#{row[:word]} — the new spelling has no builder"
+      )
+      expect(answered).to(
+        include(row[:was].to_sym),
+        "#{row[:context]}.#{row[:word]} was #{row[:was]}, and the old spelling stopped parsing — a rename never " \
+        "strands the old era"
+      )
       expect(row[:was]).not_to eq(row[:word]), "#{row[:context]}.#{row[:word]} renames itself"
     end
   end
@@ -537,8 +544,10 @@ RSpec.describe "the declared syntax" do
       room += 1 if positional.any? { |row| row[:kind] == "pairs" } &&
                    params.any? { |kind, _| kind == :keyrest }
 
-      expect(positional.map { |row| row[:at] }.map(&:to_i).max).to be <= room,
-                                                                   "#{context}.#{word} declares more positionals than its builder takes"
+      expect(positional.map { |row| row[:at] }.map(&:to_i).max).to(
+        be <= room,
+        "#{context}.#{word} declares more positionals than its builder takes"
+      )
     end
   end
 
@@ -685,9 +694,11 @@ RSpec.describe "the declared syntax" do
       expect(landing).not_to be_empty,
                              "#{row[:context]}.#{row[:word]} claims to fill #{row[:fills]}, but " \
                              "#{row[:context]} is a position and holds no record"
-      expect(landing.any? { |category| fields.fetch(category).include?(row[:fills]) }).to be(true),
-                                                                                          "#{row[:context]}.#{row[:word]} fills #{row[:fills]}, which " \
-                                                                                          "#{landing.join('/')} does not declare"
+      expect(landing.any? { |category| fields.fetch(category).include?(row[:fills]) }).to(
+        be(true),
+        "#{row[:context]}.#{row[:word]} fills #{row[:fills]}, which " \
+        "#{landing.join('/')} does not declare"
+      )
     end
   end
 

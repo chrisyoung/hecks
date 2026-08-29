@@ -103,7 +103,8 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", :io do
     JSON.parse(stdout).fetch("results")
   end
 
-  it "reads every row lineage_harness reports, connecting as the RLS-fenced app role, matching Ruby's own translated ground truth exactly" do
+  it "reads every row lineage_harness reports, connecting as the RLS-fenced app role, matching Ruby's own " \
+     "translated ground truth exactly" do
     binary = self.class.lineage_harness_binary
     skip "cargo build --bin lineage_harness failed" unless binary
 
@@ -270,7 +271,8 @@ RSpec.describe "Rust/Ruby lineage parity (rust/host)", :io do
   # on the strength of it. Ground truth here is necessarily Postgres's
   # own compiled SQL, read directly (see that script's own header for
   # why that's the honest bar for this specific case, not a weakening).
-  it "reads a compute-migrated era back exactly as Postgres's own compiled SQL produced it, minted only because a real, matching approval was recorded first" do
+  it "reads a compute-migrated era back exactly as Postgres's own compiled SQL produced it, minted only " \
+     "because a real, matching approval was recorded first" do
     binary = self.class.lineage_harness_binary
     skip "cargo build --bin lineage_harness failed" unless binary
 

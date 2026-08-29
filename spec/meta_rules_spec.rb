@@ -69,7 +69,9 @@ RSpec.describe "the language's own rules" do
   it "refuses an attribute whose type is not a declared value object" do
     expect do
       @runtime.dispatch("Bluebook::Aggregate.Attribute", to:   @aggregate_id,
-                                                         with: { name: v("x"), type: "#{@aggregate_id}.Nonexistent", list: v("false") })
+                                                         with: { name: v("x"),
+                                                                 type: "#{@aggregate_id}.Nonexistent",
+                                                                 list: v("false") })
     end
       .to raise_error(Hecks::Runtime::NotFound, /no ValueObject with/)
   end
@@ -107,7 +109,11 @@ RSpec.describe "the language's own rules" do
     it "refuses a mutation with no target" do
       expect do
         @runtime.dispatch("Bluebook::Command.Change", to:   @command_id,
-                                                      with: { target: v(""), op: v("set"), field: v(""), kind: v("literal"), source: v('"x"') })
+                                                      with: { target: v(""),
+                                                              op:     v("set"),
+                                                              field:  v(""),
+                                                              kind:   v("literal"),
+                                                              source: v('"x"') })
       end
         .to raise_error(Hecks::Runtime::GivenNotMet, /a mutation names a target/)
     end
@@ -126,7 +132,11 @@ RSpec.describe "the language's own rules" do
     it "refuses a mutation whose op the runtime does not apply" do
       expect do
         @runtime.dispatch("Bluebook::Command.Change", to:   @command_id,
-                                                      with: { target: v("x"), op: v("frobnicate"), field: v(""), kind: v("literal"), source: v('"x"') })
+                                                      with: { target: v("x"),
+                                                              op:     v("frobnicate"),
+                                                              field:  v(""),
+                                                              kind:   v("literal"),
+                                                              source: v('"x"') })
       end
         .to raise_error(Hecks::Runtime::InvariantViolation, /op admits Vocabulary::MutationOp/)
     end

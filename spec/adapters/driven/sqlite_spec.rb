@@ -165,7 +165,8 @@ RSpec.describe Hecks::Adapters::Sqlite do
     described_class.new(aggregate: aggregate, settings: { database: "legacy.db" }, root: @dir)
     db = SQLite3::Database.new(path)
     db.execute('DROP TABLE "order_entries"')
-    db.execute('CREATE TABLE "order_entries" (sequence INTEGER PRIMARY KEY AUTOINCREMENT, aggregate_id TEXT NOT NULL, state TEXT NOT NULL)')
+    db.execute('CREATE TABLE "order_entries" (sequence INTEGER PRIMARY KEY AUTOINCREMENT, ' \
+               "aggregate_id TEXT NOT NULL, state TEXT NOT NULL)")
     db.close
 
     upgraded = described_class.new(aggregate: aggregate, settings: { database: "legacy.db" }, root: @dir)

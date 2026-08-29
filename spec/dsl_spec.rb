@@ -2201,7 +2201,11 @@ RSpec.describe "the DSL surface" do
               query("Bad") { where("client/status": { gt: "active" }) }
             end
           end.to raise_error(Malformed,
-                             %r{compares client/status with gt after hopping to Client.*is the lifecycle field, which holds text}m)
+                             %r{
+                               compares\ client/status\ with\ gt\ after\ hopping\ to\ Client
+                               .*
+                               is\ the\ lifecycle\ field,\ which\ holds\ text
+                             }mx)
         end
 
         it "refuses an ordered comparator on a hop's tail that's a real attribute holding no number" do
@@ -2278,7 +2282,8 @@ RSpec.describe "the DSL surface" do
         # reference declared `as: :studio` gets no special-cased spelling
         # either way: `studio.x` never hops, no matter what `studio` names,
         # and `studio/x` always does.
-        it "a dot onto a reference attribute never hops — it dead-ends the same way any dotted path onto a non-value-object does" do
+        it "a dot onto a reference attribute never hops — it dead-ends the same way any dotted path onto a " \
+           "non-value-object does" do
           expect do
             build_bluebook("NoDotHop") do
               aggregate "Studio" do

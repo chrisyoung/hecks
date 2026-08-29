@@ -39,7 +39,8 @@ module Hecks
             aggregate.commands.each do |command|
               if bluebook.version
                 add(Fqn.command(realm: realm, domain: bluebook.name, version: bluebook.version,
-                                aggregate: aggregate.hecks_name, command: command.hecks_name), directory, dispatcher, command.hecks_name, bluebook.version)
+                                aggregate: aggregate.hecks_name, command: command.hecks_name),
+                    directory, dispatcher, command.hecks_name, bluebook.version)
               end
               if current?(
                 bluebook, world

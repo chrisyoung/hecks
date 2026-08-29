@@ -313,7 +313,8 @@ module Hecks
         return enum_for(:each_saga) unless block_given?
 
         @db.exec_params(
-          "SELECT process_manager, correlation, state, memory, completed_compensations FROM hecks_saga_instances WHERE domain = $1",
+          "SELECT process_manager, correlation, state, memory, completed_compensations " \
+          "FROM hecks_saga_instances WHERE domain = $1",
           [@domain]
         ).each do |row|
           yield row["process_manager"], row["correlation"], row["state"],

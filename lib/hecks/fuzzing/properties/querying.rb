@@ -39,7 +39,8 @@ module Hecks
             reference_refused = asked.key?(:reference_error)
 
             if native_refused != reference_refused
-              next "#{asked[:query]} #{asked[:args].inspect} — native #{native_refused ? "refused (#{asked[:error]})" : 'answered'}, " \
+              next "#{asked[:query]} #{asked[:args].inspect} — native " \
+                   "#{native_refused ? "refused (#{asked[:error]})" : 'answered'}, " \
                    "but the reference interpreter #{reference_refused ? "refused (#{asked[:reference_error]})" : 'answered'} — " \
                    "a refusal-shaped divergence, not just a differing row set"
             end

@@ -92,7 +92,8 @@ RSpec.describe Hecks::Router do
     Realm::Banking::Account.Open(id: "A-1", customer: "C-1", number: { value: "ACC-1" })
 
     expect(Realm::Banking.customer_portfolio(customer: "C-1")).to eq([
-                                                                       { customer: { id: "C-1", reference: { value: "C-1" }, name: { value: "Ada" } },
+                                                                       { customer: { id: "C-1", reference: { value: "C-1" },
+                                                                                     name: { value: "Ada" } },
                                                                          accounts: [{ id: "A-1", customer: "C-1",
 number: { value: "ACC-1" }, balance: { cents: 0 } }] }
                                                                      ])

@@ -252,8 +252,9 @@ module Hecks
         # no givens/from is skipped by lifecycle_guard_and_given_
         # violations_are_refused.
         unless spec.with_spec.to_a.empty?
-          @registry.saga_dispatch_log << { process_manager: process_manager.name, instance: correlation, dispatch: spec.command_name,
-                                            on: event.name, correlation_head: process_manager.correlation_head,
+          @registry.saga_dispatch_log << { process_manager: process_manager.name, instance: correlation,
+                                            dispatch: spec.command_name, on: event.name,
+                                            correlation_head: process_manager.correlation_head,
                                             event_payload: event.payload, memory: Value.materialize(instance[:memory]),
                                             with_spec: spec.with_spec, args: args }
         end
