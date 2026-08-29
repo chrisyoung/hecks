@@ -13,12 +13,6 @@
 Layout/LineLength:
   Enabled: false
 
-# Offense count: 243
-# Configuration parameters: AllowedMethods.
-# AllowedMethods: enums
-Lint/ConstantDefinitionInBlock:
-  Enabled: false
-
 # An empty block IS the test subject in every one of these 11 offenses —
 # `Hecks.bluebook("Registered", version: "v2") {}` exercises a bluebook/
 # command/etc. declared with a deliberately empty body, not accidental
@@ -120,15 +114,6 @@ Naming/PredicatePrefix:
 # Offense count: 44
 # Configuration parameters: Max, CountAsOne.
 RSpec/ExampleLength:
-  Enabled: false
-
-# Offense count: 199
-# Configuration parameters: AssignmentOnly.
-RSpec/InstanceVariable:
-  Enabled: false
-
-# Offense count: 245
-RSpec/LeakyConstantDeclaration:
   Enabled: false
 
 # All 6 are the same dynamically-generated-examples pattern: a value
