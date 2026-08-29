@@ -9,6 +9,7 @@ require_relative "../../query_specification/common/order_by"
 require_relative "../../query_specification/field_path"
 require_relative "../../runtime/errors"
 require_relative "../../runtime/event"
+require_relative "postgres/outbox"
 require_relative "../../runtime/instance"
 
 module Hecks
@@ -44,6 +45,7 @@ module Hecks
       include SqlQueryBuilder
       include SchemaBuilder
       include Codec
+      include PostgresOutbox
 
       SQL_TYPES = { "Integer" => "bigint", "Float" => "double precision" }.freeze
 
@@ -110,6 +112,7 @@ module Hecks
         create_entry_table!
         create_event_table!
         create_saga_table!
+        create_outbox_table!
       end
 
       def table = @aggregate.storage_name
@@ -221,18 +224,12 @@ module Hecks
       # transaction lives here, the one caller that runs both together.
       def save(instance)
         entry = Ports::Persistence::Entry.new(operation: "save", id: instance.id.to_s, state: instance.state.dup)
-        @db.transaction { append(entry); project(entry) }
+        transaction { append(entry); project(entry) }
       end
 
-      # Classification, journal append and snapshot replacement are one
-      # Postgres transaction. A row lock cannot serialize two first writers —
-      # there is no row to lock yet — so a transaction-scoped advisory lock on
-      # schema/table + aggregate id owns that missing-row race as well. Once a
-      # writer acquires it, the preceding writer has committed and status can
-      # be read from the materialized table without a runtime-side find.
       def atomic_put(entry, insert_only: false)
         status = nil
-        @db.transaction do
+        transaction do
           @db.exec_params(
             "SELECT pg_advisory_xact_lock(" \
             "hashtext(current_schema() || ':' || $1), hashtext($2))",
@@ -255,7 +252,7 @@ module Hecks
 
       def delete(id)
         entry = Ports::Persistence::Entry.new(operation: "delete", id: id.to_s, state: nil)
-        @db.transaction { append(entry); project(entry) }
+        transaction { append(entry); project(entry) }
         true
       end
 

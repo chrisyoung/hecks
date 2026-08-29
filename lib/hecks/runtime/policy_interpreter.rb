@@ -23,8 +23,13 @@ module Hecks
       # (one record per matched row) rather than one record ; `Array(...)`
       # is wrong here (it would explode a plain record Hash into its own
       # key/value pairs), so the two shapes are told apart explicitly.
-      def react(event, domain)
-        policies_for(event).each do |policy, home_domain|
+      # `only:` — ONE `[policy, home_domain]` pair, the outbox relay's
+      # way of running exactly the consumer a row names (`Runtime::
+      # Outbox::Relay#run_consumer`) instead of every policy that
+      # matches the event. Selection is otherwise identical.
+      def react(event, domain, only: nil)
+        selected = only ? [only] : policies_for(event)
+        selected.each do |policy, home_domain|
           result = deliver(policy, event, home_domain)
           next if result.nil?
 

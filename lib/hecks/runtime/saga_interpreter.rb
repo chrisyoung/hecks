@@ -28,11 +28,14 @@ module Hecks
         @door     = door
       end
 
-      def advance(event, domain)
+      # `only:` — one process manager, the outbox relay's way of running
+      # exactly the consumer a row names (`Runtime::Outbox::Relay#
+      # run_consumer`); nil advances every manager the domain declares.
+      def advance(event, domain, only: nil)
         bluebook = @registry.bluebook(domain)
         return unless bluebook
 
-        bluebook.process_managers.each do |pm|
+        (only ? [only] : bluebook.process_managers).each do |pm|
           begin_saga(pm, event, domain)
           advance_saga(pm, event, domain)
           end_saga(pm, event, domain)
