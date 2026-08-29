@@ -206,11 +206,6 @@ RSpec/NoExpectationExample:
     - 'spec/adapters/query_agreement_spec.rb'
     - 'spec/ir_golden_spec.rb'
 
-# Offense count: 49
-# Configuration parameters: CustomTransform, IgnoreMethods, IgnoreMetadata, InflectorPath, EnforcedInflector.
-# SupportedInflectors: default, active_support
-RSpec/SpecFilePathFormat:
-  Enabled: false
 
 
 # Offense count: 76

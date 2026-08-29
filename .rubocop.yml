@@ -371,3 +371,30 @@ Security/Eval:
 # examples share the context.
 RSpec/BeforeAfterAll:
   Enabled: false
+
+# `RSpec/SpecFilePathFormat` assumes one spec file per class, its path
+# under `spec/` mirroring the class's own namespace path under `lib/`
+# exactly (including the gem's own top-level `hecks/` segment). This
+# repo's spec/ tree deliberately doesn't do that, in three consistent,
+# repo-wide ways, none of them oversights:
+#
+#   1. No redundant `hecks/` prefix — `spec/` is already gem-scoped, so
+#      `spec/router_spec.rb` (not `spec/hecks/router_spec.rb`) covers
+#      `Hecks::Router`, throughout the whole suite.
+#   2. A large class's tests split across SEVERAL topic-named files
+#      rather than one — `RustProjection::Projector` alone has seven:
+#      spec/rust_project/{bridging,closed_set_fielded,constraints,
+#      creates_owner,naming_landmines,queries,reactions_merge}_spec.rb.
+#      Same for `Hecks::Forms::Params`, `Hecks::Ports::Projection::Worker`,
+#      several others — one spec file per CONCERN, not per class.
+#   3. A directory name shorter or plainer than the exact Ruby
+#      namespace — `spec/rust_project/` for `RustProjection::*`,
+#      `spec/adapters/driven/*_spec.rb` for `Hecks::Adapters::*` (the
+#      `driven/` grouping is a directory-only hexagonal-architecture
+#      label; the classes themselves were never nested under a
+#      `Driven` module).
+#
+# A cop built for "one file, one class, one mirrored path" flags all
+# three as violations; none of them are ones a rename should fix.
+RSpec/SpecFilePathFormat:
+  Enabled: false
